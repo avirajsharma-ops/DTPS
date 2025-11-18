@@ -1,0 +1,52 @@
+services:
+  # Next.js Application (using MongoDB Atlas)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Enable BuildKit for better caching and performance
+      cache_from:
+        - zoconut-app:latest
+      # Build arguments for optimization
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+    container_name: zoconut-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env.local
+    networks:
+      - zoconut-network
+    # Health check for better container management
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy with SSL
+  nginx:
+    image: nginx:alpine
+    container_name: zoconut-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      - app
+    networks:
+      - zoconut-network
+
+# No volumes needed since we're using MongoDB Atlas
+
+networks:
+  zoconut-network:
+    driver: bridge

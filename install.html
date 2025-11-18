@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Install DTPS Nutrition App</title>
+    <link rel="manifest" href="https://dtps.tech/manifest.json">
+    <meta name="theme-color" content="#16a34a">
+    <link rel="icon" href="https://dtps.tech/favicon.ico">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: linear-gradient(135deg, #16a34a 0%, #059669 100%); 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px;
+        }
+        .container { 
+            background: white; 
+            border-radius: 24px; 
+            padding: 40px; 
+            max-width: 500px; 
+            width: 100%; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15); 
+            text-align: center; 
+        }
+        .logo { 
+            width: 100px; 
+            height: 100px; 
+            background: linear-gradient(135deg, #16a34a, #059669); 
+            border-radius: 24px; 
+            margin: 0 auto 24px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 36px; 
+            font-weight: bold; 
+            box-shadow: 0 10px 20px rgba(22, 163, 74, 0.3);
+        }
+        h1 { color: #1f2937; margin-bottom: 8px; font-size: 28px; }
+        .subtitle { color: #6b7280; margin-bottom: 32px; font-size: 16px; }
+        .install-btn { 
+            display: block; 
+            width: 100%; 
+            padding: 16px 24px; 
+            margin: 12px 0; 
+            border: none; 
+            border-radius: 16px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            text-decoration: none; 
+            color: white; 
+            position: relative;
+            overflow: hidden;
+        }
+        .install-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .primary { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .secondary { background: linear-gradient(135deg, #10b981, #059669); }
+        .tertiary { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .success { background: linear-gradient(135deg, #10b981, #059669); }
+        .platform-info {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        .instructions {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 24px;
+            text-align: left;
+        }
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin: 12px 0;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        .step-number {
+            background: #3b82f6;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 16px;
+            display: inline-block;
+        }
+        .status.installed {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status.available {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        @media (max-width: 480px) {
+            .container { padding: 24px; }
+            h1 { font-size: 24px; }
+            .logo { width: 80px; height: 80px; font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">DN</div>
+        <h1>DTPS Nutrition</h1>
+        <p class="subtitle">Your personal nutrition and wellness platform</p>
+        
+        <div class="status" id="installStatus">
+            Checking installation status...
+        </div>
+        
+        <a href="https://dtps.tech/" class="install-btn primary" target="_blank" id="openApp">
+            🚀 Open App
+        </a>
+        
+        <button class="install-btn secondary" id="installPWA" style="display: none;">
+            📱 Install App
+        </button>
+        
+        <div class="instructions" id="instructions" style="display: none;">
+            <h3 style="margin-bottom: 16px; color: #1f2937;">Installation Steps:</h3>
+            <div id="stepsList"></div>
+        </div>
+        
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+            <p style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">App URL:</p>
+            <p style="font-size: 12px; color: #9ca3af; word-break: break-all;">https://dtps.tech/</p>
+        </div>
+    </div>
+    
+    <script>
+        let deferredPrompt;
+        const installButton = document.getElementById('installPWA');
+        const openAppButton = document.getElementById('openApp');
+        const statusDiv = document.getElementById('installStatus');
+        const instructionsDiv = document.getElementById('instructions');
+        const stepsList = document.getElementById('stepsList');
+        
+        // Platform detection
+        const userAgent = navigator.userAgent.toLowerCase();
+        let platform = 'Desktop';
+        let browserName = 'Browser';
+        
+        if (userAgent.includes('android')) {
+            platform = 'Android';
+            browserName = 'Chrome';
+        } else if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+            platform = 'iOS';
+            browserName = 'Safari';
+        } else if (userAgent.includes('windows')) {
+            platform = 'Windows';
+            browserName = userAgent.includes('edg') ? 'Edge' : 'Chrome';
+        } else if (userAgent.includes('mac')) {
+            platform = 'macOS';
+            browserName = userAgent.includes('safari') && !userAgent.includes('chrome') ? 'Safari' : 'Chrome';
+        }
+        
+        // Check if already installed
+        function checkInstallStatus() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isIOSStandalone = window.navigator.standalone === true;
+            
+            if (isStandalone || isIOSStandalone) {
+                statusDiv.textContent = '✅ App is already installed!';
+                statusDiv.className = 'status installed';
+                openAppButton.innerHTML = '🚀 Open Installed App';
+                return true;
+            }
+            
+            statusDiv.textContent = `📱 Ready to install on ${platform}`;
+            statusDiv.className = 'status available';
+            return false;
+        }
+        
+        // Show manual installation instructions
+        function showInstructions() {
+            let steps = [];
+            
+            switch (platform) {
+                case 'iOS':
+                    steps = [
+                        'Open the app link in Safari browser',
+                        'Tap the Share button (□↑) at the bottom',
+                        'Scroll down and tap "Add to Home Screen"',
+                        'Tap "Add" to install the app'
+                    ];
+                    break;
+                case 'Android':
+                    steps = [
+                        'Open the app link in Chrome browser',
+                        'Tap the menu (⋮) in the top-right corner',
+                        'Select "Add to Home screen"',
+                        'Tap "Add" to install the app'
+                    ];
+                    break;
+                case 'Windows':
+                    steps = [
+                        'Open the app link in Edge or Chrome',
+                        'Look for the install icon (⊕) in the address bar',
+                        'Click the install icon or check browser menu',
+                        'Click "Install" to add to your system'
+                    ];
+                    break;
+                case 'macOS':
+                    steps = [
+                        'Open the app link in Safari or Chrome',
+                        'Look for install option in browser menu',
+                        'Click "Install" or "Add to Dock"',
+                        'The app will be added to your Applications'
+                    ];
+                    break;
+                default:
+                    steps = [
+                        'Open the app link in your browser',
+                        'Look for install prompts or browser menu options',
+                        'Follow browser-specific installation steps',
+                        'The app will be installed on your system'
+                    ];
+            }
+            
+            stepsList.innerHTML = steps.map((step, index) => `
+                <div class="step">
+                    <div class="step-number">${index + 1}</div>
+                    <div>${step}</div>
+                </div>
+            `).join('');
+            
+            instructionsDiv.style.display = 'block';
+        }
+        
+        // PWA installation logic
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installButton.style.display = 'block';
+            statusDiv.textContent = '🎉 App can be installed!';
+            statusDiv.className = 'status available';
+        });
+        
+        installButton.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                try {
+                    await deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    
+                    if (outcome === 'accepted') {
+                        installButton.innerHTML = '✅ Installing...';
+                        installButton.style.background = '#10b981';
+                        statusDiv.textContent = '⏳ Installing app...';
+                        
+                        setTimeout(() => {
+                            statusDiv.textContent = '✅ App installed successfully!';
+                            statusDiv.className = 'status installed';
+                            installButton.style.display = 'none';
+                            openAppButton.innerHTML = '🚀 Open Installed App';
+                        }, 2000);
+                    } else {
+                        showInstructions();
+                    }
+                } catch (error) {
+                    console.error('Installation error:', error);
+                    showInstructions();
+                }
+                
+                deferredPrompt = null;
+            } else {
+                showInstructions();
+            }
+        });
+        
+        // Listen for app installed event
+        window.addEventListener('appinstalled', () => {
+            statusDiv.textContent = '✅ App installed successfully!';
+            statusDiv.className = 'status installed';
+            installButton.style.display = 'none';
+            openAppButton.innerHTML = '🚀 Open Installed App';
+        });
+        
+        // Initialize
+        const isInstalled = checkInstallStatus();
+        if (!isInstalled) {
+            // Show instructions by default for manual installation
+            setTimeout(showInstructions, 1000);
+        }
+        
+        // Update button text based on platform
+        if (platform === 'iOS') {
+            openAppButton.innerHTML = '🍎 Open in Safari';
+        } else if (platform === 'Android') {
+            openAppButton.innerHTML = '🤖 Open in Chrome';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Clock, Users } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+
+interface Recipe {
+  _id: string;
+  name: string;
+  description?: string;
+  image?: string;
+  ingredients: Array<{
+    name: string;
+    quantity: number;
+    unit: string;
+    remarks?: string;
+  }>;
+  instructions: string[];
+  prepTime: number;
+  cookTime: number;
+  servings: string | number;
+  nutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
+  category?: string;
+  cuisine?: string;
+  difficulty?: string;
+  tags?: string[];
+}
+
+export default function RecipeDetailMobile({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [recipeId, setRecipeId] = useState<string>('');
+
+  useEffect(() => {
+    params.then(p => setRecipeId(p.id));
+  }, [params]);
+
+  useEffect(() => {
+    if (recipeId) {
+      fetchRecipe();
+    }
+  }, [recipeId]);
+
+  const fetchRecipe = async () => {
+    try {
+      const response = await fetch(`/api/recipes/${recipeId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRecipe(data.recipe);
+      }
+    } catch (error) {
+      console.error('Error fetching recipe:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!recipe) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Recipe not found</p>
+          <button
+            onClick={() => router.back()}
+            className="px-6 py-2 bg-gray-900 text-white rounded-lg"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white pb-20">
+      {/* Header with Back Button */}
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+        <div className="flex items-center p-4">
+          <button
+            onClick={() => router.back()}
+            className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-700" />
+          </button>
+        </div>
+      </div>
+
+      {/* Recipe Image */}
+      <div className="px-4 mb-6">
+        <div className="relative h-64 w-full bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 rounded-3xl overflow-hidden shadow-lg">
+          {recipe.image ? (
+            <img
+              src={recipe.image}
+              alt={recipe.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-8xl">🥗</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recipe Name */}
+      <div className="px-6 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          {recipe.name}
+        </h1>
+        {recipe.description && (
+          <p className="text-gray-600 text-sm leading-relaxed">
+            {recipe.description}
+          </p>
+        )}
+      </div>
+
+      {/* Quick Stats */}
+      <div className="px-6 mb-8">
+        <div className="flex items-center gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-1">
+            <Clock className="h-4 w-4" />
+            <span>{recipe.prepTime + recipe.cookTime} min</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Users className="h-4 w-4" />
+            <span>{recipe.servings}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Ingredients Section */}
+      <div className="px-6 mb-8">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Ingredients:
+        </h2>
+        <ul className="space-y-3">
+          {recipe.ingredients.map((ingredient, index) => (
+            <li key={index} className="flex items-start text-gray-700">
+              <span className="mr-3 mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-900 flex-shrink-0"></span>
+              <span className="text-base leading-relaxed">
+                {ingredient.quantity} {ingredient.unit} {ingredient.name}
+                {ingredient.remarks && (
+                  <span className="text-sm text-gray-500 italic ml-2">({ingredient.remarks})</span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Instructions Section */}
+      <div className="px-6 mb-8">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Instructions:
+        </h2>
+        <ol className="space-y-4">
+          {recipe.instructions.map((instruction, index) => (
+            <li key={index} className="flex items-start text-gray-700">
+              <span className="mr-3 font-bold text-gray-900 flex-shrink-0">
+                {index + 1}.
+              </span>
+              <span className="text-base leading-relaxed flex-1">
+                {instruction}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* Nutrition Info */}
+      <div className="px-6 ">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Nutrition (per serving):
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-blue-50 rounded-2xl p-4 text-center">
+            <p className="text-2xl font-bold text-blue-600">{recipe.nutrition.calories}</p>
+            <p className="text-sm text-blue-700 mt-1">Calories</p>
+          </div>
+          <div className="bg-green-50 rounded-2xl p-4 text-center">
+            <p className="text-2xl font-bold text-green-600">{recipe.nutrition.protein}g</p>
+            <p className="text-sm text-green-700 mt-1">Protein</p>
+          </div>
+          <div className="bg-yellow-50 rounded-2xl p-4 text-center">
+            <p className="text-2xl font-bold text-yellow-600">{recipe.nutrition.carbs}g</p>
+            <p className="text-sm text-yellow-700 mt-1">Carbs</p>
+          </div>
+          <div className="bg-purple-50 rounded-2xl p-4 text-center">
+            <p className="text-2xl font-bold text-purple-600">{recipe.nutrition.fat}g</p>
+            <p className="text-sm text-purple-700 mt-1">Fat</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Navigation Placeholder */}
+    
+    </div>
+  );
+}
+

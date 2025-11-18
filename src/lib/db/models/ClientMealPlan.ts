@@ -1,0 +1,338 @@
+import mongoose, { Schema, Document } from 'mongoose';
+
+// Progress tracking interface
+interface IProgressEntry {
+  date: Date;
+  weight?: number;
+  bodyFat?: number;
+  measurements?: {
+    waist?: number;
+    chest?: number;
+    hips?: number;
+    arms?: number;
+    thighs?: number;
+  };
+  notes?: string;
+  photos?: string[];
+  mood?: 1 | 2 | 3 | 4 | 5;
+  energyLevel?: 1 | 2 | 3 | 4 | 5;
+  adherence?: number; // Percentage 0-100
+}
+
+// Meal completion tracking
+interface IMealCompletion {
+  date: Date;
+  mealType: 'breakfast' | 'morningSnack' | 'lunch' | 'afternoonSnack' | 'dinner' | 'eveningSnack';
+  completed: boolean;
+  actualServings?: number;
+  substitutions?: string;
+  notes?: string;
+  rating?: 1 | 2 | 3 | 4 | 5;
+}
+
+// Client meal plan interface
+export interface IClientMealPlan extends Document {
+  clientId: mongoose.Types.ObjectId;
+  dietitianId: mongoose.Types.ObjectId;
+  templateId: mongoose.Types.ObjectId;
+  
+  // Plan details
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  status: 'active' | 'completed' | 'paused' | 'cancelled';
+  
+  // Customizations from template
+  customizations?: {
+    targetCalories?: number;
+    targetMacros?: {
+      protein: number;
+      carbs: number;
+      fat: number;
+    };
+    dietaryRestrictions?: string[];
+    notes?: string;
+    mealModifications?: {
+      dayIndex: number;
+      mealType: string;
+      modifications: string;
+    }[];
+  };
+  
+  // Progress tracking
+  progress: IProgressEntry[];
+  mealCompletions: IMealCompletion[];
+  
+  // Goals and targets
+  goals: {
+    weightGoal?: number;
+    bodyFatGoal?: number;
+    targetDate?: Date;
+    primaryGoal: 'weight-loss' | 'weight-gain' | 'maintenance' | 'muscle-gain' | 'health-improvement';
+    secondaryGoals?: string[];
+  };
+  
+  // Feedback and communication
+  feedback?: {
+    clientFeedback?: {
+      rating: number;
+      comment?: string;
+      date: Date;
+    }[];
+    dietitianNotes?: {
+      note: string;
+      date: Date;
+      isPrivate: boolean;
+    }[];
+  };
+  
+  // Reminders and notifications
+  reminders: {
+    mealReminders: boolean;
+    progressReminders: boolean;
+    checkInReminders: boolean;
+    customReminders?: {
+      message: string;
+      time: string; // HH:MM format
+      days: number[]; // 0-6 for days of week
+      isActive: boolean;
+    }[];
+  };
+  
+  // Analytics
+  analytics: {
+    averageAdherence?: number;
+    totalDaysCompleted?: number;
+    favoriteRecipes?: mongoose.Types.ObjectId[];
+    challengingMeals?: string[];
+    progressTrend?: 'improving' | 'stable' | 'declining';
+  };
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Progress entry schema
+const ProgressEntrySchema = new Schema({
+  date: { type: Date, required: true },
+  weight: { type: Number, min: 20, max: 500 },
+  bodyFat: { type: Number, min: 3, max: 50 },
+  measurements: {
+    waist: { type: Number, min: 10, max: 200 },
+    chest: { type: Number, min: 10, max: 200 },
+    hips: { type: Number, min: 10, max: 200 },
+    arms: { type: Number, min: 5, max: 100 },
+    thighs: { type: Number, min: 10, max: 150 }
+  },
+  notes: { type: String, maxlength: 500 },
+  photos: [{ type: String }], // URLs to progress photos
+  mood: { type: Number, min: 1, max: 5 },
+  energyLevel: { type: Number, min: 1, max: 5 },
+  adherence: { type: Number, min: 0, max: 100 }
+}, { _id: false });
+
+// Meal completion schema
+const MealCompletionSchema = new Schema({
+  date: { type: Date, required: true },
+  mealType: { 
+    type: String, 
+    required: true,
+    enum: ['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'eveningSnack']
+  },
+  completed: { type: Boolean, required: true, default: false },
+  actualServings: { type: Number, min: 0, max: 10 },
+  substitutions: { type: String, maxlength: 200 },
+  notes: { type: String, maxlength: 300 },
+  rating: { type: Number, min: 1, max: 5 }
+}, { _id: false });
+
+// Main client meal plan schema
+const ClientMealPlanSchema = new Schema({
+  clientId: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true,
+    index: true
+  },
+  dietitianId: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true,
+    index: true
+  },
+  templateId: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'MealPlanTemplate', 
+    required: true,
+    index: true
+  },
+  
+  name: { 
+    type: String, 
+    required: true, 
+    trim: true,
+    maxlength: 200
+  },
+  startDate: { 
+    type: Date, 
+    required: true,
+    index: true
+  },
+  endDate: { 
+    type: Date, 
+    required: true,
+    index: true
+  },
+  status: { 
+    type: String, 
+    required: true,
+    enum: ['active', 'completed', 'paused', 'cancelled'],
+    default: 'active',
+    index: true
+  },
+  
+  customizations: {
+    targetCalories: { type: Number, min: 800, max: 5000 },
+    targetMacros: {
+      protein: { type: Number, min: 0, max: 500 },
+      carbs: { type: Number, min: 0, max: 1000 },
+      fat: { type: Number, min: 0, max: 300 }
+    },
+    dietaryRestrictions: [{ type: String, trim: true }],
+    notes: { type: String, maxlength: 1000 },
+    mealModifications: [{
+      dayIndex: { type: Number, required: true, min: 0 },
+      mealType: { type: String, required: true },
+      modifications: { type: String, required: true, maxlength: 500 }
+    }]
+  },
+  
+  progress: [ProgressEntrySchema],
+  mealCompletions: [MealCompletionSchema],
+  
+  goals: {
+    weightGoal: { type: Number, min: 20, max: 500 },
+    bodyFatGoal: { type: Number, min: 3, max: 50 },
+    targetDate: Date,
+    primaryGoal: { 
+      type: String, 
+      required: true,
+      enum: ['weight-loss', 'weight-gain', 'maintenance', 'muscle-gain', 'health-improvement']
+    },
+    secondaryGoals: [{ type: String, trim: true }]
+  },
+  
+  feedback: {
+    clientFeedback: [{
+      rating: { type: Number, required: true, min: 1, max: 5 },
+      comment: { type: String, maxlength: 500 },
+      date: { type: Date, required: true, default: Date.now }
+    }],
+    dietitianNotes: [{
+      note: { type: String, required: true, maxlength: 1000 },
+      date: { type: Date, required: true, default: Date.now },
+      isPrivate: { type: Boolean, default: false }
+    }]
+  },
+  
+  reminders: {
+    mealReminders: { type: Boolean, default: true },
+    progressReminders: { type: Boolean, default: true },
+    checkInReminders: { type: Boolean, default: true },
+    customReminders: [{
+      message: { type: String, required: true, maxlength: 200 },
+      time: { type: String, required: true, match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/ },
+      days: [{ type: Number, min: 0, max: 6 }],
+      isActive: { type: Boolean, default: true }
+    }]
+  },
+  
+  analytics: {
+    averageAdherence: { type: Number, min: 0, max: 100 },
+    totalDaysCompleted: { type: Number, min: 0, default: 0 },
+    favoriteRecipes: [{ type: Schema.Types.ObjectId, ref: 'Recipe' }],
+    challengingMeals: [{ type: String }],
+    progressTrend: { 
+      type: String, 
+      enum: ['improving', 'stable', 'declining']
+    }
+  }
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Indexes for better performance
+ClientMealPlanSchema.index({ clientId: 1, status: 1 });
+ClientMealPlanSchema.index({ dietitianId: 1, status: 1 });
+ClientMealPlanSchema.index({ startDate: 1, endDate: 1 });
+ClientMealPlanSchema.index({ 'progress.date': 1 });
+ClientMealPlanSchema.index({ 'mealCompletions.date': 1 });
+
+// Virtual for plan duration
+ClientMealPlanSchema.virtual('duration').get(function() {
+  return Math.ceil((this.endDate.getTime() - this.startDate.getTime()) / (1000 * 60 * 60 * 24));
+});
+
+// Virtual for days remaining
+ClientMealPlanSchema.virtual('daysRemaining').get(function() {
+  const today = new Date();
+  if (today > this.endDate) return 0;
+  return Math.ceil((this.endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+});
+
+// Virtual for completion percentage
+ClientMealPlanSchema.virtual('completionPercentage').get(function() {
+  const totalDays = this.get('duration') || Math.ceil((this.endDate.getTime() - this.startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const today = new Date();
+  const daysElapsed = Math.min(totalDays, Math.ceil((today.getTime() - this.startDate.getTime()) / (1000 * 60 * 60 * 24)));
+  return Math.round((daysElapsed / totalDays) * 100);
+});
+
+// Pre-save middleware to update analytics
+ClientMealPlanSchema.pre('save', function(next) {
+  if (this.isModified('mealCompletions') || this.isModified('progress')) {
+    // Initialize analytics if not exists
+    if (!this.analytics) {
+      this.analytics = {
+        totalDaysCompleted: 0,
+        favoriteRecipes: [],
+        challengingMeals: []
+      };
+    }
+
+    // Calculate average adherence
+    if (this.progress && this.progress.length > 0) {
+      const adherenceValues = this.progress
+        .filter(p => p.adherence !== undefined && p.adherence !== null)
+        .map(p => p.adherence as number);
+      if (adherenceValues.length > 0) {
+        this.analytics!.averageAdherence = Math.round(
+          adherenceValues.reduce((sum: number, val: number) => sum + val, 0) / adherenceValues.length
+        );
+      }
+    }
+
+    // Calculate total days completed
+    const uniqueDates = new Set(this.mealCompletions.map(mc => mc.date.toDateString()));
+    this.analytics!.totalDaysCompleted = uniqueDates.size;
+    
+    // Determine progress trend (simplified)
+    if (this.progress && this.progress.length >= 3) {
+      const recent = this.progress.slice(-3);
+      const weights = recent.filter(p => p.weight).map(p => p.weight as number);
+      if (weights.length >= 2) {
+        const trend = weights[weights.length - 1] - weights[0];
+        if (this.goals && this.goals.primaryGoal === 'weight-loss') {
+          this.analytics!.progressTrend = trend < -1 ? 'improving' : trend > 1 ? 'declining' : 'stable';
+        } else if (this.goals && this.goals.primaryGoal === 'weight-gain') {
+          this.analytics!.progressTrend = trend > 1 ? 'improving' : trend < -1 ? 'declining' : 'stable';
+        }
+      }
+    }
+  }
+  next();
+});
+
+export default mongoose.models.ClientMealPlan || mongoose.model<IClientMealPlan>('ClientMealPlan', ClientMealPlanSchema);

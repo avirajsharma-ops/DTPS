@@ -1,0 +1,467 @@
+'use client';
+
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { notifyMissedCall } from '@/lib/notifications/notification-manager';
+import { NotificationService } from '@/lib/notifications/notification-service';
+
+export interface RealtimeEvent {
+  type: string;
+  data: any;
+  timestamp: number;
+}
+
+export interface UseRealtimeOptions {
+  onMessage?: (event: RealtimeEvent) => void;
+  onUserOnline?: (userId: string) => void;
+  onUserOffline?: (userId: string) => void;
+  onTyping?: (data: { userId: string; isTyping: boolean }) => void;
+  autoReconnect?: boolean;
+  reconnectInterval?: number;
+}
+
+// Global connection manager to prevent multiple connections
+class GlobalSSEManager {
+  private static instance: GlobalSSEManager;
+  private connections = new Map<string, EventSource>();
+  private connectionStates = new Map<string, 'connecting' | 'connected' | 'disconnected'>();
+  private subscribers = new Map<string, Set<(event: any) => void>>();
+  private connectionPromises = new Map<string, Promise<EventSource>>();
+  private closeTimers = new Map<string, any>();
+
+  static getInstance(): GlobalSSEManager {
+    if (!GlobalSSEManager.instance) {
+      GlobalSSEManager.instance = new GlobalSSEManager();
+    }
+    return GlobalSSEManager.instance;
+  }
+
+  hasConnection(userId: string): boolean {
+    return this.connections.has(userId) && this.connectionStates.get(userId) === 'connected';
+  }
+
+  isConnecting(userId: string): boolean {
+    return this.connectionStates.get(userId) === 'connecting';
+  }
+
+  async getOrCreateConnection(userId: string): Promise<EventSource> {
+    // If already connected, return existing connection
+    if (this.hasConnection(userId)) {
+      return this.connections.get(userId)!;
+    }
+
+    // If already connecting, wait for the existing promise
+    if (this.isConnecting(userId) && this.connectionPromises.has(userId)) {
+      return this.connectionPromises.get(userId)!;
+    }
+
+    // Create new connection
+    this.connectionStates.set(userId, 'connecting');
+    
+    const connectionPromise = new Promise<EventSource>((resolve, reject) => {
+      console.log('Creating new SSE connection for user:', userId);
+      
+      try {
+        const eventSource = new EventSource('/api/realtime/sse');
+        
+        eventSource.onopen = () => {
+          console.log('SSE connection opened for user:', userId);
+          this.connections.set(userId, eventSource);
+          this.connectionStates.set(userId, 'connected');
+          this.connectionPromises.delete(userId);
+
+          // Set up heartbeat to keep connection alive
+          const heartbeatInterval = setInterval(() => {
+            if (eventSource.readyState === EventSource.CLOSED) {
+              console.log('SSE connection closed, clearing heartbeat');
+              clearInterval(heartbeatInterval);
+            } else {
+              console.log('SSE heartbeat - connection alive');
+            }
+          }, 30000); // Check every 30 seconds
+
+          resolve(eventSource);
+        };
+
+        eventSource.onerror = (error) => {
+          console.error('SSE connection error for user:', userId, error);
+          console.log('SSE readyState:', eventSource.readyState);
+
+          // Only reject if this is a permanent error (readyState 2 = CLOSED)
+          if (eventSource.readyState === EventSource.CLOSED) {
+            console.log('SSE connection permanently closed, cleaning up');
+            this.connectionStates.set(userId, 'disconnected');
+            this.connectionPromises.delete(userId);
+            this.connections.delete(userId);
+            reject(error);
+          } else {
+            console.log('SSE connection error but not closed, keeping connection alive');
+            // Don't reject, let the connection attempt to recover
+          }
+        };
+
+        // Set up message forwarding to subscribers
+        eventSource.onmessage = (event) => {
+          const subscribers = this.subscribers.get(userId);
+          if (subscribers) {
+            subscribers.forEach(callback => callback({ type: 'message', data: event.data }));
+          }
+        };
+
+        // Handle custom events (including call signaling)
+        [
+          'user_online','user_offline','typing_start','typing_stop','heartbeat','connected','new_message',
+          'incoming_call','call_accepted','call_rejected','call_ended','ice_candidate','missed_call',
+          'webrtc-signal'  // 🚀 NEW: Simple WebRTC signals
+        ].forEach(eventType => {
+          eventSource.addEventListener(eventType, (event) => {
+            const subscribers = this.subscribers.get(userId);
+            if (subscribers) {
+              subscribers.forEach(callback => callback({ type: eventType, data: (event as MessageEvent).data }));
+            }
+          });
+        });
+
+        // Online snapshot on connect
+        eventSource.addEventListener('online_snapshot', (event) => {
+          const subscribers = this.subscribers.get(userId);
+          if (subscribers) {
+            subscribers.forEach(callback => callback({ type: 'online_snapshot', data: (event as MessageEvent).data }));
+          }
+        });
+
+      } catch (error) {
+        console.error('Failed to create SSE connection for user:', userId, error);
+        this.connectionStates.set(userId, 'disconnected');
+        this.connectionPromises.delete(userId);
+        reject(error);
+      }
+    });
+
+    this.connectionPromises.set(userId, connectionPromise);
+    return connectionPromise;
+  }
+
+  subscribe(userId: string, callback: (event: any) => void): () => void {
+    if (!this.subscribers.has(userId)) {
+      this.subscribers.set(userId, new Set());
+    }
+    this.subscribers.get(userId)!.add(callback);
+
+    // If a close was scheduled, cancel it because we have a live subscriber again
+    const pending = this.closeTimers.get(userId);
+    if (pending) { clearTimeout(pending); this.closeTimers.delete(userId); }
+
+    // Return unsubscribe function
+    return () => {
+      const subscribers = this.subscribers.get(userId);
+      if (subscribers) {
+        subscribers.delete(callback);
+        if (subscribers.size === 0) {
+          this.subscribers.delete(userId);
+          // Debounce actual close to avoid churn on rerenders/StrictMode
+          const t = setTimeout(() => this.closeConnection(userId), 5000);
+          this.closeTimers.set(userId, t);
+        }
+      }
+    };
+  }
+
+  closeConnection(userId: string): void {
+    const timer = this.closeTimers.get(userId);
+    if (timer) { clearTimeout(timer); this.closeTimers.delete(userId); }
+
+    const existing = this.connections.get(userId);
+    if (existing) {
+      existing.close();
+      this.connections.delete(userId);
+    }
+    this.connectionStates.set(userId, 'disconnected');
+    this.connectionPromises.delete(userId);
+    this.subscribers.delete(userId);
+  }
+
+  getConnection(userId: string): EventSource | undefined {
+    return this.connections.get(userId);
+  }
+
+  // Force disconnect a user's connection
+  forceDisconnect(userId: string): void {
+    const connection = this.connections.get(userId);
+    if (connection) {
+      connection.close();
+      this.connections.delete(userId);
+      this.connectionStates.set(userId, 'disconnected');
+      this.connectionPromises.delete(userId);
+      console.log('Force disconnected user:', userId);
+    }
+  }
+
+  // Force reconnect a user's connection
+  async forceReconnect(userId: string): Promise<EventSource> {
+    console.log('Force reconnecting user:', userId);
+    this.forceDisconnect(userId);
+    // Wait a bit before reconnecting
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return this.getOrCreateConnection(userId);
+  }
+}
+
+export function useRealtime(options: UseRealtimeOptions = {}) {
+  const { data: session } = useSession();
+  const [isConnected, setIsConnected] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  
+  const globalManager = GlobalSSEManager.getInstance();
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const connectionCheckRef = useRef<NodeJS.Timeout | null>(null);
+
+  const {
+    onMessage,
+    onUserOnline,
+    onUserOffline,
+    onTyping
+  } = options;
+
+  const connect = useCallback(async () => {
+    if (!session?.user?.id) {
+      console.log('Skipping connection - no user session');
+      return;
+    }
+
+    const userId = session.user.id;
+    
+    try {
+      // Use global manager to get or create connection
+      await globalManager.getOrCreateConnection(userId);
+      
+      // Subscribe to events
+      const unsubscribe = globalManager.subscribe(userId, (event) => {
+        if (event.type === 'message' && onMessage) {
+          try {
+            const data = JSON.parse(event.data);
+            onMessage({
+              type: 'message',
+              data,
+              timestamp: Date.now()
+            });
+          } catch (error) {
+            console.error('Failed to parse SSE message:', error);
+          }
+        } else if (event.type === 'new_message' && onMessage) {
+          try {
+            const data = JSON.parse(event.data);
+            onMessage({
+              type: 'new_message',
+              data,
+              timestamp: Date.now()
+            });
+          } catch (error) {
+            console.error('Failed to parse new_message event:', error);
+          }
+        } else if (event.type === 'online_snapshot') {
+          try {
+            const data = JSON.parse(event.data);
+            if (Array.isArray(data.onlineUsers)) {
+              setOnlineUsers(data.onlineUsers);
+            }
+          } catch (error) {
+            console.error('Failed to parse online_snapshot event:', error);
+          }
+        } else if (event.type === 'user_online') {
+          try {
+            const data = JSON.parse(event.data);
+            setOnlineUsers(prev => {
+              if (!prev.includes(data.userId)) {
+                return [...prev, data.userId];
+              }
+              return prev;
+            });
+            if (onUserOnline) {
+              onUserOnline(data.userId);
+            }
+          } catch (error) {
+            console.error('Failed to parse user_online event:', error);
+          }
+        } else if (event.type === 'user_offline') {
+          try {
+            const data = JSON.parse(event.data);
+            setOnlineUsers(prev => prev.filter(id => id !== data.userId));
+            if (onUserOffline) {
+              onUserOffline(data.userId);
+            }
+          } catch (error) {
+            console.error('Failed to parse user_offline event:', error);
+          }
+        } else if (event.type === 'typing_start' && onTyping) {
+          try {
+            const data = JSON.parse(event.data);
+            onTyping({ userId: data.userId, isTyping: true });
+          } catch (error) {
+            console.error('Failed to parse typing_start event:', error);
+          }
+        } else if (event.type === 'typing_stop' && onTyping) {
+          try {
+            const data = JSON.parse(event.data);
+            onTyping({ userId: data.userId, isTyping: false });
+          } catch (error) {
+            console.error('Failed to parse typing_stop event:', error);
+          }
+        } else if (
+          ['incoming_call','call_accepted','call_rejected','call_ended','ice_candidate','missed_call'].includes(event.type)
+          && onMessage
+        ) {
+          try {
+            const data = JSON.parse(event.data);
+            onMessage({ type: event.type, data, timestamp: Date.now() });
+
+            // Fire browser notifications for key call events
+            if (event.type === 'incoming_call') {
+              // Ensure SW is registered and show actionable notification
+              try {
+                const ns = NotificationService.getInstance();
+                ns.showCallNotification(
+                  data.callerName || 'Incoming call',
+                  (data.type as 'audio' | 'video') || 'audio',
+                  data.callerAvatar,
+                  data.callId,
+                  {
+                    callerId: data.callerId,
+                    offer: data.offer,
+                    conversationId: data.conversationId,
+                  }
+                );
+              } catch (e) {
+                console.warn('Failed to show actionable call notification', e);
+              }
+            } else if (event.type === 'missed_call') {
+              notifyMissedCall({
+                callId: data.callId,
+                fromUserId: data.fromUserId || data.from || data.callerId,
+                fromName: data.fromName || data.callerName,
+              });
+            }
+          } catch (error) {
+            console.error(`Failed to parse ${event.type} event:`, error);
+          }
+        }
+      });
+
+      unsubscribeRef.current = unsubscribe;
+      setIsConnected(true);
+      setConnectionError(null);
+
+      // Start heartbeat to keep presence updated server-side (belt-and-suspenders)
+      if (!heartbeatRef.current) {
+        heartbeatRef.current = setInterval(async () => {
+          try {
+            await fetch('/api/realtime/status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'heartbeat' })
+            });
+          } catch (_) {}
+        }, 30000);
+      }
+
+      // Start connection health check
+      if (!connectionCheckRef.current) {
+        connectionCheckRef.current = setInterval(() => {
+          const connection = globalManager.getConnection(session.user.id);
+          if (!connection || connection.readyState === EventSource.CLOSED) {
+            console.log('SSE connection lost, attempting reconnect...');
+            setIsConnected(false);
+            // Trigger reconnection
+            connect();
+          } else if (connection.readyState === EventSource.CONNECTING) {
+            console.log('SSE connection still connecting...');
+          } else {
+            console.log('SSE connection healthy');
+          }
+        }, 10000); // Check every 10 seconds
+      }
+
+    } catch (error) {
+      console.error('Failed to connect:', error);
+      setIsConnected(false);
+      setConnectionError('Failed to connect');
+    }
+  }, [session?.user?.id, onMessage, onUserOnline, onUserOffline, onTyping, globalManager]);
+
+  const disconnect = useCallback(() => {
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current as any);
+      heartbeatRef.current = null;
+    }
+    if (connectionCheckRef.current) {
+      clearInterval(connectionCheckRef.current as any);
+      connectionCheckRef.current = null;
+    }
+    setIsConnected(false);
+  }, []);
+
+  // Connect when session is available
+  useEffect(() => {
+    if (session?.user?.id) {
+      const userId = session.user.id;
+      if (!globalManager.hasConnection(userId) && !globalManager.isConnecting(userId)) {
+        console.log('Session available, connecting for user:', userId);
+        connect();
+      } else {
+        setIsConnected(true);
+      }
+    } else {
+      console.log('No session, disconnecting...');
+      disconnect();
+    }
+
+    return () => {
+      // Debounced close in manager prevents churn
+      disconnect();
+    };
+  }, [session?.user?.id]);
+
+  // Send typing indicator
+  const sendTyping = useCallback(async (conversationId: string, isTyping: boolean) => {
+    if (!session?.user?.id) return;
+
+    try {
+      await fetch('/api/realtime/typing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          isTyping,
+          userId: session.user.id
+        })
+      });
+    } catch (error) {
+      console.error('Failed to send typing indicator:', error);
+    }
+  }, [session?.user?.id]);
+
+  const forceReconnect = useCallback(async () => {
+    if (session?.user?.id) {
+      console.log('Force reconnecting SSE connection...');
+      disconnect();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      connect();
+    }
+  }, [session?.user?.id, disconnect, connect]);
+
+  return {
+    isConnected,
+    onlineUsers,
+    connectionError,
+    connect,
+    disconnect,
+    sendTyping,
+    forceReconnect
+  };
+}
