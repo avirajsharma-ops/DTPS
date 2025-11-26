@@ -100,6 +100,7 @@ export default function RootLayout({
         <link rel="apple-touch-startup-image" href="/icons/apple-splash-640-1136.jpg" sizes="640x1136" />
       </head>
       <body
+      suppressHydrationWarning={true}
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -180,6 +180,8 @@ export default function CreateMealPlanTemplatePage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<any>({});
+  const [selectedDay, setSelectedDay] = useState(1);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   // Form state
   const [template, setTemplate] = useState<MealPlanTemplate>({
@@ -229,6 +231,34 @@ export default function CreateMealPlanTemplatePage() {
     fetchRecipes();
   }, [searchQuery, selectedFilters]);
 
+  // Load local draft on first mount
+  useEffect(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('dietTemplateDraft') : null;
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft?.template) setTemplate(draft.template);
+        if (draft?.currentStep) setCurrentStep(draft.currentStep);
+        if (draft?.selectedDay) setSelectedDay(draft.selectedDay);
+        setDraftRestored(true);
+      }
+    } catch (e) {
+      console.warn('Failed to load diet template draft', e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-save draft to local storage
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('dietTemplateDraft', JSON.stringify({ template, currentStep, selectedDay }));
+      }
+    } catch (e) {
+      console.warn('Failed to save diet template draft', e);
+    }
+  }, [template, currentStep, selectedDay]);
+
   const fetchRecipes = async () => {
     try {
       const params = new URLSearchParams();
@@ -243,6 +273,114 @@ export default function CreateMealPlanTemplatePage() {
       }
     } catch (error) {
       console.error('Error fetching recipes:', error);
+    }
+  };
+
+  // Ensure meals array matches duration
+  useEffect(() => {
+    setTemplate(prev => {
+      const days = prev.duration;
+      if (prev.meals.length === days) return prev;
+      const meals: DailyMeal[] = Array.from({ length: days }).map((_, idx) => ({
+        day: idx + 1,
+        breakfast: [],
+        lunch: [],
+        dinner: [],
+        morningSnack: [],
+        afternoonSnack: [],
+        eveningSnack: [],
+        totalNutrition: {
+          calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0
+        },
+        notes: ''
+      }));
+      return { ...prev, meals };
+    });
+  }, [template.duration]);
+
+  const recalcDayTotals = (dayIdx: number) => {
+    setTemplate(prev => {
+      const day = prev.meals[dayIdx];
+      const sumFromItems = (items?: MealItem[]) => (items || []).reduce((acc, item) => {
+        if (item.type === 'recipe' && item.recipe) {
+          const s = item.servings || 1;
+          acc.calories += (item.recipe.nutrition.calories || 0) * s;
+          acc.protein += (item.recipe.nutrition.protein || 0) * s;
+          acc.carbs += (item.recipe.nutrition.carbs || 0) * s;
+          acc.fat += (item.recipe.nutrition.fat || 0) * s;
+          acc.fiber += (item.recipe.nutrition.fiber || 0) * s;
+          acc.sugar += (item.recipe.nutrition.sugar || 0) * s;
+          acc.sodium += (item.recipe.nutrition.sodium || 0) * s;
+        }
+        return acc;
+      }, { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 });
+      const totals = ['breakfast','morningSnack','lunch','afternoonSnack','dinner','eveningSnack']
+        .map((k) => sumFromItems((day as any)[k]))
+        .reduce((a,b)=>({
+          calories:a.calories+b.calories,
+          protein:a.protein+b.protein,
+          carbs:a.carbs+b.carbs,
+          fat:a.fat+b.fat,
+          fiber:a.fiber+b.fiber,
+          sugar:a.sugar+b.sugar,
+          sodium:a.sodium+b.sodium
+        }), { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 });
+      const newMeals = [...prev.meals];
+      newMeals[dayIdx] = { ...day, totalNutrition: totals };
+      return { ...prev, meals: newMeals };
+    });
+  };
+
+  const addRecipeTo = (dayIdx: number, slot: keyof DailyMeal, recipe: Recipe) => {
+    if (!['breakfast','morningSnack','lunch','afternoonSnack','dinner','eveningSnack'].includes(slot as string)) return;
+    setTemplate(prev => {
+      const day = prev.meals[dayIdx];
+      const list = ([...(day as any)[slot]] as MealItem[]);
+      list.push({ type: 'recipe', recipeId: recipe._id, recipe, servings: 1 });
+      const newMeals = [...prev.meals];
+      (newMeals[dayIdx] as any)[slot] = list;
+      return { ...prev, meals: newMeals };
+    });
+    // recalc totals after state update
+    setTimeout(() => recalcDayTotals(dayIdx), 0);
+  };
+
+  const removeMealItem = (dayIdx: number, slot: keyof DailyMeal, index: number) => {
+    setTemplate(prev => {
+      const day = prev.meals[dayIdx];
+      const list = ([...(day as any)[slot]] as MealItem[]).filter((_, i) => i !== index);
+      const newMeals = [...prev.meals];
+      (newMeals[dayIdx] as any)[slot] = list;
+      return { ...prev, meals: newMeals };
+    });
+    setTimeout(() => recalcDayTotals(dayIdx), 0);
+  };
+
+  const dayMeals = useMemo(() => template.meals[selectedDay - 1], [template.meals, selectedDay]);
+
+  const saveTemplate = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch('/api/meal-plan-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(template)
+      });
+      if (res.ok) {
+        setSuccess('Template saved');
+        // go back to list
+  if (typeof window !== 'undefined') localStorage.removeItem('dietTemplateDraft');
+        router.push('/meal-plan-templates?success=created');
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Failed to save template');
+      }
+    } catch (e:any) {
+      console.error(e);
+      setError('Failed to save template');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -268,6 +406,32 @@ export default function CreateMealPlanTemplatePage() {
                 Design a comprehensive meal plan template like DTPS
               </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {draftRestored && (
+              <span className="text-xs text-gray-500">Draft restored</span>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (typeof window !== 'undefined') localStorage.removeItem('dietTemplateDraft');
+                // reset minimal defaults
+                setTemplate({
+                  name: '', description: '', category: '', duration: 7,
+                  targetCalories: { min: 1200, max: 2500 },
+                  targetMacros: { protein: { min: 50, max: 150 }, carbs: { min: 100, max: 300 }, fat: { min: 30, max: 100 } },
+                  dietaryRestrictions: [], tags: [], meals: [], isPublic: false, isPremium: false,
+                  difficulty: 'intermediate', prepTime: { daily: 30, weekly: 210 },
+                  targetAudience: { ageGroup: [], activityLevel: [], healthConditions: [], goals: [] }
+                });
+                setCurrentStep(1);
+                setSelectedDay(1);
+                setDraftRestored(false);
+              }}
+            >
+              Clear draft
+            </Button>
           </div>
         </div>
 
@@ -608,7 +772,170 @@ export default function CreateMealPlanTemplatePage() {
           </Card>
         )}
 
-        {/* Steps 3 and 4 will be added in the next part */}
+        {currentStep === 3 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5" />
+                <span>Meal Planning</span>
+              </CardTitle>
+              <CardDescription>Add recipes to each meal slot for every day</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Day selector and recipe search */}
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label>Day</Label>
+                  <Select value={selectedDay.toString()} onValueChange={(v)=>setSelectedDay(parseInt(v))}>
+                    <SelectTrigger className="w-32"><SelectValue placeholder="Day" /></SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: template.duration }).map((_,i)=>(
+                        <SelectItem key={i} value={(i+1).toString()}>Day {i+1}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="relative flex-1 min-w-[220px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input value={searchQuery} onChange={(e)=>setSearchQuery(e.target.value)} placeholder="Search recipes to add..." className="pl-10" />
+                </div>
+              </div>
+
+              {/* Meal slots */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {([
+                  { key:'breakfast', label:'Breakfast', icon: '🍳' },
+                  { key:'morningSnack', label:'Morning Snack', icon: '🥜' },
+                  { key:'lunch', label:'Lunch', icon: '🍛' },
+                  { key:'afternoonSnack', label:'Afternoon Snack', icon: '🍎' },
+                  { key:'dinner', label:'Dinner', icon: '🍽️' },
+                  { key:'eveningSnack', label:'Evening Snack', icon: '🍪' }
+                ] as {key: keyof DailyMeal; label: string; icon: string;}[]).map(slot => (
+                  <div key={slot.key} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-medium">{slot.icon} {slot.label}</div>
+                      <div className="text-xs text-gray-500">{(dayMeals && (dayMeals as any)[slot.key]?.length) || 0} items</div>
+                    </div>
+                    {/* Added items */}
+                    <div className="space-y-2">
+                      {(dayMeals && (dayMeals as any)[slot.key] || []).map((mi: MealItem, index: number) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded p-2">
+                          <div className="text-sm">
+                            {mi.type === 'recipe' && mi.recipe ? (
+                              <div className="font-medium">{mi.recipe.name}</div>
+                            ) : (
+                              <div className="font-medium">Custom item</div>
+                            )}
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={()=>removeMealItem(selectedDay-1, slot.key, index)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Quick add from recipes */}
+                    <div className="mt-3">
+                      <div className="text-xs text-gray-600 mb-1">Add from recipes</div>
+                      <div className="max-h-40 overflow-y-auto border rounded">
+                        {(recipes || []).slice(0, 8).map(r => (
+                          <div key={r._id} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50">
+                            <div>
+                              <div className="text-sm font-medium line-clamp-1">{r.name}</div>
+                              <div className="text-xs text-gray-500">{r.nutrition.calories} kcal</div>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={()=>addRecipeTo(selectedDay-1, slot.key, r)}>Add</Button>
+                          </div>
+                        ))}
+                        {recipes.length === 0 && (
+                          <div className="text-xs text-gray-500 p-3">No recipes found</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Day totals */}
+              {dayMeals && (
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-sm">
+                  <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.calories}</div><div className="text-gray-600">Cal</div></div>
+                  <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.protein}g</div><div className="text-gray-600">Protein</div></div>
+                  <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.carbs}g</div><div className="text-gray-600">Carbs</div></div>
+                  <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.fat}g</div><div className="text-gray-600">Fat</div></div>
+                  <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.fiber}g</div><div className="text-gray-600">Fiber</div></div>
+                  <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.sugar}g</div><div className="text-gray-600">Sugar</div></div>
+                </div>
+              )}
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setCurrentStep(2)}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
+                <Button onClick={() => setCurrentStep(4)}>
+                  Next: Review & Publish
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentStep === 4 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Save className="h-5 w-5" />
+                <span>Review & Publish</span>
+              </CardTitle>
+              <CardDescription>Review details and publish your diet template</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="bg-gray-50 p-3 rounded">
+                  <div className="text-gray-600">Name</div>
+                  <div className="font-medium">{template.name || '—'}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <div className="text-gray-600">Category</div>
+                  <div className="font-medium capitalize">{template.category || '—'}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <div className="text-gray-600">Duration</div>
+                  <div className="font-medium">{template.duration} days</div>
+                </div>
+              </div>
+              <div className="text-sm">
+                <div className="text-gray-600 mb-1">Dietary Restrictions</div>
+                <div className="flex flex-wrap gap-1">
+                  {template.dietaryRestrictions.length ? template.dietaryRestrictions.map((r, i)=>(
+                    <Badge key={i} variant="outline" className="text-xs capitalize">{r.replace('-', ' ')}</Badge>
+                  )) : <span className="text-gray-500">None</span>}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="isPublic" checked={template.isPublic} onCheckedChange={(c)=>setTemplate({...template, isPublic: !!c})} />
+                  <Label htmlFor="isPublic">Make Public</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="isPremium" checked={template.isPremium} onCheckedChange={(c)=>setTemplate({...template, isPremium: !!c})} />
+                  <Label htmlFor="isPremium">Premium</Label>
+                </div>
+              </div>
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setCurrentStep(3)}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
+                <Button onClick={saveTemplate} disabled={loading || !template.name || !template.category}>
+                  {loading ? 'Saving...' : 'Publish Template'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

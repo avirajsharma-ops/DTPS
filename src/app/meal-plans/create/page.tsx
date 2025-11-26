@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,12 +22,22 @@ import {
   Calendar,
   AlertCircle
 } from 'lucide-react';
+import { DietPlanDashboard } from '@/components/dietplandashboard/DietPlanDashboard';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { LifestyleForm } from '@/components/clients/LifestyleForm';
+import { MedicalForm } from '@/components/clients/MedicalForm';
+import { RecallForm, RecallEntry } from '@/components/clients/RecallForm';
 
 interface Client {
   _id: string;
   firstName: string;
   lastName: string;
   email: string;
+  phone?: string;
+  type?: string;
+  programStart?: string;
+  programEnd?: string;
+  dateJoined?: string;
 }
 
 interface Recipe {
@@ -54,6 +64,7 @@ interface MealPlanMeal {
 export default function CreateMealPlanPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [clients, setClients] = useState<Client[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -65,12 +76,27 @@ export default function CreateMealPlanPage() {
   const [planName, setPlanName] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
+  const [medicalHistory, setMedicalHistory] = useState('');
+
   const [endDate, setEndDate] = useState('');
   const [targetCalories, setTargetCalories] = useState('');
   const [targetProtein, setTargetProtein] = useState('');
   const [targetCarbs, setTargetCarbs] = useState('');
   const [targetFat, setTargetFat] = useState('');
   const [meals, setMeals] = useState<MealPlanMeal[]>([]);
+  // Overlay section states
+  const [showLifestyle, setShowLifestyle] = useState(false);
+  const [showMedical, setShowMedical] = useState(false);
+  const [showRecall, setShowRecall] = useState(false);
+  // Minimal lifestyle placeholder state reuse
+  const [bmi, setBmi] = useState('');
+  const [idealWeightKg, setIdealWeightKg] = useState('');
+  // Medical placeholders
+  const [medicalConditions, setMedicalConditions] = useState('');
+  const [allergies, setAllergies] = useState('');
+  const [dietaryRestrictions, setDietaryRestrictions] = useState('');
+  const [notes, setNotes] = useState('');
+  const [recallEntries, setRecallEntries] = useState<RecallEntry[]>([]);
   
   // Recipe search
   const [recipeSearch, setRecipeSearch] = useState('');
@@ -85,6 +111,20 @@ export default function CreateMealPlanPage() {
     fetchClients();
     fetchRecipes();
   }, []);
+
+  // When clients load, if client query param present, auto-select
+  useEffect(() => {
+    const clientParam = searchParams?.get('client');
+    if (clientParam && clients.length > 0) {
+      const found = clients.find(c => c._id === clientParam);
+      if (found && selectedClient !== found._id) {
+        setSelectedClient(found._id);
+        if (!description) {
+          setDescription(`Nutrition plan for ${found.firstName} ${found.lastName}`);
+        }
+      }
+    }
+  }, [searchParams, clients]);
 
   const fetchClients = async () => {
     try {
@@ -146,23 +186,26 @@ export default function CreateMealPlanPage() {
     recipe.description.toLowerCase().includes(recipeSearch.toLowerCase())
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedClient || !planName || !startDate || !endDate || meals.length === 0) {
-      setError('Please fill in all required fields and add at least one meal');
+  // Lookup selected client object
+  const selectedClientObj = clients.find(c => c._id === selectedClient);
+  const dietClientData = {
+    name: selectedClientObj ? `${selectedClientObj.firstName} ${selectedClientObj.lastName}` : 'Select a client',
+    age: 0,
+    goal: description ? description.slice(0, 30) : 'Goal not set',
+    planType: planName || 'Untitled Plan'
+  };
+  
+  const handleSubmit = async () => {
+    if (!selectedClient || !planName || !startDate || !endDate) {
+      setError('Fill required fields first');
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
       const response = await fetch('/api/meals', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clientId: selectedClient,
           name: planName,
@@ -176,17 +219,16 @@ export default function CreateMealPlanPage() {
             carbs: targetCarbs ? parseInt(targetCarbs) : 0,
             fat: targetFat ? parseInt(targetFat) : 0
           }
-        }),
+        })
       });
-
       if (response.ok) {
         router.push('/meal-plans?success=created');
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to create meal plan');
       }
-    } catch (error) {
-      console.error('Error creating meal plan:', error);
+    } catch (err) {
+      console.error('Error creating meal plan:', err);
       setError('Failed to create meal plan');
     } finally {
       setLoading(false);
@@ -202,331 +244,115 @@ export default function CreateMealPlanPage() {
           <p className="text-gray-600 mt-1">Design a personalized nutrition plan for your client</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-                <CardDescription>Set up the meal plan details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="client">Select Client</Label>
+        {/* Summary Header & Controls */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <Card className="border border-slate-300 shadow-sm">
+          <CardContent className="p-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label className="text-xs font-semibold">Client<span className="text-red-500">*</span></Label>
+                {selectedClientObj ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-9 flex items-center px-3 text-xs rounded border border-slate-300 bg-slate-50 font-medium">
+                      {selectedClientObj.firstName} {selectedClientObj.lastName}
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={()=>setSelectedClient('')}>Change</Button>
+                  </div>
+                ) : (
                   <Select value={selectedClient} onValueChange={setSelectedClient}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client._id} value={client._id}>
-                          {client.firstName} {client.lastName} ({client.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select client" /></SelectTrigger>
+                    <SelectContent>{clients.map(c => (
+                      <SelectItem key={c._id} value={c._id}>{c.firstName} {c.lastName}</SelectItem>
+                    ))}</SelectContent>
                   </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="planName">Plan Name</Label>
-                  <Input
-                    id="planName"
-                    value={planName}
-                    onChange={(e) => setPlanName(e.target.value)}
-                    placeholder="e.g., Weight Loss Plan - Week 1"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Brief description of the meal plan goals and approach..."
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="startDate">Start Date</Label>
-                    <Input
-                      id="startDate"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="endDate">End Date</Label>
-                    <Input
-                      id="endDate"
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Nutrition Targets */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Target className="h-5 w-5" />
-                  <span>Nutrition Targets</span>
-                </CardTitle>
-                <CardDescription>Set daily nutrition goals</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="targetCalories">Daily Calories</Label>
-                  <Input
-                    id="targetCalories"
-                    type="number"
-                    value={targetCalories}
-                    onChange={(e) => setTargetCalories(e.target.value)}
-                    placeholder="1800"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="targetProtein">Protein (g)</Label>
-                    <Input
-                      id="targetProtein"
-                      type="number"
-                      value={targetProtein}
-                      onChange={(e) => setTargetProtein(e.target.value)}
-                      placeholder="120"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="targetCarbs">Carbs (g)</Label>
-                    <Input
-                      id="targetCarbs"
-                      type="number"
-                      value={targetCarbs}
-                      onChange={(e) => setTargetCarbs(e.target.value)}
-                      placeholder="200"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="targetFat">Fat (g)</Label>
-                    <Input
-                      id="targetFat"
-                      type="number"
-                      value={targetFat}
-                      onChange={(e) => setTargetFat(e.target.value)}
-                      placeholder="60"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Meal Planning */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <ChefHat className="h-5 w-5" />
-                <span>Meal Planning</span>
-              </CardTitle>
-              <CardDescription>Add meals for each day of the plan</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Add Meal Controls */}
-              <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <Label>Day</Label>
-                  <Select value={selectedDay.toString()} onValueChange={(value) => setSelectedDay(parseInt(value))}>
-                    <SelectTrigger className="w-24">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: planDuration }, (_, i) => (
-                        <SelectItem key={i + 1} value={(i + 1).toString()}>
-                          {i + 1}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Meal Type</Label>
-                  <Select value={selectedMealType} onValueChange={setSelectedMealType}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mealTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={() => setShowRecipeSearch(true)}
-                  className="mt-6"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Recipe
+                )}
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Plan Name<span className="text-red-500">*</span></Label>
+                <Input value={planName} onChange={e=>setPlanName(e.target.value)} placeholder="Week 1 Plan" className="h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Start Date<span className="text-red-500">*</span></Label>
+                <Input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">End Date<span className="text-red-500">*</span></Label>
+                <Input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="h-9 text-xs" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label className="text-xs font-semibold">Calories</Label>
+                <Input type="number" value={targetCalories} onChange={e=>setTargetCalories(e.target.value)} placeholder="1800" className="h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Protein (g)</Label>
+                <Input type="number" value={targetProtein} onChange={e=>setTargetProtein(e.target.value)} placeholder="120" className="h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Carbs (g)</Label>
+                <Input type="number" value={targetCarbs} onChange={e=>setTargetCarbs(e.target.value)} placeholder="200" className="h-9 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Fat (g)</Label>
+                <Input type="number" value={targetFat} onChange={e=>setTargetFat(e.target.value)} placeholder="60" className="h-9 text-xs" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold">Description</Label>
+              <Textarea value={description} onChange={e=>setDescription(e.target.value.slice(0,240))} rows={3} className="text-xs" placeholder="Goals and approach..." />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" size="sm" onClick={()=>setShowLifestyle(true)} className="gap-1">Lifestyle</Button>
+              <Button variant="outline" size="sm" onClick={()=>setShowMedical(true)} className="gap-1">Medical</Button>
+              <Button variant="outline" size="sm" onClick={()=>setShowRecall(true)} className="gap-1">Recall</Button>
+              <div className="ml-auto flex gap-2">
+                <Button variant="outline" size="sm" onClick={()=>router.back()}>Back</Button>
+                <Button size="sm" onClick={handleSubmit} disabled={loading} className="bg-slate-900 text-white">
+                  {loading ? 'Saving...' : 'Save Plan'}
                 </Button>
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* Recipe Search Modal */}
-              {showRecipeSearch && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Select Recipe</h3>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowRecipeSearch(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
+        <Card className='mt-6'>
+          <DietPlanDashboard 
+            clientData={dietClientData}
+            onBack={() => router.back()}
+            onSavePlan={handleSubmit}
+          />
+        </Card>
 
-                    <div className="relative mb-4">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        placeholder="Search recipes..."
-                        value={recipeSearch}
-                        onChange={(e) => setRecipeSearch(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {filteredRecipes.map((recipe) => (
-                        <div
-                          key={recipe._id}
-                          className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                          onClick={() => addMealToDay(recipe._id)}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h4 className="font-medium">{recipe.name}</h4>
-                              <p className="text-sm text-gray-600">{recipe.description}</p>
-                              <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                                <span>{recipe.calories} cal</span>
-                                <span>P: {recipe.macros.protein}g</span>
-                                <span>C: {recipe.macros.carbs}g</span>
-                                <span>F: {recipe.macros.fat}g</span>
-                              </div>
-                            </div>
-                            <Badge variant="outline">{recipe.category}</Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Meal Plan Overview */}
-              <div className="space-y-4">
-                {Array.from({ length: planDuration }, (_, dayIndex) => {
-                  const day = dayIndex + 1;
-                  const dayMeals = getMealsForDay(day);
-                  
-                  return (
-                    <div key={day} className="border rounded-lg p-4">
-                      <h3 className="font-semibold mb-3">Day {day}</h3>
-                      
-                      {dayMeals.length === 0 ? (
-                        <p className="text-gray-500 text-sm">No meals planned for this day</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {dayMeals.map((meal, mealIndex) => {
-                            const recipe = getRecipeById(meal.recipe);
-                            const globalIndex = meals.findIndex(m => 
-                              m.day === meal.day && 
-                              m.mealType === meal.mealType && 
-                              m.recipe === meal.recipe
-                            );
-                            
-                            return (
-                              <div key={mealIndex} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2">
-                                    <Badge variant="outline" className="text-xs">
-                                      {meal.mealType}
-                                    </Badge>
-                                    <span className="font-medium">{recipe?.name}</span>
-                                  </div>
-                                  <p className="text-sm text-gray-600">{recipe?.description}</p>
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                  <Input
-                                    type="number"
-                                    min="0.5"
-                                    step="0.5"
-                                    value={meal.quantity}
-                                    onChange={(e) => updateMealQuantity(globalIndex, parseFloat(e.target.value))}
-                                    className="w-20"
-                                  />
-                                  <span className="text-sm text-gray-600">servings</span>
-                                  
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => removeMeal(globalIndex)}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Submit Button */}
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <LoadingSpinner className="mr-2 h-4 w-4" />
-                  Creating...
-                </>
-              ) : (
-                'Create Meal Plan'
-              )}
-            </Button>
-          </div>
-        </form>
+        {/* Overlays */}
+        <Dialog open={showLifestyle} onOpenChange={setShowLifestyle}>
+          <DialogContent className="max-w-3xl backdrop-blur">
+            <CardTitle className="mb-4 text-sm">Lifestyle</CardTitle>
+            <div className="text-xs text-slate-600">Placeholder lifestyle details...</div>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={showMedical} onOpenChange={setShowMedical}>
+          <DialogContent className="max-w-3xl backdrop-blur">
+            <CardTitle className="mb-4 text-sm">Medical</CardTitle>
+            <div className="text-xs text-slate-600">Medical history: {medicalHistory || 'None entered'}</div>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={showRecall} onOpenChange={setShowRecall}>
+          <DialogContent className="max-w-3xl backdrop-blur flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between mb-3">
+              <CardTitle className="text-sm">Recall</CardTitle>
+              
+            </div>
+            <div className="overflow-y-auto pr-2 space-y-4">
+              <RecallForm entries={recallEntries} onChange={setRecallEntries} onSave={()=>setShowRecall(false)} />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

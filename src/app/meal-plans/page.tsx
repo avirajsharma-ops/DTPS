@@ -80,6 +80,7 @@ interface MealPlanTemplate {
     firstName: string;
     lastName: string;
   };
+  
   usageCount: number;
   averageRating?: number;
   averageDailyCalories: number;
@@ -161,7 +162,7 @@ function MealPlansPageContent() {
         const data = await response.json();
         setTemplates(data.templates || []);
         setCategories(data.filters?.categories || []);
-        setTags(data.filters?.tags || []);
+        setTags(data?.filters?.tags || []);
       } else {
         console.error('Failed to fetch meal plan templates:', response.status);
         setTemplates([]);
@@ -242,6 +243,26 @@ function MealPlansPageContent() {
     return now >= start && now <= end;
   };
 
+  // Dummy clients shown when no plans & no filters
+  const dummyClients = [
+    {
+      name: 'Rahul Verma', id: 'CLT-001', phone: '+91 98765 43210', email: 'rahul.verma@example.com', type: 'Weight Loss',
+      programStart: new Date(), programEnd: new Date(Date.now() + 30*24*60*60*1000), dateJoined: new Date(Date.now() - 10*24*60*60*1000)
+    },
+    {
+      name: 'Sneha Kapoor', id: 'CLT-002', phone: '+91 91234 56789', email: 'sneha.kapoor@example.com', type: 'Diabetes',
+      programStart: new Date(Date.now() - 3*24*60*60*1000), programEnd: new Date(Date.now() + 27*24*60*60*1000), dateJoined: new Date(Date.now() - 45*24*60*60*1000)
+    },
+    {
+      name: 'Arjun Mehta', id: 'CLT-003', phone: '+91 98111 22334', email: 'arjun.mehta@example.com', type: 'Muscle Gain',
+      programStart: new Date(Date.now() - 14*24*60*60*1000), programEnd: new Date(Date.now() + 16*24*60*60*1000), dateJoined: new Date(Date.now() - 120*24*60*60*1000)
+    },
+    {
+      name: 'Priya Nair', id: 'CLT-004', phone: '+91 99900 88776', email: 'priya.nair@example.com', type: 'Maintenance',
+      programStart: new Date(Date.now() + 2*24*60*60*1000), programEnd: new Date(Date.now() + 32*24*60*60*1000), dateJoined: new Date(Date.now() - 5*24*60*60*1000)
+    }
+  ];
+
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
@@ -254,7 +275,7 @@ function MealPlansPageContent() {
             </p>
           </div>
 
-          {(session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
+          {/* {(session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
             <div className="flex gap-2">
               <Button variant="outline" className="cursor-pointer" asChild>
                 <Link href="/meal-plans/templates/create">
@@ -269,7 +290,7 @@ function MealPlansPageContent() {
                 </Link>
               </Button>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Success Message */}
@@ -284,12 +305,19 @@ function MealPlansPageContent() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="plans">Active Diet Plans</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-          </TabsList>
+       
 
           <TabsContent value="plans" className="space-y-6">
+            {/* Client Types Quick View (only when empty and no filters) */}
+            {filteredMealPlans.length === 0 && !mealPlanSearch && statusFilter === 'all' && (
+              <div className="flex flex-wrap gap-2">
+                {/* {Array.from(new Set(dummyClients.map(dc => dc.type))).map(t => (
+                  <span key={t} className="px-3 py-1 text-xs rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-medium">
+                    {t}
+                  </span>
+                ))} */}
+              </div>
+            )}
             {/* Search and Filters */}
             <Card>
               <CardContent className="p-6">
@@ -329,25 +357,83 @@ function MealPlansPageContent() {
             <LoadingSpinner />
           </div>
         ) : filteredMealPlans.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <ChefHat className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {mealPlanSearch || statusFilter !== 'all' ? 'No Diet plans found' : 'No Diet plans yet'}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {mealPlanSearch || statusFilter !== 'all'
-                  ? 'Try adjusting your search criteria'
-                  : 'Start creating personalized meal plans for your clients'
-                }
-              </p>
-              {!mealPlanSearch && statusFilter === 'all' && (
-                <Button className="cursor-pointer" asChild>
-                  <Link href="/meal-plans/create">Create Your First Diet Plan</Link>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          mealPlanSearch || statusFilter !== 'all' ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <ChefHat className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Diet plans found</h3>
+                <p className="text-gray-600 mb-4">Try adjusting your search criteria</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <div className="border-b px-6 py-5 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-900">Clients Overview</h3>
+                    <p className="text-sm text-slate-600 mt-1">No diet plans yet. Review your clients and start a program.</p>
+                  </div>
+                  <Button asChild className="bg-slate-900 hover:bg-slate-800 shadow">
+                    <Link href="/meal-plans/create">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Diet Plan
+                    </Link>
+                  </Button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="text-left p-4 font-medium text-gray-900">Client Name</th>
+                        <th className="text-left p-4 font-medium text-gray-900">Client ID</th>
+                        <th className="text-left p-4 font-medium text-gray-900">Phone</th>
+                        <th className="text-left p-4 font-medium text-gray-900">Email</th>
+                        <th className="text-left p-4 font-medium text-gray-900">Type</th>
+                        <th className="text-left p-4 font-medium text-gray-900">Program Start</th>
+                        <th className="text-left p-4 font-medium text-gray-900">Program End</th>
+                        <th className="text-left p-4 font-medium text-gray-900">Date Joined</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dummyClients.map(c => (
+                        <tr key={c.id} className="border-b hover:bg-gray-50">
+                          <td className="p-4">
+                            <div className="flex items-center space-x-2">
+                              <Users className="h-4 w-4 text-gray-400" />
+                              <Link href={`/meal-plans/create?client=${c.id}`} className="text-sm font-medium text-blue-600 hover:underline">
+                                {c.name}
+                              </Link>
+                            </div>
+                          </td>
+                          <td className="p-4 text-sm text-gray-700 font-mono">{c.id}</td>
+                          <td className="p-4 text-sm text-gray-700">{c.phone}</td>
+                          <td className="p-4 text-sm text-gray-700">{c.email}</td>
+                          <td className="p-4 text-sm">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge className="bg-green-100 text-green-800 border border-green-200">Active</Badge>
+                              
+                            </div>
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">{format(c.programStart, 'MMM d, yyyy')}</td>
+                          <td className="p-4 text-sm text-gray-600">{format(c.programEnd, 'MMM d, yyyy')}</td>
+                          <td className="p-4 text-sm text-gray-600">{format(c.dateJoined, 'MMM d, yyyy')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="px-6 py-4 bg-slate-50 border-t text-sm text-slate-600 flex items-center justify-between">
+                    <span>Ready to begin? Create a diet plan for any of these clients.</span>
+                    <Button variant="outline" asChild>
+                      <Link href="/meal-plans/create">
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Diet Plan
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
         ) : (
           <Card>
             <CardContent className="p-0">

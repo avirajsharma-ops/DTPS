@@ -16,9 +16,17 @@ import {
   User, 
   Save,
   ArrowLeft,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  Activity,
+  HeartPulse,
+  ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
+import { BasicInfoForm } from '@/components/clients/BasicInfoForm';
+import { LifestyleForm } from '@/components/clients/LifestyleForm';
+import { MedicalForm } from '@/components/clients/MedicalForm';
+import { RecallForm, RecallEntry } from '@/components/clients/RecallForm';
 
 export default function NewClientPage() {
   const { data: session } = useSession();
@@ -29,6 +37,12 @@ export default function NewClientPage() {
   const [existingClients, setExistingClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(true);
   
+  // Active section state
+  const sections = ['basic','lifestyle','medical','recall'] as const;
+  type SectionKey = typeof sections[number];
+  const [activeSection, setActiveSection] = useState<SectionKey>('basic');
+  const [savedSections, setSavedSections] = useState<SectionKey[]>([]);
+
   // Form state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -36,14 +50,136 @@ export default function NewClientPage() {
   const [phone, setPhone] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [gender, setGender] = useState('');
+  const [parentAccount, setParentAccount] = useState('');
+  const [altPhone, setAltPhone] = useState('');
+  const [altEmails, setAltEmails] = useState('');
+  const [anniversary, setAnniversary] = useState('');
+  const [source, setSource] = useState('');
+  const [referralSource, setReferralSource] = useState('');
+  const [generalGoal, setGeneralGoal] = useState('');
+  const [maritalStatus, setMaritalStatus] = useState('');
+  const [occupation, setOccupation] = useState('');
+  const [goalsList, setGoalsList] = useState<string[]>([]);
+  const [targetWeightBucket, setTargetWeightBucket] = useState('');
+  const [sharePhotoConsent, setSharePhotoConsent] = useState(false);
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [activityLevel, setActivityLevel] = useState('');
   const [healthGoals, setHealthGoals] = useState('');
+  const [heightFeet, setHeightFeet] = useState('');
+  const [heightInch, setHeightInch] = useState('');
+  const [heightCm, setHeightCm] = useState('');
+  const [weightKg, setWeightKg] = useState('');
+  const [targetWeightKg, setTargetWeightKg] = useState('');
+  const [bmi, setBmi] = useState('');
+  const [idealWeightKg, setIdealWeightKg] = useState('');
+  // New lifestyle & food preference fields
+  const [foodPreference, setFoodPreference] = useState('');
+  const [preferredCuisine, setPreferredCuisine] = useState<string[]>([]);
+  const [allergiesFood, setAllergiesFood] = useState<string[]>([]);
+  const [fastDays, setFastDays] = useState<string[]>([]);
+  const [nonVegExemptDays, setNonVegExemptDays] = useState<string[]>([]);
+  const [foodLikes, setFoodLikes] = useState('');
+  const [foodDislikes, setFoodDislikes] = useState('');
+  const [eatOutFrequency, setEatOutFrequency] = useState('');
+  const [smokingFrequency, setSmokingFrequency] = useState('');
+  const [alcoholFrequency, setAlcoholFrequency] = useState('');
+  const [activityRate, setActivityRate] = useState('');
+  const [cookingOil, setCookingOil] = useState<string[]>([]);
+  const [monthlyOilConsumption, setMonthlyOilConsumption] = useState('');
+  const [cookingSalt, setCookingSalt] = useState('');
+  const [carbonatedBeverageFrequency, setCarbonatedBeverageFrequency] = useState('');
+  const [cravingType, setCravingType] = useState('');
+  // Medical section state
   const [medicalConditions, setMedicalConditions] = useState('');
   const [allergies, setAllergies] = useState('');
   const [dietaryRestrictions, setDietaryRestrictions] = useState('');
   const [notes, setNotes] = useState('');
+  const [diseaseHistory, setDiseaseHistory] = useState<any[]>([]); // refine type later
+  const [medicalHistory, setMedicalHistory] = useState('');
+  const [familyHistory, setFamilyHistory] = useState('');
+  const [medication, setMedication] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
+  const [gutIssues, setGutIssues] = useState<string[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
+  const [recallEntries, setRecallEntries] = useState<RecallEntry[]>([]);
+
+  const markSaved = (section: SectionKey) => {
+    setSavedSections(prev => prev.includes(section) ? prev : [...prev, section]);
+  };
+
+  const basicChange = (field: any, value: string) => {
+    switch(field){
+      case 'firstName': setFirstName(value); break;
+      case 'lastName': setLastName(value); break;
+      case 'email': setEmail(value); break;
+      case 'phone': setPhone(value); break;
+      case 'dateOfBirth': setDateOfBirth(value); break;
+      case 'gender': setGender(value); break;
+      case 'parentAccount': setParentAccount(value); break;
+      case 'altPhone': setAltPhone(value); break;
+      case 'altEmails': setAltEmails(value); break;
+      case 'anniversary': setAnniversary(value); break;
+      case 'source': setSource(value); break;
+      case 'referralSource': setReferralSource(value); break;
+      case 'generalGoal': setGeneralGoal(value); break;
+      case 'maritalStatus': setMaritalStatus(value); break;
+      case 'occupation': setOccupation(value); break;
+      case 'goalsList': setGoalsList(value.split(',').filter(Boolean)); break;
+      case 'targetWeightBucket': setTargetWeightBucket(value); break;
+      case 'sharePhotoConsent': setSharePhotoConsent(value === 'true'); break;
+    }
+  };
+
+  const lifestyleChange = (field: any, value: string) => {
+    switch(field){
+      case 'height': setHeight(value); break;
+      case 'weight': setWeight(value); break;
+      case 'activityLevel': setActivityLevel(value); break;
+      case 'healthGoals': setHealthGoals(value); break;
+      case 'heightFeet': setHeightFeet(value); break;
+      case 'heightInch': setHeightInch(value); break;
+      case 'heightCm': setHeightCm(value); break;
+      case 'weightKg': setWeightKg(value); break;
+      case 'targetWeightKg': setTargetWeightKg(value); break;
+      case 'bmi': setBmi(value); break;
+      case 'idealWeightKg': setIdealWeightKg(value); break;
+      case 'foodPreference': setFoodPreference(value); break;
+      case 'preferredCuisine': setPreferredCuisine(value.split(',').filter(Boolean)); break;
+      case 'allergiesFood': setAllergiesFood(value.split(',').filter(Boolean)); break;
+      case 'fastDays': setFastDays(value.split(',').filter(Boolean)); break;
+      case 'nonVegExemptDays': setNonVegExemptDays(value.split(',').filter(Boolean)); break;
+      case 'foodLikes': setFoodLikes(value); break;
+      case 'foodDislikes': setFoodDislikes(value); break;
+      case 'eatOutFrequency': setEatOutFrequency(value); break;
+      case 'smokingFrequency': setSmokingFrequency(value); break;
+      case 'alcoholFrequency': setAlcoholFrequency(value); break;
+      case 'activityRate': setActivityRate(value); break;
+      case 'cookingOil': setCookingOil(value.split(',').filter(Boolean)); break;
+      case 'monthlyOilConsumption': setMonthlyOilConsumption(value); break;
+      case 'cookingSalt': setCookingSalt(value); break;
+      case 'carbonatedBeverageFrequency': setCarbonatedBeverageFrequency(value); break;
+      case 'cravingType': setCravingType(value); break;
+    }
+  };
+
+  const medicalChange = (field: any, value: any) => {
+    switch(field){
+      case 'medicalConditions': setMedicalConditions(value); break;
+      case 'allergies': setAllergies(value); break;
+      case 'dietaryRestrictions': setDietaryRestrictions(value); break;
+      case 'notes': setNotes(value); break;
+      case 'diseaseHistory': setDiseaseHistory(value); break;
+      case 'medicalHistory': setMedicalHistory(value); break;
+      case 'familyHistory': setFamilyHistory(value); break;
+      case 'medication': setMedication(value); break;
+      case 'bloodGroup': setBloodGroup(value); break;
+      case 'gutIssues': setGutIssues(value); break;
+      case 'reports': setReports(value); break;
+    }
+  };
+
+  const recallChange = (entries: RecallEntry[]) => setRecallEntries(entries);
 
   // Fetch existing clients
   useEffect(() => {
@@ -52,7 +188,7 @@ export default function NewClientPage() {
         const response = await fetch('/api/users?role=client');
         if (response.ok) {
           const clients = await response.json();
-          setExistingClients(clients.slice(0, 10)); // Show first 10 clients
+         setExistingClients((clients?.users || []).slice(0, 10)); // Show first 10 clients
         }
       } catch (error) {
         console.error('Error fetching clients:', error);
@@ -93,11 +229,51 @@ export default function NewClientPage() {
           weight: weight ? parseFloat(weight) : undefined,
           activityLevel: activityLevel || undefined,
           healthGoals: healthGoals ? healthGoals.split(',').map(g => g.trim()) : undefined,
-          medicalConditions: medicalConditions ? medicalConditions.split(',').map(c => c.trim()) : undefined,
-          allergies: allergies ? allergies.split(',').map(a => a.trim()) : undefined,
-          dietaryRestrictions: dietaryRestrictions ? dietaryRestrictions.split(',').map(d => d.trim()) : undefined,
-          assignedDietitian: session?.user?.id, // Assign to current dietitian
-          password: 'TempPassword123!', // Temporary password - client should change it
+          medicalConditions: medicalConditions ? medicalConditions.split(',').map((c: string) => c.trim()) : undefined,
+          allergies: allergies ? allergies.split(',').map((a: string) => a.trim()) : undefined,
+          dietaryRestrictions: dietaryRestrictions ? dietaryRestrictions.split(',').map((d: string) => d.trim()) : undefined,
+          diseaseHistory: diseaseHistory.length ? diseaseHistory : undefined,
+          medicalHistory: medicalHistory || undefined,
+          familyHistory: familyHistory || undefined,
+          medication: medication || undefined,
+          bloodGroup: bloodGroup || undefined,
+          gutIssues: gutIssues.length ? gutIssues : undefined,
+          reports: reports.length ? reports : undefined,
+          parentAccount: parentAccount || undefined,
+          altPhone: altPhone || undefined,
+          altEmails: altEmails ? altEmails.split(',').map(e=>e.trim()).filter(Boolean) : undefined,
+          anniversary: anniversary || undefined,
+          source: source || undefined,
+          referralSource: referralSource || undefined,
+          generalGoal: generalGoal || undefined,
+          maritalStatus: maritalStatus || undefined,
+          occupation: occupation || undefined,
+          goalsList: goalsList.length ? goalsList : undefined,
+          targetWeightBucket: targetWeightBucket || undefined,
+          sharePhotoConsent,
+          heightFeet: heightFeet || undefined,
+          heightInch: heightInch || undefined,
+          heightCm: heightCm || undefined,
+          weightKg: weightKg || undefined,
+          targetWeightKg: targetWeightKg || undefined,
+          bmi: bmi || undefined,
+          idealWeightKg: idealWeightKg || undefined,
+          foodPreference: foodPreference || undefined,
+          preferredCuisine: preferredCuisine.length ? preferredCuisine : undefined,
+          allergiesFood: allergiesFood.length ? allergiesFood : undefined,
+          fastDays: fastDays.length ? fastDays : undefined,
+          nonVegExemptDays: nonVegExemptDays.length ? nonVegExemptDays : undefined,
+          foodLikes: foodLikes || undefined,
+          foodDislikes: foodDislikes || undefined,
+          eatOutFrequency: eatOutFrequency || undefined,
+          smokingFrequency: smokingFrequency || undefined,
+          alcoholFrequency: alcoholFrequency || undefined,
+          activityRate: activityRate || undefined,
+          cookingOil: cookingOil.length ? cookingOil : undefined,
+          monthlyOilConsumption: monthlyOilConsumption || undefined,
+          cookingSalt: cookingSalt || undefined,
+          carbonatedBeverageFrequency: carbonatedBeverageFrequency || undefined,
+          cravingType: cravingType || undefined,
           notes
         }),
       });
@@ -134,8 +310,28 @@ export default function NewClientPage() {
           </div>
         </div>
 
-        {/* Existing Clients Section */}
+        {/* Section Navigation */}
         <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-3">
+              <Button variant={activeSection === 'basic' ? 'default':'outline'} onClick={() => setActiveSection('basic')} className="gap-2">
+                <User className="h-4 w-4" /> Basic {savedSections.includes('basic') && <CheckCircle className="h-4 w-4 text-green-600" />}
+              </Button>
+              <Button variant={activeSection === 'lifestyle' ? 'default':'outline'} onClick={() => setActiveSection('lifestyle')} className="gap-2">
+                <Activity className="h-4 w-4" /> Lifestyle {savedSections.includes('lifestyle') && <CheckCircle className="h-4 w-4 text-green-600" />}
+              </Button>
+              <Button variant={activeSection === 'medical' ? 'default':'outline'} onClick={() => setActiveSection('medical')} className="gap-2">
+                <HeartPulse className="h-4 w-4" /> Medical {savedSections.includes('medical') && <CheckCircle className="h-4 w-4 text-green-600" />}
+              </Button>
+              <Button variant={activeSection === 'recall' ? 'default':'outline'} onClick={() => setActiveSection('recall')} className="gap-2">
+                <ClipboardList className="h-4 w-4" /> Recall {savedSections.includes('recall') && <CheckCircle className="h-4 w-4 text-green-600" />}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Existing Clients Section */}
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <User className="h-5 w-5" />
@@ -154,16 +350,16 @@ export default function NewClientPage() {
             ) : existingClients.length > 0 ? (
               <div className="space-y-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {existingClients.map((client: any) => (
+                  {existingClients?.map((client: any) => (
                     <div key={client._id} className="p-3 border rounded-lg bg-gray-50">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium text-sm">{client.firstName} {client.lastName}</p>
-                          <p className="text-xs text-gray-600">{client.email}</p>
-                          {client.phone && (
-                            <p className="text-xs text-gray-500">{client.phone}</p>
+                          <p className="font-medium text-sm">{client?.firstName} {client?.lastName}</p>
+                          <p className="text-xs text-gray-600">{client?.email}</p>
+                          {client?.phone && (
+                            <p className="text-xs text-gray-500">{client?.phone}</p>
                           )}
-                          {client.wooCommerceData && (
+                          {client?.wooCommerceData && (
                             <div className="mt-1">
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
                                 🛒 {client.wooCommerceData.totalOrders} orders
@@ -187,7 +383,7 @@ export default function NewClientPage() {
                 <div className="mt-4 text-center">
                   <Button variant="outline" asChild>
                     <Link href="/clients">
-                      View All {existingClients.length > 10 ? '14,000+' : existingClients.length} Clients
+                      View All {existingClients?.length > 10 ? '14,000+' : existingClients?.length} Clients
                     </Link>
                   </Button>
                 </div>
@@ -196,225 +392,116 @@ export default function NewClientPage() {
               <p className="text-gray-500 text-center py-4">No existing clients found</p>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
 
+        {/* Dynamic Section Rendering */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+        <div>
+          {activeSection === 'basic' && (
+            <BasicInfoForm
+              firstName={firstName}
+              lastName={lastName}
+              email={email}
+              phone={phone}
+              dateOfBirth={dateOfBirth}
+              gender={gender}
+              parentAccount={parentAccount}
+              altPhone={altPhone}
+              altEmails={altEmails}
+              anniversary={anniversary}
+              source={source}
+              referralSource={referralSource}
+              generalGoal={generalGoal}
+              maritalStatus={maritalStatus}
+              occupation={occupation}
+              goalsList={goalsList}
+              targetWeightBucket={targetWeightBucket}
+              sharePhotoConsent={sharePhotoConsent}
+              onChange={basicChange}
+              onSave={() => markSaved('basic')}
+              loading={loading}
+            />
           )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-                <CardDescription>Client's personal details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="firstName">First Name *</Label>
-                    <Input
-                      id="firstName"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="lastName">Last Name *</Label>
-                    <Input
-                      id="lastName"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                    <Input
-                      id="dateOfBirth"
-                      type="date"
-                      value={dateOfBirth}
-                      onChange={(e) => setDateOfBirth(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="gender">Gender</Label>
-                    <Select value={gender} onValueChange={setGender}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                        <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Health Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Health Information</CardTitle>
-                <CardDescription>Physical stats and activity level</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="height">Height (cm)</Label>
-                    <Input
-                      id="height"
-                      type="number"
-                      value={height}
-                      onChange={(e) => setHeight(e.target.value)}
-                      placeholder="170"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="weight">Weight (kg)</Label>
-                    <Input
-                      id="weight"
-                      type="number"
-                      value={weight}
-                      onChange={(e) => setWeight(e.target.value)}
-                      placeholder="70"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="activityLevel">Activity Level</Label>
-                  <Select value={activityLevel} onValueChange={setActivityLevel}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select activity level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sedentary">Sedentary</SelectItem>
-                      <SelectItem value="lightly_active">Lightly Active</SelectItem>
-                      <SelectItem value="moderately_active">Moderately Active</SelectItem>
-                      <SelectItem value="very_active">Very Active</SelectItem>
-                      <SelectItem value="extremely_active">Extremely Active</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="healthGoals">Health Goals</Label>
-                  <Input
-                    id="healthGoals"
-                    value={healthGoals}
-                    onChange={(e) => setHealthGoals(e.target.value)}
-                    placeholder="Weight loss, muscle gain, etc. (comma separated)"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Medical Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Medical Information</CardTitle>
-              <CardDescription>Health conditions and dietary restrictions</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="medicalConditions">Medical Conditions</Label>
-                <Input
-                  id="medicalConditions"
-                  value={medicalConditions}
-                  onChange={(e) => setMedicalConditions(e.target.value)}
-                  placeholder="Diabetes, hypertension, etc. (comma separated)"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="allergies">Allergies</Label>
-                <Input
-                  id="allergies"
-                  value={allergies}
-                  onChange={(e) => setAllergies(e.target.value)}
-                  placeholder="Nuts, dairy, shellfish, etc. (comma separated)"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="dietaryRestrictions">Dietary Restrictions</Label>
-                <Input
-                  id="dietaryRestrictions"
-                  value={dietaryRestrictions}
-                  onChange={(e) => setDietaryRestrictions(e.target.value)}
-                  placeholder="Vegetarian, vegan, gluten-free, etc. (comma separated)"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Additional Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  placeholder="Any additional information about the client..."
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Submit Button */}
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" asChild>
-              <Link href="/clients">Cancel</Link>
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <LoadingSpinner className="mr-2 h-4 w-4" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Create Client
-                </>
-              )}
-            </Button>
-          </div>
+          {activeSection === 'lifestyle' && (
+            <LifestyleForm
+              height={height}
+              weight={weight}
+              activityLevel={activityLevel}
+              healthGoals={healthGoals}
+              heightFeet={heightFeet}
+              heightInch={heightInch}
+              heightCm={heightCm}
+              weightKg={weightKg}
+              targetWeightKg={targetWeightKg}
+              bmi={bmi}
+              idealWeightKg={idealWeightKg}
+              foodPreference={foodPreference}
+              preferredCuisine={preferredCuisine}
+              allergiesFood={allergiesFood}
+              fastDays={fastDays}
+              nonVegExemptDays={nonVegExemptDays}
+              foodLikes={foodLikes}
+              foodDislikes={foodDislikes}
+              eatOutFrequency={eatOutFrequency}
+              smokingFrequency={smokingFrequency}
+              alcoholFrequency={alcoholFrequency}
+              activityRate={activityRate}
+              cookingOil={cookingOil}
+              monthlyOilConsumption={monthlyOilConsumption}
+              cookingSalt={cookingSalt}
+              carbonatedBeverageFrequency={carbonatedBeverageFrequency}
+              cravingType={cravingType}
+               onChange={lifestyleChange}
+               onSave={() => markSaved('lifestyle')}
+               loading={loading}
+             />
+          )}
+          {activeSection === 'medical' && (
+            <MedicalForm
+              medicalConditions={medicalConditions}
+              allergies={allergies}
+              dietaryRestrictions={dietaryRestrictions}
+              notes={notes}
+              diseaseHistory={diseaseHistory}
+              medicalHistory={medicalHistory}
+              familyHistory={familyHistory}
+              medication={medication}
+              bloodGroup={bloodGroup}
+              gutIssues={gutIssues}
+              reports={reports}
+              onChange={medicalChange}
+              onSave={() => markSaved('medical')}
+              loading={loading}
+            />
+          )}
+          {activeSection === 'recall' && (
+            <RecallForm
+              entries={recallEntries}
+              onChange={recallChange}
+              onSave={() => markSaved('recall')}
+              loading={loading}
+            />
+          )}
+        </div>
+        {/* Submit Button */}
+        <div className="flex justify-end space-x-4">
+          <Button type="button" variant="outline" asChild>
+            <Link href="/clients">Cancel</Link>
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? (
+              <>
+                <LoadingSpinner className="mr-2 h-4 w-4" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Create Client
+              </>
+            )}
+          </Button>
+        </div>
         </form>
 
         {/* Info Box */}

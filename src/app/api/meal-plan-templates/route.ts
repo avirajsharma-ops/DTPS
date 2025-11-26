@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 // Validation schema for meal plan template
 const mealPlanTemplateSchema = z.object({
+  templateType: z.enum(['plan','diet']).default('plan'),
   name: z.string().min(1, 'Name is required').max(200, 'Name too long'),
   description: z.string().optional(),
   category: z.enum(['weight-loss', 'weight-gain', 'maintenance', 'muscle-gain', 'diabetes', 'heart-healthy', 'keto', 'vegan', 'custom']),
@@ -55,18 +56,32 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const { searchParams } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const isPublic = searchParams.get('isPublic');
     const search = searchParams.get('search');
     const difficulty = searchParams.get('difficulty');
     const dietaryRestrictions = searchParams.get('dietaryRestrictions');
-    const sortBy = searchParams.get('sortBy') || 'newest';
-    const limit = parseInt(searchParams.get('limit') || '12');
-    const skip = parseInt(searchParams.get('skip') || '0');
+  const templateType = searchParams.get('templateType');
+  const createdBy = searchParams.get('createdBy');
+  const sortBy = searchParams.get('sortBy') || 'newest';
+  const limit = parseInt(searchParams.get('limit') || '12');
+  const skip = parseInt(searchParams.get('skip') || '0');
+  const days = searchParams.get('days'); // filter by duration
 
     // Build query
-    const query: any = { isActive: true };
+  const query: any = { isActive: true };
+    if (templateType) {
+      if (templateType === 'plan') {
+        // include legacy documents with no templateType field
+        query.$or = [{ templateType: 'plan' }, { templateType: { $exists: false } }];
+      } else {
+        query.templateType = templateType;
+      }
+    }
+    if (createdBy) {
+      query.createdBy = createdBy;
+    }
 
     if (category && category !== 'all') {
       query.category = category;
@@ -81,8 +96,17 @@ export async function GET(request: NextRequest) {
     }
 
     if (dietaryRestrictions) {
-      const restrictions = dietaryRestrictions.split(',');
-      query.dietaryRestrictions = { $in: restrictions };
+      const restrictions = dietaryRestrictions.split(',').filter(r => r.trim() !== '');
+      if (restrictions.length > 0) {
+        query.dietaryRestrictions = { $in: restrictions };
+      }
+    }
+
+    if (days) {
+      const durationVal = parseInt(days);
+      if (!isNaN(durationVal)) {
+        query.duration = durationVal; // exact match on duration
+      }
     }
 
     if (search) {
@@ -164,6 +188,12 @@ export async function POST(request: NextRequest) {
 
     // Validate input
     const validatedData = mealPlanTemplateSchema.parse(body);
+    console.log('Validated meal plan template data:', {
+      name: validatedData.name,
+      templateType: validatedData.templateType,
+      duration: validatedData.duration,
+      mealsCount: Array.isArray(validatedData.meals) ? validatedData.meals.length : 0
+    });
 
     // Create new meal plan template
     const template = new MealPlanTemplate({

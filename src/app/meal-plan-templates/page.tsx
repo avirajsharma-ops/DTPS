@@ -4,52 +4,41 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Search, 
-  Plus, 
-  Calendar,
-  Target,
-  Users,
-  Clock,
+
+import {
+  Search,
+  Plus,
   CheckCircle,
-  Filter,
-  Star,
-  TrendingUp,
-  Heart,
-  Zap
+  ChefHat
 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { UserRole } from '@/types';
 
+
 interface MealPlanTemplate {
   _id: string;
+  templateType?: 'plan' | 'diet';
   name: string;
   description: string;
   category: string;
   duration: number;
-  targetCalories: {
-    min: number;
-    max: number;
-  };
+  targetCalories: { min: number; max: number; };
   targetMacros: {
-    protein: { min: number; max: number };
-    carbs: { min: number; max: number };
-    fat: { min: number; max: number };
+    protein: { min: number; max: number; };
+    carbs: { min: number; max: number; };
+    fat: { min: number; max: number; };
   };
   dietaryRestrictions: string[];
   tags: string[];
   isPublic: boolean;
-  createdBy: {
-    firstName: string;
-    lastName: string;
-  };
+  createdBy: { firstName: string; lastName: string; };
   usageCount: number;
   averageRating?: number;
   averageDailyCalories: number;
@@ -60,22 +49,70 @@ interface MealPlanTemplate {
 function MealPlanTemplatesPageContent() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
-  const [templates, setTemplates] = useState<MealPlanTemplate[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedTag, setSelectedTag] = useState('all');
-  const [showPublicOnly, setShowPublicOnly] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState<'plans' | 'diet'>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('templates_activeTab');
+      if (stored === 'plans' || stored === 'diet') return stored;
+    }
+    return 'plans';
+  });
+
+  // Plan templates state (no days filter)
+  const [planTemplates, setPlanTemplates] = useState<MealPlanTemplate[]>([]);
+  const [planSearch, setPlanSearch] = useState(() =>
+    (typeof window !== 'undefined' ? localStorage.getItem('planSearch') || '' : '')
+  );
+  const [planLoading, setPlanLoading] = useState(false);
+
+  // Diet templates state (no days filter)
+  const [dietTemplates, setDietTemplates] = useState<MealPlanTemplate[]>([]);
+  const [dietSearchTerm, setDietSearchTerm] = useState(() =>
+    (typeof window !== 'undefined' ? localStorage.getItem('dietSearchTerm') || '' : '')
+  );
+  const [dietDietaryRestrictions, setDietDietaryRestrictions] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('dietDietaryRestrictions');
+        if (raw && raw !== 'null' && raw !== '') {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) return arr;
+        }
+      } catch {/* ignore */}
+    }
+    return [];
+  });
+  const [dietLoading, setDietLoading] = useState(false);
+  const dietaryRestrictionsList = [
+    'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 'egg-free', 'soy-free', 'keto', 'paleo', 'low-carb', 'low-fat', 'diabetic-friendly'
+  ];
+
+  // Initial load from localStorage (safe parse)
+  useEffect(() => {
+    try {
+      const planRaw = typeof window !== 'undefined' ? localStorage.getItem('planTemplates_cache') : null;
+      if (planRaw && planRaw !== 'null' && planRaw !== '') {
+        const arr = JSON.parse(planRaw);
+        if (Array.isArray(arr)) setPlanTemplates(arr.filter(t => t.templateType === 'plan' || t.templateType === undefined));
+      }
+    } catch { setPlanTemplates([]); }
+    try {
+      const dietRaw = typeof window !== 'undefined' ? localStorage.getItem('dietTemplates_cache') : null;
+      if (dietRaw && dietRaw !== 'null' && dietRaw !== '') {
+        const arr = JSON.parse(dietRaw);
+        if (Array.isArray(arr)) setDietTemplates(arr.filter(t => t.templateType === 'diet'));
+      }
+    } catch { setDietTemplates([]); }
+  }, []);
+
+  useEffect(() => { if (activeTab === 'plans') fetchPlanTemplates(); }, [activeTab, planSearch]);
+  useEffect(() => { if (activeTab === 'diet') fetchDietTemplates(); }, [activeTab, dietSearchTerm, dietDietaryRestrictions]);
+  useEffect(() => { try { localStorage.setItem('templates_activeTab', activeTab); } catch {} }, [activeTab]);
+  useEffect(() => { try { localStorage.setItem('planSearch', planSearch); } catch {} }, [planSearch]);
+  useEffect(() => { try { localStorage.setItem('dietSearchTerm', dietSearchTerm); } catch {} }, [dietSearchTerm]);
+  useEffect(() => { try { localStorage.setItem('dietDietaryRestrictions', JSON.stringify(dietDietaryRestrictions)); } catch {} }, [dietDietaryRestrictions]);
 
   useEffect(() => {
-    fetchTemplates();
-  }, [searchTerm, selectedCategory, selectedTag, showPublicOnly]);
-
-  useEffect(() => {
-    // Check for success message
     if (searchParams?.get('success') === 'created') {
       setShowSuccess(true);
       const timer = setTimeout(() => setShowSuccess(false), 5000);
@@ -83,51 +120,42 @@ function MealPlanTemplatesPageContent() {
     }
   }, [searchParams]);
 
-  const fetchTemplates = async () => {
+  const fetchPlanTemplates = async () => {
     try {
-      setLoading(true);
-      
+      setPlanLoading(true);
       const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory);
-      if (selectedTag && selectedTag !== 'all') params.append('tag', selectedTag);
-      if (showPublicOnly) params.append('public', 'true');
-      
+      params.append('templateType', 'plan');
+      if (planSearch) params.append('search', planSearch);
       const response = await fetch(`/api/meal-plan-templates?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setTemplates(data.templates || []);
-        setCategories(data.filters?.categories || []);
-        setTags(data.filters?.tags || []);
+        setPlanTemplates((data.templates || []).filter((t: MealPlanTemplate) => t.templateType === 'plan' || t.templateType === undefined));
+        try { localStorage.setItem('planTemplates_cache', JSON.stringify(data.templates || [])); } catch {}
       } else {
-        console.error('Failed to fetch meal plan templates:', response.status);
-        setTemplates([]);
-        setCategories([]);
-        setTags([]);
+        setPlanTemplates([]);
       }
-    } catch (error) {
-      console.error('Error fetching meal plan templates:', error);
-      setTemplates([]);
-      setCategories([]);
-      setTags([]);
-    } finally {
-      setLoading(false);
-    }
+    } catch { setPlanTemplates([]); }
+    finally { setPlanLoading(false); }
   };
 
-  const getCategoryIcon = (category: string) => {
-    const icons: { [key: string]: any } = {
-      'weight-loss': TrendingUp,
-      'weight-gain': Target,
-      'maintenance': Heart,
-      'muscle-gain': Zap,
-      'diabetes': Heart,
-      'heart-healthy': Heart,
-      'keto': Zap,
-      'vegan': Heart,
-      'custom': Star
-    };
-    return icons[category] || Star;
+  const fetchDietTemplates = async () => {
+    try {
+      setDietLoading(true);
+      const params = new URLSearchParams();
+      params.append('templateType', 'diet');
+      if (dietSearchTerm) params.append('search', dietSearchTerm);
+      if (dietDietaryRestrictions.length > 0)
+        params.append('dietaryRestrictions', dietDietaryRestrictions.join(','));
+      const response = await fetch(`/api/meal-plan-templates?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setDietTemplates((data.templates || []).filter((t: MealPlanTemplate) => t.templateType === 'diet'));
+        try { localStorage.setItem('dietTemplates_cache', JSON.stringify(data.templates || [])); } catch {}
+      } else {
+        setDietTemplates([]);
+      }
+    } catch { setDietTemplates([]); }
+    finally { setDietLoading(false); }
   };
 
   const getCategoryColor = (category: string) => {
@@ -145,245 +173,242 @@ function MealPlanTemplatesPageContent() {
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
-  const formatCategoryName = (category: string) => {
-    return category.split('-').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
-  };
+  const formatCategoryName = (category: string) => category.split('-').map(word =>
+    word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+  const filteredPlanTemplates = planTemplates
+    .filter(t => (t.templateType === 'plan' || t.templateType === undefined))
+    .filter(t => planSearch === '' || t.name.toLowerCase().includes(planSearch.toLowerCase()));
+
+  const filteredDietTemplates = dietTemplates
+    .filter(t => t.templateType === 'diet')
+    .filter(t =>
+      (dietSearchTerm === '' || t.name.toLowerCase().includes(dietSearchTerm.toLowerCase())) &&
+      (dietDietaryRestrictions.length === 0 || dietDietaryRestrictions.every(r => t.dietaryRestrictions?.includes(r)))
+    );
 
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Meal Plan Templates</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Create Templates</h1>
             <p className="text-gray-600 mt-1">
-              Create and manage Diet plan templates for your clients
+              Create plan templates and diet templates for your clients
             </p>
           </div>
-          
-          {(session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
-            <Button asChild>
-              <Link href="/meal-plan-templates/create">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Template
-              </Link>
-            </Button>
-          )}
         </div>
-
-        {/* Success Message */}
         {showSuccess && (
           <Alert className="border-green-200 bg-green-50">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              Meal plan template created successfully! 🎉
+              plan template created successfully! 🎉
             </AlertDescription>
           </Alert>
         )}
-
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search templates..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              {/* Category Filter */}
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {categories && categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {formatCategoryName(category)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Tag Filter */}
-              <Select value={selectedTag} onValueChange={setSelectedTag}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All tags" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All tags</SelectItem>
-                  {tags && tags.map((tag) => (
-                    <SelectItem key={tag} value={tag}>
-                      {tag}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Public Only Toggle */}
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="publicOnly"
-                  checked={showPublicOnly}
-                  onChange={(e) => setShowPublicOnly(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                <label htmlFor="publicOnly" className="text-sm font-medium">
-                  Public templates only
-                </label>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="flex justify-center py-8">
-            <LoadingSpinner />
-          </div>
-        )}
-
-        {/* Templates Grid */}
-        {!loading && templates.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No Diet plan templates found
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {searchTerm || selectedCategory !== 'all' || selectedTag !== 'all'
-                  ? 'Try adjusting your search criteria'
-                  : 'Start building your meal plan template library by creating your first template'
-                }
-              </p>
-              {!searchTerm && selectedCategory === 'all' && selectedTag === 'all' && 
-               (session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
-                <Button asChild>
-                  <Link href="/meal-plan-templates/create">Create Your First Template</Link>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates && templates.map((template) => {
-              const CategoryIcon = getCategoryIcon(template.category);
-              return (
-                <Card key={template._id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg line-clamp-2 flex items-center gap-2">
-                          <CategoryIcon className="h-5 w-5" />
-                          {template.name}
-                        </CardTitle>
-                        <CardDescription className="line-clamp-2 mt-1">
-                          {template.description}
-                        </CardDescription>
-                      </div>
-                      <Badge className={getCategoryColor(template.category)}>
-                        {formatCategoryName(template.category)}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                
-                  <CardContent className="space-y-4">
-                    {/* Key Metrics */}
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="text-center p-2 bg-gray-50 rounded">
-                        <p className="font-semibold text-lg">{template.duration}</p>
-                        <p className="text-gray-600">Days</p>
-                      </div>
-                      <div className="text-center p-2 bg-gray-50 rounded">
-                        <p className="font-semibold text-lg">{template.averageDailyCalories}</p>
-                        <p className="text-gray-600">Avg Calories</p>
-                      </div>
-                    </div>
-
-                    {/* Calorie Range */}
-                    <div className="text-sm">
-                      <p className="font-medium text-gray-700">Target Calories</p>
-                      <p className="text-gray-600">
-                        {template.targetCalories.min} - {template.targetCalories.max} kcal/day
-                      </p>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <div className="flex items-center space-x-1">
-                        <Users className="h-3 w-3" />
-                        <span>{template.usageCount} uses</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{template.totalRecipes} recipes</span>
-                      </div>
-                      {template.averageRating && (
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span>{template.averageRating.toFixed(1)}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Tags */}
-                    {template.tags && template.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {template.tags.slice(0, 3).map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
+        <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'plans' | 'diet')} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="plans">Plan Templates</TabsTrigger>
+            <TabsTrigger value="diet">Diet Templates</TabsTrigger>
+          </TabsList>
+          <TabsContent value="plans" className="space-y-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="relative flex-1 min-w-[220px]">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input placeholder="Search plan templates..." value={planSearch} onChange={e => setPlanSearch(e.target.value)} className="pl-10" />
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <ChefHat className="h-4 w-4" />
+                    <span>{filteredPlanTemplates.length} Templates</span>
+                  </div>
+                  {(session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
+                    <Button asChild>
+                      <Link href="/meal-plan-templates/plans/create">
+                        <Plus className="h-4 w-4 mr-2" />Create Plan Template
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            {planLoading ? (
+              <div className="flex items-center justify-center h-32"><LoadingSpinner /></div>
+            ) : filteredPlanTemplates.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <ChefHat className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No plan templates found</h3>
+                  <p className="text-gray-600 mb-4">Create your first template to get started</p>
+                  {(session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
+                    <Button asChild>
+                      <Link href="/meal-plan-templates/plans/create">
+                        <Plus className="h-4 w-4 mr-2" />Create Plan Template
+                      </Link>
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              // Only show Name, Category, Cal Range, Actions (NO duration or description)
+              <Card>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="text-left p-4 font-medium text-gray-900">Template Name</th>
+                          <th className="text-left p-4 font-medium text-gray-900">Category</th>
+                          <th className="text-left p-4 font-medium text-gray-900">Cal Range</th>
+                          <th className="text-left p-4 font-medium text-gray-900">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPlanTemplates.map(t => (
+                          <tr key={t._id} className="border-b hover:bg-gray-50">
+                            <td className="p-4">
+                              <div>
+                                <p className="font-medium text-gray-900">{t.name}</p>
+                              </div>
+                            </td>
+                            <td className="p-4 text-sm">
+                              <Badge className={getCategoryColor(t.category)}>{formatCategoryName(t.category)}</Badge>
+                            </td>
+                            <td className="p-4 text-sm text-gray-700">{t.targetCalories.min}-{t.targetCalories.max}</td>
+                            <td className="p-4">
+                              <div className="flex space-x-2">
+                                <Button size="sm" variant="outline" asChild>
+                                  <Link href={`/meal-plan-templates/${t._id}`}>View</Link>
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
                         ))}
-                        {template.tags.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{template.tags.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+          <TabsContent value="diet" className="space-y-6">
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="relative flex-1 min-w-[220px]">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input placeholder="Search diet templates..." value={dietSearchTerm} onChange={e => setDietSearchTerm(e.target.value)} className="pl-10" />
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <ChefHat className="h-4 w-4" />
+                    <span>{filteredDietTemplates.length} Templates</span>
+                  </div>
+                  {(session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
+                    <Button asChild variant="outline">
+                      <Link href="/meal-plan-templates/diet/create">
+                        <Plus className="h-4 w-4 mr-2" />Create Diet Template
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-gray-600">Dietary Restrictions</div>
+                  <div className="flex flex-wrap gap-2">
+                    {dietDietaryRestrictions.length > 0 && (
+                      <Button variant="outline" onClick={() => setDietDietaryRestrictions([])} className="h-6 px-2 text-xs">Clear</Button>
                     )}
-
-                    {/* Creator */}
-                    <div className="text-xs text-gray-500">
-                      Created by Dr. {template.createdBy.firstName} {template.createdBy.lastName}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1" asChild>
-                        <Link href={`/meal-plan-templates/${template._id}`}>
-                          View Details
-                        </Link>
-                      </Button>
-                      {(session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
-                        <Button className="flex-1" asChild>
-                          <Link href={`/meal-plan-templates/${template._id}/assign`}>
-                            Assign to Client
-                          </Link>
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                    {dietDietaryRestrictions.length === 0 && <span className="text-[11px] text-gray-400">Select restrictions to filter</span>}
+                    {dietaryRestrictionsList.map(r => {
+                      const selected = dietDietaryRestrictions.includes(r);
+                      return (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setDietDietaryRestrictions(prev => selected ? prev.filter(x => x !== r) : [...prev, r])}
+                          className={`px-2 py-1 rounded border text-xs capitalize transition ${selected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                        >
+                          {r.replace('-', ' ')}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            {dietLoading ? (
+              <div className="flex items-center justify-center h-32"><LoadingSpinner /></div>
+            ) : filteredDietTemplates.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <ChefHat className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No diet templates found</h3>
+                  <p className="text-gray-600 mb-4">Try adjusting your search or restrictions</p>
+                  {(session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
+                    <Button asChild>
+                      <Link href="/meal-plan-templates/diet/create">
+                        <Plus className="h-4 w-4 mr-2" />Create Diet Template
+                      </Link>
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="text-left p-4 font-medium text-gray-900">Template Name</th>
+                          <th className="text-left p-4 font-medium text-gray-900">Category</th>
+                          <th className="text-left p-4 font-medium text-gray-900">Duration</th>
+                          <th className="text-left p-4 font-medium text-gray-900">Restrictions</th>
+                          <th className="text-left p-4 font-medium text-gray-900">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredDietTemplates.map(t => (
+                          <tr key={t._id} className="border-b hover:bg-gray-50">
+                            <td className="p-4">
+                              <div>
+                                <p className="font-medium text-gray-900">{t.name}</p>
+                                <p className="text-xs text-gray-600 line-clamp-1">{t.description}</p>
+                              </div>
+                            </td>
+                            <td className="p-4 text-sm">
+                              <Badge className={getCategoryColor(t.category)}>{formatCategoryName(t.category)}</Badge>
+                            </td>
+                            <td className="p-4 text-sm text-gray-700">{t.duration} days</td>
+                            <td className="p-4 text-xs text-gray-700">
+                              {t.dietaryRestrictions && t.dietaryRestrictions.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {t.dietaryRestrictions.slice(0, 4).map((r, i) => (
+                                    <Badge key={i} variant="outline" className="text-[10px] capitalize">{r.replace('-', ' ')}</Badge>
+                                  ))}
+                                  {t.dietaryRestrictions.length > 4 && (
+                                    <Badge variant="outline" className="text-[10px]">+{t.dietaryRestrictions.length - 4}</Badge>
+                                  )}
+                                </div>
+                              ) : <span className="text-gray-400">None</span>}
+                            </td>
+                            <td className="p-4">
+                              <div className="flex space-x-2">
+                                <Button size="sm" variant="outline" asChild>
+                                  <Link href={`/meal-plan-templates/${t._id}`}>View</Link>
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

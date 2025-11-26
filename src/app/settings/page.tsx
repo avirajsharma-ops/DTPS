@@ -105,12 +105,12 @@ function DesktopSettingsPage() {
         setMessage('Profile updated successfully');
         
         // Update session if avatar changed
-        if (updatedProfile.avatar !== session?.user?.avatar) {
+        if (updatedProfile?.avatar !== session?.user?.avatar) {
           await update({
             ...session,
             user: {
               ...session?.user,
-              avatar: updatedProfile.avatar
+              avatar: updatedProfile?.avatar
             }
           });
         }
@@ -206,9 +206,9 @@ function DesktopSettingsPage() {
                 {/* Avatar */}
                 <div className="flex items-center space-x-6">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={profile.avatar} />
+                    <AvatarImage src={profile?.avatar} />
                     <AvatarFallback className="text-lg">
-                      {profile.firstName[0]}{profile.lastName[0]}
+                      {profile?.firstName[0]}{profile?.lastName[0]}
                     </AvatarFallback>
                   </Avatar>
                   
@@ -233,7 +233,7 @@ function DesktopSettingsPage() {
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
-                      value={profile.firstName}
+                      value={profile?.firstName}
                       onChange={(e) => updateField('firstName', e.target.value)}
                     />
                   </div>
@@ -242,7 +242,7 @@ function DesktopSettingsPage() {
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
-                      value={profile.lastName}
+                      value={profile?.lastName}
                       onChange={(e) => updateField('lastName', e.target.value)}
                     />
                   </div>
@@ -252,7 +252,7 @@ function DesktopSettingsPage() {
                     <Input
                       id="email"
                       type="email"
-                      value={profile.email}
+                      value={profile?.email}
                       onChange={(e) => updateField('email', e.target.value)}
                     />
                   </div>
@@ -261,7 +261,7 @@ function DesktopSettingsPage() {
                     <Label htmlFor="phone">Phone</Label>
                     <Input
                       id="phone"
-                      value={profile.phone || ''}
+                      value={profile?.phone || ''}
                       onChange={(e) => updateField('phone', e.target.value)}
                     />
                   </div>
@@ -271,7 +271,7 @@ function DesktopSettingsPage() {
                   <Label htmlFor="bio">Bio</Label>
                   <Textarea
                     id="bio"
-                    value={profile.bio || ''}
+                    value={profile?.bio || ''}
                     onChange={(e) => updateField('bio', e.target.value)}
                     rows={3}
                     placeholder="Tell us about yourself..."
@@ -296,7 +296,7 @@ function DesktopSettingsPage() {
                     <Input
                       id="dateOfBirth"
                       type="date"
-                      value={profile.dateOfBirth || ''}
+                      value={profile?.dateOfBirth || ''}
                       onChange={(e) => updateField('dateOfBirth', e.target.value)}
                     />
                   </div>
@@ -304,7 +304,7 @@ function DesktopSettingsPage() {
                   <div>
                     <Label htmlFor="gender">Gender</Label>
                     <Select
-                      value={profile.gender || ''}
+                      value={profile?.gender || ''}
                       onValueChange={(value) => updateField('gender', value)}
                     >
                       <SelectTrigger>
@@ -322,7 +322,7 @@ function DesktopSettingsPage() {
                   <div>
                     <Label htmlFor="activityLevel">Activity Level</Label>
                     <Select
-                      value={profile.activityLevel || ''}
+                      value={profile?.activityLevel || ''}
                       onValueChange={(value) => updateField('activityLevel', value)}
                     >
                       <SelectTrigger>
@@ -345,7 +345,7 @@ function DesktopSettingsPage() {
                     <Input
                       id="height"
                       type="number"
-                      value={profile.height || ''}
+                      value={profile?.height || ''}
                       onChange={(e) => updateField('height', parseFloat(e.target.value))}
                     />
                   </div>
@@ -355,7 +355,7 @@ function DesktopSettingsPage() {
                     <Input
                       id="weight"
                       type="number"
-                      value={profile.weight || ''}
+                      value={profile?.weight || ''}
                       onChange={(e) => updateField('weight', parseFloat(e.target.value))}
                     />
                   </div>
