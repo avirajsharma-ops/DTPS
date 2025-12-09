@@ -37,7 +37,7 @@ interface Recipe {
   _id: string;
   name: string;
   description: string;
-  category: string;
+  // category: string;
   prepTime: number;
   cookTime: number;
   servings: string | number;
@@ -74,7 +74,7 @@ export default function EditRecipePage() {
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
+  // const [category, setCategory] = useState('');
   const [prepTime, setPrepTime] = useState('');
   const [cookTime, setCookTime] = useState('');
   const [servings, setServings] = useState('');
@@ -110,35 +110,34 @@ export default function EditRecipePage() {
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [medicalContraindications, setMedicalContraindications] = useState<string[]>([]);
 
-  const categories = [
-    'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Appetizer', 'Dessert',
-    'Beverage', 'Salad', 'Soup', 'Main Course', 'Side Dish'
-  ];
+  // const categories = [
+  //   'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Appetizer', 'Dessert',
+  //   'Beverage', 'Salad', 'Soup', 'Main Course', 'Side Dish'
+  // ];
 
   const availableDietaryRestrictions = [
-    'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto',
-    'Low-Carb', 'Low-Fat', 'High-Protein', 'Paleo', 'Mediterranean'
+     'Vegetarian','Vegan','Gluten-Free','Non-Vegetarian','Dairy-Free','Keto','Low-Carb','Low-Fat','High-Protein','Paleo','Mediterranean'
   ];
 
   const availableMedicalContraindications = [
-    { value: 'diabetes', label: 'Diabetes' },
-    { value: 'hypertension', label: 'High Blood Pressure' },
-    { value: 'heart-disease', label: 'Heart Disease' },
-    { value: 'kidney-disease', label: 'Kidney Disease' },
-    { value: 'liver-disease', label: 'Liver Disease' },
-    { value: 'high-cholesterol', label: 'High Cholesterol' },
-    { value: 'thyroid-disorders', label: 'Thyroid Disorders' },
-    { value: 'gout', label: 'Gout' },
-    { value: 'acid-reflux', label: 'Acid Reflux/GERD' },
-    { value: 'ibs', label: 'IBS (Irritable Bowel Syndrome)' },
-    { value: 'celiac-disease', label: 'Celiac Disease' },
-    { value: 'lactose-intolerance', label: 'Lactose Intolerance' },
-    { value: 'gallbladder-disease', label: 'Gallbladder Disease' },
-    { value: 'osteoporosis', label: 'Osteoporosis' },
-    { value: 'anemia', label: 'Anemia' },
-    { value: 'food-allergies', label: 'Food Allergies' },
-    { value: 'pregnancy', label: 'Pregnancy' },
-    { value: 'breastfeeding', label: 'Breastfeeding' }
+    'Diabetes',
+    'High Blood Pressure',
+    'Heart Disease',
+    'Kidney Disease',
+    'Liver Disease',
+    'High Cholesterol',
+    'Thyroid Disorders',
+    'Gout',
+    'Acid Reflux/GERD',
+    'IBS (Irritable Bowel Syndrome)',
+    'Celiac Disease',
+    'Lactose Intolerance',
+    'Gallbladder Disease',
+    'Osteoporosis',
+    'Anemia',
+    'Food Allergies',
+    'Pregnancy',
+    'Breastfeeding'
   ];
 
   const units = [
@@ -174,7 +173,7 @@ export default function EditRecipePage() {
         // Populate form fields
         setName(recipeData.name || '');
         setDescription(recipeData.description || '');
-        setCategory(recipeData.category || '');
+        // setCategory(recipeData.category || '');
         setPrepTime(recipeData.prepTime?.toString() || '');
         setCookTime(recipeData.cookTime?.toString() || '');
         setServings(recipeData.servings?.toString() || '');
@@ -265,7 +264,7 @@ export default function EditRecipePage() {
       return;
     }
     
-    if (!name || !description || !category || !servings || ingredients.some(ing => !ing.name || !ing.unit)) {
+    if (!name || !description || !servings || ingredients.some(ing => !ing.name || !ing.unit)) {
       toast.error('Please fill in all required fields (name, description, category, portion size, and complete ingredient details)');
       return;
     }
@@ -286,7 +285,7 @@ export default function EditRecipePage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name, description, category,
+          name, description,
           prepTime: prepTime ? parseInt(prepTime) : 0,
           cookTime: cookTime ? parseInt(cookTime) : 0,
           servings: servings,
@@ -407,17 +406,17 @@ export default function EditRecipePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description *</Label>
+                  <Label htmlFor="description">Description </Label>
                   <Textarea
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Brief description of the recipe..."
                     rows={3}
-                    required
+                    
                   />
                 </div>
-
+{/* 
                 <div>
                   <Label htmlFor="category">Category *</Label>
                   <Select value={category} onValueChange={setCategory}>
@@ -433,7 +432,7 @@ export default function EditRecipePage() {
                       <SelectItem value="beverage">Beverage</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
 
@@ -698,27 +697,27 @@ export default function EditRecipePage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {availableMedicalContraindications.map((condition) => (
                     <div
-                      key={condition.value}
+                      key={condition}
                       className={`p-2 rounded-lg border cursor-pointer transition-colors ${
-                        medicalContraindications.includes(condition.value)
+                        medicalContraindications.includes(condition)
                           ? 'bg-red-50 border-red-200 text-red-800'
                           : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                       }`}
-                      onClick={() => toggleMedicalContraindication(condition.value)}
+                      onClick={() => toggleMedicalContraindication(condition)}
                     >
                       <div className="flex items-center space-x-2">
                         <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                          medicalContraindications.includes(condition.value)
+                          medicalContraindications.includes(condition)
                             ? 'bg-red-500 border-red-500'
                             : 'border-gray-300'
                         }`}>
-                          {medicalContraindications.includes(condition.value) && (
+                          {medicalContraindications.includes(condition) && (
                             <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           )}
                         </div>
-                        <span className="text-sm font-medium">{condition.label}</span>
+                        <span className="text-sm font-medium">{condition}</span>
                       </div>
                     </div>
                   ))}

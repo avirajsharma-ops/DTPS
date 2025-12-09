@@ -12,7 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { ArrowLeft, Save, ChefHat, Target } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ArrowLeft, Save, ChefHat, Target, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { UserRole } from '@/types';
 
@@ -48,7 +50,13 @@ export default function CreatePlanTemplateBasicPage() {
   const [fatMin, setFatMin] = useState(30);
   const [fatMax, setFatMax] = useState(100);
   const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
-  const [draftRestored, setDraftRestored] = useState(false);
+
+  // Template loading states
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (!session) return;
@@ -57,48 +65,51 @@ export default function CreatePlanTemplateBasicPage() {
     }
   }, [session, router]);
 
-  // Restore draft
-  useEffect(() => {
+  // Fetch plan templates
+  const fetchPlanTemplates = async () => {
     try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('planTemplateDraft') : null;
-      if (raw) {
-        const d = JSON.parse(raw);
-        if (d?.name) setName(d.name);
-        if (d?.description) setDescription(d.description);
-        if (d?.category) setCategory(d.category);
-        if (d?.duration) setDuration(d.duration);
-        if (d?.difficulty) setDifficulty(d.difficulty);
-        if (d?.targets) {
-          setCalMin(d.targets.calMin ?? calMin);
-          setCalMax(d.targets.calMax ?? calMax);
-          setProteinMin(d.targets.proteinMin ?? proteinMin);
-          setProteinMax(d.targets.proteinMax ?? proteinMax);
-          setCarbMin(d.targets.carbMin ?? carbMin);
-          setCarbMax(d.targets.carbMax ?? carbMax);
-          setFatMin(d.targets.fatMin ?? fatMin);
-          setFatMax(d.targets.fatMax ?? fatMax);
-        }
-        setDraftRestored(true);
+      setLoadingTemplates(true);
+      const res = await fetch('/api/meal-plan-templates?templateType=plan');
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableTemplates(data.templates || []);
       }
-    } catch (e) {
-      console.warn('Failed to load plan template draft', e);
+    } catch (err) {
+      console.error('Error fetching plan templates:', err);
+    } finally {
+      setLoadingTemplates(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  };
 
-  // Auto-save draft
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('planTemplateDraft', JSON.stringify({
-          name, description, category, duration, difficulty,
-          targets: { calMin, calMax, proteinMin, proteinMax, carbMin, carbMax, fatMin, fatMax }
-        }));
-      }
-    } catch (e) {
-      console.warn('Failed to save plan template draft', e);
+  // Load template data into form
+  const loadTemplateData = (tmpl: any) => {
+    if (!tmpl) return;
+    
+    setName(tmpl.name || '');
+    setDescription(tmpl.description || '');
+    setCategory(tmpl.category || '');
+    setDuration(Math.min(15, tmpl.duration || 7));
+    setDifficulty(tmpl.difficulty || 'intermediate');
+    
+    if (tmpl.targetCalories) {
+      setCalMin(tmpl.targetCalories.min || 1200);
+      setCalMax(tmpl.targetCalories.max || 2500);
     }
-  }, [name, description, category, duration, difficulty, calMin, calMax, proteinMin, proteinMax, carbMin, carbMax, fatMin, fatMax]);
+    
+    if (tmpl.targetMacros) {
+      setProteinMin(tmpl.targetMacros.protein?.min || 50);
+      setProteinMax(tmpl.targetMacros.protein?.max || 150);
+      setCarbMin(tmpl.targetMacros.carbs?.min || 100);
+      setCarbMax(tmpl.targetMacros.carbs?.max || 300);
+      setFatMin(tmpl.targetMacros.fat?.min || 30);
+      setFatMax(tmpl.targetMacros.fat?.max || 100);
+    }
+    
+    setSelectedTemplateId(tmpl._id);
+    setShowTemplateDialog(false);
+    setSuccess(`Template "${tmpl.name}" loaded successfully!`);
+    setTimeout(() => setSuccess(''), 3000);
+  };
 
   const handleSave = async () => {
     if (!session) {
@@ -132,8 +143,6 @@ export default function CreatePlanTemplateBasicPage() {
         isPublic: false,
         isPremium: false
       };
-      // Persist outbound payload for recovery/debug
-      try { if (typeof window !== 'undefined') localStorage.setItem('planTemplateSubmitPayload', JSON.stringify(body)); } catch(_) {}
       // Basic client-side sanity checks matching zod constraints
       if (body.targetCalories.min < 800 || body.targetCalories.max > 5000) {
         setError('Calories must be between 800 and 5000');
@@ -147,21 +156,6 @@ export default function CreatePlanTemplateBasicPage() {
         body: JSON.stringify(body)
       });
       if (res.ok) {
-        const data = await res.json();
-        try {
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('planTemplateDraft');
-            localStorage.setItem('lastCreatedPlanTemplate', JSON.stringify(data.template));
-            // merge into cachedPlanTemplates if present
-            const existingRaw = localStorage.getItem('cachedPlanTemplates');
-            if (existingRaw) {
-              const existing = JSON.parse(existingRaw);
-              if (Array.isArray(existing)) {
-                localStorage.setItem('cachedPlanTemplates', JSON.stringify([data.template, ...existing]));
-              }
-            }
-          }
-        } catch(_) {}
         router.push('/meal-plan-templates?success=created');
       } else {
         let errMsg = 'Failed to create plan template';
@@ -174,8 +168,6 @@ export default function CreatePlanTemplateBasicPage() {
           }
           if (res.status === 401) errMsg = 'Authentication required. Please sign in again.';
           if (res.status === 403) errMsg = 'Insufficient permissions to create templates.';
-          // Persist last error for inspection
-          try { if (typeof window !== 'undefined') localStorage.setItem('planTemplateLastError', JSON.stringify({ status: res.status, data })); } catch(_) {}
         } catch (_) {
           // ignore JSON parse errors
         }
@@ -184,7 +176,6 @@ export default function CreatePlanTemplateBasicPage() {
     } catch (e) {
       console.error('Create template unexpected error:', e);
       setError('Failed to create plan template (network or unexpected error)');
-      try { if (typeof window !== 'undefined') localStorage.setItem('planTemplateLastError', JSON.stringify({ status: 'network', message: (e as any)?.message })); } catch(_) {}
     } finally {
       setLoading(false);
     }
@@ -205,19 +196,25 @@ export default function CreatePlanTemplateBasicPage() {
             </Link>
           </Button>
           <div className="flex items-center gap-2">
-            {draftRestored && <span className="text-xs text-gray-500">Draft restored</span>}
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                if (typeof window !== 'undefined') localStorage.removeItem('planTemplateDraft');
                 setName(''); setDescription(''); setCategory(''); setDuration(7); setDifficulty('intermediate');
                 setCalMin(1200); setCalMax(2500); setProteinMin(50); setProteinMax(150);
                 setCarbMin(100); setCarbMax(300); setFatMin(30); setFatMax(100);
-                setDraftRestored(false);
               }}
             >
               Clear draft
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => { fetchPlanTemplates(); setShowTemplateDialog(true); }}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Load Template
             </Button>
           </div>
         </div>
@@ -231,6 +228,11 @@ export default function CreatePlanTemplateBasicPage() {
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {success && (
+              <Alert>
+                <AlertDescription>{success}</AlertDescription>
               </Alert>
             )}
 
@@ -259,7 +261,6 @@ export default function CreatePlanTemplateBasicPage() {
                   </SelectContent>
                 </Select>
               </div>
-           
             </div>
 
             <div className="space-y-2">
@@ -315,6 +316,67 @@ export default function CreatePlanTemplateBasicPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Load Template Dialog */}
+        <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+          <DialogContent className="max-w-2xl p-4 space-y-3 overflow-y-auto max-h-[80vh]">
+            <CardTitle className="text-lg flex items-center gap-2"><FileText className="h-5 w-5" />Load Plan Template</CardTitle>
+            <CardDescription>Select a plan template to load its data</CardDescription>
+            {loadingTemplates ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner />
+                <span className="ml-2 text-sm text-gray-500">Loading templates...</span>
+              </div>
+            ) : availableTemplates.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-sm">No plan templates available</p>
+                <p className="text-gray-400 text-xs mt-1">Create some plan templates first</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                {availableTemplates.map((tmpl) => (
+                  <Card 
+                    key={tmpl._id} 
+                    className={`cursor-pointer hover:border-blue-300 transition-all ${selectedTemplateId === tmpl._id ? 'border-blue-500 bg-blue-50' : ''}`}
+                    onClick={() => setSelectedTemplateId(tmpl._id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{tmpl.name}</h4>
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{tmpl.description || 'No description'}</p>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <Badge variant="outline" className="text-[10px]">{tmpl.duration} days</Badge>
+                            <Badge variant="outline" className="text-[10px] capitalize">{tmpl.category?.replace('-', ' ')}</Badge>
+                            <Badge variant="outline" className="text-[10px] capitalize">{tmpl.difficulty}</Badge>
+                          </div>
+                        </div>
+                        {selectedTemplateId === tmpl._id && (
+                          <div className="text-blue-600">
+                            <Target className="h-5 w-5" />
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button variant="outline" size="sm" onClick={() => setShowTemplateDialog(false)}>Cancel</Button>
+              <Button 
+                size="sm" 
+                disabled={!selectedTemplateId}
+                onClick={() => {
+                  const tmpl = availableTemplates.find(t => t._id === selectedTemplateId);
+                  if (tmpl) loadTemplateData(tmpl);
+                }}
+              >
+                Load Template
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

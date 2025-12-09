@@ -4,17 +4,26 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import MealPlanTemplate from '@/lib/db/models/MealPlanTemplate';
+import DietTemplate from '@/lib/db/models/DietTemplate';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { z } from 'zod';
+import { logHistoryServer } from '@/lib/server/history';
 
 // Validation schema for client meal plan assignment
 const clientMealPlanSchema = z.object({
   clientId: z.string().min(1, 'Client ID is required'),
-  templateId: z.string().min(1, 'Template ID is required'),
+  templateId: z.string().optional(), // Optional - can create plan without template
   name: z.string().min(1, 'Plan name is required').max(200),
+  description: z.string().max(2000).optional(),
   startDate: z.string().refine(date => !isNaN(Date.parse(date)), 'Invalid start date'),
   endDate: z.string().refine(date => !isNaN(Date.parse(date)), 'Invalid end date'),
+  duration: z.number().min(1).max(365).optional(),
+  meals: z.array(z.any()).optional(), // Flexible meal data
+  mealTypes: z.array(z.object({
+    name: z.string(),
+    time: z.string()
+  })).optional(),
   customizations: z.object({
     targetCalories: z.number().min(800).max(5000).optional(),
     targetMacros: z.object({
@@ -29,14 +38,15 @@ const clientMealPlanSchema = z.object({
     weightGoal: z.number().min(20).max(500).optional(),
     bodyFatGoal: z.number().min(3).max(50).optional(),
     targetDate: z.string().refine(date => !isNaN(Date.parse(date)), 'Invalid target date').optional(),
-    primaryGoal: z.enum(['weight-loss', 'weight-gain', 'maintenance', 'muscle-gain', 'health-improvement']),
+    primaryGoal: z.enum(['weight-loss', 'weight-gain', 'maintenance', 'muscle-gain', 'health-improvement']).optional(),
     secondaryGoals: z.array(z.string()).optional()
-  }),
+  }).optional(),
   reminders: z.object({
     mealReminders: z.boolean().default(true),
     progressReminders: z.boolean().default(true),
     checkInReminders: z.boolean().default(true)
-  }).optional()
+  }).optional(),
+  status: z.enum(['active', 'completed', 'paused', 'cancelled']).optional()
 });
 
 // GET /api/client-meal-plans - Get client meal plans
@@ -56,14 +66,27 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
 
     // Build query based on user role
-    const query: any = {};
+    let query: any = {};
 
     if (session.user.role === UserRole.CLIENT) {
       // Clients can only see their own meal plans
       query.clientId = session.user.id;
     } else if (session.user.role === UserRole.DIETITIAN) {
-      // Dietitians can see meal plans they created
-      query.dietitianId = session.user.id;
+      // Get all clients assigned to this dietitian
+      const assignedClients = await User.find({
+        role: UserRole.CLIENT,
+        $or: [
+          { assignedDietitian: session.user.id },
+          { assignedDietitians: session.user.id }
+        ]
+      }).select('_id');
+      const assignedClientIds = assignedClients.map(c => c._id);
+      
+      // Dietitian can see meal plans they created OR for their assigned clients
+      query.$or = [
+        { dietitianId: session.user.id },
+        { clientId: { $in: assignedClientIds } }
+      ];
       if (clientId) {
         query.clientId = clientId;
       }
@@ -166,13 +189,29 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validate that the template exists
-    const template = await MealPlanTemplate.findById(validatedData.templateId);
-    if (!template) {
-      return NextResponse.json({
-        error: 'Invalid template',
-        message: 'The specified meal plan template does not exist'
-      }, { status: 400 });
+    // Validate template if provided - check both DietTemplate and MealPlanTemplate
+    let template = null;
+    let templateType = null;
+    if (validatedData.templateId) {
+      // First try DietTemplate
+      template = await DietTemplate.findById(validatedData.templateId);
+      if (template) {
+        templateType = 'diet';
+      } else {
+        // Fallback to MealPlanTemplate
+        template = await MealPlanTemplate.findById(validatedData.templateId);
+        if (template) {
+          templateType = 'meal';
+        }
+      }
+      
+      // If neither found, it's an error only if templateId was provided
+      if (!template) {
+        return NextResponse.json({
+          error: 'Invalid template',
+          message: 'The specified template does not exist'
+        }, { status: 400 });
+      }
     }
 
     // Validate date range
@@ -205,16 +244,26 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    // Create client meal plan
-    const clientMealPlan = new ClientMealPlan({
+    // Create client meal plan - use template data if provided
+    const mealPlanData: any = {
       clientId: validatedData.clientId,
       dietitianId: session.user.id,
-      templateId: validatedData.templateId,
       name: validatedData.name,
+      description: validatedData.description,
       startDate: startDate,
       endDate: endDate,
-      customizations: validatedData.customizations,
-      goals: validatedData.goals,
+      meals: validatedData.meals || (template && templateType === 'diet' ? template.meals : []),
+      mealTypes: validatedData.mealTypes || (template && templateType === 'diet' ? template.mealTypes : []),
+      customizations: validatedData.customizations || (template ? {
+        targetCalories: template.targetCalories?.max || template.dailyCalorieTarget,
+        targetMacros: template.targetMacros ? {
+          protein: template.targetMacros.protein?.max,
+          carbs: template.targetMacros.carbs?.max,
+          fat: template.targetMacros.fat?.max
+        } : template.dailyMacros
+      } : undefined),
+      goals: validatedData.goals || { primaryGoal: 'health-improvement' },
+      status: validatedData.status || 'active',
       reminders: validatedData.reminders || {
         mealReminders: true,
         progressReminders: true,
@@ -223,7 +272,14 @@ export async function POST(request: NextRequest) {
       analytics: {
         totalDaysCompleted: 0
       }
-    });
+    };
+
+    // Only add templateId if provided
+    if (validatedData.templateId) {
+      mealPlanData.templateId = validatedData.templateId;
+    }
+
+    const clientMealPlan = new ClientMealPlan(mealPlanData);
 
     await clientMealPlan.save();
 
@@ -234,11 +290,37 @@ export async function POST(request: NextRequest) {
       { path: 'templateId', select: 'name category duration' }
     ]);
 
-    // Update template usage count
-    await MealPlanTemplate.findByIdAndUpdate(
-      validatedData.templateId,
-      { $inc: { usageCount: 1 } }
-    );
+    // Update template usage count if template was used
+    if (validatedData.templateId && templateType) {
+      if (templateType === 'diet') {
+        await DietTemplate.findByIdAndUpdate(
+          validatedData.templateId,
+          { $inc: { usageCount: 1 } }
+        );
+      } else {
+        await MealPlanTemplate.findByIdAndUpdate(
+          validatedData.templateId,
+          { $inc: { usageCount: 1 } }
+        );
+      }
+    }
+
+    // Log history for meal plan assignment
+    await logHistoryServer({
+      userId: validatedData.clientId,
+      action: 'assign',
+      category: 'plan',
+      description: `Meal plan assigned: ${validatedData.name} (${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()})`,
+      performedById: session.user.id,
+      metadata: {
+        mealPlanId: clientMealPlan._id,
+        name: validatedData.name,
+        templateId: validatedData.templateId,
+        startDate: validatedData.startDate,
+        endDate: validatedData.endDate,
+        status: clientMealPlan.status
+      }
+    });
 
     return NextResponse.json({
       success: true,

@@ -43,6 +43,7 @@ interface IDailyMeal {
 
 // Meal plan template interface
 export interface IMealPlanTemplate extends Document {
+  templateType: 'plan' | 'diet';
   name: string;
   description?: string;
   category: 'weight-loss' | 'weight-gain' | 'maintenance' | 'muscle-gain' | 'diabetes' | 'heart-healthy' | 'keto' | 'vegan' | 'custom';
@@ -60,7 +61,19 @@ export interface IMealPlanTemplate extends Document {
   tags: string[];
   meals: IDailyMeal[];
   isPublic: boolean;
+  isPremium: boolean;
   isActive: boolean;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  prepTime?: {
+    daily: number;
+    weekly: number;
+  };
+  targetAudience?: {
+    ageGroup: string[];
+    activityLevel: string[];
+    healthConditions: string[];
+    goals: string[];
+  };
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -121,6 +134,12 @@ const DailyMealSchema = new Schema({
 
 // Main meal plan template schema
 const MealPlanTemplateSchema = new Schema({
+  templateType: {
+    type: String,
+    enum: ['plan', 'diet'],
+    default: 'plan',
+    index: true
+  },
   name: { 
     type: String, 
     required: true, 
@@ -175,7 +194,23 @@ const MealPlanTemplateSchema = new Schema({
   }],
   meals: [DailyMealSchema],
   isPublic: { type: Boolean, default: false, index: true },
+  isPremium: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true, index: true },
+  difficulty: {
+    type: String,
+    enum: ['beginner', 'intermediate', 'advanced'],
+    default: 'intermediate'
+  },
+  prepTime: {
+    daily: { type: Number, min: 0, default: 30 },
+    weekly: { type: Number, min: 0, default: 210 }
+  },
+  targetAudience: {
+    ageGroup: [{ type: String }],
+    activityLevel: [{ type: String }],
+    healthConditions: [{ type: String }],
+    goals: [{ type: String }]
+  },
   createdBy: { 
     type: Schema.Types.ObjectId, 
     ref: 'User', 
@@ -199,6 +234,7 @@ const MealPlanTemplateSchema = new Schema({
 // Indexes for better performance
 MealPlanTemplateSchema.index({ name: 'text', description: 'text', tags: 'text' });
 MealPlanTemplateSchema.index({ category: 1, isPublic: 1, isActive: 1 });
+MealPlanTemplateSchema.index({ templateType: 1, isActive: 1 });
 MealPlanTemplateSchema.index({ createdBy: 1, isActive: 1 });
 MealPlanTemplateSchema.index({ 'targetCalories.min': 1, 'targetCalories.max': 1 });
 

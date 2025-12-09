@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import FoodLog from '@/lib/db/models/FoodLog';
+import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 
 // GET /api/food-logs - Get food logs
@@ -30,6 +31,18 @@ export async function GET(request: NextRequest) {
       query.client = session.user.id;
     } else if (session.user.role === UserRole.DIETITIAN) {
       if (clientId) {
+        // Verify the dietitian is assigned to this client
+        const client = await User.findById(clientId).select('assignedDietitian assignedDietitians');
+        const isAssigned = 
+          client?.assignedDietitian?.toString() === session.user.id ||
+          client?.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
+        
+        if (!isAssigned) {
+          return NextResponse.json(
+            { error: 'You are not assigned to this client' },
+            { status: 403 }
+          );
+        }
         query.client = clientId;
       } else {
         // Get all clients assigned to this dietitian

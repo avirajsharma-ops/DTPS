@@ -47,7 +47,6 @@ const userSchema = new Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
     lowercase: true,
     trim: true
   },
@@ -123,6 +122,17 @@ const userSchema = new Schema({
     type: String,
     enum: ['male', 'female', 'other']
   },
+  // Additional basic info fields
+  parentAccount: { type: String },
+  alternativePhone: { type: String, trim: true },
+  alternativeEmail: { type: String, trim: true },
+  anniversary: { type: Date },
+  source: { type: String },
+  referralSource: { type: String },
+  maritalStatus: { type: String },
+  occupation: { type: String },
+  targetWeightBucket: { type: String },
+  sharePhotoConsent: { type: Boolean, default: false },
   height: {
     type: Number,
     min: 0
@@ -131,13 +141,41 @@ const userSchema = new Schema({
     type: Number,
     min: 0
   },
+  // Physical measurement fields (moved from lifestyle)
+  heightFeet: { type: String },
+  heightInch: { type: String },
+  heightCm: { type: String },
+  weightKg: { type: String },
+  targetWeightKg: { type: String },
+  idealWeightKg: { type: String },
+  bmi: { type: String },
   activityLevel: {
     type: String,
-    enum: ['sedentary', 'light', 'moderate', 'active', 'very_active']
+    enum: ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active']
   },
-  healthGoals: [{
-    type: String
-  }],
+healthGoals: [{
+  type: String
+}],
+
+generalGoal: {
+  type: String,
+  enum: ['not-specified', 'weight-loss', 'weight-gain', 'disease-management'],
+  default: 'not-specified'
+},
+
+  documents: [
+  {
+    type: {
+      type: String,
+      enum: ["meal-picture", "medical-report"],
+      required: true,
+    },
+    fileName: { type: String, required: true },
+    filePath: { type: String, required: true },
+    uploadedAt: { type: Date, default: Date.now },
+  }
+],
+
   goals: {
     calories: { type: Number, default: 1800 },
     protein: { type: Number, default: 120 },
@@ -161,6 +199,11 @@ const userSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User'
   },
+  // Support for multiple dietitians per client
+  assignedDietitians: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
 
   // Fitness tracking data
   fitnessData: fitnessDataSchema,
@@ -190,12 +233,15 @@ const userSchema = new Schema({
     }]
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  autoIndex: false // Disable automatic index creation to prevent duplicate warnings
 });
 
-// Index for better query performance (email index is automatic due to unique: true)
+// Index for better query performance - define on schema before model creation
+
 userSchema.index({ role: 1 });
 userSchema.index({ assignedDietitian: 1 });
+userSchema.index({ assignedDietitians: 1 });
 
 // Password comparison method using bcrypt
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {

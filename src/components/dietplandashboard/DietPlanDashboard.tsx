@@ -26,13 +26,30 @@ type ClientData = {
   age: number;
   goal: string;
   planType: string;
+  dietaryRestrictions?: string; // comma-separated
+  medicalConditions?: string;   // comma-separated
+  allergies?: string;           // comma-separated
+};
+
+export type MealTypeConfig = {
+  name: string;
+  time: string;
 };
 
 type DietPlanDashboardProps = {
-  clientData: ClientData;
-  onBack: () => void;
-  onSavePlan?: () => void; // trigger parent save
+  clientData?: ClientData;
+  onBack?: () => void;
+  onSavePlan?: (weekPlan: DayPlan[], mealTypes: MealTypeConfig[]) => void; // trigger parent save with meal data and meal types
+  onSave?: (weekPlan: DayPlan[]) => void; // Simple save callback for PlanningSection
   duration?: number; // number of days to show
+  initialMeals?: DayPlan[]; // Load existing meals
+  initialMealTypes?: MealTypeConfig[]; // Load existing meal types
+  clientId?: string; // Client ID for saving
+  clientName?: string; // Client name for display
+  readOnly?: boolean; // View mode - hide save buttons and disable editing
+  clientDietaryRestrictions?: string; // comma-separated dietary restrictions
+  clientMedicalConditions?: string;   // comma-separated medical conditions
+  clientAllergies?: string;           // comma-separated allergies
 };
 
 export type FoodOption = {
@@ -65,8 +82,23 @@ export type DayPlan = {
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-export function DietPlanDashboard({ clientData, onBack, onSavePlan, duration = 7 }: DietPlanDashboardProps) {
-  const [mealTypes, setMealTypes] = useState<string[]>(['Breakfast', 'Mid Morning', 'Lunch', 'Evening Snack', 'Dinner', 'Bedtime']);
+const defaultMealTypes: MealTypeConfig[] = [
+  { name: 'Breakfast', time: '08:00' },
+  { name: 'Mid Morning', time: '10:30' },
+  { name: 'Lunch', time: '13:00' },
+  { name: 'Evening Snack', time: '16:00' },
+  { name: 'Dinner', time: '19:30' },
+  { name: 'Bedtime', time: '21:30' }
+];
+
+export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, duration = 7, initialMeals, initialMealTypes, clientId, clientName, readOnly = false, clientDietaryRestrictions, clientMedicalConditions, clientAllergies }: DietPlanDashboardProps) {
+  // Combine props with clientData for restrictions
+  const dietaryRestrictions = clientDietaryRestrictions || clientData?.dietaryRestrictions || '';
+  const medicalConditions = clientMedicalConditions || clientData?.medicalConditions || '';
+  const allergies = clientAllergies || clientData?.allergies || '';
+  const [mealTypeConfigs, setMealTypeConfigs] = useState<MealTypeConfig[]>(initialMealTypes || defaultMealTypes);
+  const mealTypes = mealTypeConfigs.map(m => m.name);
+  
   const buildDays = (count: number): DayPlan[] => {
     return Array.from({ length: count }).map((_, index) => {
       const dow = daysOfWeek[index % 7];
@@ -79,61 +111,132 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, duration = 7
       };
     });
   };
-  const [weekPlan, setWeekPlan] = useState<DayPlan[]>(buildDays(duration));
-  // Rebuild when duration changes
-  if (weekPlan.length !== duration) {
-    // Preserve existing first days data if shrinking
-    setWeekPlan(prev => {
-      const newDays = buildDays(duration);
-      return newDays.map((d, i) => ({ ...d, meals: prev[i]?.meals || {}, note: prev[i]?.note || '' }));
-    });
-  }
-
-  // Load cached week plan
-  useEffect(() => {
-    try {
-      const key = `dietPlan_week_${duration}`;
-      const raw = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
-      if (raw) {
-        const parsed: DayPlan[] = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length === duration) {
-          setWeekPlan(parsed);
-        }
+  
+  // Initialize weekPlan with the correct duration and initialMeals
+  const [weekPlan, setWeekPlan] = useState<DayPlan[]>(() => {
+    console.log('DietPlanDashboard INIT - duration:', duration, 'initialMeals:', initialMeals?.length);
+    
+    // Always start with correct number of days based on duration
+    const newDays = buildDays(duration);
+    
+    // If we have initialMeals, merge it into the days
+    if (initialMeals && Array.isArray(initialMeals) && initialMeals.length > 0) {
+      console.log('DietPlanDashboard INIT - merging initialMeals');
+      // Log sample data
+      if (initialMeals[0]) {
+        console.log('First day data:', JSON.stringify(initialMeals[0]).slice(0, 500));
       }
-    } catch {/* ignore */}
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      
+      return newDays.map((d, i) => ({
+        ...d,
+        meals: initialMeals[i]?.meals || {},
+        note: initialMeals[i]?.note || ''
+      }));
+    }
+    
+    return newDays;
+  });
+  
+  // Rebuild when duration changes
+  useEffect(() => {
+    console.log('Duration changed to:', duration, 'Current weekPlan length:', weekPlan.length);
+    if (weekPlan.length !== duration) {
+      const newDays = buildDays(duration);
+      setWeekPlan(prev => {
+        return newDays.map((d, i) => ({ 
+          ...d, 
+          meals: prev[i]?.meals || {}, 
+          note: prev[i]?.note || '' 
+        }));
+      });
+    }
   }, [duration]);
 
-  // Persist changes
+  // Rebuild when initialMeals changes (e.g., when viewing/editing a different plan)
+  // Using JSON stringify for deep comparison since object reference may not change
+  const initialMealsKey = JSON.stringify(initialMeals);
   useEffect(() => {
+    console.log('initialMeals effect triggered:', initialMeals?.length, 'duration:', duration);
+    
+    const newDays = buildDays(duration);
+    
+    if (initialMeals && Array.isArray(initialMeals) && initialMeals.length > 0) {
+      // Log what we're loading
+      console.log('Loading initialMeals data:');
+      initialMeals.forEach((day, i) => {
+        const mealCount = day?.meals ? Object.keys(day.meals).length : 0;
+        console.log(`  Day ${i + 1}: ${mealCount} meal types`);
+      });
+      
+      // Always set the weekPlan from initialMeals if provided
+      setWeekPlan(newDays.map((d, i) => ({
+        ...d,
+        meals: initialMeals[i]?.meals || {},
+        note: initialMeals[i]?.note || ''
+      })));
+    } else {
+      console.log('No initialMeals, resetting to empty days');
+      // Reset to empty days
+      setWeekPlan(newDays);
+    }
+  }, [initialMealsKey, duration]);
+
+  // Update mealTypeConfigs when initialMealTypes changes
+  useEffect(() => {
+    if (initialMealTypes && initialMealTypes.length > 0) {
+      setMealTypeConfigs(initialMealTypes);
+    }
+  }, [initialMealTypes]);
+
+  // Persist changes to localStorage (only in edit mode)
+  useEffect(() => {
+    if (readOnly) return; // Don't persist in view mode
     try {
       if (typeof window !== 'undefined') {
         const key = `dietPlan_week_${duration}`;
         localStorage.setItem(key, JSON.stringify(weekPlan));
       }
     } catch {/* ignore */}
-  }, [weekPlan, duration]);
+  }, [weekPlan, duration, readOnly]);
 
   const handleAddMealType = (newMealType: string, position?: number) => {
     if (newMealType && !mealTypes.includes(newMealType)) {
+      const newConfig: MealTypeConfig = { name: newMealType, time: '12:00' };
       if (position !== undefined) {
         // Insert at specific position
-        const newMealTypes = [...mealTypes];
-        newMealTypes.splice(position, 0, newMealType);
-        setMealTypes(newMealTypes);
+        setMealTypeConfigs(prev => {
+          const updated = [...prev];
+          updated.splice(position, 0, newConfig);
+          return updated;
+        });
       } else {
         // Add at the end
-        setMealTypes([...mealTypes, newMealType]);
+        setMealTypeConfigs(prev => [...prev, newConfig]);
       }
     }
   };
 
   const handleSavePlan = () => {
-    if (onSavePlan) {
-      onSavePlan();
+    if (onSave) {
+      // New simple callback for PlanningSection
+      onSave(weekPlan);
+    } else if (onSavePlan) {
+      onSavePlan(weekPlan, mealTypeConfigs);
     } else {
       toast.success('Diet plan saved successfully!');
     }
+  };
+
+  const handleUpdateMealType = (index: number, field: 'name' | 'time', value: string) => {
+    setMealTypeConfigs(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const handleRemoveMealType = (index: number) => {
+    setMealTypeConfigs(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleExport = () => {
@@ -147,18 +250,34 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, duration = 7
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-5">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Diet Plan Manager</h1>
+              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
+                {clientName ? `Diet Plan for ${clientName}` : 'Diet Plan Manager'}
+              </h1>
+              {clientId && (
+                <span className="text-sm text-slate-500">({duration} days)</span>
+              )}
+              {readOnly && (
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">View Only</span>
+              )}
             </div>
-            <div className="flex items-center space-x-3">
+            {!readOnly && (
+              <div className="flex items-center space-x-3">
+                <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 font-medium">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export PDF
+                </Button>
+                <Button onClick={handleSavePlan} className="bg-green-600 hover:bg-green-700 shadow font-medium">
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Plan
+                </Button>
+              </div>
+            )}
+            {readOnly && (
               <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 font-medium">
                 <Download className="w-4 h-4 mr-2" />
                 Export PDF
               </Button>
-              <Button onClick={handleSavePlan} className="bg-slate-900 hover:bg-slate-800 shadow font-medium">
-                <Save className="w-4 h-4 mr-2" />
-                Save Plan
-              </Button>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -168,8 +287,12 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, duration = 7
         <MealGridTable 
           weekPlan={weekPlan} 
           mealTypes={mealTypes}
-          onUpdate={setWeekPlan}
-          onAddMealType={handleAddMealType}
+          onUpdate={readOnly ? undefined : setWeekPlan}
+          onAddMealType={readOnly ? undefined : handleAddMealType}
+          readOnly={readOnly}
+          clientDietaryRestrictions={dietaryRestrictions}
+          clientMedicalConditions={medicalConditions}
+          clientAllergies={allergies}
         />
       </div>
     </div>

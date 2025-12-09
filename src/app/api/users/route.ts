@@ -25,10 +25,13 @@ export async function GET(request: NextRequest) {
 
     // Role-based access control
     if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
-      // Dietitians and Health Counselors can see only their assigned clients
+      // Dietitians and Health Counselors can see only their assigned clients (including from array)
       query = {
         role: UserRole.CLIENT,
-        assignedDietitian: session.user.id
+        $or: [
+          { assignedDietitian: session.user.id },
+          { assignedDietitians: session.user.id }
+        ]
       };
     } else if (session.user.role === UserRole.CLIENT) {
       // Clients can see only their assigned dietitian

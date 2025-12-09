@@ -27,7 +27,9 @@ import {
   BookOpen,
   Award,
   Globe,
-  Shield
+  Shield,
+  X,
+  ZoomIn
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -55,7 +57,6 @@ interface Recipe {
     sodium?: number;
   };
   tags: string[];
-  category: string;
   cuisine: string;
   dietaryRestrictions: string[];
   allergens: string[];
@@ -132,6 +133,7 @@ export default function RecipeViewPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   // Detect mobile device and PWA
   useEffect(() => {
@@ -383,12 +385,18 @@ export default function RecipeViewPage() {
               </div>
               
               {recipe.image && (
-                <div className="lg:w-80 lg:h-60 w-full h-48 rounded-lg overflow-hidden">
+                <div 
+                  className="lg:w-80 lg:h-60 w-full h-48 rounded-lg overflow-hidden cursor-pointer relative group"
+                  onClick={() => setShowImageModal(true)}
+                >
                   <img 
                     src={recipe.image} 
                     alt={recipe.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </div>
               )}
             </div>
@@ -433,13 +441,14 @@ export default function RecipeViewPage() {
 
               <Separator />
 
-              <div>
-                <p className="text-sm font-medium mb-2">Category & Cuisine</p>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline">{recipe.category}</Badge>
-                  {recipe.cuisine && <Badge variant="outline">{recipe.cuisine}</Badge>}
+              {recipe.cuisine && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Cuisine</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline">{recipe.cuisine}</Badge>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {recipe.dietaryRestrictions && recipe.dietaryRestrictions.length > 0 && (
                 <div>
@@ -794,6 +803,34 @@ export default function RecipeViewPage() {
           </Card>
         )}
       </div>
+
+      {/* Image Modal/Lightbox */}
+      {showImageModal && recipe?.image && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setShowImageModal(false)}
+        >
+          <button
+            onClick={() => setShowImageModal(false)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-50"
+          >
+            <X className="h-8 w-8" />
+          </button>
+          <div 
+            className="relative max-w-4xl max-h-[90vh] w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={recipe.image}
+              alt={recipe.name}
+              className="w-full h-full object-contain rounded-lg"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 rounded-b-lg">
+              <h3 className="text-white text-lg font-semibold">{recipe.name}</h3>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation Dialog */}
       <ConfirmationDialog />

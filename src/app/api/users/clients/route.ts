@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDB();
-
+ 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -28,9 +28,12 @@ export async function GET(request: NextRequest) {
     // Build query
     let query: any = { role: UserRole.CLIENT };
 
-    // If dietitian, only show their assigned clients (NOT unassigned ones)
+    // If dietitian, only show their assigned clients (including from assignedDietitians array)
     if (session.user.role === UserRole.DIETITIAN) {
-      query.assignedDietitian = session.user.id;
+      query.$or = [
+        { assignedDietitian: session.user.id },
+        { assignedDietitians: session.user.id }
+      ];
     }
     // Admin can see all clients (no additional filter needed)
 
@@ -47,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     const clients = await User.find(query)
-      .select('firstName lastName email avatar phone dateOfBirth gender healthGoals assignedDietitian status')
+      .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian status createdAt')
       .populate('assignedDietitian', 'firstName lastName email')
       .sort({ firstName: 1, lastName: 1 })
       .limit(limit)
@@ -73,3 +76,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+ 

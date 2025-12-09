@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
 
+// Delete cached model if it exists to ensure schema updates are applied
+if (mongoose.models.File) {
+  delete mongoose.models.File;
+}
+
 const FileSchema = new mongoose.Schema({
   filename: {
     type: String,
@@ -23,7 +28,7 @@ const FileSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['avatar', 'document', 'recipe-image', 'message', 'progress-photo'],
+    enum: ['avatar', 'document', 'recipe-image', 'message', 'progress-photo', 'note-attachment'],
     required: true
   },
   metadata: {
@@ -47,4 +52,4 @@ const FileSchema = new mongoose.Schema({
 FileSchema.index({ uploadedBy: 1, type: 1 });
 FileSchema.index({ filename: 1 });
 
-export const File = mongoose.models.File || mongoose.model('File', FileSchema);
+export const File = mongoose.model('File', FileSchema);

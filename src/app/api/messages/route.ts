@@ -7,6 +7,7 @@ import { UserRole } from '@/types';
 import { SSEManager } from '@/lib/realtime/sse-manager';
 import { createMessageWebhook } from '@/lib/webhooks/webhook-manager';
 import { z } from 'zod';
+import { logHistoryServer } from '@/lib/server/history';
 
 // Message validation schema
 const messageSchema = z.object({
@@ -142,6 +143,20 @@ export async function POST(request: NextRequest) {
 
     // Trigger webhook for message sent
     await createMessageWebhook(message.toJSON(), 'sent');
+
+    // Log history for message sent (for both sender and recipient)
+    await logHistoryServer({
+      userId: validatedData.recipientId,
+      action: 'create',
+      category: 'other',
+      description: `Message received from ${session.user.role}`,
+      performedById: session.user.id,
+      metadata: {
+        messageId: message._id,
+        type: validatedData.type,
+        hasAttachments: (validatedData.attachments || []).length > 0
+      }
+    });
 
     return NextResponse.json(message, { status: 201 });
 

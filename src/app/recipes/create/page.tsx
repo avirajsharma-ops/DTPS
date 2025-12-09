@@ -41,7 +41,6 @@ export default function CreateRecipePage() {
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
   const [prepTime, setPrepTime] = useState('');
   const [cookTime, setCookTime] = useState('');
   const [servings, setServings] = useState('');
@@ -56,35 +55,31 @@ export default function CreateRecipePage() {
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [medicalContraindications, setMedicalContraindications] = useState<string[]>([]);
 
-  const categories = [
-    'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Appetizer', 'Dessert',
-    'Beverage', 'Salad', 'Soup', 'Main Course', 'Side Dish'
-  ];
+
 
   const availableDietaryRestrictions = [
-    'Vegetarian','Non-vegetarian','Eggetarian','Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto',
-    'Low-Carb', 'Low-Fat', 'High-Protein', 'Paleo', 'Mediterranean'
+     'Vegetarian','Vegan','Gluten-Free','Non-Vegetarian','Dairy-Free','Keto','Low-Carb','Low-Fat','High-Protein','Paleo','Mediterranean'
   ];
 
   const availableMedicalContraindications = [
-    { value: 'diabetes', label: 'Diabetes' },
-    { value: 'hypertension', label: 'High Blood Pressure' },
-    { value: 'heart-disease', label: 'Heart Disease' },
-    { value: 'kidney-disease', label: 'Kidney Disease' },
-    { value: 'liver-disease', label: 'Liver Disease' },
-    { value: 'high-cholesterol', label: 'High Cholesterol' },
-    { value: 'thyroid-disorders', label: 'Thyroid Disorders' },
-    { value: 'gout', label: 'Gout' },
-    { value: 'acid-reflux', label: 'Acid Reflux/GERD' },
-    { value: 'ibs', label: 'IBS (Irritable Bowel Syndrome)' },
-    { value: 'celiac-disease', label: 'Celiac Disease' },
-    { value: 'lactose-intolerance', label: 'Lactose Intolerance' },
-    { value: 'gallbladder-disease', label: 'Gallbladder Disease' },
-    { value: 'osteoporosis', label: 'Osteoporosis' },
-    { value: 'anemia', label: 'Anemia' },
-    { value: 'food-allergies', label: 'Food Allergies' },
-    { value: 'pregnancy', label: 'Pregnancy' },
-    { value: 'breastfeeding', label: 'Breastfeeding' }
+    'Diabetes',
+    'High Blood Pressure',
+    'Heart Disease',
+    'Kidney Disease',
+    'Liver Disease',
+    'High Cholesterol',
+    'Thyroid Disorders',
+    'Gout',
+    'Acid Reflux/GERD',
+    'IBS (Irritable Bowel Syndrome)',
+    'Celiac Disease',
+    'Lactose Intolerance',
+    'Gallbladder Disease',
+    'Osteoporosis',
+    'Anemia',
+    'Food Allergies',
+    'Pregnancy',
+    'Breastfeeding'
   ];
 
   const units = [
@@ -186,13 +181,12 @@ export default function CreateRecipePage() {
       };
       reader.readAsDataURL(file);
 
-      // Upload to WordPress server
+      // Upload to server using GridFS
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('title', name || 'Recipe Image');
-      formData.append('alt', `${name || 'Recipe'} image`);
+      formData.append('type', 'recipe-image');
 
-      const response = await fetch('/api/wordpress/media', {
+      const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
@@ -200,14 +194,14 @@ export default function CreateRecipePage() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Upload error:', errorData);
-        throw new Error(errorData.error || 'Failed to upload image to WordPress');
+        throw new Error(errorData.error || 'Failed to upload image');
       }
 
       const data = await response.json();
       console.log('Upload successful:', data);
 
-      // Use the WordPress media URL (source_url is the full URL from WordPress)
-      setImage(data.source_url || data.url);
+      // Use the file URL from GridFS
+      setImage(data.url);
     } catch (err: any) {
       console.error('Error uploading image:', err);
       setError(err.message || 'Failed to upload image. Please try again.');
@@ -220,8 +214,8 @@ export default function CreateRecipePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !description || !category || !servings || ingredients.some(ing => !ing.name || !ing.unit)) {
-      setError('Please fill in all required fields (name, description, category, portion size, and complete ingredient details)');
+    if (!name || !servings || ingredients.some(ing => !ing.name || !ing.unit)) {
+      setError('Please fill in all required fields (name, portion size, and complete ingredient details)');
       return;
     }
 
@@ -255,12 +249,13 @@ export default function CreateRecipePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name, description, category,
+          name,
+          description: description || undefined,
           prepTime: prepTime ? parseInt(prepTime) : 0,
           cookTime: cookTime ? parseInt(cookTime) : 0,
           servings: servings,
           calories: calories ? parseInt(calories) : 0,
-          image: image || undefined, // Include image URL if uploaded
+          image: image || undefined,
           macros: {
             protein: protein ? parseFloat(protein) : 0,
             carbs: carbs ? parseFloat(carbs) : 0,
@@ -334,14 +329,13 @@ export default function CreateRecipePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description *</Label>
+                  <Label htmlFor="description">Description</Label>
                   <Textarea
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Brief description of the recipe..."
                     rows={3}
-                    required
                   />
                 </div>
 
@@ -385,22 +379,6 @@ export default function CreateRecipePage() {
                       Upload an image for your recipe (max 10MB, JPG/PNG)
                     </div>
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="category">Category *</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat.toLowerCase()}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
@@ -526,27 +504,27 @@ export default function CreateRecipePage() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {availableMedicalContraindications.map((condition) => (
                       <div
-                        key={condition.value}
+                        key={condition}
                         className={`p-2 rounded-lg border cursor-pointer transition-colors ${
-                          medicalContraindications.includes(condition.value)
+                          medicalContraindications.includes(condition)
                             ? 'bg-red-50 border-red-200 text-red-800'
                             : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                         }`}
-                        onClick={() => toggleMedicalContraindication(condition.value)}
+                        onClick={() => toggleMedicalContraindication(condition)}
                       >
                         <div className="flex items-center space-x-2">
                           <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                            medicalContraindications.includes(condition.value)
+                            medicalContraindications.includes(condition)
                               ? 'bg-red-500 border-red-500'
                               : 'border-gray-300'
                           }`}>
-                            {medicalContraindications.includes(condition.value) && (
+                            {medicalContraindications.includes(condition) && (
                               <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
                             )}
                           </div>
-                          <span className="text-sm font-medium">{condition.label}</span>
+                          <span className="text-sm font-medium">{condition}</span>
                         </div>
                       </div>
                     ))}

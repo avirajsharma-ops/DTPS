@@ -102,6 +102,10 @@ export default function NewClientPage() {
   const [bloodGroup, setBloodGroup] = useState('');
   const [gutIssues, setGutIssues] = useState<string[]>([]);
   const [reports, setReports] = useState<any[]>([]);
+  const [isPregnant, setIsPregnant] = useState(false);
+  const [isLactating, setIsLactating] = useState(false);
+  const [menstrualCycle, setMenstrualCycle] = useState('');
+  const [bloodFlow, setBloodFlow] = useState('');
   const [recallEntries, setRecallEntries] = useState<RecallEntry[]>([]);
 
   const markSaved = (section: SectionKey) => {
@@ -128,6 +132,14 @@ export default function NewClientPage() {
       case 'goalsList': setGoalsList(value.split(',').filter(Boolean)); break;
       case 'targetWeightBucket': setTargetWeightBucket(value); break;
       case 'sharePhotoConsent': setSharePhotoConsent(value === 'true'); break;
+      case 'heightFeet': setHeightFeet(value); break;
+      case 'heightInch': setHeightInch(value); break;
+      case 'heightCm': setHeightCm(value); break;
+      case 'weightKg': setWeightKg(value); break;
+      case 'targetWeightKg': setTargetWeightKg(value); break;
+      case 'idealWeightKg': setIdealWeightKg(value); break;
+      case 'bmi': setBmi(value); break;
+      case 'activityLevel': setActivityLevel(value); break;
     }
   };
 
@@ -176,6 +188,10 @@ export default function NewClientPage() {
       case 'bloodGroup': setBloodGroup(value); break;
       case 'gutIssues': setGutIssues(value); break;
       case 'reports': setReports(value); break;
+      case 'isPregnant': setIsPregnant(value); break;
+      case 'isLactating': setIsLactating(value); break;
+      case 'menstrualCycle': setMenstrualCycle(value); break;
+      case 'bloodFlow': setBloodFlow(value); break;
     }
   };
 
@@ -313,18 +329,58 @@ export default function NewClientPage() {
         {/* Section Navigation */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-3">
-              <Button variant={activeSection === 'basic' ? 'default':'outline'} onClick={() => setActiveSection('basic')} className="gap-2">
-                <User className="h-4 w-4" /> Basic {savedSections.includes('basic') && <CheckCircle className="h-4 w-4 text-green-600" />}
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <Button 
+                variant={activeSection === 'basic' ? 'default':'outline'} 
+                onClick={() => setActiveSection('basic')} 
+                className={`gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                  activeSection === 'basic' 
+                    ? 'bg-blue-100 text-blue-700 border-blue-300' 
+                    : 'hover:bg-slate-100'
+                }`}
+              >
+                <User className="h-4 w-4" /> 
+                <span>Basic</span>
+                {savedSections.includes('basic') && <CheckCircle className="h-4 w-4 text-green-600 ml-1" />}
               </Button>
-              <Button variant={activeSection === 'lifestyle' ? 'default':'outline'} onClick={() => setActiveSection('lifestyle')} className="gap-2">
-                <Activity className="h-4 w-4" /> Lifestyle {savedSections.includes('lifestyle') && <CheckCircle className="h-4 w-4 text-green-600" />}
+              <Button 
+                variant={activeSection === 'lifestyle' ? 'default':'outline'} 
+                onClick={() => setActiveSection('lifestyle')} 
+                className={`gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                  activeSection === 'lifestyle' 
+                    ? 'bg-blue-100 text-blue-700 border-blue-300' 
+                    : 'hover:bg-slate-100'
+                }`}
+              >
+                <Activity className="h-4 w-4" /> 
+                <span>Lifestyle</span>
+                {savedSections.includes('lifestyle') && <CheckCircle className="h-4 w-4 text-green-600 ml-1" />}
               </Button>
-              <Button variant={activeSection === 'medical' ? 'default':'outline'} onClick={() => setActiveSection('medical')} className="gap-2">
-                <HeartPulse className="h-4 w-4" /> Medical {savedSections.includes('medical') && <CheckCircle className="h-4 w-4 text-green-600" />}
+              <Button 
+                variant={activeSection === 'medical' ? 'default':'outline'} 
+                onClick={() => setActiveSection('medical')} 
+                className={`gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                  activeSection === 'medical' 
+                    ? 'bg-blue-100 text-blue-700 border-blue-300' 
+                    : 'hover:bg-slate-100'
+                }`}
+              >
+                <HeartPulse className="h-4 w-4" /> 
+                <span>Medical</span>
+                {savedSections.includes('medical') && <CheckCircle className="h-4 w-4 text-green-600 ml-1" />}
               </Button>
-              <Button variant={activeSection === 'recall' ? 'default':'outline'} onClick={() => setActiveSection('recall')} className="gap-2">
-                <ClipboardList className="h-4 w-4" /> Recall {savedSections.includes('recall') && <CheckCircle className="h-4 w-4 text-green-600" />}
+              <Button 
+                variant={activeSection === 'recall' ? 'default':'outline'} 
+                onClick={() => setActiveSection('recall')} 
+                className={`gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                  activeSection === 'recall' 
+                    ? 'bg-blue-100 text-blue-700 border-blue-300' 
+                    : 'hover:bg-slate-100'
+                }`}
+              >
+                <ClipboardList className="h-4 w-4" /> 
+                <span>Recall</span>
+                {savedSections.includes('recall') && <CheckCircle className="h-4 w-4 text-green-600 ml-1" />}
               </Button>
             </div>
           </CardContent>
@@ -396,91 +452,100 @@ export default function NewClientPage() {
 
         {/* Dynamic Section Rendering */}
         <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
+        <div className="w-full">
           {activeSection === 'basic' && (
-            <BasicInfoForm
-              firstName={firstName}
-              lastName={lastName}
-              email={email}
-              phone={phone}
-              dateOfBirth={dateOfBirth}
-              gender={gender}
-              parentAccount={parentAccount}
-              altPhone={altPhone}
-              altEmails={altEmails}
-              anniversary={anniversary}
-              source={source}
-              referralSource={referralSource}
-              generalGoal={generalGoal}
-              maritalStatus={maritalStatus}
-              occupation={occupation}
-              goalsList={goalsList}
-              targetWeightBucket={targetWeightBucket}
-              sharePhotoConsent={sharePhotoConsent}
-              onChange={basicChange}
-              onSave={() => markSaved('basic')}
-              loading={loading}
-            />
+            <div className="animate-in fade-in duration-300">
+              <BasicInfoForm
+                firstName={firstName}
+                lastName={lastName}
+                email={email}
+                phone={phone}
+                dateOfBirth={dateOfBirth}
+                gender={gender}
+                parentAccount={parentAccount}
+                altPhone={altPhone}
+                altEmails={altEmails}
+                anniversary={anniversary}
+                source={source}
+                referralSource={referralSource}
+                generalGoal={generalGoal}
+                maritalStatus={maritalStatus}
+                occupation={occupation}
+                goalsList={goalsList}
+                targetWeightBucket={targetWeightBucket}
+                sharePhotoConsent={sharePhotoConsent}
+                heightFeet={heightFeet}
+                heightInch={heightInch}
+                heightCm={heightCm}
+                weightKg={weightKg}
+                targetWeightKg={targetWeightKg}
+                idealWeightKg={idealWeightKg}
+                bmi={bmi}
+                activityLevel={activityLevel}
+                onChange={basicChange}
+                onSave={() => markSaved('basic')}
+                loading={loading}
+              />
+            </div>
           )}
           {activeSection === 'lifestyle' && (
-            <LifestyleForm
-              height={height}
-              weight={weight}
-              activityLevel={activityLevel}
-              healthGoals={healthGoals}
-              heightFeet={heightFeet}
-              heightInch={heightInch}
-              heightCm={heightCm}
-              weightKg={weightKg}
-              targetWeightKg={targetWeightKg}
-              bmi={bmi}
-              idealWeightKg={idealWeightKg}
-              foodPreference={foodPreference}
-              preferredCuisine={preferredCuisine}
-              allergiesFood={allergiesFood}
-              fastDays={fastDays}
-              nonVegExemptDays={nonVegExemptDays}
-              foodLikes={foodLikes}
-              foodDislikes={foodDislikes}
-              eatOutFrequency={eatOutFrequency}
-              smokingFrequency={smokingFrequency}
-              alcoholFrequency={alcoholFrequency}
-              activityRate={activityRate}
-              cookingOil={cookingOil}
-              monthlyOilConsumption={monthlyOilConsumption}
-              cookingSalt={cookingSalt}
-              carbonatedBeverageFrequency={carbonatedBeverageFrequency}
-              cravingType={cravingType}
-               onChange={lifestyleChange}
-               onSave={() => markSaved('lifestyle')}
-               loading={loading}
-             />
+            <div className="animate-in fade-in duration-300">
+              <LifestyleForm
+                foodPreference={foodPreference}
+                preferredCuisine={preferredCuisine}
+                allergiesFood={allergiesFood}
+                fastDays={fastDays}
+                nonVegExemptDays={nonVegExemptDays}
+                foodLikes={foodLikes}
+                foodDislikes={foodDislikes}
+                eatOutFrequency={eatOutFrequency}
+                smokingFrequency={smokingFrequency}
+                alcoholFrequency={alcoholFrequency}
+                activityRate={activityRate}
+                cookingOil={cookingOil}
+                monthlyOilConsumption={monthlyOilConsumption}
+                cookingSalt={cookingSalt}
+                carbonatedBeverageFrequency={carbonatedBeverageFrequency}
+                cravingType={cravingType}
+                onChange={lifestyleChange}
+                onSave={() => markSaved('lifestyle')}
+                loading={loading}
+              />
+            </div>
           )}
           {activeSection === 'medical' && (
-            <MedicalForm
-              medicalConditions={medicalConditions}
-              allergies={allergies}
-              dietaryRestrictions={dietaryRestrictions}
-              notes={notes}
-              diseaseHistory={diseaseHistory}
-              medicalHistory={medicalHistory}
-              familyHistory={familyHistory}
-              medication={medication}
-              bloodGroup={bloodGroup}
-              gutIssues={gutIssues}
-              reports={reports}
-              onChange={medicalChange}
-              onSave={() => markSaved('medical')}
-              loading={loading}
-            />
+            <div className="animate-in fade-in duration-300">
+              <MedicalForm
+                medicalConditions={medicalConditions}
+                allergies={allergies}
+                dietaryRestrictions={dietaryRestrictions}
+                notes={notes}
+                diseaseHistory={diseaseHistory}
+                medicalHistory={medicalHistory}
+                familyHistory={familyHistory}
+                medication={medication}
+                bloodGroup={bloodGroup}
+                gutIssues={gutIssues}
+                reports={reports}
+                isPregnant={isPregnant}
+                isLactating={isLactating}
+                menstrualCycle={menstrualCycle}
+                bloodFlow={bloodFlow}
+                onChange={medicalChange}
+                onSave={() => markSaved('medical')}
+                loading={loading}
+              />
+            </div>
           )}
           {activeSection === 'recall' && (
-            <RecallForm
-              entries={recallEntries}
-              onChange={recallChange}
-              onSave={() => markSaved('recall')}
-              loading={loading}
-            />
+            <div className="animate-in fade-in duration-300">
+              <RecallForm
+                entries={recallEntries}
+                onChange={recallChange}
+                onSave={() => markSaved('recall')}
+                loading={loading}
+              />
+            </div>
           )}
         </div>
         {/* Submit Button */}

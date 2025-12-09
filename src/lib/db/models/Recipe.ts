@@ -120,18 +120,13 @@ const recipeSchema = new Schema({
     trim: true,
     lowercase: true
   }],
-  category: {
-    type: String,
-    required: true,
-    enum: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert', 'beverage', 'appetizer', 'main-course', 'side-dish', 'soup', 'salad']
-  },
   cuisine: {
     type: String,
     enum: ['indian', 'chinese', 'italian', 'mexican', 'american', 'mediterranean', 'thai', 'japanese', 'french', 'other']
   },
   dietaryRestrictions: [{
     type: String,
-    enum: ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 'egg-free', 'soy-free', 'keto', 'paleo', 'low-carb', 'low-fat', 'diabetic-friendly']
+    trim: true
   }],
   allergens: [{
     type: String,
@@ -139,12 +134,7 @@ const recipeSchema = new Schema({
   }],
   medicalContraindications: [{
     type: String,
-    enum: [
-      'diabetes', 'hypertension', 'heart-disease', 'kidney-disease', 'liver-disease',
-      'high-cholesterol', 'thyroid-disorders', 'gout', 'acid-reflux', 'ibs',
-      'celiac-disease', 'lactose-intolerance', 'gallbladder-disease', 'osteoporosis',
-      'anemia', 'food-allergies', 'pregnancy', 'breastfeeding'
-    ]
+    trim: true
   }],
   difficulty: {
     type: String,

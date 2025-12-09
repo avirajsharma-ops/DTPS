@@ -26,14 +26,16 @@ export async function POST(request: NextRequest) {
       avatar: ['image/jpeg', 'image/png', 'image/webp'],
       document: ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
       'recipe-image': ['image/jpeg', 'image/png', 'image/webp'],
-      'message': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'audio/mpeg', 'audio/wav', 'video/mp4', 'video/webm']
+      'message': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'audio/mpeg', 'audio/wav', 'audio/webm', 'video/mp4', 'video/webm'],
+      'note-attachment': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/aac']
     };
 
     const maxSizes = {
       avatar: 5 * 1024 * 1024, // 5MB
       document: 10 * 1024 * 1024, // 10MB
       'recipe-image': 10 * 1024 * 1024, // 10MB
-      'message': 25 * 1024 * 1024 // 25MB for messages (images, videos, audio)
+      'message': 25 * 1024 * 1024, // 25MB for messages (images, videos, audio)
+      'note-attachment': 50 * 1024 * 1024 // 50MB for note attachments
     };
 
     const fileType = type as keyof typeof allowedTypes;
@@ -86,8 +88,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error uploading file:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to upload file';
+    console.error('Detailed error:', {
+      message: errorMessage,
+      error: error
+    });
     return NextResponse.json(
-      { error: 'Failed to upload file' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

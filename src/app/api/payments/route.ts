@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import Payment from '@/lib/db/models/Payment';
 import { UserRole } from '@/types';
 import Stripe from 'stripe';
+import { logHistoryServer } from '@/lib/server/history';
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-07-30.basil',
@@ -108,6 +109,23 @@ export async function POST(request: NextRequest) {
 
     await payment.save();
 
+    // Record payment creation in history
+    await logHistoryServer({
+      userId: session.user.id,
+      action: 'create',
+      category: 'payment',
+      description: `Payment of ${amount} ${currency.toUpperCase()} initiated: ${description}`,
+      performedById: session.user.id,
+      metadata: {
+        paymentId: payment._id,
+        appointmentId,
+        dietitianId,
+        amount,
+        currency,
+        status: payment.status,
+      },
+    });
+
     // Create Stripe payment intent
     if (!stripe) {
       return NextResponse.json({ error: 'Payment service not configured' }, { status: 500 });
@@ -170,6 +188,20 @@ export async function PUT(request: NextRequest) {
     }
 
     await payment.save();
+
+    // Record status update in history for the client
+    await logHistoryServer({
+      userId: payment.client?.toString() || '',
+      action: 'update',
+      category: 'payment',
+      description: `Payment status updated to ${status}`,
+      metadata: {
+        paymentId: payment._id,
+        appointmentId: payment.appointment,
+        dietitianId: payment.dietitian,
+        status,
+      },
+    });
 
     return NextResponse.json({ message: 'Payment updated successfully' });
 

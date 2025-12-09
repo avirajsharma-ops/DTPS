@@ -124,9 +124,9 @@ export default function DietitianDashboard() {
               You have {stats.todaysAppointments} appointments scheduled for today
             </p>
           </div>
-          <Button asChild>
+          {/* <Button asChild>
             <Link href="/clients/new">Add New Client</Link>
-          </Button>
+          </Button> */}
         </div>
 
         {/* Stats Cards */}
@@ -207,14 +207,26 @@ export default function DietitianDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button asChild className="w-full">
+              <Button asChild className="w-full bg-green-600 hover:bg-green-700">
+                <Link href="/dietician/clients/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Client
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
                 <Link href="/dietician/clients">
                   <Users className="h-4 w-4 mr-2" />
                   View My Clients
                 </Link>
               </Button>
+               <Button asChild variant="outline" className="w-full">
+                <Link href="/meal-plan-templates/plans/create">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Plan Plan
+                </Link>
+              </Button>
               <Button asChild variant="outline" className="w-full">
-                <Link href="/meal-plans/create">
+                <Link href="/meal-plan-templates/diet/create">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Diet Plan
                 </Link>
@@ -341,8 +353,8 @@ export default function DietitianDashboard() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pending Tasks */}
+        {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          Pending Tasks
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -373,7 +385,7 @@ export default function DietitianDashboard() {
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
+          Quick Actions
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
@@ -413,7 +425,7 @@ export default function DietitianDashboard() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
       </div>
     </DashboardLayout>
   );

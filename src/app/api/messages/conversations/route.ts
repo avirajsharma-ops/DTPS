@@ -78,11 +78,14 @@ export async function GET(request: NextRequest) {
           return null;
         }
 
-        // For clients, only show conversations with their assigned dietitian
+        // For clients, only show conversations with their assigned dietitians
         if (session.user.role === 'client') {
-          const currentUser = await User.findById(session.user.id).select('assignedDietitian');
-          if (currentUser?.assignedDietitian &&
-              user._id.toString() !== currentUser.assignedDietitian.toString()) {
+          const currentUser = await User.findById(session.user.id).select('assignedDietitian assignedDietitians');
+          const assignedIds = [
+            ...(currentUser?.assignedDietitian ? [currentUser.assignedDietitian.toString()] : []),
+            ...(currentUser?.assignedDietitians?.map((d: any) => d.toString()) || [])
+          ];
+          if (assignedIds.length > 0 && !assignedIds.includes(user._id.toString())) {
             return null; // Skip conversations with non-assigned dietitians
           }
         }
@@ -90,8 +93,11 @@ export async function GET(request: NextRequest) {
         // For dietitians, only show conversations with their assigned clients
         if (session.user.role === 'dietitian' || session.user.role === 'health_counselor') {
           if (user.role === 'client') {
-            const clientUser = await User.findById(user._id).select('assignedDietitian');
-            if (clientUser?.assignedDietitian?.toString() !== session.user.id) {
+            const clientUser = await User.findById(user._id).select('assignedDietitian assignedDietitians');
+            const isAssigned = 
+              clientUser?.assignedDietitian?.toString() === session.user.id ||
+              clientUser?.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
+            if (!isAssigned) {
               return null; // Skip conversations with non-assigned clients
             }
           }

@@ -162,8 +162,8 @@ const ClientMealPlanSchema = new Schema({
   },
   templateId: { 
     type: Schema.Types.ObjectId, 
-    ref: 'MealPlanTemplate', 
-    required: true,
+    ref: 'DietTemplate', 
+    required: false, // Optional - can create plan without template
     index: true
   },
   
@@ -173,6 +173,22 @@ const ClientMealPlanSchema = new Schema({
     trim: true,
     maxlength: 200
   },
+  
+  description: {
+    type: String,
+    maxlength: 2000
+  },
+  
+  // Store meals directly in the plan (for plans created without template)
+  meals: {
+    type: [Schema.Types.Mixed],
+    default: []
+  },
+  
+  mealTypes: [{
+    name: { type: String, required: true },
+    time: { type: String, default: '12:00' }
+  }],
   startDate: { 
     type: Date, 
     required: true,

@@ -5,7 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Save } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Save, Eye, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export interface MedicalData {
   medicalConditions: string;
@@ -19,6 +22,11 @@ export interface MedicalData {
   bloodGroup: string;
   gutIssues: string[]; // acidity, bloating, constipation, none
   reports: UploadedReport[];
+  isPregnant: boolean;
+  // Female-specific fields
+  isLactating: boolean;
+  menstrualCycle: string; // 'regular' | 'irregular'
+  bloodFlow: string; // 'light' | 'normal' | 'heavy'
 }
 
 export interface DiseaseEntry {
@@ -43,9 +51,35 @@ interface MedicalFormProps extends MedicalData {
   onChange: (field: keyof MedicalData, value: any) => void;
   onSave: () => void;
   loading?: boolean;
+  clientGender?: string;
+  clientId?: string;
+  onDeleteReport?: (reportId: string) => Promise<void>;
 }
 
-export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions, notes, diseaseHistory, medicalHistory, familyHistory, medication, bloodGroup, gutIssues, reports, onChange, onSave, loading }: MedicalFormProps) {
+export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions, notes, diseaseHistory, medicalHistory, familyHistory, medication, bloodGroup, gutIssues, reports, isPregnant, isLactating, menstrualCycle, bloodFlow, onChange, onSave, loading, clientGender, clientId, onDeleteReport }: MedicalFormProps) {
+  const [deletingReportId, setDeletingReportId] = React.useState<string | null>(null);
+  const [selectedDietary, setSelectedDietary] = React.useState<string[]>(() => (dietaryRestrictions ? dietaryRestrictions.split(',').map(s => s.trim()).filter(Boolean) : []));
+  React.useEffect(() => {
+    setSelectedDietary(dietaryRestrictions ? dietaryRestrictions.split(',').map(s => s.trim()).filter(Boolean) : []);
+  }, [dietaryRestrictions]);
+  const [dietaryOpen, setDietaryOpen] = React.useState(false);
+  const dietaryOptions = [
+    'Vegetarian','Vegan','Gluten-Free','Non-Vegetarian','Dairy-Free','Keto','Low-Carb','Low-Fat','High-Protein','Paleo','Mediterranean'
+  ];
+  
+  // Medical conditions multi-select
+  const [selectedMedical, setSelectedMedical] = React.useState<string[]>(() => (medicalConditions ? medicalConditions.split(',').map(s => s.trim()).filter(Boolean) : []));
+  React.useEffect(() => {
+    setSelectedMedical(medicalConditions ? medicalConditions.split(',').map(s => s.trim()).filter(Boolean) : []);
+  }, [medicalConditions]);
+  const medicalConditionOptions = [
+    'Diabetes', 'High Blood Pressure', 'Heart Disease', 'Kidney Disease', 'Liver Disease',
+    'High Cholesterol', 'Thyroid Disorders', 'Gout', 'Acid Reflux/GERD', 'IBS (Irritable Bowel Syndrome)',
+    'Celiac Disease', 'Lactose Intolerance', 'Gallbladder Disease', 'Osteoporosis', 'Anemia',
+    'Food Allergies', 'Pregnancy', 'Breastfeeding'
+  ];
+  
+  
   const addDiseaseRow = () => {
     const newRow: DiseaseEntry = { id: Math.random().toString(36).slice(2), disease: '', since: '', frequency: '', severity: '', grading: '', action: '' };
     onChange('diseaseHistory', [...diseaseHistory, newRow]);
@@ -64,34 +98,147 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
       onChange('gutIssues', next);
     }
   };
-  const addReport = (file: File, customName: string) => {
-    const newReport: UploadedReport = {
-      id: Math.random().toString(36).slice(2),
-      fileName: customName || file.name,
-      uploadedOn: new Date().toISOString().split('T')[0],
-      fileType: file.type || 'unknown',
-    };
-    onChange('reports', [...reports, newReport]);
+  const addReport = async (file: File, customName: string) => {
+    // If we have a clientId, upload to server
+    if (clientId) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('fileName', customName || file.name);
+
+        const response = await fetch(`/api/users/${clientId}/medical/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Upload response:', data);
+          if (data.report) {
+            console.log('Report with URL:', data.report);
+            onChange('reports', [...reports, data.report]);
+            toast.success('Report uploaded successfully');
+          }
+        } else {
+          const errorData = await response.json();
+          console.error('Upload failed:', errorData);
+          toast.error('Failed to upload report');
+        }
+      } catch (error) {
+        console.error('Error uploading report:', error);
+        toast.error('Error uploading report');
+      }
+    } else {
+      // Fallback: just add to local state (for new clients)
+      const newReport: UploadedReport = {
+        id: Math.random().toString(36).slice(2),
+        fileName: customName || file.name,
+        uploadedOn: new Date().toISOString().split('T')[0],
+        fileType: file.type || 'unknown',
+      };
+      onChange('reports', [...reports, newReport]);
+    }
   };
   const removeReport = (id: string) => onChange('reports', reports.filter(r => r.id !== id));
-  const handleReportInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleViewReport = (report: UploadedReport) => {
+    console.log('Viewing report:', report);
+    if (!report.url) {
+      toast.error('File URL not available. Please save the form first.');
+      return;
+    }
+
+    // Open file in new tab - let the browser handle errors
+    const url = report.url.startsWith('/') ? window.location.origin + report.url : report.url;
+    console.log('Opening URL:', url);
+    window.open(url, '_blank');
+  };
+
+  const handleDeleteReport = async (report: UploadedReport) => {
+    if (!report.url) {
+      // If no URL, just remove from local state
+      removeReport(report.id);
+      return;
+    }
+
+    try {
+      setDeletingReportId(report.id);
+      
+      // Extract fileId from URL (e.g., /api/reports/12345 -> 12345)
+      const fileId = report.url.split('/').pop();
+      
+      if (fileId && onDeleteReport) {
+        await onDeleteReport(fileId);
+      } else if (fileId) {
+        // Fallback: call API directly
+        const response = await fetch(`/api/reports/${fileId}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          removeReport(report.id);
+          toast.success('Report deleted successfully');
+        } else {
+          toast.error('Failed to delete report');
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      toast.error('Error deleting report');
+    } finally {
+      setDeletingReportId(null);
+    }
+  };
+  const [uploadingFile, setUploadingFile] = React.useState(false);
+
+  const handleReportInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    Array.from(files).forEach(f => addReport(f, pendingReportName));
+    
+    setUploadingFile(true);
+    for (const f of Array.from(files)) {
+      await addReport(f, pendingReportName);
+    }
+    setUploadingFile(false);
     setPendingReportName('');
     e.target.value = '';
   };
   const [pendingReportName, setPendingReportName] = React.useState('');
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Medical Information</CardTitle>
-        <CardDescription>Health conditions and dietary restrictions</CardDescription>
+    <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
+        <CardTitle className="text-lg sm:text-xl font-bold text-white">Medical Information</CardTitle>
+        <CardDescription className="text-blue-100 text-sm">Health conditions and dietary restrictions</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6 pt-6 px-4 sm:px-6">
         <div>
           <Label htmlFor="medicalConditions">Medical Conditions</Label>
-          <Input id="medicalConditions" value={medicalConditions} onChange={e => onChange('medicalConditions', e.target.value)} placeholder="Diabetes, hypertension, etc. (comma separated)" />
+          <div className="mt-2 border rounded-md p-3 bg-gray-50">
+            <div className="flex flex-wrap gap-2">
+              {medicalConditionOptions.map(opt => {
+                const isSelected = selectedMedical.includes(opt);
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      const next = isSelected ? selectedMedical.filter(s => s !== opt) : [...selectedMedical, opt];
+                      setSelectedMedical(next);
+                      onChange('medicalConditions', next.join(', '));
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${isSelected ? 'bg-red-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:border-red-400 hover:bg-red-50'}`}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedMedical.length > 0 && (
+              <div className="mt-3 pt-2 border-t text-xs text-gray-500">
+                Selected: <span className="font-medium text-gray-700">{selectedMedical.join(', ')}</span>
+              </div>
+            )}
+          </div>
         </div>
         <div>
           <Label htmlFor="allergies">Allergies</Label>
@@ -99,7 +246,32 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
         </div>
         <div>
           <Label htmlFor="dietaryRestrictions">Dietary Restrictions</Label>
-          <Input id="dietaryRestrictions" value={dietaryRestrictions} onChange={e => onChange('dietaryRestrictions', e.target.value)} placeholder="Vegetarian, vegan, gluten-free, etc. (comma separated)" />
+          <div className="mt-2 border rounded-md p-3 bg-gray-50">
+            <div className="flex flex-wrap gap-2">
+              {dietaryOptions.map(opt => {
+                const isSelected = selectedDietary.includes(opt);
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      const next = isSelected ? selectedDietary.filter(s => s !== opt) : [...selectedDietary, opt];
+                      setSelectedDietary(next);
+                      onChange('dietaryRestrictions', next.join(', '));
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${isSelected ? 'bg-emerald-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:border-emerald-400 hover:bg-emerald-50'}`}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedDietary.length > 0 && (
+              <div className="mt-3 pt-2 border-t text-xs text-gray-500">
+                Selected: <span className="font-medium text-gray-700">{selectedDietary.join(', ')}</span>
+              </div>
+            )}
+          </div>
         </div>
         {/* Disease History Table */}
         <div className="space-y-2">
@@ -139,7 +311,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
             </table>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Any Medical History</Label>
             <Textarea value={medicalHistory} onChange={e => onChange('medicalHistory', e.target.value)} rows={2} placeholder="Past surgeries, hospitalizations..." />
@@ -153,12 +325,12 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
           <Label>Any Medication</Label>
           <Textarea value={medication} onChange={e => onChange('medication', e.target.value)} rows={2} placeholder="Current medications..." />
         </div>
-        <div className="grid grid-cols-3 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
           <div>
             <Label>Blood Group</Label>
             <Input value={bloodGroup} onChange={e => onChange('bloodGroup', e.target.value)} placeholder="A+" />
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Gut Issues *</Label>
             <div className="flex flex-wrap gap-2 mt-2">
               {['Acidity','Bloating','Constipation','None'].map(issue => {
@@ -171,12 +343,57 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
             </div>
           </div>
         </div>
+        {clientGender === 'female' && (
+          <div className="space-y-4 border-t pt-4">
+            <h4 className="font-semibold text-gray-900">Assessment Questions (Female Only)</h4>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="isPregnant" checked={isPregnant} onChange={e => onChange('isPregnant', e.target.checked)} className="h-4 w-4" />
+                <Label htmlFor="isPregnant">Are you pregnant?</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="isLactating" checked={isLactating} onChange={e => onChange('isLactating', e.target.checked)} className="h-4 w-4" />
+                <Label htmlFor="isLactating">Are you lactating?</Label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>How Is Your Menstrual Cycle? *</Label>
+                <Select value={menstrualCycle} onValueChange={val => onChange('menstrualCycle', val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="regular">Regular</SelectItem>
+                    <SelectItem value="irregular">Irregular</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>How Is The Flow Of Blood? *</Label>
+                <Select value={bloodFlow} onValueChange={val => onChange('bloodFlow', val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="heavy">Heavy</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Reports Upload */}
         <div className="space-y-2">
           <Label>Upload Medical Reports</Label>
-          <div className="flex items-center gap-2">
-            <Input placeholder="File Name (Optional)" value={pendingReportName} onChange={e => setPendingReportName(e.target.value)} className="flex-1" />
-            <Input type="file" multiple onChange={handleReportInput} className="flex-1" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <Input placeholder="File Name (Optional)" value={pendingReportName} onChange={e => setPendingReportName(e.target.value)} className="flex-1" disabled={uploadingFile} />
+            <Input type="file" multiple onChange={handleReportInput} className="flex-1" disabled={uploadingFile} />
+            {uploadingFile && <span className="text-sm text-gray-500">Uploading...</span>}
           </div>
           <div className="border rounded-md overflow-hidden">
             <table className="min-w-full text-xs">
@@ -194,7 +411,32 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                     <td className="p-2">{r.fileName}</td>
                     <td className="p-2">{r.uploadedOn}</td>
                     <td className="p-2">{r.fileType}</td>
-                    <td className="p-2"><Button type="button" size="sm" variant="ghost" onClick={() => removeReport(r.id)}>Remove</Button></td>
+                    <td className="p-2">
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => handleViewReport(r)}
+                          disabled={!r.url}
+                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => handleDeleteReport(r)}
+                          disabled={deletingReportId === r.id}
+                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          {deletingReportId === r.id ? 'Deleting...' : 'Remove'}
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
                 {reports.length === 0 && (
@@ -208,9 +450,9 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
           <Label htmlFor="notes">Additional Notes</Label>
           <Textarea id="notes" value={notes} onChange={e => onChange('notes', e.target.value)} rows={3} placeholder="Any additional information about the client..." />
         </div>
-        <div className="flex justify-end">
-          <Button type="button" onClick={onSave} disabled={loading}>
-            <Save className="mr-2 h-4 w-4" />
+        <div className="flex justify-end pt-6 border-t border-gray-200 mt-6">
+          <Button type="button" onClick={onSave} disabled={loading} 
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md hover:shadow-lg transition-all">    <Save className="mr-2 h-4 w-4" />
             Save Medical
           </Button>
         </div>
@@ -219,3 +461,8 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
   );
 }
 export default MedicalForm;
+
+
+
+
+

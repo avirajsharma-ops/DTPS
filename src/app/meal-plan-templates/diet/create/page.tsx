@@ -19,6 +19,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DietPlanDashboard } from '@/components/dietplandashboard/DietPlanDashboard';
 import Link from 'next/link';
 import { UserRole } from '@/types';
+import { log } from 'node:console';
 
 // ------------------ INTERFACES ------------------
 
@@ -158,13 +159,18 @@ export default function CreateDietTemplatePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<any>({});
   const [selectedDay, setSelectedDay] = useState(1);
-  const [draftRestored, setDraftRestored] = useState(false);
 
   // Panel dialogs for basic/lifestyle/dietary/medical info
   const [showBasicPanel, setShowBasicPanel] = useState(false);
   const [showLifestylePanel, setShowLifestylePanel] = useState(false);
   const [showDietaryPanel, setShowDietaryPanel] = useState(false);
   const [showMedicalPanel, setShowMedicalPanel] = useState(false);
+
+  // Template loading states
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   // Main template state
   const [template, setTemplate] = useState<MealPlanTemplate>({
@@ -184,31 +190,62 @@ export default function CreateDietTemplatePage() {
     }
   }, [session, router]);
 
+  
+
   // ----------- AUTO-REFRESH RECIPES ----------
   useEffect(() => { fetchRecipes(); }, [searchQuery, selectedFilters]);
 
-  // ---------- RESTORE DRAFT ON MOUNT ----------
-  useEffect(() => {
+  // ----------- FETCH DIET TEMPLATES ----------
+  const fetchDietTemplates = async () => {
     try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('dietTemplateDraft_custom') : null;
-      if (raw) {
-        const d = JSON.parse(raw);
-        if (d?.template) setTemplate(d.template);
-        if (d?.currentStep) setCurrentStep(d.currentStep);
-        if (d?.selectedDay) setSelectedDay(d.selectedDay);
-        setDraftRestored(true);
+      setLoadingTemplates(true);
+      const res = await fetch('/api/diet-templates?isActive=true');
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableTemplates(data.templates || []);
       }
-    } catch { /* ignore */ }
-  }, []);
+    } catch (err) {
+      console.error('Error fetching diet templates:', err);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
 
-  // --------- SAVE DRAFT ON CHANGES ----------
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('dietTemplateDraft_custom', JSON.stringify({ template, currentStep, selectedDay }));
-      }
-    } catch {/* ignore */}
-  }, [template, currentStep, selectedDay]);
+  
+
+  // ----------- LOAD TEMPLATE DATA ----------
+  const loadTemplateData = (tmpl: any) => {
+    if (!tmpl) return;
+    
+    // Load basic info
+    setTemplate(prev => ({
+      ...prev,
+      name: tmpl.name || prev.name,
+      description: tmpl.description || '',
+      category: tmpl.category || prev.category,
+      duration: Math.min(15, tmpl.duration || 7),
+      targetCalories: tmpl.targetCalories || prev.targetCalories,
+      targetMacros: tmpl.targetMacros || prev.targetMacros,
+      dietaryRestrictions: tmpl.dietaryRestrictions || [],
+      difficulty: tmpl.difficulty || 'intermediate',
+      targetAudience: tmpl.targetAudience || prev.targetAudience,
+    }));
+    
+    // Load meal types if available
+    if (tmpl.mealTypes && tmpl.mealTypes.length > 0) {
+      setMealTypesData(tmpl.mealTypes);
+    }
+    
+    // Load meals if available
+    if (tmpl.meals && tmpl.meals.length > 0) {
+      setWeekPlanData(tmpl.meals);
+    }
+    
+    setSelectedTemplateId(tmpl._id);
+    setShowTemplateDialog(false);
+    setSuccess(`Template "${tmpl.name}" loaded successfully!`);
+    setTimeout(() => setSuccess(''), 3000);
+  };
 
   // ----------- FETCH RECIPES -------------
   const fetchRecipes = async () => {
@@ -244,7 +281,6 @@ export default function CreateDietTemplatePage() {
     setTemplate(prev => {
       const days = prev.duration;
       if (prev.meals.length === days) return prev;
-      try { if (typeof window !== 'undefined') localStorage.removeItem(`dietPlan_week_${prev.duration}`); } catch {/* ignore */}
       const meals: DailyMeal[] = Array.from({ length: days }).map((_, i) => ({
         day: i+1, breakfast: [], lunch: [], dinner: [], morningSnack: [], afternoonSnack: [], eveningSnack: [],
         totalNutrition: { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 }, notes: ''
@@ -303,42 +339,77 @@ export default function CreateDietTemplatePage() {
 
   const dayMeals = useMemo(()=>template.meals[selectedDay-1], [template.meals, selectedDay]);
 
+  // Store weekPlan and mealTypes data from DietPlanDashboard
+  const [weekPlanData, setWeekPlanData] = useState<any[]>([]);
+  const [mealTypesData, setMealTypesData] = useState<{name: string; time: string}[]>([
+    { name: 'Breakfast', time: '8:00 AM' },
+    { name: 'Mid Morning', time: '10:30 AM' },
+    { name: 'Lunch', time: '1:00 PM' },
+    { name: 'Evening Snack', time: '4:00 PM' },
+    { name: 'Dinner', time: '7:00 PM' },
+    { name: 'Bedtime', time: '9:30 PM' }
+  ]);
+console.log(template )
   // -------------- SAVE/PUBLISH TEMPLATE -------------
-  const saveTemplate = async () => {
+  const saveTemplate = async (weekPlan?: any[], mealTypes?: {name: string; time: string}[]) => {
     try {
       setLoading(true); setError('');
-      const submitPayload = { ...template, templateType: 'diet' };
-      try { if (typeof window !== 'undefined') localStorage.setItem('dietTemplatePayload_custom', JSON.stringify(submitPayload)); } catch { /* ignore */ }
-      const res = await fetch('/api/meal-plan-templates', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(submitPayload) });
+      
+      // Validate required fields
+      if (!template.name?.trim()) {
+        setError('Template name is required');
+        setLoading(false);
+        return;
+      }
+      if (!template.category) {
+        setError('Category is required');
+        setLoading(false);
+        return;
+      }
+      
+      const mealsToSave = weekPlan || weekPlanData;
+      const mealTypesToSave = mealTypes || mealTypesData;
+      const submitPayload = { 
+        ...template, 
+        meals: mealsToSave, 
+        mealTypes: mealTypesToSave,
+        // Ensure defaults
+        targetCalories: template.targetCalories || { min: 1200, max: 2500 },
+        targetMacros: template.targetMacros || { 
+          protein: { min: 50, max: 150 }, 
+          carbs: { min: 100, max: 300 }, 
+          fat: { min: 30, max: 100 } 
+        }
+      };
+      // Remove templateType as it's not needed for diet templates (separate collection)
+      delete (submitPayload as any).templateType;
+      
+      console.log('Submitting diet template:', submitPayload);
+      
+      const res = await fetch('/api/diet-templates', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(submitPayload) });
       if (res.ok) {
         const data = await res.json();
+        // Clear localStorage after successful save
         try {
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('dietTemplateDraft_custom');
-            localStorage.setItem('lastCreatedDietTemplate_custom', JSON.stringify(data.template));
-            const existingRaw = localStorage.getItem('dietTemplates_cache_custom');
-            if (existingRaw) {
-              const existing = JSON.parse(existingRaw);
-              if (Array.isArray(existing)) {
-                localStorage.setItem('dietTemplates_cache_custom', JSON.stringify([data.template, ...existing]));
-              }
-            }
-          }
-        } catch { /* ignore */ }
-        router.push('/meal-plan-templates?success=created');
+          localStorage.removeItem(`dietPlan_week_${template.duration}`);
+        } catch {}
+        router.push('/meal-plan-templates?success=created&tab=diet');
       } else {
         let errMsg = 'Failed to save template';
         try {
           const data = await res.json();
+          console.error('API error response:', data);
           if (data?.error) errMsg = data.error;
           if (data?.details && Array.isArray(data.details) && data.details.length) {
             errMsg = `${data.error || 'Validation failed'}: ${data.details[0].message || data.details[0].path?.join('.')}`;
           }
-          try { if (typeof window !== 'undefined') localStorage.setItem('dietTemplateLastError_custom', JSON.stringify({ status: res.status, data })); } catch { /* ignore */ }
         } catch { /* ignore parse */ }
         setError(errMsg);
       }
-    } catch { setError('Failed to save template'); } finally { setLoading(false); }
+    } catch (err) { 
+      console.error('Save error:', err);
+      setError('Failed to save template'); 
+    } finally { setLoading(false); }
   };
 
   if (!session) return <LoadingSpinner />;
@@ -361,11 +432,9 @@ export default function CreateDietTemplatePage() {
             </div>
           </div>
           <div className="flex gap-2 items-center">
-            {draftRestored && <span className="text-xs text-gray-500">Draft restored</span>}
             <Button variant="outline" size="sm" onClick={() => {
-              if (typeof window !== 'undefined') localStorage.removeItem('dietTemplateDraft_custom');
               setTemplate({ name:'', description:'', category:'', duration:7, targetCalories:{min:1200,max:2500}, targetMacros:{ protein:{min:50,max:150}, carbs:{min:100,max:300}, fat:{min:30,max:100}}, dietaryRestrictions:[], tags:[], meals:[], isPublic:false, isPremium:false, difficulty:'intermediate', prepTime:{daily:30, weekly:210}, targetAudience:{ageGroup:[], activityLevel:[], healthConditions:[], goals:[]} });
-              setCurrentStep(1); setSelectedDay(1); setDraftRestored(false);
+              setCurrentStep(1); setSelectedDay(1);
             }}>Clear Draft</Button>
           </div>
         </div>
@@ -385,6 +454,9 @@ export default function CreateDietTemplatePage() {
           </Button>
           <Button variant="outline" size="sm" className="gap-1" onClick={()=>setShowMedicalPanel(true)}>
             <Stethoscope className="h-4 w-4" /> Medical
+          </Button>
+          <Button variant="default" size="sm" className="gap-1 bg-blue-600 hover:bg-blue-700" onClick={() => { fetchDietTemplates(); setShowTemplateDialog(true); }}>
+            <ChefHat className="h-4 w-4" /> Load Template
           </Button>
         </div>
 
@@ -419,10 +491,18 @@ export default function CreateDietTemplatePage() {
                   <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
                   <SelectContent>{categories.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                 </Select></div>
-                <div className="space-y-2"><Label>Duration *</Label><Select value={template.duration.toString()} onValueChange={v=>setTemplate({...template, duration: parseInt(v)})}>
-                  <SelectTrigger><SelectValue placeholder="Days" /></SelectTrigger>
-                  <SelectContent>{['7','14','21','30'].map(d=> <SelectItem key={d} value={d}>{d} Days</SelectItem>)}</SelectContent>
-                </Select></div>
+                <div className="space-y-2"><Label>Duration * (max 15 days)</Label>
+                  <Input 
+                    type="number" 
+                    min={1} 
+                    max={15} 
+                    value={template.duration} 
+                    onChange={e => {
+                      const val = parseInt(e.target.value) || 1;
+                      setTemplate({...template, duration: Math.min(15, Math.max(1, val))});
+                    }}
+                    placeholder="Enter days (1-15)"
+                  /></div>
                 <div className="space-y-2"><Label>Difficulty</Label><Select value={template.difficulty} onValueChange={v=>setTemplate({...template, difficulty: v})}>
                   <SelectTrigger><SelectValue placeholder="Difficulty" /></SelectTrigger>
                   <SelectContent>{difficultyLevels.map(dl=> <SelectItem key={dl.value} value={dl.value}>{dl.label}</SelectItem>)}</SelectContent>
@@ -495,10 +575,11 @@ export default function CreateDietTemplatePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Calendar className="h-5 w-5" />Templates</CardTitle>
-              <CardDescription>Use dashboard tools to finalize and publish</CardDescription>
+              <CardDescription>Use dashboard tools to finalize and publish ({template.duration} days)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <DietPlanDashboard 
+                key={`diet-dashboard-${template.duration}`}
                 clientData={{
                   name: template.name || 'Untitled Template',
                   age: 0,
@@ -507,13 +588,17 @@ export default function CreateDietTemplatePage() {
                 }}
                 duration={template.duration}
                 onBack={() => setCurrentStep(2)}
-                onSavePlan={saveTemplate}
+                onSavePlan={(weekPlan, mealTypes) => {
+                  setWeekPlanData(weekPlan);
+                  if (mealTypes) setMealTypesData(mealTypes);
+                  saveTemplate(weekPlan, mealTypes);
+                }}
               />
               <div className="flex justify-end">
                 <Button variant="outline" onClick={()=>setCurrentStep(2)} className="mr-2">
                   <ArrowLeft className="h-4 w-4 mr-1" />Back
                 </Button>
-                <Button disabled={loading || !template.name || !template.category} onClick={saveTemplate}>{loading? 'Saving...' : 'Publish Template'}</Button>
+                <Button disabled={loading || !template.name || !template.category} onClick={() => saveTemplate()}>{loading? 'Saving...' : 'Publish Template'}</Button>
               </div>
             </CardContent>
           </Card>
@@ -524,16 +609,12 @@ export default function CreateDietTemplatePage() {
           <DialogContent className="max-w-sm p-4 space-y-3 overflow-y-auto max-h-[70vh]">
             <CardTitle className="text-sm flex items-center gap-2"><User className="h-4 w-4" />Basic Info</CardTitle>
             <div className="grid grid-cols-1 gap-2 text-xs">
-              <div className="border rounded p-2"><span className="text-gray-500">Name:</span> <span className="font-medium">{template.name || '—'}</span></div>
-              <div className="border rounded p-2"><span className="text-gray-500">Category:</span> <span className="font-medium capitalize">{template.category || '—'}</span></div>
-              <div className="border rounded p-2"><span className="text-gray-500">Duration:</span> <span className="font-medium">{template.duration} days</span></div>
-              <div className="border rounded p-2"><span className="text-gray-500">Difficulty:</span> <span className="font-medium capitalize">{template.difficulty}</span></div>
-              <div className="border rounded p-2"><span className="text-gray-500">Dietary Restrictions:</span> {template.dietaryRestrictions.length ? (
-                <div className="flex flex-wrap gap-1 mt-1">{template.dietaryRestrictions.map(r => <Badge key={r} variant="outline" className="text-[10px] capitalize">{r.replace('-', ' ')}</Badge>)}</div>
-              ) : <span className="font-medium">None</span>}
-              </div>
-              <div className="border rounded p-2"><span className="text-gray-500">Description:</span>
-                <div className="text-[11px] mt-1 line-clamp-4">{template.description || 'No description'}</div>
+              <div className="border rounded p-2"><span className="text-gray-500">Name:</span> <span className="font-medium">{template?.name || '—'}</span></div>
+              <div className="border rounded p-2"><span className="text-gray-500">Email:</span> <span className="font-medium">—</span></div>
+              <div className="border rounded p-2"><span className="text-gray-500">Phone:</span> <span className="font-medium">—</span></div>
+              <div className="border rounded p-2"><span className="text-gray-500">Gender / DOB:</span> <span className="font-medium">—</span></div>
+              <div className="border rounded p-2"><span className="text-gray-500">Address / Notes:</span>
+                <div className="text-[11px] mt-1">{template.description || 'No details'}</div>
               </div>
             </div>
             <div className="flex justify-end"><Button size="sm" onClick={()=>setShowBasicPanel(false)}>Close</Button></div>
@@ -543,29 +624,85 @@ export default function CreateDietTemplatePage() {
         <Dialog open={showLifestylePanel} onOpenChange={setShowLifestylePanel}>
           <DialogContent className="max-w-sm p-4 space-y-3 overflow-y-auto max-h-[70vh]">
             <CardTitle className="text-sm flex items-center gap-2"><Heart className="h-4 w-4" />Lifestyle Info</CardTitle>
-            <p className="text-xs text-gray-600 mt-2">Add lifestyle notes (placeholder).</p>
+            <p className="text-xs text-gray-600 mt-2">No lifestyle data available for templates. Use client profile to view user-specific lifestyle details.</p>
             <div className="flex justify-end mt-4"><Button size="sm" onClick={()=>setShowLifestylePanel(false)}>Close</Button></div>
           </DialogContent>
         </Dialog>
-        {/* Dietary Dialog */}
-        <Dialog open={showDietaryPanel} onOpenChange={setShowDietaryPanel}>
-          <DialogContent className="max-w-sm p-4 space-y-3 overflow-y-auto max-h-[70vh]">
-            <CardTitle className="text-sm flex items-center gap-2"><Leaf className="h-4 w-4" />Dietary Info</CardTitle>
-            <p className="text-xs text-gray-600 mt-2">Dietary preferences and restrictions overview.</p>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {template.dietaryRestrictions.length ? template.dietaryRestrictions.map(r => (
-                <Badge key={r} variant="outline" className="text-[10px] capitalize">{r.replace('-', ' ')}</Badge>
-              )) : <span className="text-[11px] text-gray-400">No restrictions selected</span>}
-            </div>
-            <div className="flex justify-end mt-4"><Button size="sm" onClick={()=>setShowDietaryPanel(false)}>Close</Button></div>
-          </DialogContent>
-        </Dialog>
+        {/* Recall entries removed (client-loader feature was reverted) */}
         {/* Medical Dialog */}
         <Dialog open={showMedicalPanel} onOpenChange={setShowMedicalPanel}>
           <DialogContent className="max-w-sm p-4 space-y-3 overflow-y-auto max-h-[70vh]">
             <CardTitle className="text-sm flex items-center gap-2"><Stethoscope className="h-4 w-4" />Medical Info</CardTitle>
-            <p className="text-xs text-gray-600 mt-2">Add medical considerations (placeholder).</p>
+            <p className="text-xs text-gray-600 mt-2">No medical data available for templates. Use client profile to view user-specific medical details.</p>
             <div className="flex justify-end mt-4"><Button size="sm" onClick={()=>setShowMedicalPanel(false)}>Close</Button></div>
+          </DialogContent>
+        </Dialog>
+        {/* Load Template Dialog */}
+        <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+          <DialogContent className="max-w-2xl p-4 space-y-3 overflow-y-auto max-h-[80vh]">
+            <CardTitle className="text-lg flex items-center gap-2"><ChefHat className="h-5 w-5" />Load Diet Template</CardTitle>
+            <CardDescription>Select a template to load its data including meals and food items</CardDescription>
+            {loadingTemplates ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner />
+                <span className="ml-2 text-sm text-gray-500">Loading templates...</span>
+              </div>
+            ) : availableTemplates.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-sm">No templates available</p>
+                <p className="text-gray-400 text-xs mt-1">Create some templates first</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                {availableTemplates.map((tmpl) => (
+                  <Card 
+                    key={tmpl._id} 
+                    className={`cursor-pointer hover:border-blue-300 transition-all ${selectedTemplateId === tmpl._id ? 'border-blue-500 bg-blue-50' : ''}`}
+                    onClick={() => setSelectedTemplateId(tmpl._id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{tmpl.name}</h4>
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{tmpl.description || 'No description'}</p>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <Badge variant="outline" className="text-[10px]">{tmpl.duration} days</Badge>
+                            <Badge variant="outline" className="text-[10px] capitalize">{tmpl.category?.replace('-', ' ')}</Badge>
+                            <Badge variant="outline" className="text-[10px] capitalize">{tmpl.difficulty}</Badge>
+                            {tmpl.targetAudience?.goals?.length > 0 && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                {tmpl.targetAudience.goals[0]}
+                              </Badge>
+                            )}
+                          </div>
+                          {tmpl.meals?.length > 0 && (
+                            <p className="text-xs text-green-600 mt-2">✓ Contains {tmpl.meals.length} day(s) of meal data</p>
+                          )}
+                        </div>
+                        {selectedTemplateId === tmpl._id && (
+                          <div className="text-blue-600">
+                            <Target className="h-5 w-5" />
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button variant="outline" size="sm" onClick={() => setShowTemplateDialog(false)}>Cancel</Button>
+              <Button 
+                size="sm" 
+                disabled={!selectedTemplateId}
+                onClick={() => {
+                  const tmpl = availableTemplates.find(t => t._id === selectedTemplateId);
+                  if (tmpl) loadTemplateData(tmpl);
+                }}
+              >
+                Load Template
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import previewImage from "@/app/public/icons/icon-72x72.png"
+import previewImage from "@/app/public/icons/app-icon-original.png"
 
 import {
   DropdownMenu,
@@ -31,6 +32,8 @@ import { UserRole } from '@/types';
 import Image from 'next/image';
 
 export default function Navbar() {
+  const pathname = usePathname();
+  const isDashboard = pathname?.includes('/dashboard');
   const { data: session, status } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -64,7 +67,7 @@ export default function Navbar() {
           ...baseItems,
           { href: '/dietician/clients', label: 'My Clients', icon: Users },
           { href: '/appointments', label: 'Appointments', icon: Calendar },
-          { href: '/meal-plans', label: 'Diet Plans', icon: Heart },
+          { href: '/meal-plan-templates', label: 'Diet Plans', icon: Heart },
           { href: '/messages', label: 'Messages', icon: MessageCircle },
         ];
       case UserRole.CLIENT:
@@ -96,11 +99,10 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Image
-              src={previewImage}
-              alt="Preview"
-              className="max-w-full h-[3rem] object-contain rounded-lg"
-            />
+              <div className="flex items-center space-x-2">
+                <Heart className="h-6 w-6 text-green-600" />
+                <span className="text-lg font-semibold text-gray-900">DTPS</span>
+              </div>
             </div>
           </div>
         </div>
@@ -114,11 +116,10 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Image
-              src={previewImage}
-              alt="Preview"
-              className="max-w-full h-[3rem]  object-contain rounded-lg"
-            />
+            <div className="flex items-center space-x-2">
+              <Heart className="h-6 w-6 text-green-600" />
+              <span className="text-lg font-semibold text-gray-900">DTPS</span>
+            </div>
           </div>
 
           {/* Desktop Navigation */}

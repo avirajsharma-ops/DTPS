@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Plus, X, Minus, Copy, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Plus, X, Minus, Copy, ChevronLeft, ChevronRight, Check, Maximize2, Minimize2 } from 'lucide-react';
 import { DayPlan, Meal, FoodOption } from './DietPlanDashboard';
 import { FoodDatabasePanel } from './FoodSheet';
 // Define FoodItem shape to type foods parameter from FoodDatabasePanel selection
@@ -27,8 +27,12 @@ import React from 'react';
 type MealGridTableProps = {
   weekPlan: DayPlan[];
   mealTypes: string[];
-  onUpdate: (weekPlan: DayPlan[]) => void;
-  onAddMealType: (mealType: string, position?: number) => void;
+  onUpdate?: (weekPlan: DayPlan[]) => void;
+  onAddMealType?: (mealType: string, position?: number) => void;
+  readOnly?: boolean;
+  clientDietaryRestrictions?: string;
+  clientMedicalConditions?: string;
+  clientAllergies?: string;
 };
 
 const mealTimeSuggestions: { [key: string]: string } = {
@@ -40,9 +44,19 @@ const mealTimeSuggestions: { [key: string]: string } = {
   'Bedtime': '21:00'
 };
 
-const DAYS_PER_PAGE = 10;
+const DAYS_PER_PAGE = 14;
 
-export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: MealGridTableProps) {
+export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '' }: MealGridTableProps) {
+  // Debug logging
+  console.log('MealGridTable render - weekPlan days:', weekPlan.length);
+  console.log('MealGridTable render - first day meals:', weekPlan[0]?.meals ? Object.keys(weekPlan[0].meals) : 'none');
+  if (weekPlan[0]?.meals) {
+    const firstMealType = Object.keys(weekPlan[0].meals)[0];
+    if (firstMealType) {
+      console.log('MealGridTable render - first meal data:', JSON.stringify(weekPlan[0].meals[firstMealType]).slice(0, 200));
+    }
+  }
+  
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copySource, setCopySource] = useState<{ dayIndex: number; mealType: string } | null>(null);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
@@ -68,6 +82,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   const [dragSource, setDragSource] = useState<{ dayIndex: number; mealType: string; optionIndex: number } | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const totalPages = Math.ceil(weekPlan.length / DAYS_PER_PAGE);
   const startIndex = currentPage * DAYS_PER_PAGE;
@@ -95,10 +110,16 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   });
 
   const getMealForDay = (dayIndex: number, mealType: string): Meal | null => {
-    return weekPlan[dayIndex].meals[mealType] || null;
+    const meal = weekPlan[dayIndex]?.meals[mealType] || null;
+    // Debug logging only for first day
+    if (dayIndex === 0) {
+      console.log(`getMealForDay(${dayIndex}, ${mealType}):`, meal ? `found with ${meal.foodOptions?.length || 0} options` : 'null');
+    }
+    return meal;
   };
 
   const addMealToCell = (dayIndex: number, mealType: string) => {
+    if (readOnly || !onUpdate) return;
     const newWeekPlan = [...weekPlan];
     const existingMeal = newWeekPlan[dayIndex].meals[mealType];
     if (!existingMeal) {
@@ -123,6 +144,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   };
 
   const updateMealTime = (dayIndex: number, mealType: string, time: string) => {
+    if (readOnly || !onUpdate) return;
     const newWeekPlan = [...weekPlan];
     if (newWeekPlan[dayIndex].meals[mealType]) {
       newWeekPlan[dayIndex].meals[mealType].time = time;
@@ -131,6 +153,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   };
 
   const toggleAlternatives = (dayIndex: number, mealType: string) => {
+    if (readOnly || !onUpdate) return;
     const newWeekPlan = [...weekPlan];
     if (newWeekPlan[dayIndex].meals[mealType]) {
       newWeekPlan[dayIndex].meals[mealType].showAlternatives = 
@@ -140,6 +163,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   };
 
   const addFoodOption = (dayIndex: number, mealType: string) => {
+    if (readOnly || !onUpdate) return;
     const newWeekPlan = [...weekPlan];
     const meal = newWeekPlan[dayIndex].meals[mealType];
     if (meal) {
@@ -160,6 +184,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   };
 
   const removeFoodOption = (dayIndex: number, mealType: string, optionIndex: number) => {
+    if (readOnly || !onUpdate) return;
     const newWeekPlan = [...weekPlan];
     const meal = newWeekPlan[dayIndex].meals[mealType];
     if (meal) {
@@ -175,6 +200,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
     field: keyof FoodOption,
     value: string
   ) => {
+    if (readOnly || !onUpdate) return;
     const newWeekPlan = [...weekPlan];
     const meal = newWeekPlan[dayIndex].meals[mealType];
     if (meal && meal.foodOptions[optionIndex]) {
@@ -184,6 +210,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   };
 
   const updateDayInfo = (dayIndex: number, field: 'date' | 'note', value: string) => {
+    if (readOnly || !onUpdate) return;
     const newWeekPlan = [...weekPlan];
     newWeekPlan[dayIndex][field] = value;
     onUpdate(newWeekPlan);
@@ -198,6 +225,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
 
   const handleCopyMeal = () => {
     if (!copySource || selectedDays.length === 0 || selectedMeals.length === 0) return;
+    if (readOnly || !onUpdate) return;
 
     const sourceMeal = weekPlan[copySource.dayIndex].meals[copySource.mealType];
     if (!sourceMeal) return;
@@ -269,6 +297,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   };
 
   const addNewDay = () => {
+    if (readOnly || !onUpdate) return;
     const newDayIndex = weekPlan.length + 1;
     const newDay: DayPlan = {
       id: `day-${Date.now()}`,
@@ -300,6 +329,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   };
 
   const handleAddMealType = () => {
+    if (readOnly || !onUpdate || !onAddMealType) return;
     const name = newMealTypeName.trim();
     if (!name) return;
     const time = newMealTime || '12:00';
@@ -380,6 +410,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   };
 
   const handleFindReplace = () => {
+    if (readOnly || !onUpdate) return;
   const findValue = (findFoodTarget || manualFindFoodName).trim();
     const replaceValue = replaceFoodValue.trim();
     if (!findValue || !replaceValue || selectedDaysForReplace.length === 0 || selectedMealTypesForReplace.length === 0) return;
@@ -458,6 +489,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
     setDragOverTarget(null);
     setDragSource(null);
     if (!source) return;
+    if (readOnly || !onUpdate) return;
 
     const newWeekPlan = [...weekPlan].map(d => ({ ...d, meals: { ...d.meals } }));
     const sourceMeal = newWeekPlan[source.dayIndex].meals[source.mealType];
@@ -507,26 +539,35 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
   };
 
   return (
-    <div className="space-y-1">
+    <div className={`space-y-1 ${isFullScreen ? 'fixed inset-0 z-50 bg-white p-4 overflow-auto' : ''}`}>
       {/* Pagination Controls - Moved to top */}
       <div className="flex justify-between items-center gap-3 py-2">
         <div>
-          <Button
-            variant="outline"
-            onClick={() => setAddMealTypeDialogOpen(true)}
-            style={{ backgroundColor: '#00A63E', color: 'white', borderColor: '#00A63E' }}
-            className="h-10 px-4 hover:opacity-90 font-medium shadow-md"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Meal Type
-          </Button>
-            <Button
-              variant="outline"
-              onClick={() => setFindReplaceDialogOpen(true)}
-              className="h-10 px-4 ml-2 border-gray-300 bg-white hover:bg-slate-100 font-medium shadow-md"
-            >
-              Find & Replace
-            </Button>
+          {!readOnly && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setAddMealTypeDialogOpen(true)}
+                style={{ backgroundColor: '#00A63E', color: 'white', borderColor: '#00A63E' }}
+                className="h-10 px-4 hover:opacity-90 font-medium shadow-md"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Meal Type
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setFindReplaceDialogOpen(true)}
+                className="h-10 px-4 ml-2 border-gray-300 bg-white hover:bg-slate-100 font-medium shadow-md"
+              >
+                Find & Replace
+              </Button>
+            </>
+          )}
+          {readOnly && (
+            <span className="text-sm text-gray-500 font-medium px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+              📋 View Mode - Read Only
+            </span>
+          )}
         </div>
     <div className='flex items-center gap-4'  >
           <div className="bg-white shadow-md rounded-full px-4 py-2 border border-gray-300">
@@ -576,6 +617,16 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
         >
           <ChevronRight className="w-4 h-4" />
         </Button>
+        {/* Full Screen Toggle Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsFullScreen(!isFullScreen)}
+          className={`h-9 w-9 p-0 rounded-full shadow-md border-gray-300 hover:bg-slate-100 ${isFullScreen ? 'bg-emerald-100 border-emerald-500 text-emerald-700' : 'bg-white'}`}
+          title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+        >
+          {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
    </div>
     </div>
       </div>
@@ -584,7 +635,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
       <div className="relative border border-gray-300 rounded-lg bg-white overflow-hidden shadow">
         <div 
         ref={scrollContainerRef} 
-        className="w-full h-[calc(100vh-250px)] overflow-auto"
+        className={`w-full overflow-auto ${isFullScreen ? 'h-[calc(100vh-120px)]' : 'h-[calc(100vh-250px)]'}`}
         style={{ scrollbarWidth: 'thin' }}
       >
         <table className="w-full border-collapse relative">
@@ -632,8 +683,8 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
           <tbody>
             {paginatedDays.map((day, paginatedIndex) => {
               const actualDayIndex = startIndex + paginatedIndex;
-              // Use custom color scheme: BCEBCB for even rows and C2E66E for odd rows
-              const rowColor = actualDayIndex % 2 === 0 ? '#BCEBCB' : '#C2E66E';
+              // Use same green color for all rows
+              const rowColor = '#BCEBCB';
               // Get all meal types for this day (standard ones + any custom ones)
               const dayMealTypes = [...displayMealTypes];
               const customMeals = Object.keys(day.meals).filter(mt => !displayMealTypes.includes(mt));
@@ -873,6 +924,55 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
           </tbody>
         </table>
       </div>
+      
+      {/* Bottom Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 py-4 bg-white border-t border-gray-200">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToPreviousPage}
+            disabled={currentPage === 0}
+            className="h-9 px-4 border-gray-300 hover:bg-slate-100 disabled:opacity-50"
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Previous
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => (
+              <Button
+                key={i}
+                variant={currentPage === i ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(i)}
+                className={`h-9 w-9 p-0 ${
+                  currentPage === i 
+                    ? 'bg-slate-900 text-white hover:bg-slate-800' 
+                    : 'border-gray-300 hover:bg-slate-100'
+                }`}
+              >
+                {i + 1}
+              </Button>
+            ))}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToNextPage}
+            disabled={currentPage >= totalPages - 1}
+            className="h-9 px-4 border-gray-300 hover:bg-slate-100 disabled:opacity-50"
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+          
+          <span className="text-sm text-slate-600 ml-4">
+            Days {startIndex + 1}-{endIndex} of {weekPlan.length}
+          </span>
+        </div>
+      )}
 
       {/* Copy Meal Dialog */}
       <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
@@ -1108,6 +1208,9 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
       <FoodDatabasePanel
         isOpen={foodDatabaseOpen}
         onClose={() => setFoodDatabaseOpen(false)}
+        clientDietaryRestrictions={clientDietaryRestrictions}
+        clientMedicalConditions={clientMedicalConditions}
+        clientAllergies={clientAllergies}
   onSelectFood={(foods: FoodItem[]) => {
           if (currentFoodContext) {
             const { dayIndex, mealType, optionIndex } = currentFoodContext;
@@ -1124,7 +1227,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType }: 
             }
             
             // Create new boxes for additional selected foods
-            if (foods.length > 1) {
+            if (foods.length > 1 && onUpdate && !readOnly) {
               const newWeekPlan = [...weekPlan];
               const meal = newWeekPlan[dayIndex].meals[mealType];
               

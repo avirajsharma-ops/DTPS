@@ -109,8 +109,8 @@ export default function AdminDashboard() {
     const fetchAdminData = async () => {
       try {
         const response = await fetch('/api/dashboard/admin-stats');
-        if (response.ok) {
-          const data = await response.json();
+        if (response?.ok) {
+          const data = await response?.json();
           setStats(data);
         } else {
           console.error('Failed to fetch admin dashboard data');
@@ -270,6 +270,69 @@ export default function AdminDashboard() {
           />
         </div>
 
+        {/* Client Management Section */}
+        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  <span>Client Management</span>
+                </CardTitle>
+                <CardDescription>
+                  Manage all clients and assign dietitians
+                </CardDescription>
+              </div>
+              <Button asChild>
+                <Link href="/admin/allclients">
+                  View All Clients
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-white rounded-lg border border-blue-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Total Clients</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.totalClients}</p>
+                  </div>
+                  <Users className="h-8 w-8 text-blue-600" />
+                </div>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-green-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Active Clients</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.activeClients}</p>
+                  </div>
+                  <UserCheck className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-yellow-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Need Assignment</p>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      <Link href="/admin/allclients?assigned=false" className="hover:underline">
+                        View
+                      </Link>
+                    </p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-yellow-600" />
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 p-4 bg-blue-100 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-900">
+                <strong>Quick Tip:</strong> Click "View All Clients" to assign dietitians to clients who don't have one yet. 
+                This ensures every client gets proper guidance and support.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Activity */}
           <Card>
@@ -427,8 +490,15 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
                 <Button variant="outline" className="h-20 flex flex-col space-y-2" asChild>
-                  <Link href="/admin/users">
+                  <Link href="/admin/allclients">
                     <Users className="h-6 w-6" />
+                    <span>All Clients</span>
+                  </Link>
+                </Button>
+                
+                <Button variant="outline" className="h-20 flex flex-col space-y-2" asChild>
+                  <Link href="/admin/users">
+                    <UserCheck className="h-6 w-6" />
                     <span>Manage Users</span>
                   </Link>
                 </Button>
@@ -444,13 +514,6 @@ export default function AdminDashboard() {
                   <Link href="/admin/support">
                     <MessageSquare className="h-6 w-6" />
                     <span>Support Tickets</span>
-                  </Link>
-                </Button>
-                
-                <Button variant="outline" className="h-20 flex flex-col space-y-2" asChild>
-                  <Link href="/admin/settings">
-                    <Activity className="h-6 w-6" />
-                    <span>System Settings</span>
                   </Link>
                 </Button>
               </div>

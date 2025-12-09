@@ -6,6 +6,7 @@ import Appointment from '@/lib/db/models/Appointment';
 import User from '@/lib/db/models/User';
 import zoomService from '@/lib/services/zoom';
 import { UserRole, AppointmentStatus } from '@/types';
+import { logHistoryServer } from '@/lib/server/history';
 
 // GET /api/appointments - Get appointments for current user
 export async function GET(request: NextRequest) {
@@ -27,7 +28,21 @@ export async function GET(request: NextRequest) {
     // Build query based on user role
     let query: any = {};
     if (session.user.role === UserRole.DIETITIAN) {
-      query.dietitian = session.user.id;
+      // Get all clients assigned to this dietitian
+      const assignedClients = await User.find({
+        role: UserRole.CLIENT,
+        $or: [
+          { assignedDietitian: session.user.id },
+          { assignedDietitians: session.user.id }
+        ]
+      }).select('_id');
+      const assignedClientIds = assignedClients.map(c => c._id);
+      
+      // Dietitian can see appointments they created OR for their assigned clients
+      query.$or = [
+        { dietitian: session.user.id },
+        { client: { $in: assignedClientIds } }
+      ];
     } else if (session.user.role === UserRole.CLIENT) {
       query.client = session.user.id;
     } else {
@@ -213,6 +228,24 @@ export async function POST(request: NextRequest) {
     // Populate the created appointment
     await appointment.populate('dietitian', 'firstName lastName email avatar');
     await appointment.populate('client', 'firstName lastName email avatar');
+
+    // Record history for the client
+    await logHistoryServer({
+      userId: clientId,
+      action: 'create',
+      category: 'appointment',
+      description: `Appointment scheduled with ${dietitian.firstName} ${dietitian.lastName} on ${new Date(scheduledAt).toLocaleString()}`,
+      performedById: session.user.id,
+      metadata: {
+        appointmentId: appointment._id,
+        dietitianId,
+        clientId,
+        scheduledAt,
+        duration: duration || 60,
+        type,
+        status: appointment.status,
+      },
+    });
 
     return NextResponse.json({ appointment }, { status: 201 });
 

@@ -1,0 +1,218 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/config';
+import connectDB from '@/lib/db/connection';
+import mongoose from 'mongoose';
+import { logHistoryServer } from '@/lib/server/history';
+
+// Topic types for notes
+const NOTE_TOPIC_TYPES = [
+  'General',
+  'Diet Plan',
+  'Medical',
+  'Progress',
+  'Consultation',
+  'Renewal',
+  'Follow-up',
+  'Feedback',
+  'Other'
+] as const;
+
+// Get the ClientNote model
+const getClientNoteModel = () => {
+  // Delete cached model to ensure schema updates are applied
+  if (mongoose.models.ClientNote) {
+    delete mongoose.models.ClientNote;
+  }
+  
+  const noteSchema = new mongoose.Schema({
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    topicType: {
+      type: String,
+      enum: NOTE_TOPIC_TYPES,
+      default: 'General'
+    },
+    date: {
+      type: Date,
+      default: Date.now
+    },
+    content: {
+      type: String,
+      required: true
+    },
+    showToClient: {
+      type: Boolean,
+      default: false
+    },
+    attachments: [{
+      type: {
+        type: String,
+        enum: ['image', 'video', 'audio'],
+        required: true
+      },
+      url: {
+        type: String,
+        required: true
+      },
+      filename: String,
+      mimeType: String,
+      size: Number
+    }]
+  }, {
+    timestamps: true
+  });
+
+  return mongoose.model('ClientNote', noteSchema);
+};
+
+// DELETE /api/users/[id]/notes/[noteId] - Delete a note
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; noteId: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Only admins and dietitians can delete notes
+    const allowedRoles = ['admin', 'dietitian'];
+    if (!allowedRoles.includes(session.user.role)) {
+      return NextResponse.json({ error: 'Access denied. Only admin and dietitian can delete notes.' }, { status: 403 });
+    }
+
+    const { id, noteId } = await params;
+    await connectDB();
+
+    const ClientNote = getClientNoteModel();
+    const clientObjectId = new mongoose.Types.ObjectId(id);
+    const noteObjectId = new mongoose.Types.ObjectId(noteId);
+
+    const result = await ClientNote.findOneAndDelete({
+      _id: noteObjectId,
+      client: clientObjectId
+    });
+
+    if (!result) {
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+    }
+
+    // Log history for note deletion
+    await logHistoryServer({
+      userId: id,
+      action: 'delete',
+      category: 'other',
+      description: `Note deleted: ${result.topicType || 'General'}`,
+      performedById: session.user.id,
+      metadata: {
+        noteId,
+        topicType: result.topicType
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Note deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Error deleting note:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete note' },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH /api/users/[id]/notes/[noteId] - Update a note (toggle visibility, etc.)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; noteId: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Only admins and dietitians can update notes
+    const allowedRoles = ['admin', 'dietitian'];
+    if (!allowedRoles.includes(session.user.role)) {
+      return NextResponse.json({ error: 'Access denied. Only admin and dietitian can update notes.' }, { status: 403 });
+    }
+
+    const { id, noteId } = await params;
+    const body = await request.json();
+
+    await connectDB();
+
+    const ClientNote = getClientNoteModel();
+    const clientObjectId = new mongoose.Types.ObjectId(id);
+    const noteObjectId = new mongoose.Types.ObjectId(noteId);
+
+    // Build update object with only provided fields
+    const updateFields: any = {};
+    if (body.topicType !== undefined) updateFields.topicType = body.topicType;
+    if (body.date !== undefined) updateFields.date = new Date(body.date);
+    if (body.content !== undefined) updateFields.content = body.content;
+    if (body.showToClient !== undefined) updateFields.showToClient = body.showToClient;
+    if (body.attachments !== undefined) updateFields.attachments = body.attachments;
+
+    const updatedNote = await ClientNote.findOneAndUpdate(
+      { _id: noteObjectId, client: clientObjectId },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedNote) {
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+    }
+
+    // Log history for note update (only visibility toggle is allowed now)
+    if (body.showToClient !== undefined) {
+      await logHistoryServer({
+        userId: id,
+        action: 'update',
+        category: 'other',
+        description: `Note visibility changed: ${updatedNote.topicType || 'General'} - ${body.showToClient ? 'visible to client' : 'hidden from client'}`,
+        performedById: session.user.id,
+        metadata: {
+          noteId,
+          topicType: updatedNote.topicType,
+          showToClient: body.showToClient
+        }
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      note: {
+        _id: updatedNote._id.toString(),
+        topicType: updatedNote.topicType || 'General',
+        date: updatedNote.date,
+        content: updatedNote.content,
+        showToClient: updatedNote.showToClient,
+        attachments: updatedNote.attachments || [],
+        createdAt: updatedNote.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating note:', error);
+    return NextResponse.json(
+      { error: 'Failed to update note' },
+      { status: 500 }
+    );
+  }
+}

@@ -68,72 +68,72 @@ export async function GET(
 }
 
 // PUT /api/users/[id] - Update specific user (admin only)
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+// export async function PUT(
+//   request: NextRequest,
+//   { params }: { params: Promise<{ id: string }> }
+// ) {
+//   try {
+//     const session = await getServerSession(authOptions);
+//     if (!session?.user) {
+//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+//     }
 
-    const { id } = await params;
-    // Only admins can update other users, or users can update themselves
-    if (session.user.role !== UserRole.ADMIN && session.user.id !== id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+//     const { id } = await params;
+//     // Only admins can update other users, or users can update themselves
+//     if (session.user.role !== UserRole.ADMIN && session.user.id !== id) {
+//       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+//     }
 
-    const body = await request.json();
-    await connectDB();
+//     const body = await request.json();
+//     await connectDB();
 
-    const user = await User.findById(id);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
+//     const user = await User.findById(id);
+//     if (!user) {
+//       return NextResponse.json(
+//         { error: 'User not found' },
+//         { status: 404 }
+//       );
+//     }
 
-    // Define allowed fields based on user permissions
-    let allowedFields = [
-      'firstName', 'lastName', 'phone', 'avatar', 'bio', 'status',
-      'dateOfBirth', 'gender', 'height', 'weight', 'activityLevel',
-      'healthGoals', 'medicalConditions', 'allergies', 'dietaryRestrictions',
-      'credentials', 'specializations', 'experience', 'consultationFee',
-      'availability', 'assignedDietitian'
-    ];
+//     // Define allowed fields based on user permissions
+//     let allowedFields = [
+//       'firstName', 'lastName', 'phone', 'avatar', 'bio', 'status',
+//       'dateOfBirth', 'gender', 'height', 'weight', 'activityLevel',
+//       'healthGoals', 'medicalConditions', 'allergies', 'dietaryRestrictions',
+//       'credentials', 'specializations', 'experience', 'consultationFee',
+//       'availability', 'assignedDietitian'
+//     ];
 
-    // Only admins can update roles
-    if (session.user.role === 'admin') {
-      allowedFields.push('role');
-    }
+//     // Only admins can update roles
+//     if (session.user.role === 'admin') {
+//       allowedFields.push('role');
+//     }
 
-    // Filter body to only include allowed fields
-    const updateData = Object.keys(body)
-      .filter(key => allowedFields.includes(key))
-      .reduce((obj: any, key) => {
-        obj[key] = body[key];
-        return obj;
-      }, {});
+//     // Filter body to only include allowed fields
+//     const updateData = Object.keys(body)
+//       .filter(key => allowedFields.includes(key))
+//       .reduce((obj: any, key) => {
+//         obj[key] = body[key];
+//         return obj;
+//       }, {});
 
-    Object.assign(user, updateData);
-    await user.save();
+//     Object.assign(user, updateData);
+//     await user.save();
 
-    // Return user without password
-    const updatedUser = user.toJSON();
-    delete updatedUser.password;
+//     // Return user without password
+//     const updatedUser = user.toJSON();
+//     delete updatedUser.password;
 
-    return NextResponse.json(updatedUser);
+//     return NextResponse.json(updatedUser);
 
-  } catch (error) {
-    console.error('Error updating user:', error);
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
-    );
-  }
-}
+//   } catch (error) {
+//     console.error('Error updating user:', error);
+//     return NextResponse.json(
+//       { error: 'Failed to update user' },
+//       { status: 500 }
+//     );
+//   }
+// }
 
 // DELETE /api/users/[id] - Deactivate user (admin only)
 export async function DELETE(
@@ -171,5 +171,213 @@ export async function DELETE(
       { error: 'Failed to deactivate user' },
       { status: 500 }
     );
+  }
+}
+
+// PUT /api/users/[id] - Update specific user
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    await connectDB();
+
+    // Fetch target user BEFORE permission check
+    const targetUser = await User.findById(id);
+    if (!targetUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Permission Logic:
+    const isAdmin = session.user.role === UserRole.ADMIN;
+    const isSelf = session.user.id === id;
+
+    // Dietitian can update ONLY their assigned clients (including from assignedDietitians array)
+    const isDietitianEditingClient =
+      session.user.role === UserRole.DIETITIAN &&
+      (targetUser.assignedDietitian?.toString() === session.user.id ||
+       targetUser.assignedDietitians?.some((d: any) => d.toString() === session.user.id));
+
+    if (!isAdmin && !isSelf && !isDietitianEditingClient) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Allowed fields to update (only User model fields)
+    let allowedFields = [
+      // Basic Info
+      "firstName",
+      "lastName",
+      "phone",
+      "email",
+      "avatar",
+      "bio",
+      "status",
+      "dateOfBirth",
+      "gender",
+      "parentAccount",
+      "alternativePhone",
+      "alternativeEmail",
+      "anniversary",
+      "source",
+      "referralSource",
+      "maritalStatus",
+      "occupation",
+      "targetWeightBucket",
+      "sharePhotoConsent",
+      "generalGoal",
+      "healthGoals",
+      // Lifestyle Data
+      "height",
+      "weight",
+      "heightFeet",
+      "heightInch",
+      "heightCm",
+      "weightKg",
+      "targetWeightKg",
+      "idealWeightKg",
+      "bmi",
+      "activityLevel",
+      "activityRate",
+      "foodPreference",
+      "preferredCuisine",
+      "allergiesFood",
+      "fastDays",
+      "nonVegExemptDays",
+      "foodLikes",
+      "foodDislikes",
+      "eatOutFrequency",
+      "smokingFrequency",
+      "alcoholFrequency",
+      "cookingOil",
+      "monthlyOilConsumption",
+      "cookingSalt",
+      "carbonatedBeverageFrequency",
+      "cravingType",
+      // Medical Data
+      "medicalConditions",
+      "allergies",
+      "dietaryRestrictions",
+      "notes",
+      "diseaseHistory",
+      "medicalHistory",
+      "familyHistory",
+      "medication",
+      "bloodGroup",
+      "gutIssues",
+      "reports",
+      "isPregnant",
+      // Professional fields (for dietitians)
+      "credentials",
+      "specializations",
+      "experience",
+      "consultationFee",
+      "availability",
+      "assignedDietitian"
+    ];
+
+    if (session.user.role === UserRole.ADMIN) {
+      allowedFields.push("role");
+    }
+
+    // FIX: Skip empty values (especially enums)
+    const updateData = Object.keys(body)
+      .filter((key) => allowedFields.includes(key))
+      .reduce((obj: any, key) => {
+        const value = body[key];
+        if (value === "" || value === null) return obj; // <------ FIX
+        // Special handling for generalGoal enum - only allow valid single values
+        if (key === 'generalGoal' && value) {
+          const validGoals = ['not-specified', 'weight-loss', 'weight-gain', 'disease-management'];
+          if (!validGoals.includes(value)) {
+            console.log(`Invalid generalGoal value: ${value}, skipping...`);
+            return obj; // Skip invalid values
+          }
+        }
+        obj[key] = value;
+        return obj;
+      }, {});
+
+    console.log('Update data for generalGoal:', updateData.generalGoal);
+
+    Object.assign(targetUser, updateData);
+    await targetUser.save();
+
+    const updatedUser = targetUser?.toJSON();
+    delete updatedUser.password;
+
+    return NextResponse.json(updatedUser);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    return NextResponse.json(
+      { error: "Failed to update user" },
+      { status: 500 }
+    );
+  }
+}
+
+
+// Post /api/users/[id] - Update the document for specific user
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    const { type, fileName, filePath } = body;
+
+    if (!type || !fileName || !filePath) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    await connectDB();
+    const user = await User.findById(id);
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // ----------------------
+    // PERMISSION CHECK
+    // ----------------------
+    const isAdmin = session.user.role === UserRole.ADMIN;
+    const isSelf = session.user.id === id;
+    const isDietitianAssigned =
+      session.user.role === UserRole.DIETITIAN &&
+      (user.assignedDietitian?.toString() === session.user.id ||
+       user.assignedDietitians?.some((d: { toString: () => string }) => d.toString() === session.user.id));
+
+    if (!isAdmin && !isSelf && !isDietitianAssigned) {
+      return NextResponse.json({ error: "Forbidden: You cannot upload documents for this user" }, { status: 403 });
+    }
+
+    // ----------------------
+    // ADD DOCUMENT
+    // ----------------------
+    user.documents.push({
+      type,
+      fileName,
+      filePath,
+      uploadedAt: new Date(),
+    });
+
+    await user.save();
+
+    return NextResponse.json({ message: "Document uploaded successfully", documents: user.documents });
+  } catch (error) {
+    console.error("Error uploading document:", error);
+    return NextResponse.json({ error: "Failed to upload document" }, { status: 500 });
   }
 }

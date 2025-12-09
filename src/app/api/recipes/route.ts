@@ -48,9 +48,8 @@ const recipeSchema = z.object({
   tags: z.array(z.string()).optional(),
   dietaryRestrictions: z.array(z.string()).optional(),
   medicalContraindications: z.array(z.string()).optional(),
-  category: z.string().min(1, 'Category is required'),
 
-  // Allow any string for image URL (WordPress URLs, data URLs, relative paths, etc.)
+  // Allow any string for image URL
   image: z.string().optional().or(z.literal(''))
 });
 
@@ -66,7 +65,6 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
-    const category = searchParams.get('category');
     const cuisine = searchParams.get('cuisine');
     const difficulty = searchParams.get('difficulty');
     const dietaryRestrictions = searchParams.get('dietaryRestrictions');
@@ -87,11 +85,6 @@ export async function GET(request: NextRequest) {
         { description: { $regex: search, $options: 'i' } },
         { 'ingredients.name': { $regex: search, $options: 'i' } }
       ];
-    }
-
-    // Filter by category
-    if (category && category !== 'all') {
-      query.category = category;
     }
 
     // Filter by cuisine
@@ -159,7 +152,6 @@ export async function GET(request: NextRequest) {
     const total = await Recipe.countDocuments(query);
 
     // Get unique values for filtering
-    const categories = await Recipe.distinct('category');
     const cuisines = await Recipe.distinct('cuisine');
     const tags = await Recipe.distinct('tags');
 
@@ -167,7 +159,6 @@ export async function GET(request: NextRequest) {
       success: true,
       recipes,
       total,
-      categories,
       cuisines,
       tags,
       page,
@@ -230,8 +221,7 @@ export async function POST(request: NextRequest) {
     // Transform data to match database schema
     const recipeData: any = {
       name: validatedData.name,
-      description: validatedData.description,
-      category: validatedData.category,
+      description: validatedData.description || '',
       ingredients: validatedData.ingredients,
       instructions: validatedData.instructions,
       prepTime: validatedData.prepTime,
@@ -259,15 +249,18 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Handle tags - support both tags and dietaryRestrictions
+    // Handle tags
     if (validatedData.tags) {
       recipeData.tags = validatedData.tags;
-    } else if (validatedData.dietaryRestrictions) {
-      recipeData.tags = validatedData.dietaryRestrictions;
-    } else if (validatedData.category) {
-      recipeData.tags = [validatedData.category];
     } else {
       recipeData.tags = [];
+    }
+
+    // Handle dietary restrictions
+    if (validatedData.dietaryRestrictions) {
+      recipeData.dietaryRestrictions = validatedData.dietaryRestrictions;
+    } else {
+      recipeData.dietaryRestrictions = [];
     }
 
     // Handle medical contraindications

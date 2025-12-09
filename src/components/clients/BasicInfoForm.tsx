@@ -1,3 +1,4 @@
+// Updated BasicInfoForm where generalGoal is NOT saved and NOT shown as selected
 "use client";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,49 +23,107 @@ export interface BasicInfoData {
   generalGoal: string; // Goal text or enum
   maritalStatus: string;
   occupation: string;
-  goalsList: string[]; // multi-select
+  goalsList: string[];
   targetWeightBucket: string;
   sharePhotoConsent: boolean;
+  // Physical measurements (moved from lifestyle)
+  heightFeet: string;
+  heightInch: string;
+  heightCm: string;
+  weightKg: string;
+  targetWeightKg: string;
+  idealWeightKg: string;
+  bmi: string;
+  activityLevel: string;
 }
 
 interface BasicInfoFormProps extends BasicInfoData {
-  onChange: (field: keyof BasicInfoData, value: string) => void;
+  onChange: (field: keyof BasicInfoData, value: any) => void;
   onSave: () => void;
   loading?: boolean;
 }
 
-export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, gender, parentAccount, altPhone, altEmails, anniversary, source, referralSource, generalGoal, maritalStatus, occupation, goalsList, targetWeightBucket, sharePhotoConsent, onChange, onSave, loading }: BasicInfoFormProps) {
+export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, gender, parentAccount, altPhone, altEmails, anniversary, source, referralSource, generalGoal, maritalStatus, occupation, goalsList, targetWeightBucket, sharePhotoConsent, heightFeet, heightInch, heightCm, weightKg, targetWeightKg, idealWeightKg, bmi, activityLevel, onChange, onSave, loading }: BasicInfoFormProps) {
+  const formattedDOB = dateOfBirth ? new Date(dateOfBirth).toISOString().split("T")[0] : "";
+
+  const formattedAN = anniversary ? new Date(anniversary).toISOString().split("T")[0] : "";
+
+  // Computed values for height and BMI
+  const feetNum = parseFloat(heightFeet || '0');
+  const inchNum = parseFloat(heightInch || '0');
+  const computedCm = feetNum > 0 || inchNum > 0 ? ((feetNum * 12 + inchNum) * 2.54).toFixed(2) : heightCm;
+  const hMeters = parseFloat(computedCm || '0') / 100;
+  const wKg = parseFloat(weightKg || '0');
+  const computedBmi = hMeters > 0 && wKg > 0 ? (wKg / (hMeters * hMeters)).toFixed(1) : bmi;
+  const computedIdeal = hMeters > 0 ? (parseFloat(computedCm) - 100).toFixed(1) : idealWeightKg;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Basic Information</CardTitle>
-        <CardDescription>Client's personal details</CardDescription>
+    <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
+        <CardTitle className="text-lg sm:text-xl font-bold text-white">Basic Information</CardTitle>
+        <CardDescription className="text-blue-100 text-sm">Client's personal details</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+      <CardContent className="space-y-6 pt-6 px-4 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
             <Label htmlFor="firstName">First Name *</Label>
             <Input id="firstName" value={firstName} onChange={e => onChange('firstName', e.target.value)} required />
           </div>
-          <div>
+          <div className="space-y-1.5">
             <Label htmlFor="lastName">Last Name *</Label>
             <Input id="lastName" value={lastName} onChange={e => onChange('lastName', e.target.value)} required />
           </div>
         </div>
-        <div>
+
+        <div className="space-y-1.5">
           <Label htmlFor="email">Email *</Label>
           <Input id="email" type="email" value={email} onChange={e => onChange('email', e.target.value)} required />
         </div>
-        <div>
+
+        <div className="space-y-1.5">
           <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" value={phone} onChange={e => onChange('phone', e.target.value)} placeholder="+1 (555) 123-4567" />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="dateOfBirth">Date of Birth</Label>
-            <Input id="dateOfBirth" type="date" value={dateOfBirth} onChange={e => onChange('dateOfBirth', e.target.value)} />
+          <div className="flex gap-2">
+            <Select 
+              value={phone?.startsWith('+91') ? '+91' : phone?.startsWith('+1') ? '+1' : phone?.startsWith('+44') ? '+44' : phone?.startsWith('+971') ? '+971' : '+91'}
+              onValueChange={(code) => {
+                const currentNumber = phone?.replace(/^\+\d+\s*/, '') || '';
+                onChange('phone', `${code} ${currentNumber}`);
+              }}
+            >
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Code" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="+91">🇮🇳 +91</SelectItem>
+                <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                <SelectItem value="+44">🇬🇧 +44</SelectItem>
+                <SelectItem value="+971">🇦🇪 +971</SelectItem>
+                <SelectItem value="+65">🇸🇬 +65</SelectItem>
+                <SelectItem value="+61">🇦🇺 +61</SelectItem>
+                <SelectItem value="+49">🇩🇪 +49</SelectItem>
+                <SelectItem value="+33">🇫🇷 +33</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input 
+              id="phone" 
+              className="flex-1"
+              value={phone?.replace(/^\+\d+\s*/, '') || ''} 
+              onChange={e => {
+                const code = phone?.match(/^\+\d+/)?.[0] || '+91';
+                onChange('phone', `${code} ${e.target.value}`);
+              }} 
+              placeholder="90000 00000" 
+            />
           </div>
-          <div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="dateOfBirth">Date of Birth</Label>
+            <Input id="dateOfBirth" type="date" value={formattedDOB} onChange={e => onChange('dateOfBirth', e.target.value)} />
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="gender">Gender</Label>
             <Select value={gender} onValueChange={val => onChange('gender', val)}>
               <SelectTrigger>
@@ -79,30 +138,75 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
             </Select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
             <Label htmlFor="parentAccount">Parent Account</Label>
             <Input id="parentAccount" value={parentAccount} onChange={e => onChange('parentAccount', e.target.value)} placeholder="Parent name or ID" />
           </div>
-          <div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="altPhone">Alternative Phone Number</Label>
-            <Input id="altPhone" value={altPhone} onChange={e => onChange('altPhone', e.target.value)} placeholder="+91 90000 00000" />
+            <div className="flex gap-2">
+              <Select 
+                value={altPhone?.startsWith('+91') ? '+91' : altPhone?.startsWith('+1') ? '+1' : altPhone?.startsWith('+44') ? '+44' : altPhone?.startsWith('+971') ? '+971' : '+91'}
+                onValueChange={(code) => {
+                  const currentNumber = altPhone?.replace(/^\+\d+\s*/, '') || '';
+                  onChange('altPhone', `${code} ${currentNumber}`);
+                }}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="Code" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="+91">🇮🇳 +91</SelectItem>
+                  <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                  <SelectItem value="+44">🇬🇧 +44</SelectItem>
+                  <SelectItem value="+971">🇦🇪 +971</SelectItem>
+                  <SelectItem value="+65">🇸🇬 +65</SelectItem>
+                  <SelectItem value="+61">🇦🇺 +61</SelectItem>
+                  <SelectItem value="+49">🇩🇪 +49</SelectItem>
+                  <SelectItem value="+33">🇫🇷 +33</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input 
+                id="altPhone" 
+                className="flex-1"
+                value={altPhone?.replace(/^\+\d+\s*/, '') || ''} 
+                onChange={e => {
+                  const code = altPhone?.match(/^\+\d+/)?.[0] || '+91';
+                  onChange('altPhone', `${code} ${e.target.value}`);
+                }} 
+                placeholder="90000 00000" 
+              />
+            </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
             <Label htmlFor="altEmails">Alternative Emails</Label>
             <Input id="altEmails" value={altEmails} onChange={e => onChange('altEmails', e.target.value)} placeholder="comma separated" />
           </div>
-          <div>
+          <div className="space-y-1.5">
             <Label htmlFor="anniversary">Anniversary</Label>
-            <Input id="anniversary" type="date" value={anniversary} onChange={e => onChange('anniversary', e.target.value)} />
+            <Input id="anniversary" type="date" value={formattedAN} onChange={e => onChange('anniversary', e.target.value)} />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
             <Label htmlFor="source">Source</Label>
-            <Select value={source} onValueChange={val => onChange('source', val)}>
+            <Select 
+              value={['google-ads', 'facebook-ads', 'instagram', 'referral', 'other'].includes(source) ? source : 'other'} 
+              onValueChange={val => {
+                if (val === 'other') {
+                  onChange('source', '');
+                } else {
+                  onChange('source', val);
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select source" />
               </SelectTrigger>
@@ -114,88 +218,216 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+            {/* Show text input when "Other" is selected or when source has a custom value */}
+            {(!['google-ads', 'facebook-ads', 'instagram', 'referral'].includes(source) && source !== undefined) && (
+              <Input 
+                id="otherSource" 
+                value={source === 'other' ? '' : source}
+                onChange={e => onChange('source', e.target.value)}
+                placeholder="Please specify the source..."
+                className="mt-2"
+              />
+            )}
           </div>
-          <div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="referralSource">Change Referral / Referral Source</Label>
             <Input id="referralSource" value={referralSource} onChange={e => onChange('referralSource', e.target.value)} placeholder="Referral name/code" />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="generalGoal">Goal</Label>
-            <Select value={generalGoal} onValueChange={val => onChange('generalGoal', val)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Not Specified" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="not-specified">Not Specified</SelectItem>
-                <SelectItem value="weight-loss">Weight Loss</SelectItem>
-                <SelectItem value="weight-gain">Weight Gain</SelectItem>
-                <SelectItem value="disease-management">Disease Management</SelectItem>
-              </SelectContent>
-            </Select>
+
+        {/* GENERAL GOAL — NOT SAVED + NEVER SHOW SELECTED VALUE */}
+        <div className="space-y-6 border-t border-gray-200 pt-6">
+          <h4 className="font-semibold text-gray-900 text-base">Goals & Personal Info</h4>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="space-y-2.5">
+              <Label htmlFor="generalGoal" className="text-sm font-medium">Goal</Label>
+              <Select value={generalGoal} onValueChange={val => onChange('generalGoal', val)}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Not Specified" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not-specified">Not Specified</SelectItem>
+                  <SelectItem value="weight-loss">Weight Loss</SelectItem>
+                  <SelectItem value="weight-gain">Weight Gain</SelectItem>
+                  <SelectItem value="disease-management">Disease Management</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2.5">
+              <Label htmlFor="maritalStatus" className="text-sm font-medium">Marital Status *</Label>
+              <Select value={maritalStatus} onValueChange={val => onChange('maritalStatus', val)}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="single">Single</SelectItem>
+                  <SelectItem value="married">Married</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div>
-            <Label htmlFor="maritalStatus">Marital Status *</Label>
-            <Select value={maritalStatus} onValueChange={val => onChange('maritalStatus', val)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">Single</SelectItem>
-                <SelectItem value="married">Married</SelectItem>
-              </SelectContent>
-            </Select>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="space-y-2.5">
+              <Label htmlFor="occupation" className="text-sm font-medium">Occupation *</Label>
+              <Input id="occupation" value={occupation} onChange={e => onChange('occupation', e.target.value)} placeholder="Occupation" className="h-10" />
+            </div>
+
+            <div className="space-y-2.5">
+              <Label htmlFor="targetWeightBucket" className="text-sm font-medium">What is Your Target Weight?</Label>
+              <Select value={targetWeightBucket} onValueChange={val => onChange('targetWeightBucket', val)}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select range" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72 overflow-auto">
+                  <SelectItem value="below-5">Below 5 Kgs</SelectItem>
+                  <SelectItem value="5-10">5 to 10 Kgs</SelectItem>
+                  <SelectItem value="10-15">10 to 15 Kgs</SelectItem>
+                  <SelectItem value="15-20">15 to 20 Kgs</SelectItem>
+                  <SelectItem value="20-25">20 to 25 Kgs</SelectItem>
+                  <SelectItem value="25-30">25 to 30 Kgs</SelectItem>
+                  <SelectItem value="more-30">More than 30 Kgs</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+
+        {/* Physical Measurements Section */}
+        <div className="space-y-6 border-t border-gray-200 pt-6">
+          <h4 className="font-semibold text-gray-900 text-base">Physical Measurements</h4>
+          
+          {/* Height */}
           <div>
-            <Label htmlFor="occupation">Occupation *</Label>
-            <Input id="occupation" value={occupation} onChange={e => onChange('occupation', e.target.value)} placeholder="Occupation" />
+            <Label className="text-sm font-medium mb-3 block">Height Measurements</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2.5">
+                <Label className="text-xs text-gray-600">Height (Ft)*</Label>
+                <Input
+                  type="number"
+                  value={heightFeet}
+                  onChange={e => onChange("heightFeet", e.target.value)}
+                  placeholder="5"
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <Label className="text-xs text-gray-600">Height (Inch)</Label>
+                <Input
+                  type="number"
+                  value={heightInch}
+                  onChange={e => onChange("heightInch", e.target.value)}
+                  placeholder="6"
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <Label className="text-xs text-gray-600">Height (Cm)</Label>
+                <Input
+                  type="number"
+                  value={computedCm}
+                  onChange={e => onChange("heightCm", e.target.value)}
+                  className="h-10 bg-gray-50"
+                />
+              </div>
+            </div>
           </div>
+
+          {/* Weight */}
           <div>
-            <Label htmlFor="targetWeightBucket">What is Your Target Weight?</Label>
-            <Select value={targetWeightBucket} onValueChange={val => onChange('targetWeightBucket', val)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select range" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72 overflow-auto">
-                <SelectItem value="below-5">Below 5 Kgs</SelectItem>
-                <SelectItem value="5-10">5 to 10 Kgs</SelectItem>
-                <SelectItem value="10-15">10 to 15 Kgs</SelectItem>
-                <SelectItem value="15-20">15 to 20 Kgs</SelectItem>
-                <SelectItem value="20-25">20 to 25 Kgs</SelectItem>
-                <SelectItem value="25-30">25 to 30 Kgs</SelectItem>
-                <SelectItem value="more-30">More than 30 Kgs</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="text-sm font-medium mb-3 block">Weight Measurements</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2.5">
+                <Label className="text-xs text-gray-600">Weight (Kg)*</Label>
+                <Input
+                  type="number"
+                  value={weightKg}
+                  onChange={e => onChange("weightKg", e.target.value)}
+                  placeholder="70"
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <Label className="text-xs text-gray-600">Target Weight (Kg)</Label>
+                <Input
+                  type="number"
+                  value={targetWeightKg}
+                  onChange={e => onChange("targetWeightKg", e.target.value)}
+                  placeholder="65"
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <Label className="text-xs text-gray-600">BMI</Label>
+                <Input readOnly value={computedBmi} className="h-10 bg-blue-50" />
+              </div>
+            </div>
+          </div>
+
+          {/* Ideal Weight & Activity Level */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2.5">
+              <Label className="text-sm font-medium">Ideal Weight (Kg)</Label>
+              <Input readOnly value={computedIdeal} className="h-10 bg-blue-50" />
+            </div>
+            <div className="space-y-2.5">
+              <Label className="text-sm font-medium">Activity Level</Label>
+              <Select value={activityLevel} onValueChange={val => onChange('activityLevel', val)}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select activity level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sedentary">Sedentary</SelectItem>
+                  <SelectItem value="lightly_active">Lightly Active</SelectItem>
+                  <SelectItem value="moderately_active">Moderately Active</SelectItem>
+                  <SelectItem value="very_active">Very Active</SelectItem>
+                  <SelectItem value="extremely_active">Extremely Active</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
-        <div>
-          <Label>What Are Your Goals?</Label>
-          <div className="flex flex-wrap gap-2">
+
+        <div className="space-y-4 pt-2">
+          <Label className="text-sm font-medium">What Are Your Goals?</Label>
+          <div className="flex flex-wrap gap-2.5 mt-2">
             {['Weight Loss','Weight Gain','Weight Loss + Disease Management','Only Disease Management','Other'].map(item => {
               const value = item.toLowerCase().replace(/\s+/g,'-');
               const selected = goalsList.includes(value);
               return (
-                <Button key={value} type="button" variant={selected ? 'default':'outline'} size="sm" onClick={() => {
-                  const next = selected ? goalsList.filter(g => g !== value) : [...goalsList, value];
-                  onChange('goalsList', next.join(','));
-                }}>{item}</Button>
+                <Button 
+                  key={value} 
+                  type="button" 
+                  variant={selected ? 'default':'outline'} 
+                  size="sm" 
+                  onClick={() => {
+                    const next = selected ? goalsList.filter(g => g !== value) : [...goalsList, value];
+                    onChange('goalsList', next);
+                  }}
+                  className="text-xs"
+                >
+                  {item}
+                </Button>
               );
             })}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <input type="checkbox" id="sharePhotoConsent" checked={sharePhotoConsent} onChange={e => onChange('sharePhotoConsent', e.target.checked ? 'true':'false')} className="h-4 w-4" />
-          <Label htmlFor="sharePhotoConsent">Ready to share front/side photos (for analysis)?</Label>
+
+        <div className="flex items-center gap-3 pt-4 pb-2 bg-blue-50 px-4 py-3 rounded-lg">
+          <input type="checkbox" id="sharePhotoConsent" checked={sharePhotoConsent} onChange={e => onChange('sharePhotoConsent', e.target.checked)} className="h-4 w-4 rounded" />
+          <Label htmlFor="sharePhotoConsent" className="text-sm">Ready to share front/side photos (for analysis)?</Label>
         </div>
-        <div className="flex justify-end mt-4">
-           <Button type="button" onClick={onSave} disabled={loading}>
-             <Save className="mr-2 h-4 w-4" />
-             Save Basic Info
-           </Button>
-         </div>
+
+        <div className="flex justify-end pt-6 border-t border-gray-200 mt-6">
+          <Button type="button" onClick={onSave} disabled={loading} 
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md hover:shadow-lg transition-all">
+               <Save className="mr-2 h-4 w-4" />
+            Save Basic Info
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

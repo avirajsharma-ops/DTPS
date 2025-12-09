@@ -1,0 +1,209 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/config';
+import connectDB from '@/lib/db/connection';
+import mongoose from 'mongoose';
+import { logHistoryServer } from '@/lib/server/history';
+
+// Topic types for notes
+export const NOTE_TOPIC_TYPES = [
+  'General',
+  'Diet Plan',
+  'Medical',
+  'Progress',
+  'Consultation',
+  'Renewal',
+  'Follow-up',
+  'Feedback',
+  'Other'
+] as const;
+
+// Delete cached model to ensure schema updates are applied
+if (mongoose.models.ClientNote) {
+  delete mongoose.models.ClientNote;
+}
+
+// Notes Schema (embedded in a separate collection for better management)
+const noteSchema = new mongoose.Schema({
+  client: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  topicType: {
+    type: String,
+    enum: NOTE_TOPIC_TYPES,
+    default: 'General'
+  },
+  date: {
+    type: Date,
+    default: Date.now
+  },
+  content: {
+    type: String,
+    required: true
+  },
+  showToClient: {
+    type: Boolean,
+    default: false
+  },
+  // Media attachments
+  attachments: [{
+    type: {
+      type: String,
+      enum: ['image', 'video', 'audio'],
+      required: true
+    },
+    url: {
+      type: String,
+      required: true
+    },
+    filename: String,
+    mimeType: String,
+    size: Number
+  }]
+}, {
+  timestamps: true
+});
+
+const ClientNote = mongoose.model('ClientNote', noteSchema);
+
+// GET /api/users/[id]/notes - Get all notes for a client
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    await connectDB();
+
+    const clientObjectId = new mongoose.Types.ObjectId(id);
+
+    // If user is a client, only show notes marked as showToClient
+    const isClient = session.user.role === 'client';
+    const query: any = { client: clientObjectId };
+    
+    if (isClient) {
+      query.showToClient = true;
+    }
+
+    const notes = await ClientNote.find(query)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return NextResponse.json({
+      success: true,
+      notes: notes.map((note: any) => ({
+        _id: note._id.toString(),
+        topicType: note.topicType || 'General',
+        date: note.date,
+        content: note.content,
+        showToClient: note.showToClient,
+        attachments: note.attachments || [],
+        createdAt: note.createdAt
+      })),
+      topicTypes: NOTE_TOPIC_TYPES
+    });
+
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch notes' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/users/[id]/notes - Create a new note
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Only admins and dietitians can create notes
+    const allowedRoles = ['admin', 'dietitian'];
+    if (!allowedRoles.includes(session.user.role)) {
+      return NextResponse.json({ error: 'Access denied. Only admin and dietitian can create notes.' }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    const { topicType, date, content, showToClient, attachments } = body;
+
+    if (!content) {
+      return NextResponse.json(
+        { error: 'Content is required' },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    const clientObjectId = new mongoose.Types.ObjectId(id);
+    const createdByObjectId = new mongoose.Types.ObjectId(session.user.id);
+
+    const newNote = new ClientNote({
+      client: clientObjectId,
+      createdBy: createdByObjectId,
+      topicType: topicType || 'General',
+      date: date ? new Date(date) : new Date(),
+      content,
+      showToClient: showToClient || false,
+      attachments: attachments || []
+    });
+
+    await newNote.save();
+
+    // Log history for note creation
+    await logHistoryServer({
+      userId: id,
+      action: 'create',
+      category: 'other',
+      description: `Note created: ${topicType || 'General'}`,
+      performedById: session.user.id,
+      metadata: {
+        noteId: newNote._id,
+        topicType: topicType || 'General',
+        hasAttachments: (attachments || []).length > 0,
+        attachmentCount: (attachments || []).length
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      note: {
+        _id: newNote._id.toString(),
+        topicType: newNote.topicType,
+        date: newNote.date,
+        content: newNote.content,
+        showToClient: newNote.showToClient,
+        attachments: newNote.attachments || [],
+        createdAt: newNote.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Error creating note:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create note';
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    );
+  }
+}

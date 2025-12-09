@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
   title: "DTPS Nutrition - Your Personal Wellness Journey",
   description: "Connect with certified dietitians and nutritionists for personalized meal plans, health tracking, and wellness guidance. Available as a Progressive Web App.",
   manifest: "/manifest.json",

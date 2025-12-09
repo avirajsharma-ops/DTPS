@@ -1,0 +1,287 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Droplets, Plus, Trash2, Loader2 } from 'lucide-react';
+import TrackingStatsGrid from './TrackingStatsGrid';
+// import TimeBasedBarChart from './TimeBasedBarChart';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+
+interface WaterEntry {
+  _id: string;
+  amount: number;
+  unit: string;
+  time: string;
+}
+
+interface WaterSectionProps {
+  clientId: string;
+  selectedDate: Date;
+}
+
+export default function WaterSection({ clientId, selectedDate }: WaterSectionProps) {
+  const [entries, setEntries] = useState<WaterEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [summary, setSummary] = useState({ totalMl: 0, totalLiters: '0', target: 2500, percentage: 0 });
+  
+  const [newEntry, setNewEntry] = useState({
+    amount: 0,
+    unit: 'Glass (250ml)'
+  });
+
+  const unitToMl: Record<string, number> = {
+    'Glass (250ml)': 250,
+    'Bottle (500ml)': 500,
+    'Bottle (1L)': 1000,
+    'Cup (200ml)': 200,
+    'glasses': 250
+  };
+
+  // Fetch water entries for the selected date
+  const fetchWater = useCallback(async () => {
+    try {
+      setLoading(true);
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const res = await fetch(`/api/journal/water?date=${dateStr}&clientId=${clientId}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setEntries(data.entries || []);
+        setSummary(data.summary || { totalMl: 0, totalLiters: '0', target: 2500, percentage: 0 });
+      }
+    } catch (error) {
+      console.error('Error fetching water:', error);
+      toast.error('Failed to load water intake');
+    } finally {
+      setLoading(false);
+    }
+  }, [clientId, selectedDate]);
+
+  useEffect(() => {
+    fetchWater();
+  }, [fetchWater]);
+
+  const handleAddEntry = async () => {
+    if (!newEntry.amount) {
+      toast.error('Please enter an amount');
+      return;
+    }
+    
+    try {
+      setSaving(true);
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const res = await fetch('/api/journal/water', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newEntry,
+          date: dateStr,
+          clientId
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setEntries(data.entries || []);
+        setSummary(data.summary || summary);
+        setNewEntry({ amount: 0, unit: 'Glass (250ml)' });
+        toast.success('Water intake added successfully');
+      } else {
+        toast.error(data.error || 'Failed to add water intake');
+      }
+    } catch (error) {
+      console.error('Error adding water:', error);
+      toast.error('Failed to add water intake');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const res = await fetch(`/api/journal/water?entryId=${id}&date=${dateStr}&clientId=${clientId}`, {
+        method: 'DELETE'
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setEntries(data.entries || []);
+        setSummary(data.summary || summary);
+        toast.success('Entry deleted');
+      } else {
+        toast.error(data.error || 'Failed to delete entry');
+      }
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      toast.error('Failed to delete entry');
+    }
+  };
+
+  const totalMl = summary.totalMl;
+  const totalLiters = summary.totalLiters;
+
+  // Mock chart data
+  const chartData = [
+    { time: '6 am', values: [100, 80, 60] },
+    { time: '8 am', values: [150, 120, 80] },
+    { time: '10 am', values: [180, 140, 100] },
+    { time: '12 pm', values: [200, 160, 120] },
+    { time: '2 pm', values: [170, 140, 100] },
+    { time: '4 pm', values: [190, 150, 110] },
+    { time: '6 pm', values: [160, 130, 90] },
+    { time: '8 pm', values: [140, 110, 80] },
+    { time: '10 pm', values: [100, 80, 60] },
+  ];
+
+  const trackingStats = [
+    { title: 'Daily Intake', value: `${totalLiters} L`, percentage: summary.percentage, color: '#22c55e' },
+    { title: 'Average Intake', value: '2500 ml', percentage: 85, color: '#3b82f6' },
+    { title: 'Total Intake', value: '17000 ml', percentage: 68, color: '#f97316' },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 w-full">
+      {/* Add Water Intake Form */}
+      <Card className="w-full">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Droplets className="h-4 w-4 text-blue-500" />
+            Add Water Intake
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm text-gray-600">Amount</Label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={newEntry.amount || ''}
+                onChange={(e) => setNewEntry({ ...newEntry, amount: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div>
+              <Label className="text-sm text-gray-600">Unit</Label>
+              <Select
+                value={newEntry.unit}
+                onValueChange={(value) => setNewEntry({ ...newEntry, unit: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Glass (250ml)">Glass (250ml)</SelectItem>
+                  <SelectItem value="Bottle (500ml)">Bottle (500ml)</SelectItem>
+                  <SelectItem value="Bottle (1L)">Bottle (1L)</SelectItem>
+                  <SelectItem value="Cup (200ml)">Cup (200ml)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <Button onClick={handleAddEntry} disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700">
+            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+            {saving ? 'Adding...' : 'Add Entry'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Today's Water Intake */}
+      <Card className="w-full">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <CardTitle className="text-base">Today's Water Intake</CardTitle>
+            <div className="flex gap-2">
+              <Badge variant="outline" className="text-blue-600">
+                {totalLiters} L
+              </Badge>
+              <Badge variant="outline" className="text-cyan-600">
+                {totalMl} ml
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {entries.length === 0 ? (
+            <p className="text-center text-gray-500 py-4">No water intake recorded today</p>
+          ) : (
+            <div className="space-y-3">
+              {entries.map((entry) => (
+                <div 
+                  key={entry._id} 
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
+                >
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {entry.amount} {entry.unit === 'glasses' ? 'glasses' : entry.unit} 
+                      ({entry.amount * (unitToMl[entry.unit] || 250)} ml)
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-400">{entry.time}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDeleteEntry(entry._id)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Water Intake Tracking Stats */}
+      <Card className="w-full">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <CardTitle className="text-base">Water Intake Tracking</CardTitle>
+            {/* <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-1" />
+              Add Entry
+            </Button> */}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <TrackingStatsGrid stats={trackingStats} />
+        </CardContent>
+      </Card>
+
+      {/* Glass Intake Chart */}
+      {/* <TimeBasedBarChart
+        title="Glass Intake"
+        yAxisLabel="200 ml"
+        data={chartData}
+        colors={['#3b82f6', '#8b5cf6', '#ef4444']}
+        legends={[
+          { label: 'Glass 1', color: '#3b82f6' },
+          { label: 'Glass 2', color: '#8b5cf6' },
+          { label: 'Glass 3', color: '#ef4444' },
+        ]}
+        maxValue={250}
+      /> */}
+    </div>
+  );
+}

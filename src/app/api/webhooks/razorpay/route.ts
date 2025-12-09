@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import connectDB from '@/lib/db/connection';
 import ClientSubscription from '@/lib/db/models/ClientSubscription';
+import PaymentLink from '@/lib/db/models/PaymentLink';
+import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 
 // Verify Razorpay webhook signature
 function verifyRazorpaySignature(
@@ -165,10 +167,72 @@ async function handlePaymentFailed(payload: any) {
 // Handle payment link completed
 async function handlePaymentLinkCompleted(payload: any) {
   try {
-    const paymentLink = payload.payment_link;
-    const notes = paymentLink.notes || {};
+    const paymentLinkData = payload.payment_link;
+    const notes = paymentLinkData.notes || {};
     const subscriptionId = notes.subscriptionId;
+    const clientId = notes.clientId;
+    const dietitianId = notes.dietitianId;
 
+    // First, check if this is from our PaymentLink model
+    const paymentLink = await PaymentLink.findOne({
+      razorpayPaymentLinkId: paymentLinkData.id
+    });
+
+    if (paymentLink) {
+      // Update PaymentLink status
+      paymentLink.status = 'paid';
+      paymentLink.paidAt = new Date();
+      
+      // Extract payment details if available
+      if (payload.payment) {
+        paymentLink.razorpayPaymentId = payload.payment.entity?.id;
+        paymentLink.paymentMethod = payload.payment.entity?.method;
+        paymentLink.payerEmail = payload.payment.entity?.email;
+        paymentLink.payerPhone = payload.payment.entity?.contact;
+      }
+
+      await paymentLink.save();
+      console.log(`Payment link ${paymentLink._id} marked as paid`);
+
+      // Create ClientPurchase record if servicePlanId exists
+      if (paymentLink.servicePlanId && paymentLink.durationDays) {
+        try {
+          const startDate = new Date();
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + paymentLink.durationDays);
+
+          const clientPurchase = new ClientPurchase({
+            client: paymentLink.client,
+            dietitian: paymentLink.dietitian,
+            servicePlan: paymentLink.servicePlanId,
+            paymentLink: paymentLink._id,
+            planName: paymentLink.planName || 'Service Plan',
+            planCategory: paymentLink.planCategory || 'general-wellness',
+            durationDays: paymentLink.durationDays,
+            durationLabel: paymentLink.duration || `${paymentLink.durationDays} Days`,
+            baseAmount: paymentLink.amount,
+            discountPercent: paymentLink.discount || 0,
+            taxPercent: paymentLink.tax || 0,
+            finalAmount: paymentLink.finalAmount,
+            purchaseDate: new Date(),
+            startDate: startDate,
+            endDate: endDate,
+            status: 'active',
+            mealPlanCreated: false,
+            daysUsed: 0
+          });
+
+          await clientPurchase.save();
+          console.log(`Created ClientPurchase ${clientPurchase._id} for client ${paymentLink.client}`);
+        } catch (purchaseError) {
+          console.error('Error creating ClientPurchase:', purchaseError);
+        }
+      }
+
+      return;
+    }
+
+    // Legacy handling for ClientSubscription
     if (!subscriptionId) {
       console.log('No subscription ID in payment link');
       return;

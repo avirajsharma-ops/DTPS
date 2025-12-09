@@ -7,44 +7,45 @@ export default withAuth(
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
 
-    // Define role-based route access
-    const roleRoutes = {
-      [UserRole.ADMIN]: ['/dashboard/admin'],
-      [UserRole.DIETITIAN]: ['/dashboard/dietitian'],
-      [UserRole.HEALTH_COUNSELOR]: ['/dashboard/dietitian'], // Health counselors use same dashboard as dietitians
-      [UserRole.CLIENT]: ['/dashboard/client'],
-    };
+    // Normalize role to lowercase for comparison
+    const userRole = token?.role?.toLowerCase();
 
     // Check if user is trying to access a role-specific route
-    for (const [role, routes] of Object.entries(roleRoutes)) {
-      for (const route of routes) {
-        if (pathname.startsWith(route)) {
-          // Special handling for dietitian dashboard - allow both dietitians and health counselors
-          if (route === '/dashboard/dietitian') {
-            if (token?.role !== UserRole.DIETITIAN &&
-                token?.role !== UserRole.HEALTH_COUNSELOR &&
-                token?.role !== UserRole.ADMIN) {
-              // Redirect to appropriate dashboard based on user role
-              const redirectPath = token?.role === UserRole.CLIENT
-                ? '/dashboard/client'
-                : '/dashboard/admin';
-
-              return NextResponse.redirect(new URL(redirectPath, req.url));
-            }
-          } else {
-            // For other routes, check exact role match
-            if (token?.role !== role && token?.role !== UserRole.ADMIN) {
-              // Redirect to appropriate dashboard based on user role
-              const redirectPath = token?.role === UserRole.DIETITIAN || token?.role === UserRole.HEALTH_COUNSELOR
-                ? '/dashboard/dietitian'
-                : token?.role === UserRole.CLIENT
-                ? '/dashboard/client'
-                : '/dashboard/admin';
-
-              return NextResponse.redirect(new URL(redirectPath, req.url));
-            }
-          }
-        }
+    // Admin routes - allow anyone with admin in their role
+    if (pathname.startsWith('/admin') || pathname.startsWith('/dashboard/admin')) {
+      if (!userRole || !userRole.includes('admin')) {
+        console.log('Admin access denied. Role:', token?.role);
+        // Redirect non-admins to their appropriate dashboard
+        const redirectPath = userRole === 'dietitian' || userRole === 'health_counselor'
+          ? '/dashboard/dietitian'
+          : userRole === 'client'
+          ? '/dashboard/client'
+          : '/auth/signin';
+        return NextResponse.redirect(new URL(redirectPath, req.url));
+      }
+    }
+    
+    // Dietitian/Health Counselor routes
+    if (pathname.startsWith('/dietician') || pathname.startsWith('/dashboard/dietitian')) {
+      if (userRole !== 'dietitian' && 
+          userRole !== 'health_counselor' && 
+          !userRole?.includes('admin')) {
+        // Redirect to appropriate dashboard
+        const redirectPath = userRole === 'client'
+          ? '/dashboard/client'
+          : '/dashboard/admin';
+        return NextResponse.redirect(new URL(redirectPath, req.url));
+      }
+    }
+    
+    // Client routes
+    if (pathname.startsWith('/dashboard/client') || pathname.startsWith('/client-dashboard')) {
+      if (userRole !== 'client' && !userRole?.includes('admin')) {
+        // Redirect to appropriate dashboard
+        const redirectPath = userRole === 'dietitian' || userRole === 'health_counselor'
+          ? '/dashboard/dietitian'
+          : '/dashboard/admin';
+        return NextResponse.redirect(new URL(redirectPath, req.url));
       }
     }
 

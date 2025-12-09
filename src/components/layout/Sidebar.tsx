@@ -22,7 +22,8 @@ import {
   Clock,
   Utensils,
   CreditCard,
-  DollarSign
+  DollarSign,
+  Package
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -64,12 +65,12 @@ export default function Sidebar({ className }: SidebarProps) {
             icon: Clock,
             description: 'Book at any time with any dietitian'
           },
-          {
-            href: '/meal-plans',
-            label: 'Diet Plans',
-            icon: Utensils,
-            description: 'Create and manage Diet plans'
-          },
+          // {
+          //   href: '/meal-plans',
+          //   label: 'Diet Plans',
+          //   icon: Utensils,
+          //   description: 'Create and manage Diet plans'
+          // },
           {
             href: '/meal-plan-templates',
             label: 'Diet Plan Templates',
@@ -173,8 +174,8 @@ export default function Sidebar({ className }: SidebarProps) {
             description: 'Manage all users'
           },
           {
-            href: '/admin/clients',
-            label: 'Manage Clients',
+            href: '/admin/allclients',
+            label: 'All Clients',
             icon: Users,
             description: 'Assign dietitians to clients'
           },
@@ -183,6 +184,12 @@ export default function Sidebar({ className }: SidebarProps) {
             label: 'Subscription Plans',
             icon: CreditCard,
             description: 'Manage subscription plans'
+          },
+          {
+            href: '/admin/service-plans',
+            label: 'Service Plans',
+            icon: Package,
+            description: 'Manage service plans with pricing'
           },
           {
             href: '/admin/appointments',
@@ -232,19 +239,32 @@ export default function Sidebar({ className }: SidebarProps) {
   }
 
   const navigationItems = getNavigationItems(session.user.role);
+  
+  // Filter out Dashboard from sidebar nav items (it's shown in header)
+  const filteredNavItems = navigationItems.filter(item => item.label !== 'Dashboard');
+
+  const dashboardHref = session?.user?.role === UserRole.ADMIN 
+    ? '/dashboard/admin' 
+    : session?.user?.role === UserRole.CLIENT 
+      ? '/client-dashboard' 
+      : '/dashboard/dietitian';
 
   return (
     <div className={cn(
-      "flex flex-col h-full bg-white border-r border-gray-200 transition-all duration-300",
-      isCollapsed ? "w-[5.5rem]" : "w-[15.9rem]",      className
+      "flex flex-col bg-white border-r border-gray-200 transition-all duration-300 h-screen",
+      isCollapsed ? "w-[5.5rem]" : "w-[15.9rem]",
+      className
     )}>
-      {/* Header */}
+      {/* Header - Always shows Dashboard button */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         {!isCollapsed && (
-          <div className="flex items-center space-x-2">
-            <Heart className="h-6 w-6 text-green-600" />
-            <span className="text-lg font-semibold text-gray-900">DTPS</span>
-          </div>
+          <Link
+            href={dashboardHref}
+            className="flex items-center space-x-2 px-3 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200"
+          >
+            <BarChart3 className="h-5 w-5 text-green-600" />
+            <span className="text-sm font-medium">Dashboard</span>
+          </Link>
         )}
         <Button
           variant="ghost"
@@ -262,7 +282,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col gap-2">
-        {navigationItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
 

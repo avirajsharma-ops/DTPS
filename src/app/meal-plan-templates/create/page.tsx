@@ -181,7 +181,6 @@ export default function CreateMealPlanTemplatePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<any>({});
   const [selectedDay, setSelectedDay] = useState(1);
-  const [draftRestored, setDraftRestored] = useState(false);
 
   // Form state
   const [template, setTemplate] = useState<MealPlanTemplate>({
@@ -230,34 +229,6 @@ export default function CreateMealPlanTemplatePage() {
   useEffect(() => {
     fetchRecipes();
   }, [searchQuery, selectedFilters]);
-
-  // Load local draft on first mount
-  useEffect(() => {
-    try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('dietTemplateDraft') : null;
-      if (raw) {
-        const draft = JSON.parse(raw);
-        if (draft?.template) setTemplate(draft.template);
-        if (draft?.currentStep) setCurrentStep(draft.currentStep);
-        if (draft?.selectedDay) setSelectedDay(draft.selectedDay);
-        setDraftRestored(true);
-      }
-    } catch (e) {
-      console.warn('Failed to load diet template draft', e);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Auto-save draft to local storage
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('dietTemplateDraft', JSON.stringify({ template, currentStep, selectedDay }));
-      }
-    } catch (e) {
-      console.warn('Failed to save diet template draft', e);
-    }
-  }, [template, currentStep, selectedDay]);
 
   const fetchRecipes = async () => {
     try {
@@ -369,8 +340,6 @@ export default function CreateMealPlanTemplatePage() {
       });
       if (res.ok) {
         setSuccess('Template saved');
-        // go back to list
-  if (typeof window !== 'undefined') localStorage.removeItem('dietTemplateDraft');
         router.push('/meal-plan-templates?success=created');
       } else {
         const data = await res.json();
@@ -408,15 +377,10 @@ export default function CreateMealPlanTemplatePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {draftRestored && (
-              <span className="text-xs text-gray-500">Draft restored</span>
-            )}
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                if (typeof window !== 'undefined') localStorage.removeItem('dietTemplateDraft');
-                // reset minimal defaults
                 setTemplate({
                   name: '', description: '', category: '', duration: 7,
                   targetCalories: { min: 1200, max: 2500 },
@@ -427,7 +391,6 @@ export default function CreateMealPlanTemplatePage() {
                 });
                 setCurrentStep(1);
                 setSelectedDay(1);
-                setDraftRestored(false);
               }}
             >
               Clear draft

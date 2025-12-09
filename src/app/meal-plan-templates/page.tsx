@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,11 +15,14 @@ import {
   Search,
   Plus,
   CheckCircle,
-  ChefHat
+  ChefHat,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { UserRole } from '@/types';
+import { toast } from 'sonner';
 
 
 interface MealPlanTemplate {
@@ -47,70 +50,40 @@ interface MealPlanTemplate {
 }
 
 function MealPlanTemplatesPageContent() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [showSuccess, setShowSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<'plans' | 'diet'>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('templates_activeTab');
-      if (stored === 'plans' || stored === 'diet') return stored;
+  const [activeTab, setActiveTab] = useState<'plans' | 'diet'>('plans');
+
+  // Authorization check - only admin and dietitian can access
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session) {
+      router.push('/login');
+      return;
     }
-    return 'plans';
-  });
+    if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.DIETITIAN) {
+      router.push('/dashboard');
+    }
+  }, [session, status, router]);
 
   // Plan templates state (no days filter)
   const [planTemplates, setPlanTemplates] = useState<MealPlanTemplate[]>([]);
-  const [planSearch, setPlanSearch] = useState(() =>
-    (typeof window !== 'undefined' ? localStorage.getItem('planSearch') || '' : '')
-  );
+  const [planSearch, setPlanSearch] = useState('');
   const [planLoading, setPlanLoading] = useState(false);
 
   // Diet templates state (no days filter)
   const [dietTemplates, setDietTemplates] = useState<MealPlanTemplate[]>([]);
-  const [dietSearchTerm, setDietSearchTerm] = useState(() =>
-    (typeof window !== 'undefined' ? localStorage.getItem('dietSearchTerm') || '' : '')
-  );
-  const [dietDietaryRestrictions, setDietDietaryRestrictions] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = localStorage.getItem('dietDietaryRestrictions');
-        if (raw && raw !== 'null' && raw !== '') {
-          const arr = JSON.parse(raw);
-          if (Array.isArray(arr)) return arr;
-        }
-      } catch {/* ignore */}
-    }
-    return [];
-  });
+  const [dietSearchTerm, setDietSearchTerm] = useState('');
+  const [dietDietaryRestrictions, setDietDietaryRestrictions] = useState<string[]>([]);
   const [dietLoading, setDietLoading] = useState(false);
   const dietaryRestrictionsList = [
     'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 'egg-free', 'soy-free', 'keto', 'paleo', 'low-carb', 'low-fat', 'diabetic-friendly'
   ];
 
-  // Initial load from localStorage (safe parse)
-  useEffect(() => {
-    try {
-      const planRaw = typeof window !== 'undefined' ? localStorage.getItem('planTemplates_cache') : null;
-      if (planRaw && planRaw !== 'null' && planRaw !== '') {
-        const arr = JSON.parse(planRaw);
-        if (Array.isArray(arr)) setPlanTemplates(arr.filter(t => t.templateType === 'plan' || t.templateType === undefined));
-      }
-    } catch { setPlanTemplates([]); }
-    try {
-      const dietRaw = typeof window !== 'undefined' ? localStorage.getItem('dietTemplates_cache') : null;
-      if (dietRaw && dietRaw !== 'null' && dietRaw !== '') {
-        const arr = JSON.parse(dietRaw);
-        if (Array.isArray(arr)) setDietTemplates(arr.filter(t => t.templateType === 'diet'));
-      }
-    } catch { setDietTemplates([]); }
-  }, []);
-
-  useEffect(() => { if (activeTab === 'plans') fetchPlanTemplates(); }, [activeTab, planSearch]);
-  useEffect(() => { if (activeTab === 'diet') fetchDietTemplates(); }, [activeTab, dietSearchTerm, dietDietaryRestrictions]);
-  useEffect(() => { try { localStorage.setItem('templates_activeTab', activeTab); } catch {} }, [activeTab]);
-  useEffect(() => { try { localStorage.setItem('planSearch', planSearch); } catch {} }, [planSearch]);
-  useEffect(() => { try { localStorage.setItem('dietSearchTerm', dietSearchTerm); } catch {} }, [dietSearchTerm]);
-  useEffect(() => { try { localStorage.setItem('dietDietaryRestrictions', JSON.stringify(dietDietaryRestrictions)); } catch {} }, [dietDietaryRestrictions]);
+  useEffect(() => { if (activeTab === 'plans' && session) fetchPlanTemplates(); }, [activeTab, planSearch, session]);
+  useEffect(() => { if (activeTab === 'diet' && session) fetchDietTemplates(); }, [activeTab, dietSearchTerm, dietDietaryRestrictions, session]);
 
   useEffect(() => {
     if (searchParams?.get('success') === 'created') {
@@ -130,7 +103,6 @@ function MealPlanTemplatesPageContent() {
       if (response.ok) {
         const data = await response.json();
         setPlanTemplates((data.templates || []).filter((t: MealPlanTemplate) => t.templateType === 'plan' || t.templateType === undefined));
-        try { localStorage.setItem('planTemplates_cache', JSON.stringify(data.templates || [])); } catch {}
       } else {
         setPlanTemplates([]);
       }
@@ -142,15 +114,13 @@ function MealPlanTemplatesPageContent() {
     try {
       setDietLoading(true);
       const params = new URLSearchParams();
-      params.append('templateType', 'diet');
       if (dietSearchTerm) params.append('search', dietSearchTerm);
       if (dietDietaryRestrictions.length > 0)
         params.append('dietaryRestrictions', dietDietaryRestrictions.join(','));
-      const response = await fetch(`/api/meal-plan-templates?${params.toString()}`);
+      const response = await fetch(`/api/diet-templates?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setDietTemplates((data.templates || []).filter((t: MealPlanTemplate) => t.templateType === 'diet'));
-        try { localStorage.setItem('dietTemplates_cache', JSON.stringify(data.templates || [])); } catch {}
+        setDietTemplates(data.templates || []);
       } else {
         setDietTemplates([]);
       }
@@ -176,12 +146,42 @@ function MealPlanTemplatesPageContent() {
   const formatCategoryName = (category: string) => category.split('-').map(word =>
     word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
+  // Delete template
+  const handleDeleteTemplate = async (templateId: string, templateType: 'plan' | 'diet') => {
+    if (!confirm('Are you sure you want to delete this template?')) return;
+    
+    try {
+      // Use different API endpoints for plan and diet templates
+      const apiUrl = templateType === 'diet' 
+        ? `/api/diet-templates/${templateId}`
+        : `/api/meal-plan-templates/${templateId}`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        toast.success('Template deleted successfully');
+        if (templateType === 'plan') {
+          setPlanTemplates(prev => prev.filter(t => t._id !== templateId));
+        } else {
+          setDietTemplates(prev => prev.filter(t => t._id !== templateId));
+        }
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete template');
+      }
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      toast.error('Failed to delete template');
+    }
+  };
+
   const filteredPlanTemplates = planTemplates
     .filter(t => (t.templateType === 'plan' || t.templateType === undefined))
     .filter(t => planSearch === '' || t.name.toLowerCase().includes(planSearch.toLowerCase()));
 
   const filteredDietTemplates = dietTemplates
-    .filter(t => t.templateType === 'diet')
     .filter(t =>
       (dietSearchTerm === '' || t.name.toLowerCase().includes(dietSearchTerm.toLowerCase())) &&
       (dietDietaryRestrictions.length === 0 || dietDietaryRestrictions.every(r => t.dietaryRestrictions?.includes(r)))
@@ -281,6 +281,13 @@ function MealPlanTemplatesPageContent() {
                                 <Button size="sm" variant="outline" asChild>
                                   <Link href={`/meal-plan-templates/${t._id}`}>View</Link>
                                 </Button>
+                                {(session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
+                                  <Button size="sm" variant="outline" asChild>
+                                    <Link href={`/meal-plan-templates/${t._id}/edit`}>
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </Link>
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -395,8 +402,15 @@ function MealPlanTemplatesPageContent() {
                             <td className="p-4">
                               <div className="flex space-x-2">
                                 <Button size="sm" variant="outline" asChild>
-                                  <Link href={`/meal-plan-templates/${t._id}`}>View</Link>
+                                  <Link href={`/meal-plan-templates/diet/${t._id}`}>View</Link>
                                 </Button>
+                                {(session?.user?.role === UserRole.DIETITIAN || session?.user?.role === UserRole.ADMIN) && (
+                                  <Button size="sm" variant="outline" asChild>
+                                    <Link href={`/meal-plan-templates/diet/${t._id}/edit`}>
+                                      <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                                    </Link>
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           </tr>

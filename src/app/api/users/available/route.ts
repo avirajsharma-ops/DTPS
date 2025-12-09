@@ -48,10 +48,13 @@ export async function GET(request: NextRequest) {
       })));
       
     } else if (session.user.role === 'dietitian') {
-      // Dietitians can see their assigned clients
+      // Dietitians can see their assigned clients (from both assignedDietitian and assignedDietitians)
       users = await User.find({
         role: 'client',
-        assignedDietitian: session.user.id,
+        $or: [
+          { assignedDietitian: session.user.id },
+          { assignedDietitians: session.user.id }
+        ],
         status: 'active'
       })
       .select('firstName lastName avatar role dateOfBirth healthGoals')

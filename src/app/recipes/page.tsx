@@ -127,18 +127,6 @@ function RecipesPageContent() {
     }
   };
 
-  const getDietaryRestrictionColor = (restriction: string) => {
-    const colors: { [key: string]: string } = {
-      'vegetarian': 'bg-green-100 text-green-800',
-      'vegan': 'bg-green-100 text-green-800',
-      'gluten-free': 'bg-blue-100 text-blue-800',
-      'dairy-free': 'bg-purple-100 text-purple-800',
-      'keto': 'bg-orange-100 text-orange-800',
-      'low-carb': 'bg-yellow-100 text-yellow-800',
-    };
-    return colors[restriction.toLowerCase()] || 'bg-gray-100 text-gray-800';
-  };
-
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
@@ -240,10 +228,10 @@ function RecipesPageContent() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recipes && recipes.map((recipe) => (
-              <Card key={recipe._id} className="hover:shadow-lg transition-all duration-300 overflow-hidden border-0 bg-white">
+              <Card key={recipe._id} className="hover:shadow-md transition-shadow border border-gray-200">
                 {/* Recipe Image */}
-                {recipe.image && (
-                  <div className="relative h-48 w-full overflow-hidden bg-gradient-to-br from-green-50 to-blue-50">
+                {recipe.image ? (
+                  <div className="relative h-48 w-full overflow-hidden bg-gray-100">
                     <img
                       src={recipe.image}
                       alt={recipe.name}
@@ -254,85 +242,75 @@ function RecipesPageContent() {
                       }}
                     />
                   </div>
+                ) : (
+                  <div className="relative h-48 w-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
+                    <ChefHat className="h-16 w-16 text-green-300" />
+                  </div>
                 )}
 
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-lg line-clamp-2 font-bold text-gray-900">{recipe.name}</CardTitle>
-                      <CardDescription className="line-clamp-2 mt-1 text-gray-600">
-                        {recipe.description}
+                      <CardTitle className="text-lg line-clamp-2 font-semibold text-gray-900">{recipe.name}</CardTitle>
+                      <CardDescription className="line-clamp-2 mt-1 text-gray-500">
+                        {recipe.description || 'No description available'}
                       </CardDescription>
                     </div>
-                    {recipe.tags && recipe.tags.length > 0 && (
-                      <Badge className="ml-2 bg-green-100 text-green-700 hover:bg-green-200 border-0">
-                        {recipe.tags[0]}
-                      </Badge>
-                    )}
                   </div>
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  {/* Nutrition Info - Colorful Cards */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
-                      <p className="text-lg font-bold text-white">{recipe.nutrition.calories}</p>
-                      <p className="text-xs text-blue-100 font-medium">Calories</p>
+                  {/* Nutrition Info */}
+                  <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-gray-900">{recipe.nutrition.calories}</p>
+                      <p className="text-xs text-gray-500">Calories</p>
                     </div>
-                    <div className="text-center p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md">
-                      <p className="text-lg font-bold text-white">{recipe.servings}</p>
-                      <p className="text-xs text-green-100 font-medium">Servings</p>
+                    <div className="text-center border-x border-gray-200">
+                      <p className="text-lg font-bold text-gray-900">{recipe.nutrition.protein}g</p>
+                      <p className="text-xs text-gray-500">Protein</p>
                     </div>
-                    <div className="text-center p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md">
-                      <p className="text-lg font-bold text-white">{recipe.prepTime + recipe.cookTime}</p>
-                      <p className="text-xs text-purple-100 font-medium">Minutes</p>
-                    </div>
-                  </div>
-
-                  {/* Macros - Colorful Pills */}
-                  <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                    <div className="bg-blue-50 rounded-lg py-2 px-1">
-                      <p className="font-bold text-blue-600">{recipe.nutrition.protein}g</p>
-                      <p className="text-xs text-blue-500">Protein</p>
-                    </div>
-                    <div className="bg-yellow-50 rounded-lg py-2 px-1">
-                      <p className="font-bold text-yellow-600">{recipe.nutrition.carbs}g</p>
-                      <p className="text-xs text-yellow-500">Carbs</p>
-                    </div>
-                    <div className="bg-purple-50 rounded-lg py-2 px-1">
-                      <p className="font-bold text-purple-600">{recipe.nutrition.fat}g</p>
-                      <p className="text-xs text-purple-500">Fat</p>
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-gray-900">{recipe.servings}</p>
+                      <p className="text-xs text-gray-500">Servings</p>
                     </div>
                   </div>
 
-                  {/* Time Info - Without Dietician Name */}
-                  <div className="flex items-center justify-center text-sm text-gray-600 bg-gray-50 rounded-lg py-2">
-                    <Clock className="h-4 w-4 mr-1 text-gray-500" />
-                    <span className="font-medium">{recipe.prepTime + recipe.cookTime} min</span>
+                  {/* Time and Macros */}
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-1 text-gray-400" />
+                      <span>{recipe.prepTime + recipe.cookTime} min</span>
+                    </div>
+                    <div className="flex gap-2 text-xs">
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded">C: {recipe.nutrition.carbs}g</span>
+                      <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded">F: {recipe.nutrition.fat}g</span>
+                    </div>
                   </div>
 
-                  {/* Tags - Colorful Badges */}
+                  {/* Tags */}
                   {recipe.tags && recipe.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1">
                       {recipe.tags.slice(0, 3).map((tag, index) => (
                         <Badge
                           key={index}
-                          className={`text-xs font-medium ${getDietaryRestrictionColor(tag)} border-0`}
+                          variant="outline"
+                          className="text-xs"
                         >
                           {tag}
                         </Badge>
                       ))}
                       {recipe.tags.length > 3 && (
-                        <Badge className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 border-0">
-                          +{recipe.tags.length - 3} more
+                        <Badge variant="outline" className="text-xs">
+                          +{recipe.tags.length - 3}
                         </Badge>
                       )}
                     </div>
                   )}
 
-                  {/* Action Button - Colorful */}
+                  {/* Action Button */}
                   <Button
-                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+                    className="w-full"
                     asChild
                   >
                     <Link href={`/recipes/${recipe._id}`}>

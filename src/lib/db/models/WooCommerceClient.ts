@@ -203,8 +203,7 @@ const wooCommerceClientSchema = new Schema({
   timestamps: true
 });
 
-// Indexes for better query performance
-wooCommerceClientSchema.index({ email: 1 }, { unique: true });
+// Indexes for better query performance (email index is already created by unique: true in schema)
 wooCommerceClientSchema.index({ totalSpent: -1 });
 wooCommerceClientSchema.index({ lastOrderDate: -1 });
 wooCommerceClientSchema.index({ country: 1, city: 1 });

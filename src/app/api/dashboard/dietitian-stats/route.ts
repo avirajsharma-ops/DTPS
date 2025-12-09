@@ -35,7 +35,10 @@ export async function GET(request: NextRequest) {
 
     // If dietitian or health counselor, filter by assigned clients only
     if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
-      clientQuery.assignedDietitian = session.user.id;
+      clientQuery.$or = [
+        { assignedDietitian: session.user.id },
+        { assignedDietitians: session.user.id }
+      ];
       appointmentQuery.dietitianId = session.user.id;
     }
     // Admin sees all clients (no filter needed)

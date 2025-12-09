@@ -29,12 +29,15 @@ export async function GET(request: NextRequest) {
     // Define who can chat with whom
     if (session.user.role === UserRole.CLIENT) {
       // Clients can chat with:
-      // 1. Their assigned dietitian
+      // 1. Their assigned dietitians (from assignedDietitians array)
       // 2. Any dietitian if they don't have one assigned
-      const currentUser = await User.findById(session.user.id).select('assignedDietitian');
+      const currentUser = await User.findById(session.user.id).select('assignedDietitian assignedDietitians');
       
-      if (currentUser?.assignedDietitian) {
-        // Chat with assigned dietitian
+      if (currentUser?.assignedDietitians && currentUser.assignedDietitians.length > 0) {
+        // Chat with all assigned dietitians
+        query.$or.push({ _id: { $in: currentUser.assignedDietitians } });
+      } else if (currentUser?.assignedDietitian) {
+        // Chat with assigned dietitian (backwards compatibility)
         query.$or.push({ _id: currentUser.assignedDietitian });
       } else {
         // Chat with any dietitian
@@ -42,11 +45,12 @@ export async function GET(request: NextRequest) {
       }
     } else if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
       // Dietitians and Health Counselors can chat with:
-      // 1. Their assigned clients
+      // 1. Their assigned clients (from both assignedDietitian and assignedDietitians)
       // 2. Any unassigned clients
       // 3. Other dietitians and health counselors (for collaboration)
       query.$or.push(
-        { assignedDietitian: session.user.id }, // Assigned clients
+        { assignedDietitian: session.user.id }, // Assigned clients (primary)
+        { assignedDietitians: session.user.id }, // Assigned clients (from array)
         { role: UserRole.CLIENT, assignedDietitian: { $exists: false } }, // Unassigned clients
         { role: UserRole.CLIENT, assignedDietitian: null }, // Clients with null assignment
         { role: { $in: [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR] } } // Other dietitians and health counselors

@@ -1,0 +1,167 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/config';
+import connectDB from '@/lib/db/connection';
+import User from '@/lib/db/models/User';
+import { UserRole } from '@/types';
+
+// PATCH /api/admin/clients/[clientId]/assign - Assign/Add dietitian to client
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ clientId: string }> }
+) {
+  try {
+    const { clientId } = await params;
+    
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user has admin role (case-insensitive and flexible)
+    const userRole = session.user.role?.toLowerCase();
+    console.log('API assign - User role:', session.user.role);
+    
+    if (!userRole || (!userRole.includes('admin') && userRole !== 'admin')) {
+      return NextResponse.json({ 
+        error: 'Forbidden - Admin access required', 
+        userRole: session.user.role 
+      }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { dietitianId, action, mode, dietitianIds } = body;
+    // Support both 'action' and 'mode' for backwards compatibility
+    const assignAction = action || mode || 'replace';
+    // action/mode: 'replace' (default) - replace primary dietitian
+    // action/mode: 'add' - add to assignedDietitians array
+    // action/mode: 'remove' - remove from assignedDietitians array
+    // action/mode: 'transfer' - transfer client to new primary dietitian (keeping history)
+
+    await connectDB();
+
+    // Validate client exists and is a client
+    const client = await User.findById(clientId);
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+    if (client.role !== UserRole.CLIENT) {
+      return NextResponse.json({ error: 'User is not a client' }, { status: 400 });
+    }
+
+    // Initialize assignedDietitians array if it doesn't exist
+    if (!client.assignedDietitians) {
+      client.assignedDietitians = [];
+    }
+
+    // Handle different actions
+    if (assignAction === 'add' && dietitianIds && Array.isArray(dietitianIds)) {
+      // Add multiple dietitians
+      for (const dId of dietitianIds) {
+        const dietitian = await User.findById(dId);
+        if (!dietitian || dietitian.role !== UserRole.DIETITIAN) {
+          continue; // Skip invalid dietitians
+        }
+        // Add to array if not already present
+        if (!client.assignedDietitians.includes(dId)) {
+          client.assignedDietitians.push(dId);
+        }
+      }
+      // Set primary if not set
+      if (!client.assignedDietitian && dietitianIds.length > 0) {
+        client.assignedDietitian = dietitianIds[0];
+      }
+    } else if (assignAction === 'add' && dietitianId) {
+      // Add single dietitian to the array
+      const dietitian = await User.findById(dietitianId);
+      if (!dietitian) {
+        return NextResponse.json({ error: 'Dietitian not found' }, { status: 404 });
+      }
+      if (dietitian.role !== UserRole.DIETITIAN) {
+        return NextResponse.json({ error: 'User is not a dietitian' }, { status: 400 });
+      }
+      // Add to array if not already present
+      if (!client.assignedDietitians.includes(dietitianId)) {
+        client.assignedDietitians.push(dietitianId);
+      }
+      // Set as primary if no primary exists
+      if (!client.assignedDietitian) {
+        client.assignedDietitian = dietitianId;
+      }
+    } else if (assignAction === 'remove' && dietitianId) {
+      // Remove dietitian from the array
+      client.assignedDietitians = client.assignedDietitians.filter(
+        (d: any) => d.toString() !== dietitianId
+      );
+      // If removing the primary, set a new primary
+      if (client.assignedDietitian?.toString() === dietitianId) {
+        client.assignedDietitian = client.assignedDietitians[0] || null;
+      }
+    } else if (assignAction === 'transfer' && dietitianId) {
+      // Transfer to new primary dietitian
+      const dietitian = await User.findById(dietitianId);
+      if (!dietitian) {
+        return NextResponse.json({ error: 'Dietitian not found' }, { status: 404 });
+      }
+      if (dietitian.role !== UserRole.DIETITIAN) {
+        return NextResponse.json({ error: 'User is not a dietitian' }, { status: 400 });
+      }
+      
+      // Add current primary to the array if not already there (for history)
+      if (client.assignedDietitian && !client.assignedDietitians.includes(client.assignedDietitian.toString())) {
+        client.assignedDietitians.push(client.assignedDietitian);
+      }
+      
+      // Set new primary
+      client.assignedDietitian = dietitianId;
+      
+      // Add new primary to array if not already there
+      if (!client.assignedDietitians.includes(dietitianId)) {
+        client.assignedDietitians.push(dietitianId);
+      }
+    } else {
+      // Default: Replace primary dietitian (original behavior)
+      if (dietitianId) {
+        const dietitian = await User.findById(dietitianId);
+        if (!dietitian) {
+          return NextResponse.json({ error: 'Dietitian not found' }, { status: 404 });
+        }
+        if (dietitian.role !== UserRole.DIETITIAN) {
+          return NextResponse.json({ error: 'User is not a dietitian' }, { status: 400 });
+        }
+        client.assignedDietitian = dietitianId;
+        // Also add to array
+        if (!client.assignedDietitians.includes(dietitianId)) {
+          client.assignedDietitians.push(dietitianId);
+        }
+      } else {
+        client.assignedDietitian = null;
+      }
+    }
+
+    await client.save();
+
+    // Populate the assigned dietitian info
+    await client.populate('assignedDietitian', 'firstName lastName email avatar');
+    await client.populate('assignedDietitians', 'firstName lastName email avatar');
+
+    const actionMessages: Record<string, string> = {
+      'add': 'Dietitian(s) added successfully',
+      'remove': 'Dietitian removed successfully',
+      'transfer': 'Client transferred successfully',
+      'replace': dietitianId ? 'Dietitian assigned successfully' : 'Dietitian unassigned successfully'
+    };
+
+    return NextResponse.json({
+      message: actionMessages[assignAction] || 'Dietitian updated successfully',
+      client
+    });
+
+  } catch (error) {
+    console.error('Error assigning dietitian:', error);
+    return NextResponse.json(
+      { error: 'Failed to assign dietitian' },
+      { status: 500 }
+    );
+  }
+}

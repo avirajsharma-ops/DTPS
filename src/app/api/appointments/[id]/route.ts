@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Appointment from '@/lib/db/models/Appointment';
 import { UserRole, AppointmentStatus } from '@/types';
+import { logHistoryServer } from '@/lib/server/history';
 
 // GET /api/appointments/[id] - Get specific appointment
 export async function GET(
@@ -131,6 +132,20 @@ export async function PUT(
     await appointment.populate('dietitian', 'firstName lastName email avatar');
     await appointment.populate('client', 'firstName lastName email avatar');
 
+    // Log history for appointment update
+    await logHistoryServer({
+      userId: appointment.client._id?.toString() || appointment.client.toString(),
+      action: 'update',
+      category: 'appointment',
+      description: `Appointment updated${body.status ? ': status changed to ' + body.status : ''}`,
+      performedById: session.user.id,
+      metadata: {
+        appointmentId: appointment._id,
+        changes: Object.keys(body),
+        status: appointment.status
+      }
+    });
+
     return NextResponse.json(appointment);
 
   } catch (error) {
@@ -177,6 +192,20 @@ export async function DELETE(
     // Update status to cancelled instead of deleting
     appointment.status = AppointmentStatus.CANCELLED;
     await appointment.save();
+
+    // Log history for appointment cancellation
+    await logHistoryServer({
+      userId: appointment.client.toString(),
+      action: 'delete',
+      category: 'appointment',
+      description: `Appointment cancelled`,
+      performedById: session.user.id,
+      metadata: {
+        appointmentId: appointment._id,
+        scheduledAt: appointment.scheduledAt,
+        type: appointment.type
+      }
+    });
 
     return NextResponse.json({ message: 'Appointment cancelled successfully' });
 

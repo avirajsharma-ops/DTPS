@@ -33,14 +33,17 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-      <Navbar />
-      <div className="flex flex-1 overflow-hidden">
-        {showSidebar && (
-          <div className="hidden lg:block">
-            <Sidebar />
-          </div>
-        )}
+    <div className="h-screen bg-gray-50 flex overflow-hidden">
+      {/* Sidebar - Full Height on Dashboard */}
+      {showSidebar && (
+        <div className="hidden lg:block h-screen flex-shrink-0">
+          <Sidebar />
+        </div>
+      )}
+      
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Navbar />
         <main className={cn(
           "flex-1 overflow-y-auto",
           className
