@@ -243,6 +243,30 @@ userSchema.index({ role: 1 });
 userSchema.index({ assignedDietitian: 1 });
 userSchema.index({ assignedDietitians: 1 });
 
+// Pre-save hook to hash password with bcrypt
+userSchema.pre('save', async function(next) {
+  // Only hash the password if it has been modified (or is new)
+  if (!this.isModified('password')) {
+    return next();
+  }
+
+  try {
+    const bcrypt = require('bcrypt');
+    
+    // Skip if password is already hashed (starts with $2b$ or $2a$)
+    if (this.password.startsWith('$2b$') || this.password.startsWith('$2a$')) {
+      return next();
+    }
+
+    // Generate salt and hash password
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
+
 // Password comparison method using bcrypt
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
   const bcrypt = require('bcrypt');
