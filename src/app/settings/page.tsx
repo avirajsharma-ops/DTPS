@@ -22,9 +22,12 @@ import {
   Bell,
   CreditCard,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Calendar,
+  Loader2
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { log } from 'console';
 
 // Import mobile version for clients
 const MobileSettingsPage = dynamic(() => import('./page-mobile'), {
@@ -32,6 +35,7 @@ const MobileSettingsPage = dynamic(() => import('./page-mobile'), {
 });
 
 interface UserProfile {
+  user: any;
   firstName: string;
   lastName: string;
   email: string;
@@ -62,10 +66,16 @@ function DesktopSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
+  const [googleCalendarConnecting, setGoogleCalendarConnecting] = useState(false);
+
+
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (session?.user?.id) {
+      fetchProfile();
+    }
+  }, [session?.user?.id]);
 
   const fetchProfile = async () => {
     try {
@@ -74,6 +84,8 @@ function DesktopSettingsPage() {
       if (response.ok) {
         const data = await response.json();
         setProfile(data);
+        // Check if Google Calendar is connected
+        setGoogleCalendarConnected(!!data.googleCalendarAccessToken);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -138,6 +150,26 @@ function DesktopSettingsPage() {
     }
   };
 
+  const handleConnectGoogleCalendar = async () => {
+    try {
+      setGoogleCalendarConnecting(true);
+      const response = await fetch('/api/auth/google-calendar', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else {
+        setError('Failed to get Google Calendar authorization URL');
+      }
+    } catch (err) {
+      console.error('Error connecting Google Calendar:', err);
+      setError('Failed to connect Google Calendar');
+    } finally {
+      setGoogleCalendarConnecting(false);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -193,6 +225,7 @@ function DesktopSettingsPage() {
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="health">Health Info</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="integrations">Integrations</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
 
@@ -207,8 +240,8 @@ function DesktopSettingsPage() {
                 <div className="flex items-center space-x-6">
                   <Avatar className="h-24 w-24">
                     <AvatarImage src={profile?.avatar} />
-                    <AvatarFallback className="text-lg">
-                      {profile?.firstName[0]}{profile?.lastName[0]}
+                    <AvatarFallback className="text-lg">{profile?.user?.firstName?.[0] || 'U'}{profile?.user?.lastName?.[0] || 'N'}
+                      {/* {profile?.firstName[0]}{profile?.lastName[0]} */}
                     </AvatarFallback>
                   </Avatar>
                   
@@ -233,7 +266,7 @@ function DesktopSettingsPage() {
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
-                      value={profile?.firstName}
+                      value={profile?.user?.firstName}
                       onChange={(e) => updateField('firstName', e.target.value)}
                     />
                   </div>
@@ -242,7 +275,7 @@ function DesktopSettingsPage() {
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
-                      value={profile?.lastName}
+                      value={profile?.user?.lastName}
                       onChange={(e) => updateField('lastName', e.target.value)}
                     />
                   </div>
@@ -252,7 +285,7 @@ function DesktopSettingsPage() {
                     <Input
                       id="email"
                       type="email"
-                      value={profile?.email}
+                      value={profile?.user?.email}
                       onChange={(e) => updateField('email', e.target.value)}
                     />
                   </div>
@@ -261,7 +294,7 @@ function DesktopSettingsPage() {
                     <Label htmlFor="phone">Phone</Label>
                     <Input
                       id="phone"
-                      value={profile?.phone || ''}
+                      value={profile?.user?.phone || ''}
                       onChange={(e) => updateField('phone', e.target.value)}
                     />
                   </div>
@@ -271,7 +304,7 @@ function DesktopSettingsPage() {
                   <Label htmlFor="bio">Bio</Label>
                   <Textarea
                     id="bio"
-                    value={profile?.bio || ''}
+                    value={profile?.user?.bio || ''}
                     onChange={(e) => updateField('bio', e.target.value)}
                     rows={3}
                     placeholder="Tell us about yourself..."
@@ -296,7 +329,7 @@ function DesktopSettingsPage() {
                     <Input
                       id="dateOfBirth"
                       type="date"
-                      value={profile?.dateOfBirth || ''}
+                      value={profile?.user?.dateOfBirth || ''}
                       onChange={(e) => updateField('dateOfBirth', e.target.value)}
                     />
                   </div>
@@ -304,7 +337,7 @@ function DesktopSettingsPage() {
                   <div>
                     <Label htmlFor="gender">Gender</Label>
                     <Select
-                      value={profile?.gender || ''}
+                      value={profile?.user?.gender || ''}
                       onValueChange={(value) => updateField('gender', value)}
                     >
                       <SelectTrigger>
@@ -322,7 +355,7 @@ function DesktopSettingsPage() {
                   <div>
                     <Label htmlFor="activityLevel">Activity Level</Label>
                     <Select
-                      value={profile?.activityLevel || ''}
+                      value={profile?.user?.activityLevel || ''}
                       onValueChange={(value) => updateField('activityLevel', value)}
                     >
                       <SelectTrigger>
@@ -345,7 +378,7 @@ function DesktopSettingsPage() {
                     <Input
                       id="height"
                       type="number"
-                      value={profile?.height || ''}
+                      value={profile?.user?.height || ''}
                       onChange={(e) => updateField('height', parseFloat(e.target.value))}
                     />
                   </div>
@@ -355,7 +388,7 @@ function DesktopSettingsPage() {
                     <Input
                       id="weight"
                       type="number"
-                      value={profile?.weight || ''}
+                      value={profile?.user?.weight || ''}
                       onChange={(e) => updateField('weight', parseFloat(e.target.value))}
                     />
                   </div>
@@ -381,6 +414,59 @@ function DesktopSettingsPage() {
                     Notification preferences will be available in a future update.
                   </p>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="integrations" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Calendar className="h-5 w-5" />
+                  <span>Calendar Integration</span>
+                </CardTitle>
+                <CardDescription>Connect your Google Calendar to sync tasks</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-6 w-6 text-blue-500" />
+                    <div>
+                      <h3 className="font-medium">Google Calendar</h3>
+                      <p className="text-sm text-gray-600">
+                        {googleCalendarConnected ? 'Connected' : 'Not connected'}
+                      </p>
+                    </div>
+                  </div>
+                  {!googleCalendarConnected ? (
+                    <Button
+                      onClick={handleConnectGoogleCalendar}
+                      disabled={googleCalendarConnecting}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {googleCalendarConnecting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <Calendar className="mr-2 h-4 w-4" />
+                          Connect Calendar
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="flex items-center space-x-2 text-green-600">
+                      <CheckCircle className="h-5 w-5" />
+                      <span>Connected</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mt-4">
+                  Connect your Google Calendar to automatically sync tasks and receive calendar notifications.
+                  Your calendar will be updated with new tasks and their deadlines.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>

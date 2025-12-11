@@ -48,9 +48,7 @@ export async function GET(
       hour: meal.hour,
       minute: meal.minute,
       meridian: meal.meridian,
-      food: meal.food || '',
-      amount: meal.amount || '',
-      notes: meal.notes || ''
+      food: meal.food || ''
     }));
 
     return NextResponse.json({ 
@@ -117,9 +115,7 @@ export async function POST(
           hour: meal.hour || defaultTime.hour,
           minute: meal.minute || defaultTime.minute,
           meridian: meal.meridian || defaultTime.meridian,
-          food: meal.food || '',
-          amount: meal.amount || '',
-          notes: meal.notes || ''
+          food: meal.food || ''
         };
       });
 

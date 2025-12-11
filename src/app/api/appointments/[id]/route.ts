@@ -134,7 +134,7 @@ export async function PUT(
 
     // Log history for appointment update
     await logHistoryServer({
-      userId: appointment.client._id?.toString() || appointment.client.toString(),
+      userId: (appointment.client as any).toString(),
       action: 'update',
       category: 'appointment',
       description: `Appointment updated${body.status ? ': status changed to ' + body.status : ''}`,

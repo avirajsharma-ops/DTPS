@@ -18,7 +18,8 @@ import {
   MessageSquare,
   Edit,
   Trash2,
-  MoreHorizontal
+  MoreHorizontal,
+  Tag
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -514,6 +515,13 @@ export default function AdminDashboard() {
                   <Link href="/admin/support">
                     <MessageSquare className="h-6 w-6" />
                     <span>Support Tickets</span>
+                  </Link>
+                </Button>
+
+                <Button variant="outline" className="h-20 flex flex-col space-y-2" asChild>
+                  <Link href="/admin/tags">
+                    <Tag className="h-6 w-6" />
+                    <span>Manage Tags</span>
                   </Link>
                 </Button>
               </div>

@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Plus, Edit, Trash2, Copy, ArrowLeft, ArrowRight, Utensils, Dumbbell, Eye, FileText, Image as ImageIcon, Video, Search, Loader2, Check, X, AlertTriangle, CreditCard, Clock, RefreshCw } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, Copy, ArrowLeft, ArrowRight, Utensils, Dumbbell, Eye, FileText, Image as ImageIcon, Video, Search, Loader2, Check, X, AlertTriangle, CreditCard, Clock, RefreshCw, MoreVertical, Repeat2, Pause, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 import { DietPlanDashboard } from '@/components/dietplandashboard/DietPlanDashboard';
@@ -147,17 +148,28 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [createdPlanInfo, setCreatedPlanInfo] = useState<{ days: number; remainingDays: number } | null>(null);
 
-  // Check client's payment status
-  const checkPaymentStatus = async () => {
+  // Check client's payment status (also syncs with Razorpay)
+  const checkPaymentStatus = async (showToast = false) => {
     setCheckingPayment(true);
     try {
+      // The check API now automatically syncs pending payments with Razorpay
       const res = await fetch(`/api/client-purchases/check?clientId=${client._id}`);
       const data = await res.json();
       if (data.success) {
         setPaymentCheck(data);
+        if (showToast) {
+          if (data.hasPaidPlan) {
+            toast.success(`Payment verified! ${data.remainingDays} days remaining`);
+          } else {
+            toast.info('No active paid plan found. Payment may still be processing.');
+          }
+        }
       }
     } catch (error) {
       console.error('Error checking payment status:', error);
+      if (showToast) {
+        toast.error('Error checking payment status');
+      }
     } finally {
       setCheckingPayment(false);
     }
@@ -255,6 +267,34 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     
     setShowTemplateDialog(false);
     toast.success(`Template "${template.name}" loaded successfully`);
+  };
+
+  // Fetch the latest meal plan's end date
+  const getLatestMealPlanEndDate = async (): Promise<string | null> => {
+    try {
+      const res = await fetch(`/api/client-meal-plans?clientId=${client._id}`);
+      const data = await res.json();
+
+      if (data.success && data.mealPlans.length > 0) {
+        console.log('Fetched meal plans:', data.mealPlans); // Debug log
+        const sortedPlans = data.mealPlans.sort((a: any, b: any) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime());
+        console.log('Sorted meal plans by endDate:', sortedPlans); // Debug log
+        return sortedPlans[0].endDate;
+      }
+    } catch (error) {
+      console.error('Error fetching latest meal plan end date:', error);
+    }
+    return null;
+  };
+
+  // Initialize start date based on latest plan's end date
+  const initializeStartDate = async () => {
+    const latestEndDate = await getLatestMealPlanEndDate();
+    if (latestEndDate) {
+      const nextStartDate = format(addDays(new Date(latestEndDate), 1), 'yyyy-MM-dd');
+      console.log('Initializing start date to:', nextStartDate); // Debug log
+      setStartDate(nextStartDate);
+    }
   };
 
   // Handle form submission - move to meals step
@@ -518,6 +558,18 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
 
   // Duplicate plan
   const handleDuplicatePlan = (plan: any) => {
+    // Check if client has active payment
+    if (!paymentCheck?.hasPaidPlan) {
+      toast.error('Client needs to purchase a plan first before duplicating meal plans');
+      return;
+    }
+    
+    // Check if client has remaining days
+    if (paymentCheck.remainingDays <= 0) {
+      toast.error('All plan days have been used. Client needs to purchase a new plan.');
+      return;
+    }
+
     setPlanTitle(`${plan.name} (Copy)`);
     setDescription(plan.description || '');
     setStartDate(format(new Date(), 'yyyy-MM-dd'));
@@ -537,6 +589,594 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     setStep('form');
     toast.info('Plan duplicated. Make changes and save as new.');
   };
+
+  // Helper function to parse date string to Date object (handles timezone)
+  const parseDate = (dateStr: string): Date => {
+    const [year, month, day] = dateStr.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  };
+
+  // Extend plan with cascading date adjustments for ALL meal plans
+  const handleExtendPlan = async (plan: any, newStartDate?: string, newEndDate?: string) => {
+    if (!newStartDate || !newEndDate) {
+      toast.error('Please select dates');
+      return;
+    }
+
+    // Validate date range on frontend (using parseDate for consistent handling)
+    if (parseDate(newStartDate) > parseDate(newEndDate)) {
+      toast.error('Start date cannot be after end date');
+      return;
+    }
+
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const planStartDate = parseDate(plan.startDate);
+      const hasStarted = planStartDate <= today;
+
+      // Check if plan has started - only allow extension if started
+      if (!hasStarted) {
+        toast.error('Can only extend plans that have already started');
+        return;
+      }
+
+      // Calculate original duration - ALWAYS PRESERVE THIS
+      const originalDuration = Math.ceil(
+        (new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)
+      ) + 1;
+
+      let finalStartDate = newStartDate;
+      let finalEndDate: string;
+
+      // Always calculate end date based on new start date and ORIGINAL duration
+      // This ensures duration NEVER changes
+      finalEndDate = format(addDays(parseDate(newStartDate), Math.max(0, originalDuration - 1)), 'yyyy-MM-dd');
+
+      // Final validation - make sure start is not after end
+      const finalStart = parseDate(finalStartDate);
+      const finalEnd = parseDate(finalEndDate);
+      if (finalStart > finalEnd) {
+        toast.error('Invalid date range calculated. Start date cannot be after end date.');
+        return;
+      }
+
+      // Update current plan
+      const payload = {
+        startDate: finalStartDate,
+        endDate: finalEndDate
+      };
+
+      const res = await fetch(`/api/client-meal-plans/${plan._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success('Plan dates extended successfully!');
+        
+        // AUTO-ADJUST ALL MEAL PLANS IN THE CHAIN
+        try {
+          const allPlansRes = await fetch(`/api/client-meal-plans?clientId=${client._id}`);
+          const allPlansDataResponse = await allPlansRes.json();
+          
+          if (allPlansDataResponse.success && allPlansDataResponse.mealPlans) {
+            // Sort all plans by start date
+            const sortedPlans = allPlansDataResponse.mealPlans.sort((a: any, b: any) => 
+              new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+            );
+            
+            const currentPlanIndex = sortedPlans.findIndex((p: any) => p._id === plan._id);
+            
+            if (currentPlanIndex !== -1) {
+              // ADJUST ALL PLANS AFTER THE CURRENT PLAN (FORWARD CASCADE)
+              for (let i = currentPlanIndex + 1; i < sortedPlans.length; i++) {
+                const planToAdjust = sortedPlans[i];
+                const prevPlan = sortedPlans[i - 1];
+                
+                // Calculate previous plan's duration
+                let prevPlanDuration;
+                if (i - 1 === currentPlanIndex) {
+                  // For the immediate next plan, use the updated current plan
+                  prevPlanDuration = Math.ceil(
+                    (new Date(finalEndDate).getTime() - new Date(finalStartDate).getTime()) / (1000 * 60 * 60 * 24)
+                  ) + 1;
+                } else {
+                  // For others, calculate from the previous plan in the sorted list
+                  prevPlanDuration = Math.ceil(
+                    (new Date(prevPlan.endDate).getTime() - new Date(prevPlan.startDate).getTime()) / (1000 * 60 * 60 * 24)
+                  ) + 1;
+                }
+                
+                // New plan starts the day after previous plan ends
+                const newStartDate_adjusted = format(addDays(new Date(prevPlan.endDate), 1), 'yyyy-MM-dd');
+                
+                // Calculate plan's original duration
+                const planOriginalDuration = Math.ceil(
+                  (new Date(planToAdjust.endDate).getTime() - new Date(planToAdjust.startDate).getTime()) / (1000 * 60 * 60 * 24)
+                ) + 1;
+                
+                // New end date = start + original duration
+                // For 1 day: addDays(date, 0) = same date
+                // For 7 days: addDays(date, 6) = date + 6 days
+                const newEndDate_adjusted = format(addDays(new Date(newStartDate_adjusted), Math.max(0, planOriginalDuration - 1)), 'yyyy-MM-dd');
+                
+                // Update this plan in the chain
+                await fetch(`/api/client-meal-plans/${planToAdjust._id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    startDate: newStartDate_adjusted,
+                    endDate: newEndDate_adjusted
+                  })
+                });
+                
+                // Update the reference for next iteration
+                sortedPlans[i].startDate = newStartDate_adjusted;
+                sortedPlans[i].endDate = newEndDate_adjusted;
+              }
+            }
+          }
+        } catch (adjustError) {
+          console.error('Error auto-adjusting meal plans:', adjustError);
+        }
+        
+        fetchClientPlans();
+      } else {
+        toast.error(data.error || 'Failed to extend plan');
+      }
+    } catch (error) {
+      console.error('Error extending plan:', error);
+      toast.error('Failed to extend plan');
+    }
+  };
+
+  // Pause/Hold plan
+  const handlePausePlan = async (plan: any, pauseDays: number) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const planStartDate = parseDate(plan.startDate);
+
+      // Check if plan has already started
+      const hasStarted = planStartDate <= today;
+
+      let endDateToUse = plan.endDate;
+
+      // Only extend end date if plan has already started
+      if (hasStarted) {
+        const currentEndDate = new Date(plan.endDate);
+        const newEndDate = addDays(currentEndDate, pauseDays);
+        endDateToUse = format(newEndDate, 'yyyy-MM-dd');
+      }
+
+      const payload = {
+        startDate: plan.startDate,
+        endDate: endDateToUse,
+        status: 'paused'
+      };
+
+      const res = await fetch(`/api/client-meal-plans/${plan._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        const message = hasStarted 
+          ? `Plan paused for ${pauseDays} days. End date extended to ${endDateToUse}`
+          : `Plan paused. (Plan hasn't started yet, so end date not extended)`;
+        toast.success(message);
+        fetchClientPlans();
+      } else {
+        toast.error(data.error || 'Failed to pause plan');
+      }
+    } catch (error) {
+      console.error('Error pausing plan:', error);
+      toast.error('Failed to pause plan');
+    }
+  };
+
+  // Resume/Unfreeze plan
+  const handleResumePlan = async (plan: any) => {
+    try {
+      const payload = {
+        startDate: plan.startDate,
+        endDate: plan.endDate,
+        status: 'active'
+      };
+
+      const res = await fetch(`/api/client-meal-plans/${plan._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success('Plan resumed successfully');
+        fetchClientPlans();
+      } else {
+        toast.error(data.error || 'Failed to resume plan');
+      }
+    } catch (error) {
+      console.error('Error resuming plan:', error);
+      toast.error('Failed to resume plan');
+    }
+  };
+
+  // Pause Plan Dialog Component
+  function PausePlanDialog({ plan, onPause, onResume, showAsText = false, showAsButton = false }: { plan: any; onPause: (plan: any, days: number) => void; onResume: (plan: any) => void; showAsText?: boolean; showAsButton?: boolean }) {
+    const [pauseDays, setPauseDays] = useState(2);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isPaused, setIsPaused] = useState(plan.status === 'paused');
+
+    const handlePause = async () => {
+      if (pauseDays < 1) {
+        toast.error('Pause duration must be at least 1 day');
+        return;
+      }
+      setIsLoading(true);
+      await onPause(plan, pauseDays);
+      setIsLoading(false);
+      setIsPaused(true);
+    };
+
+    const handleResume = async () => {
+      setIsLoading(true);
+      await onResume(plan);
+      setIsLoading(false);
+      setIsPaused(false);
+    };
+
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          {showAsText ? (
+            <span className="text-sm cursor-pointer">Hold</span>
+          ) : showAsButton ? (
+            <Button 
+              size="sm" 
+              variant="outline"
+              title={isPaused ? 'Resume plan' : 'Hold plan'}
+              className="flex items-center gap-1.5"
+            >
+              <Pause className="h-4 w-4" />
+              <span className="text-xs">Hold</span>
+            </Button>
+          ) : (
+            <Button 
+              size="sm" 
+              variant="outline"
+              title={isPaused ? 'Resume plan' : 'Pause plan'}
+              className={isPaused ? 'text-orange-600 hover:text-orange-700' : 'text-amber-600 hover:text-amber-700'}
+            >
+              {isPaused ? '▶️' : '⏸️'}
+            </Button>
+          )}
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{isPaused ? 'Resume Plan' : 'Pause Plan'}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {!isPaused ? (
+              <>
+                <div className="bg-amber-50 p-3 rounded border border-amber-200">
+                  <p className="text-sm font-medium text-amber-900">
+                    ⏸️ Pause your meal plan temporarily. The end date will be extended by the number of days you pause for.
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Pause for how many days?</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant={pauseDays === 1 ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setPauseDays(1)}
+                    >
+                      1 Day
+                    </Button>
+                    <Button
+                      variant={pauseDays === 2 ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setPauseDays(2)}
+                    >
+                      2 Days
+                    </Button>
+                    <Button
+                      variant={pauseDays === 3 ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setPauseDays(3)}
+                    >
+                      3 Days
+                    </Button>
+                    <Button
+                      variant={pauseDays === 7 ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setPauseDays(7)}
+                    >
+                      1 Week
+                    </Button>
+                  </div>
+                  
+                  <div className="mt-3">
+                    <Label className="text-xs">Or enter custom days:</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="365"
+                      value={pauseDays}
+                      onChange={(e) => setPauseDays(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-xs text-gray-600">
+                    <strong>Current End Date:</strong> {format(new Date(plan.endDate), 'MMM dd, yyyy')}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    <strong>New End Date:</strong> {format(addDays(new Date(plan.endDate), pauseDays), 'MMM dd, yyyy')}
+                  </p>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="flex-1 bg-amber-600 hover:bg-amber-700"
+                    onClick={handlePause}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Pausing...
+                      </>
+                    ) : (
+                      '⏸️ Pause Plan'
+                    )}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-green-50 p-3 rounded border border-green-200">
+                  <p className="text-sm font-medium text-green-900">
+                    ✓ Plan is currently paused. Click below to resume and continue with your meal plan.
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-xs text-gray-600">
+                    <strong>Current Status:</strong> <span className="text-amber-600 font-medium">Paused</span>
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    <strong>End Date:</strong> {format(new Date(plan.endDate), 'MMM dd, yyyy')}
+                  </p>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={handleResume}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Resuming...
+                      </>
+                    ) : (
+                      '▶️ Resume Plan'
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Extend Plan Dialog Component
+  function ExtendPlanDialog({ plan, onExtend, showAsText = false, showAsButton = false }: { plan: any; onExtend: (plan: any, startDate: string, endDate: string) => void; showAsText?: boolean; showAsButton?: boolean }) {
+    const [newStartDate, setNewStartDate] = useState(format(new Date(plan.startDate), 'yyyy-MM-dd'));
+    const [newEndDate, setNewEndDate] = useState(format(new Date(plan.endDate), 'yyyy-MM-dd'));
+    const [isLoading, setIsLoading] = useState(false);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const planStartDate = parseDate(plan.startDate);
+    const hasStarted = planStartDate <= today;
+
+    // Calculate original duration
+    const originalDuration = Math.ceil(
+      (new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)
+    ) + 1;
+
+    const handleStartDateChange = (date: string) => {
+      setNewStartDate(date);
+      // Auto-calculate end date based on original duration
+      // For 1 day: addDays(date, 0) = same date
+      // For 7 days: addDays(date, 6) = date + 6 days
+      const endDate = format(addDays(parseDate(date), Math.max(0, originalDuration - 1)), 'yyyy-MM-dd');
+      setNewEndDate(endDate);
+    };
+
+    const handleEndDateChange = (date: string) => {
+      setNewEndDate(date);
+    };
+
+    const handleSave = async () => {
+      // Validate date range using parseDate for consistent handling
+      if (parseDate(newStartDate) > parseDate(newEndDate)) {
+        toast.error('Start date cannot be after end date');
+        return;
+      }
+      setIsLoading(true);
+      await onExtend(plan, newStartDate, newEndDate);
+      setIsLoading(false);
+    };
+
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          {showAsText ? (
+            <span className="text-sm cursor-pointer">Extend</span>
+          ) : showAsButton ? (
+            <Button 
+              size="sm" 
+              variant="outline"
+              title="Extend plan dates"
+              className="flex items-center gap-1.5"
+            >
+              <Repeat2 className="h-4 w-4" />
+              <span className="text-xs">Extend</span>
+            </Button>
+          ) : (
+            <Button 
+              size="sm" 
+              variant="outline"
+              title="Extend plan dates"
+              className="text-blue-600 hover:text-blue-700"
+            >
+              📅
+            </Button>
+          )}
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Extend Plan Dates</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {hasStarted ? (
+              <>
+                <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                  <p className="text-sm font-medium text-blue-900">
+                    📅 Adjust end date to extend the plan
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Start Date (Fixed)</Label>
+                  <Input
+                    type="date"
+                    value={newStartDate}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                </div>
+
+                <div>
+                  <Label>End Date</Label>
+                  <Input
+                    type="date"
+                    value={newEndDate}
+                    onChange={(e) => handleEndDateChange(e.target.value)}
+                    min={newStartDate}
+                  />
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-xs text-gray-600">
+                    <strong>Current End Date:</strong> {plan.endDate}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    <strong>New End Date:</strong> {newEndDate}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    ✨ <strong>Auto-adjust:</strong> All other meal plans will adjust automatically to maintain continuity
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                  <p className="text-sm font-medium text-blue-900">
+                    📅 Adjust start date - Duration will remain {originalDuration} days (auto-calculated)
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    value={newStartDate}
+                    onChange={(e) => handleStartDateChange(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>End Date (Auto-calculated)</Label>
+                  <Input
+                    type="date"
+                    value={newEndDate}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-xs text-gray-600">
+                    <strong>Duration:</strong> {Math.ceil((parseDate(newEndDate).getTime() - parseDate(newStartDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days (Fixed)
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    ✨ <strong>Auto-adjust:</strong> All other meal plans will adjust automatically to maintain continuity
+                  </p>
+                </div>
+              </>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {}}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                onClick={handleSave}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update Dates & Adjust All Plans'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const dietPlans = client?.dietPlans || [];
 
@@ -592,6 +1232,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                 <Button 
                   variant="outline"
                   onClick={() => handleDuplicatePlan(viewingPlan)}
+                  disabled={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0}
+                  title={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0 ? 'Client needs active payment to duplicate plans' : 'Duplicate'}
                 >
                   <Copy className="h-4 w-4 mr-2" />
                   Duplicate
@@ -1242,19 +1884,16 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                     variant="outline" 
                     size="sm" 
                     className="border-amber-600 text-amber-700 hover:bg-amber-100"
-                    onClick={() => {
-                      checkPaymentStatus();
-                      toast.info('Refreshing payment status...');
-                    }}
+                    onClick={() => checkPaymentStatus(true)}
                     disabled={checkingPayment}
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${checkingPayment ? 'animate-spin' : ''}`} />
-                    Refresh Status
+                    {checkingPayment ? 'Syncing...' : 'Sync & Refresh'}
                   </Button>
                 </div>
               </div>
             </div>
-          </CardContent>
+                   </CardContent>
         </Card>
       ) : paymentCheck && paymentCheck.hasPaidPlan ? (
         paymentCheck.remainingDays > 0 ? (
@@ -1288,11 +1927,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                   variant="ghost" 
                   size="sm" 
                   className="text-green-700 hover:bg-green-100"
-                  onClick={() => {
-                    checkPaymentStatus();
-                    toast.info('Refreshing payment status...');
-                  }}
+                  onClick={() => checkPaymentStatus(true)}
                   disabled={checkingPayment}
+                  title="Sync payment status with Razorpay"
                 >
                   <RefreshCw className={`h-4 w-4 ${checkingPayment ? 'animate-spin' : ''}`} />
                 </Button>
@@ -1336,11 +1973,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                       variant="ghost" 
                       size="sm" 
                       className="text-amber-700 hover:bg-amber-100"
-                      onClick={() => {
-                        checkPaymentStatus();
-                        toast.info('Refreshing payment status...');
-                      }}
+                      onClick={() => checkPaymentStatus(true)}
                       disabled={checkingPayment}
+                      title="Sync payment status with Razorpay"
                     >
                       <RefreshCw className={`h-4 w-4 ${checkingPayment ? 'animate-spin' : ''}`} />
                     </Button>
@@ -1363,7 +1998,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                   ? 'bg-blue-600 hover:bg-blue-700' 
                   : 'bg-gray-400 cursor-not-allowed'
               }`}
-              onClick={() => {
+              onClick={async () => {
                 if (!paymentCheck?.hasPaidPlan) {
                   toast.error('Client needs to purchase a plan first before creating a meal plan');
                   return;
@@ -1376,6 +2011,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                 if (paymentCheck.remainingDays > 0) {
                   setDuration(Math.min(paymentCheck.remainingDays, 30)); // Max 30 days at a time
                 }
+                // Initialize start date based on latest plan
+                await initializeStartDate();
                 setStep('form');
               }}
               disabled={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0}
@@ -1467,7 +2104,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-2 ml-4 items-center">
                       <Button 
                         size="sm" 
                         variant="outline" 
@@ -1484,14 +2121,49 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        title="Duplicate"
-                        onClick={() => handleDuplicatePlan(plan)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
+
+                      {/* Three Dot Dropdown Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            title="More options"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="p-3 w-48">
+                          <div className="flex flex-col gap-2">
+                            <ExtendPlanDialog 
+                              plan={plan}
+                              onExtend={handleExtendPlan}
+                              showAsText={false}
+                              showAsButton={true}
+                            />
+
+                            <PausePlanDialog 
+                              plan={plan}
+                              onPause={handlePausePlan}
+                              onResume={handleResumePlan}
+                              showAsText={false}
+                              showAsButton={true}
+                            />
+
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              title={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0 ? 'Client needs active payment to duplicate plans' : 'Duplicate'}
+                              onClick={() => handleDuplicatePlan(plan)}
+                              disabled={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0}
+                              className="flex items-center gap-1.5"
+                            >
+                              <Copy className="h-4 w-4" />
+                              <span className="text-xs">Duplicate</span>
+                            </Button>
+                          </div>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </div>

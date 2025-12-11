@@ -1,5 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import WooCommerceClient from '@/lib/db/models/WooCommerceClient';
@@ -84,6 +85,16 @@ export const authOptions: NextAuthOptions = {
           throw error;
         }
       }
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      allowDangerousEmailAccountLinking: true,
+      authorization: {
+        params: {
+          scope: 'openid email profile https://www.googleapis.com/auth/calendar'
+        }
+      }
     })
   ],
   session: {
@@ -94,7 +105,7 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, account, trigger, session }) {
       // Initial sign in
       if (user) {
         token.role = user.role;
@@ -111,6 +122,27 @@ export const authOptions: NextAuthOptions = {
           token.country = user.country;
           token.totalOrders = user.totalOrders;
           token.totalSpent = user.totalSpent;
+        }
+      }
+
+      // Handle Google account linking to store calendar tokens
+      if (account && account.provider === 'google') {
+        token.googleAccessToken = account.access_token;
+        token.googleRefreshToken = account.refresh_token;
+        token.googleTokenExpiry = account.expires_at ? new Date(account.expires_at * 1000) : undefined;
+
+        // Store tokens in database for later use
+        try {
+          await connectDB();
+          const dbUser = await User.findById(token.sub);
+          if (dbUser) {
+            dbUser.googleCalendarAccessToken = account.access_token;
+            dbUser.googleCalendarRefreshToken = account.refresh_token;
+            dbUser.googleCalendarTokenExpiry = account.expires_at ? new Date(account.expires_at * 1000) : undefined;
+            await dbUser.save();
+          }
+        } catch (error) {
+          console.error('Error storing Google Calendar tokens:', error);
         }
       }
 
@@ -164,5 +196,5 @@ export const authOptions: NextAuthOptions = {
       console.log(`User signed out: ${token.email}`);
     }
   },
-  debug: process.env.NODE_ENV === 'development',
+  debug: process.env.NODE_ENV === 'development' && process.env.NEXT_DEBUG_AUTH === 'true',
 };

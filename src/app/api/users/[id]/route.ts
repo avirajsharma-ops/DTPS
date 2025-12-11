@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
+import Tag from '@/lib/db/models/Tag'; // Ensure Tag model is registered
+import Task from '@/lib/db/models/Task'; // Ensure Task model is registered
 import { UserRole } from '@/types';
 
 // GET /api/users/[id] - Get specific user
@@ -29,7 +31,8 @@ export async function GET(
 
     const user = await User.findById(id)
       .select('-password')
-      .populate('assignedDietitian', 'firstName lastName email avatar');
+      .populate('assignedDietitian', 'firstName lastName email avatar')
+      .populate('tags', 'name description color icon');
 
     if (!user) {
       return NextResponse.json(
@@ -279,7 +282,9 @@ export async function PUT(
       "experience",
       "consultationFee",
       "availability",
-      "assignedDietitian"
+      "assignedDietitian",
+      // Tags
+      "tags"
     ];
 
     if (session.user.role === UserRole.ADMIN) {

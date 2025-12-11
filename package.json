@@ -38,6 +38,7 @@
     "date-fns-tz": "^3.2.0",
     "emoji-picker-react": "^4.13.3",
     "force": "^0.0.3",
+    "googleapis": "^168.0.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.541.0",
     "mongodb": "^6.19.0",

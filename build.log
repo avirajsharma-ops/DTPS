@@ -1,0 +1,24 @@
+
+> zoconut-app@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.0
+   - Environments: .env
+   - Experiments (use with caution):
+     ✓ optimizeCss
+     · optimizePackageImports
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: Can't resolve '/Users/lokeshdhote/Desktop/DTPS/next.config.compiled.js' in '/Users/lokeshdhote/Desktop/DTPS'
+<w> while resolving '/Users/lokeshdhote/Desktop/DTPS/next.config.compiled.js' in /Users/lokeshdhote/Desktop/DTPS as file
+<w>  at resolve commonjs /Users/lokeshdhote/Desktop/DTPS/next.config.compiled.js
+ ✓ Compiled successfully in 12.1s
+   Skipping linting
+   Checking validity of types ...
+Failed to compile.
+
+src/app/api/users/[id]/notes/route.ts
+Type error: Route "src/app/api/users/[id]/notes/route.ts" does not match the required types of a Next.js Route.
+  "NOTE_TOPIC_TYPES" is not a valid Route export field.
+
+Next.js build worker exited with code: 1 and signal: null

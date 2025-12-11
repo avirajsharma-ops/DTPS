@@ -59,6 +59,18 @@ export async function PUT(
       status
     } = body;
     
+    // Validate date range
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (start > end) {
+        return NextResponse.json(
+          { success: false, error: 'Start date cannot be after end date' },
+          { status: 400 }
+        );
+      }
+    }
+    
     // Build update object
     const updateData: Record<string, any> = {};
     
@@ -92,6 +104,13 @@ export async function PUT(
     });
   } catch (error) {
     console.error('Error updating meal plan:', error);
+    // Handle validation errors
+    if (error instanceof Error && error.message.includes('validation')) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid data provided. Please check your inputs.' },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { success: false, error: 'Failed to update meal plan' },
       { status: 500 }

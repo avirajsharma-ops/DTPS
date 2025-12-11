@@ -101,7 +101,7 @@ const watiContactSchema = new Schema<IWatiContact>({
   operatorIds: { type: [String], default: null },
   optedIn: { type: Boolean, default: false },
   paylinkSettings: { type: Schema.Types.Mixed, default: null },
-  phone: { type: String, index: true },
+  phone: { type: String },
   photo: { type: String, default: null },
   regionCode: { type: String, default: null },
   segments: { type: Schema.Types.Mixed, default: null },
@@ -112,7 +112,7 @@ const watiContactSchema = new Schema<IWatiContact>({
   tenantId: { type: String, default: null },
   waChannelPhone: { type: String, default: null },
   // Derived fields
-  level: { type: Number, default: 0, index: true },
+  level: { type: Number, default: 0 },
   city: { type: String, default: null }
 }, {
   timestamps: true

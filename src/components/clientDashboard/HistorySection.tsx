@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Button } from '@/components/ui/button';
 import { 
   Clock, 
   User, 
@@ -18,21 +19,32 @@ import {
   Edit,
   Trash2,
   Upload,
-  Download
+  Download,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight
 } from 'lucide-react';
 import { format } from 'date-fns';
+
+interface ChangeDetail {
+  fieldName: string;
+  oldValue: any;
+  newValue: any;
+}
 
 interface HistoryEntry {
   _id: string;
   action: string;
   description: string;
-  category: 'profile' | 'medical' | 'lifestyle' | 'diet' | 'payment' | 'appointment' | 'document' | 'other';
+  category: 'profile' | 'medical' | 'lifestyle' | 'diet' | 'payment' | 'appointment' | 'document' | 'assignment' | 'other';
   createdAt: string;
   performedBy?: {
     name: string;
+    email?: string;
     role: string;
   };
   metadata?: Record<string, any>;
+  changeDetails?: ChangeDetail[];
 }
 
 interface HistorySectionProps {
@@ -72,15 +84,26 @@ const actionIcons: Record<string, React.ReactNode> = {
 export default function HistorySection({ clientId }: HistorySectionProps) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchHistory();
   }, [clientId]);
 
+  const toggleExpanded = (id: string) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedItems(newExpanded);
+  };
+
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/users/${clientId}/history`);
+      const response = await fetch(`/api/users/${clientId}/history?limit=100`);
       if (response.ok) {
         const data = await response.json();
         setHistory(data.history || []);
@@ -117,6 +140,30 @@ export default function HistorySection({ clientId }: HistorySectionProps) {
     } catch {
       return 'Unknown';
     }
+  };
+
+  const formatValue = (value: any): string => {
+    if (value === null || value === undefined) {
+      return '<empty>';
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+    if (typeof value === 'object') {
+      if (Array.isArray(value)) {
+        return value.length > 0 ? value.join(', ') : '<empty>';
+      }
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
+  const formatFieldName = (fieldName: string): string => {
+    // Convert camelCase to Title Case
+    return fieldName
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, str => str.toUpperCase())
+      .trim();
   };
 
   if (loading) {
@@ -183,9 +230,41 @@ export default function HistorySection({ clientId }: HistorySectionProps) {
                           {entry.performedBy && (
                             <span className="text-xs text-gray-500">
                               by {entry.performedBy.name}
+                              {entry.performedBy.role && ` (${entry.performedBy.role})`}
                             </span>
                           )}
+                          {entry.changeDetails && entry.changeDetails.length > 0 && (
+                            <button
+                              onClick={() => toggleExpanded(entry._id)}
+                              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            >
+                              {expandedItems.has(entry._id) ? '▼ Hide details' : '▶ View details'}
+                            </button>
+                          )}
                         </div>
+                        
+                        {/* Change details section */}
+                        {expandedItems.has(entry._id) && entry.changeDetails && entry.changeDetails.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                            <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Changed Fields:</p>
+                            {entry.changeDetails.map((change, idx) => (
+                              <div key={idx} className="bg-white rounded p-2 border-l-2 border-blue-300 ml-2">
+                                <p className="text-xs font-medium text-gray-900">
+                                  {formatFieldName(change.fieldName)}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1 text-xs">
+                                  <span className="bg-red-50 text-red-700 px-2 py-1 rounded font-mono">
+                                    {formatValue(change.oldValue)}
+                                  </span>
+                                  <span className="text-gray-400">→</span>
+                                  <span className="bg-green-50 text-green-700 px-2 py-1 rounded font-mono">
+                                    {formatValue(change.newValue)}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-xs font-medium text-gray-600">

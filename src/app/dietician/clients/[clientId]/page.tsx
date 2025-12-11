@@ -67,6 +67,7 @@ import PaymentsSection from '@/components/clientDashboard/PaymentsSection';
 import BookingsSection from '@/components/clientDashboard/BookingsSection';
 import DocumentsSection from '@/components/clientDashboard/DocumentsSection';
 import HistorySection from '@/components/clientDashboard/HistorySection';
+import TasksSection from '@/components/clientDashboard/TasksSection';
 
 interface ClientData {
   _id: string;
@@ -153,6 +154,58 @@ const NOTE_TOPIC_TYPES = [
   'Other'
 ] as const;
 
+// Task types
+const TASK_TYPES = [
+  'General Followup',
+  'Habit Update',
+  'Session Booking',
+  'Sign Document',
+  'Form Allotment',
+  'Report Upload',
+  'Diary Update',
+  'Measurement Update',
+  'BCA Update',
+  'Progress Update'
+] as const;
+
+// Time options for task allotment
+const TIME_OPTIONS = [
+  '12:00 AM', '12:30 AM', '01:00 AM', '01:30 AM', '02:00 AM', '02:30 AM',
+  '03:00 AM', '03:30 AM', '04:00 AM', '04:30 AM', '05:00 AM', '05:30 AM',
+  '06:00 AM', '06:30 AM', '07:00 AM', '07:30 AM', '08:00 AM', '08:30 AM',
+  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
+  '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM', '08:00 PM', '08:30 PM',
+  '09:00 PM', '09:30 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM'
+] as const;
+
+interface ClientTask {
+  _id?: string;
+  taskType: string;
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  allottedTime: string;
+  repeatFrequency: number;
+  notifyClientOnChat: boolean;
+  notifyDieticianOnCompletion: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  tags?: Array<{ _id: string; name: string; color: string; icon?: string }>;
+  dietitian?: { _id: string; firstName: string; lastName: string; email: string };
+  createdAt?: string;
+}
+
+interface ClientTag {
+  _id: string;
+  name: string;
+  description?: string;
+  color: string;
+  icon?: string;
+  createdAt?: string;
+}
+
 export default function ClientDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -176,6 +229,31 @@ export default function ClientDetailPage() {
     showToClient: false,
     attachments: []
   });
+
+  // Tasks panel state
+  const [isTasksOpen, setIsTasksOpen] = useState(false);
+  const [clientTasks, setClientTasks] = useState<ClientTask[]>([]);
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [savingTask, setSavingTask] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<ClientTask | null>(null);
+  const [newTask, setNewTask] = useState<ClientTask>({
+    taskType: 'General Followup',
+    title: '',
+    description: '',
+    startDate: format(new Date(), 'yyyy-MM-dd'),
+    endDate: format(new Date(), 'yyyy-MM-dd'),
+    allottedTime: '12:00 AM',
+    repeatFrequency: 1,
+    notifyClientOnChat: false,
+    notifyDieticianOnCompletion: '',
+    status: 'pending'
+  });
+
+  // Tags panel state
+  const [isTagsOpen, setIsTagsOpen] = useState(false);
+  const [allTags, setAllTags] = useState<ClientTag[]>([]);
+  const [clientTagIds, setClientTagIds] = useState<string[]>([]);
+  const [loadingTags, setLoadingTags] = useState(false);
 
   
   const [renewalStartDate, setRenewalStartDate] = useState('');
@@ -276,6 +354,7 @@ export default function ClientDetailPage() {
     if (params.clientId) {
       fetchClientDetails();
       fetchClientNotes();
+      fetchClientTasks();
     }
   }, [params.clientId]);
 
@@ -530,6 +609,14 @@ export default function ClientDetailPage() {
         setFormData(data?.user);
         console.log('Client data:', data.user);
 
+        // Load client tags
+        if (data?.user?.tags && Array.isArray(data.user.tags)) {
+          const tagIds = data.user.tags.map((tag: any) => 
+            typeof tag === 'string' ? tag : tag._id
+          );
+          setClientTagIds(tagIds);
+        }
+
         // Fetch lifestyle data from separate API first to get physical measurements
         const lifestyleResponse = await fetch(`/api/users/${params.clientId}/lifestyle`);
         let lifestyleInfo = null;
@@ -778,8 +865,7 @@ export default function ClientDetailPage() {
           minute: entry.minute,
           meridian: entry.meridian,
           food: entry.food,
-          amount: entry.amount,
-          notes: entry.notes
+        
         }));
 
         const recallResponse = await fetch(`/api/users/${params.clientId}/recall`, {
@@ -844,8 +930,7 @@ export default function ClientDetailPage() {
         minute: e.minute,
         meridian: e.meridian,
         food: e.food,
-        amount: e.amount,
-        notes: e.notes
+       
       }));
 
       const response = await fetch(`/api/users/${params.clientId}/recall`, {
@@ -864,7 +949,7 @@ export default function ClientDetailPage() {
           metadata: {
             mealType: entry.mealType,
             food: entry.food,
-            amount: entry.amount,
+            
           },
         });
 
@@ -939,6 +1024,177 @@ export default function ClientDetailPage() {
       return 'N/A';
     }
   };
+
+  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
+
+  // Fetch client tasks
+  const fetchClientTasks = async () => {
+    try {
+      const response = await fetch(`/api/users/${params.clientId}/tasks`);
+      if (response.ok) {
+        const data = await response.json();
+        setClientTasks(data?.tasks || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  };
+
+  // Save new task
+  const handleSaveTask = async () => {
+    if (!newTask.taskType || !newTask.startDate || !newTask.endDate) {
+      toast.error('Please fill in task type, start date and end date');
+      return;
+    }
+
+    try {
+      setSavingTask(true);
+      const response = await fetch(`/api/users/${params.clientId}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newTask,
+          title: newTask.title || newTask.taskType
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Task created successfully');
+        setNewTask({
+          taskType: 'General Followup',
+          title: '',
+          description: '',
+          startDate: format(new Date(), 'yyyy-MM-dd'),
+          endDate: format(new Date(), 'yyyy-MM-dd'),
+          allottedTime: '12:00 AM',
+          repeatFrequency: 1,
+          notifyClientOnChat: false,
+          notifyDieticianOnCompletion: '',
+          status: 'pending'
+        });
+        setIsAddingTask(false);
+        fetchClientTasks();
+      } else {
+        toast.error(data.error || 'Failed to create task');
+        console.error('Task creation error:', data);
+      }
+    } catch (error) {
+      console.error('Error creating task:', error);
+      toast.error(error instanceof Error ? error.message : 'Error creating task');
+    } finally {
+      setSavingTask(false);
+    }
+  };
+
+  // Delete task
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/users/${params.clientId}/tasks/${taskId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        toast.success('Task deleted');
+        setClientTasks(prev => prev.filter(t => t._id !== taskId));
+        if (selectedTask?._id === taskId) {
+          setSelectedTask(null);
+        }
+      } else {
+        toast.error('Failed to delete task');
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('Error deleting task');
+    }
+  };
+
+  // Update task status
+  const handleUpdateTaskStatus = async (taskId: string, status: string) => {
+    try {
+      const response = await fetch(`/api/users/${params.clientId}/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+
+      if (response.ok) {
+        setClientTasks(prev => prev.map(t => 
+          t._id === taskId ? { ...t, status: status as any } : t
+        ));
+        if (selectedTask && selectedTask._id === taskId) {
+          setSelectedTask({ ...selectedTask, status: status as any });
+        }
+        toast.success('Task status updated');
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
+  // Open task detail view
+  const handleOpenTaskDetail = (task: ClientTask) => {
+    setSelectedTask(task);
+  };
+
+  // Close task detail view
+  const handleCloseTaskDetail = () => {
+    setSelectedTask(null);
+  };
+
+  // Fetch all tags
+  const fetchAllTags = async () => {
+    try {
+      setLoadingTags(true);
+      const response = await fetch(`/api/tags`);
+      if (response.ok) {
+        const data = await response.json();
+        setAllTags(data?.tags || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    } finally {
+      setLoadingTags(false);
+    }
+  };
+
+  // Toggle tag for client
+  const handleToggleClientTag = async (tagId: string) => {
+    try {
+      const isSelected = clientTagIds.includes(tagId);
+      const newTagIds = isSelected 
+        ? clientTagIds.filter(id => id !== tagId)
+        : [...clientTagIds, tagId];
+      
+      setClientTagIds(newTagIds);
+
+      // Update client with new tags
+      const response = await fetch(`/api/users/${params.clientId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags: newTagIds })
+      });
+
+      if (!response.ok) {
+        // Revert on error
+        setClientTagIds(clientTagIds);
+        toast.error('Failed to update tags');
+      } else {
+        toast.success(isSelected ? 'Tag removed' : 'Tag added');
+      }
+    } catch (error) {
+      console.error('Error updating tags:', error);
+      toast.error('Error updating tags');
+    }
+  };
+
+  // Load tags when opening the panel
+  useEffect(() => {
+    if (isTagsOpen) {
+      fetchAllTags();
+    }
+  }, [isTagsOpen]);
 
   if (loading) {
     return (
@@ -1053,6 +1309,18 @@ export default function ClientDetailPage() {
     </button>
 
     <button
+      onClick={() => setActiveSection('tasks')}
+      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
+        activeSection === 'tasks'
+          ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+      }`}
+    >
+      <Calendar className="h-4 w-4" />
+      Tasks
+    </button>
+
+    <button
       onClick={() => setActiveSection('history')}
       className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
         activeSection === 'history'
@@ -1106,7 +1374,19 @@ export default function ClientDetailPage() {
 
                 {/* Right: Action buttons */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                  <Button variant="outline" size="sm" className="text-xs h-8">Tags</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs h-8 flex items-center gap-1.5"
+                    onClick={() => setIsTagsOpen(true)}
+                  >
+                    Tags
+                    {clientTagIds.length > 0 && (
+                      <Badge className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-purple-500">
+                        {clientTagIds.length}
+                      </Badge>
+                    )}
+                  </Button>
                   {/* <Button 
                     variant="outline" 
                     size="sm" 
@@ -1130,7 +1410,20 @@ export default function ClientDetailPage() {
                     )}
                   </Button>
                   {/* <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => setIsEditing(!isEditing)}>{isEditing ? 'Cancel' : 'Modify'}</Button> */}
-                  <Button variant="outline" size="sm" className="text-xs h-8">Tasks</Button>
+                  {/* <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs h-8 flex items-center gap-1.5"
+                    onClick={() => setIsTasksOpen(true)}
+                  >
+                    <Calendar className="h-3.5 w-3.5" />
+                    Tasks
+                    {clientTasks.length > 0 && (
+                      <Badge className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-green-500">
+                        {clientTasks.length}
+                      </Badge>
+                    )}
+                  </Button> */}
                 </div>
               </div>
 
@@ -1214,6 +1507,14 @@ export default function ClientDetailPage() {
 
             {activeSection === 'documents' && (
               <DocumentsSection client={client} formatDate={formatDate} />
+            )}
+
+            {activeSection === 'tasks' && (
+              <TasksSection
+                clientId={params.clientId as string}
+                clientName={`${client?.firstName} ${client?.lastName}`}
+                dietitianEmail={session?.user?.email}
+              />
             )}
 
             {activeSection === 'history' && (
@@ -1761,6 +2062,543 @@ export default function ClientDetailPage() {
               )}
             </div>
               </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tasks Slide-out Panel */}
+      <div 
+        className={`fixed inset-0 z-40 transition-opacity duration-300 ${
+          isTasksOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/30"
+          onClick={() => setIsTasksOpen(false)}
+        />
+        
+        {/* Panel */}
+        <div 
+          className={`fixed top-1/2 right-0 -translate-y-1/2 h-[85vh] w-full max-w-md bg-white shadow-2xl z-50 rounded-l-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${
+            isTasksOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-green-50 to-white">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-green-600" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">Client Tasks</h2>
+                <p className="text-xs text-gray-500">{clientTasks.length} tasks</p>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
+              onClick={() => setIsTasksOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {/* Task Detail View */}
+            {selectedTask ? (
+              <div className="animate-in slide-in-from-right-4 duration-200">
+                {/* Back button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mb-3 -ml-2 text-gray-600 hover:text-gray-900"
+                  onClick={handleCloseTaskDetail}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Back to Tasks
+                </Button>
+
+                {/* Task Detail Card */}
+                <Card className="border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-[10px] px-2 py-0.5 mb-1 ${
+                              selectedTask.status === 'completed' ? 'bg-green-100 text-green-700' :
+                              selectedTask.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                              selectedTask.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}
+                          >
+                            {selectedTask.status}
+                          </Badge>
+                          <h3 className="text-lg font-semibold text-gray-900">{selectedTask.title || selectedTask.taskType}</h3>
+                          <Badge variant="outline" className="text-[10px] px-2 py-0.5 mt-1">
+                            {selectedTask.taskType}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <Label className="text-xs font-medium text-gray-500">Start Date</Label>
+                          <p className="text-sm text-gray-700 mt-1">
+                            {selectedTask.startDate ? format(new Date(selectedTask.startDate), 'MMM d, yyyy') : 'N/A'}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <Label className="text-xs font-medium text-gray-500">End Date</Label>
+                          <p className="text-sm text-gray-700 mt-1">
+                            {selectedTask.endDate ? format(new Date(selectedTask.endDate), 'MMM d, yyyy') : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <Label className="text-xs font-medium text-gray-500">Allotted Time</Label>
+                        <p className="text-sm text-gray-700 mt-1">{selectedTask.allottedTime}</p>
+                      </div>
+
+                      {selectedTask.description && (
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <Label className="text-xs font-medium text-gray-500">Message</Label>
+                          <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{selectedTask.description}</p>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-2">
+                        {selectedTask.notifyClientOnChat && (
+                          <Badge className="text-[10px] bg-blue-100 text-blue-700">
+                            Notify Client on Chat
+                          </Badge>
+                        )}
+                        {selectedTask.repeatFrequency > 0 && (
+                          <Badge className="text-[10px] bg-purple-100 text-purple-700">
+                            Repeat: Every {selectedTask.repeatFrequency} day(s)
+                          </Badge>
+                        )}
+                      </div>
+
+                      {selectedTask.createdAt && (
+                        <p className="text-[10px] text-gray-400">
+                          Created: {format(new Date(selectedTask.createdAt), 'MMM d, yyyy h:mm a')}
+                        </p>
+                      )}
+
+                      {/* Status Update Buttons */}
+                      <div className="pt-3 border-t">
+                        <Label className="text-xs font-medium text-gray-500 mb-2 block">Update Status</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {['pending', 'in-progress', 'completed', 'cancelled'].map((status) => (
+                            <Button
+                              key={status}
+                              variant={selectedTask.status === status ? 'default' : 'outline'}
+                              size="sm"
+                              className="text-xs capitalize"
+                              onClick={() => handleUpdateTaskStatus(selectedTask._id!, status)}
+                            >
+                              {status}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 pt-3 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                          onClick={() => {
+                            handleDeleteTask(selectedTask._id!);
+                            handleCloseTaskDetail();
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                          Delete Task
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              /* Tasks List View */
+              <>
+                {/* Add Task Button */}
+                {!isAddingTask && (
+                  <Button 
+                    className="w-full mb-3 bg-green-600 hover:bg-green-700 h-9 text-sm"
+                    onClick={() => setIsAddingTask(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Task
+                  </Button>
+                )}
+
+                {/* Add Task Form */}
+                {isAddingTask && (
+                  <Card className="mb-3 border-green-200 bg-green-50/50 animate-in slide-in-from-top-2 duration-200">
+                    <CardContent className="p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-gray-900">Create Task</h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => setIsAddingTask(false)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs font-medium">Task Type *</Label>
+                        <Select
+                          value={newTask.taskType}
+                          onValueChange={(value) => setNewTask(prev => ({ ...prev, taskType: value }))}
+                        >
+                          <SelectTrigger className="mt-1 h-8 text-sm">
+                            <SelectValue placeholder="Select task type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TASK_TYPES.map((type) => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs font-medium">Start Date *</Label>
+                          <Input
+                            type="date"
+                            value={newTask.startDate}
+                            onChange={(e) => setNewTask(prev => ({ ...prev, startDate: e.target.value }))}
+                            className="mt-1 h-8 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-medium">End Date *</Label>
+                          <Input
+                            type="date"
+                            value={newTask.endDate}
+                            onChange={(e) => setNewTask(prev => ({ ...prev, endDate: e.target.value }))}
+                            className="mt-1 h-8 text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs font-medium">Task Allotment Time</Label>
+                        <Select
+                          value={newTask.allottedTime}
+                          onValueChange={(value) => setNewTask(prev => ({ ...prev, allottedTime: value }))}
+                        >
+                          <SelectTrigger className="mt-1 h-8 text-sm">
+                            <SelectValue placeholder="Select time" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-48">
+                            {TIME_OPTIONS.map((time) => (
+                              <SelectItem key={time} value={time}>{time}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs font-medium">Repeat Frequency (days)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={newTask.repeatFrequency}
+                          onChange={(e) => setNewTask(prev => ({ ...prev, repeatFrequency: parseInt(e.target.value) || 0 }))}
+                          className="mt-1 h-8 text-sm"
+                          placeholder="0 = no repeat"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="notifyClientOnChat"
+                          checked={newTask.notifyClientOnChat}
+                          onChange={(e) => setNewTask(prev => ({ ...prev, notifyClientOnChat: e.target.checked }))}
+                          className="h-3.5 w-3.5 text-green-600 rounded border-gray-300"
+                        />
+                        <Label htmlFor="notifyClientOnChat" className="text-xs cursor-pointer">
+                          Notify Customer on chat
+                        </Label>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs font-medium">Notify practitioner on task completion</Label>
+                        <Input
+                          type="text"
+                          value={newTask.notifyDieticianOnCompletion}
+                          onChange={(e) => setNewTask(prev => ({ ...prev, notifyDieticianOnCompletion: e.target.value }))}
+                          className="mt-1 h-8 text-sm"
+                          placeholder="Email or name"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-xs font-medium">Message</Label>
+                        <Textarea
+                          value={newTask.description}
+                          onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                          className="mt-1 text-sm min-h-[60px]"
+                          placeholder="Write your message here"
+                        />
+                        <p className="text-[10px] text-orange-500 mt-1">
+                          Note: Type #name to use as a placeholder for contact&apos;s name
+                        </p>
+                      </div>
+                      
+                      <div className="flex gap-2 pt-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 h-8 text-xs"
+                          onClick={() => {
+                            setIsAddingTask(false);
+                            setNewTask({
+                              taskType: 'General Followup',
+                              title: '',
+                              description: '',
+                              startDate: format(new Date(), 'yyyy-MM-dd'),
+                              endDate: format(new Date(), 'yyyy-MM-dd'),
+                              allottedTime: '12:00 AM',
+                              repeatFrequency: 1,
+                              notifyClientOnChat: false,
+                              notifyDieticianOnCompletion: '',
+                              status: 'pending'
+                            });
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700"
+                          onClick={handleSaveTask}
+                          disabled={savingTask}
+                        >
+                          {savingTask ? 'Saving...' : 'Save'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Tasks List */}
+                <div className="space-y-2">
+                  {clientTasks.length === 0 && !isAddingTask ? (
+                    <div className="text-center py-8">
+                      <Calendar className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500 text-sm">No tasks yet</p>
+                      <p className="text-gray-400 text-xs mt-1">Create your first task</p>
+                    </div>
+                  ) : (
+                    clientTasks.map((task, index) => (
+                      <Card 
+                        key={task._id} 
+                        className="border-gray-200 hover:border-green-300 transition-all duration-200 hover:shadow-md cursor-pointer animate-in fade-in slide-in-from-right-2 group"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                        onClick={() => handleOpenTaskDetail(task)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <Badge variant="outline" className="text-[8px] px-1 py-0 text-gray-500">
+                                  {task.taskType}
+                                </Badge>
+                                <Badge 
+                                  className={`text-[9px] px-1.5 py-0 ${
+                                    task.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                    task.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                                    task.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                    'bg-yellow-100 text-yellow-700'
+                                  }`}
+                                >
+                                  {task.status}
+                                </Badge>
+                              </div>
+                              <p className="text-xs font-medium text-gray-900 mb-0.5">
+                                {task.title || task.taskType}
+                              </p>
+                              <p className="text-[10px] text-gray-500">
+                                {task.startDate ? format(new Date(task.startDate), 'MMM d') : ''} - {task.endDate ? format(new Date(task.endDate), 'MMM d, yyyy') : ''}
+                              </p>
+                            </div>
+                            
+                            <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteTask(task._id!)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tags Slide-out Panel */}
+      <div 
+        className={`fixed inset-0 z-40 transition-opacity duration-300 ${
+          isTagsOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/30"
+          onClick={() => setIsTagsOpen(false)}
+        />
+        
+        {/* Panel */}
+        <div 
+          className={`fixed top-1/2 right-0 -translate-y-1/2 h-[85vh] w-full max-w-md bg-white shadow-2xl z-50 rounded-l-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${
+            isTagsOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-purple-50 to-white">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                <Badge className="h-4 w-4 text-purple-600" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">Manage Tags</h2>
+                <p className="text-xs text-gray-500">{clientTagIds.length} tags assigned</p>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
+              onClick={() => setIsTagsOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {loadingTags ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner className="h-6 w-6" />
+              </div>
+            ) : allTags.length === 0 ? (
+              <div className="text-center py-8">
+                <Badge className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">No tags available</p>
+                <p className="text-gray-400 text-xs mt-1">Tags are created by admin</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {/* Assigned Tags */}
+                {clientTagIds.length > 0 && (
+                  <>
+                    <div className="mb-4">
+                      <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Assigned Tags</h3>
+                      <div className="space-y-2">
+                        {allTags
+                          .filter(tag => clientTagIds.includes(tag._id))
+                          .map((tag) => (
+                            <Card 
+                              key={tag._id} 
+                              className="border-2 border-purple-200 bg-purple-50 hover:shadow-md transition-all"
+                            >
+                              <CardContent className="p-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <div 
+                                      className="h-3 w-3 rounded-full"
+                                      style={{ backgroundColor: tag.color || '#3B82F6' }}
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-gray-900">{tag.name}</p>
+                                      {tag.description && (
+                                        <p className="text-xs text-gray-600 line-clamp-1">{tag.description}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0 text-purple-600 hover:text-purple-700 hover:bg-purple-100"
+                                    onClick={() => handleToggleClientTag(tag._id)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    </div>
+                    <div className="border-t border-gray-200 my-4" />
+                  </>
+                )}
+
+                {/* Available Tags */}
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Available Tags</h3>
+                  {allTags.filter(tag => !clientTagIds.includes(tag._id)).length === 0 ? (
+                    <div className="text-center py-6">
+                      <p className="text-gray-500 text-xs">All tags are assigned</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {allTags
+                        .filter(tag => !clientTagIds.includes(tag._id))
+                        .map((tag) => (
+                          <Card 
+                            key={tag._id} 
+                            className="border-gray-200 hover:border-purple-300 transition-all duration-200 hover:shadow-md cursor-pointer group"
+                            onClick={() => handleToggleClientTag(tag._id)}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className="h-3 w-3 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: tag.color || '#3B82F6' }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900">{tag.name}</p>
+                                  {tag.description && (
+                                    <p className="text-xs text-gray-600 line-clamp-1">{tag.description}</p>
+                                  )}
+                                </div>
+                                <Plus className="h-4 w-4 text-gray-400 group-hover:text-purple-600 transition-colors flex-shrink-0" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>

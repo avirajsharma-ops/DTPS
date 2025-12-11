@@ -151,20 +151,17 @@ const ClientMealPlanSchema = new Schema({
   clientId: { 
     type: Schema.Types.ObjectId, 
     ref: 'User', 
-    required: true,
-    index: true
+    required: true
   },
   dietitianId: { 
     type: Schema.Types.ObjectId, 
     ref: 'User', 
-    required: true,
-    index: true
+    required: true
   },
   templateId: { 
     type: Schema.Types.ObjectId, 
     ref: 'DietTemplate', 
-    required: false, // Optional - can create plan without template
-    index: true
+    required: false // Optional - can create plan without template
   },
   
   name: { 
@@ -191,20 +188,17 @@ const ClientMealPlanSchema = new Schema({
   }],
   startDate: { 
     type: Date, 
-    required: true,
-    index: true
+    required: true
   },
   endDate: { 
     type: Date, 
-    required: true,
-    index: true
+    required: true
   },
   status: { 
     type: String, 
     required: true,
     enum: ['active', 'completed', 'paused', 'cancelled'],
-    default: 'active',
-    index: true
+    default: 'active'
   },
   
   customizations: {
@@ -276,7 +270,30 @@ const ClientMealPlanSchema = new Schema({
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
-  toObject: { virtuals: true }
+  toObject: { virtuals: true },
+  autoIndex: false
+});
+
+// Validation: ensure startDate is not after endDate
+ClientMealPlanSchema.pre('save', function(next) {
+  if (this.startDate && this.endDate && this.startDate > this.endDate) {
+    next(new Error('Start date cannot be after end date'));
+  } else {
+    next();
+  }
+});
+
+ClientMealPlanSchema.pre('findOneAndUpdate', function(next) {
+  const update = this.getUpdate() as any;
+  if (update.$set && update.$set.startDate && update.$set.endDate) {
+    if (new Date(update.$set.startDate) > new Date(update.$set.endDate)) {
+      next(new Error('Start date cannot be after end date'));
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
 });
 
 // Indexes for better performance

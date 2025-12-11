@@ -218,10 +218,10 @@ export async function POST(request: NextRequest) {
     const startDate = new Date(validatedData.startDate);
     const endDate = new Date(validatedData.endDate);
     
-    if (startDate >= endDate) {
+    if (startDate > endDate) {
       return NextResponse.json({
         error: 'Invalid date range',
-        message: 'Start date must be before end date'
+        message: 'Start date must be before or equal to end date'
       }, { status: 400 });
     }
 

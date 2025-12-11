@@ -16,6 +16,8 @@ export { default as LifestyleInfo } from './LifestyleInfo';
 export { default as MedicalInfo } from './MedicalInfo';
 export { default as JournalTracking } from './JournalTracking';
 export { default as DietTemplate } from './DietTemplate';
+export { default as Task } from './Task';
+export { default as Tag } from './Tag';
 export { History } from './History';
 
 // Re-export types for convenience

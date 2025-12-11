@@ -202,7 +202,8 @@ const recipeSchema = new Schema({
     required: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  autoIndex: false
 });
 
 // Indexes for better search performance

@@ -48,7 +48,8 @@ const paymentSchema = new Schema({
     maxlength: 500
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  autoIndex: false
 });
 
 // Indexes for better query performance (transactionId index is automatic due to unique: true)

@@ -277,13 +277,11 @@ const journalTrackingSchema = new Schema({
   client: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
   },
   date: {
     type: Date,
-    required: true,
-    index: true
+    required: true
   },
   activities: [activityEntrySchema],
   steps: [stepsEntrySchema],

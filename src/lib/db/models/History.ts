@@ -28,8 +28,7 @@ const historySchema = new Schema<IHistory>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
-      index: true,
+      required: true
     },
     action: {
       type: String,
@@ -41,8 +40,7 @@ const historySchema = new Schema<IHistory>(
       type: String,
       required: true,
       enum: ['profile', 'medical', 'lifestyle', 'diet', 'payment', 'appointment', 'document', 'assignment', 'other'],
-      default: 'other',
-      index: true,
+      default: 'other'
     },
     description: {
       type: String,

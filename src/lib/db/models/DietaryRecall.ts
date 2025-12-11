@@ -6,8 +6,6 @@ export interface IMealEntry {
   minute: string;
   meridian: 'AM' | 'PM';
   food: string;
-  amount: string;
-  notes: string;
 }
 
 export interface IDietaryRecall extends Document {
@@ -41,31 +39,22 @@ const mealEntrySchema = new Schema({
     type: String,
     default: '',
   },
-  amount: {
-    type: String,
-    default: '',
-  },
-  notes: {
-    type: String,
-    default: '',
-  },
 }, { _id: false });
 
 const dietaryRecallSchema = new Schema<IDietaryRecall>({
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true,
+    required: true
   },
   date: {
     type: Date,
-    default: Date.now,
-    index: true,
+    default: Date.now
   },
   meals: [mealEntrySchema],
 }, {
   timestamps: true,
+  autoIndex: false
 });
 
 // Compound index for efficient querying by user and date

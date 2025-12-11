@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import PaymentLink from '@/lib/db/models/PaymentLink';
+import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import { UserRole } from '@/types';
 import Razorpay from 'razorpay';
 
@@ -118,12 +119,57 @@ export async function POST(request: NextRequest) {
         }
         
         await paymentLink.save();
+
+        // Create ClientPurchase if it doesn't exist and servicePlanId is present
+        let clientPurchaseCreated = false;
+        if (paymentLink.servicePlanId && paymentLink.durationDays) {
+          try {
+            // Check if ClientPurchase already exists
+            const existingPurchase = await ClientPurchase.findOne({
+              paymentLink: paymentLink._id
+            });
+
+            if (!existingPurchase) {
+              const startDate = paymentLink.paidAt || new Date();
+              const endDate = new Date(startDate);
+              endDate.setDate(endDate.getDate() + paymentLink.durationDays);
+
+              const newPurchase = new ClientPurchase({
+                client: paymentLink.client,
+                dietitian: paymentLink.dietitian,
+                servicePlan: paymentLink.servicePlanId,
+                paymentLink: paymentLink._id,
+                planName: paymentLink.planName || 'Service Plan',
+                planCategory: paymentLink.planCategory || 'general-wellness',
+                durationDays: paymentLink.durationDays,
+                durationLabel: paymentLink.duration || `${paymentLink.durationDays} Days`,
+                baseAmount: paymentLink.amount,
+                discountPercent: paymentLink.discount || 0,
+                taxPercent: paymentLink.tax || 0,
+                finalAmount: paymentLink.finalAmount,
+                purchaseDate: startDate,
+                startDate: startDate,
+                endDate: endDate,
+                status: 'active',
+                mealPlanCreated: false,
+                daysUsed: 0
+              });
+
+              await newPurchase.save();
+              clientPurchaseCreated = true;
+              console.log(`Created ClientPurchase ${newPurchase._id} from synced payment ${paymentLink._id}`);
+            }
+          } catch (purchaseError) {
+            console.error('Error creating ClientPurchase during sync:', purchaseError);
+          }
+        }
         
         return NextResponse.json({
           success: true,
           message: 'Payment status synced successfully - Payment is PAID',
           paymentLink,
-          razorpayStatus: razorpayLink.status
+          razorpayStatus: razorpayLink.status,
+          clientPurchaseCreated
         });
       } else if (razorpayLink.status === 'expired') {
         paymentLink.status = 'expired';

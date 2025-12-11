@@ -16,8 +16,6 @@ export interface RecallEntry {
   minute: string; // 00-59
   meridian: 'AM' | 'PM';
   food: string;
-  amount: string;
-  notes: string;
 }
 
 interface RecallFormProps {
@@ -53,9 +51,7 @@ export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEnt
         hour: s.hour,
         minute: s.minute,
         meridian: s.meridian,
-        food: '',
-        amount: '',
-        notes: ''
+        food: ''
       })));
     }
   }, [entries.length]); // Remove onChange from dependencies to prevent infinite loop
@@ -63,7 +59,7 @@ export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEnt
   const addEntry = () => {
     onChange([
       ...entries,
-      { id: Math.random().toString(36).slice(2), mealType: 'Custom', hour: '9', minute: '00', meridian: 'AM', food: '', amount: '', notes: '' }
+      { id: Math.random().toString(36).slice(2), mealType: 'Custom', hour: '9', minute: '00', meridian: 'AM', food: '' }
     ]);
   };
 
@@ -122,27 +118,6 @@ export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEnt
                   placeholder="Please enter food details here..." 
                   className="resize-none"
                 />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2.5">
-                  <Label className="text-sm font-medium">Amount</Label>
-                  <Input 
-                    value={entry.amount} 
-                    onChange={e => updateEntry(entry.id, 'amount', e.target.value)} 
-                    placeholder="e.g., 1 bowl" 
-                    className="h-10"
-                  />
-                </div>
-                <div className="space-y-2.5">
-                  <Label className="text-sm font-medium">Notes</Label>
-                  <Input 
-                    value={entry.notes} 
-                    onChange={e => updateEntry(entry.id, 'notes', e.target.value)} 
-                    placeholder="Any notes..." 
-                    className="h-10"
-                  />
-                </div>
               </div>
 
               {/* Show individual save buttons only for clients */}

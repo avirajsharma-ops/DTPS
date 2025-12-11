@@ -87,14 +87,12 @@ const servicePlanSchema = new Schema({
     type: String,
     required: true,
     trim: true,
-    maxlength: 200,
-    index: true
+    maxlength: 200
   },
   category: {
     type: String,
     required: true,
-    enum: ['weight-loss', 'weight-gain', 'muscle-gain', 'diabetes', 'pcos', 'thyroid', 'general-wellness', 'detox', 'sports-nutrition', 'custom'],
-    index: true
+    enum: ['weight-loss', 'weight-gain', 'muscle-gain', 'diabetes', 'pcos', 'thyroid', 'general-wellness', 'detox', 'sports-nutrition', 'custom']
   },
   description: {
     type: String,
@@ -107,8 +105,7 @@ const servicePlanSchema = new Schema({
   }],
   isActive: {
     type: Boolean,
-    default: true,
-    index: true
+    default: true
   },
   maxDiscountPercent: {
     type: Number,
@@ -122,7 +119,8 @@ const servicePlanSchema = new Schema({
     required: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  autoIndex: false
 });
 
 // Client purchase schema
@@ -130,14 +128,12 @@ const clientPurchaseSchema = new Schema({
   client: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
   },
   dietitian: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
   },
   servicePlan: {
     type: Schema.Types.ObjectId,
@@ -147,8 +143,7 @@ const clientPurchaseSchema = new Schema({
   paymentLink: {
     type: Schema.Types.ObjectId,
     ref: 'PaymentLink',
-    required: true,
-    index: true
+    required: true
   },
   
   // Plan details at time of purchase
@@ -211,8 +206,7 @@ const clientPurchaseSchema = new Schema({
     type: String,
     required: true,
     enum: ['active', 'expired', 'cancelled'],
-    default: 'active',
-    index: true
+    default: 'active'
   },
   
   // Meal plan tracking
@@ -230,7 +224,8 @@ const clientPurchaseSchema = new Schema({
     min: 0
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  autoIndex: false
 });
 
 // Indexes

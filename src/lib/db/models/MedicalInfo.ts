@@ -63,8 +63,7 @@ const medicalInfoSchema = new Schema<IMedicalInfo>({
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    unique: true,
-    index: true,
+    unique: true
   },
   medicalConditions: [{ type: String }],
   allergies: [{ type: String }],

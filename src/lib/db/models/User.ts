@@ -205,6 +205,12 @@ generalGoal: {
     ref: 'User'
   }],
 
+  // Tags for categorizing/organizing clients
+  tags: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Tag'
+  }],
+
   // Fitness tracking data
   fitnessData: fitnessDataSchema,
 
@@ -231,6 +237,17 @@ generalGoal: {
       paymentMethodTitle: String,
       transactionId: String
     }]
+  },
+
+  // Google Calendar integration data
+  googleCalendarAccessToken: {
+    type: String
+  },
+  googleCalendarRefreshToken: {
+    type: String
+  },
+  googleCalendarTokenExpiry: {
+    type: Date
   }
 }, {
   timestamps: true,

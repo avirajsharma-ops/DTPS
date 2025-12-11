@@ -126,8 +126,7 @@ const DietTemplateSchema = new Schema({
     type: String, 
     required: true, 
     trim: true,
-    maxlength: 200,
-    index: true
+    maxlength: 200
   },
   description: { 
     type: String, 
@@ -136,15 +135,13 @@ const DietTemplateSchema = new Schema({
   category: {
     type: String,
     required: true,
-    enum: ['weight-loss', 'weight-gain', 'maintenance', 'muscle-gain', 'diabetes', 'heart-healthy', 'keto', 'vegan', 'custom'],
-    index: true
+    enum: ['weight-loss', 'weight-gain', 'maintenance', 'muscle-gain', 'diabetes', 'heart-healthy', 'keto', 'vegan', 'custom']
   },
   duration: { 
     type: Number, 
     required: true, 
     min: 1, 
-    max: 365,
-    index: true
+    max: 365
   },
   targetCalories: {
     min: { type: Number, default: 1200, min: 0 },
@@ -166,13 +163,11 @@ const DietTemplateSchema = new Schema({
   },
   dietaryRestrictions: [{ 
     type: String, 
-    trim: true,
-    index: true
+    trim: true
   }],
   tags: [{ 
     type: String, 
-    trim: true,
-    index: true
+    trim: true
   }],
   // Use Mixed type for meals to accept any structure from DietPlanDashboard
   meals: { type: [Schema.Types.Mixed], default: [] },
@@ -187,9 +182,9 @@ const DietTemplateSchema = new Schema({
       { name: 'Bedtime', time: '9:30 PM' }
     ]
   },
-  isPublic: { type: Boolean, default: false, index: true },
+  isPublic: { type: Boolean, default: false },
   isPremium: { type: Boolean, default: false },
-  isActive: { type: Boolean, default: true, index: true },
+  isActive: { type: Boolean, default: true },
   difficulty: {
     type: String,
     enum: ['beginner', 'intermediate', 'advanced'],
@@ -208,8 +203,7 @@ const DietTemplateSchema = new Schema({
   createdBy: { 
     type: Schema.Types.ObjectId, 
     ref: 'User', 
-    required: true,
-    index: true
+    required: true
   },
   usageCount: { type: Number, default: 0, min: 0 },
   averageRating: { type: Number, min: 1, max: 5 },
@@ -222,7 +216,8 @@ const DietTemplateSchema = new Schema({
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
-  toObject: { virtuals: true }
+  toObject: { virtuals: true },
+  autoIndex: false
 });
 
 // Indexes for better performance

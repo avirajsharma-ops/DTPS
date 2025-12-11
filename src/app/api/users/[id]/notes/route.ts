@@ -4,19 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import mongoose from 'mongoose';
 import { logHistoryServer } from '@/lib/server/history';
-
-// Topic types for notes
-export const NOTE_TOPIC_TYPES = [
-  'General',
-  'Diet Plan',
-  'Medical',
-  'Progress',
-  'Consultation',
-  'Renewal',
-  'Follow-up',
-  'Feedback',
-  'Other'
-] as const;
+import { NOTE_TOPIC_TYPES } from '@/lib/constants/notes';
 
 // Delete cached model to ensure schema updates are applied
 if (mongoose.models.ClientNote) {

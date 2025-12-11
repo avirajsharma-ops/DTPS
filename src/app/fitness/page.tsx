@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import EnhancedFitnessTracker from '@/components/fitness/EnhancedFitnessTracker';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,10 @@ import {
   Footprints,
   Flame
 } from 'lucide-react';
+
+const EnhancedFitnessTracker = dynamic(() => import('@/components/fitness/EnhancedFitnessTracker'), {
+  ssr: false
+});
 
 interface DailyGoal {
   type: 'steps' | 'calories' | 'distance' | 'activeMinutes';

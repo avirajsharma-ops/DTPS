@@ -1,5 +1,28 @@
 import mongoose from 'mongoose';
 
+// Import all models to register their schemas before any operations
+import './models/User';
+import './models/Tag';
+import './models/Task';
+import './models/Appointment';
+import './models/Recipe';
+import './models/MealPlan';
+import './models/Message';
+import './models/Payment';
+import './models/SystemAlert';
+import './models/ProgressEntry';
+import './models/FoodLog';
+import './models/WooCommerceClient';
+import './models/WatiContact';
+import './models/ClientDocuments';
+import './models/DietaryRecall';
+import './models/LifestyleInfo';
+import './models/MedicalInfo';
+import './models/JournalTracking';
+import './models/DietTemplate';
+import './models/History';
+import './models/ActivityAssignment';
+
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/dtps-nutrition';
 
 if (!MONGODB_URI) {

@@ -61,13 +61,11 @@ const subscriptionPlanSchema = new Schema({
   category: {
     type: String,
     required: true,
-    enum: ['weight-loss', 'weight-gain', 'muscle-gain', 'diabetes', 'pcos', 'thyroid', 'general-wellness', 'custom'],
-    index: true
+    enum: ['weight-loss', 'weight-gain', 'muscle-gain', 'diabetes', 'pcos', 'thyroid', 'general-wellness', 'custom']
   },
   isActive: {
     type: Boolean,
-    default: true,
-    index: true
+    default: true
   },
   consultationsIncluded: {
     type: Number,

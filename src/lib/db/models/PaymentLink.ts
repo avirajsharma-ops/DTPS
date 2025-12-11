@@ -63,14 +63,12 @@ const paymentLinkSchema = new Schema({
   client: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
   },
   dietitian: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
   },
   
   // Payment details
@@ -132,8 +130,7 @@ const paymentLinkSchema = new Schema({
   // Razorpay details
   razorpayPaymentLinkId: {
     type: String,
-    sparse: true,
-    index: true
+    sparse: true
   },
   razorpayPaymentLinkUrl: {
     type: String
@@ -217,14 +214,15 @@ const paymentLinkSchema = new Schema({
     default: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  autoIndex: false
 });
 
 // Indexes
 paymentLinkSchema.index({ client: 1, status: 1 });
 paymentLinkSchema.index({ dietitian: 1, status: 1 });
 paymentLinkSchema.index({ createdAt: -1 });
-paymentLinkSchema.index({ razorpayPaymentLinkId: 1 });
+// Note: razorpayPaymentLinkId index is created automatically by sparse: true, so we don't need schema.index() call
 
 // Method to mark as paid
 paymentLinkSchema.methods.markAsPaid = function(paymentDetails: {

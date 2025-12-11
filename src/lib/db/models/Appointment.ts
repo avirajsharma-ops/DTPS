@@ -78,7 +78,8 @@ const appointmentSchema = new Schema({
     }
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  autoIndex: false
 });
 
 // Indexes for better query performance
