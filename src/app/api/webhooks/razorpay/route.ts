@@ -4,6 +4,8 @@ import connectDB from '@/lib/db/connection';
 import ClientSubscription from '@/lib/db/models/ClientSubscription';
 import PaymentLink from '@/lib/db/models/PaymentLink';
 import { ClientPurchase } from '@/lib/db/models/ServicePlan';
+import Payment from '@/lib/db/models/Payment';
+import { PaymentStatus, PaymentType } from '@/types';
 
 // Verify Razorpay webhook signature
 function verifyRazorpaySignature(
@@ -116,6 +118,26 @@ async function handlePaymentSuccess(payload: any) {
 
     await subscription.save();
 
+    // Create Payment record in Payment schema
+    try {
+      const paymentRecord = new Payment({
+        client: subscription.client,
+        dietitian: subscription.dietitian,
+        type: PaymentType.SUBSCRIPTION,
+        amount: subscription.amount,
+        currency: 'INR',
+        status: PaymentStatus.COMPLETED,
+        paymentMethod: 'razorpay',
+        transactionId: payment.id,
+        description: `Subscription payment - Order: ${orderId}`
+      });
+
+      await paymentRecord.save();
+      console.log(`Created Payment record ${paymentRecord._id} for client ${subscription.client}`);
+    } catch (paymentError) {
+      console.error('Error creating Payment record:', paymentError);
+    }
+
     console.log(`Payment successful for subscription: ${subscription._id}`);
     console.log(`Client: ${subscription.client}, Amount: ${subscription.amount}`);
 
@@ -154,6 +176,26 @@ async function handlePaymentFailed(payload: any) {
 
     await subscription.save();
 
+    // Create Payment record with FAILED status
+    try {
+      const paymentRecord = new Payment({
+        client: subscription.client,
+        dietitian: subscription.dietitian,
+        type: PaymentType.SUBSCRIPTION,
+        amount: subscription.amount,
+        currency: 'INR',
+        status: PaymentStatus.FAILED,
+        paymentMethod: 'razorpay',
+        transactionId: payment.id,
+        description: `Failed payment - Order: ${orderId} - Reason: ${payment.description || 'Unknown'}`
+      });
+
+      await paymentRecord.save();
+      console.log(`Created Failed Payment record ${paymentRecord._id} for client ${subscription.client}`);
+    } catch (paymentError) {
+      console.error('Error creating Failed Payment record:', paymentError);
+    }
+
     console.log(`Payment failed for subscription: ${subscription._id}`);
     console.log(`Reason: ${payment.description}`);
 
@@ -179,54 +221,133 @@ async function handlePaymentLinkCompleted(payload: any) {
     });
 
     if (paymentLink) {
+      // Extract payment details if available
+      let paymentMethod = 'razorpay';
+      let payerEmail = '';
+      let payerPhone = '';
+      let razorpayPaymentId = paymentLinkData.id;
+      
+      if (payload.payment) {
+        razorpayPaymentId = payload.payment.entity?.id || paymentLinkData.id;
+        paymentMethod = payload.payment.entity?.method || 'razorpay';
+        payerEmail = payload.payment.entity?.email || '';
+        payerPhone = payload.payment.entity?.contact || '';
+      }
+      
       // Update PaymentLink status
       paymentLink.status = 'paid';
       paymentLink.paidAt = new Date();
-      
-      // Extract payment details if available
-      if (payload.payment) {
-        paymentLink.razorpayPaymentId = payload.payment.entity?.id;
-        paymentLink.paymentMethod = payload.payment.entity?.method;
-        paymentLink.payerEmail = payload.payment.entity?.email;
-        paymentLink.payerPhone = payload.payment.entity?.contact;
-      }
+      paymentLink.razorpayPaymentId = razorpayPaymentId;
+      paymentLink.paymentMethod = paymentMethod;
+      paymentLink.payerEmail = payerEmail;
+      paymentLink.payerPhone = payerPhone;
 
       await paymentLink.save();
       console.log(`Payment link ${paymentLink._id} marked as paid`);
 
+      // Create Payment record in Payment schema with full plan details
+      let paymentRecordId = null;
+      try {
+        // Check if payment record already exists to avoid duplicates
+        let existingPayment = await Payment.findOne({
+          transactionId: razorpayPaymentId,
+          client: paymentLink.client
+        });
+
+        if (existingPayment) {
+          console.log(`⚠️ Payment record already exists for transaction ${razorpayPaymentId}`);
+          paymentRecordId = existingPayment._id;
+        } else {
+          const paymentRecord = new Payment({
+            client: paymentLink.client,
+            dietitian: paymentLink.dietitian,
+            type: PaymentType.SERVICE_PLAN,
+            amount: paymentLink.finalAmount,
+            currency: paymentLink.currency || 'INR',
+            status: PaymentStatus.COMPLETED,
+            paymentMethod: paymentMethod,
+            transactionId: razorpayPaymentId,
+            description: `Payment for ${paymentLink.planName || 'Service Plan'} - ${paymentLink.duration || paymentLink.durationDays + ' Days'} (${paymentLink.planCategory || 'general-wellness'})`,
+            
+            // Plan details
+            planName: paymentLink.planName,
+            planCategory: paymentLink.planCategory,
+            durationDays: paymentLink.durationDays,
+            durationLabel: paymentLink.duration || `${paymentLink.durationDays} Days`,
+            
+            // References
+            paymentLink: paymentLink._id,
+            
+            // Payer details
+            payerEmail: payerEmail,
+            payerPhone: payerPhone
+          });
+
+          // Save the Payment record
+          const savedPayment = await paymentRecord.save();
+          paymentRecordId = savedPayment._id;
+          console.log(`✅ Created Payment record ${paymentRecordId} for client ${paymentLink.client}`);
+          console.log(`   Amount: ₹${paymentLink.finalAmount}, Status: COMPLETED, TransactionId: ${razorpayPaymentId}`);
+        }
+      } catch (paymentError) {
+        console.error('Error creating Payment record:', paymentError);
+      }
+
       // Create ClientPurchase record if servicePlanId exists
       if (paymentLink.servicePlanId && paymentLink.durationDays) {
         try {
-          const startDate = new Date();
-          const endDate = new Date();
-          endDate.setDate(endDate.getDate() + paymentLink.durationDays);
+          // Check if ClientPurchase already exists for this payment link
+          const existingPurchase = await ClientPurchase.findOne({ paymentLink: paymentLink._id });
+          
+          if (existingPurchase) {
+            console.log(`⚠️ ClientPurchase already exists for PaymentLink ${paymentLink._id}`);
+          } else {
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + paymentLink.durationDays);
 
-          const clientPurchase = new ClientPurchase({
-            client: paymentLink.client,
-            dietitian: paymentLink.dietitian,
-            servicePlan: paymentLink.servicePlanId,
-            paymentLink: paymentLink._id,
-            planName: paymentLink.planName || 'Service Plan',
-            planCategory: paymentLink.planCategory || 'general-wellness',
-            durationDays: paymentLink.durationDays,
-            durationLabel: paymentLink.duration || `${paymentLink.durationDays} Days`,
-            baseAmount: paymentLink.amount,
-            discountPercent: paymentLink.discount || 0,
-            taxPercent: paymentLink.tax || 0,
-            finalAmount: paymentLink.finalAmount,
-            purchaseDate: new Date(),
-            startDate: startDate,
-            endDate: endDate,
-            status: 'active',
-            mealPlanCreated: false,
-            daysUsed: 0
-          });
+            const clientPurchase = new ClientPurchase({
+              client: paymentLink.client,
+              dietitian: paymentLink.dietitian,
+              servicePlan: paymentLink.servicePlanId,
+              paymentLink: paymentLink._id,
+              planName: paymentLink.planName || 'Service Plan',
+              planCategory: paymentLink.planCategory || 'general-wellness',
+              durationDays: paymentLink.durationDays,
+              durationLabel: paymentLink.duration || `${paymentLink.durationDays} Days`,
+              baseAmount: paymentLink.amount,
+              discountPercent: paymentLink.discount || 0,
+              taxPercent: paymentLink.tax || 0,
+              finalAmount: paymentLink.finalAmount,
+              purchaseDate: new Date(),
+              startDate: startDate,
+              endDate: endDate,
+              status: 'active',
+              mealPlanCreated: false,
+              daysUsed: 0
+            });
 
-          await clientPurchase.save();
-          console.log(`Created ClientPurchase ${clientPurchase._id} for client ${paymentLink.client}`);
+            const savedPurchase = await clientPurchase.save();
+            console.log(`✅ Created ClientPurchase ${savedPurchase._id} for client ${paymentLink.client}`);
+            console.log(`   PaymentLink Reference: ${savedPurchase.paymentLink}`);
+            console.log(`   Status: ${savedPurchase.status}, Duration: ${paymentLink.durationDays} days`);
+            console.log(`   Start: ${startDate.toISOString()}, End: ${endDate.toISOString()}`);
+            
+            // Update Payment record with ClientPurchase reference
+            if (paymentRecordId) {
+              const updatedPayment = await Payment.findByIdAndUpdate(
+                paymentRecordId, 
+                { clientPurchase: savedPurchase._id },
+                { new: true }
+              );
+              console.log(`✅ Updated Payment record with ClientPurchase reference: ${updatedPayment?.clientPurchase}`);
+            }
+          }
         } catch (purchaseError) {
           console.error('Error creating ClientPurchase:', purchaseError);
         }
+      } else {
+        console.log(`⚠️ Cannot create ClientPurchase - missing servicePlanId (${paymentLink.servicePlanId}) or durationDays (${paymentLink.durationDays})`);
       }
 
       return;

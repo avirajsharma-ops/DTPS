@@ -70,10 +70,48 @@ export function CreateTaskDialog({
     startDate: '',
     endDate: '',
     allottedTime: '12:00 AM',
+    dueTime: '11:59 PM',
     repeatFrequency: 0,
     notifyClientOnChat: false,
     notifyDieticianOnCompletion: dietitianEmail || ''
   });
+
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  // Get available time options (only future times for today, all times for future dates)
+  const getAvailableTimeOptions = () => {
+    const today = new Date();
+    const todayDateStr = today.toISOString().split('T')[0];
+    
+    // If start date is today, filter out past times
+    if (formData.startDate === todayDateStr) {
+      const currentHour = today.getHours();
+      const currentMinute = today.getMinutes();
+      
+      return TIME_OPTIONS.filter(timeStr => {
+        const [timeOnly] = timeStr.split(' ');
+        const [hours, minutes] = timeOnly.split(':').map(Number);
+        
+        // Convert to 24-hour format for comparison
+        let hour24 = hours;
+        if (timeStr.includes('PM') && hours !== 12) {
+          hour24 = hours + 12;
+        } else if (timeStr.includes('AM') && hours === 12) {
+          hour24 = 0;
+        }
+        
+        // Only show times that are current or future
+        return hour24 > currentHour || (hour24 === currentHour && minutes >= currentMinute);
+      });
+    }
+    
+    // For future dates, show all times
+    return TIME_OPTIONS;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +145,7 @@ export function CreateTaskDialog({
           startDate: '',
           endDate: '',
           allottedTime: '12:00 AM',
+          dueTime: '11:59 PM',
           repeatFrequency: 0,
           notifyClientOnChat: false,
           notifyDieticianOnCompletion: dietitianEmail || ''
@@ -181,8 +220,14 @@ export function CreateTaskDialog({
                 id="startDate"
                 type="date"
                 value={formData.startDate}
+                min={getTodayDate()}
                 onChange={(e) =>
-                  setFormData({ ...formData, startDate: e.target.value })
+                  setFormData({ 
+                    ...formData, 
+                    startDate: e.target.value,
+                    // Reset time if date changes
+                    allottedTime: TIME_OPTIONS[0] || '12:00 AM'
+                  })
                 }
                 required
               />
@@ -196,6 +241,7 @@ export function CreateTaskDialog({
                 id="endDate"
                 type="date"
                 value={formData.endDate}
+                min={getTodayDate()}
                 onChange={(e) =>
                   setFormData({ ...formData, endDate: e.target.value })
                 }
@@ -220,7 +266,7 @@ export function CreateTaskDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-[200px]">
-                  {TIME_OPTIONS.map((time) => (
+                  {getAvailableTimeOptions().map((time) => (
                     <SelectItem key={time} value={time}>
                       {time}
                     </SelectItem>
@@ -229,25 +275,49 @@ export function CreateTaskDialog({
               </Select>
             </div>
 
-            {/* Repeat Frequency */}
+            {/* Due Time */}
             <div>
-              <Label htmlFor="repeatFrequency" className="text-sm font-medium">
-                Repeat Frequency
+              <Label htmlFor="dueTime" className="text-sm font-medium">
+                Due Time (Complete By)
               </Label>
-              <Input
-                id="repeatFrequency"
-                type="number"
-                min="0"
-                value={formData.repeatFrequency}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    repeatFrequency: parseInt(e.target.value) || 0
-                  })
+              <Select
+                value={formData.dueTime}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, dueTime: value })
                 }
-                placeholder="0 = No repeat"
-              />
+              >
+                <SelectTrigger id="dueTime">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {TIME_OPTIONS.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          {/* Repeat Frequency */}
+          <div>
+            <Label htmlFor="repeatFrequency" className="text-sm font-medium">
+              Repeat Frequency
+            </Label>
+            <Input
+              id="repeatFrequency"
+              type="number"
+              min="0"
+              value={formData.repeatFrequency}
+              placeholder="0 = No repeat"
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  repeatFrequency: parseInt(e.target.value) || 0
+                })
+              }
+            />
           </div>
 
           {/* Checkboxes */}

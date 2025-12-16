@@ -22,6 +22,7 @@ export async function POST(
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const fileName = formData.get('fileName') as string;
+    const category = (formData.get('category') as string) || 'medical-report';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -62,7 +63,8 @@ export async function POST(
       fileName: fileName || file.name,
       uploadedOn: new Date().toISOString().split('T')[0],
       fileType: contentType,
-      url: publicUrl
+      url: publicUrl,
+      category: category as 'medical-report' | 'transformation' | 'other'
     };
 
     if (medicalInfo) {

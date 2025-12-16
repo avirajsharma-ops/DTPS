@@ -10,6 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -25,9 +32,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ExternalLink, RefreshCw, Search, Users } from 'lucide-react';
+import { ExternalLink, RefreshCw, Search, Users, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface Client {
   _id: string;
@@ -58,6 +66,19 @@ export default function DieticianClientsPage() {
   const [filterFreeze, setFilterFreeze] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  
+  // Create client dialog state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    gender: '',
+    dateOfBirth: '',
+  });
 
   useEffect(() => {
     fetchMyClients();
@@ -76,6 +97,57 @@ export default function DieticianClientsPage() {
       console.error('Error fetching clients:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateClient = async () => {
+    if (!createForm.email || !createForm.firstName || !createForm.lastName || !createForm.password) {
+      toast.error('Please fill required fields: email, first name, last name, and password');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const payload = {
+        email: createForm.email,
+        password: createForm.password,
+        firstName: createForm.firstName,
+        lastName: createForm.lastName,
+        phone: createForm.phone || undefined,
+        gender: createForm.gender || undefined,
+        dateOfBirth: createForm.dateOfBirth ? new Date(createForm.dateOfBirth) : undefined,
+        role: 'client',
+        // Auto-assign to the current dietitian
+        assignedDietitian: (session?.user as any)?._id || undefined,
+      };
+
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to create client');
+      }
+
+      toast.success('Client created successfully');
+      setCreateDialogOpen(false);
+      setCreateForm({
+        email: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        phone: '',
+        gender: '',
+        dateOfBirth: '',
+      });
+      await fetchMyClients();
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to create client');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -127,9 +199,19 @@ export default function DieticianClientsPage() {
             </p>
           </div>
           
-          <div className="flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
-            <Users className="h-5 w-5 text-blue-600" />
-            <span className="text-blue-900 font-semibold">{filteredClients.length} Clients</span>
+          <div className="flex items-center gap-3">
+            <Button 
+              size="sm" 
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Create Client
+            </Button>
+            <div className="flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
+              <Users className="h-5 w-5 text-blue-600" />
+              <span className="text-blue-900 font-semibold">{filteredClients.length} Clients</span>
+            </div>
           </div>
         </div>
 
@@ -281,7 +363,86 @@ export default function DieticianClientsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Create Client Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Client</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="text-sm text-gray-600">Email <span className="text-red-500">*</span></label>
+              <Input 
+                type="email" 
+                value={createForm.email} 
+                onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))} 
+                placeholder="client@example.com"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-sm text-gray-600">Password <span className="text-red-500">*</span></label>
+              <Input 
+                type="password" 
+                value={createForm.password} 
+                onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} 
+                placeholder="Enter password"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">First Name <span className="text-red-500">*</span></label>
+              <Input 
+                value={createForm.firstName} 
+                onChange={e => setCreateForm(f => ({ ...f, firstName: e.target.value }))} 
+                placeholder="First name"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">Last Name <span className="text-red-500">*</span></label>
+              <Input 
+                value={createForm.lastName} 
+                onChange={e => setCreateForm(f => ({ ...f, lastName: e.target.value }))} 
+                placeholder="Last name"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">Phone</label>
+              <Input 
+                value={createForm.phone} 
+                onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))} 
+                placeholder="Phone number"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">Gender</label>
+              <Select value={createForm.gender} onValueChange={(v) => setCreateForm(f => ({ ...f, gender: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
+              <label className="text-sm text-gray-600">Date of Birth</label>
+              <Input 
+                type="date" 
+                value={createForm.dateOfBirth} 
+                onChange={e => setCreateForm(f => ({ ...f, dateOfBirth: e.target.value }))} 
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateClient} disabled={saving}>
+              {saving ? 'Creating...' : 'Create Client'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
-

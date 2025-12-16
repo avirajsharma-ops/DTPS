@@ -25,7 +25,7 @@ const paymentSchema = new Schema({
   currency: {
     type: String,
     required: true,
-    default: 'USD',
+    default: 'INR',
     uppercase: true
   },
   status: {
@@ -36,7 +36,7 @@ const paymentSchema = new Schema({
   },
   paymentMethod: {
     type: String,
-    required: true
+    default: 'razorpay'
   },
   transactionId: {
     type: String,
@@ -45,7 +45,49 @@ const paymentSchema = new Schema({
   },
   description: {
     type: String,
-    maxlength: 500
+    maxlength: 1000
+  },
+  
+  // Plan details (for service_plan type)
+  planName: {
+    type: String,
+    trim: true
+  },
+  planCategory: {
+    type: String,
+    trim: true
+  },
+  durationDays: {
+    type: Number,
+    min: 1
+  },
+  durationLabel: {
+    type: String,
+    trim: true
+  },
+  
+  // References
+  paymentLink: {
+    type: Schema.Types.ObjectId,
+    ref: 'PaymentLink'
+  },
+  clientPurchase: {
+    type: Schema.Types.ObjectId,
+    ref: 'ClientPurchase'
+  },
+  
+  // Payment method details
+  payerEmail: {
+    type: String,
+    trim: true
+  },
+  payerPhone: {
+    type: String,
+    trim: true
+  },
+  payerName: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true,

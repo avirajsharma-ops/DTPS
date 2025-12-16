@@ -226,7 +226,8 @@ export enum PaymentStatus {
 export enum PaymentType {
   CONSULTATION = 'consultation',
   SUBSCRIPTION = 'subscription',
-  MEAL_PLAN = 'meal_plan'
+  MEAL_PLAN = 'meal_plan',
+  SERVICE_PLAN = 'service_plan'
 }
 
 export interface IPayment extends Document {
@@ -240,6 +241,22 @@ export interface IPayment extends Document {
   paymentMethod: string;
   transactionId?: string;
   description?: string;
+  
+  // Plan details (for service_plan type)
+  planName?: string;
+  planCategory?: string;
+  durationDays?: number;
+  durationLabel?: string;
+  
+  // Payment link reference
+  paymentLink?: string;
+  clientPurchase?: string;
+  
+  // Payment method details
+  payerEmail?: string;
+  payerPhone?: string;
+  payerName?: string;
+  
   createdAt: Date;
   updatedAt: Date;
 }

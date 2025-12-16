@@ -72,23 +72,54 @@ export async function GET(request: NextRequest) {
       // Clients can only see their own meal plans
       query.clientId = session.user.id;
     } else if (session.user.role === UserRole.DIETITIAN) {
-      // Get all clients assigned to this dietitian
-      const assignedClients = await User.find({
-        role: UserRole.CLIENT,
-        $or: [
-          { assignedDietitian: session.user.id },
-          { assignedDietitians: session.user.id }
-        ]
-      }).select('_id');
-      const assignedClientIds = assignedClients.map(c => c._id);
-      
-      // Dietitian can see meal plans they created OR for their assigned clients
-      query.$or = [
-        { dietitianId: session.user.id },
-        { clientId: { $in: assignedClientIds } }
-      ];
+      // If clientId is specified, filter by that client
       if (clientId) {
+        // Check if dietitian has access to this client
+        const client = await User.findById(clientId).select('assignedDietitian assignedDietitians');
+        if (!client) {
+          return NextResponse.json({ 
+            success: true,
+            mealPlans: [],
+            pagination: { page: 1, limit: 20, total: 0, pages: 0 }
+          });
+        }
+        
+        const isAssigned = 
+          client.assignedDietitian?.toString() === session.user.id ||
+          client.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
+        
+        // Check if dietitian created any plans for this client
+        const hasCreatedPlans = await ClientMealPlan.exists({ 
+          clientId: clientId, 
+          dietitianId: session.user.id 
+        });
+        
+        if (!isAssigned && !hasCreatedPlans) {
+          return NextResponse.json({ 
+            success: true,
+            mealPlans: [],
+            pagination: { page: 1, limit: 20, total: 0, pages: 0 }
+          });
+        }
+        
+        // Dietitian has access - just filter by clientId
         query.clientId = clientId;
+      } else {
+        // No clientId specified - get all clients assigned to this dietitian
+        const assignedClients = await User.find({
+          role: UserRole.CLIENT,
+          $or: [
+            { assignedDietitian: session.user.id },
+            { assignedDietitians: session.user.id }
+          ]
+        }).select('_id');
+        const assignedClientIds = assignedClients.map(c => c._id);
+        
+        // Dietitian can see meal plans they created OR for their assigned clients
+        query.$or = [
+          { dietitianId: session.user.id },
+          { clientId: { $in: assignedClientIds } }
+        ];
       }
     } else if (session.user.role === UserRole.ADMIN) {
       // Admins can see all meal plans
@@ -252,6 +283,7 @@ export async function POST(request: NextRequest) {
       description: validatedData.description,
       startDate: startDate,
       endDate: endDate,
+      duration: validatedData.duration, // Store original plan duration
       meals: validatedData.meals || (template && templateType === 'diet' ? template.meals : []),
       mealTypes: validatedData.mealTypes || (template && templateType === 'diet' ? template.mealTypes : []),
       customizations: validatedData.customizations || (template ? {

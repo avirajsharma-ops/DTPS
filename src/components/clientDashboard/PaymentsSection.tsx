@@ -4,26 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Copy, Plus, RefreshCw, MoreVertical, Trash2, ExternalLink, Eye, FileText, Bell, Loader2, Mail, Printer, Package, ChevronDown } from "lucide-react";
-
-// Service Plan interfaces
-interface PricingTier {
-  _id: string;
-  durationDays: number;
-  durationLabel: string;
-  amount: number;
-  isActive: boolean;
-}
-
-interface ServicePlan {
-  _id: string;
-  name: string;
-  category: string;
-  description?: string;
-  pricingTiers: PricingTier[];
-  maxDiscountPercent: number;
-  isActive: boolean;
-}
+import { Copy, Plus, RefreshCw, MoreVertical, Trash2, ExternalLink, Eye, FileText, Bell, Loader2, Mail, Printer } from "lucide-react";
 
 export interface PaymentItem {
   _id: string;
@@ -40,9 +21,6 @@ export interface PaymentItem {
   planName?: string;
   catalogue?: string;
   duration?: string;
-  durationDays?: number;
-  servicePlanId?: string;
-  pricingTierId?: string;
   createdAt: string;
   status?: string;
   paidAt?: string;
@@ -91,14 +69,6 @@ export default function PaymentsSection({
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
-  // Service Plans state
-  const [servicePlans, setServicePlans] = useState<ServicePlan[]>([]);
-  const [loadingPlans, setLoadingPlans] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedServicePlan, setSelectedServicePlan] = useState<ServicePlan | null>(null);
-  const [selectedPricingTier, setSelectedPricingTier] = useState<PricingTier | null>(null);
-  const [maxDiscount, setMaxDiscount] = useState<number>(40);
-
   // Modal fields
   const [showModal, setShowModal] = useState(false);
   const [expireDate, setExpireDate] = useState("");
@@ -112,79 +82,6 @@ export default function PaymentsSection({
   const [planName, setPlanName] = useState("");
   const [catalogue, setCatalogue] = useState("");
   const [duration, setDuration] = useState<number | "">(1);
-  const [durationLabel, setDurationLabel] = useState("");
-
-  // Fetch service plans
-  const fetchServicePlans = useCallback(async () => {
-    setLoadingPlans(true);
-    try {
-      const response = await fetch('/api/admin/service-plans?activeOnly=true');
-      const data = await response.json();
-      if (data.success) {
-        setServicePlans(data.plans || []);
-      }
-    } catch (error) {
-      console.error('Error fetching service plans:', error);
-    } finally {
-      setLoadingPlans(false);
-    }
-  }, []);
-
-  // Get unique categories from service plans
-  const getUniqueCategories = () => {
-    const categories = [...new Set(servicePlans.map(p => p.category))];
-    return categories;
-  };
-
-  // Get plans filtered by selected category
-  const getPlansForCategory = () => {
-    if (!selectedCategory) return [];
-    return servicePlans.filter(p => p.category === selectedCategory);
-  };
-
-  // Handle category selection
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-    setSelectedServicePlan(null);
-    setSelectedPricingTier(null);
-    setPlanCategory(category);
-    setPlanName("");
-    setAmount("");
-    setDuration("");
-    setDurationLabel("");
-    setMaxDiscount(40);
-  };
-
-  // Handle service plan selection
-  const handleServicePlanSelect = (planId: string) => {
-    const plan = servicePlans.find(p => p._id === planId);
-    if (plan) {
-      setSelectedServicePlan(plan);
-      setSelectedPricingTier(null);
-      setPlanName(plan.name);
-      setMaxDiscount(plan.maxDiscountPercent);
-      // Reset amount when plan changes
-      setAmount("");
-      setDuration("");
-      setDurationLabel("");
-    } else {
-      setSelectedServicePlan(null);
-      setSelectedPricingTier(null);
-      setMaxDiscount(40);
-    }
-  };
-
-  // Handle pricing tier selection - auto-fill amount and duration
-  const handlePricingTierSelect = (tierId: string) => {
-    if (!selectedServicePlan) return;
-    const tier = selectedServicePlan.pricingTiers.find(t => t._id === tierId);
-    if (tier) {
-      setSelectedPricingTier(tier);
-      setAmount(tier.amount);
-      setDuration(tier.durationDays);
-      setDurationLabel(tier.durationLabel);
-    }
-  };
 
   // Auto-calc final amount
   useEffect(() => {
@@ -192,17 +89,10 @@ export default function PaymentsSection({
     const t = typeof tax === "number" ? tax : 0;
     const d = typeof discount === "number" ? discount : 0;
 
-    // Enforce max discount limit
-    const effectiveDiscount = Math.min(d, maxDiscount);
-    if (d > maxDiscount) {
-      setDiscount(maxDiscount);
-      toast.error(`Maximum discount for this plan is ${maxDiscount}%`);
-    }
-
     const taxed = amt + (amt * t) / 100;
-    const finalVal = Math.max(0, taxed - (amt * effectiveDiscount) / 100);
+    const finalVal = Math.max(0, taxed - (amt * d) / 100);
     setFinalAmount(Number(finalVal.toFixed(2)));
-  }, [amount, tax, discount, maxDiscount]);
+  }, [amount, tax, discount]);
 
   // Fetch payment links from API
   const fetchPaymentLinks = useCallback(async () => {
@@ -230,13 +120,6 @@ export default function PaymentsSection({
     fetchPaymentLinks();
   }, [fetchPaymentLinks]);
 
-  // Load service plans when modal opens
-  useEffect(() => {
-    if (showModal && servicePlans.length === 0) {
-      fetchServicePlans();
-    }
-  }, [showModal, servicePlans.length, fetchServicePlans]);
-
   const resetModal = () => {
     setExpireDate("");
     setAmount("");
@@ -248,11 +131,6 @@ export default function PaymentsSection({
     setPlanName("");
     setCatalogue("");
     setDuration(1);
-    setDurationLabel("");
-    setSelectedCategory("");
-    setSelectedServicePlan(null);
-    setSelectedPricingTier(null);
-    setMaxDiscount(40);
     setShowModal(false);
   };
 
@@ -267,11 +145,6 @@ export default function PaymentsSection({
       return;
     }
 
-    if (!selectedServicePlan || !selectedPricingTier) {
-      toast.error("Please select a service plan and duration");
-      return;
-    }
-
     setCreating(true);
     try {
       const response = await fetch('/api/payment-links', {
@@ -281,14 +154,11 @@ export default function PaymentsSection({
           clientId: client._id,
           amount,
           tax: Number(tax) || 0,
-          discount: Math.min(Number(discount) || 0, maxDiscount),
+          discount: Number(discount) || 0,
           finalAmount,
           planCategory: planCategory || undefined,
           planName: planName || undefined,
-          duration: durationLabel || `${duration} Days`,
-          durationDays: Number(duration) || undefined,
-          servicePlanId: selectedServicePlan._id,
-          pricingTierId: selectedPricingTier._id,
+          duration: duration || undefined,
           catalogue: catalogue || undefined,
           expireDate: expireDate || undefined,
           notes: notes || undefined,
@@ -749,7 +619,7 @@ export default function PaymentsSection({
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white p-6 rounded-lg w-full max-w-xl shadow-xl">
             <h2 className="text-lg font-semibold mb-4">Generate Payment Link</h2>
             
             {/* Client info display */}
@@ -762,176 +632,130 @@ export default function PaymentsSection({
               </div>
             )}
 
-            {loadingPlans ? (
-              <div className="flex items-center gap-2 mb-4">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-gray-500">Loading plans...</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-gray-700">Amount *</label>
+                <input 
+                  type="number" 
+                  value={amount} 
+                  onChange={(e) => setAmount(Number(e.target.value))} 
+                  placeholder="Enter amount"
+                  className="w-full border p-2 rounded mt-1" 
+                />
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Plan Category Dropdown */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700">Plan Category *</label>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => handleCategorySelect(e.target.value)}
-                    className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="">-- Select Category --</option>
-                    {getUniqueCategories().map((category) => (
-                      <option key={category} value={category}>
-                        {category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </option>
-                    ))}
-                  </select>
-                </div>
 
-                {/* Plan Name Dropdown */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700">Plan Name *</label>
-                  <select
-                    value={selectedServicePlan?._id || ""}
-                    onChange={(e) => handleServicePlanSelect(e.target.value)}
-                    disabled={!selectedCategory}
-                    className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">{selectedCategory ? '-- Select Plan --' : 'Select category first'}</option>
-                    {getPlansForCategory().map((plan) => (
-                      <option key={plan._id} value={plan._id}>
-                        {plan.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="text-xs font-medium text-gray-700">Tax %</label>
+                <input 
+                  type="number" 
+                  value={tax} 
+                  onChange={(e) => setTax(Number(e.target.value))} 
+                  className="w-full border p-2 rounded mt-1" 
+                />
+              </div>
 
-                {/* Duration Dropdown */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700">Duration *</label>
-                  <select
-                    value={selectedPricingTier?._id || ""}
-                    onChange={(e) => handlePricingTierSelect(e.target.value)}
-                    disabled={!selectedServicePlan}
-                    className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">{selectedServicePlan ? '-- Select Duration --' : 'Select plan first'}</option>
-                    {selectedServicePlan?.pricingTiers
-                      .filter(tier => tier.isActive)
-                      .map((tier) => (
-                        <option key={tier._id} value={tier._id}>
-                          {tier.durationLabel} ({tier.durationDays} days) - ₹{tier.amount.toLocaleString()}
-                        </option>
-                      ))}
-                  </select>
-                  {selectedPricingTier && (
-                    <p className="text-xs text-gray-500 mt-1">{selectedPricingTier.durationDays} days plan</p>
-                  )}
-                </div>
+              <div>
+                <label className="text-xs font-medium text-gray-700">Discount %</label>
+                <input 
+                  type="number" 
+                  value={discount} 
+                  onChange={(e) => setDiscount(Number(e.target.value))} 
+                  className="w-full border p-2 rounded mt-1" 
+                />
+              </div>
 
-                {/* Link Expire Date */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700">Link Expire Date</label>
-                  <input 
-                    type="date" 
-                    value={expireDate} 
-                    onChange={(e) => setExpireDate(e.target.value)} 
-                    className="w-full border p-2 rounded-lg mt-1" 
-                  />
-                </div>
-
-                {/* Base Amount */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700">Base Amount *</label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
-                    <input 
-                      type="number" 
-                      value={amount} 
-                      onChange={(e) => setAmount(Number(e.target.value))} 
-                      placeholder="Auto-filled from plan"
-                      className="w-full border p-2 pl-8 rounded-lg bg-gray-50" 
-                      readOnly={!!selectedPricingTier}
-                    />
-                  </div>
-                  {selectedPricingTier && (
-                    <p className="text-xs text-green-600 mt-1">✓ Auto-filled from selected plan</p>
-                  )}
-                </div>
-
-                {/* Tax */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700">Tax %</label>
-                  <input 
-                    type="number" 
-                    min="0"
-                    value={tax} 
-                    onChange={(e) => setTax(Number(e.target.value))} 
-                    className="w-full border p-2 rounded-lg mt-1" 
-                    placeholder="Enter tax percentage"
-                  />
-                </div>
-
-                {/* Discount */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700">
-                    Discount % <span className="text-gray-400">(Max {maxDiscount}%)</span>
-                  </label>
-                  <input 
-                    type="number"
-                    min="0"
-                    max={maxDiscount}
-                    value={discount} 
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setDiscount(Math.min(val, maxDiscount));
-                    }} 
-                    className="w-full border p-2 rounded-lg mt-1" 
-                    placeholder={`Max ${maxDiscount}%`}
-                  />
-                </div>
-
-                {/* Final Amount */}
-                <div>
-                  <label className="text-xs font-medium text-gray-700">Final Amount</label>
-                  <div className="mt-1 p-2 bg-green-50 rounded-lg font-bold text-green-700 text-lg border border-green-200">
-                    ₹{finalAmount.toLocaleString()}
-                  </div>
-                </div>
-
-                {/* Notes */}
-                <div className="md:col-span-2">
-                  <label className="text-xs font-medium text-gray-700">Notes</label>
-                  <textarea 
-                    value={notes} 
-                    onChange={(e) => setNotes(e.target.value)} 
-                    placeholder="Any additional notes..."
-                    className="w-full border p-2 rounded-lg mt-1" 
-                    rows={2} 
-                  />
-                </div>
-
-                {/* Show to Client */}
-                <div className="md:col-span-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={showToClient} 
-                      onChange={(e) => setShowToClient(e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm text-gray-700">Show this payment to client</span>
-                  </label>
+              <div>
+                <label className="text-xs font-medium text-gray-700">Final Amount</label>
+                <div className="mt-1 p-2 bg-blue-50 rounded font-semibold text-blue-700">
+                  ₹{finalAmount.toLocaleString()}
                 </div>
               </div>
-            )}
+
+              <div>
+                <label className="text-xs font-medium text-gray-700">Plan Name</label>
+                <input 
+                  type="text" 
+                  value={planName} 
+                  onChange={(e) => setPlanName(e.target.value)} 
+                  placeholder="e.g., Weight Loss Plan"
+                  className="w-full border p-2 rounded mt-1" 
+                />
+              </div>
+
+
+
+
+              <div>
+                <label className="text-xs font-medium text-gray-700">Plan Category</label>
+                <input 
+                  type="text" 
+                  value={planCategory} 
+                  onChange={(e) => setPlanCategory(e.target.value)} 
+                  placeholder="e.g., Premium"
+                  className="w-full border p-2 rounded mt-1" 
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700">Duration (Days) <span className="text-red-500">*</span></label>
+                <input
+                  type="number"
+                  min={1}
+                  max={15}
+                  value={duration}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (isNaN(val)) {
+                      setDuration("");
+                    } else {
+                      setDuration(Math.min(15, Math.max(1, val)));
+                    }
+                  }}
+                  placeholder="1-15 days"
+                  className="w-full border p-2 rounded mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">Max 15 days</p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700">Expire Date</label>
+                <input 
+                  type="date" 
+                  value={expireDate} 
+                  onChange={(e) => setExpireDate(e.target.value)} 
+                  className="w-full border p-2 rounded mt-1" 
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="text-xs font-medium text-gray-700">Notes</label>
+                <textarea 
+                  value={notes} 
+                  onChange={(e) => setNotes(e.target.value)} 
+                  placeholder="Any additional notes..."
+                  className="w-full border p-2 rounded mt-1" 
+                  rows={2} 
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={showToClient} 
+                    onChange={(e) => setShowToClient(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm text-gray-700">Show this payment to client</span>
+                </label>
+              </div>
+            </div>
 
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="ghost" onClick={resetModal} disabled={creating}>
                 Cancel
               </Button>
-              <Button 
-                onClick={generateLink} 
-                disabled={creating || !selectedServicePlan || !selectedPricingTier}
-              >
+              <Button onClick={generateLink} disabled={creating}>
                 {creating ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />

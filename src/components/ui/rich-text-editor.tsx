@@ -141,8 +141,8 @@ export function RichTextEditor({
           type="button"
           variant="ghost"
           size="sm"
-          title="Heading"
-          onClick={() => execCommand('formatBlock', 'h3')}
+          title="Heading (H2)"
+          onClick={() => execCommand('formatBlock', 'h2')}
           className="h-8 w-8 p-0 hover:bg-gray-200"
         >
           <Heading2 className="h-4 w-4" />

@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+// Freeze day interface
+interface IFreezeDay {
+  date: Date;
+  addedDate?: string; // The date where meal was copied to (YYYY-MM-DD format)
+  createdAt: Date;
+}
+
 // Progress tracking interface
 interface IProgressEntry {
   date: Date;
@@ -30,6 +37,8 @@ interface IMealCompletion {
   rating?: 1 | 2 | 3 | 4 | 5;
 }
 
+
+
 // Client meal plan interface
 export interface IClientMealPlan extends Document {
   clientId: mongoose.Types.ObjectId;
@@ -41,6 +50,10 @@ export interface IClientMealPlan extends Document {
   startDate: Date;
   endDate: Date;
   status: 'active' | 'completed' | 'paused' | 'cancelled';
+  
+  // Freeze tracking
+  freezedDays: IFreezeDay[];
+  totalFreezeCount: number;
   
   // Customizations from template
   customizations?: {
@@ -146,6 +159,13 @@ const MealCompletionSchema = new Schema({
   rating: { type: Number, min: 1, max: 5 }
 }, { _id: false });
 
+// Freeze day schema
+const FreezeDaySchema = new Schema({
+  date: { type: Date, required: true },
+  addedDate: { type: String }, // The date where meal was copied to (YYYY-MM-DD format)
+  createdAt: { type: Date, default: Date.now }
+}, { _id: false });
+
 // Main client meal plan schema
 const ClientMealPlanSchema = new Schema({
   clientId: { 
@@ -155,7 +175,6 @@ const ClientMealPlanSchema = new Schema({
   },
   dietitianId: { 
     type: Schema.Types.ObjectId, 
-    ref: 'User', 
     required: true
   },
   templateId: { 
@@ -194,11 +213,28 @@ const ClientMealPlanSchema = new Schema({
     type: Date, 
     required: true
   },
+  // Original plan duration in days (doesn't change when frozen)
+  duration: {
+    type: Number,
+    required: false,
+    min: 1
+  },
   status: { 
     type: String, 
     required: true,
     enum: ['active', 'completed', 'paused', 'cancelled'],
     default: 'active'
+  },
+  
+  // Freeze tracking
+  freezedDays: {
+    type: [FreezeDaySchema],
+    default: []
+  },
+  totalFreezeCount: {
+    type: Number,
+    default: 0,
+    min: 0
   },
   
   customizations: {
@@ -303,8 +339,8 @@ ClientMealPlanSchema.index({ startDate: 1, endDate: 1 });
 ClientMealPlanSchema.index({ 'progress.date': 1 });
 ClientMealPlanSchema.index({ 'mealCompletions.date': 1 });
 
-// Virtual for plan duration
-ClientMealPlanSchema.virtual('duration').get(function() {
+// Virtual for calculated duration (fallback if duration field is not set)
+ClientMealPlanSchema.virtual('calculatedDuration').get(function() {
   return Math.ceil((this.endDate.getTime() - this.startDate.getTime()) / (1000 * 60 * 60 * 24));
 });
 
@@ -317,7 +353,7 @@ ClientMealPlanSchema.virtual('daysRemaining').get(function() {
 
 // Virtual for completion percentage
 ClientMealPlanSchema.virtual('completionPercentage').get(function() {
-  const totalDays = this.get('duration') || Math.ceil((this.endDate.getTime() - this.startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const totalDays = this.duration || Math.ceil((this.endDate.getTime() - this.startDate.getTime()) / (1000 * 60 * 60 * 24));
   const today = new Date();
   const daysElapsed = Math.min(totalDays, Math.ceil((today.getTime() - this.startDate.getTime()) / (1000 * 60 * 60 * 24)));
   return Math.round((daysElapsed / totalDays) * 100);

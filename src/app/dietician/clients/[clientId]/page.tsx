@@ -52,7 +52,7 @@ import {
   Pause
 } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { logHistory, generateChangeDetails } from '@/lib/utils/history';
 import { BasicInfoForm, type BasicInfoData } from '@/components/clients/BasicInfoForm';
@@ -63,8 +63,9 @@ import FormsSection from '@/components/clientDashboard/FormsSection';
 import { JournalSection } from '@/components/journal';
 import ProgressSection from '@/components/clientDashboard/ProgressSection';
 import PlanningSection from '@/components/clientDashboard/PlanningSection';
-import PaymentsSection from '@/components/clientDashboard/PaymentsSection';
+// import PaymentsSection from '@/components/clientDashboard/PaymentsSection';
 import BookingsSection from '@/components/clientDashboard/BookingsSection';
+import PaymentsSection from '@/components/clientDashboard/PaymentsSection';
 import DocumentsSection from '@/components/clientDashboard/DocumentsSection';
 import HistorySection from '@/components/clientDashboard/HistorySection';
 import TasksSection from '@/components/clientDashboard/TasksSection';
@@ -78,6 +79,8 @@ interface ClientData {
   phone?: string;
   status: string;
   createdAt: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
   dateOfBirth?: string;
   gender?: string;
   height?: number;
@@ -230,6 +233,21 @@ export default function ClientDetailPage() {
     attachments: []
   });
 
+  // Active plan/program state
+  const [activePlan, setActivePlan] = useState<{
+    name: string;
+    startDate: string;
+    endDate: string;
+    originalEndDate?: string;
+    duration: number;
+    status: 'active' | 'inactive' | 'completed';
+    isExtended?: boolean;
+    isFrozen?: boolean;
+    frozenDays?: number;
+    extendedDays?: number;
+  } | null>(null);
+  const [showPlanDetails, setShowPlanDetails] = useState(false);
+
   // Tasks panel state
   const [isTasksOpen, setIsTasksOpen] = useState(false);
   const [clientTasks, setClientTasks] = useState<ClientTask[]>([]);
@@ -355,8 +373,108 @@ export default function ClientDetailPage() {
       fetchClientDetails();
       fetchClientNotes();
       fetchClientTasks();
+      fetchActivePlan();
     }
   }, [params.clientId]);
+
+  // Fetch active plan data (from client-meal-plans and client-purchases)
+  const fetchActivePlan = async () => {
+    try {
+      // Fetch meal plans for this client
+      const mealPlanRes = await fetch(`/api/client-meal-plans?clientId=${params.clientId}`);
+      if (mealPlanRes.ok) {
+        const data = await mealPlanRes.json();
+        // API returns { success: true, mealPlans: [...] }
+        const mealPlans = data.mealPlans || [];
+        
+        // Get ALL active plans (not just the most recent one)
+        const activePlans = mealPlans
+          .filter((p: any) => p.status === 'active')
+          .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+        
+        if (activePlans.length > 0) {
+          // Combine all active plans
+          let totalDuration = 0;
+          let totalFrozenDays = 0;
+          let totalExtendedDays = 0;
+          let earliestStart = new Date(activePlans[0].startDate);
+          let latestEnd = new Date(activePlans[0].endDate);
+          const planNames: string[] = [];
+          
+          activePlans.forEach((plan: any) => {
+            // Sum up durations
+            const planOriginalDuration = plan.duration || 0;
+            const planCurrentDuration = Math.ceil(
+              (new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)
+            ) + 1;
+            
+            totalDuration += planOriginalDuration || planCurrentDuration;
+            
+            // Count frozen days
+            const frozenDays = plan.meals?.filter((m: any) => m.isFrozen)?.length || 0;
+            totalFrozenDays += frozenDays;
+            
+            // Calculate extended days
+            if (planOriginalDuration > 0 && planCurrentDuration > planOriginalDuration) {
+              totalExtendedDays += planCurrentDuration - planOriginalDuration;
+            }
+            
+            // Track earliest start and latest end
+            const planStart = new Date(plan.startDate);
+            const planEnd = new Date(plan.endDate);
+            if (planStart < earliestStart) earliestStart = planStart;
+            if (planEnd > latestEnd) latestEnd = planEnd;
+            
+            // Collect plan names
+            if (plan.name) planNames.push(plan.name);
+          });
+          
+          // Create combined plan name
+          const combinedName = activePlans.length > 1 
+            ? `${activePlans.length} Active Plans` 
+            : (planNames[0] || 'Wellness Plan');
+          
+          setActivePlan({
+            name: combinedName,
+            startDate: earliestStart.toISOString(),
+            endDate: latestEnd.toISOString(),
+            originalEndDate: totalExtendedDays > 0 
+              ? new Date(latestEnd.getTime() - totalExtendedDays * 24 * 60 * 60 * 1000).toISOString()
+              : undefined,
+            duration: totalDuration,
+            status: 'active',
+            isExtended: totalExtendedDays > 0,
+            isFrozen: totalFrozenDays > 0,
+            frozenDays: totalFrozenDays,
+            extendedDays: totalExtendedDays
+          });
+          return;
+        }
+      }
+      
+      // If no meal plan, check for purchases to determine if inactive
+      const purchaseRes = await fetch(`/api/client-purchases/check?clientId=${params.clientId}`);
+      if (purchaseRes.ok) {
+        const purchaseData = await purchaseRes.json();
+        if (purchaseData.hasPaidPlan) {
+          setActivePlan({
+            name: 'Wellness Plan',
+            startDate: purchaseData.startDate || new Date().toISOString(),
+            endDate: purchaseData.endDate || new Date().toISOString(),
+            duration: purchaseData.totalDays || 0,
+            status: 'active',
+          });
+        } else {
+          setActivePlan(null); // No active plan
+        }
+      } else {
+        setActivePlan(null);
+      }
+    } catch (error) {
+      console.error('Error fetching active plan:', error);
+      setActivePlan(null);
+    }
+  };
 
   // Fetch client notes
   const fetchClientNotes = async () => {
@@ -449,10 +567,10 @@ export default function ClientDetailPage() {
       });
 
       console.log('Upload response status:', response.status);
-      const data = await response.json();
-      console.log('Upload response data:', data);
 
       if (response.ok) {
+        const data = await response.json();
+        console.log('Upload response data:', data);
         let mediaType: 'image' | 'video' | 'audio' = 'image';
         if (file.type.startsWith('video/')) mediaType = 'video';
         else if (file.type.startsWith('audio/')) mediaType = 'audio';
@@ -471,7 +589,14 @@ export default function ClientDetailPage() {
         }));
         toast.success('Media uploaded successfully');
       } else {
-        const errorMsg = data.error || 'Failed to upload media';
+        // Try to get error message from response
+        let errorMsg = 'Failed to upload media';
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch {
+          // If JSON parsing fails, use default error
+        }
         console.error('Upload error:', errorMsg);
         if (file.type.startsWith('audio/')) {
           toast.error(`Failed to upload audio: ${errorMsg}`);
@@ -1025,6 +1150,30 @@ export default function ClientDetailPage() {
     }
   };
 
+  // Format last seen with relative time
+  const formatLastSeen = (dateString: string | undefined) => {
+    if (!dateString) return 'Never';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date?.getTime())) return 'Never';
+      
+      const now = new Date();
+      const diffInMs = now.getTime() - date.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+      
+      if (diffInMinutes < 1) return 'Just now';
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      if (diffInDays < 7) return `${diffInDays}d ago`;
+      
+      return format(date, 'MMM d, yyyy');
+    } catch (error) {
+      return 'Never';
+    }
+  };
+
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
 
   // Fetch client tasks
@@ -1058,9 +1207,8 @@ export default function ClientDetailPage() {
         })
       });
 
-      const data = await response.json();
-
       if (response.ok) {
+        const data = await response.json();
         toast.success('Task created successfully');
         setNewTask({
           taskType: 'General Followup',
@@ -1077,8 +1225,15 @@ export default function ClientDetailPage() {
         setIsAddingTask(false);
         fetchClientTasks();
       } else {
-        toast.error(data.error || 'Failed to create task');
-        console.error('Task creation error:', data);
+        let errorMsg = 'Failed to create task';
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorMsg;
+          console.error('Task creation error:', errorData);
+        } catch {
+          // JSON parsing failed
+        }
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error('Error creating task:', error);
@@ -1360,13 +1515,13 @@ export default function ClientDetailPage() {
                       </div>
                       <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
                         <div className="flex items-center gap-1.5">
-                          <span className={`inline-block h-2 w-2 rounded-full ${client?.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                          <span className="capitalize">{client?.status || 'Unknown'}</span>
+                          <span className={`inline-block h-2 w-2 rounded-full ${activePlan?.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <span className="capitalize">{activePlan?.status === 'active' ? 'Active' : 'Inactive'}</span>
                         </div>
                         <span className="text-gray-300">•</span>
                         <span>Practitioner: {client.assignedDietitian ? `${client.assignedDietitian.firstName} ${client.assignedDietitian.lastName}` : 'Not Assigned'}</span>
                         <span className="text-gray-300">•</span>
-                        <span className="whitespace-nowrap">Last seen: {formatDate(client?.createdAt)}</span>
+                        <span className="whitespace-nowrap">Last seen: {formatLastSeen(client?.updatedAt || client?.lastLoginAt || client?.createdAt)}</span>
                       </div>
                     </div>
                   </div>
@@ -1428,14 +1583,17 @@ export default function ClientDetailPage() {
               </div>
 
               {/* Program Banner */}
-                  <div className="mt-5 rounded-2xl bg-gradient-to-r from-slate-600 via-slate-500 to-slate-400 px-6 py-5 shadow-lg">
+              {activePlan ? (
+                <div className="mt-5 rounded-2xl bg-gradient-to-r from-slate-600 via-slate-500 to-slate-400 px-6 py-5 shadow-lg">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                        <p className="text-sm font-medium text-slate-300 uppercase tracking-wide">Active program</p>
+                        <div className={`h-2 w-2 rounded-full ${activePlan.status === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-gray-400'}`}></div>
+                        <p className="text-sm font-medium text-slate-300 uppercase tracking-wide">
+                          {activePlan.status === 'active' ? 'Active program' : 'No active program'}
+                        </p>
                       </div>
-                      <h2 className="mt-2 text-xl text-white font-bold">Weight loss</h2>
+                      <h2 className="mt-2 text-xl text-white font-bold">{activePlan.name}</h2>
                       <p className="mt-1 text-sm text-slate-400">
                         Ongoing wellness journey
                       </p>
@@ -1444,24 +1602,101 @@ export default function ClientDetailPage() {
                       <div className="rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 px-4 py-3 shadow-md">
                         <p className="text-xs font-medium text-cyan-100 uppercase tracking-wide">Duration</p>
                         <p className="mt-1.5 text-lg font-bold text-white">
-                          180 days
+                          {activePlan.duration} days
                         </p>
                       </div>
-                      <div className="rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 px-4 py-3 shadow-md">
-                        <p className="text-xs font-medium text-violet-100 uppercase tracking-wide">Program dates</p>
+                      <div 
+                        className={`rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 px-4 py-3 shadow-md ${(activePlan.isExtended || activePlan.isFrozen) ? 'cursor-pointer hover:from-violet-600 hover:to-purple-700 transition-colors' : ''}`}
+                        onClick={(e) => {
+                          if (activePlan.isExtended || activePlan.isFrozen) {
+                            e.stopPropagation();
+                            setShowPlanDetails(!showPlanDetails);
+                          }
+                        }}
+                      >
+                        <p className="text-xs font-medium text-violet-100 uppercase tracking-wide">
+                          Program dates {(activePlan.isExtended || activePlan.isFrozen) && <span className="text-yellow-300">ⓘ</span>}
+                        </p>
                         <p className="mt-1.5 text-sm font-semibold text-white">
-                          Jul 11, 2025 – Jan 06, 2026
+                          {formatDate(activePlan.startDate)} – {formatDate(activePlan.endDate)}
                         </p>
                       </div>
                       <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 px-4 py-3 shadow-md">
                         <p className="text-xs font-medium text-emerald-100 uppercase tracking-wide">Status</p>
-                        <Badge className="mt-1.5 bg-white/20 backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold">
-                          Active
+                        <Badge className={`mt-1.5 ${activePlan.status === 'active' ? 'bg-white/20' : 'bg-gray-500/20'} backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold`}>
+                          {activePlan.status === 'active' ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Extended/Frozen Details - shown on click of Program dates */}
+                  {showPlanDetails && (activePlan.isExtended || activePlan.isFrozen) && (
+                    <div className="mt-4 pt-4 border-t border-white/20">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        {activePlan.originalEndDate && (
+                          <div className="bg-white/10 rounded-lg p-3">
+                            <p className="text-xs text-slate-300">Original End Date</p>
+                            <p className="text-white font-medium">{formatDate(activePlan.originalEndDate)}</p>
+                          </div>
+                        )}
+                        {activePlan.isExtended && activePlan.extendedDays && (
+                          <div className="bg-orange-500/20 rounded-lg p-3">
+                            <p className="text-xs text-orange-200">Extended Days</p>
+                            <p className="text-white font-medium">+{activePlan.extendedDays} days</p>
+                          </div>
+                        )}
+                        {activePlan.isFrozen && activePlan.frozenDays && (
+                          <div className="bg-blue-500/20 rounded-lg p-3">
+                            <p className="text-xs text-blue-200">Frozen Days</p>
+                            <p className="text-white font-medium">{activePlan.frozenDays} days</p>
+                          </div>
+                        )}
+                        <div className="bg-white/10 rounded-lg p-3">
+                          <p className="text-xs text-slate-300">New End Date</p>
+                          <p className="text-white font-medium">{formatDate(activePlan.endDate)}</p>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-xs text-slate-400">
+                        {activePlan.isExtended && `Plan extended by ${activePlan.extendedDays} days. `}
+                        {activePlan.isFrozen && `${activePlan.frozenDays} days were frozen and recovered. `}
+                        End date updated accordingly.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="mt-5 rounded-2xl bg-gradient-to-r from-gray-500 via-gray-400 to-gray-300 px-6 py-5 shadow-lg">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-red-400"></div>
+                        <p className="text-sm font-medium text-gray-200 uppercase tracking-wide">No Active Program</p>
+                      </div>
+                      <h2 className="mt-2 text-xl text-white font-bold">No Plan</h2>
+                      <p className="mt-1 text-sm text-gray-200">
+                        Client needs to purchase a plan to get started
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-xs">
+                      <div className="rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 px-4 py-3 shadow-md">
+                        <p className="text-xs font-medium text-gray-300 uppercase tracking-wide">Duration</p>
+                        <p className="mt-1.5 text-lg font-bold text-white">No days</p>
+                      </div>
+                      <div className="rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 px-4 py-3 shadow-md">
+                        <p className="text-xs font-medium text-gray-300 uppercase tracking-wide">Program dates</p>
+                        <p className="mt-1.5 text-sm font-semibold text-white">No dates</p>
+                      </div>
+                      <div className="rounded-xl bg-gradient-to-br from-red-600 to-red-700 px-4 py-3 shadow-md">
+                        <p className="text-xs font-medium text-red-200 uppercase tracking-wide">Status</p>
+                        <Badge className="mt-1.5 bg-red-500/30 backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold">
+                          Inactive
                         </Badge>
                       </div>
                     </div>
                   </div>
                 </div>
+              )}
             </div>
 
             {/* Section Content */}

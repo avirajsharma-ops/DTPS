@@ -72,6 +72,10 @@ export default function TasksSection({
     try {
       setIsLoading(true);
       const response = await fetch(`/api/clients/${clientId}/tasks`);
+      if (!response.ok) {
+        console.error('Failed to fetch tasks:', response.status);
+        return;
+      }
       const data = await response.json();
       if (data.success) {
         setTasks(data.tasks);

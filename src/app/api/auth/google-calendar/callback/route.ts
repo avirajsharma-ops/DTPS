@@ -56,17 +56,56 @@ export async function GET(req: NextRequest) {
       redirectUri
     );
 
-    // Exchange code for tokens
-    const { tokens } = await oauth2Client.getToken(code);
+    // Exchange code for tokens with timeout
+    let tokens;
+    try {
+      const tokenPromise = oauth2Client.getToken(code);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Token exchange timeout')), 15000)
+      );
+      tokens = await Promise.race([tokenPromise, timeoutPromise]) as any;
+    } catch (tokenError: any) {
+      console.error('Error exchanging code for tokens:', tokenError);
+      return NextResponse.redirect(
+        new URL('/settings?calendar=error&message=token-exchange-failed', baseUrl)
+      );
+    }
 
-    if (!tokens.access_token) {
+    if (!tokens.tokens.access_token) {
       return NextResponse.redirect(
         new URL('/settings?calendar=error&message=no-token', baseUrl)
       );
     }
 
-    // Save tokens to database
-    await connectDB();
+    // Save tokens to database with timeout
+    try {
+      const dbPromise = (async () => {
+        await connectDB();
+        const user = await User.findById(session.user.id);
+        
+        if (!user) {
+          throw new Error('User not found');
+        }
+
+        user.googleCalendarAccessToken = tokens.tokens.access_token;
+        user.googleCalendarRefreshToken = tokens.tokens.refresh_token || user.googleCalendarRefreshToken;
+        user.googleCalendarTokenExpiry = tokens.tokens.expiry_date ? new Date(tokens.tokens.expiry_date) : undefined;
+        await user.save();
+        
+        return user;
+      })();
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database save timeout')), 10000)
+      );
+      
+      await Promise.race([dbPromise, timeoutPromise]);
+    } catch (dbError: any) {
+      console.error('Error saving to database:', dbError);
+      return NextResponse.redirect(
+        new URL('/settings?calendar=error&message=database-error', baseUrl)
+      );
+    }
     const user = await User.findById(session.user.id);
     
     if (!user) {

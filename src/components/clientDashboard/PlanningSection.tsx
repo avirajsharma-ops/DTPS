@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Plus, Edit, Trash2, Copy, ArrowLeft, ArrowRight, Utensils, Dumbbell, Eye, FileText, Image as ImageIcon, Video, Search, Loader2, Check, X, AlertTriangle, CreditCard, Clock, RefreshCw, MoreVertical, Repeat2, Pause, Zap } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, Copy, ArrowLeft, ArrowRight, Utensils, Dumbbell, Eye, FileText, Image as ImageIcon, Video, Search, Loader2, Check, X, AlertTriangle, CreditCard, Clock, RefreshCw, MoreVertical, Repeat2, Pause, Play, Zap, Snowflake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -154,6 +154,10 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     try {
       // The check API now automatically syncs pending payments with Razorpay
       const res = await fetch(`/api/client-purchases/check?clientId=${client._id}`);
+      if (!res.ok) {
+        console.error('Payment check failed with status:', res.status);
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setPaymentCheck(data);
@@ -189,6 +193,22 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     }
   }, [startDate, duration]);
 
+  // Helper function to check if a plan is currently running (today is within date range)
+  const isPlanRunning = (plan: any): boolean => {
+    if (!plan || plan.status !== 'active') return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const startDate = new Date(plan.startDate);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(plan.endDate);
+    endDate.setHours(0, 0, 0, 0);
+    
+    return today >= startDate && today <= endDate;
+  };
+
   // Fetch client's existing meal plans
   useEffect(() => {
     fetchClientPlans();
@@ -198,6 +218,10 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     try {
       setLoadingPlans(true);
       const res = await fetch(`/api/client-meal-plans?clientId=${client._id}`);
+      if (!res.ok) {
+        console.error('Failed to fetch client plans with status:', res.status);
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setClientPlans(data.mealPlans || []);
@@ -226,6 +250,10 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         ? `/api/meal-plan-templates?templateType=plan&${params.toString()}`
         : `/api/diet-templates?${params.toString()}`;
       const res = await fetch(url);
+      if (!res.ok) {
+        console.error('Failed to fetch templates with status:', res.status);
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setTemplates(data.templates || []);
@@ -273,6 +301,10 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
   const getLatestMealPlanEndDate = async (): Promise<string | null> => {
     try {
       const res = await fetch(`/api/client-meal-plans?clientId=${client._id}`);
+      if (!res.ok) {
+        console.error('Failed to get latest meal plan with status:', res.status);
+        return null;
+      }
       const data = await res.json();
 
       if (data.success && data.mealPlans.length > 0) {
@@ -325,6 +357,23 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     try {
       setSaving(true);
       
+      // Calculate proper dates for each day based on startDate
+      const startDateObj = new Date(startDate);
+      const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      
+      const mealsWithDates = mealsData.map((day, index) => {
+        const dayDate = addDays(startDateObj, index);
+        const dateOfMonth = dayDate.getDate();
+        const dayName = fullDayNames[dayDate.getDay()];
+        const dateStr = format(dayDate, 'yyyy-MM-dd');
+        
+        return {
+          ...day,
+          date: dateStr,
+          day: `${dateOfMonth} - Day ${index + 1} - ${dayName}`
+        };
+      });
+      
       const payload: any = {
         clientId: client._id,
         name: planTitle,
@@ -332,7 +381,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         startDate,
         endDate,
         duration,
-        meals: mealsData,
+        meals: mealsWithDates,
         mealTypes: initialMealTypes,
         customizations: {
           targetCalories: selectedTemplate?.targetCalories?.max || 2000,
@@ -359,6 +408,12 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         body: JSON.stringify(payload)
       });
 
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to create plan:', res.status, errorText);
+        toast.error('Failed to create diet plan. Server error.');
+        return;
+      }
       const data = await res.json();
       
       if (data.success) {
@@ -439,8 +494,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       console.log('handleViewPlan - first day meals:', JSON.stringify(plan.meals[0]));
     }
     
-    // Set all state at once
-    const planDuration = Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    // Use stored duration if available, otherwise calculate from dates
+    const planDuration = plan.duration || Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const planMeals = plan.meals || [];
     const planMealTypes = plan.mealTypes || [
       { name: 'Breakfast', time: '8:00 AM' },
@@ -478,8 +533,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       console.log('handleEditPlan - first day meals:', JSON.stringify(plan.meals[0]));
     }
     
-    // Set all state at once
-    const planDuration = Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    // Use stored duration if available, otherwise calculate from dates
+    const planDuration = plan.duration || Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const planMeals = plan.meals || [];
     const planMealTypes = plan.mealTypes || [
       { name: 'Breakfast', time: '8:00 AM' },
@@ -513,12 +568,29 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     try {
       setSaving(true);
       
+      // Calculate proper dates for each day based on startDate
+      const startDateObj = new Date(startDate);
+      const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      
+      const mealsWithDates = mealsData.map((day, index) => {
+        const dayDate = addDays(startDateObj, index);
+        const dateOfMonth = dayDate.getDate();
+        const dayName = fullDayNames[dayDate.getDay()];
+        const dateStr = format(dayDate, 'yyyy-MM-dd');
+        
+        return {
+          ...day,
+          date: dateStr,
+          day: `${dateOfMonth} - Day ${index + 1} - ${dayName}`
+        };
+      });
+      
       const payload: any = {
         name: planTitle,
         description,
         startDate,
         endDate,
-        meals: mealsData,
+        meals: mealsWithDates,
         mealTypes: initialMealTypes,
         customizations: {
           targetCalories: selectedTemplate?.targetCalories?.max || editingPlan.customizations?.targetCalories || 2000,
@@ -539,6 +611,12 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         body: JSON.stringify(payload)
       });
 
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to update plan:', res.status, errorText);
+        toast.error('Failed to update diet plan. Server error.');
+        return;
+      }
       const data = await res.json();
       
       if (data.success) {
@@ -573,7 +651,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     setPlanTitle(`${plan.name} (Copy)`);
     setDescription(plan.description || '');
     setStartDate(format(new Date(), 'yyyy-MM-dd'));
-    setDuration(Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1);
+    // Use stored duration if available, otherwise calculate from dates
+    const planDuration = plan.duration || Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    setDuration(planDuration);
     setPrimaryGoal(plan.goals?.primaryGoal || 'health-improvement');
     setInitialMeals(plan.meals || []);
     setInitialMealTypes(plan.mealTypes || [
@@ -610,14 +690,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     }
 
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const planStartDate = parseDate(plan.startDate);
-      const hasStarted = planStartDate <= today;
-
-      // Check if plan has started - only allow extension if started
-      if (!hasStarted) {
-        toast.error('Can only extend plans that have already started');
+      // Validate date range on frontend (using parseDate for consistent handling)
+      if (parseDate(newStartDate) > parseDate(newEndDate)) {
+        toast.error('Start date cannot be after end date');
         return;
       }
 
@@ -653,14 +728,24 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         body: JSON.stringify(payload)
       });
 
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to extend plan:', res.status, errorText);
+        toast.error('Failed to extend plan. Server error.');
+        return;
+      }
       const data = await res.json();
 
       if (data.success) {
         toast.success('Plan dates extended successfully!');
         
-        // AUTO-ADJUST ALL MEAL PLANS IN THE CHAIN
+        // AUTO-ADJUST ALL MEAL PLANS IN THE CHAIN (BOTH BEFORE AND AFTER)
         try {
           const allPlansRes = await fetch(`/api/client-meal-plans?clientId=${client._id}`);
+          if (!allPlansRes.ok) {
+            console.error('Failed to fetch all plans:', allPlansRes.status);
+            return;
+          }
           const allPlansDataResponse = await allPlansRes.json();
           
           if (allPlansDataResponse.success && allPlansDataResponse.mealPlans) {
@@ -672,36 +757,51 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
             const currentPlanIndex = sortedPlans.findIndex((p: any) => p._id === plan._id);
             
             if (currentPlanIndex !== -1) {
+              // ADJUST ALL PLANS BEFORE THE CURRENT PLAN (BACKWARD CASCADE)
+              for (let i = currentPlanIndex - 1; i >= 0; i--) {
+                const planToAdjust = sortedPlans[i];
+                const nextPlan = sortedPlans[i + 1];
+                
+                // Calculate this plan's original duration
+                const planOriginalDuration = Math.ceil(
+                  (new Date(planToAdjust.endDate).getTime() - new Date(planToAdjust.startDate).getTime()) / (1000 * 60 * 60 * 24)
+                ) + 1;
+                
+                // This plan ends one day before the next plan starts
+                const newEndDate_adjusted = format(addDays(new Date(nextPlan.startDate), -1), 'yyyy-MM-dd');
+                
+                // This plan's start = end - duration + 1
+                const newStartDate_adjusted = format(addDays(new Date(newEndDate_adjusted), -(planOriginalDuration - 1)), 'yyyy-MM-dd');
+                
+                // Update this plan in the chain
+                await fetch(`/api/client-meal-plans/${planToAdjust._id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    startDate: newStartDate_adjusted,
+                    endDate: newEndDate_adjusted
+                  })
+                });
+                
+                // Update the reference for next iteration
+                sortedPlans[i].startDate = newStartDate_adjusted;
+                sortedPlans[i].endDate = newEndDate_adjusted;
+              }
+              
               // ADJUST ALL PLANS AFTER THE CURRENT PLAN (FORWARD CASCADE)
               for (let i = currentPlanIndex + 1; i < sortedPlans.length; i++) {
                 const planToAdjust = sortedPlans[i];
                 const prevPlan = sortedPlans[i - 1];
-                
-                // Calculate previous plan's duration
-                let prevPlanDuration;
-                if (i - 1 === currentPlanIndex) {
-                  // For the immediate next plan, use the updated current plan
-                  prevPlanDuration = Math.ceil(
-                    (new Date(finalEndDate).getTime() - new Date(finalStartDate).getTime()) / (1000 * 60 * 60 * 24)
-                  ) + 1;
-                } else {
-                  // For others, calculate from the previous plan in the sorted list
-                  prevPlanDuration = Math.ceil(
-                    (new Date(prevPlan.endDate).getTime() - new Date(prevPlan.startDate).getTime()) / (1000 * 60 * 60 * 24)
-                  ) + 1;
-                }
-                
-                // New plan starts the day after previous plan ends
-                const newStartDate_adjusted = format(addDays(new Date(prevPlan.endDate), 1), 'yyyy-MM-dd');
                 
                 // Calculate plan's original duration
                 const planOriginalDuration = Math.ceil(
                   (new Date(planToAdjust.endDate).getTime() - new Date(planToAdjust.startDate).getTime()) / (1000 * 60 * 60 * 24)
                 ) + 1;
                 
+                // New plan starts the day after previous plan ends
+                const newStartDate_adjusted = format(addDays(new Date(prevPlan.endDate), 1), 'yyyy-MM-dd');
+                
                 // New end date = start + original duration
-                // For 1 day: addDays(date, 0) = same date
-                // For 7 days: addDays(date, 6) = date + 6 days
                 const newEndDate_adjusted = format(addDays(new Date(newStartDate_adjusted), Math.max(0, planOriginalDuration - 1)), 'yyyy-MM-dd');
                 
                 // Update this plan in the chain
@@ -765,6 +865,12 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         body: JSON.stringify(payload)
       });
 
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to pause plan:', res.status, errorText);
+        toast.error('Failed to pause plan. Server error.');
+        return;
+      }
       const data = await res.json();
 
       if (data.success) {
@@ -782,7 +888,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     }
   };
 
-  // Resume/Unfreeze plan
+  // Resume plan
   const handleResumePlan = async (plan: any) => {
     try {
       const payload = {
@@ -797,6 +903,12 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         body: JSON.stringify(payload)
       });
 
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to resume plan:', res.status, errorText);
+        toast.error('Failed to resume plan. Server error.');
+        return;
+      }
       const data = await res.json();
 
       if (data.success) {
@@ -1000,7 +1112,392 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     );
   }
 
-  // Extend Plan Dialog Component
+  // Freeze Plan Dialog Component
+  function FreezePlanDialog({ plan, onFreeze, showAsText = false, showAsButton = false }: { plan: any; onFreeze: () => void; showAsText?: boolean; showAsButton?: boolean }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
+    const [selectedDates, setSelectedDates] = useState<string[]>([]);
+    const [freezeInfo, setFreezeInfo] = useState<{
+      allowedFreezeDays: number;
+      totalFreezeCount: number;
+      remainingFreezeDays: number;
+      freezedDays: { date: string; createdAt: string }[];
+      durationDays: number;
+      canFreeze: boolean;
+    } | null>(null);
+
+    // Calculate plan duration
+    const startDate = new Date(plan.startDate);
+    const endDate = new Date(plan.endDate);
+    const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    // Fetch freeze info when dialog opens
+    const fetchFreezeInfo = async () => {
+      setIsFetching(true);
+      try {
+        const res = await fetch(`/api/client-meal-plans/${plan._id}/freeze`);
+        if (!res.ok) {
+          console.error('Failed to fetch freeze info:', res.status);
+          toast.error('Failed to load freeze information');
+          return;
+        }
+        const data = await res.json();
+        if (data.success) {
+          setFreezeInfo(data.data);
+        } else {
+          toast.error(data.error || 'Failed to fetch freeze information');
+        }
+      } catch (error) {
+        console.error('Error fetching freeze info:', error);
+        toast.error('Failed to load freeze information');
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    // Handle dialog open
+    const handleOpenChange = (open: boolean) => {
+      setIsOpen(open);
+      if (open) {
+        setSelectedDates([]);
+        fetchFreezeInfo();
+      }
+    };
+
+    // Check if a date is already frozen
+    const isDateFrozen = (dateStr: string) => {
+      if (!freezeInfo) return false;
+      return freezeInfo.freezedDays.some(fd => {
+        const frozenDate = format(new Date(fd.date), 'yyyy-MM-dd');
+        return frozenDate === dateStr;
+      });
+    };
+
+    // Check if a date is selectable
+    const isDateSelectable = (dateStr: string) => {
+      const date = new Date(dateStr);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Can't select past dates
+      if (date < today) return false;
+      
+      // Can't select dates outside plan range
+      if (date < startDate || date > endDate) return false;
+      
+      // Can't select already frozen dates
+      if (isDateFrozen(dateStr)) return false;
+      
+      return true;
+    };
+
+    // Toggle date selection
+    const toggleDateSelection = (dateStr: string) => {
+      if (!isDateSelectable(dateStr)) return;
+      
+      // Check if we've reached the limit
+      if (!selectedDates.includes(dateStr)) {
+        if (freezeInfo && selectedDates.length >= freezeInfo.remainingFreezeDays) {
+          toast.error(`You can only freeze ${freezeInfo.remainingFreezeDays} more days`);
+          return;
+        }
+      }
+
+      setSelectedDates(prev => 
+        prev.includes(dateStr) 
+          ? prev.filter(d => d !== dateStr)
+          : [...prev, dateStr]
+      );
+    };
+
+    // Handle freeze submission
+    const handleFreeze = async () => {
+      if (selectedDates.length === 0) {
+        toast.error('Please select at least one date to freeze');
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/client-meal-plans/${plan._id}/freeze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ freezeDates: selectedDates })
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Failed to freeze dates:', res.status, errorText);
+          toast.error('Failed to freeze dates. Server error.');
+          return;
+        }
+        const data = await res.json();
+
+        if (data.success) {
+          toast.success(data.message);
+          setIsOpen(false);
+          setSelectedDates([]);
+          onFreeze(); // Refresh plans
+        } else {
+          toast.error(data.error || 'Failed to freeze dates');
+        }
+      } catch (error) {
+        console.error('Error freezing dates:', error);
+        toast.error('Failed to freeze dates');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Generate calendar days for current month range (startDate to endDate)
+    const generateCalendarDays = () => {
+      const days: { date: Date; dateStr: string; isCurrentMonth: boolean }[] = [];
+      
+      // Start from plan start date
+      const current = new Date(startDate);
+      current.setHours(0, 0, 0, 0);
+      
+      while (current <= endDate) {
+        days.push({
+          date: new Date(current),
+          dateStr: format(current, 'yyyy-MM-dd'),
+          isCurrentMonth: true
+        });
+        current.setDate(current.getDate() + 1);
+      }
+      
+      return days;
+    };
+
+    const calendarDays = generateCalendarDays();
+
+    return (
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          {showAsText ? (
+            <span className="text-sm cursor-pointer">Freeze</span>
+          ) : showAsButton ? (
+            <Button 
+              size="sm" 
+              variant="outline"
+              title="Freeze specific dates"
+              className="flex items-center gap-1.5"
+            >
+              <Snowflake className="h-4 w-4" />
+              <span className="text-xs">Freeze</span>
+            </Button>
+          ) : (
+            <Button 
+              size="sm" 
+              variant="outline"
+              title="Freeze dates"
+              className="text-blue-600 hover:text-blue-700"
+            >
+              ❄️
+            </Button>
+          )}
+        </DialogTrigger>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Snowflake className="h-5 w-5 text-blue-500" />
+              Freeze Plan Dates
+            </DialogTitle>
+            <DialogDescription>
+              Select dates to freeze. Meals on frozen dates will be moved to extended days.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {isFetching ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                <span className="ml-2 text-gray-600">Loading freeze information...</span>
+              </div>
+            ) : (
+              <>
+                {/* Plan Duration (Read-only) */}
+                <div className="bg-gray-50 p-3 rounded border">
+                  <Label className="text-sm font-medium">Plan Duration</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Input 
+                      value={`${durationDays} days (${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd, yyyy')})`}
+                      disabled
+                      className="bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Freeze Allowance Info */}
+                {freezeInfo && (
+                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-blue-900">
+                        <strong>Allowed Freeze Days:</strong> {freezeInfo.allowedFreezeDays} days
+                      </span>
+                      <Badge variant={freezeInfo.remainingFreezeDays > 0 ? 'default' : 'destructive'}>
+                        {freezeInfo.remainingFreezeDays} remaining
+                      </Badge>
+                    </div>
+                    {freezeInfo.totalFreezeCount > 0 && (
+                      <p className="text-xs text-blue-700 mt-1">
+                        Already frozen: {freezeInfo.totalFreezeCount} days
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Calendar for Date Selection */}
+                <div className="border rounded-lg p-3">
+                  <Label className="text-sm font-medium mb-2 block">Select Dates to Freeze</Label>
+                  
+                  {/* Day headers */}
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Calendar grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {/* Add empty cells for alignment to start day of week */}
+                    {Array.from({ length: calendarDays[0]?.date.getDay() || 0 }).map((_, i) => (
+                      <div key={`empty-${i}`} className="aspect-square" />
+                    ))}
+                    
+                    {calendarDays.map(({ date, dateStr }) => {
+                      const isFrozen = isDateFrozen(dateStr);
+                      const isSelectable = isDateSelectable(dateStr);
+                      const isSelected = selectedDates.includes(dateStr);
+                      const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+
+                      return (
+                        <button
+                          key={dateStr}
+                          type="button"
+                          onClick={() => toggleDateSelection(dateStr)}
+                          disabled={!isSelectable}
+                          className={`
+                            aspect-square flex flex-col items-center justify-center text-sm rounded-lg relative transition-all
+                            ${isSelected ? 'bg-blue-500 text-white font-bold ring-2 ring-blue-300' : ''}
+                            ${isFrozen ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : ''}
+                            ${isPast && !isFrozen ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : ''}
+                            ${isSelectable && !isSelected ? 'hover:bg-blue-100 cursor-pointer border border-gray-200' : ''}
+                            ${!isSelectable && !isFrozen && !isPast ? 'opacity-50 cursor-not-allowed' : ''}
+                          `}
+                        >
+                          <span>{date.getDate()}</span>
+                          {isFrozen && (
+                            <X className="h-3 w-3 text-red-500 absolute top-0.5 right-0.5" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex gap-4 mt-3 text-xs text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-blue-500 rounded" />
+                      <span>Selected</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-gray-200 rounded relative">
+                        <X className="h-2 w-2 text-red-500 absolute -top-0.5 -right-0.5" />
+                      </div>
+                      <span>Already Frozen</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-gray-100 rounded" />
+                      <span>Past</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Selected Dates Summary */}
+                {selectedDates.length > 0 && (
+                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                    <p className="text-sm font-medium text-blue-900 mb-2">
+                      Selected {selectedDates.length} date(s) to freeze:
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedDates.sort().map(dateStr => (
+                        <Badge 
+                          key={dateStr} 
+                          variant="secondary"
+                          className="cursor-pointer hover:bg-red-100"
+                          onClick={() => toggleDateSelection(dateStr)}
+                        >
+                          {format(new Date(dateStr), 'MMM dd')}
+                          <X className="h-3 w-3 ml-1" />
+                        </Badge>
+                      ))}
+                    </div>
+                    
+                    {/* Show the dates that will be added at the end */}
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <p className="text-sm font-medium text-green-800 mb-2">
+                        Meals will be copied to these new dates (after plan end):
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedDates.sort().map((_, index) => {
+                          const newDate = addDays(endDate, index + 1);
+                          return (
+                            <Badge 
+                              key={index} 
+                              variant="outline"
+                              className="bg-green-50 text-green-800 border-green-300"
+                            >
+                              {format(newDate, 'MMM dd, yyyy')}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2">
+                        <strong>Note:</strong> Original plan duration will NOT change. Meals from frozen dates will be copied to the dates shown above.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    onClick={handleFreeze}
+                    disabled={isLoading || selectedDates.length === 0 || (freezeInfo !== null && !freezeInfo.canFreeze)}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Freezing...
+                      </>
+                    ) : (
+                      <>
+                        <Snowflake className="h-4 w-4 mr-2" />
+                        Freeze {selectedDates.length > 0 ? `${selectedDates.length} Days` : 'Selected'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   function ExtendPlanDialog({ plan, onExtend, showAsText = false, showAsButton = false }: { plan: any; onExtend: (plan: any, startDate: string, endDate: string) => void; showAsText?: boolean; showAsButton?: boolean }) {
     const [newStartDate, setNewStartDate] = useState(format(new Date(plan.startDate), 'yyyy-MM-dd'));
     const [newEndDate, setNewEndDate] = useState(format(new Date(plan.endDate), 'yyyy-MM-dd'));
@@ -1141,7 +1638,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
 
                 <div className="bg-gray-50 p-3 rounded">
                   <p className="text-xs text-gray-600">
-                    <strong>Duration:</strong> {Math.ceil((parseDate(newEndDate).getTime() - parseDate(newStartDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days (Fixed)
+                    <strong>Duration:</strong> 
+                    {Math.ceil((parseDate(newEndDate).getTime() - parseDate(newStartDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days (Fixed)
                   </p>
                   <p className="text-xs text-gray-600 mt-1">
                     ✨ <strong>Auto-adjust:</strong> All other meal plans will adjust automatically to maintain continuity
@@ -1311,6 +1809,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
               <DietPlanDashboard
                 key={`view-${viewingPlan._id}-${planKey}`}
                 duration={duration}
+                startDate={viewingPlan?.startDate ? format(new Date(viewingPlan.startDate), 'yyyy-MM-dd') : startDate}
                 initialMeals={viewingPlan?.meals || []}
                 initialMealTypes={viewingPlan?.mealTypes || initialMealTypes}
                 clientId={client._id}
@@ -1520,6 +2019,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
             <DietPlanDashboard
               key={`edit-${editingPlan?._id || 'new'}-${planKey}`}
               duration={duration}
+              startDate={isEditMode && editingPlan?.startDate ? format(new Date(editingPlan.startDate), 'yyyy-MM-dd') : startDate}
               initialMeals={isEditMode && editingPlan?.meals ? editingPlan.meals : initialMeals}
               initialMealTypes={isEditMode && editingPlan?.mealTypes ? editingPlan.mealTypes : initialMealTypes}
               onSave={isEditMode ? handleUpdatePlan : handleSavePlan}
@@ -1902,25 +2402,33 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
               <div className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <h4 className="font-medium text-green-900">Active Plan: {paymentCheck.purchase?.planName}</h4>
-                  <div className="flex items-center gap-4 mt-1 text-sm text-green-700 flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {paymentCheck.remainingDays} days remaining
-                    </span>
-                    <span>•</span>
-                    <span>
-                      {paymentCheck.totalDaysUsed || 0} / {paymentCheck.totalPurchasedDays || paymentCheck.purchase?.durationDays} days used
-                    </span>
+                  <h4 className="font-medium text-green-900">✅ Active Plan: {paymentCheck.purchase?.planName}</h4>
+                  <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+                    <div className="bg-white rounded p-2 border border-green-200">
+                      <p className="text-gray-600 text-xs">Total Duration</p>
+                      <p className="font-bold text-green-700">{paymentCheck.totalPurchasedDays || paymentCheck.purchase?.durationDays} days</p>
+                    </div>
+                    <div className="bg-white rounded p-2 border border-green-200">
+                      <p className="text-gray-600 text-xs">Days Used</p>
+                      <p className="font-bold text-green-700">{paymentCheck.totalDaysUsed || 0} days</p>
+                    </div>
+                    <div className="bg-white rounded p-2 border border-green-200">
+                      <p className="text-gray-600 text-xs">Remaining</p>
+                      <p className="font-bold text-blue-600">{paymentCheck.remainingDays} days</p>
+                    </div>
+                    <div className="bg-white rounded p-2 border border-green-200">
+                      <p className="text-gray-600 text-xs">Plan Category</p>
+                      <p className="font-bold text-green-700">{paymentCheck.purchase?.planCategory || 'General'}</p>
+                    </div>
                   </div>
-                  <div className="mt-2 bg-green-100 rounded-full h-2 overflow-hidden">
+                  <div className="mt-3 bg-green-100 rounded-full h-2 overflow-hidden">
                     <div 
                       className="bg-green-500 h-full transition-all"
                       style={{ width: `${((paymentCheck.totalDaysUsed || 0) / (paymentCheck.totalPurchasedDays || 1)) * 100}%` }}
                     />
                   </div>
-                  <p className="text-xs text-green-600 mt-1">
-                    You can create multiple meal plans (e.g., 7+7 days)
+                  <p className="text-xs text-green-600 mt-2">
+                    ✓ You can create multiple meal plans (e.g., 7+7 days)
                   </p>
                 </div>
                 <Button 
@@ -1936,55 +2444,47 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
               </div>
             </CardContent>
           </Card>
-        ) : (
-          /* All days used - need to pay for more */
+        ) : clientPlans && clientPlans.length > 0 && clientPlans.some((plan: any) => isPlanRunning(plan)) ? (
+          /* All days used - show this only if plans exist AND at least one is currently running */
           <Card className="border-amber-300 bg-amber-50">
             <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-medium text-amber-900">All Plan Days Used</h4>
-                  <p className="text-sm text-amber-700 mt-1">
-                    {paymentCheck.totalDaysUsed || 0} / {paymentCheck.totalPurchasedDays || paymentCheck.purchase?.durationDays} days have been used for meal plans.
-                  </p>
-                  <div className="mt-2 bg-amber-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-amber-500 h-full w-full" />
-                  </div>
-                  <p className="text-sm text-amber-700 mt-2">
-                    To create more meal plans, the client needs to purchase a new service plan.
-                  </p>
-                  <div className="flex gap-2 mt-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="border-amber-600 text-amber-700 hover:bg-amber-100"
-                      onClick={() => {
-                        const paymentsSection = document.querySelector('[data-section="payments"]');
-                        if (paymentsSection) {
-                          paymentsSection.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        toast.info('Create a payment link for more days');
-                      }}
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Go to Payments
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-amber-700 hover:bg-amber-100"
-                      onClick={() => checkPaymentStatus(true)}
-                      disabled={checkingPayment}
-                      title="Sync payment status with Razorpay"
-                    >
-                      <RefreshCw className={`h-4 w-4 ${checkingPayment ? 'animate-spin' : ''}`} />
-                    </Button>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-amber-700 font-medium">
+                      All {paymentCheck.totalPurchasedDays || paymentCheck.purchase?.durationDays} days used • 
+                      <Button 
+                        variant="link" 
+                        size="sm" 
+                        className="text-amber-700 underline p-0 h-auto"
+                        onClick={() => {
+                          const paymentsSection = document.querySelector('[data-section="payments"]');
+                          if (paymentsSection) {
+                            paymentsSection.scrollIntoView({ behavior: 'smooth' });
+                          }
+                          toast.info('Create a payment link for more days');
+                        }}
+                      >
+                        Purchase new plan for more days
+                      </Button>
+                    </p>
                   </div>
                 </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-amber-700 hover:bg-amber-100"
+                  onClick={() => checkPaymentStatus(true)}
+                  disabled={checkingPayment}
+                  title="Sync payment status with Razorpay"
+                >
+                  <RefreshCw className={`h-4 w-4 ${checkingPayment ? 'animate-spin' : ''}`} />
+                </Button>
               </div>
             </CardContent>
           </Card>
-        )
+        ) : null
       ) : null}
 
       {/* Current Diet Plans */}
@@ -1992,34 +2492,53 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Diet Plans for {client.firstName} {client.lastName}</CardTitle>
-            <Button 
-              className={`${
-                paymentCheck?.hasPaidPlan && paymentCheck.remainingDays > 0
-                  ? 'bg-blue-600 hover:bg-blue-700' 
-                  : 'bg-gray-400 cursor-not-allowed'
-              }`}
-              onClick={async () => {
-                if (!paymentCheck?.hasPaidPlan) {
-                  toast.error('Client needs to purchase a plan first before creating a meal plan');
-                  return;
-                }
-                if (paymentCheck.remainingDays <= 0) {
-                  toast.error('All plan days have been used. Client needs to purchase a new plan.');
-                  return;
-                }
-                // Set duration based on remaining days
-                if (paymentCheck.remainingDays > 0) {
-                  setDuration(Math.min(paymentCheck.remainingDays, 30)); // Max 30 days at a time
-                }
-                // Initialize start date based on latest plan
-                await initializeStartDate();
-                setStep('form');
-              }}
-              disabled={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Plan
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Refresh Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await Promise.all([
+                    fetchClientPlans(),
+                    checkPaymentStatus(true)
+                  ]);
+                  toast.success('Refreshed successfully');
+                }}
+                disabled={checkingPayment || loadingPlans}
+                title="Refresh plans and payment status"
+              >
+                <RefreshCw className={`h-4 w-4 ${checkingPayment || loadingPlans ? 'animate-spin' : ''}`} />
+              </Button>
+              {/* Create New Plan Button */}
+              <Button 
+                className={`${
+                  paymentCheck?.hasPaidPlan && paymentCheck.remainingDays > 0
+                    ? 'bg-blue-600 hover:bg-blue-700' 
+                    : 'bg-gray-400 cursor-not-allowed'
+                }`}
+                onClick={async () => {
+                  if (!paymentCheck?.hasPaidPlan) {
+                    toast.error('Client needs to purchase a plan first before creating a meal plan');
+                    return;
+                  }
+                  if (paymentCheck.remainingDays <= 0) {
+                    toast.error('All plan days have been used. Client needs to purchase a new plan.');
+                    return;
+                  }
+                  // Set duration based on remaining days
+                  if (paymentCheck.remainingDays > 0) {
+                    setDuration(Math.min(paymentCheck.remainingDays, 30)); // Max 30 days at a time
+                  }
+                  // Initialize start date based on latest plan
+                  await initializeStartDate();
+                  setStep('form');
+                }}
+                disabled={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Plan
+              </Button>
+            </div>
           </div>
           {paymentCheck?.hasPaidPlan && paymentCheck.remainingDays > 0 && (
             <p className="text-sm text-gray-500 mt-1">
@@ -2092,7 +2611,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                         <div>
                           <span className="text-gray-500">Duration:</span>
                           <p className="font-medium">
-                            {Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} Days
+                            {plan.duration} Days  
+                            {/* {Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} Days */}
                           </p>
                         </div>
                         <div>
@@ -2102,6 +2622,16 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                           </p>
                         </div>
                       </div>
+                      
+                      {/* Show freeze days info if any */}
+                      {plan.totalFreezeCount > 0 && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                            <Snowflake className="h-3 w-3 mr-1" />
+                            {plan.totalFreezeCount} day(s) frozen
+                          </Badge>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex gap-2 ml-4 items-center">
@@ -2146,6 +2676,13 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                               plan={plan}
                               onPause={handlePausePlan}
                               onResume={handleResumePlan}
+                              showAsText={false}
+                              showAsButton={true}
+                            />
+
+                            <FreezePlanDialog 
+                              plan={plan}
+                              onFreeze={fetchClientPlans}
                               showAsText={false}
                               showAsButton={true}
                             />
@@ -2293,7 +2830,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                   You can create more meal plans with the remaining days
                 </p>
               </div>
-            ) : (
+            ) : createdPlanInfo && createdPlanInfo.remainingDays <= 0 ? (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <CreditCard className="h-5 w-5 text-amber-600" />
@@ -2303,7 +2840,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                   To create more meal plans, the client needs to purchase a new plan first.
                 </p>
               </div>
-            )}
+            ) : null}
 
             <div className="flex gap-2 pt-2">
               <Button 

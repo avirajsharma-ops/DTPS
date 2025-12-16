@@ -42,6 +42,7 @@ type DietPlanDashboardProps = {
   onSavePlan?: (weekPlan: DayPlan[], mealTypes: MealTypeConfig[]) => void; // trigger parent save with meal data and meal types
   onSave?: (weekPlan: DayPlan[]) => void; // Simple save callback for PlanningSection
   duration?: number; // number of days to show
+  startDate?: string; // Start date in YYYY-MM-DD format
   initialMeals?: DayPlan[]; // Load existing meals
   initialMealTypes?: MealTypeConfig[]; // Load existing meal types
   clientId?: string; // Client ID for saving
@@ -50,6 +51,8 @@ type DietPlanDashboardProps = {
   clientDietaryRestrictions?: string; // comma-separated dietary restrictions
   clientMedicalConditions?: string;   // comma-separated medical conditions
   clientAllergies?: string;           // comma-separated allergies
+  holdDays?: { originalDate: Date; holdStartDate: Date; holdDays: number; reason?: string }[];
+  totalHeldDays?: number;
 };
 
 export type FoodOption = {
@@ -78,6 +81,14 @@ export type DayPlan = {
   date: string;
   meals: { [mealType: string]: Meal };
   note: string;
+  // Hold-related fields
+  isHeld?: boolean;
+  holdReason?: string;
+  holdDate?: string;
+  isCopiedFromHold?: boolean;
+  originalDayIndex?: number;
+  wasHeld?: boolean;
+  resumedDate?: string;
 };
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -91,7 +102,7 @@ const defaultMealTypes: MealTypeConfig[] = [
   { name: 'Bedtime', time: '21:30' }
 ];
 
-export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, duration = 7, initialMeals, initialMealTypes, clientId, clientName, readOnly = false, clientDietaryRestrictions, clientMedicalConditions, clientAllergies }: DietPlanDashboardProps) {
+export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, duration = 7, startDate, initialMeals, initialMealTypes, clientId, clientName, readOnly = false, clientDietaryRestrictions, clientMedicalConditions, clientAllergies, holdDays = [], totalHeldDays = 0 }: DietPlanDashboardProps) {
   // Combine props with clientData for restrictions
   const dietaryRestrictions = clientDietaryRestrictions || clientData?.dietaryRestrictions || '';
   const medicalConditions = clientMedicalConditions || clientData?.medicalConditions || '';
@@ -99,13 +110,35 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   const [mealTypeConfigs, setMealTypeConfigs] = useState<MealTypeConfig[]>(initialMealTypes || defaultMealTypes);
   const mealTypes = mealTypeConfigs.map(m => m.name);
   
+  // Helper to format date as YYYY-MM-DD
+  const formatDateStr = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper to add days to a date
+  const addDaysToDate = (date: Date, days: number): Date => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  };
+  
   const buildDays = (count: number): DayPlan[] => {
+    const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const baseDate = startDate ? new Date(startDate) : new Date();
+    
     return Array.from({ length: count }).map((_, index) => {
-      const dow = daysOfWeek[index % 7];
+      const dayDate = addDaysToDate(baseDate, index);
+      const dayOfMonth = dayDate.getDate();
+      const dayName = fullDayNames[dayDate.getDay()];
+      const dateStr = formatDateStr(dayDate);
+      
       return {
         id: `day-${index}`,
-        day: `Day ${index + 1} - ${dow.slice(0,3)}`,
-        date: '',
+        day: `${dayOfMonth} - Day ${index + 1} - ${dayName}`,
+        date: dateStr,
         meals: {},
         note: ''
       };
@@ -129,6 +162,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       
       return newDays.map((d, i) => ({
         ...d,
+        ...(initialMeals[i] || {}), // Preserve all fields from initialMeals including isHeld, isCopiedFromHold
         meals: initialMeals[i]?.meals || {},
         note: initialMeals[i]?.note || ''
       }));
@@ -144,7 +178,8 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       const newDays = buildDays(duration);
       setWeekPlan(prev => {
         return newDays.map((d, i) => ({ 
-          ...d, 
+          ...d,
+          ...(prev[i] || {}), // Preserve all fields including isHeld, isCopiedFromHold
           meals: prev[i]?.meals || {}, 
           note: prev[i]?.note || '' 
         }));
@@ -165,12 +200,19 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       console.log('Loading initialMeals data:');
       initialMeals.forEach((day, i) => {
         const mealCount = day?.meals ? Object.keys(day.meals).length : 0;
-        console.log(`  Day ${i + 1}: ${mealCount} meal types`);
+        const isHeld = (day as any)?.isHeld || false;
+        console.log(`  Day ${i + 1}: ${mealCount} meal types, isHeld: ${isHeld}`);
       });
       
       // Always set the weekPlan from initialMeals if provided
-      setWeekPlan(newDays.map((d, i) => ({
+      // Use MAX of duration and initialMeals.length to ensure we show all days
+      // (duration is what user wants, initialMeals.length may be less if old data, or more if hold days were added)
+      const mealsLength = Math.max(duration, initialMeals.length);
+      const adjustedDays = buildDays(mealsLength);
+      
+      setWeekPlan(adjustedDays.map((d, i) => ({
         ...d,
+        ...(initialMeals[i] || {}), // Preserve all fields including isHeld, isCopiedFromHold
         meals: initialMeals[i]?.meals || {},
         note: initialMeals[i]?.note || ''
       })));
@@ -293,6 +335,8 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
           clientDietaryRestrictions={dietaryRestrictions}
           clientMedicalConditions={medicalConditions}
           clientAllergies={allergies}
+          holdDays={holdDays}
+          totalHeldDays={totalHeldDays}
         />
       </div>
     </div>

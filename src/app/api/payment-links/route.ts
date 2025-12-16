@@ -177,6 +177,9 @@ export async function POST(request: NextRequest) {
           ? `Payment for ${validatedData.planName}${validatedData.duration ? ` - ${validatedData.duration}` : ''}`
           : 'Payment Link';
 
+        const today = new Date();
+        const paymentDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+        
         const razorpayPaymentLinkOptions: any = {
           amount: Math.round(validatedData.finalAmount * 100), // Amount in paise
           currency: 'INR',
@@ -194,9 +197,18 @@ export async function POST(request: NextRequest) {
           reminder_enable: true,
           notes: {
             clientId: validatedData.clientId,
+            clientName: clientName,
             dietitianId: session.user.id,
             planName: validatedData.planName || '',
             planCategory: validatedData.planCategory || '',
+            durationDays: validatedData.durationDays?.toString() || '',
+            duration: validatedData.duration || '',
+            baseAmount: validatedData.amount.toString(),
+            tax: validatedData.tax.toString(),
+            discount: validatedData.discount.toString(),
+            finalAmount: validatedData.finalAmount.toString(),
+            paymentDate: paymentDate,
+            createdAt: today.toISOString(),
           },
           callback_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/success`,
           callback_method: 'get'

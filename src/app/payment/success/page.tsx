@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,27 +21,6 @@ interface PaymentDetails {
 }
 
 export default function PaymentSuccessPage() {
-  return (
-    <Suspense fallback={<PaymentSuccessLoading />}>
-      <PaymentSuccessContent />
-    </Suspense>
-  );
-}
-
-function PaymentSuccessLoading() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6 flex flex-col items-center justify-center space-y-4 py-12">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-          <p className="text-gray-600">Verifying payment...</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
@@ -79,6 +58,7 @@ function PaymentSuccessContent() {
           setError(data.error || 'Payment verification failed');
         }
       } catch (err) {
+        console.error('Verification error:', err);
         setError('Failed to verify payment');
       } finally {
         setLoading(false);
@@ -177,3 +157,5 @@ function PaymentSuccessContent() {
     </div>
   );
 }
+
+

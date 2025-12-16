@@ -233,18 +233,10 @@ export default function HistorySection({ clientId }: HistorySectionProps) {
                               {entry.performedBy.role && ` (${entry.performedBy.role})`}
                             </span>
                           )}
-                          {entry.changeDetails && entry.changeDetails.length > 0 && (
-                            <button
-                              onClick={() => toggleExpanded(entry._id)}
-                              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                            >
-                              {expandedItems.has(entry._id) ? '▼ Hide details' : '▶ View details'}
-                            </button>
-                          )}
                         </div>
                         
                         {/* Change details section */}
-                        {expandedItems.has(entry._id) && entry.changeDetails && entry.changeDetails.length > 0 && (
+                        {entry.changeDetails && entry.changeDetails.length > 0 && expandedItems.has(entry._id) && (
                           <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
                             <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Changed Fields:</p>
                             {entry.changeDetails.map((change, idx) => (

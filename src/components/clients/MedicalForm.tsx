@@ -45,6 +45,7 @@ export interface UploadedReport {
   uploadedOn: string;
   fileType: string;
   url?: string;
+  category?: 'medical-report' | 'transformation' | 'other';
 }
 
 interface MedicalFormProps extends MedicalData {
@@ -56,9 +57,18 @@ interface MedicalFormProps extends MedicalData {
   onDeleteReport?: (reportId: string) => Promise<void>;
 }
 
+// Report category options
+const REPORT_CATEGORIES = [
+  { value: 'medical-report', label: 'Medical Report' },
+  { value: 'transformation', label: 'Transformation' },
+  { value: 'other', label: 'Other' },
+] as const;
+
 export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions, notes, diseaseHistory, medicalHistory, familyHistory, medication, bloodGroup, gutIssues, reports, isPregnant, isLactating, menstrualCycle, bloodFlow, onChange, onSave, loading, clientGender, clientId, onDeleteReport }: MedicalFormProps) {
   const [deletingReportId, setDeletingReportId] = React.useState<string | null>(null);
   const [selectedDietary, setSelectedDietary] = React.useState<string[]>(() => (dietaryRestrictions ? dietaryRestrictions.split(',').map(s => s.trim()).filter(Boolean) : []));
+  const [reportCategory, setReportCategory] = React.useState<'medical-report' | 'transformation' | 'other'>('medical-report');
+  const [categoryFilter, setCategoryFilter] = React.useState<string>('all');
   React.useEffect(() => {
     setSelectedDietary(dietaryRestrictions ? dietaryRestrictions.split(',').map(s => s.trim()).filter(Boolean) : []);
   }, [dietaryRestrictions]);
@@ -98,13 +108,14 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
       onChange('gutIssues', next);
     }
   };
-  const addReport = async (file: File, customName: string) => {
+  const addReport = async (file: File, customName: string, category: 'medical-report' | 'transformation' | 'other') => {
     // If we have a clientId, upload to server
     if (clientId) {
       try {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('fileName', customName || file.name);
+        formData.append('category', category);
 
         const response = await fetch(`/api/users/${clientId}/medical/upload`, {
           method: 'POST',
@@ -135,6 +146,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
         fileName: customName || file.name,
         uploadedOn: new Date().toISOString().split('T')[0],
         fileType: file.type || 'unknown',
+        category: category,
       };
       onChange('reports', [...reports, newReport]);
     }
@@ -197,13 +209,20 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
     
     setUploadingFile(true);
     for (const f of Array.from(files)) {
-      await addReport(f, pendingReportName);
+      await addReport(f, pendingReportName, reportCategory);
     }
     setUploadingFile(false);
     setPendingReportName('');
+    setReportCategory('medical-report');
     e.target.value = '';
   };
   const [pendingReportName, setPendingReportName] = React.useState('');
+  
+  // Filter reports by category
+  const filteredReports = categoryFilter === 'all' 
+    ? reports 
+    : reports.filter(r => r.category === categoryFilter);
+
   return (
     <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
@@ -388,27 +407,71 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
           </div>
         )}
         {/* Reports Upload */}
-        <div className="space-y-2">
-          <Label>Upload Medical Reports</Label>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <Input placeholder="File Name (Optional)" value={pendingReportName} onChange={e => setPendingReportName(e.target.value)} className="flex-1" disabled={uploadingFile} />
-            <Input type="file" multiple onChange={handleReportInput} className="flex-1" disabled={uploadingFile} />
-            {uploadingFile && <span className="text-sm text-gray-500">Uploading...</span>}
+        <div className="space-y-3">
+          <Label>Upload Documents</Label>
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Input placeholder="File Name (Optional)" value={pendingReportName} onChange={e => setPendingReportName(e.target.value)} className="flex-1" disabled={uploadingFile} />
+              <Select value={reportCategory} onValueChange={(v: 'medical-report' | 'transformation' | 'other') => setReportCategory(v)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {REPORT_CATEGORIES.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input type="file" multiple onChange={handleReportInput} className="flex-1" accept={reportCategory === 'transformation' ? 'image/*' : undefined} disabled={uploadingFile} />
+              {uploadingFile && <span className="text-sm text-gray-500">Uploading...</span>}
+            </div>
+            {reportCategory === 'transformation' && (
+              <p className="text-xs text-gray-500">Transformation photos: Before/After images showing client progress</p>
+            )}
           </div>
+          
+          {/* Category Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Filter:</span>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[180px] h-8">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Documents</SelectItem>
+                {REPORT_CATEGORIES.map(cat => (
+                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           <div className="border rounded-md overflow-hidden">
             <table className="min-w-full text-xs">
               <thead className="bg-gray-50">
                 <tr className="text-left">
                   <th className="p-2">File Name</th>
+                  <th className="p-2">Category</th>
                   <th className="p-2">Uploaded On</th>
                   <th className="p-2">File Type</th>
                   <th className="p-2">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {reports.map(r => (
+                {filteredReports.map(r => (
                   <tr key={r.id} className="border-t">
                     <td className="p-2">{r.fileName}</td>
+                    <td className="p-2">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        r.category === 'transformation' 
+                          ? 'bg-purple-100 text-purple-700' 
+                          : r.category === 'other' 
+                            ? 'bg-gray-100 text-gray-700'
+                            : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {r.category === 'transformation' ? 'Transformation' : r.category === 'other' ? 'Other' : 'Medical Report'}
+                      </span>
+                    </td>
                     <td className="p-2">{r.uploadedOn}</td>
                     <td className="p-2">{r.fileType}</td>
                     <td className="p-2">
@@ -439,8 +502,8 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                     </td>
                   </tr>
                 ))}
-                {reports.length === 0 && (
-                  <tr><td colSpan={4} className="p-3 text-center text-gray-500">No reports uploaded.</td></tr>
+                {filteredReports.length === 0 && (
+                  <tr><td colSpan={5} className="p-3 text-center text-gray-500">No documents uploaded.</td></tr>
                 )}
               </tbody>
             </table>

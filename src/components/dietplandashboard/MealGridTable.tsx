@@ -33,6 +33,8 @@ type MealGridTableProps = {
   clientDietaryRestrictions?: string;
   clientMedicalConditions?: string;
   clientAllergies?: string;
+  holdDays?: { originalDate: Date; holdStartDate: Date; holdDays: number; reason?: string }[];
+  totalHeldDays?: number;
 };
 
 const mealTimeSuggestions: { [key: string]: string } = {
@@ -46,10 +48,11 @@ const mealTimeSuggestions: { [key: string]: string } = {
 
 const DAYS_PER_PAGE = 14;
 
-export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '' }: MealGridTableProps) {
+export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
   // Debug logging
   console.log('MealGridTable render - weekPlan days:', weekPlan.length);
   console.log('MealGridTable render - first day meals:', weekPlan[0]?.meals ? Object.keys(weekPlan[0].meals) : 'none');
+  console.log('MealGridTable render - holdDays:', holdDays?.length || 0, 'totalHeldDays:', totalHeldDays);
   if (weekPlan[0]?.meals) {
     const firstMealType = Object.keys(weekPlan[0].meals)[0];
     if (firstMealType) {
@@ -690,11 +693,41 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, re
               const customMeals = Object.keys(day.meals).filter(mt => !displayMealTypes.includes(mt));
               const allMealTypesForDay = [...dayMealTypes, ...customMeals];
               
+              // Format day label to show date + day number + day name
+              const formatDayLabel = () => {
+                if (day.date) {
+                  const dateObj = new Date(day.date);
+                  const dayOfMonth = dateObj.getDate();
+                  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                  const dayName = dayNames[dateObj.getDay()];
+                  const dayNum = actualDayIndex + 1;
+                  return `${dayOfMonth} - Day ${dayNum} - ${dayName}`;
+                }
+                return day.day;
+              };
+
+              // Check if this is a freeze recovery day (copied meal at the end)
+              const isFreezeRecovery = (day as any).isFreezeRecovery === true;
+              const originalFreezeDateLabel = (day as any).originalFreezeDateLabel;
+              
+              // Check if this day is a frozen day (original day that was frozen - should be blurred)
+              const isFrozenDay = (day as any).isFrozen === true;
+
               return (
-                <tr key={day.id} className="hover:opacity-90 transition-opacity">
+                <tr key={day.id} className={`hover:opacity-90 transition-opacity ${isFrozenDay ? 'opacity-40 blur-[1px]' : ''}`}>
                   <td className="border-r border-b border-gray-300 p-5 align-top" style={{ backgroundColor: rowColor }}>
                     <div className="space-y-2.5">
-                      <div className="text-slate-900 font-semibold text-base">{day.day}</div>
+                      <div className="text-slate-900 font-semibold text-base">{formatDayLabel()}</div>
+                      {isFreezeRecovery && originalFreezeDateLabel && (
+                        <div className="text-xs text-gray-500 italic">
+                          (Freeze Recovery from {originalFreezeDateLabel})
+                        </div>
+                      )}
+                      {isFrozenDay && (
+                        <div className="text-xs text-red-500 font-medium">
+                          ❄️ Frozen Day
+                        </div>
+                      )}
                       <DatePicker
                         value={day.date}
                         onChange={(date) => updateDayInfo(actualDayIndex, 'date', date)}
