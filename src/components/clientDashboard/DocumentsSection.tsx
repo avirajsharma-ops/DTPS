@@ -3,7 +3,8 @@
 import { useState, ChangeEvent, FormEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { FileText, Plus, Search, Image as ImageIcon, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +24,7 @@ import { cn } from "@/lib/utils";
 
 export interface ClientDocument {
   id: string;
-  type: "meal-picture" | "medical-report";
+  type: "meal-picture" | "medical-report" | "transformation";
   uploadedAt: string;
   fileName: string;
   filePath: string;
@@ -48,17 +49,21 @@ export default function DocumentsSection({
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [docType, setDocType] = useState<
-    "meal-picture" | "medical-report" | ""
+    "meal-picture" | "medical-report" | "transformation" | ""
   >("");
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const [filterType, setFilterType] = useState<"all" | "meal-picture" | "medical-report">("all");
+  const [filterType, setFilterType] = useState<"all" | "meal-picture" | "medical-report" | "transformation">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredDocuments =
-    filterType === "all"
-      ? documents
-      : documents.filter((doc) => doc.type === filterType);
+  // Filter and search documents
+  const filteredDocuments = documents.filter((doc) => {
+    const matchesType = filterType === "all" || doc.type === filterType;
+    const matchesSearch = searchQuery === "" || 
+      doc.fileName.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -136,18 +141,38 @@ export default function DocumentsSection({
             <CardTitle>Client Documents</CardTitle>
 
             <div className="flex items-center gap-3">
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search files..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 w-[180px]"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                  >
+                    <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+
               {/* Filter Dropdown */}
               <Select
                 value={filterType}
                 onValueChange={(val: any) => setFilterType(val)}
               >
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter Documents" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Documents</SelectItem>
                   <SelectItem value="meal-picture">Meal Pictures</SelectItem>
                   <SelectItem value="medical-report">Medical Reports</SelectItem>
+                  <SelectItem value="transformation">Transformation</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -182,8 +207,16 @@ export default function DocumentsSection({
                           <SelectItem value="medical-report">
                             Medical report
                           </SelectItem>
+                          <SelectItem value="transformation">
+                            Transformation
+                          </SelectItem>
                         </SelectContent>
                       </Select>
+                      {docType === "transformation" && (
+                        <p className="text-xs text-gray-500">
+                          Transformation photos: Before/After images showing client progress
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -256,6 +289,8 @@ export default function DocumentsSection({
                       <td className="px-3 py-2 capitalize">
                         {doc.type === "meal-picture"
                           ? "Meal pictures"
+                          : doc.type === "transformation"
+                          ? "Transformation"
                           : "Medical report"}
                       </td>
                       <td className="px-3 py-2">

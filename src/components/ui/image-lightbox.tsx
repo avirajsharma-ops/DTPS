@@ -1,0 +1,87 @@
+'use client';
+
+import { useEffect, useCallback } from 'react';
+import { X, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+interface ImageLightboxProps {
+  isOpen: boolean;
+  onClose: () => void;
+  src: string;
+  alt?: string;
+}
+
+export default function ImageLightbox({ isOpen, onClose, src, alt = 'Image' }: ImageLightboxProps) {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, handleKeyDown]);
+
+  if (!isOpen) return null;
+
+  const handleDownload = () => {
+    const link = document.createElement('a');
+    link.href = src;
+    link.download = alt || 'image';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+      onClick={onClose}
+    >
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-white hover:bg-white/20"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDownload();
+          }}
+        >
+          <Download className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-white hover:bg-white/20"
+          onClick={onClose}
+        >
+          <X className="h-6 w-6" />
+        </Button>
+      </div>
+      
+      <div
+        className="max-w-[90vw] max-h-[90vh] overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={src}
+          alt={alt}
+          className="max-w-full max-h-[90vh] object-contain"
+        />
+      </div>
+    </div>
+  );
+}

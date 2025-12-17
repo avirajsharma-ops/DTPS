@@ -63,6 +63,7 @@ export async function GET(
         remainingFreezeDays,
         freezedDays: freezedDays.map((fd: any) => ({
           date: fd.date,
+          addedDate: fd.addedDate || null,
           createdAt: fd.createdAt
         })),
         canFreeze: remainingFreezeDays > 0
@@ -299,5 +300,141 @@ export async function POST(
   } catch (error) {
     console.error('Error freezing dates:', error);
     return NextResponse.json({ error: 'Failed to freeze dates' }, { status: 500 });
+  }
+}
+
+// DELETE - Unfreeze selected dates (revert to original state)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await dbConnect();
+    const { id } = await params;
+    const body = await request.json();
+    const { unfreezeDates } = body; // Array of date strings in YYYY-MM-DD format to unfreeze
+
+    if (!unfreezeDates || !Array.isArray(unfreezeDates) || unfreezeDates.length === 0) {
+      return NextResponse.json({ error: 'unfreezeDates array is required' }, { status: 400 });
+    }
+
+    // Fetch the meal plan
+    const mealPlan = await ClientMealPlan.findById(id);
+
+    if (!mealPlan) {
+      return NextResponse.json({ error: 'Meal plan not found' }, { status: 404 });
+    }
+
+    const meals = mealPlan.meals || [];
+    const freezedDays = mealPlan.freezedDays || [];
+    const currentFreezeCount = mealPlan.totalFreezeCount || 0;
+
+    // Convert unfreeze dates to Set for quick lookup
+    const unfreezeDateSet = new Set(unfreezeDates.map((d: string) => format(parseISO(d), 'yyyy-MM-dd')));
+
+    // Find which frozen dates to remove
+    const datesToUnfreeze: string[] = [];
+    const addedDatesToRemove: string[] = [];
+
+    for (const freezeDay of freezedDays) {
+      const freezeDateStr = format(new Date(freezeDay.date), 'yyyy-MM-dd');
+      if (unfreezeDateSet.has(freezeDateStr)) {
+        datesToUnfreeze.push(freezeDateStr);
+        if (freezeDay.addedDate) {
+          addedDatesToRemove.push(format(new Date(freezeDay.addedDate), 'yyyy-MM-dd'));
+        }
+      }
+    }
+
+    if (datesToUnfreeze.length === 0) {
+      return NextResponse.json({ 
+        error: 'No matching frozen dates found to unfreeze' 
+      }, { status: 400 });
+    }
+
+    // Remove isFrozen flag from originally frozen days
+    const updatedMeals = meals
+      .filter((meal: any) => {
+        const mealDateStr = meal.date;
+        // Remove the freeze recovery meals that were added
+        if (addedDatesToRemove.includes(mealDateStr)) {
+          return false;
+        }
+        return true;
+      })
+      .map((meal: any) => {
+        const mealDateStr = meal.date;
+        // Remove isFrozen flag from unfrozen dates
+        if (datesToUnfreeze.includes(mealDateStr) && meal.isFrozen) {
+          const { isFrozen, ...mealWithoutFrozen } = meal;
+          return mealWithoutFrozen;
+        }
+        return meal;
+      });
+
+    // Sort meals by date
+    updatedMeals.sort((a: any, b: any) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    // Remove unfrozen dates from freezedDays array
+    const updatedFreezedDays = freezedDays.filter((fd: any) => {
+      const freezeDateStr = format(new Date(fd.date), 'yyyy-MM-dd');
+      return !unfreezeDateSet.has(freezeDateStr);
+    });
+
+    // Calculate new end date (subtract the unfrozen days)
+    const currentEndDate = startOfDay(new Date(mealPlan.endDate));
+    const newEndDate = addDays(currentEndDate, -datesToUnfreeze.length);
+
+    // NOTE: totalFreezeCount does NOT change on unfreeze
+    // The freeze days are still "used" even after unfreezing
+    // This means remaining freeze days won't increase when you unfreeze
+    // Only the freezedDays array is updated to remove the unfrozen dates
+
+    // Update the meal plan - keep totalFreezeCount unchanged
+    mealPlan.meals = updatedMeals;
+    mealPlan.freezedDays = updatedFreezedDays;
+    // mealPlan.totalFreezeCount stays the same - freeze days are still "used"
+    mealPlan.endDate = newEndDate;
+
+    await mealPlan.save();
+
+    // Also update ClientPurchase end date to keep in sync
+    await ClientPurchase.updateOne(
+      { mealPlanId: mealPlan._id },
+      { $set: { endDate: newEndDate } }
+    );
+
+    // Recalculate allowed freeze days based on original duration
+    const startDate = startOfDay(new Date(mealPlan.startDate));
+    const allowedFreezeDays = calculateAllowedFreezeDays(mealPlan.duration || differenceInDays(newEndDate, startDate) + 1);
+
+    return NextResponse.json({
+      success: true,
+      message: `Successfully unfroze ${datesToUnfreeze.length} days. End date reverted to ${format(newEndDate, 'yyyy-MM-dd')}. Note: Freeze allowance remains unchanged.`,
+      data: {
+        planId: mealPlan._id,
+        previousEndDate: format(currentEndDate, 'yyyy-MM-dd'),
+        newEndDate: format(newEndDate, 'yyyy-MM-dd'),
+        totalFreezeCount: currentFreezeCount, // Unchanged - freeze days still "used"
+        allowedFreezeDays,
+        remainingFreezeDays: allowedFreezeDays - currentFreezeCount, // Remains same
+        unfrozenDates: datesToUnfreeze,
+        removedMealDates: addedDatesToRemove
+      }
+    });
+
+  } catch (error) {
+    console.error('Error unfreezing dates:', error);
+    return NextResponse.json({ error: 'Failed to unfreeze dates' }, { status: 500 });
   }
 }

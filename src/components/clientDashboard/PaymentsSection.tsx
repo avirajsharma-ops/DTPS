@@ -4,7 +4,26 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Copy, Plus, RefreshCw, MoreVertical, Trash2, ExternalLink, Eye, FileText, Bell, Loader2, Mail, Printer } from "lucide-react";
+import { Copy, Plus, RefreshCw, MoreVertical, Trash2, ExternalLink, Eye, FileText, Bell, Loader2, Mail, Printer, Package, ChevronDown, Wallet, Upload, Calendar } from "lucide-react";
+
+// Service Plan interfaces
+interface PricingTier {
+  _id: string;
+  durationDays: number;
+  durationLabel: string;
+  amount: number;
+  isActive: boolean;
+}
+
+interface ServicePlan {
+  _id: string;
+  name: string;
+  category: string;
+  description?: string;
+  pricingTiers: PricingTier[];
+  maxDiscountPercent: number;
+  isActive: boolean;
+}
 
 export interface PaymentItem {
   _id: string;
@@ -21,6 +40,9 @@ export interface PaymentItem {
   planName?: string;
   catalogue?: string;
   duration?: string;
+  durationDays?: number;
+  servicePlanId?: string;
+  pricingTierId?: string;
   createdAt: string;
   status?: string;
   paidAt?: string;
@@ -69,6 +91,14 @@ export default function PaymentsSection({
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
+  // Service Plans state
+  const [servicePlans, setServicePlans] = useState<ServicePlan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedServicePlan, setSelectedServicePlan] = useState<ServicePlan | null>(null);
+  const [selectedPricingTier, setSelectedPricingTier] = useState<PricingTier | null>(null);
+  const [maxDiscount, setMaxDiscount] = useState<number>(40);
+
   // Modal fields
   const [showModal, setShowModal] = useState(false);
   const [expireDate, setExpireDate] = useState("");
@@ -82,6 +112,79 @@ export default function PaymentsSection({
   const [planName, setPlanName] = useState("");
   const [catalogue, setCatalogue] = useState("");
   const [duration, setDuration] = useState<number | "">(1);
+  const [durationLabel, setDurationLabel] = useState("");
+
+  // Fetch service plans
+  const fetchServicePlans = useCallback(async () => {
+    setLoadingPlans(true);
+    try {
+      const response = await fetch('/api/admin/service-plans?activeOnly=true');
+      const data = await response.json();
+      if (data.success) {
+        setServicePlans(data.plans || []);
+      }
+    } catch (error) {
+      console.error('Error fetching service plans:', error);
+    } finally {
+      setLoadingPlans(false);
+    }
+  }, []);
+
+  // Get unique categories from service plans
+  const getUniqueCategories = () => {
+    const categories = [...new Set(servicePlans.map(p => p.category))];
+    return categories;
+  };
+
+  // Get plans filtered by selected category
+  const getPlansForCategory = () => {
+    if (!selectedCategory) return [];
+    return servicePlans.filter(p => p.category === selectedCategory);
+  };
+
+  // Handle category selection
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+    setSelectedServicePlan(null);
+    setSelectedPricingTier(null);
+    setPlanCategory(category);
+    setPlanName("");
+    setAmount("");
+    setDuration("");
+    setDurationLabel("");
+    setMaxDiscount(40);
+  };
+
+  // Handle service plan selection
+  const handleServicePlanSelect = (planId: string) => {
+    const plan = servicePlans.find(p => p._id === planId);
+    if (plan) {
+      setSelectedServicePlan(plan);
+      setSelectedPricingTier(null);
+      setPlanName(plan.name);
+      setMaxDiscount(plan.maxDiscountPercent);
+      // Reset amount when plan changes
+      setAmount("");
+      setDuration("");
+      setDurationLabel("");
+    } else {
+      setSelectedServicePlan(null);
+      setSelectedPricingTier(null);
+      setMaxDiscount(40);
+    }
+  };
+
+  // Handle pricing tier selection - auto-fill amount and duration
+  const handlePricingTierSelect = (tierId: string) => {
+    if (!selectedServicePlan) return;
+    const tier = selectedServicePlan.pricingTiers.find(t => t._id === tierId);
+    if (tier) {
+      setSelectedPricingTier(tier);
+      setAmount(tier.amount);
+      setDuration(tier.durationDays);
+      setDurationLabel(tier.durationLabel);
+    }
+  };
 
   // Auto-calc final amount
   useEffect(() => {
@@ -89,10 +192,17 @@ export default function PaymentsSection({
     const t = typeof tax === "number" ? tax : 0;
     const d = typeof discount === "number" ? discount : 0;
 
+    // Enforce max discount limit
+    const effectiveDiscount = Math.min(d, maxDiscount);
+    if (d > maxDiscount) {
+      setDiscount(maxDiscount);
+      toast.error(`Maximum discount for this plan is ${maxDiscount}%`);
+    }
+
     const taxed = amt + (amt * t) / 100;
-    const finalVal = Math.max(0, taxed - (amt * d) / 100);
+    const finalVal = Math.max(0, taxed - (amt * effectiveDiscount) / 100);
     setFinalAmount(Number(finalVal.toFixed(2)));
-  }, [amount, tax, discount]);
+  }, [amount, tax, discount, maxDiscount]);
 
   // Fetch payment links from API
   const fetchPaymentLinks = useCallback(async () => {
@@ -120,6 +230,13 @@ export default function PaymentsSection({
     fetchPaymentLinks();
   }, [fetchPaymentLinks]);
 
+  // Load service plans when modal opens
+  useEffect(() => {
+    if (showModal && servicePlans.length === 0) {
+      fetchServicePlans();
+    }
+  }, [showModal, servicePlans.length, fetchServicePlans]);
+
   const resetModal = () => {
     setExpireDate("");
     setAmount("");
@@ -131,6 +248,11 @@ export default function PaymentsSection({
     setPlanName("");
     setCatalogue("");
     setDuration(1);
+    setDurationLabel("");
+    setSelectedCategory("");
+    setSelectedServicePlan(null);
+    setSelectedPricingTier(null);
+    setMaxDiscount(40);
     setShowModal(false);
   };
 
@@ -145,6 +267,11 @@ export default function PaymentsSection({
       return;
     }
 
+    if (!selectedServicePlan || !selectedPricingTier) {
+      toast.error("Please select a service plan and duration");
+      return;
+    }
+
     setCreating(true);
     try {
       const response = await fetch('/api/payment-links', {
@@ -154,11 +281,14 @@ export default function PaymentsSection({
           clientId: client._id,
           amount,
           tax: Number(tax) || 0,
-          discount: Number(discount) || 0,
+          discount: Math.min(Number(discount) || 0, maxDiscount),
           finalAmount,
           planCategory: planCategory || undefined,
           planName: planName || undefined,
-          duration: duration || undefined,
+          duration: durationLabel || `${duration} Days`,
+          durationDays: Number(duration) || undefined,
+          servicePlanId: selectedServicePlan._id,
+          pricingTierId: selectedPricingTier._id,
           catalogue: catalogue || undefined,
           expireDate: expireDate || undefined,
           notes: notes || undefined,
@@ -268,6 +398,133 @@ export default function PaymentsSection({
 
   const [sendingReminder, setSendingReminder] = useState(false);
   const [syncingPayment, setSyncingPayment] = useState<string | null>(null);
+
+  // Other Platform Payment states
+  const [showOtherPaymentModal, setShowOtherPaymentModal] = useState(false);
+  const [selectedPaymentForOther, setSelectedPaymentForOther] = useState<PaymentItem | null>(null);
+  const [otherPaymentPlatform, setOtherPaymentPlatform] = useState("");
+  const [otherPaymentCustomPlatform, setOtherPaymentCustomPlatform] = useState("");
+  const [otherPaymentTransactionId, setOtherPaymentTransactionId] = useState("");
+  const [otherPaymentDate, setOtherPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [otherPaymentNotes, setOtherPaymentNotes] = useState("");
+  const [otherPaymentReceipt, setOtherPaymentReceipt] = useState<File | null>(null);
+  const [submittingOtherPayment, setSubmittingOtherPayment] = useState(false);
+  const [otherPlatformPayments, setOtherPlatformPayments] = useState<any[]>([]);
+
+  // Platform options
+  const platformOptions = [
+    { value: 'upi', label: 'UPI' },
+    { value: 'gpay', label: 'Google Pay' },
+    { value: 'phonepe', label: 'PhonePe' },
+    { value: 'paytm', label: 'Paytm' },
+    { value: 'bank_transfer', label: 'Bank Transfer' },
+    { value: 'cash', label: 'Cash' },
+    { value: 'other', label: 'Other' },
+  ];
+
+  // Fetch other platform payments
+  const fetchOtherPlatformPayments = useCallback(async () => {
+    if (!client?._id) return;
+    try {
+      const response = await fetch(`/api/other-platform-payments?clientId=${client._id}`);
+      const data = await response.json();
+      if (data.payments) {
+        setOtherPlatformPayments(data.payments);
+      }
+    } catch (error) {
+      console.error('Error fetching other platform payments:', error);
+    }
+  }, [client?._id]);
+
+  // Load other platform payments
+  useEffect(() => {
+    fetchOtherPlatformPayments();
+  }, [fetchOtherPlatformPayments]);
+
+  // Submit other platform payment
+  const submitOtherPlatformPayment = async () => {
+    if (!selectedPaymentForOther) {
+      toast.error('Please select a payment link');
+      return;
+    }
+    if (!otherPaymentPlatform) {
+      toast.error('Please select a payment platform');
+      return;
+    }
+    if (otherPaymentPlatform === 'other' && !otherPaymentCustomPlatform.trim()) {
+      toast.error('Please enter the platform name');
+      return;
+    }
+    if (!otherPaymentTransactionId.trim()) {
+      toast.error('Please enter the transaction ID');
+      return;
+    }
+    if (!otherPaymentDate) {
+      toast.error('Please select payment date');
+      return;
+    }
+
+    setSubmittingOtherPayment(true);
+    try {
+      const formData = new FormData();
+      formData.append('clientId', client._id);
+      formData.append('paymentLinkId', selectedPaymentForOther._id);
+      formData.append('platform', otherPaymentPlatform);
+      if (otherPaymentPlatform === 'other') {
+        formData.append('customPlatform', otherPaymentCustomPlatform);
+      }
+      formData.append('transactionId', otherPaymentTransactionId);
+      formData.append('amount', String(selectedPaymentForOther.finalAmount));
+      formData.append('paymentDate', otherPaymentDate);
+      formData.append('planName', selectedPaymentForOther.planName || '');
+      formData.append('planCategory', selectedPaymentForOther.planCategory || '');
+      formData.append('durationDays', String(selectedPaymentForOther.durationDays || 0));
+      formData.append('durationLabel', selectedPaymentForOther.duration || '');
+      if (otherPaymentNotes) {
+        formData.append('notes', otherPaymentNotes);
+      }
+      if (otherPaymentReceipt) {
+        formData.append('receiptImage', otherPaymentReceipt);
+      }
+
+      const response = await fetch('/api/other-platform-payments', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Payment submitted for admin approval');
+        resetOtherPaymentModal();
+        fetchOtherPlatformPayments();
+      } else {
+        toast.error(data.error || 'Failed to submit payment');
+      }
+    } catch (error) {
+      console.error('Error submitting other platform payment:', error);
+      toast.error('Failed to submit payment');
+    } finally {
+      setSubmittingOtherPayment(false);
+    }
+  };
+
+  const resetOtherPaymentModal = () => {
+    setShowOtherPaymentModal(false);
+    setSelectedPaymentForOther(null);
+    setOtherPaymentPlatform("");
+    setOtherPaymentCustomPlatform("");
+    setOtherPaymentTransactionId("");
+    setOtherPaymentDate(new Date().toISOString().split('T')[0]);
+    setOtherPaymentNotes("");
+    setOtherPaymentReceipt(null);
+  };
+
+  const openOtherPaymentModal = (payment: PaymentItem) => {
+    setSelectedPaymentForOther(payment);
+    setShowOtherPaymentModal(true);
+    setOpenRowMenuId(null);
+  };
 
   // Sync payment status from Razorpay
   const syncPaymentStatus = async (payment: PaymentItem) => {
@@ -601,6 +858,13 @@ export default function PaymentsSection({
                     <>
                       <div className="border-t border-gray-100 my-1"></div>
                       <button
+                        onClick={() => openOtherPaymentModal(payment!)}
+                        className="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50 flex items-center gap-2"
+                      >
+                        <Wallet className="h-4 w-4" />
+                        Add Other Platform Payment
+                      </button>
+                      <button
                         onClick={() => deletePayment(openRowMenuId)}
                         className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                       >
@@ -619,7 +883,7 @@ export default function PaymentsSection({
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-xl shadow-xl">
+          <div className="bg-white p-6 rounded-lg w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4">Generate Payment Link</h2>
             
             {/* Client info display */}
@@ -632,130 +896,176 @@ export default function PaymentsSection({
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-gray-700">Amount *</label>
-                <input 
-                  type="number" 
-                  value={amount} 
-                  onChange={(e) => setAmount(Number(e.target.value))} 
-                  placeholder="Enter amount"
-                  className="w-full border p-2 rounded mt-1" 
-                />
+            {loadingPlans ? (
+              <div className="flex items-center gap-2 mb-4">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-gray-500">Loading plans...</span>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Plan Category Dropdown */}
+                <div>
+                  <label className="text-xs font-medium text-gray-700">Plan Category *</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => handleCategorySelect(e.target.value)}
+                    className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">-- Select Category --</option>
+                    {getUniqueCategories().map((category) => (
+                      <option key={category} value={category}>
+                        {category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="text-xs font-medium text-gray-700">Tax %</label>
-                <input 
-                  type="number" 
-                  value={tax} 
-                  onChange={(e) => setTax(Number(e.target.value))} 
-                  className="w-full border p-2 rounded mt-1" 
-                />
-              </div>
+                {/* Plan Name Dropdown */}
+                <div>
+                  <label className="text-xs font-medium text-gray-700">Plan Name *</label>
+                  <select
+                    value={selectedServicePlan?._id || ""}
+                    onChange={(e) => handleServicePlanSelect(e.target.value)}
+                    disabled={!selectedCategory}
+                    className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">{selectedCategory ? '-- Select Plan --' : 'Select category first'}</option>
+                    {getPlansForCategory().map((plan) => (
+                      <option key={plan._id} value={plan._id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="text-xs font-medium text-gray-700">Discount %</label>
-                <input 
-                  type="number" 
-                  value={discount} 
-                  onChange={(e) => setDiscount(Number(e.target.value))} 
-                  className="w-full border p-2 rounded mt-1" 
-                />
-              </div>
+                {/* Duration Dropdown */}
+                <div>
+                  <label className="text-xs font-medium text-gray-700">Duration *</label>
+                  <select
+                    value={selectedPricingTier?._id || ""}
+                    onChange={(e) => handlePricingTierSelect(e.target.value)}
+                    disabled={!selectedServicePlan}
+                    className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">{selectedServicePlan ? '-- Select Duration --' : 'Select plan first'}</option>
+                    {selectedServicePlan?.pricingTiers
+                      .filter(tier => tier.isActive)
+                      .map((tier) => (
+                        <option key={tier._id} value={tier._id}>
+                          {tier.durationLabel} ({tier.durationDays} days) - ₹{tier.amount.toLocaleString()}
+                        </option>
+                      ))}
+                  </select>
+                  {selectedPricingTier && (
+                    <p className="text-xs text-gray-500 mt-1">{selectedPricingTier.durationDays} days plan</p>
+                  )}
+                </div>
 
-              <div>
-                <label className="text-xs font-medium text-gray-700">Final Amount</label>
-                <div className="mt-1 p-2 bg-blue-50 rounded font-semibold text-blue-700">
-                  ₹{finalAmount.toLocaleString()}
+                {/* Link Expire Date */}
+                <div>
+                  <label className="text-xs font-medium text-gray-700">Link Expire Date</label>
+                  <input 
+                    type="date" 
+                    value={expireDate} 
+                    onChange={(e) => setExpireDate(e.target.value)} 
+                    className="w-full border p-2 rounded-lg mt-1" 
+                  />
+                </div>
+
+                {/* Base Amount */}
+                <div>
+                  <label className="text-xs font-medium text-gray-700">Base Amount *</label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                    <input 
+                      type="number" 
+                      value={amount} 
+                      onChange={(e) => setAmount(Number(e.target.value))} 
+                      placeholder="Auto-filled from plan"
+                      className="w-full border p-2 pl-8 rounded-lg bg-gray-50" 
+                      readOnly={!!selectedPricingTier}
+                    />
+                  </div>
+                  {selectedPricingTier && (
+                    <p className="text-xs text-green-600 mt-1">✓ Auto-filled from selected plan</p>
+                  )}
+                </div>
+
+                {/* Tax */}
+                <div>
+                  <label className="text-xs font-medium text-gray-700">Tax %</label>
+                  <input 
+                    type="number" 
+                    min="0"
+                    value={tax} 
+                    onChange={(e) => setTax(Number(e.target.value))} 
+                    className="w-full border p-2 rounded-lg mt-1" 
+                    placeholder="Enter tax percentage"
+                  />
+                </div>
+
+                {/* Discount */}
+                <div>
+                  <label className="text-xs font-medium text-gray-700">
+                    Discount % <span className="text-gray-400">(Max {maxDiscount}%)</span>
+                  </label>
+                  <input 
+                    type="number"
+                    min="0"
+                    max={maxDiscount}
+                    value={discount} 
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setDiscount(Math.min(val, maxDiscount));
+                    }} 
+                    className="w-full border p-2 rounded-lg mt-1" 
+                    placeholder={`Max ${maxDiscount}%`}
+                  />
+                </div>
+
+                {/* Final Amount */}
+                <div>
+                  <label className="text-xs font-medium text-gray-700">Final Amount</label>
+                  <div className="mt-1 p-2 bg-green-50 rounded-lg font-bold text-green-700 text-lg border border-green-200">
+                    ₹{finalAmount.toLocaleString()}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="md:col-span-2">
+                  <label className="text-xs font-medium text-gray-700">Notes</label>
+                  <textarea 
+                    value={notes} 
+                    onChange={(e) => setNotes(e.target.value)} 
+                    placeholder="Any additional notes..."
+                    className="w-full border p-2 rounded-lg mt-1" 
+                    rows={2} 
+                  />
+                </div>
+
+                {/* Show to Client */}
+                <div className="md:col-span-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={showToClient} 
+                      onChange={(e) => setShowToClient(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm text-gray-700">Show this payment to client</span>
+                  </label>
                 </div>
               </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-700">Plan Name</label>
-                <input 
-                  type="text" 
-                  value={planName} 
-                  onChange={(e) => setPlanName(e.target.value)} 
-                  placeholder="e.g., Weight Loss Plan"
-                  className="w-full border p-2 rounded mt-1" 
-                />
-              </div>
-
-
-
-
-              <div>
-                <label className="text-xs font-medium text-gray-700">Plan Category</label>
-                <input 
-                  type="text" 
-                  value={planCategory} 
-                  onChange={(e) => setPlanCategory(e.target.value)} 
-                  placeholder="e.g., Premium"
-                  className="w-full border p-2 rounded mt-1" 
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-700">Duration (Days) <span className="text-red-500">*</span></label>
-                <input
-                  type="number"
-                  min={1}
-                  max={15}
-                  value={duration}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    if (isNaN(val)) {
-                      setDuration("");
-                    } else {
-                      setDuration(Math.min(15, Math.max(1, val)));
-                    }
-                  }}
-                  placeholder="1-15 days"
-                  className="w-full border p-2 rounded mt-1"
-                />
-                <p className="text-xs text-gray-500 mt-1">Max 15 days</p>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-700">Expire Date</label>
-                <input 
-                  type="date" 
-                  value={expireDate} 
-                  onChange={(e) => setExpireDate(e.target.value)} 
-                  className="w-full border p-2 rounded mt-1" 
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="text-xs font-medium text-gray-700">Notes</label>
-                <textarea 
-                  value={notes} 
-                  onChange={(e) => setNotes(e.target.value)} 
-                  placeholder="Any additional notes..."
-                  className="w-full border p-2 rounded mt-1" 
-                  rows={2} 
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={showToClient} 
-                    onChange={(e) => setShowToClient(e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm text-gray-700">Show this payment to client</span>
-                </label>
-              </div>
-            </div>
+            )}
 
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="ghost" onClick={resetModal} disabled={creating}>
                 Cancel
               </Button>
-              <Button onClick={generateLink} disabled={creating}>
+              <Button 
+                onClick={generateLink} 
+                disabled={creating || !selectedServicePlan || !selectedPricingTier}
+              >
                 {creating ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -768,6 +1078,245 @@ export default function PaymentsSection({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Other Platform Payment Modal */}
+      {showOtherPaymentModal && selectedPaymentForOther && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-purple-600" />
+              Other Platform Payment
+            </h2>
+            
+            {/* Plan Details - Locked */}
+            <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-100">
+              <p className="text-sm font-medium text-purple-800 mb-2">Plan Details (Locked)</p>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-500">Plan:</span>
+                  <p className="font-medium">{selectedPaymentForOther.planName || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Category:</span>
+                  <p className="font-medium">{selectedPaymentForOther.planCategory || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Duration:</span>
+                  <p className="font-medium">{selectedPaymentForOther.duration || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Amount:</span>
+                  <p className="font-bold text-lg text-purple-700">₹{selectedPaymentForOther.finalAmount?.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Payment Platform */}
+              <div>
+                <label className="text-sm font-medium text-gray-700">Payment Platform *</label>
+                <select
+                  value={otherPaymentPlatform}
+                  onChange={(e) => setOtherPaymentPlatform(e.target.value)}
+                  className="w-full border rounded-lg p-2.5 mt-1 focus:ring-2 focus:ring-purple-500 bg-white"
+                >
+                  <option value="">-- Select Platform --</option>
+                  {platformOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Custom Platform Name */}
+              {otherPaymentPlatform === 'other' && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Platform Name *</label>
+                  <input
+                    type="text"
+                    value={otherPaymentCustomPlatform}
+                    onChange={(e) => setOtherPaymentCustomPlatform(e.target.value)}
+                    placeholder="Enter platform name"
+                    className="w-full border rounded-lg p-2.5 mt-1"
+                  />
+                </div>
+              )}
+
+              {/* Transaction ID */}
+              <div>
+                <label className="text-sm font-medium text-gray-700">Transaction ID / Reference Number *</label>
+                <input
+                  type="text"
+                  value={otherPaymentTransactionId}
+                  onChange={(e) => setOtherPaymentTransactionId(e.target.value)}
+                  placeholder="Enter transaction ID"
+                  className="w-full border rounded-lg p-2.5 mt-1"
+                />
+              </div>
+
+              {/* Payment Date */}
+              <div>
+                <label className="text-sm font-medium text-gray-700">Payment Date *</label>
+                <input
+                  type="date"
+                  value={otherPaymentDate}
+                  onChange={(e) => setOtherPaymentDate(e.target.value)}
+                  className="w-full border rounded-lg p-2.5 mt-1"
+                />
+              </div>
+
+              {/* Receipt Image */}
+              <div>
+                <label className="text-sm font-medium text-gray-700">Receipt / Screenshot</label>
+                <div className="mt-1">
+                  <label className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    {otherPaymentReceipt ? (
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-green-600">✓ File selected</p>
+                        <p className="text-xs text-gray-500 mt-1">{otherPaymentReceipt.name}</p>
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); setOtherPaymentReceipt(null); }}
+                          className="text-xs text-red-500 hover:underline mt-2"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Upload className="h-8 w-8 mx-auto text-gray-400" />
+                        <p className="text-sm text-gray-500 mt-2">Click to upload receipt</p>
+                        <p className="text-xs text-gray-400">PNG, JPG up to 5MB</p>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setOtherPaymentReceipt(e.target.files?.[0] || null)}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-sm font-medium text-gray-700">Notes (Optional)</label>
+                <textarea
+                  value={otherPaymentNotes}
+                  onChange={(e) => setOtherPaymentNotes(e.target.value)}
+                  placeholder="Any additional notes..."
+                  className="w-full border rounded-lg p-2.5 mt-1"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> This payment will be submitted for admin approval. Once verified, your plan will be activated.
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="ghost" onClick={resetOtherPaymentModal} disabled={submittingOtherPayment}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={submitOtherPlatformPayment}
+                disabled={submittingOtherPayment}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {submittingOtherPayment ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit for Approval'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Other Platform Payments Table */}
+      {otherPlatformPayments.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Wallet className="h-5 w-5 text-purple-600" />
+              Other Platform Payments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-gray-50">
+                    <th className="text-left p-3 font-medium text-gray-700">Plan Name</th>
+                    <th className="text-left p-3 font-medium text-gray-700">Platform</th>
+                    <th className="text-left p-3 font-medium text-gray-700">Amount</th>
+                    <th className="text-left p-3 font-medium text-gray-700">Transaction ID</th>
+                    <th className="text-left p-3 font-medium text-gray-700">Date</th>
+                    <th className="text-left p-3 font-medium text-gray-700">Status</th>
+                    <th className="text-left p-3 font-medium text-gray-700">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {otherPlatformPayments.map((payment) => (
+                    <tr key={payment._id} className="border-b hover:bg-gray-50">
+                      <td className="p-3">
+                        <div className="font-medium">{payment.planName || 'N/A'}</div>
+                        {payment.durationLabel && (
+                          <div className="text-xs text-gray-500">{payment.durationLabel}</div>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {payment.platform === 'other' 
+                          ? payment.customPlatform 
+                          : platformOptions.find(p => p.value === payment.platform)?.label || payment.platform}
+                      </td>
+                      <td className="p-3 font-medium">₹{payment.amount?.toLocaleString()}</td>
+                      <td className="p-3">
+                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">{payment.transactionId}</code>
+                      </td>
+                      <td className="p-3 text-gray-600">
+                        {new Date(payment.paymentDate || payment.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="p-3">
+                        <span className={`text-xs px-2 py-1 rounded-full capitalize ${
+                          payment.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {payment.status}
+                        </span>
+                        {payment.status === 'rejected' && payment.reviewNotes && (
+                          <div className="text-xs text-red-600 mt-1">{payment.reviewNotes}</div>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {payment.receiptImage ? (
+                          <button
+                            onClick={() => window.open(payment.receiptImage, '_blank')}
+                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            <Eye className="h-3 w-3" />
+                            View
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-xs">No receipt</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </Card>
   );

@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const ClientDocumentSchema = new mongoose.Schema(
   {
     clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    type: { type: String, enum: ["meal-picture", "medical-report"], required: true },
+    type: { type: String, enum: ["meal-picture", "medical-report", "transformation"], required: true },
     fileName: { type: String, required: true },
     filePath: { type: String, required: true },
   },

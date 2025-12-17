@@ -28,8 +28,9 @@ export interface IClientPurchase extends Document {
   _id: string;
   client: mongoose.Types.ObjectId;
   dietitian: mongoose.Types.ObjectId;
-  servicePlan: mongoose.Types.ObjectId;
-  paymentLink: mongoose.Types.ObjectId;
+  servicePlan?: mongoose.Types.ObjectId;
+  paymentLink?: mongoose.Types.ObjectId;
+  otherPlatformPayment?: mongoose.Types.ObjectId;
   
   // Plan details at time of purchase
   planName: string;
@@ -138,12 +139,18 @@ const clientPurchaseSchema = new Schema({
   servicePlan: {
     type: Schema.Types.ObjectId,
     ref: 'ServicePlan',
-    required: true
+    required: false
   },
   paymentLink: {
     type: Schema.Types.ObjectId,
     ref: 'PaymentLink',
-    required: true
+    required: false
+  },
+  
+  // Reference to other platform payment (if payment was made via other platform)
+  otherPlatformPayment: {
+    type: Schema.Types.ObjectId,
+    ref: 'OtherPlatformPayment',
   },
   
   // Plan details at time of purchase

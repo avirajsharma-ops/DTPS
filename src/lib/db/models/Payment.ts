@@ -75,6 +75,20 @@ const paymentSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'ClientPurchase'
   },
+  otherPlatformPayment: {
+    type: Schema.Types.ObjectId,
+    ref: 'OtherPlatformPayment'
+  },
+  
+  // Meal plan tracking
+  mealPlanCreated: {
+    type: Boolean,
+    default: false
+  },
+  mealPlanId: {
+    type: Schema.Types.ObjectId,
+    ref: 'ClientMealPlan'
+  },
   
   // Payment method details
   payerEmail: {

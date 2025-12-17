@@ -251,6 +251,11 @@ export interface IPayment extends Document {
   // Payment link reference
   paymentLink?: string;
   clientPurchase?: string;
+  otherPlatformPayment?: string;
+  
+  // Meal plan tracking
+  mealPlanCreated: boolean;
+  mealPlanId?: string;
   
   // Payment method details
   payerEmail?: string;

@@ -45,7 +45,8 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<string | n
       durationLabel: paymentLink.duration || `${paymentLink.durationDays} Days`,
       paymentLink: paymentLink._id,
       payerEmail: paymentLink.payerEmail,
-      payerPhone: paymentLink.payerPhone
+      payerPhone: paymentLink.payerPhone,
+      mealPlanCreated: false, // Default false - will be set true when meal plan is created
     });
     
     await paymentRecord.save();
@@ -224,25 +225,44 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // STEP 2: Find client's active purchase that hasn't expired
-    console.log(`🔍 Looking for active ClientPurchase for client ${clientId}`);
+    // STEP 2: Find ALL client's active purchases that haven't expired
+    console.log(`🔍 Looking for active ClientPurchases for client ${clientId}`);
     
-    let activePurchase = await ClientPurchase.findOne({
+    const allActivePurchases = await ClientPurchase.find({
       client: clientId,
       status: 'active',
       endDate: { $gte: new Date() }
     })
     .populate('servicePlan', 'name category')
-    .sort({ endDate: -1 });
+    .sort({ createdAt: -1 });
+
+    console.log(`Found ${allActivePurchases.length} active purchases for client ${clientId}`);
+
+    // Prioritize purchase that needs meal plan (mealPlanCreated: false and has remaining days)
+    let activePurchase = allActivePurchases.find(p => 
+      !p.mealPlanCreated && (p.durationDays - (p.daysUsed || 0)) > 0
+    );
+
+    // If no purchase needs meal plan, find one with remaining days
+    if (!activePurchase) {
+      activePurchase = allActivePurchases.find(p => 
+        (p.durationDays - (p.daysUsed || 0)) > 0
+      );
+    }
+
+    // If still no purchase with remaining days, use the most recent one
+    if (!activePurchase && allActivePurchases.length > 0) {
+      activePurchase = allActivePurchases[0];
+    }
 
     if (activePurchase) {
-      console.log(`✅ Found active ClientPurchase:`, {
+      console.log(`✅ Selected ClientPurchase:`, {
         _id: activePurchase._id,
         planName: activePurchase.planName,
-        paymentLink: activePurchase.paymentLink,
-        startDate: activePurchase.startDate,
-        endDate: activePurchase.endDate,
-        status: activePurchase.status
+        mealPlanCreated: activePurchase.mealPlanCreated,
+        daysUsed: activePurchase.daysUsed,
+        durationDays: activePurchase.durationDays,
+        remainingDays: activePurchase.durationDays - (activePurchase.daysUsed || 0)
       });
     } else {
       console.log(`⚠️ No active ClientPurchase found for client ${clientId}`);
@@ -322,9 +342,23 @@ export async function GET(request: NextRequest) {
         message: 'No active paid plan found. Client needs to purchase a plan first.',
         remainingDays: 0,
         maxDays: 0,
-        totalDaysUsed: 0
+        totalDaysUsed: 0,
+        allPurchases: []
       });
     }
+
+    // Aggregate data from ALL active purchases
+    const aggregatedTotalPurchasedDays = allActivePurchases.reduce((sum, p) => sum + (p.durationDays || 0), 0);
+    const aggregatedTotalDaysUsed = allActivePurchases.reduce((sum, p) => sum + (p.daysUsed || 0), 0);
+    const aggregatedRemainingDays = Math.max(0, aggregatedTotalPurchasedDays - aggregatedTotalDaysUsed);
+
+    // Find all purchases that need meal plans
+    const purchasesNeedingMealPlan = allActivePurchases.filter(p => 
+      !p.mealPlanCreated && (p.durationDays - (p.daysUsed || 0)) > 0
+    );
+
+    console.log(`📊 Aggregated Stats: Total Purchased: ${aggregatedTotalPurchasedDays}, Used: ${aggregatedTotalDaysUsed}, Remaining: ${aggregatedRemainingDays}`);
+    console.log(`📋 Purchases needing meal plan: ${purchasesNeedingMealPlan.length}`);
 
     // Calculate remaining days based on daysUsed (not date difference)
     // This allows multiple meal plans to use the total purchased days
@@ -389,7 +423,9 @@ export async function GET(request: NextRequest) {
           status: payment.status,
           paymentMethod: payment.paymentMethod,
           transactionId: payment.transactionId,
-          paidAt: payment.createdAt
+          paidAt: payment.createdAt,
+          mealPlanCreated: payment.mealPlanCreated || false,
+          mealPlanId: payment.mealPlanId || null,
         };
       } else {
         console.log('⚠️ No Payment record found for this purchase');
@@ -423,8 +459,29 @@ export async function GET(request: NextRequest) {
       maxDays: remainingDays,
       totalDaysUsed,
       totalPurchasedDays,
+      // Aggregated data across ALL active purchases
+      aggregated: {
+        totalPurchases: allActivePurchases.length,
+        totalPurchasedDays: aggregatedTotalPurchasedDays,
+        totalDaysUsed: aggregatedTotalDaysUsed,
+        totalRemainingDays: aggregatedRemainingDays,
+        purchasesNeedingMealPlan: purchasesNeedingMealPlan.length
+      },
+      // All purchases that need meal plans created
+      allPurchasesNeedingMealPlan: purchasesNeedingMealPlan.map(p => ({
+        _id: p._id,
+        planName: p.planName,
+        planCategory: p.planCategory,
+        durationDays: p.durationDays,
+        durationLabel: p.durationLabel,
+        daysUsed: p.daysUsed || 0,
+        remainingDays: (p.durationDays || 0) - (p.daysUsed || 0),
+        mealPlanCreated: p.mealPlanCreated,
+        startDate: p.startDate,
+        endDate: p.endDate
+      })),
       message: canCreate 
-        ? `Client has ${remainingDays} days remaining (${totalDaysUsed}/${totalPurchasedDays} days used) in their ${activePurchase.planName} plan.`
+        ? `Client has ${remainingDays} days remaining (${totalDaysUsed}/${totalPurchasedDays} days used) in their ${activePurchase.planName} plan.${purchasesNeedingMealPlan.length > 1 ? ` (${purchasesNeedingMealPlan.length} purchases need meal plans)` : ''}`
         : remainingDays === 0
           ? `All ${totalPurchasedDays} days have been used. Client needs to purchase a new plan.`
           : `Requested ${requestedDays} days but only ${remainingDays} days remaining in plan.`

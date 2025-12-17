@@ -19,6 +19,8 @@ export { default as DietTemplate } from './DietTemplate';
 export { default as Task } from './Task';
 export { default as Tag } from './Tag';
 export { History } from './History';
+export { default as OtherPlatformPayment } from './OtherPlatformPayment';
+export { default as PaymentLink } from './PaymentLink';
 
 // Re-export types for convenience
 export * from '@/types';

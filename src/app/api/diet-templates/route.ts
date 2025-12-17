@@ -75,6 +75,8 @@ export async function GET(request: NextRequest) {
   try {
     console.log('GET /api/diet-templates - Starting request');
 
+    const session = await getServerSession(authOptions);
+    
     await connectDB();
 
     const { searchParams } = new URL(request.url);
@@ -88,16 +90,47 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '12');
     const skip = parseInt(searchParams.get('skip') || '0');
     const days = searchParams.get('days');
+    const primaryGoal = searchParams.get('primaryGoal');
+    const duration = searchParams.get('duration');
 
     // Build query
     const query: any = { isActive: true };
 
-    if (createdBy) {
-      query.createdBy = createdBy;
+    // Filter by creator - dietitians can only see their own templates, admins can see all
+    if (session?.user) {
+      if (session.user.role === UserRole.ADMIN) {
+        // Admin can see all templates
+        if (createdBy) {
+          query.createdBy = createdBy;
+        }
+      } else if (session.user.role === UserRole.DIETITIAN) {
+        // Dietitian can only see templates they created
+        query.createdBy = session.user.id;
+      }
+    } else {
+      // No session - only show public templates
+      query.isPublic = true;
     }
 
+    // Filter by category (which can also serve as primary goal)
     if (category && category !== 'all') {
       query.category = category;
+    }
+
+    // Filter by primary goal - match category or targetAudience.goals
+    if (primaryGoal && primaryGoal !== 'all') {
+      query.$or = [
+        { category: primaryGoal },
+        { 'targetAudience.goals': primaryGoal }
+      ];
+    }
+
+    // Filter by duration
+    if (duration) {
+      const durationVal = parseInt(duration);
+      if (!isNaN(durationVal)) {
+        query.duration = durationVal;
+      }
     }
 
     if (isPublic !== null && isPublic !== undefined) {

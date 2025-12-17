@@ -23,7 +23,8 @@ import {
   Utensils,
   CreditCard,
   DollarSign,
-  Package
+  Package,
+  Wallet
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -214,6 +215,12 @@ export default function Sidebar({ className }: SidebarProps) {
             label: 'Revenue Report',
             icon: DollarSign,
             description: 'Detailed revenue analytics'
+          },
+          {
+            href: '/admin/other-platform-payments',
+            label: 'Other Payments',
+            icon: Wallet,
+            description: 'Review external payments'
           },
 
           {

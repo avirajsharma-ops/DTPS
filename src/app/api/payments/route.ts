@@ -213,3 +213,49 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+
+// PATCH /api/payments - Update meal plan created status
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+
+    const body = await request.json();
+    const { paymentId, mealPlanCreated, mealPlanId } = body;
+
+    if (!paymentId) {
+      return NextResponse.json({ error: 'Payment ID is required' }, { status: 400 });
+    }
+
+    const updateData: any = {};
+    if (mealPlanCreated !== undefined) updateData.mealPlanCreated = mealPlanCreated;
+    if (mealPlanId) updateData.mealPlanId = mealPlanId;
+
+    const payment = await Payment.findByIdAndUpdate(
+      paymentId,
+      updateData,
+      { new: true }
+    );
+
+    if (!payment) {
+      return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      payment,
+      message: 'Payment updated successfully' 
+    });
+
+  } catch (error) {
+    console.error('Error updating payment:', error);
+    return NextResponse.json(
+      { error: 'Failed to update payment' },
+      { status: 500 }
+    );
+  }
+}

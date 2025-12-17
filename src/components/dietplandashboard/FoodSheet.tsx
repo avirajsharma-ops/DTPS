@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Plus,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import Link from 'next/link';
 
@@ -57,6 +58,7 @@ export function FoodDatabasePanel({
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Fetch recipes from the database
   useEffect(() => {
@@ -191,7 +193,12 @@ export function FoodDatabasePanel({
     };
 
     fetchRecipes();
-  }, [isOpen, searchQuery, categoryFilter, clientDietaryArr.join(','), clientMedicalArr.join(','), clientAllergyArr.join(',')]);
+  }, [isOpen, searchQuery, categoryFilter, clientDietaryArr.join(','), clientMedicalArr.join(','), clientAllergyArr.join(','), refreshKey]);
+
+  const handleRefresh = () => {
+    setCurrentPage(1);
+    setRefreshKey(prev => prev + 1);
+  };
   
   const itemsPerPage = 12;
 
@@ -300,10 +307,20 @@ export function FoodDatabasePanel({
               className="border-gray-300 bg-white hover:bg-slate-50"
               asChild
             >
-              <Link href="/recipes/create">
+              <Link href="/recipes/create" target="_blank" rel="noopener noreferrer">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Recipe
               </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-gray-300 bg-white hover:bg-slate-50"
+              onClick={handleRefresh}
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
           </div>
           <div className="flex items-center gap-3">
@@ -330,7 +347,7 @@ export function FoodDatabasePanel({
             <div className="flex flex-col items-center justify-center h-64 gap-4">
               <p className="text-gray-500">No recipes found</p>
               <Button variant="outline" asChild>
-                <Link href="/recipes/create">
+             <Link href="/recipes/create" target="_blank" rel="noopener noreferrer">
                   <Plus className="w-4 h-4 mr-2" />
                   Create New Recipe
                 </Link>

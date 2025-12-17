@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 import { DietPlanDashboard } from '@/components/dietplandashboard/DietPlanDashboard';
+import { useDataRefresh, emitDataChange, DataEventTypes } from '@/lib/events/useDataRefresh';
 
 // Client Purchase interface
 interface ClientPurchase {
@@ -29,10 +30,23 @@ interface ClientPurchase {
   daysUsed: number;
 }
 
+interface PaymentDetails {
+  _id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  paymentMethod: string;
+  transactionId?: string;
+  paidAt: string;
+  mealPlanCreated: boolean;
+  mealPlanId?: string;
+}
+
 interface PaymentCheckResult {
   hasPaidPlan: boolean;
   canCreateMealPlan: boolean;
   purchase?: ClientPurchase;
+  payment?: PaymentDetails;
   remainingDays: number;
   maxDays: number;
   totalDaysUsed?: number;
@@ -214,9 +228,30 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     fetchClientPlans();
   }, [client._id]);
 
-  const fetchClientPlans = async () => {
+  // Subscribe to data change events for automatic refresh
+  useDataRefresh(
+    [
+      DataEventTypes.MEAL_PLAN_UPDATED,
+      DataEventTypes.MEAL_PLAN_CREATED,
+      DataEventTypes.MEAL_PLAN_DELETED,
+      DataEventTypes.MEAL_PLAN_FROZEN,
+      DataEventTypes.MEAL_PLAN_UNFROZEN,
+      DataEventTypes.MEAL_PLAN_EXTENDED,
+      DataEventTypes.MEAL_PLAN_PAUSED,
+      DataEventTypes.MEAL_PLAN_RESUMED,
+      DataEventTypes.PURCHASE_UPDATED,
+      DataEventTypes.PAYMENT_UPDATED,
+    ],
+    () => {
+      fetchClientPlans(true); // Silent refresh when data changes
+      checkPaymentStatus(); // Also refresh payment status
+    },
+    [client._id]
+  );
+
+  const fetchClientPlans = async (silent = false) => {
     try {
-      setLoadingPlans(true);
+      if (!silent) setLoadingPlans(true);
       const res = await fetch(`/api/client-meal-plans?clientId=${client._id}`);
       if (!res.ok) {
         console.error('Failed to fetch client plans with status:', res.status);
@@ -229,7 +264,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     } catch (error) {
       console.error('Error fetching client plans:', error);
     } finally {
-      setLoadingPlans(false);
+      if (!silent) setLoadingPlans(false);
     }
   };
 
@@ -243,7 +278,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         isActive: 'true',
         page: page.toString(),
         limit: TEMPLATES_PER_PAGE.toString(),
-        ...(search && { search })
+        ...(search && { search }),
+        ...(primaryGoal && { primaryGoal }),
+        ...(duration && { duration: duration.toString() })
       });
       
       const url = type === 'plan' 
@@ -435,6 +472,23 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
           }
         }
         
+        // Update Payment record - mark mealPlanCreated as true
+        if (paymentCheck?.payment?._id) {
+          try {
+            await fetch('/api/payments', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                paymentId: paymentCheck.payment._id,
+                mealPlanId: data.mealPlan?._id,
+                mealPlanCreated: true,
+              })
+            });
+          } catch (updateError) {
+            console.error('Error updating payment record:', updateError);
+          }
+        }
+        
         // Calculate remaining days after this plan
         const remainingAfterPlan = Math.max(0, (paymentCheck?.remainingDays || 0) - duration);
         
@@ -444,6 +498,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
           remainingDays: remainingAfterPlan
         });
         setShowSuccessDialog(true);
+        
+        // Emit event to trigger automatic refresh across all components
+        emitDataChange(DataEventTypes.MEAL_PLAN_CREATED, { planId: data.mealPlan?._id });
         
         resetForm();
         fetchClientPlans();
@@ -621,6 +678,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       
       if (data.success) {
         toast.success('Diet plan updated successfully!');
+        // Emit event to trigger automatic refresh across all components
+        emitDataChange(DataEventTypes.MEAL_PLAN_UPDATED, { planId: editingPlan._id });
         resetForm();
         fetchClientPlans();
       } else {
@@ -824,6 +883,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
           console.error('Error auto-adjusting meal plans:', adjustError);
         }
         
+        // Emit event to trigger automatic refresh
+        emitDataChange(DataEventTypes.MEAL_PLAN_EXTENDED, { planId: plan._id });
         fetchClientPlans();
       } else {
         toast.error(data.error || 'Failed to extend plan');
@@ -878,6 +939,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
           ? `Plan paused for ${pauseDays} days. End date extended to ${endDateToUse}`
           : `Plan paused. (Plan hasn't started yet, so end date not extended)`;
         toast.success(message);
+        // Emit event to trigger automatic refresh
+        emitDataChange(DataEventTypes.MEAL_PLAN_PAUSED, { planId: plan._id });
         fetchClientPlans();
       } else {
         toast.error(data.error || 'Failed to pause plan');
@@ -913,6 +976,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
 
       if (data.success) {
         toast.success('Plan resumed successfully');
+        // Emit event to trigger automatic refresh
+        emitDataChange(DataEventTypes.MEAL_PLAN_RESUMED, { planId: plan._id });
         fetchClientPlans();
       } else {
         toast.error(data.error || 'Failed to resume plan');
@@ -1118,11 +1183,13 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(false);
     const [selectedDates, setSelectedDates] = useState<string[]>([]);
+    const [selectedUnfreezeDates, setSelectedUnfreezeDates] = useState<string[]>([]);
+    const [activeTab, setActiveTab] = useState<'freeze' | 'unfreeze'>('freeze');
     const [freezeInfo, setFreezeInfo] = useState<{
       allowedFreezeDays: number;
       totalFreezeCount: number;
       remainingFreezeDays: number;
-      freezedDays: { date: string; createdAt: string }[];
+      freezedDays: { date: string; createdAt: string; addedDate?: string }[];
       durationDays: number;
       canFreeze: boolean;
     } | null>(null);
@@ -1161,6 +1228,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       setIsOpen(open);
       if (open) {
         setSelectedDates([]);
+        setSelectedUnfreezeDates([]);
+        setActiveTab('freeze');
         fetchFreezeInfo();
       }
     };
@@ -1238,7 +1307,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
           toast.success(data.message);
           setIsOpen(false);
           setSelectedDates([]);
-          onFreeze(); // Refresh plans
+          // Emit event to trigger automatic refresh across all components
+          emitDataChange(DataEventTypes.MEAL_PLAN_FROZEN, { planId: plan._id });
+          onFreeze(); // Also call callback for backward compatibility
         } else {
           toast.error(data.error || 'Failed to freeze dates');
         }
@@ -1248,6 +1319,56 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       } finally {
         setIsLoading(false);
       }
+    };
+
+    // Handle unfreeze submission
+    const handleUnfreeze = async () => {
+      if (selectedUnfreezeDates.length === 0) {
+        toast.error('Please select at least one date to unfreeze');
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/client-meal-plans/${plan._id}/freeze`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ unfreezeDates: selectedUnfreezeDates })
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Failed to unfreeze dates:', res.status, errorText);
+          toast.error('Failed to unfreeze dates. Server error.');
+          return;
+        }
+        const data = await res.json();
+
+        if (data.success) {
+          toast.success(data.message);
+          setIsOpen(false);
+          setSelectedUnfreezeDates([]);
+          // Emit event to trigger automatic refresh across all components
+          emitDataChange(DataEventTypes.MEAL_PLAN_UNFROZEN, { planId: plan._id });
+          onFreeze(); // Also call callback for backward compatibility
+        } else {
+          toast.error(data.error || 'Failed to unfreeze dates');
+        }
+      } catch (error) {
+        console.error('Error unfreezing dates:', error);
+        toast.error('Failed to unfreeze dates');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Toggle unfreeze date selection
+    const toggleUnfreezeSelection = (dateStr: string) => {
+      setSelectedUnfreezeDates(prev => 
+        prev.includes(dateStr) 
+          ? prev.filter(d => d !== dateStr)
+          : [...prev, dateStr]
+      );
     };
 
     // Generate calendar days for current month range (startDate to endDate)
@@ -1302,10 +1423,10 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Snowflake className="h-5 w-5 text-blue-500" />
-              Freeze Plan Dates
+              Freeze / Unfreeze Plan Dates
             </DialogTitle>
             <DialogDescription>
-              Select dates to freeze. Meals on frozen dates will be moved to extended days.
+              Freeze dates to pause meals or unfreeze to restore them.
             </DialogDescription>
           </DialogHeader>
           
@@ -1317,6 +1438,31 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
               </div>
             ) : (
               <>
+                {/* Tabs for Freeze / Unfreeze */}
+                <div className="flex border-b">
+                  <button
+                    className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+                      activeTab === 'freeze' 
+                        ? 'border-blue-500 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                    onClick={() => setActiveTab('freeze')}
+                  >
+                    ❄️ Freeze Dates
+                  </button>
+                  <button
+                    className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+                      activeTab === 'unfreeze' 
+                        ? 'border-green-500 text-green-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                    onClick={() => setActiveTab('unfreeze')}
+                    disabled={!freezeInfo || freezeInfo.totalFreezeCount === 0}
+                  >
+                    🔓 Unfreeze Dates {freezeInfo && freezeInfo.totalFreezeCount > 0 && `(${freezeInfo.totalFreezeCount})`}
+                  </button>
+                </div>
+
                 {/* Plan Duration (Read-only) */}
                 <div className="bg-gray-50 p-3 rounded border">
                   <Label className="text-sm font-medium">Plan Duration</Label>
@@ -1342,13 +1488,15 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                     </div>
                     {freezeInfo.totalFreezeCount > 0 && (
                       <p className="text-xs text-blue-700 mt-1">
-                        Already frozen: {freezeInfo.totalFreezeCount} days
+                        Currently frozen: {freezeInfo.totalFreezeCount} days
                       </p>
                     )}
                   </div>
                 )}
 
-                {/* Calendar for Date Selection */}
+                {/* FREEZE TAB CONTENT */}
+                {activeTab === 'freeze' && (
+                  <>
                 <div className="border rounded-lg p-3">
                   <Label className="text-sm font-medium mb-2 block">Select Dates to Freeze</Label>
                   
@@ -1490,6 +1638,109 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                     )}
                   </Button>
                 </div>
+                  </>
+                )}
+
+                {/* UNFREEZE TAB CONTENT */}
+                {activeTab === 'unfreeze' && (
+                  <>
+                    {freezeInfo && freezeInfo.totalFreezeCount > 0 ? (
+                      <>
+                        {/* List of Frozen Dates */}
+                        <div className="border rounded-lg p-3">
+                          <Label className="text-sm font-medium mb-2 block">Select Frozen Dates to Unfreeze</Label>
+                          <p className="text-xs text-gray-500 mb-3">
+                            Select dates to unfreeze. The meals added at the end will be removed and original dates will be restored.
+                          </p>
+                          
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {freezeInfo.freezedDays.map((fd) => {
+                              const dateStr = format(new Date(fd.date), 'yyyy-MM-dd');
+                              const isSelected = selectedUnfreezeDates.includes(dateStr);
+                              return (
+                                <div 
+                                  key={dateStr}
+                                  onClick={() => toggleUnfreezeSelection(dateStr)}
+                                  className={`
+                                    flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all
+                                    ${isSelected 
+                                      ? 'bg-green-50 border-green-500 ring-2 ring-green-200' 
+                                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                    }
+                                  `}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                      isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                                    }`}>
+                                      {isSelected && <Check className="h-3 w-3 text-white" />}
+                                    </div>
+                                    <div>
+                                      <p className="font-medium text-sm">
+                                        {format(new Date(fd.date), 'EEEE, MMM dd, yyyy')}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        Frozen on: {format(new Date(fd.createdAt), 'MMM dd, yyyy HH:mm')}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Snowflake className="h-4 w-4 text-blue-400" />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Unfreeze Warning */}
+                        {selectedUnfreezeDates.length > 0 && (
+                          <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                            <p className="text-sm font-medium text-yellow-800 mb-2">
+                              ⚠️ Unfreezing {selectedUnfreezeDates.length} date(s) will:
+                            </p>
+                            <ul className="text-xs text-yellow-700 list-disc list-inside space-y-1">
+                              <li>Remove the frozen flag from selected dates</li>
+                              <li>Remove the recovery meals added at the end of plan</li>
+                              <li>Reduce end date by {selectedUnfreezeDates.length} day(s)</li>
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Unfreeze Action Buttons */}
+                        <div className="flex gap-2 pt-2">
+                          <Button 
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={handleUnfreeze}
+                            disabled={isLoading || selectedUnfreezeDates.length === 0}
+                          >
+                            {isLoading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Unfreezing...
+                              </>
+                            ) : (
+                              <>
+                                🔓 Unfreeze {selectedUnfreezeDates.length > 0 ? `${selectedUnfreezeDates.length} Days` : 'Selected'}
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Snowflake className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm">No frozen dates to unfreeze</p>
+                        <p className="text-xs text-gray-400 mt-1">Freeze some dates first to use this feature</p>
+                      </div>
+                    )}
+                  </>
+                )}
               </>
             )}
           </div>
@@ -2403,7 +2654,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                 <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <h4 className="font-medium text-green-900">✅ Active Plan: {paymentCheck.purchase?.planName}</h4>
-                  <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-sm">
                     <div className="bg-white rounded p-2 border border-green-200">
                       <p className="text-gray-600 text-xs">Total Duration</p>
                       <p className="font-bold text-green-700">{paymentCheck.totalPurchasedDays || paymentCheck.purchase?.durationDays} days</p>
@@ -2420,6 +2671,12 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                       <p className="text-gray-600 text-xs">Plan Category</p>
                       <p className="font-bold text-green-700">{paymentCheck.purchase?.planCategory || 'General'}</p>
                     </div>
+                    <div className="bg-white rounded p-2 border border-green-200">
+                      <p className="text-gray-600 text-xs">Meal Plan Status</p>
+                      <p className={`font-bold ${paymentCheck.purchase?.mealPlanCreated ? 'text-green-700' : 'text-orange-600'}`}>
+                        {paymentCheck.purchase?.mealPlanCreated ? '✅ Created' : '⏳ Not Created'}
+                      </p>
+                    </div>
                   </div>
                   <div className="mt-3 bg-green-100 rounded-full h-2 overflow-hidden">
                     <div 
@@ -2428,7 +2685,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                     />
                   </div>
                   <p className="text-xs text-green-600 mt-2">
-                    ✓ You can create multiple meal plans (e.g., 7+7 days)
+                    {paymentCheck.purchase?.mealPlanCreated 
+                      ? '✓ Meal plan has been created. You can create additional plans with remaining days.'
+                      : '✓ Ready to create meal plan. Click "Create New Plan" button below.'}
                   </p>
                 </div>
                 <Button 
@@ -2635,24 +2894,51 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                     </div>
 
                     <div className="flex gap-2 ml-4 items-center">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        title="View"
-                        onClick={() => handleViewPlan(plan)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        title="Edit"
-                        onClick={() => handleEditPlan(plan)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      {/* Check if plan has ended (completed status OR end date passed) */}
+                      {(() => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const planEndDate = new Date(plan.endDate);
+                        planEndDate.setHours(23, 59, 59, 999);
+                        const isPlanEnded = plan.status === 'completed' || plan.status === 'cancelled' || planEndDate < today;
+                        
+                        return (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              title="View"
+                              onClick={() => handleViewPlan(plan)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            
+                            {/* Only show Edit and More options if plan has NOT ended */}
+                            {!isPlanEnded && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  title="Edit"
+                                  onClick={() => handleEditPlan(plan)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </>
+                        );
+                      })()}
 
-                      {/* Three Dot Dropdown Menu */}
+                      {/* Three Dot Dropdown Menu - Only show if plan has NOT ended */}
+                      {(() => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const planEndDate = new Date(plan.endDate);
+                        planEndDate.setHours(23, 59, 59, 999);
+                        const isPlanEnded = plan.status === 'completed' || plan.status === 'cancelled' || planEndDate < today;
+                        if (isPlanEnded) return null;
+                        return (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button 
@@ -2701,6 +2987,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                           </div>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -16,7 +16,7 @@ export interface IUploadedReport {
   uploadedOn: string;
   fileType: string;
   url?: string;
-  category?: 'medical-report' | 'transformation' | 'other';
+  category?: 'medical-report' | 'other';
 }
 
 export interface IMedicalInfo extends Document {
@@ -57,7 +57,7 @@ const uploadedReportSchema = new Schema({
   uploadedOn: String,
   fileType: String,
   url: String,
-  category: { type: String, enum: ['medical-report', 'transformation', 'other'], default: 'medical-report' }
+  category: { type: String, enum: ['medical-report', 'other'], default: 'medical-report' }
 }, { _id: false });
 
 const medicalInfoSchema = new Schema<IMedicalInfo>({

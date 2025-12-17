@@ -60,14 +60,13 @@ interface MedicalFormProps extends MedicalData {
 // Report category options
 const REPORT_CATEGORIES = [
   { value: 'medical-report', label: 'Medical Report' },
-  { value: 'transformation', label: 'Transformation' },
   { value: 'other', label: 'Other' },
 ] as const;
 
 export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions, notes, diseaseHistory, medicalHistory, familyHistory, medication, bloodGroup, gutIssues, reports, isPregnant, isLactating, menstrualCycle, bloodFlow, onChange, onSave, loading, clientGender, clientId, onDeleteReport }: MedicalFormProps) {
   const [deletingReportId, setDeletingReportId] = React.useState<string | null>(null);
   const [selectedDietary, setSelectedDietary] = React.useState<string[]>(() => (dietaryRestrictions ? dietaryRestrictions.split(',').map(s => s.trim()).filter(Boolean) : []));
-  const [reportCategory, setReportCategory] = React.useState<'medical-report' | 'transformation' | 'other'>('medical-report');
+  const [reportCategory, setReportCategory] = React.useState<'medical-report' | 'other'>('medical-report');
   const [categoryFilter, setCategoryFilter] = React.useState<string>('all');
   React.useEffect(() => {
     setSelectedDietary(dietaryRestrictions ? dietaryRestrictions.split(',').map(s => s.trim()).filter(Boolean) : []);
@@ -412,7 +411,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
           <div className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Input placeholder="File Name (Optional)" value={pendingReportName} onChange={e => setPendingReportName(e.target.value)} className="flex-1" disabled={uploadingFile} />
-              <Select value={reportCategory} onValueChange={(v: 'medical-report' | 'transformation' | 'other') => setReportCategory(v)}>
+              <Select value={reportCategory} onValueChange={(v: 'medical-report' | 'other') => setReportCategory(v)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
@@ -422,12 +421,9 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                   ))}
                 </SelectContent>
               </Select>
-              <Input type="file" multiple onChange={handleReportInput} className="flex-1" accept={reportCategory === 'transformation' ? 'image/*' : undefined} disabled={uploadingFile} />
+              <Input type="file" multiple onChange={handleReportInput} className="flex-1" disabled={uploadingFile} />
               {uploadingFile && <span className="text-sm text-gray-500">Uploading...</span>}
             </div>
-            {reportCategory === 'transformation' && (
-              <p className="text-xs text-gray-500">Transformation photos: Before/After images showing client progress</p>
-            )}
           </div>
           
           {/* Category Filter */}
@@ -463,13 +459,11 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                     <td className="p-2">{r.fileName}</td>
                     <td className="p-2">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        r.category === 'transformation' 
-                          ? 'bg-purple-100 text-purple-700' 
-                          : r.category === 'other' 
-                            ? 'bg-gray-100 text-gray-700'
-                            : 'bg-blue-100 text-blue-700'
+                        r.category === 'other' 
+                          ? 'bg-gray-100 text-gray-700'
+                          : 'bg-blue-100 text-blue-700'
                       }`}>
-                        {r.category === 'transformation' ? 'Transformation' : r.category === 'other' ? 'Other' : 'Medical Report'}
+                        {r.category === 'other' ? 'Other' : 'Medical Report'}
                       </span>
                     </td>
                     <td className="p-2">{r.uploadedOn}</td>

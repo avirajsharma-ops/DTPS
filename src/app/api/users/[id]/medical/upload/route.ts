@@ -64,7 +64,7 @@ export async function POST(
       uploadedOn: new Date().toISOString().split('T')[0],
       fileType: contentType,
       url: publicUrl,
-      category: category as 'medical-report' | 'transformation' | 'other'
+      category: category as 'medical-report' | 'other'
     };
 
     if (medicalInfo) {
