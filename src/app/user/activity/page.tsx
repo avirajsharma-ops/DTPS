@@ -1,0 +1,686 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { format } from 'date-fns';
+import {
+    ArrowLeft,
+    Calendar,
+    Zap,
+    Plus,
+    Minus,
+    X,
+    Trash2,
+    Check,
+    Activity
+} from 'lucide-react';
+import { toast } from 'sonner';
+import BottomNavBar from '@/components/client/BottomNavBar';
+
+interface ActivityEntry {
+    _id: string;
+    name: string;
+    duration: number;
+    intensity: string;
+    calories?: number;
+    time: string;
+    createdAt: string;
+}
+
+interface AssignedActivity {
+    amount: number;
+    unit: string;
+    assignedAt: string;
+    isCompleted: boolean;
+    completedAt?: string;
+}
+
+interface ActivityData {
+    totalToday: number;
+    goal: number;
+    entries: ActivityEntry[];
+    assignedActivity: AssignedActivity | null;
+    date: string;
+    dataHash?: string;
+}
+
+export default function ActivityPage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    const [loading, setLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [activityData, setActivityData] = useState<ActivityData>({
+        totalToday: 0,
+        goal: 30,
+        entries: [],
+        assignedActivity: null,
+        date: new Date().toISOString()
+    });
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [customName, setCustomName] = useState('Walking');
+    const [customDuration, setCustomDuration] = useState(30);
+    const [customIntensity, setCustomIntensity] = useState('moderate');
+    const [saving, setSaving] = useState(false);
+    const [completingTask, setCompletingTask] = useState(false);
+    const [animatedFill, setAnimatedFill] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [lastDataHash, setLastDataHash] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            router.push('/login');
+        }
+    }, [status, router]);
+
+    const fetchActivityData = useCallback(async (showLoader = true, checkForChanges = false) => {
+        try {
+            if (showLoader) setLoading(true);
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            const response = await fetch(`/api/client/activity?date=${dateStr}`);
+            if (response.ok) {
+                const data = await response.json();
+
+                if (checkForChanges && lastDataHash && data.dataHash === lastDataHash) {
+                    return;
+                }
+
+                const prevTotal = activityData.totalToday;
+                setActivityData(data);
+                setLastDataHash(data.dataHash || null);
+
+                if (data.totalToday !== prevTotal && !showLoader) {
+                    animateActivityFill(prevTotal, data.totalToday, data.goal);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching activity data:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedDate, activityData.totalToday, lastDataHash]);
+
+    const animateActivityFill = (from: number, to: number, goal: number) => {
+        setIsAnimating(true);
+        const startPercent = Math.min((from / goal) * 100, 100);
+        const endPercent = Math.min((to / goal) * 100, 100);
+        const duration = 1500;
+        const steps = 60;
+        const stepDuration = duration / steps;
+        const increment = (endPercent - startPercent) / steps;
+
+        let currentStep = 0;
+        setAnimatedFill(startPercent);
+
+        const interval = setInterval(() => {
+            currentStep++;
+            setAnimatedFill(startPercent + (increment * currentStep));
+
+            if (currentStep >= steps) {
+                clearInterval(interval);
+                setAnimatedFill(endPercent);
+                setIsAnimating(false);
+            }
+        }, stepDuration);
+    };
+
+    useEffect(() => {
+        if (session?.user) {
+            fetchActivityData(true, false);
+
+            const interval = setInterval(() => {
+                fetchActivityData(false, true);
+            }, 5000);
+
+            return () => clearInterval(interval);
+        }
+    }, [session, selectedDate]);
+
+    useEffect(() => {
+        if (!loading && !isAnimating) {
+            const targetPercent = Math.min((activityData.totalToday / activityData.goal) * 100, 100);
+            setAnimatedFill(targetPercent);
+        }
+    }, [loading, activityData.totalToday, activityData.goal, isAnimating]);
+
+    const handleQuickAdd = async (name: string, duration: number, intensity: string = 'moderate') => {
+        setSaving(true);
+        const prevTotal = activityData.totalToday;
+        try {
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            const response = await fetch('/api/client/activity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, duration, intensity, date: dateStr })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                toast.success(`Added ${duration}m of ${name}`);
+
+                const newResponse = await fetch(`/api/client/activity?date=${dateStr}`);
+                if (newResponse.ok) {
+                    const newData = await newResponse.json();
+                    setActivityData(newData);
+                    setLastDataHash(newData.dataHash || null);
+                    animateActivityFill(prevTotal, newData.totalToday, newData.goal);
+                }
+            } else {
+                toast.error('Failed to add activity');
+            }
+        } catch (error) {
+            toast.error('Something went wrong');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCustomAdd = async () => {
+        if (customDuration <= 0) {
+            toast.error('Please enter a valid duration');
+            return;
+        }
+        await handleQuickAdd(customName, customDuration, customIntensity);
+        setShowAddModal(false);
+        setCustomName('Walking');
+        setCustomDuration(30);
+        setCustomIntensity('moderate');
+    };
+
+    const handleDeleteEntry = async (entryId: string) => {
+        const prevTotal = activityData.totalToday;
+        try {
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            const response = await fetch(`/api/client/activity?id=${entryId}&date=${dateStr}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                toast.success('Entry deleted');
+                const newResponse = await fetch(`/api/client/activity?date=${dateStr}`);
+                if (newResponse.ok) {
+                    const newData = await newResponse.json();
+                    setActivityData(newData);
+                    setLastDataHash(newData.dataHash || null);
+                    animateActivityFill(prevTotal, newData.totalToday, newData.goal);
+                }
+            } else {
+                toast.error('Failed to delete entry');
+            }
+        } catch (error) {
+            toast.error('Something went wrong');
+        }
+    };
+
+    const handleCompleteActivity = async () => {
+        setCompletingTask(true);
+        try {
+            const response = await fetch('/api/client/activity', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'complete' })
+            });
+
+            if (response.ok) {
+                toast.success('Activity goal marked as complete!');
+                const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                const newResponse = await fetch(`/api/client/activity?date=${dateStr}`);
+                if (newResponse.ok) {
+                    const newData = await newResponse.json();
+                    setActivityData(newData);
+                }
+            } else {
+                toast.error('Failed to mark as complete');
+            }
+        } catch (error) {
+            toast.error('Something went wrong');
+        } finally {
+            setCompletingTask(false);
+        }
+    };
+
+    const fillPercent = Math.min((activityData.totalToday / activityData.goal) * 100, 100);
+    const completionPercent = Math.round(fillPercent);
+
+    if (status === 'loading' || loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50 pb-24">
+            {/* Header */}
+            <div className="bg-white px-4 py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                    <Link href="/user" className="p-2 -ml-2">
+                        <ArrowLeft className="w-6 h-6 text-gray-700" />
+                    </Link>
+                    <h1 className="text-lg font-bold text-gray-900">Activity</h1>
+                    <button
+                        onClick={() => setShowDatePicker(!showDatePicker)}
+                        className="flex items-center gap-1 p-2 -mr-2 bg-orange-50 rounded-lg"
+                    >
+                        <Calendar className="w-5 h-5 text-orange-600" />
+                        <span className="text-sm font-medium text-orange-600">
+                            {format(selectedDate, 'dd MMM')}
+                        </span>
+                    </button>
+                </div>
+
+                {/* Date Picker */}
+                {showDatePicker && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded-xl">
+                        <input
+                            type="date"
+                            value={format(selectedDate, 'yyyy-MM-dd')}
+                            onChange={(e) => {
+                                setSelectedDate(new Date(e.target.value));
+                                setShowDatePicker(false);
+                            }}
+                            className="w-full p-2 border rounded-lg"
+                        />
+                    </div>
+                )}
+            </div>
+
+            <div className="px-4 py-6 space-y-6">
+                {/* Main Activity Card */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm">
+                    <div className="flex items-start justify-between">
+                        {/* Left side - Stats */}
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Zap className="w-5 h-5 text-orange-500" />
+                                <span className="text-orange-500 font-semibold text-sm">TODAY</span>
+                            </div>
+                            <div className="flex items-baseline">
+                                <span className="text-5xl font-bold text-gray-900">
+                                    {Math.round(activityData.totalToday)}
+                                </span>
+                                <span className="text-2xl text-gray-400 ml-1">min</span>
+                            </div>
+                            <p className="text-gray-500 mt-1">Goal: {activityData.goal} minutes</p>
+
+                            {/* Completion Badge */}
+                            <div className="mt-4 inline-flex items-center gap-2 bg-orange-50 text-orange-600 px-4 py-2 rounded-full">
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <span className="font-semibold">{completionPercent}% Complete</span>
+                            </div>
+                        </div>
+
+                        {/* Right side - Activity Animation */}
+                        <div className="relative w-36 h-48">
+                            <svg viewBox="0 0 120 160" className="w-full h-full">
+                                <defs>
+                                    <linearGradient id="activityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stopColor="#fbbf24">
+                                            <animate attributeName="stop-color" values="#fbbf24;#f59e0b;#fbbf24" dur="3s" repeatCount="indefinite" />
+                                        </stop>
+                                        <stop offset="50%" stopColor="#f59e0b">
+                                            <animate attributeName="stop-color" values="#f59e0b;#d97706;#f59e0b" dur="3s" repeatCount="indefinite" />
+                                        </stop>
+                                        <stop offset="100%" stopColor="#d97706">
+                                            <animate attributeName="stop-color" values="#d97706;#b45309;#d97706" dur="3s" repeatCount="indefinite" />
+                                        </stop>
+                                    </linearGradient>
+                                    <clipPath id="activityClip">
+                                        <path d="M30 15 Q30 10 35 10 L85 10 Q90 10 90 15 L88 145 Q88 152 60 155 Q32 152 32 145 L30 15" />
+                                    </clipPath>
+                                </defs>
+
+                                {/* Container outline (like a fitness tracker) */}
+                                <rect
+                                    x="22"
+                                    y="12"
+                                    width="76"
+                                    height="136"
+                                    rx="8"
+                                    fill="none"
+                                    stroke="#e5e7eb"
+                                    strokeWidth="2"
+                                />
+                                <path
+                                    d="M22 20 L98 20 M22 20 Q22 12 30 12 L90 12 Q98 12 98 20"
+                                    fill="none"
+                                    stroke="#d1d5db"
+                                    strokeWidth="1"
+                                    opacity="0.5"
+                                />
+
+                                <g clipPath="url(#activityClip)">
+                                    {/* Energy fill - smooth animated transition */}
+                                    <rect
+                                        x="30"
+                                        y={148 - (animatedFill * 1.30)}
+                                        width="60"
+                                        height={animatedFill * 1.30}
+                                        fill="url(#activityGradient)"
+                                        style={{ transition: isAnimating ? 'none' : 'all 0.5s ease-out' }}
+                                    />
+
+                                    {/* Energy wave effect */}
+                                    <ellipse
+                                        cx="60"
+                                        cy={148 - (animatedFill * 1.30)}
+                                        rx="30"
+                                        ry="4"
+                                        fill="#fcd34d"
+                                        opacity="0.7"
+                                    >
+                                        <animate attributeName="rx" values="30;28;30" dur="2s" repeatCount="indefinite" />
+                                        <animate attributeName="ry" values="4;5;4" dur="2s" repeatCount="indefinite" />
+                                    </ellipse>
+                                </g>
+
+                                {/* Energy particles/sparks */}
+                                {animatedFill > 15 && (
+                                    <>
+                                        <circle cx="45" cy={130 - (animatedFill * 0.8)} r="2" fill="#fbbf24" opacity="0.6">
+                                            <animate attributeName="cy" values={`${130 - (animatedFill * 0.8)};${90 - (animatedFill * 0.8)};${130 - (animatedFill * 0.8)}`} dur="2.5s" repeatCount="indefinite" />
+                                            <animate attributeName="opacity" values="0.6;0.9;0" dur="2.5s" repeatCount="indefinite" />
+                                        </circle>
+                                        <circle cx="75" cy={140 - (animatedFill * 0.85)} r="1.5" fill="#f59e0b" opacity="0.5">
+                                            <animate attributeName="cy" values={`${140 - (animatedFill * 0.85)};${95 - (animatedFill * 0.85)};${140 - (animatedFill * 0.85)}`} dur="3s" repeatCount="indefinite" begin="0.5s" />
+                                            <animate attributeName="opacity" values="0.5;0.8;0" dur="3s" repeatCount="indefinite" begin="0.5s" />
+                                        </circle>
+                                        <circle cx="60" cy={135 - (animatedFill * 0.75)} r="1" fill="#fbbf24" opacity="0.4">
+                                            <animate attributeName="cy" values={`${135 - (animatedFill * 0.75)};${100 - (animatedFill * 0.75)};${135 - (animatedFill * 0.75)}`} dur="3.5s" repeatCount="indefinite" begin="1s" />
+                                            <animate attributeName="opacity" values="0.4;0.7;0" dur="3.5s" repeatCount="indefinite" begin="1s" />
+                                        </circle>
+                                    </>
+                                )}
+
+                                {/* Progress bars on side */}
+                                <line x1="105" y1="40" x2="105" y2="140" stroke="#f3f4f6" strokeWidth="2" />
+                                <line
+                                    x1="105"
+                                    y1={140 - (animatedFill * 1.0)}
+                                    x2="105"
+                                    y2="140"
+                                    stroke="url(#activityGradient)"
+                                    strokeWidth="2"
+                                    style={{ transition: 'all 0.5s ease-out' }}
+                                />
+
+                                {/* Display percentage */}
+                                <text x="60" y="85" textAnchor="middle" fontSize="18" fontWeight="bold" fill="#374151">
+                                    {completionPercent}%
+                                </text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Assigned Activity Section */}
+                {activityData.assignedActivity && activityData.assignedActivity.amount > 0 && (
+                    <div className={`rounded-3xl p-5 shadow-sm ${activityData.assignedActivity.isCompleted
+                        ? 'bg-green-50 border-2 border-green-200'
+                        : 'bg-orange-50 border-2 border-orange-200'
+                        }`}>
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-semibold text-gray-600 mb-1">
+                                    Today's Activity Goal
+                                </p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {activityData.assignedActivity.amount} minutes
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Assigned: {format(new Date(activityData.assignedActivity.assignedAt), 'MMM d, h:mm a')}
+                                </p>
+                            </div>
+
+                            {activityData.assignedActivity.isCompleted ? (
+                                <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full">
+                                    <Check className="w-5 h-5" />
+                                    <span className="font-semibold">Completed</span>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={handleCompleteActivity}
+                                    disabled={completingTask || activityData.totalToday < activityData.assignedActivity.amount}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all ${activityData.totalToday >= activityData.assignedActivity.amount
+                                        ? 'bg-orange-500 text-white hover:bg-orange-600'
+                                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                >
+                                    {completingTask ? (
+                                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                                    ) : (
+                                        <Check className="w-5 h-5" />
+                                    )}
+                                    <span>Done</span>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="mt-4">
+                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Progress</span>
+                                <span>{Math.min(Math.round((activityData.totalToday / activityData.assignedActivity.amount) * 100), 100)}%</span>
+                            </div>
+                            <div className="h-2 bg-white rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${activityData.assignedActivity.isCompleted ? 'bg-green-500' : 'bg-orange-500'
+                                        }`}
+                                    style={{ width: `${Math.min((activityData.totalToday / activityData.assignedActivity.amount) * 100, 100)}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Quick Add Section */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold text-gray-900">Quick Add</h2>
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="text-orange-500 font-semibold text-sm"
+                        >
+                            Custom activity
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                        {/* 15 minutes */}
+                        <button
+                            onClick={() => handleQuickAdd('Walking', 15, 'light')}
+                            disabled={saving}
+                            className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
+                        >
+                            <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center">
+                                <Zap className="w-6 h-6 text-orange-500" />
+                            </div>
+                            <span className="font-semibold text-gray-900 text-sm">15 min</span>
+                        </button>
+
+                        {/* 30 minutes */}
+                        <button
+                            onClick={() => handleQuickAdd('Jogging', 30, 'moderate')}
+                            disabled={saving}
+                            className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
+                        >
+                            <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center">
+                                <Zap className="w-6 h-6 text-orange-500" />
+                            </div>
+                            <span className="font-semibold text-gray-900 text-sm">30 min</span>
+                        </button>
+
+                        {/* 45 minutes */}
+                        <button
+                            onClick={() => handleQuickAdd('Running', 45, 'vigorous')}
+                            disabled={saving}
+                            className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
+                        >
+                            <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center">
+                                <Zap className="w-6 h-6 text-orange-500" />
+                            </div>
+                            <span className="font-semibold text-gray-900 text-sm">45 min</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Today's History */}
+                <div>
+                    <h2 className="text-lg font-bold text-gray-900 mb-4">Today's Activity Log</h2>
+
+                    {activityData.entries.length === 0 ? (
+                        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+                            <Zap className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <p className="text-gray-500">No activities logged yet today</p>
+                            <p className="text-sm text-gray-400 mt-1">Start tracking your activities!</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {activityData.entries.map((entry) => (
+                                <div
+                                    key={entry._id}
+                                    className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-full flex items-center justify-center bg-orange-50">
+                                            <Zap className="w-6 h-6 text-orange-500" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-gray-900 capitalize">{entry.name}</p>
+                                            <p className="text-sm text-gray-500">
+                                                {entry.duration}m • Intensity: {entry.intensity}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <p className="font-semibold text-gray-900">{entry.duration} min</p>
+                                            <p className="text-xs text-gray-400">{entry.time}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteEntry(entry._id)}
+                                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Custom Activity Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
+                    <div className="bg-white rounded-t-3xl w-full max-w-lg p-6 animate-slide-up">
+                        {/* Handle */}
+                        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6" />
+
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-gray-900">Add Activity</h3>
+                            <button onClick={() => setShowAddModal(false)} className="p-2">
+                                <X className="w-6 h-6 text-gray-500" />
+                            </button>
+                        </div>
+
+                        {/* Activity Name */}
+                        <div className="mb-6">
+                            <label className="text-sm font-semibold text-gray-700 block mb-2">Activity Type</label>
+                            <input
+                                type="text"
+                                value={customName}
+                                onChange={(e) => setCustomName(e.target.value)}
+                                placeholder="e.g., Running, Cycling, Swimming"
+                                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            />
+                        </div>
+
+                        {/* Duration */}
+                        <div className="mb-6">
+                            <p className="text-sm font-semibold text-gray-700 mb-3">Duration (minutes)</p>
+                            <div className="flex items-center justify-center gap-6">
+                                <button
+                                    onClick={() => setCustomDuration(Math.max(5, customDuration - 5))}
+                                    className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                                >
+                                    <Minus className="w-5 h-5 text-gray-600" />
+                                </button>
+
+                                <div className="text-center">
+                                    <input
+                                        type="number"
+                                        value={customDuration}
+                                        onChange={(e) => setCustomDuration(Math.max(1, parseInt(e.target.value) || 0))}
+                                        className="text-5xl font-bold text-gray-900 w-24 text-center bg-transparent border-none outline-none"
+                                    />
+                                    <p className="text-gray-500">minutes</p>
+                                </div>
+
+                                <button
+                                    onClick={() => setCustomDuration(customDuration + 5)}
+                                    className="w-14 h-14 rounded-2xl border-2 border-orange-500 flex items-center justify-center hover:bg-orange-50 transition-colors"
+                                >
+                                    <Plus className="w-5 h-5 text-orange-500" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Intensity */}
+                        <div className="mb-6">
+                            <p className="text-sm font-semibold text-gray-700 mb-3">Intensity</p>
+                            <div className="flex justify-center gap-3">
+                                {['light', 'moderate', 'vigorous'].map((intensity) => (
+                                    <button
+                                        key={intensity}
+                                        onClick={() => setCustomIntensity(intensity)}
+                                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors capitalize ${customIntensity === intensity
+                                            ? 'bg-orange-500 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        {intensity}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Add Button */}
+                        <button
+                            onClick={handleCustomAdd}
+                            disabled={saving || customDuration <= 0}
+                            className="w-full py-4 bg-orange-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors disabled:opacity-50"
+                        >
+                            <Zap className="w-5 h-5" />
+                            {saving ? 'Adding...' : 'Add Activity'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Bottom Navigation */}
+            <BottomNavBar />
+
+            <style jsx>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
+        </div>
+    );
+}

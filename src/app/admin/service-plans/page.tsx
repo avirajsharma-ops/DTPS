@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -10,19 +10,18 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { toast } from 'sonner';
 import {
   Plus,
   Edit,
   Trash2,
-  IndianRupee,
-  Calendar,
-  CheckCircle2,
-  XCircle,
   Package,
   X,
-  Clock
+  Clock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface PricingTier {
@@ -30,6 +29,7 @@ interface PricingTier {
   durationDays: number;
   durationLabel: string;
   amount: number;
+  maxDiscount: number;
   isActive: boolean;
 }
 
@@ -39,14 +39,10 @@ interface ServicePlan {
   category: string;
   description?: string;
   pricingTiers: PricingTier[];
-  features: string[];
   maxDiscountPercent: number;
   isActive: boolean;
+  showToClients: boolean;
   createdAt: string;
-  createdBy?: {
-    firstName: string;
-    lastName: string;
-  };
 }
 
 const CATEGORIES = [
@@ -62,6 +58,17 @@ const CATEGORIES = [
   { value: 'custom', label: 'Custom' }
 ];
 
+// Duration presets for quick selection
+const DURATION_PRESETS = [
+  { days: 7, label: '1 Week' },
+  { days: 14, label: '2 Weeks' },
+  { days: 30, label: '1 Month' },
+  { days: 60, label: '2 Months' },
+  { days: 90, label: '3 Months' },
+  { days: 180, label: '6 Months' },
+  { days: 365, label: '1 Year' },
+];
+
 export default function AdminServicePlansPage() {
   const [plans, setPlans] = useState<ServicePlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,20 +82,17 @@ export default function AdminServicePlansPage() {
     name: '',
     category: 'general-wellness',
     description: '',
-    features: [] as string[],
     maxDiscountPercent: 40,
     isActive: true,
+    showToClients: true,
     pricingTiers: [] as PricingTier[]
   });
 
-  const [featureInput, setFeatureInput] = useState('');
-  
   // New pricing tier input
   const [newTier, setNewTier] = useState({
-    durationDays: 7,
-    durationLabel: '7 Days',
+    durationDays: 30,
     amount: 0,
-    isActive: true
+    maxDiscount: 40
   });
 
   useEffect(() => {
@@ -116,19 +120,23 @@ export default function AdminServicePlansPage() {
       name: '',
       category: 'general-wellness',
       description: '',
-      features: [],
       maxDiscountPercent: 40,
       isActive: true,
+      showToClients: true,
       pricingTiers: []
     });
     setEditingPlan(null);
-    setFeatureInput('');
-    setNewTier({
-      durationDays: 7,
-      durationLabel: '7 Days',
-      amount: 0,
-      isActive: true
-    });
+    setNewTier({ durationDays: 30, amount: 0, maxDiscount: 40 });
+  };
+
+  // Auto-generate label from days
+  const getDurationLabel = (days: number): string => {
+    const preset = DURATION_PRESETS.find(p => p.days === days);
+    if (preset) return preset.label;
+    if (days % 365 === 0) return `${days / 365} Year${days / 365 > 1 ? 's' : ''}`;
+    if (days % 30 === 0) return `${days / 30} Month${days / 30 > 1 ? 's' : ''}`;
+    if (days % 7 === 0) return `${days / 7} Week${days / 7 > 1 ? 's' : ''}`;
+    return `${days} Days`;
   };
 
   const handleSubmit = async () => {
@@ -146,7 +154,7 @@ export default function AdminServicePlansPage() {
       setSaving(true);
       const url = '/api/admin/service-plans';
       const method = editingPlan ? 'PUT' : 'POST';
-      const body = editingPlan 
+      const body = editingPlan
         ? { id: editingPlan._id, ...formData }
         : formData;
 
@@ -180,9 +188,9 @@ export default function AdminServicePlansPage() {
       name: plan.name,
       category: plan.category,
       description: plan.description || '',
-      features: plan.features || [],
       maxDiscountPercent: plan.maxDiscountPercent,
       isActive: plan.isActive,
+      showToClients: plan.showToClients ?? true,
       pricingTiers: plan.pricingTiers || []
     });
     setDialogOpen(true);
@@ -209,38 +217,28 @@ export default function AdminServicePlansPage() {
     setDeleteConfirmId(null);
   };
 
-  const addFeature = () => {
-    if (featureInput.trim()) {
-      setFormData({
-        ...formData,
-        features: [...formData.features, featureInput.trim()]
-      });
-      setFeatureInput('');
-    }
-  };
-
-  const removeFeature = (index: number) => {
-    setFormData({
-      ...formData,
-      features: formData.features.filter((_, i) => i !== index)
-    });
-  };
-
   const addPricingTier = () => {
-    if (!newTier.durationLabel || newTier.amount < 0) {
+    if (newTier.durationDays < 1 || newTier.amount < 0) {
       toast.error('Please fill in tier details correctly');
       return;
     }
+
+    // Check if duration already exists
+    if (formData.pricingTiers.some(t => t.durationDays === newTier.durationDays)) {
+      toast.error('A pricing tier with this duration already exists');
+      return;
+    }
+
     setFormData({
       ...formData,
-      pricingTiers: [...formData.pricingTiers, { ...newTier }]
+      pricingTiers: [...formData.pricingTiers, {
+        ...newTier,
+        durationLabel: getDurationLabel(newTier.durationDays),
+        maxDiscount: newTier.maxDiscount,
+        isActive: true
+      }].sort((a, b) => a.durationDays - b.durationDays)
     });
-    setNewTier({
-      durationDays: 7,
-      durationLabel: '7 Days',
-      amount: 0,
-      isActive: true
-    });
+    setNewTier({ durationDays: 30, amount: 0, maxDiscount: 40 });
   };
 
   const removePricingTier = (index: number) => {
@@ -253,6 +251,10 @@ export default function AdminServicePlansPage() {
   const updatePricingTier = (index: number, field: string, value: any) => {
     const updatedTiers = [...formData.pricingTiers];
     updatedTiers[index] = { ...updatedTiers[index], [field]: value };
+    // Auto-update label if days change
+    if (field === 'durationDays') {
+      updatedTiers[index].durationLabel = getDurationLabel(value);
+    }
     setFormData({ ...formData, pricingTiers: updatedTiers });
   };
 
@@ -260,9 +262,30 @@ export default function AdminServicePlansPage() {
     return CATEGORIES.find(c => c.value === value)?.label || value;
   };
 
+  const togglePlanStatus = async (plan: ServicePlan) => {
+    try {
+      const response = await fetch('/api/admin/service-plans', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: plan._id,
+          isActive: !plan.isActive,
+          showToClients: plan.showToClients
+        })
+      });
+
+      if (response.ok) {
+        toast.success(`Plan ${plan.isActive ? 'deactivated' : 'activated'}`);
+        fetchPlans();
+      }
+    } catch (error) {
+      toast.error('Failed to update plan status');
+    }
+  };
+
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 pb-24">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -274,12 +297,12 @@ export default function AdminServicePlansPage() {
             if (!open) resetForm();
           }}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-green-600 hover:bg-green-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Service Plan
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingPlan ? 'Edit Service Plan' : 'Create Service Plan'}</DialogTitle>
                 <DialogDescription>
@@ -287,7 +310,7 @@ export default function AdminServicePlansPage() {
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-6 mt-4">
+              <div className="space-y-6 mt-4 pb-4">
                 {/* Basic Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -300,8 +323,8 @@ export default function AdminServicePlansPage() {
                   </div>
                   <div>
                     <Label>Category *</Label>
-                    <Select 
-                      value={formData.category} 
+                    <Select
+                      value={formData.category}
                       onValueChange={(value) => setFormData({ ...formData, category: value })}
                     >
                       <SelectTrigger>
@@ -323,7 +346,7 @@ export default function AdminServicePlansPage() {
                   <RichTextEditor
                     value={formData.description}
                     onChange={(value) => setFormData({ ...formData, description: value })}
-                    placeholder="Describe the service plan... (use toolbar for formatting)"
+                    placeholder="Describe the service plan..."
                     minHeight="100px"
                   />
                 </div>
@@ -338,73 +361,84 @@ export default function AdminServicePlansPage() {
                     <div className="space-y-3 mb-4">
                       {formData.pricingTiers.map((tier, index) => (
                         <div key={index} className="flex items-center gap-3 bg-white p-3 rounded-lg border">
-                          <div className="flex-1 grid grid-cols-4 gap-2">
-                            <Input
-                              type="number"
-                              min="1"
-                              value={tier.durationDays}
-                              onChange={(e) => updatePricingTier(index, 'durationDays', parseInt(e.target.value) || 1)}
-                              placeholder="Days"
-                            />
-                            <Input
-                              value={tier.durationLabel}
-                              onChange={(e) => updatePricingTier(index, 'durationLabel', e.target.value)}
-                              placeholder="Label (e.g., 1 Month)"
-                            />
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                          <div className="flex-1 grid grid-cols-4 gap-3">
+                            <div>
+                              <Label className="text-xs text-gray-500">Duration (Days)</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={tier.durationDays}
+                                onChange={(e) => updatePricingTier(index, 'durationDays', parseInt(e.target.value) || 1)}
+                              />
+                              <p className="text-xs text-gray-400 mt-1">{getDurationLabel(tier.durationDays)}</p>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">Amount (₹)</Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={tier.amount}
+                                  onChange={(e) => updatePricingTier(index, 'amount', parseInt(e.target.value) || 0)}
+                                  className="pl-8"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">Max Discount %</Label>
                               <Input
                                 type="number"
                                 min="0"
-                                value={tier.amount}
-                                onChange={(e) => updatePricingTier(index, 'amount', parseInt(e.target.value) || 0)}
-                                className="pl-8"
-                                placeholder="Amount"
+                                max="40"
+                                value={tier.maxDiscount || 40}
+                                onChange={(e) => updatePricingTier(index, 'maxDiscount', Math.min(40, parseInt(e.target.value) || 0))}
                               />
                             </div>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={tier.isActive}
-                                onChange={(e) => updatePricingTier(index, 'isActive', e.target.checked)}
-                                className="rounded border-gray-300"
-                              />
-                              <span className="text-sm">Active</span>
-                            </label>
+                            <div className="flex items-end justify-between">
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={tier.isActive}
+                                  onCheckedChange={(checked) => updatePricingTier(index, 'isActive', checked)}
+                                />
+                                <span className="text-xs text-gray-500">{tier.isActive ? 'Active' : 'Inactive'}</span>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removePricingTier(index)}
+                                className="text-red-500 hover:text-red-700 p-2"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removePricingTier(index)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
                         </div>
                       ))}
                     </div>
                   )}
 
                   {/* Add New Tier */}
-                  <div className="flex items-end gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex-1 grid grid-cols-4 gap-2">
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="grid grid-cols-4 gap-3 items-end">
                       <div>
-                        <Label className="text-xs">Duration (Days)</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={newTier.durationDays}
-                          onChange={(e) => setNewTier({ ...newTier, durationDays: parseInt(e.target.value) || 1 })}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Label</Label>
-                        <Input
-                          value={newTier.durationLabel}
-                          onChange={(e) => setNewTier({ ...newTier, durationLabel: e.target.value })}
-                          placeholder="e.g., 1 Month"
-                        />
+                        <Label className="text-xs">Duration</Label>
+                        <Select
+                          value={newTier.durationDays.toString()}
+                          onValueChange={(value) => setNewTier({ ...newTier, durationDays: parseInt(value) })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DURATION_PRESETS.map(preset => (
+                              <SelectItem key={preset.days} value={preset.days.toString()}>
+                                {preset.label} ({preset.days} days)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <Label className="text-xs">Amount (₹)</Label>
@@ -413,19 +447,58 @@ export default function AdminServicePlansPage() {
                           min="0"
                           value={newTier.amount}
                           onChange={(e) => setNewTier({ ...newTier, amount: parseInt(e.target.value) || 0 })}
+                          placeholder="Enter amount"
                         />
                       </div>
-                      <div className="flex items-end">
-                        <Button type="button" onClick={addPricingTier} className="w-full">
-                          <Plus className="h-4 w-4 mr-1" /> Add Tier
-                        </Button>
+                      <div>
+                        <Label className="text-xs">Max Discount %</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="40"
+                          value={newTier.maxDiscount}
+                          onChange={(e) => setNewTier({ ...newTier, maxDiscount: Math.min(40, parseInt(e.target.value) || 0) })}
+                          placeholder="0-40"
+                        />
                       </div>
+                      <Button type="button" onClick={addPricingTier} className="bg-green-600 hover:bg-green-700">
+                        <Plus className="h-4 w-4 mr-1" /> Add Tier
+                      </Button>
                     </div>
                   </div>
                 </div>
 
-                {/* Max Discount */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Settings */}
+                <div className="border rounded-lg p-4 space-y-4">
+                  <Label className="text-base font-semibold">Settings</Label>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Show to Clients</p>
+                      <p className="text-sm text-gray-500">Display this plan on client dashboard</p>
+                    </div>
+                    <Switch
+                      checked={formData.showToClients}
+                      onCheckedChange={(checked) => setFormData({ ...formData, showToClients: checked })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Plan Status</p>
+                      <p className="text-sm text-gray-500">Enable or disable this plan</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={formData.isActive}
+                        onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                      />
+                      <Badge variant={formData.isActive ? "default" : "secondary"} className={formData.isActive ? "bg-green-500" : ""}>
+                        {formData.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                  </div>
+
                   <div>
                     <Label>Max Discount % (Max 40%)</Label>
                     <Input
@@ -433,49 +506,13 @@ export default function AdminServicePlansPage() {
                       min="0"
                       max="40"
                       value={formData.maxDiscountPercent}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        maxDiscountPercent: Math.min(40, parseInt(e.target.value) || 0) 
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        maxDiscountPercent: Math.min(40, parseInt(e.target.value) || 0)
                       })}
+                      className="w-32"
                     />
                     <p className="text-xs text-gray-500 mt-1">Maximum discount allowed on this plan</p>
-                  </div>
-                  <div className="flex items-center pt-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.isActive}
-                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                        className="rounded border-gray-300"
-                      />
-                      <span>Plan is Active</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div>
-                  <Label>Features</Label>
-                  <div className="flex gap-2 mb-2">
-                    <Input
-                      value={featureInput}
-                      onChange={(e) => setFeatureInput(e.target.value)}
-                      placeholder="Add a feature..."
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-                    />
-                    <Button type="button" onClick={addFeature} variant="outline">
-                      Add
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.features.map((feature, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                        {feature}
-                        <button type="button" onClick={() => removeFeature(index)} className="ml-1">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
                   </div>
                 </div>
 
@@ -484,7 +521,7 @@ export default function AdminServicePlansPage() {
                   <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSubmit} disabled={saving}>
+                  <Button onClick={handleSubmit} disabled={saving} className="bg-green-600 hover:bg-green-700">
                     {saving ? (
                       <>
                         <LoadingSpinner className="h-4 w-4 mr-2" />
@@ -516,7 +553,10 @@ export default function AdminServicePlansPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {plans.map((plan) => (
-              <Card key={plan._id} className={`relative ${!plan.isActive ? 'opacity-60' : ''}`}>
+              <Card key={plan._id} className={`relative overflow-hidden ${!plan.isActive ? 'opacity-60' : ''}`}>
+                {/* Status indicator stripe */}
+                <div className={`absolute top-0 left-0 right-0 h-1 ${plan.isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
+
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
@@ -525,13 +565,24 @@ export default function AdminServicePlansPage() {
                         {getCategoryLabel(plan.category)}
                       </Badge>
                     </div>
-                    <Badge variant={plan.isActive ? "default" : "secondary"}>
-                      {plan.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge variant={plan.isActive ? "default" : "secondary"} className={plan.isActive ? "bg-green-500" : ""}>
+                        {plan.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                      {plan.showToClients ? (
+                        <span className="text-xs text-green-600 flex items-center gap-1">
+                          <Eye className="h-3 w-3" /> Visible to clients
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                          <EyeOff className="h-3 w-3" /> Hidden
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {plan.description && (
-                    <div 
-                      className="mt-2 text-sm text-gray-500 prose prose-sm max-w-none"
+                    <div
+                      className="mt-2 text-sm text-gray-500 prose prose-sm max-w-none line-clamp-2"
                       dangerouslySetInnerHTML={{ __html: plan.description }}
                     />
                   )}
@@ -542,13 +593,18 @@ export default function AdminServicePlansPage() {
                     <Label className="text-sm text-gray-500">Pricing Options</Label>
                     <div className="space-y-1">
                       {plan.pricingTiers.filter(t => t.isActive).map((tier, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                        <div key={idx} className="flex items-center justify-between bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-2 border border-green-100">
                           <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm">{tier.durationLabel}</span>
+                            <Clock className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium">{tier.durationLabel}</span>
                             <span className="text-xs text-gray-400">({tier.durationDays} days)</span>
                           </div>
-                          <span className="font-semibold text-blue-600">₹{tier.amount.toLocaleString()}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">
+                              Max {tier.maxDiscount || 40}% off
+                            </span>
+                            <span className="font-bold text-green-600">₹{tier.amount.toLocaleString()}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -560,52 +616,41 @@ export default function AdminServicePlansPage() {
                     <span className="font-medium">{plan.maxDiscountPercent}%</span>
                   </div>
 
-                  {/* Features */}
-                  {plan.features.length > 0 && (
-                    <div>
-                      <Label className="text-sm text-gray-500">Features</Label>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {plan.features.slice(0, 3).map((feature, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">
-                            {feature}
-                          </Badge>
-                        ))}
-                        {plan.features.length > 3 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{plan.features.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Actions */}
                   <div className="flex gap-2 pt-2 border-t">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(plan)}>
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => togglePlanStatus(plan)}
+                      className={plan.isActive ? "text-orange-600" : "text-green-600"}
+                    >
+                      {plan.isActive ? 'Deactivate' : 'Activate'}
+                    </Button>
                     {deleteConfirmId === plan._id ? (
                       <div className="flex gap-1">
-                        <Button 
-                          variant="destructive" 
-                          size="sm" 
+                        <Button
+                          variant="destructive"
+                          size="sm"
                           onClick={() => handleDelete(plan._id)}
                         >
                           Confirm
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => setDeleteConfirmId(null)}
                         >
                           Cancel
                         </Button>
                       </div>
                     ) : (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="text-red-600 hover:text-red-700"
                         onClick={() => setDeleteConfirmId(plan._id)}
                       >

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Moon, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Moon, Plus, Trash2, Loader2, Check, Target, Send } from 'lucide-react';
 import TrackingStatsGrid from './TrackingStatsGrid';
 // import TimeBasedBarChart from './TimeBasedBarChart';
 import { format } from 'date-fns';
@@ -21,6 +21,14 @@ interface SleepEntry {
   time: string;
 }
 
+interface AssignedSleep {
+  targetHours: number;
+  targetMinutes: number;
+  assignedAt?: string;
+  isCompleted: boolean;
+  completedAt?: string;
+}
+
 interface SleepSectionProps {
   clientId: string;
   selectedDate: Date;
@@ -31,7 +39,14 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [summary, setSummary] = useState({ totalMinutes: 0, totalHours: 0, remainingMinutes: 0, displayTime: '0h 0m', target: 8, percentage: 0 });
-  
+
+  // Assigned sleep state
+  const [assignedSleep, setAssignedSleep] = useState<AssignedSleep | null>(null);
+  const [assignHours, setAssignHours] = useState<number>(8);
+  const [assignMinutes, setAssignMinutes] = useState<number>(0);
+  const [assigning, setAssigning] = useState(false);
+  const [showCustomSleep, setShowCustomSleep] = useState(false);
+
   const [newEntry, setNewEntry] = useState({
     hours: 0,
     minutes: 0,
@@ -45,7 +60,7 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const res = await fetch(`/api/journal/sleep?date=${dateStr}&clientId=${clientId}`);
       const data = await res.json();
-      
+
       if (data.success) {
         setEntries(data.entries || []);
         setSummary(data.summary || { totalMinutes: 0, totalHours: 0, remainingMinutes: 0, displayTime: '0h 0m', target: 8, percentage: 0 });
@@ -58,16 +73,98 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
     }
   }, [clientId, selectedDate]);
 
+  // Fetch assigned sleep status
+  const fetchAssignedSleep = useCallback(async () => {
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const res = await fetch(`/api/admin/clients/${clientId}/assign-sleep?date=${dateStr}`);
+      const data = await res.json();
+
+      if (data.assignedSleep) {
+        setAssignedSleep(data.assignedSleep);
+        setAssignHours(data.assignedSleep.targetHours || 8);
+        setAssignMinutes(data.assignedSleep.targetMinutes || 0);
+      } else {
+        setAssignedSleep(null);
+      }
+    } catch (error) {
+      console.error('Error fetching assigned sleep:', error);
+    }
+  }, [clientId, selectedDate]);
+
   useEffect(() => {
     fetchSleep();
-  }, [fetchSleep]);
+    fetchAssignedSleep();
+  }, [fetchSleep, fetchAssignedSleep]);
+
+  // Handle assigning sleep to client
+  const handleAssignSleep = async () => {
+    if (assignHours <= 0 && assignMinutes <= 0) {
+      toast.error('Please enter a valid sleep duration');
+      return;
+    }
+
+    try {
+      setAssigning(true);
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const res = await fetch(`/api/admin/clients/${clientId}/assign-sleep`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetHours: assignHours, targetMinutes: assignMinutes, date: dateStr })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setAssignedSleep({
+          targetHours: assignHours,
+          targetMinutes: assignMinutes,
+          assignedAt: new Date().toISOString(),
+          isCompleted: false
+        });
+        toast.success(`Assigned ${assignHours}h ${assignMinutes}m sleep target to client`);
+      } else {
+        toast.error(data.error || 'Failed to assign sleep target');
+      }
+    } catch (error) {
+      console.error('Error assigning sleep:', error);
+      toast.error('Failed to assign sleep target');
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  // Handle removing assigned sleep
+  const handleRemoveAssignedSleep = async () => {
+    try {
+      setAssigning(true);
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const res = await fetch(`/api/admin/clients/${clientId}/assign-sleep?date=${dateStr}`, {
+        method: 'DELETE'
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setAssignedSleep(null);
+        toast.success('Assigned sleep target removed');
+      } else {
+        toast.error(data.error || 'Failed to remove assigned sleep');
+      }
+    } catch (error) {
+      console.error('Error removing assigned sleep:', error);
+      toast.error('Failed to remove assigned sleep');
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   const handleAddEntry = async () => {
     if (!newEntry.hours && !newEntry.minutes) {
       toast.error('Please enter hours or minutes');
       return;
     }
-    
+
     try {
       setSaving(true);
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -81,9 +178,9 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
           clientId
         })
       });
-      
+
       const data = await res.json();
-      
+
       if (data.success) {
         setEntries(data.entries || []);
         setSummary(data.summary || summary);
@@ -106,9 +203,9 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
       const res = await fetch(`/api/journal/sleep?entryId=${id}&date=${dateStr}&clientId=${clientId}`, {
         method: 'DELETE'
       });
-      
+
       const data = await res.json();
-      
+
       if (data.success) {
         setEntries(data.entries || []);
         setSummary(data.summary || summary);
@@ -167,72 +264,131 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
 
   return (
     <div className="space-y-6 w-full">
-      {/* Add Sleep Record Form */}
-      <Card className="w-full">
+      {/* Assign Sleep to Client Card */}
+      <Card className="w-full border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Moon className="h-4 w-4 text-indigo-500" />
-            Add Sleep Record
+            <Target className="h-4 w-4 text-indigo-600" />
+            Assign Sleep Goal for {format(selectedDate, 'MMM dd, yyyy')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm text-gray-600">Hours</Label>
-              <Input
-                type="number"
-                placeholder="0"
-                min="0"
-                max="24"
-                value={newEntry.hours || ''}
-                onChange={(e) => setNewEntry({ ...newEntry, hours: parseInt(e.target.value) || 0 })}
-              />
+          {assignedSleep ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-indigo-100">
+                <div>
+                  <p className="font-medium text-gray-800">
+                    Assigned Sleep Target: {assignedSleep.targetHours}h {assignedSleep.targetMinutes}m
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {assignedSleep.assignedAt && `Assigned on ${format(new Date(assignedSleep.assignedAt), 'MMM dd, yyyy hh:mm a')}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {assignedSleep.isCompleted ? (
+                    <Badge className="bg-green-500 text-white flex items-center gap-1">
+                      <Check className="h-3 w-3" />
+                      Completed
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-orange-600 border-orange-300 animate-pulse">
+                      Pending
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              {assignedSleep.isCompleted && assignedSleep.completedAt && (
+                <p className="text-sm text-green-600 text-center">
+                  ✓ Client marked as completed on {format(new Date(assignedSleep.completedAt), 'MMM dd, hh:mm a')}
+                </p>
+              )}
+              {/* <div className="flex gap-2">
+                <Button 
+                  onClick={handleRemoveAssignedSleep} 
+                  disabled={assigning}
+                  variant="outline"
+                  className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  Remove Assignment
+                </Button>
+              </div> */}
             </div>
-            <div>
-              <Label className="text-sm text-gray-600">Minutes</Label>
-              <Input
-                type="number"
-                placeholder="0"
-                min="0"
-                max="59"
-                value={newEntry.minutes || ''}
-                onChange={(e) => setNewEntry({ ...newEntry, minutes: parseInt(e.target.value) || 0 })}
-              />
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600">
+                Set a daily sleep goal for this client. They will see this target on their Tasks page.
+              </p>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label className="text-xs text-gray-500">Hours</Label>
+                  <Input
+                    type="number"
+                    placeholder="8"
+                    min="0"
+                    max="24"
+                    value={assignHours}
+                    onChange={(e) => setAssignHours(parseInt(e.target.value) || 0)}
+                    className="bg-white"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs text-gray-500">Minutes</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    max="59"
+                    value={assignMinutes}
+                    onChange={(e) => setAssignMinutes(parseInt(e.target.value) || 0)}
+                    className="bg-white"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    onClick={handleAssignSleep}
+                    disabled={assigning || (assignHours <= 0 && assignMinutes <= 0)}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {assigning ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Send className="h-4 w-4 mr-2" />
+                    )}
+                    Assign
+                  </Button>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button type="button" variant="outline" size="sm" onClick={() => { setAssignHours(6); setAssignMinutes(0); }} className="text-xs">6h</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { setAssignHours(7); setAssignMinutes(0); }} className="text-xs">7h</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { setAssignHours(8); setAssignMinutes(0); }} className="text-xs">8h</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { setAssignHours(7); setAssignMinutes(30); }} className="text-xs">7.5h</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { setAssignHours(8); setAssignMinutes(30); }} className="text-xs">8.5h</Button>
+              </div>
             </div>
-            <div>
-              <Label className="text-sm text-gray-600">Sleep Quality</Label>
-              <Select
-                value={newEntry.quality}
-                onValueChange={(value) => setNewEntry({ ...newEntry, quality: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select quality..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Excellent">Excellent</SelectItem>
-                  <SelectItem value="Good">Good</SelectItem>
-                  <SelectItem value="Fair">Fair</SelectItem>
-                  <SelectItem value="Poor">Poor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <Button onClick={handleAddEntry} disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700">
-            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-            {saving ? 'Adding...' : 'Add Entry'}
-          </Button>
+          )}
         </CardContent>
       </Card>
+
 
       {/* Today's Sleep */}
       <Card className="w-full">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <CardTitle className="text-base">Today's Sleep</CardTitle>
-            <Badge variant="outline" className="text-indigo-600">
-              {totalHours}h {remainingMinutes}m total
-            </Badge>
+            <div className="flex gap-2">
+              <Badge variant="outline" className="text-indigo-600">
+                {totalHours}h {remainingMinutes}m total
+              </Badge>
+              <Button
+                onClick={() => setShowCustomSleep(true)}
+                size="sm"
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -241,8 +397,8 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
           ) : (
             <div className="space-y-3">
               {entries.map((entry) => (
-                <div 
-                  key={entry._id} 
+                <div
+                  key={entry._id}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
                 >
                   <div className="flex items-center gap-2">
@@ -255,8 +411,8 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-gray-400">{entry.time}</span>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteEntry(entry._id)}
                       className="text-red-500 hover:text-red-700 hover:bg-red-50"
@@ -300,6 +456,88 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
         ]}
         maxValue={70}
       /> */}
+
+      {/* Custom Sleep Modal */}
+      {showCustomSleep && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
+          <div className="bg-white rounded-t-3xl w-full max-w-md p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">Add Sleep</h2>
+              <button
+                onClick={() => setShowCustomSleep(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Display assigned sleep if any */}
+            {assignedSleep && (
+              <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                <p className="text-sm font-medium text-indigo-900">
+                  Assigned Target: {assignedSleep.targetHours}h {assignedSleep.targetMinutes}m
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium">Hours</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  max="24"
+                  value={newEntry.hours || ''}
+                  onChange={(e) => setNewEntry({ ...newEntry, hours: parseInt(e.target.value) || 0 })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Minutes</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  max="59"
+                  value={newEntry.minutes || ''}
+                  onChange={(e) => setNewEntry({ ...newEntry, minutes: parseInt(e.target.value) || 0 })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Quality</Label>
+                <select
+                  value={newEntry.quality}
+                  onChange={(e) => setNewEntry({ ...newEntry, quality: e.target.value })}
+                  className="w-full mt-1 p-2 border rounded-lg"
+                >
+                  <option value="">Select quality</option>
+                  <option value="Excellent">Excellent</option>
+                  <option value="Good">Good</option>
+                  <option value="Fair">Fair</option>
+                  <option value="Poor">Poor</option>
+                </select>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleAddEntry}
+              disabled={saving}
+              className="w-full bg-indigo-600 hover:bg-indigo-700"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Sleep Record'
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

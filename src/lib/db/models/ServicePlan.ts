@@ -5,6 +5,7 @@ export interface IPricingTier {
   durationDays: number;
   durationLabel: string; // e.g., "7 Days", "1 Month", "3 Months"
   amount: number;
+  maxDiscount: number; // Max discount percentage for this tier (0-40%)
   isActive: boolean;
 }
 
@@ -17,6 +18,7 @@ export interface IServicePlan extends Document {
   pricingTiers: IPricingTier[];
   features: string[];
   isActive: boolean;
+  showToClients: boolean; // Whether to show this plan to clients in the user dashboard
   maxDiscountPercent: number; // Max 40%
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -31,7 +33,7 @@ export interface IClientPurchase extends Document {
   servicePlan?: mongoose.Types.ObjectId;
   paymentLink?: mongoose.Types.ObjectId;
   otherPlatformPayment?: mongoose.Types.ObjectId;
-  
+
   // Plan details at time of purchase
   planName: string;
   planCategory: string;
@@ -41,27 +43,27 @@ export interface IClientPurchase extends Document {
   discountPercent: number;
   taxPercent: number;
   finalAmount: number;
-  
+
   // Dates
   purchaseDate: Date;
   startDate: Date;
   endDate: Date;
-  
+
   // Expected dates (dietitian's expected start/end for meal plan)
   expectedStartDate?: Date;
   expectedEndDate?: Date;
-  
+
   // Parent purchase reference (for multi-phase plans sharing freeze days)
   parentPurchaseId?: mongoose.Types.ObjectId;
-  
+
   // Status
   status: 'active' | 'expired' | 'cancelled';
-  
+
   // Meal plan tracking
   mealPlanCreated: boolean;
   mealPlanId?: mongoose.Types.ObjectId;
   daysUsed: number;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -82,6 +84,12 @@ const pricingTierSchema = new Schema({
     type: Number,
     required: true,
     min: 0
+  },
+  maxDiscount: {
+    type: Number,
+    default: 40,
+    min: 0,
+    max: 40
   },
   isActive: {
     type: Boolean,
@@ -112,6 +120,10 @@ const servicePlanSchema = new Schema({
     trim: true
   }],
   isActive: {
+    type: Boolean,
+    default: true
+  },
+  showToClients: {
     type: Boolean,
     default: true
   },
@@ -153,13 +165,13 @@ const clientPurchaseSchema = new Schema({
     ref: 'PaymentLink',
     required: false
   },
-  
+
   // Reference to other platform payment (if payment was made via other platform)
   otherPlatformPayment: {
     type: Schema.Types.ObjectId,
     ref: 'OtherPlatformPayment',
   },
-  
+
   // Plan details at time of purchase
   planName: {
     type: String,
@@ -199,7 +211,7 @@ const clientPurchaseSchema = new Schema({
     required: true,
     min: 0
   },
-  
+
   // Dates
   purchaseDate: {
     type: Date,
@@ -214,7 +226,7 @@ const clientPurchaseSchema = new Schema({
     type: Date,
     required: true
   },
-  
+
   // Expected dates (dietitian's expected start/end for meal plan)
   expectedStartDate: {
     type: Date,
@@ -224,14 +236,14 @@ const clientPurchaseSchema = new Schema({
     type: Date,
     required: false
   },
-  
+
   // Parent purchase reference (for multi-phase plans sharing freeze days)
   parentPurchaseId: {
     type: Schema.Types.ObjectId,
     ref: 'ClientPurchase',
     required: false
   },
-  
+
   // Status
   status: {
     type: String,
@@ -239,7 +251,7 @@ const clientPurchaseSchema = new Schema({
     enum: ['active', 'expired', 'cancelled'],
     default: 'active'
   },
-  
+
   // Meal plan tracking
   mealPlanCreated: {
     type: Boolean,
@@ -266,23 +278,23 @@ clientPurchaseSchema.index({ client: 1, status: 1 });
 clientPurchaseSchema.index({ client: 1, endDate: -1 });
 
 // Static method to get active pricing for a plan
-servicePlanSchema.statics.getActivePricingTiers = function(planId: string) {
+servicePlanSchema.statics.getActivePricingTiers = function (planId: string) {
   return this.findById(planId).select('name category pricingTiers maxDiscountPercent').lean();
 };
 
 // Static method to get client's active purchase
-clientPurchaseSchema.statics.getClientActivePurchase = function(clientId: string) {
+clientPurchaseSchema.statics.getClientActivePurchase = function (clientId: string) {
   return this.findOne({
     client: clientId,
     status: 'active',
     endDate: { $gte: new Date() }
   })
-  .populate('servicePlan', 'name category')
-  .sort({ endDate: -1 });
+    .populate('servicePlan', 'name category')
+    .sort({ endDate: -1 });
 };
 
 // Method to check remaining days
-clientPurchaseSchema.methods.getRemainingDays = function() {
+clientPurchaseSchema.methods.getRemainingDays = function () {
   const now = new Date();
   const endDate = new Date(this.endDate);
   const diffTime = endDate.getTime() - now.getTime();
@@ -291,15 +303,15 @@ clientPurchaseSchema.methods.getRemainingDays = function() {
 };
 
 // Method to check if can create meal plan
-clientPurchaseSchema.methods.canCreateMealPlan = function(requestedDays: number) {
+clientPurchaseSchema.methods.canCreateMealPlan = function (requestedDays: number) {
   const remainingDays = this.getRemainingDays();
   return {
     canCreate: this.status === 'active' && remainingDays >= requestedDays,
     remainingDays,
     maxDays: remainingDays,
-    message: this.status !== 'active' 
-      ? 'Purchase is not active' 
-      : remainingDays < requestedDays 
+    message: this.status !== 'active'
+      ? 'Purchase is not active'
+      : remainingDays < requestedDays
         ? `Only ${remainingDays} days remaining in plan`
         : 'OK'
   };

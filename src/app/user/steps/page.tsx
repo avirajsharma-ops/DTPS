@@ -1,0 +1,681 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { format } from 'date-fns';
+import {
+    ArrowLeft,
+    Calendar,
+    Footprints,
+    Plus,
+    Minus,
+    X,
+    Trash2,
+    Check
+} from 'lucide-react';
+import { toast } from 'sonner';
+import BottomNavBar from '@/components/client/BottomNavBar';
+
+interface StepsEntry {
+    _id: string;
+    steps: number;
+    distance?: number;
+    calories?: number;
+    time: string;
+    createdAt: string;
+}
+
+interface AssignedSteps {
+    amount: number;
+    assignedAt: string;
+    isCompleted: boolean;
+    completedAt?: string;
+}
+
+interface StepsData {
+    totalToday: number;
+    goal: number;
+    entries: StepsEntry[];
+    assignedSteps: AssignedSteps | null;
+    date: string;
+    dataHash?: string;
+}
+
+export default function StepsPage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    const [loading, setLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [stepsData, setStepsData] = useState<StepsData>({
+        totalToday: 0,
+        goal: 10000,
+        entries: [],
+        assignedSteps: null,
+        date: new Date().toISOString()
+    });
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [customSteps, setCustomSteps] = useState(1000);
+    const [saving, setSaving] = useState(false);
+    const [completingTask, setCompletingTask] = useState(false);
+    const [animatedFill, setAnimatedFill] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [lastDataHash, setLastDataHash] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            router.push('/login');
+        }
+    }, [status, router]);
+
+    const fetchStepsData = useCallback(async (showLoader = true, checkForChanges = false) => {
+        try {
+            if (showLoader) setLoading(true);
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            const response = await fetch(`/api/client/steps?date=${dateStr}`);
+            if (response.ok) {
+                const data = await response.json();
+
+                if (checkForChanges && lastDataHash && data.dataHash === lastDataHash) {
+                    return;
+                }
+
+                const prevTotal = stepsData.totalToday;
+                setStepsData(data);
+                setLastDataHash(data.dataHash || null);
+
+                if (data.totalToday !== prevTotal && !showLoader) {
+                    animateStepsFill(prevTotal, data.totalToday, data.goal);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching steps data:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedDate, stepsData.totalToday, lastDataHash]);
+
+    const animateStepsFill = (from: number, to: number, goal: number) => {
+        setIsAnimating(true);
+        const startPercent = Math.min((from / goal) * 100, 100);
+        const endPercent = Math.min((to / goal) * 100, 100);
+        const duration = 1500;
+        const steps = 60;
+        const stepDuration = duration / steps;
+        const increment = (endPercent - startPercent) / steps;
+
+        let currentStep = 0;
+        setAnimatedFill(startPercent);
+
+        const interval = setInterval(() => {
+            currentStep++;
+            setAnimatedFill(startPercent + (increment * currentStep));
+
+            if (currentStep >= steps) {
+                clearInterval(interval);
+                setAnimatedFill(endPercent);
+                setIsAnimating(false);
+            }
+        }, stepDuration);
+    };
+
+    useEffect(() => {
+        if (session?.user) {
+            fetchStepsData(true, false);
+
+            const interval = setInterval(() => {
+                fetchStepsData(false, true);
+            }, 5000);
+
+            return () => clearInterval(interval);
+        }
+    }, [session, selectedDate]);
+
+    useEffect(() => {
+        if (!loading && !isAnimating) {
+            const targetPercent = Math.min((stepsData.totalToday / stepsData.goal) * 100, 100);
+            setAnimatedFill(targetPercent);
+        }
+    }, [loading, stepsData.totalToday, stepsData.goal, isAnimating]);
+
+    const handleQuickAdd = async (steps: number) => {
+        setSaving(true);
+        const prevTotal = stepsData.totalToday;
+        try {
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            const response = await fetch('/api/client/steps', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steps, date: dateStr })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                toast.success(`Added ${steps.toLocaleString()} steps`);
+
+                const newResponse = await fetch(`/api/client/steps?date=${dateStr}`);
+                if (newResponse.ok) {
+                    const newData = await newResponse.json();
+                    setStepsData(newData);
+                    setLastDataHash(newData.dataHash || null);
+                    animateStepsFill(prevTotal, newData.totalToday, newData.goal);
+                }
+            } else {
+                toast.error('Failed to add steps');
+            }
+        } catch (error) {
+            toast.error('Something went wrong');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCustomAdd = async () => {
+        if (customSteps <= 0) {
+            toast.error('Please enter a valid amount');
+            return;
+        }
+        await handleQuickAdd(customSteps);
+        setShowAddModal(false);
+        setCustomSteps(1000);
+    };
+
+    const handleDeleteEntry = async (entryId: string) => {
+        const prevTotal = stepsData.totalToday;
+        try {
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            const response = await fetch(`/api/client/steps?id=${entryId}&date=${dateStr}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                toast.success('Entry deleted');
+                const newResponse = await fetch(`/api/client/steps?date=${dateStr}`);
+                if (newResponse.ok) {
+                    const newData = await newResponse.json();
+                    setStepsData(newData);
+                    setLastDataHash(newData.dataHash || null);
+                    animateStepsFill(prevTotal, newData.totalToday, newData.goal);
+                }
+            } else {
+                toast.error('Failed to delete entry');
+            }
+        } catch (error) {
+            toast.error('Something went wrong');
+        }
+    };
+
+    const handleCompleteSteps = async () => {
+        setCompletingTask(true);
+        try {
+            const response = await fetch('/api/client/steps', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'complete' })
+            });
+
+            if (response.ok) {
+                toast.success('Steps goal marked as complete!');
+                const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                const newResponse = await fetch(`/api/client/steps?date=${dateStr}`);
+                if (newResponse.ok) {
+                    const newData = await newResponse.json();
+                    setStepsData(newData);
+                }
+            } else {
+                toast.error('Failed to mark as complete');
+            }
+        } catch (error) {
+            toast.error('Something went wrong');
+        } finally {
+            setCompletingTask(false);
+        }
+    };
+
+    const fillPercent = Math.min((stepsData.totalToday / stepsData.goal) * 100, 100);
+    const completionPercent = Math.round(fillPercent);
+    const distance = (stepsData.totalToday / 1315).toFixed(2);
+
+    if (status === 'loading' || loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50 pb-24">
+            {/* Header */}
+            <div className="bg-white px-4 py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                    <Link href="/user" className="p-2 -ml-2">
+                        <ArrowLeft className="w-6 h-6 text-gray-700" />
+                    </Link>
+                    <h1 className="text-lg font-bold text-gray-900">Steps</h1>
+                    <button
+                        onClick={() => setShowDatePicker(!showDatePicker)}
+                        className="flex items-center gap-1 p-2 -mr-2 bg-green-50 rounded-lg"
+                    >
+                        <Calendar className="w-5 h-5 text-green-600" />
+                        <span className="text-sm font-medium text-green-600">
+                            {format(selectedDate, 'dd MMM')}
+                        </span>
+                    </button>
+                </div>
+
+                {/* Date Picker */}
+                {showDatePicker && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded-xl">
+                        <input
+                            type="date"
+                            value={format(selectedDate, 'yyyy-MM-dd')}
+                            onChange={(e) => {
+                                setSelectedDate(new Date(e.target.value));
+                                setShowDatePicker(false);
+                            }}
+                            className="w-full p-2 border rounded-lg"
+                        />
+                    </div>
+                )}
+            </div>
+
+            <div className="px-4 py-6 space-y-6">
+                {/* Main Steps Card */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm">
+                    <div className="flex items-start justify-between">
+                        {/* Left side - Stats */}
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Footprints className="w-5 h-5 text-green-500" />
+                                <span className="text-green-500 font-semibold text-sm">TODAY</span>
+                            </div>
+                            <div className="flex items-baseline">
+                                <span className="text-5xl font-bold text-gray-900">
+                                    {stepsData.totalToday.toLocaleString()}
+                                </span>
+                                <span className="text-2xl text-gray-400 ml-1">steps</span>
+                            </div>
+                            <div className="flex gap-4 mt-2 text-gray-600 text-sm">
+                                <div>
+                                    <p className="text-gray-500">Distance</p>
+                                    <p className="font-semibold">{distance} km</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-500">Goal</p>
+                                    <p className="font-semibold">{stepsData.goal.toLocaleString()}</p>
+                                </div>
+                            </div>
+
+                            {/* Completion Badge */}
+                            <div className="mt-4 inline-flex items-center gap-2 bg-green-50 text-green-600 px-4 py-2 rounded-full">
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <span className="font-semibold">{completionPercent}% Complete</span>
+                            </div>
+                        </div>
+
+                        {/* Right side - Circular Progress Ring Animation */}
+                        <div className="relative w-36 h-48">
+                            <svg viewBox="0 0 120 160" className="w-full h-full">
+                                <defs>
+                                    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#4ade80" />
+                                        <stop offset="50%" stopColor="#22c55e" />
+                                        <stop offset="100%" stopColor="#16a34a" />
+                                    </linearGradient>
+                                    <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stopColor="#86efac" />
+                                        <stop offset="100%" stopColor="#22c55e" />
+                                    </linearGradient>
+                                    <filter id="glowEffect" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+                                    </filter>
+                                </defs>
+
+                                {/* Background circle track */}
+                                <circle
+                                    cx="60"
+                                    cy="75"
+                                    r="50"
+                                    fill="none"
+                                    stroke="#e5e7eb"
+                                    strokeWidth="8"
+                                    opacity="0.5"
+                                />
+
+                                {/* Animated progress ring */}
+                                <circle
+                                    cx="60"
+                                    cy="75"
+                                    r="50"
+                                    fill="none"
+                                    stroke="url(#ringGradient)"
+                                    strokeWidth="8"
+                                    strokeLinecap="round"
+                                    strokeDasharray={`${(animatedFill / 100) * 314} 314`}
+                                    transform="rotate(-90 60 75)"
+                                    style={{ transition: isAnimating ? 'none' : 'stroke-dasharray 0.5s ease-out' }}
+                                />
+
+                                {/* Glow effect on progress */}
+                                <circle
+                                    cx="60"
+                                    cy="75"
+                                    r="50"
+                                    fill="none"
+                                    stroke="url(#ringGradient)"
+                                    strokeWidth="8"
+                                    strokeLinecap="round"
+                                    strokeDasharray={`${(animatedFill / 100) * 314} 314`}
+                                    transform="rotate(-90 60 75)"
+                                    filter="url(#glowEffect)"
+                                    opacity="0.5"
+                                    style={{ transition: isAnimating ? 'none' : 'stroke-dasharray 0.5s ease-out' }}
+                                />
+
+                                {/* Center content */}
+                                <text x="60" y="70" textAnchor="middle" fontSize="22" fontWeight="bold" fill="#16a34a">
+                                    {completionPercent}%
+                                </text>
+                                <text x="60" y="88" textAnchor="middle" fontSize="10" fill="#6b7280">
+                                    of goal
+                                </text>
+
+                                {/* Animated walking path at bottom */}
+                                <g transform="translate(10, 135)">
+                                    {/* Path line */}
+                                    <line x1="0" y1="10" x2="100" y2="10" stroke="#dcfce7" strokeWidth="4" strokeLinecap="round" />
+                                    <line
+                                        x1="0"
+                                        y1="10"
+                                        x2={animatedFill}
+                                        y2="10"
+                                        stroke="url(#pathGradient)"
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                        style={{ transition: isAnimating ? 'none' : 'all 0.5s ease-out' }}
+                                    />
+
+                                    {/* Walking figure dot */}
+                                    <circle
+                                        cx={Math.min(animatedFill, 100)}
+                                        cy="10"
+                                        r="6"
+                                        fill="#22c55e"
+                                        style={{ transition: isAnimating ? 'none' : 'cx 0.5s ease-out' }}
+                                    >
+                                        <animate attributeName="r" values="6;7;6" dur="1s" repeatCount="indefinite" />
+                                    </circle>
+
+                                    {/* Footprint markers on path */}
+                                    {[20, 40, 60, 80].map((pos, i) => (
+                                        <text
+                                            key={i}
+                                            x={pos}
+                                            y="10"
+                                            textAnchor="middle"
+                                            fontSize="8"
+                                            opacity={animatedFill >= pos ? "0.8" : "0.2"}
+                                            style={{ transition: 'opacity 0.3s ease-out' }}
+                                        >
+                                            👣
+                                        </text>
+                                    ))}
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Assigned Steps Section */}
+                {stepsData.assignedSteps && stepsData.assignedSteps.amount > 0 && (
+                    <div className={`rounded-3xl p-5 shadow-sm ${stepsData.assignedSteps.isCompleted
+                        ? 'bg-green-50 border-2 border-green-200'
+                        : 'bg-green-50 border-2 border-green-200'
+                        }`}>
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-semibold text-gray-600 mb-1">
+                                    Today's Steps Goal
+                                </p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {stepsData.assignedSteps.amount.toLocaleString()} steps
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Assigned: {format(new Date(stepsData.assignedSteps.assignedAt), 'MMM d, h:mm a')}
+                                </p>
+                            </div>
+
+                            {stepsData.assignedSteps.isCompleted ? (
+                                <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full">
+                                    <Check className="w-5 h-5" />
+                                    <span className="font-semibold">Completed</span>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={handleCompleteSteps}
+                                    disabled={completingTask || stepsData.totalToday < stepsData.assignedSteps.amount}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all ${stepsData.totalToday >= stepsData.assignedSteps.amount
+                                        ? 'bg-green-500 text-white hover:bg-green-600'
+                                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                >
+                                    {completingTask ? (
+                                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                                    ) : (
+                                        <Check className="w-5 h-5" />
+                                    )}
+                                    <span>Done</span>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="mt-4">
+                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Progress</span>
+                                <span>{Math.min(Math.round((stepsData.totalToday / stepsData.assignedSteps.amount) * 100), 100)}%</span>
+                            </div>
+                            <div className="h-2 bg-white rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${stepsData.assignedSteps.isCompleted ? 'bg-green-500' : 'bg-green-500'
+                                        }`}
+                                    style={{ width: `${Math.min((stepsData.totalToday / stepsData.assignedSteps.amount) * 100, 100)}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Quick Add Section */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold text-gray-900">Quick Add</h2>
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="text-green-500 font-semibold text-sm"
+                        >
+                            Custom steps
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                        {/* 1000 steps */}
+                        <button
+                            onClick={() => handleQuickAdd(1000)}
+                            disabled={saving}
+                            className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
+                        >
+                            <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-xl">
+                                👣
+                            </div>
+                            <span className="font-semibold text-gray-900 text-sm">1K</span>
+                        </button>
+
+                        {/* 5000 steps */}
+                        <button
+                            onClick={() => handleQuickAdd(5000)}
+                            disabled={saving}
+                            className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
+                        >
+                            <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-xl">
+                                👣
+                            </div>
+                            <span className="font-semibold text-gray-900 text-sm">5K</span>
+                        </button>
+
+                        {/* 10000 steps */}
+                        <button
+                            onClick={() => handleQuickAdd(10000)}
+                            disabled={saving}
+                            className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
+                        >
+                            <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-xl">
+                                👣
+                            </div>
+                            <span className="font-semibold text-gray-900 text-sm">10K</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Today's History */}
+                <div>
+                    <h2 className="text-lg font-bold text-gray-900 mb-4">Today's Steps Log</h2>
+
+                    {stepsData.entries.length === 0 ? (
+                        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+                            <Footprints className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <p className="text-gray-500">No steps logged yet today</p>
+                            <p className="text-sm text-gray-400 mt-1">Start tracking your steps!</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {stepsData.entries.map((entry) => (
+                                <div
+                                    key={entry._id}
+                                    className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-full flex items-center justify-center bg-green-50 text-xl">
+                                            👣
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-gray-900">Steps</p>
+                                            <p className="text-sm text-gray-500">
+                                                {entry.steps.toLocaleString()} steps
+                                                {entry.distance && ` • ${entry.distance} km`}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <p className="font-semibold text-gray-900">{entry.steps.toLocaleString()}</p>
+                                            <p className="text-xs text-gray-400">{entry.time}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteEntry(entry._id)}
+                                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Custom Steps Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
+                    <div className="bg-white rounded-t-3xl w-full max-w-lg p-6 animate-slide-up">
+                        {/* Handle */}
+                        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6" />
+
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-gray-900">Add Steps</h3>
+                            <button onClick={() => setShowAddModal(false)} className="p-2">
+                                <X className="w-6 h-6 text-gray-500" />
+                            </button>
+                        </div>
+
+                        <p className="text-center text-gray-500 text-sm mb-4">ENTER STEPS</p>
+
+                        {/* Steps Selector */}
+                        <div className="flex items-center justify-center gap-6 mb-6">
+                            <button
+                                onClick={() => setCustomSteps(Math.max(0, customSteps - 500))}
+                                className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                            >
+                                <Minus className="w-5 h-5 text-gray-600" />
+                            </button>
+
+                            <div className="text-center">
+                                <input
+                                    type="number"
+                                    value={customSteps}
+                                    onChange={(e) => setCustomSteps(Math.max(0, parseInt(e.target.value) || 0))}
+                                    className="text-5xl font-bold text-gray-900 w-40 text-center bg-transparent border-none outline-none"
+                                />
+                                <p className="text-gray-500">steps</p>
+                            </div>
+
+                            <button
+                                onClick={() => setCustomSteps(customSteps + 500)}
+                                className="w-14 h-14 rounded-2xl border-2 border-green-500 flex items-center justify-center hover:bg-green-50 transition-colors"
+                            >
+                                <Plus className="w-5 h-5 text-green-500" />
+                            </button>
+                        </div>
+
+                        {/* Quick Step Buttons */}
+                        <div className="flex justify-center gap-3 mb-6 flex-wrap">
+                            {[1000, 2500, 5000].map((amount) => (
+                                <button
+                                    key={amount}
+                                    onClick={() => setCustomSteps(customSteps + amount)}
+                                    className="px-5 py-2 bg-gray-100 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-200 transition-colors"
+                                >
+                                    +{(amount / 1000).toFixed(1)}K
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Add Button */}
+                        <button
+                            onClick={handleCustomAdd}
+                            disabled={saving || customSteps <= 0}
+                            className="w-full py-4 bg-green-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-green-600 transition-colors disabled:opacity-50"
+                        >
+                            <Footprints className="w-5 h-5" />
+                            {saving ? 'Adding...' : 'Add Steps'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Bottom Navigation */}
+            <BottomNavBar />
+
+            <style jsx>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
+        </div>
+    );
+}

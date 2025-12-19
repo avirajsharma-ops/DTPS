@@ -5,19 +5,21 @@ import dbConnect from "@/lib/db/connection";
 import JournalTracking from "@/lib/db/models/JournalTracking";
 import User from "@/lib/db/models/User";
 
-// GET - Get today's assigned water status for a client
+// GET - Get assigned water status for a client
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { clientId } = await params;
+    const { searchParams } = new URL(request.url);
+    const dateParam = searchParams.get('date');
 
     await dbConnect();
 
@@ -33,16 +35,16 @@ export async function GET(
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    // Get today's date range
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get date range
+    const targetDate = dateParam ? new Date(dateParam) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
 
-    // Find today's journal
+    // Find journal for the date
     const journal = await JournalTracking.findOne({
       client: clientId,
-      date: { $gte: today, $lt: tomorrow }
+      date: { $gte: targetDate, $lt: nextDay }
     });
 
     // Calculate total water intake
@@ -67,7 +69,8 @@ export async function GET(
       } : null,
       totalWaterIntake,
       clientName: client.name,
-      date: today.toISOString()
+      date: targetDate.toISOString(),
+      lastUpdated: journal?.updatedAt || null
     });
   } catch (error) {
     console.error("Error fetching assigned water:", error);
@@ -82,7 +85,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -104,28 +107,28 @@ export async function POST(
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    const { amount } = data;
+    const { amount, date: dateParam } = data;
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "Invalid water amount" }, { status: 400 });
     }
 
-    // Get today's date range
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get date range
+    const targetDate = dateParam ? new Date(dateParam) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
 
-    // Find or create today's journal entry
+    // Find or create journal entry
     let journal = await JournalTracking.findOne({
       client: clientId,
-      date: { $gte: today, $lt: tomorrow }
+      date: { $gte: targetDate, $lt: nextDay }
     });
 
     if (!journal) {
       journal = new JournalTracking({
         client: clientId,
-        date: today,
+        date: targetDate,
         water: [],
         activities: [],
         steps: [],
@@ -176,12 +179,14 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { clientId } = await params;
+    const { searchParams } = new URL(request.url);
+    const dateParam = searchParams.get('date');
 
     await dbConnect();
 
@@ -191,17 +196,17 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Get today's date range
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get date range
+    const targetDate = dateParam ? new Date(dateParam) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
 
-    // Find today's journal and remove assigned water
+    // Find journal and remove assigned water
     const result = await JournalTracking.findOneAndUpdate(
       {
         client: clientId,
-        date: { $gte: today, $lt: tomorrow }
+        date: { $gte: targetDate, $lt: nextDay }
       },
       {
         $unset: { assignedWater: 1 }
@@ -209,7 +214,7 @@ export async function DELETE(
       { new: true }
     );
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: "Assigned water removed successfully"
     });

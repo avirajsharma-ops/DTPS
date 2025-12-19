@@ -7,17 +7,19 @@ import User from "@/lib/db/models/User";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await dbConnect();
 
-    const user = await User.findById(session.user.id).select(
-      "name firstName lastName email phone dateOfBirth gender address city state pincode profileImage avatar createdAt heightCm weightKg targetWeightKg activityLevel generalGoal dietType alternativeEmail alternativePhone anniversary source referralSource"
-    );
-    
+    const user = await User.findById(session.user.id)
+      .select(
+        "name firstName lastName email phone dateOfBirth gender address city state pincode profileImage avatar createdAt heightCm weightKg targetWeightKg activityLevel generalGoal dietType alternativeEmail alternativePhone anniversary source referralSource assignedDietitian"
+      )
+      .populate('assignedDietitian', 'firstName lastName email phone');
+
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -32,7 +34,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -42,12 +44,12 @@ export async function PUT(request: Request) {
 
     // Only allow certain fields to be updated
     const allowedFields = [
-      "name", "firstName", "lastName", "phone", "dateOfBirth", "gender", 
+      "name", "firstName", "lastName", "phone", "dateOfBirth", "gender",
       "address", "city", "state", "pincode", "profileImage", "avatar",
       "heightCm", "weightKg", "targetWeightKg", "activityLevel", "generalGoal", "dietType",
       "alternativeEmail", "alternativePhone", "anniversary", "source", "referralSource"
     ];
-    
+
     const updateData: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (data[field] !== undefined) {

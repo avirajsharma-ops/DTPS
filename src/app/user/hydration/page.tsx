@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { 
+import {
   ArrowLeft,
   Calendar,
   Droplet,
@@ -14,14 +14,11 @@ import {
   Minus,
   X,
   Trash2,
-  Home,
-  Utensils,
-  BarChart3,
-  User,
   Check,
   GlassWater
 } from 'lucide-react';
 import { toast } from 'sonner';
+import BottomNavBar from '@/components/client/BottomNavBar';
 
 interface WaterEntry {
   _id: string;
@@ -45,6 +42,7 @@ interface HydrationData {
   entries: WaterEntry[];
   assignedWater: AssignedWater | null;
   date: string;
+  dataHash?: string; // For change detection
 }
 
 export default function HydrationPage() {
@@ -66,6 +64,7 @@ export default function HydrationPage() {
   const [completingTask, setCompletingTask] = useState(false);
   const [animatedFill, setAnimatedFill] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [lastDataHash, setLastDataHash] = useState<string | null>(null); // For change detection
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -73,16 +72,24 @@ export default function HydrationPage() {
     }
   }, [status, router]);
 
-  const fetchHydrationData = useCallback(async (showLoader = true) => {
+  const fetchHydrationData = useCallback(async (showLoader = true, checkForChanges = false) => {
     try {
       if (showLoader) setLoading(true);
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const response = await fetch(`/api/client/hydration?date=${dateStr}`);
       if (response.ok) {
         const data = await response.json();
+
+        // If checking for changes, only update if dataHash is different
+        if (checkForChanges && lastDataHash && data.dataHash === lastDataHash) {
+          // No changes, skip update
+          return;
+        }
+
         const prevTotal = hydrationData.totalToday;
         setHydrationData(data);
-        
+        setLastDataHash(data.dataHash || null);
+
         // Animate water fill when total changes
         if (data.totalToday !== prevTotal && !showLoader) {
           animateWaterFill(prevTotal, data.totalToday, data.goal);
@@ -93,7 +100,7 @@ export default function HydrationPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, hydrationData.totalToday]);
+  }, [selectedDate, hydrationData.totalToday, lastDataHash]);
 
   // Animate water fill slowly
   const animateWaterFill = (from: number, to: number, goal: number) => {
@@ -104,14 +111,14 @@ export default function HydrationPage() {
     const steps = 60;
     const stepDuration = duration / steps;
     const increment = (endPercent - startPercent) / steps;
-    
+
     let currentStep = 0;
     setAnimatedFill(startPercent);
-    
+
     const interval = setInterval(() => {
       currentStep++;
       setAnimatedFill(startPercent + (increment * currentStep));
-      
+
       if (currentStep >= steps) {
         clearInterval(interval);
         setAnimatedFill(endPercent);
@@ -122,13 +129,13 @@ export default function HydrationPage() {
 
   useEffect(() => {
     if (session?.user) {
-      fetchHydrationData(true);
-      
-      // Auto-refresh every 5 seconds without loading spinner
+      fetchHydrationData(true, false);
+
+      // Check for changes every 5 seconds - only reload if data changed
       const interval = setInterval(() => {
-        fetchHydrationData(false);
+        fetchHydrationData(false, true); // checkForChanges = true
       }, 5000);
-      
+
       return () => clearInterval(interval);
     }
   }, [session, selectedDate]);
@@ -155,12 +162,13 @@ export default function HydrationPage() {
       if (response.ok) {
         const data = await response.json();
         toast.success(`Added ${amount}ml of ${type}`);
-        
+
         // Fetch new data and animate
         const newResponse = await fetch(`/api/client/hydration?date=${dateStr}`);
         if (newResponse.ok) {
           const newData = await newResponse.json();
           setHydrationData(newData);
+          setLastDataHash(newData.dataHash || null); // Update hash after direct action
           // Trigger animation
           animateWaterFill(prevTotal, newData.totalToday, newData.goal);
         }
@@ -199,6 +207,7 @@ export default function HydrationPage() {
         if (newResponse.ok) {
           const newData = await newResponse.json();
           setHydrationData(newData);
+          setLastDataHash(newData.dataHash || null); // Update hash after direct action
           animateWaterFill(prevTotal, newData.totalToday, newData.goal);
         }
       } else {
@@ -257,11 +266,14 @@ export default function HydrationPage() {
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </Link>
           <h1 className="text-lg font-bold text-gray-900">Hydration</h1>
-          <button 
+          <button
             onClick={() => setShowDatePicker(!showDatePicker)}
-            className="p-2 -mr-2"
+            className="flex items-center gap-1 p-2 -mr-2 bg-blue-50 rounded-lg"
           >
-            <Calendar className="w-6 h-6 text-gray-700" />
+            <Calendar className="w-5 h-5 text-blue-600" />
+            <span className="text-sm font-medium text-blue-600">
+              {format(selectedDate, 'dd MMM')}
+            </span>
           </button>
         </div>
 
@@ -298,11 +310,11 @@ export default function HydrationPage() {
                 <span className="text-2xl text-gray-400 ml-1">ml</span>
               </div>
               <p className="text-gray-500 mt-1">Goal: {hydrationData.goal.toLocaleString()} ml</p>
-              
+
               {/* Completion Badge */}
               <div className="mt-4 inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <span className="font-semibold">{completionPercent}% Complete</span>
               </div>
@@ -333,7 +345,7 @@ export default function HydrationPage() {
                     </stop>
                   </linearGradient>
                 </defs>
-                
+
                 {/* Glass outline */}
                 <path
                   d="M20 10 L25 150 C25 155 95 155 95 150 L100 10 C100 5 20 5 20 10"
@@ -348,7 +360,7 @@ export default function HydrationPage() {
                   stroke="#e5e7eb"
                   strokeWidth="3"
                 />
-                
+
                 <g clipPath="url(#glassClip)">
                   {/* Water fill - smooth animated transition */}
                   <rect
@@ -359,7 +371,7 @@ export default function HydrationPage() {
                     fill="url(#waterGradient)"
                     style={{ transition: isAnimating ? 'none' : 'all 0.5s ease-out' }}
                   />
-                  
+
                   {/* Animated wave effect on water surface using SVG animate */}
                   <ellipse
                     cx="60"
@@ -383,7 +395,7 @@ export default function HydrationPage() {
                     <animate attributeName="rx" values="35;37;35" dur="2.5s" repeatCount="indefinite" />
                   </ellipse>
                 </g>
-                
+
                 {/* Animated Bubbles using SVG animate */}
                 {animatedFill > 10 && (
                   <>
@@ -409,7 +421,7 @@ export default function HydrationPage() {
                     </circle>
                   </>
                 )}
-                
+
                 {/* Glass highlight/shine */}
                 <path
                   d="M30 20 L32 120"
@@ -425,11 +437,10 @@ export default function HydrationPage() {
 
         {/* Assigned Water Section - Today's Goal */}
         {hydrationData.assignedWater && hydrationData.assignedWater.amount > 0 && (
-          <div className={`rounded-3xl p-5 shadow-sm ${
-            hydrationData.assignedWater.isCompleted 
-              ? 'bg-green-50 border-2 border-green-200' 
-              : 'bg-blue-50 border-2 border-blue-200'
-          }`}>
+          <div className={`rounded-3xl p-5 shadow-sm ${hydrationData.assignedWater.isCompleted
+            ? 'bg-green-50 border-2 border-green-200'
+            : 'bg-blue-50 border-2 border-blue-200'
+            }`}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-semibold text-gray-600 mb-1">
@@ -442,7 +453,7 @@ export default function HydrationPage() {
                   Assigned: {format(new Date(hydrationData.assignedWater.assignedAt), 'MMM d, h:mm a')}
                 </p>
               </div>
-              
+
               {hydrationData.assignedWater.isCompleted ? (
                 <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full">
                   <Check className="w-5 h-5" />
@@ -452,11 +463,10 @@ export default function HydrationPage() {
                 <button
                   onClick={handleCompleteAssignedWater}
                   disabled={completingTask || hydrationData.totalToday < hydrationData.assignedWater.amount}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all ${
-                    hydrationData.totalToday >= hydrationData.assignedWater.amount
-                      ? 'bg-blue-500 text-white hover:bg-blue-600'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  }`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all ${hydrationData.totalToday >= hydrationData.assignedWater.amount
+                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
                 >
                   {completingTask ? (
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
@@ -467,7 +477,7 @@ export default function HydrationPage() {
                 </button>
               )}
             </div>
-            
+
             {/* Progress bar */}
             <div className="mt-4">
               <div className="flex justify-between text-xs text-gray-500 mb-1">
@@ -475,10 +485,9 @@ export default function HydrationPage() {
                 <span>{Math.min(Math.round((hydrationData.totalToday / hydrationData.assignedWater.amount) * 100), 100)}%</span>
               </div>
               <div className="h-2 bg-white rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    hydrationData.assignedWater.isCompleted ? 'bg-green-500' : 'bg-blue-500'
-                  }`}
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${hydrationData.assignedWater.isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                    }`}
                   style={{ width: `${Math.min((hydrationData.totalToday / hydrationData.assignedWater.amount) * 100, 100)}%` }}
                 />
               </div>
@@ -490,14 +499,14 @@ export default function HydrationPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Quick Add</h2>
-            <button 
+            <button
               onClick={() => setShowAddModal(true)}
               className="text-blue-500 font-semibold text-sm"
             >
               Custom amount
             </button>
           </div>
-          
+
           <div className="grid grid-cols-3 gap-3">
             {/* 250ml */}
             <button
@@ -519,7 +528,7 @@ export default function HydrationPage() {
             >
               <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
                 <svg className="w-6 h-6 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6 2v6h.01L6 8.01V12h10V8.01L16 8V2H6zm10 16h-4v2.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V18h1V8H8v10h1v2.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V18h4v-4h-4v-2h4v-2h-4V8h4v2h-4v2h4v4z"/>
+                  <path d="M6 2v6h.01L6 8.01V12h10V8.01L16 8V2H6zm10 16h-4v2.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V18h1V8H8v10h1v2.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V18h4v-4h-4v-2h4v-2h-4V8h4v2h-4v2h4v4z" />
                 </svg>
               </div>
               <span className="font-semibold text-gray-900">+500 ml</span>
@@ -533,7 +542,7 @@ export default function HydrationPage() {
             >
               <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
                 <svg className="w-6 h-6 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M5 2v3H3v2h2v2H3v2h2v10a1 1 0 001 1h12a1 1 0 001-1V11h2V9h-2V7h2V5h-2V2H5zm2 2h10v16H7V4z"/>
+                  <path d="M5 2v3H3v2h2v2H3v2h2v10a1 1 0 001 1h12a1 1 0 001-1V11h2V9h-2V7h2V5h-2V2H5zm2 2h10v16H7V4z" />
                 </svg>
               </div>
               <span className="font-semibold text-gray-900">+750 ml</span>
@@ -544,7 +553,7 @@ export default function HydrationPage() {
         {/* Today's History */}
         <div>
           <h2 className="text-lg font-bold text-gray-900 mb-4">Today's History</h2>
-          
+
           {hydrationData.entries.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
               <Droplet className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -554,14 +563,13 @@ export default function HydrationPage() {
           ) : (
             <div className="space-y-3">
               {hydrationData.entries.map((entry) => (
-                <div 
+                <div
                   key={entry._id}
                   className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                      entry.type === 'coffee' ? 'bg-amber-50' : 'bg-blue-50'
-                    }`}>
+                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${entry.type === 'coffee' ? 'bg-amber-50' : 'bg-blue-50'
+                      }`}>
                       {entry.type === 'coffee' ? (
                         <Coffee className="w-6 h-6 text-amber-600" />
                       ) : (
@@ -573,7 +581,7 @@ export default function HydrationPage() {
                       <p className="text-sm text-gray-500">Hydration</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">{entry.amount} ml</p>
@@ -599,7 +607,7 @@ export default function HydrationPage() {
           <div className="bg-white rounded-t-3xl w-full max-w-lg p-6 animate-slide-up">
             {/* Handle */}
             <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6" />
-            
+
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">Add Water</h3>
               <button onClick={() => setShowAddModal(false)} className="p-2">
@@ -617,7 +625,7 @@ export default function HydrationPage() {
               >
                 <Minus className="w-5 h-5 text-gray-600" />
               </button>
-              
+
               <div className="text-center">
                 <input
                   type="number"
@@ -663,32 +671,7 @@ export default function HydrationPage() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 z-40">
-        <div className="flex items-center justify-between max-w-md mx-auto relative">
-          <Link href="/user" className="flex flex-col items-center gap-1 min-w-[48px]">
-            <Home className="h-6 w-6 text-gray-400" />
-            <span className="text-xs text-gray-400">Dashboard</span>
-          </Link>
-          <Link href="/user/plan" className="flex flex-col items-center gap-1 min-w-[48px]">
-            <Utensils className="h-6 w-6 text-gray-400" />
-            <span className="text-xs text-gray-400">Log</span>
-          </Link>
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="h-14 w-14 rounded-full bg-blue-500 flex items-center justify-center -mt-8 shadow-lg hover:bg-blue-600 active:scale-95 transition-all"
-          >
-            <Droplet className="h-7 w-7 text-white" fill="white" />
-          </button>
-          <Link href="/user/progress" className="flex flex-col items-center gap-1 min-w-[48px]">
-            <BarChart3 className="h-6 w-6 text-gray-400" />
-            <span className="text-xs text-gray-400">Progress</span>
-          </Link>
-          <Link href="/user/profile" className="flex flex-col items-center gap-1 min-w-[48px]">
-            <User className="h-6 w-6 text-gray-400" />
-            <span className="text-xs text-gray-400">Profile</span>
-          </Link>
-        </div>
-      </div>
+      <BottomNavBar />
 
       <style jsx>{`
         @keyframes slide-up {

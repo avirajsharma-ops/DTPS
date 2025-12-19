@@ -8,10 +8,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
-import { 
-  Droplet, 
-  Moon, 
-  Activity, 
+import {
+  Droplet,
+  Moon,
+  Activity,
   Utensils,
   Bed,
   User,
@@ -64,7 +64,7 @@ export default function UserHomePage() {
   useEffect(() => {
     const checkOnboarding = async () => {
       if (status === 'loading') return;
-      
+
       try {
         const response = await fetch('/api/client/onboarding');
         if (response.ok) {
@@ -124,7 +124,7 @@ export default function UserHomePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Hamburger Menu */}
-            <button 
+            <button
               onClick={() => setSidebarOpen(true)}
               className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
@@ -142,10 +142,10 @@ export default function UserHomePage() {
           <Link href="/user/profile">
             <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden border-2 border-orange-200">
               {session?.user?.avatar ? (
-                <img 
-                  src={session.user.avatar} 
-                  alt="Profile" 
-                
+                <img
+                  src={session.user.avatar}
+                  alt="Profile"
+
                   className=" w-full h-full rounded-full"
                 />
               ) : (
@@ -171,7 +171,7 @@ export default function UserHomePage() {
                 <span className="text-green-600 text-sm">🏁 Goal: {data.caloriesGoal.toLocaleString()}</span>
               </div>
             </div>
-            
+
             {/* Circular Progress */}
             <div className="relative h-24 w-24">
               <svg className="h-24 w-24 transform -rotate-90">
@@ -236,7 +236,7 @@ export default function UserHomePage() {
 
         {/* Swipeable Image Cards - 1 at a time with 2 images per card */}
         <div className="relative">
-          <div 
+          <div
             ref={cardsContainerRef}
             onScroll={handleCardsScroll}
             className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide"
@@ -261,7 +261,7 @@ export default function UserHomePage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Card 2 - Fitness Goals */}
             <div className="min-w-full snap-start bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-5 text-white">
               <h4 className="font-bold text-lg mb-4">Fitness Goals</h4>
@@ -282,7 +282,7 @@ export default function UserHomePage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Card 3 - Wellness */}
             <div className="min-w-full snap-start bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl p-5 text-white">
               <h4 className="font-bold text-lg mb-4">Wellness & Rest</h4>
@@ -307,11 +307,10 @@ export default function UserHomePage() {
           {/* Swipe indicator dots */}
           <div className="flex justify-center gap-1.5 mt-3">
             {[0, 1, 2].map((index) => (
-              <span 
+              <span
                 key={index}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  activeCard === index ? 'bg-green-500' : 'bg-gray-300'
-                }`}
+                className={`w-2 h-2 rounded-full transition-colors ${activeCard === index ? 'bg-green-500' : 'bg-gray-300'
+                  }`}
               />
             ))}
           </div>
@@ -336,7 +335,7 @@ export default function UserHomePage() {
         {/* Water & Sleep Row */}
         <div className="grid grid-cols-2 gap-4">
           {/* Water Card */}
-          <Link href="/user/hydration" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
+          <Link href="" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Water</p>
               <span className="text-green-500 text-sm font-semibold">{Math.round(waterPercent)}%</span>
@@ -344,10 +343,10 @@ export default function UserHomePage() {
             <div className="flex items-center justify-center mb-3">
               <div className="relative">
                 <GlassWater className="h-16 w-16 text-blue-100" fill="#dbeafe" />
-                <div 
+                <div
                   className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-blue-400 rounded-b-full transition-all"
-                  style={{ 
-                    width: '50%', 
+                  style={{
+                    width: '50%',
                     height: `${waterPercent * 0.6}%`,
                     maxHeight: '60%'
                   }}
@@ -392,11 +391,11 @@ export default function UserHomePage() {
               <div className="relative h-16 w-16">
                 <svg className="h-16 w-16 transform -rotate-90">
                   <circle cx="32" cy="32" r="28" stroke="#fed7aa" strokeWidth="6" fill="none" />
-                  <circle 
-                    cx="32" cy="32" r="28" 
-                    stroke="#f97316" 
-                    strokeWidth="6" 
-                    fill="none" 
+                  <circle
+                    cx="32" cy="32" r="28"
+                    stroke="#f97316"
+                    strokeWidth="6"
+                    fill="none"
                     strokeLinecap="round"
                     strokeDasharray={`${(data.activity.minutes / 60) * 176} 176`}
                   />
@@ -422,11 +421,11 @@ export default function UserHomePage() {
               <div className="relative h-16 w-16">
                 <svg className="h-16 w-16 transform -rotate-90">
                   <circle cx="32" cy="32" r="28" stroke="#d1fae5" strokeWidth="6" fill="none" />
-                  <circle 
-                    cx="32" cy="32" r="28" 
-                    stroke="#10b981" 
-                    strokeWidth="6" 
-                    fill="none" 
+                  <circle
+                    cx="32" cy="32" r="28"
+                    stroke="#10b981"
+                    strokeWidth="6"
+                    fill="none"
                     strokeLinecap="round"
                     strokeDasharray={`${mealsPercent * 1.76} 176`}
                   />
@@ -445,68 +444,68 @@ export default function UserHomePage() {
 
         {/* Quick Log Section */}
 
-<div>
-  <h2 className="text-lg font-bold text-gray-900 mb-4">
-    Quick Log
-  </h2>
+        <div>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            Quick Log
+          </h2>
 
-  {/* Scroll Container */}
-  <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
-    
-    {/* Water */}
-    <Link href="/user/hydration" className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
-      <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
-        <GlassWater className="h-8 w-8 text-blue-600" />
-      </div>
-      <span className="text-base font-semibold text-gray-900">
-        Water
-      </span>
-      <span className="text-sm text-gray-400">
-        +250 ml
-      </span>
-    </Link>
+          {/* Scroll Container */}
+          <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
 
-    {/* Exercise */}
-    <button className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
-      <div className="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center">
-        <Activity className="h-8 w-8 text-orange-500" />
-      </div>
-      <span className="text-base font-semibold text-gray-900">
-        Exercise
-      </span>
-      <span className="text-sm text-gray-400">
-        Log Activity
-      </span>
-    </button>
+            {/* Water */}
+            <Link href="/user/hydration" className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
+              <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                <GlassWater className="h-8 w-8 text-blue-600" />
+              </div>
+              <span className="text-base font-semibold text-gray-900">
+                Water
+              </span>
+              <span className="text-sm text-gray-400">
+                +250 ml
+              </span>
+            </Link>
 
-    {/* Sleep */}
-    <button className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
-      <div className="h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center">
-        <Moon className="h-8 w-8 text-indigo-500" />
-      </div>
-      <span className="text-base font-semibold text-gray-900">
-        Sleep
-      </span>
-      <span className="text-sm text-gray-400">
-        Duration
-      </span>
-    </button>
+            {/* Exercise */}
+            <Link href="/user/activity" className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
+              <div className="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center">
+                <Activity className="h-8 w-8 text-orange-500" />
+              </div>
+              <span className="text-base font-semibold text-gray-900">
+                Exercise
+              </span>
+              <span className="text-sm text-gray-400">
+                Log Activity
+              </span>
+            </Link>
 
-    {/* Steps */}
-    <button className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
-      <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-        <Footprints className="h-8 w-8 text-green-500" />
-      </div>
-      <span className="text-base font-semibold text-gray-900">
-        Steps
-      </span>
-      <span className="text-sm text-gray-400">
-        {data.steps.current.toLocaleString()}
-      </span>
-    </button>
+            {/* Sleep */}
+            <Link href="/user/sleep" className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
+              <div className="h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center">
+                <Moon className="h-8 w-8 text-indigo-500" />
+              </div>
+              <span className="text-base font-semibold text-gray-900">
+                Sleep
+              </span>
+              <span className="text-sm text-gray-400">
+                Duration
+              </span>
+            </Link>
 
-  </div>
-</div>
+            {/* Steps */}
+            <Link href="/user/steps" className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
+              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+                <Footprints className="h-8 w-8 text-green-500" />
+              </div>
+              <span className="text-base font-semibold text-gray-900">
+                Steps
+              </span>
+              <span className="text-sm text-gray-400">
+                {data.steps.current.toLocaleString()}
+              </span>
+            </Link>
+
+          </div>
+        </div>
 
         {/* Blogs Section */}
         <div className="">

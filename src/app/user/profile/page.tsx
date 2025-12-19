@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { 
-  User, 
-  Heart, 
-  Activity, 
-  Utensils, 
-  Edit3, 
-  Phone, 
-  Mail, 
-  Calendar, 
+import {
+  User,
+  Heart,
+  Activity,
+  Utensils,
+  Edit3,
+  Phone,
+  Mail,
+  Calendar,
   MapPin,
   Droplets,
   Scale,
@@ -28,10 +28,11 @@ import {
   Stethoscope,
   ArrowLeft,
   Settings,
-  Camera,
   ChevronRight,
   Gift,
-  Users
+  Users,
+  Eye,
+  UserCheck
 } from "lucide-react";
 import Link from "next/link";
 import BottomNavBar from '@/components/client/BottomNavBar';
@@ -60,6 +61,13 @@ interface ProfileData {
   anniversary: string;
   source: string;
   referralSource: string;
+  assignedDietitian?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+  };
 }
 
 interface MedicalData {
@@ -73,7 +81,7 @@ interface MedicalData {
   menstrualCycle: string;
   bloodFlow: string;
   diseaseHistory: string;
-  reports: Array<{ name: string; url: string; _id?: string }>;
+  reports: Array<{ name: string; url: string; _id?: string; category?: string; createdAt?: string }>;
 }
 
 interface LifestyleData {
@@ -127,7 +135,7 @@ export default function ProfilePage() {
     const fetchAllData = async () => {
       try {
         setLoading(true);
-        
+
         const [profileRes, medicalRes, lifestyleRes, recallRes] = await Promise.all([
           fetch("/api/client/profile"),
           fetch("/api/client/medical-info"),
@@ -240,7 +248,7 @@ export default function ProfilePage() {
             </Link>
             <h1 className="text-lg font-bold text-gray-900">My Profile</h1>
           </div>
-          <Link 
+          <Link
             href="/user/settings"
             className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
           >
@@ -257,25 +265,14 @@ export default function ProfilePage() {
             <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
           </div>
-          
+
           <div className="relative flex items-center gap-4">
             <div className="relative">
-              {profileData?.profileImage ? (
-                <img 
-                  src={profileData.profileImage} 
-                  alt="Profile" 
-                  className="w-20 h-20 rounded-2xl border-4 border-white/30 object-cover shadow-lg"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border-4 border-white/30 shadow-lg">
-                  <span className="text-2xl font-bold text-white">
-                    {getInitials(profileData?.firstName && profileData?.lastName ? `${profileData.firstName} ${profileData.lastName}` : profileData?.name || session?.user?.name || "User")}
-                  </span>
-                </div>
-              )}
-              <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Camera className="w-4 h-4 text-white" />
-              </button>
+              <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border-4 border-white/30 shadow-lg">
+                <span className="text-2xl font-bold text-white">
+                  {getInitials(profileData?.firstName && profileData?.lastName ? `${profileData.firstName} ${profileData.lastName}` : profileData?.name || session?.user?.name || "User")}
+                </span>
+              </div>
             </div>
             <div className="flex-1">
               <h2 className="text-xl font-bold text-white">
@@ -349,7 +346,7 @@ export default function ProfilePage() {
         {activeTab === "personal" && (
           <div className="space-y-4">
             <div className="flex justify-end">
-              <Link 
+              <Link
                 href="/user/personal-info"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
               >
@@ -396,7 +393,7 @@ export default function ProfilePage() {
         {activeTab === "medical" && (
           <div className="space-y-4">
             <div className="flex justify-end">
-              <Link 
+              <Link
                 href="/user/medical-info"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
               >
@@ -406,34 +403,34 @@ export default function ProfilePage() {
 
             <InfoCard title="Blood & Health" icon={Droplets} color="red">
               <InfoRow icon={Droplets} label="Blood Group" value={medicalData?.bloodGroup || "Not set"} />
-              <TagsRow 
-                icon={AlertCircle} 
-                label="Medical Conditions" 
-                values={medicalData?.medicalConditions || []} 
+              <TagsRow
+                icon={AlertCircle}
+                label="Medical Conditions"
+                values={medicalData?.medicalConditions || []}
                 emptyText="No conditions listed"
                 colorClass="bg-red-100 text-red-600"
               />
-              <TagsRow 
-                icon={AlertCircle} 
-                label="Allergies" 
-                values={medicalData?.allergies || []} 
+              <TagsRow
+                icon={AlertCircle}
+                label="Allergies"
+                values={medicalData?.allergies || []}
                 emptyText="No allergies listed"
                 colorClass="bg-orange-100 text-orange-600"
               />
             </InfoCard>
 
             <InfoCard title="Dietary Restrictions" icon={Utensils} color="orange">
-              <TagsRow 
-                icon={Utensils} 
-                label="Restrictions" 
-                values={medicalData?.dietaryRestrictions || []} 
+              <TagsRow
+                icon={Utensils}
+                label="Restrictions"
+                values={medicalData?.dietaryRestrictions || []}
                 emptyText="No restrictions"
                 colorClass="bg-yellow-100 text-yellow-700"
               />
-              <TagsRow 
-                icon={Stethoscope} 
-                label="Gut Issues" 
-                values={medicalData?.gutIssues || []} 
+              <TagsRow
+                icon={Stethoscope}
+                label="Gut Issues"
+                values={medicalData?.gutIssues || []}
                 emptyText="No gut issues"
                 colorClass="bg-purple-100 text-purple-600"
               />
@@ -448,27 +445,81 @@ export default function ProfilePage() {
 
             <InfoCard title="Medical Reports" icon={FileText} color="blue">
               {medicalData?.reports && medicalData.reports.length > 0 ? (
-                <div className="space-y-2">
-                  {medicalData.reports.map((report, i) => (
-                    <a 
-                      key={i}
-                      href={report.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <span className="flex-1 text-sm font-medium text-gray-700">{report.name}</span>
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
-                    </a>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-2 px-2 text-gray-500 font-medium">Date</th>
+                        <th className="text-left py-2 px-2 text-gray-500 font-medium">Report Name</th>
+                        <th className="text-center py-2 px-2 text-gray-500 font-medium">View</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {medicalData.reports.map((report, i) => (
+                        <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-2 text-gray-600">
+                            {report.createdAt ? new Date(report.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                          </td>
+                          <td className="py-3 px-2">
+                            <span className="font-medium text-gray-700">{report.name}</span>
+                            {report.category && (
+                              <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">{report.category}</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <a
+                              href={report.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                            >
+                              <Eye className="w-4 h-4 text-blue-600" />
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 <p className="text-gray-500 text-sm">No medical reports uploaded</p>
               )}
             </InfoCard>
+
+            {/* Assigned Dietitian Section */}
+            {profileData?.assignedDietitian && (
+              <InfoCard title="Your Dietitian" icon={UserCheck} color="green">
+                <div className="bg-green-50 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <User className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800">
+                        {profileData.assignedDietitian.firstName} {profileData.assignedDietitian.lastName}
+                      </p>
+                      <p className="text-sm text-green-600">Your Assigned Dietitian</p>
+                    </div>
+                  </div>
+
+                  {profileData.assignedDietitian.phone && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <a href={`tel:${profileData.assignedDietitian.phone}`} className="text-gray-700 hover:text-green-600">
+                        {profileData.assignedDietitian.phone}
+                      </a>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3 text-sm">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <a href={`mailto:${profileData.assignedDietitian.email}`} className="text-gray-700 hover:text-green-600">
+                      {profileData.assignedDietitian.email}
+                    </a>
+                  </div>
+                </div>
+              </InfoCard>
+            )}
           </div>
         )}
 
@@ -476,7 +527,7 @@ export default function ProfilePage() {
         {activeTab === "lifestyle" && (
           <div className="space-y-4">
             <div className="flex justify-end">
-              <Link 
+              <Link
                 href="/user/lifestyle-info"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-sm font-medium hover:bg-green-100 transition-colors"
               >
@@ -486,24 +537,24 @@ export default function ProfilePage() {
 
             <InfoCard title="Food Preferences" icon={ChefHat} color="orange">
               <InfoRow icon={Utensils} label="Food Preference" value={lifestyleData?.foodPreference || "Not set"} />
-              <TagsRow 
-                icon={ChefHat} 
-                label="Preferred Cuisine" 
-                values={lifestyleData?.preferredCuisine || []} 
+              <TagsRow
+                icon={ChefHat}
+                label="Preferred Cuisine"
+                values={lifestyleData?.preferredCuisine || []}
                 emptyText="Not specified"
                 colorClass="bg-green-100 text-green-600"
               />
-              <TagsRow 
-                icon={AlertCircle} 
-                label="Food Allergies" 
-                values={lifestyleData?.allergiesFood || []} 
+              <TagsRow
+                icon={AlertCircle}
+                label="Food Allergies"
+                values={lifestyleData?.allergiesFood || []}
                 emptyText="None"
                 colorClass="bg-orange-100 text-orange-600"
               />
-              <TagsRow 
-                icon={Calendar} 
-                label="Fasting Days" 
-                values={lifestyleData?.fastDays || []} 
+              <TagsRow
+                icon={Calendar}
+                label="Fasting Days"
+                values={lifestyleData?.fastDays || []}
                 emptyText="None"
                 colorClass="bg-purple-100 text-purple-600"
               />
@@ -517,17 +568,17 @@ export default function ProfilePage() {
             </InfoCard>
 
             <InfoCard title="Cooking & Cravings" icon={Flame} color="red">
-              <TagsRow 
-                icon={ChefHat} 
-                label="Cooking Oil" 
-                values={lifestyleData?.cookingOil || []} 
+              <TagsRow
+                icon={ChefHat}
+                label="Cooking Oil"
+                values={lifestyleData?.cookingOil || []}
                 emptyText="Not specified"
                 colorClass="bg-yellow-100 text-yellow-700"
               />
-              <TagsRow 
-                icon={Flame} 
-                label="Cravings" 
-                values={Array.isArray(lifestyleData?.cravingType) ? lifestyleData.cravingType : lifestyleData?.cravingType ? [lifestyleData.cravingType] : []} 
+              <TagsRow
+                icon={Flame}
+                label="Cravings"
+                values={Array.isArray(lifestyleData?.cravingType) ? lifestyleData.cravingType : lifestyleData?.cravingType ? [lifestyleData.cravingType] : []}
                 emptyText="None"
                 colorClass="bg-pink-100 text-pink-600"
               />
@@ -539,7 +590,7 @@ export default function ProfilePage() {
         {activeTab === "dietary" && (
           <div className="space-y-4">
             <div className="flex justify-end">
-              <Link 
+              <Link
                 href="/user/dietary-recall"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg text-sm font-medium hover:bg-orange-100 transition-colors"
               >
@@ -550,7 +601,7 @@ export default function ProfilePage() {
             {dietaryRecallData?.meals && dietaryRecallData.meals.length > 0 ? (
               <div className="space-y-3">
                 {dietaryRecallData.meals.map((meal, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
                   >
@@ -578,7 +629,7 @@ export default function ProfilePage() {
                   <Utensils className="w-8 h-8 text-orange-400" />
                 </div>
                 <p className="text-gray-500 mb-4">No dietary recall recorded yet</p>
-                <Link 
+                <Link
                   href="/user/dietary-recall"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/25"
                 >
@@ -606,7 +657,7 @@ function InfoCard({ title, icon: Icon, color, children }: { title: string; icon:
     orange: "bg-orange-50 text-orange-600",
     pink: "bg-pink-50 text-pink-600"
   };
-  
+
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
       <div className="flex items-center gap-3 mb-4">
@@ -634,16 +685,16 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ cla
   );
 }
 
-function TagsRow({ 
-  icon: Icon, 
-  label, 
-  values, 
-  emptyText, 
-  colorClass 
-}: { 
-  icon: React.ComponentType<{ className?: string }>; 
-  label: string; 
-  values: string[]; 
+function TagsRow({
+  icon: Icon,
+  label,
+  values,
+  emptyText,
+  colorClass
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  values: string[];
   emptyText: string;
   colorClass: string;
 }) {

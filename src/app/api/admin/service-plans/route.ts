@@ -8,7 +8,7 @@ import { ServicePlan } from '@/lib/db/models/ServicePlan';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
       .populate('createdBy', 'firstName lastName')
       .sort({ createdAt: -1 });
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       plans,
       total: plans.length
     });
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -63,26 +63,26 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!name || !category || !pricingTiers || pricingTiers.length === 0) {
-      return NextResponse.json({ 
-        error: 'Name, category, and at least one pricing tier are required' 
+      return NextResponse.json({
+        error: 'Name, category, and at least one pricing tier are required'
       }, { status: 400 });
     }
 
     // Validate pricing tiers
     for (const tier of pricingTiers) {
       if (!tier.durationDays || tier.durationDays < 1) {
-        return NextResponse.json({ 
-          error: 'Each pricing tier must have valid duration days' 
+        return NextResponse.json({
+          error: 'Each pricing tier must have valid duration days'
         }, { status: 400 });
       }
       if (!tier.durationLabel) {
-        return NextResponse.json({ 
-          error: 'Each pricing tier must have a duration label' 
+        return NextResponse.json({
+          error: 'Each pricing tier must have a duration label'
         }, { status: 400 });
       }
       if (tier.amount == null || tier.amount < 0) {
-        return NextResponse.json({ 
-          error: 'Each pricing tier must have a valid amount' 
+        return NextResponse.json({
+          error: 'Each pricing tier must have a valid amount'
         }, { status: 400 });
       }
     }
@@ -98,13 +98,14 @@ export async function POST(request: NextRequest) {
       features: features || [],
       maxDiscountPercent: validMaxDiscount,
       isActive: isActive !== false,
+      showToClients: body.showToClients !== false,
       createdBy: session.user.id
     });
 
     await servicePlan.save();
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       plan: servicePlan,
       message: 'Service plan created successfully'
     });
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -141,18 +142,18 @@ export async function PUT(request: NextRequest) {
     if (pricingTiers) {
       for (const tier of pricingTiers) {
         if (!tier.durationDays || tier.durationDays < 1) {
-          return NextResponse.json({ 
-            error: 'Each pricing tier must have valid duration days' 
+          return NextResponse.json({
+            error: 'Each pricing tier must have valid duration days'
           }, { status: 400 });
         }
         if (!tier.durationLabel) {
-          return NextResponse.json({ 
-            error: 'Each pricing tier must have a duration label' 
+          return NextResponse.json({
+            error: 'Each pricing tier must have a duration label'
           }, { status: 400 });
         }
         if (tier.amount == null || tier.amount < 0) {
-          return NextResponse.json({ 
-            error: 'Each pricing tier must have a valid amount' 
+          return NextResponse.json({
+            error: 'Each pricing tier must have a valid amount'
           }, { status: 400 });
         }
       }
@@ -169,6 +170,7 @@ export async function PUT(request: NextRequest) {
     if (features !== undefined) updateData.features = features;
     if (validMaxDiscount !== undefined) updateData.maxDiscountPercent = validMaxDiscount;
     if (isActive !== undefined) updateData.isActive = isActive;
+    if (body.showToClients !== undefined) updateData.showToClients = body.showToClients;
 
     const updatedPlan = await ServicePlan.findByIdAndUpdate(
       id,
@@ -180,8 +182,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Service plan not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       plan: updatedPlan,
       message: 'Service plan updated successfully'
     });
@@ -195,7 +197,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -220,8 +222,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Service plan not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: 'Service plan deleted successfully'
     });
   } catch (error) {

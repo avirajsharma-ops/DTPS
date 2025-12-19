@@ -37,12 +37,13 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [summary, setSummary] = useState({ totalMl: 0, totalLiters: '0', target: 2500, percentage: 0 });
-  
+
   // Assigned water state
   const [assignedWater, setAssignedWater] = useState<AssignedWater | null>(null);
   const [assignAmount, setAssignAmount] = useState<number>(2500);
   const [assigning, setAssigning] = useState(false);
-  
+  const [showCustomWater, setShowCustomWater] = useState(false);
+
   const [newEntry, setNewEntry] = useState({
     amount: 0,
     unit: 'Glass (250ml)'
@@ -63,7 +64,7 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const res = await fetch(`/api/journal/water?date=${dateStr}&clientId=${clientId}`);
       const data = await res.json();
-      
+
       if (data.success) {
         setEntries(data.entries || []);
         setSummary(data.summary || { totalMl: 0, totalLiters: '0', target: 2500, percentage: 0 });
@@ -79,9 +80,10 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
   // Fetch assigned water status
   const fetchAssignedWater = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/clients/${clientId}/assign-water`);
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const res = await fetch(`/api/admin/clients/${clientId}/assign-water?date=${dateStr}`);
       const data = await res.json();
-      
+
       if (data.assignedWater) {
         setAssignedWater(data.assignedWater);
         setAssignAmount(data.assignedWater.amount || 2500);
@@ -91,19 +93,11 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
     } catch (error) {
       console.error('Error fetching assigned water:', error);
     }
-  }, [clientId]);
+  }, [clientId, selectedDate]);
 
   useEffect(() => {
     fetchWater();
     fetchAssignedWater();
-
-    // Auto-refresh every 5 seconds for real-time updates
-    const interval = setInterval(() => {
-      fetchWater();
-      fetchAssignedWater();
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, [fetchWater, fetchAssignedWater]);
 
   // Handle assigning water to client
@@ -115,10 +109,11 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
 
     try {
       setAssigning(true);
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const res = await fetch(`/api/admin/clients/${clientId}/assign-water`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: assignAmount })
+        body: JSON.stringify({ amount: assignAmount, date: dateStr })
       });
 
       const data = await res.json();
@@ -145,7 +140,8 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
   const handleRemoveAssignedWater = async () => {
     try {
       setAssigning(true);
-      const res = await fetch(`/api/admin/clients/${clientId}/assign-water`, {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const res = await fetch(`/api/admin/clients/${clientId}/assign-water?date=${dateStr}`, {
         method: 'DELETE'
       });
 
@@ -170,7 +166,7 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
       toast.error('Please enter an amount');
       return;
     }
-    
+
     try {
       setSaving(true);
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -183,9 +179,9 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
           clientId
         })
       });
-      
+
       const data = await res.json();
-      
+
       if (data.success) {
         setEntries(data.entries || []);
         setSummary(data.summary || summary);
@@ -208,9 +204,9 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
       const res = await fetch(`/api/journal/water?entryId=${id}&date=${dateStr}&clientId=${clientId}`, {
         method: 'DELETE'
       });
-      
+
       const data = await res.json();
-      
+
       if (data.success) {
         setEntries(data.entries || []);
         setSummary(data.summary || summary);
@@ -261,7 +257,7 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-base">
             <Target className="h-4 w-4 text-blue-600" />
-            Assign Today's Water Intake Goal
+            Assign Water Intake Goal
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -270,7 +266,7 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
               <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">
                 <div>
                   <p className="font-medium text-gray-800">
-                    Today's Assigned Water: {assignedWater.amount}ml
+                    Assigned Water: {assignedWater.amount}ml
                   </p>
                   <p className="text-xs text-gray-500">
                     {assignedWater.assignedAt && `Assigned on ${format(new Date(assignedWater.assignedAt), 'MMM dd, yyyy hh:mm a')}`}
@@ -294,14 +290,12 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
                   ✓ Client marked as completed on {format(new Date(assignedWater.completedAt), 'MMM dd, hh:mm a')}
                 </p>
               )}
-              <p className="text-xs text-gray-500 text-center italic">
-                Water intake goal has been assigned for today. Updates will appear automatically when client tracks water.
-              </p>
+
             </div>
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-gray-600">
-                Set a daily water intake goal for this client. They will see this target on their hydration page.
+                Set a daily water intake goal for this client. They will see this target on their Tasks page.
               </p>
               <div className="flex gap-2">
                 <div className="flex-1">
@@ -313,8 +307,8 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
                     className="bg-white"
                   />
                 </div>
-                <Button 
-                  onClick={handleAssignWater} 
+                <Button
+                  onClick={handleAssignWater}
                   disabled={assigning || assignAmount <= 0}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
@@ -370,7 +364,7 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
       </Card>
 
       {/* Add Water Intake Form */}
-      <Card className="w-full">
+      {/* <Card className="w-full">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-base">
             <Droplets className="h-4 w-4 text-blue-500" />
@@ -412,20 +406,28 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
             {saving ? 'Adding...' : 'Add Entry'}
           </Button>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Today's Water Intake */}
       <Card className="w-full">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <CardTitle className="text-base">Today's Water Intake</CardTitle>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <Badge variant="outline" className="text-blue-600">
                 {totalLiters} L
               </Badge>
-              <Badge variant="outline" className="text-cyan-600">
+              {/* <Badge variant="outline" className="text-cyan-600">
                 {totalMl} ml
-              </Badge>
+              </Badge> */}
+              <Button
+                onClick={() => setShowCustomWater(true)}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -435,17 +437,17 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
           ) : (
             <div className="space-y-3">
               {entries.map((entry) => (
-                <div 
-                  key={entry._id} 
+                <div
+                  key={entry._id}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
                 >
                   <div>
                     <p className="font-medium text-gray-800">
-                      {entry.amount} {entry.unit === 'glasses' ? 'glasses' : entry.unit} 
-                      ({entry.amount * (unitToMl[entry.unit] || 250)} ml)
+                      {entry.amount} {entry.unit === 'glasses' ? 'glasses' : entry.unit}
+
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  {/* <div className="flex items-center gap-3">
                     <span className="text-xs text-gray-400">{entry.time}</span>
                     <Button 
                       variant="ghost" 
@@ -455,7 +457,7 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </div>
+                  </div> */}
                 </div>
               ))}
             </div>
@@ -492,6 +494,106 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
         ]}
         maxValue={250}
       /> */}
+
+      {/* Custom Water Modal */}
+      {showCustomWater && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
+          <div className="bg-white rounded-t-3xl w-full max-w-md p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">Add Water</h2>
+              <button
+                onClick={() => setShowCustomWater(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Display assigned water if any */}
+            {assignedWater && (
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                <p className="text-sm font-medium text-blue-900">
+                  Target: {assignedWater.amount} ml
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium">Amount</Label>
+                <Input
+                  type="number"
+                  placeholder="250"
+                  value={newEntry.amount || ''}
+                  onChange={(e) => setNewEntry({ ...newEntry, amount: parseInt(e.target.value) || 0 })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Unit</Label>
+                <select
+                  value={newEntry.unit}
+                  onChange={(e) => setNewEntry({ ...newEntry, unit: e.target.value })}
+                  className="w-full mt-1 p-2 border rounded-lg"
+                >
+                  <option value="Glass (250ml)">Glass (250ml)</option>
+                  <option value="Bottle (500ml)">Bottle (500ml)</option>
+                  <option value="Bottle (1L)">Bottle (1L)</option>
+                  <option value="Cup (200ml)">Cup (200ml)</option>
+                  <option value="ml">Custom (ml)</option>
+                </select>
+              </div>
+
+              {/* Quick add buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  onClick={() => setNewEntry({ ...newEntry, amount: 250, unit: 'Glass (250ml)' })}
+                  variant="outline"
+                  size="sm"
+                >
+                  250ml
+                </Button>
+                <Button
+                  onClick={() => setNewEntry({ ...newEntry, amount: 500, unit: 'Bottle (500ml)' })}
+                  variant="outline"
+                  size="sm"
+                >
+                  500ml
+                </Button>
+                <Button
+                  onClick={() => setNewEntry({ ...newEntry, amount: 1000, unit: 'Bottle (1L)' })}
+                  variant="outline"
+                  size="sm"
+                >
+                  1L
+                </Button>
+                <Button
+                  onClick={() => setNewEntry({ ...newEntry, amount: 200, unit: 'Cup (200ml)' })}
+                  variant="outline"
+                  size="sm"
+                >
+                  200ml
+                </Button>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleAddEntry}
+              disabled={saving}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Water'
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

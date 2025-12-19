@@ -8,7 +8,7 @@ import User from "@/lib/db/models/User";
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -51,18 +51,21 @@ export async function GET(request: Request) {
     // Format entries for response
     const entries = (journal?.water || []).map((entry: any) => ({
       _id: entry._id.toString(),
-      amount: entry.amount * (entry.unit === 'ml' ? 1 : 
-               entry.unit === 'Glass (250ml)' ? 250 :
-               entry.unit === 'Bottle (500ml)' ? 500 :
-               entry.unit === 'Bottle (1L)' ? 1000 :
-               entry.unit === 'Cup (200ml)' ? 200 : 250),
+      amount: entry.amount * (entry.unit === 'ml' ? 1 :
+        entry.unit === 'Glass (250ml)' ? 250 :
+          entry.unit === 'Bottle (500ml)' ? 500 :
+            entry.unit === 'Bottle (1L)' ? 1000 :
+              entry.unit === 'Cup (200ml)' ? 200 : 250),
       unit: 'ml',
       type: entry.type || 'water',
       time: entry.time,
       createdAt: entry.createdAt
-    })).sort((a: any, b: any) => 
+    })).sort((a: any, b: any) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+
+    // Generate a hash based on water data for change detection
+    const dataHash = journal?.updatedAt?.toISOString() || 'no-data';
 
     return NextResponse.json({
       totalToday,
@@ -74,7 +77,8 @@ export async function GET(request: Request) {
         assignedAt: journal.assignedWater.assignedAt,
         isCompleted: journal.assignedWater.isCompleted || false,
         completedAt: journal.assignedWater.completedAt
-      } : null
+      } : null,
+      dataHash // For change detection - only reload if this changes
     });
   } catch (error) {
     console.error("Error fetching hydration data:", error);
@@ -85,7 +89,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -131,10 +135,10 @@ export async function POST(request: Request) {
       amount: amount,
       unit: unit,
       type: type,
-      time: time || new Date().toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
+      time: time || new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: true 
+        hour12: true
       }),
       createdAt: new Date()
     };
@@ -142,8 +146,8 @@ export async function POST(request: Request) {
     journal.water.push(waterEntry);
     await journal.save();
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       entry: {
         _id: journal.water[journal.water.length - 1]._id,
         ...waterEntry,
@@ -159,7 +163,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -205,7 +209,7 @@ export async function DELETE(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -232,7 +236,7 @@ export async function PATCH(request: Request) {
         'assignedWater.amount': { $gt: 0 }
       },
       {
-        $set: { 
+        $set: {
           'assignedWater.isCompleted': true,
           'assignedWater.completedAt': new Date()
         }
@@ -244,7 +248,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "No assigned water found for today" }, { status: 404 });
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       assignedWater: {
         amount: result.assignedWater?.amount || 0,

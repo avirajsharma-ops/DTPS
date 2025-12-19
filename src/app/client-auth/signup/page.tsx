@@ -10,22 +10,23 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Eye, 
-  EyeOff, 
-  User, 
-  Mail, 
-  Lock, 
-  Shield, 
-  Gift, 
-  ArrowLeft, 
-  Leaf 
+import {
+  Eye,
+  EyeOff,
+  User,
+  Mail,
+  Lock,
+  Shield,
+  Gift,
+  ArrowLeft,
+  Leaf
 } from 'lucide-react';
 import { z } from 'zod';
 
-// Client-specific signup schema with full name
+// Client-specific signup schema with separate first and last name
 const clientSignUpSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  firstName: z.string().min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Please enter a valid email'),
   phone: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -40,17 +41,6 @@ const clientSignUpSchema = z.object({
 });
 
 type ClientSignUpInput = z.infer<typeof clientSignUpSchema>;
-
-// Function to split full name into first and last name
-const splitFullName = (fullName: string): { firstName: string; lastName: string } => {
-  const nameParts = fullName.trim().split(/\s+/);
-  if (nameParts.length === 1) {
-    return { firstName: nameParts[0], lastName: '' };
-  }
-  const firstName = nameParts[0];
-  const lastName = nameParts.slice(1).join(' ');
-  return { firstName, lastName };
-};
 
 export default function ClientSignUpPage() {
   const router = useRouter();
@@ -81,17 +71,14 @@ export default function ClientSignUpPage() {
     setSuccess('');
 
     try {
-      // Split full name into first and last name
-      const { firstName, lastName } = splitFullName(data.fullName);
-
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          firstName,
-          lastName,
+          firstName: data.firstName,
+          lastName: data.lastName,
           email: data.email,
           phone: data.phone,
           password: data.password,
@@ -107,9 +94,9 @@ export default function ClientSignUpPage() {
         throw new Error(result.error || 'Registration failed');
       }
 
-      setSuccess('Account created successfully! Redirecting to sign in...');
+      setSuccess('Account created successfully! Redirecting to onboarding...');
       setTimeout(() => {
-        router.push('/client-auth/signin');
+        router.push('/client-auth/onboarding');
       }, 2000);
 
     } catch (error) {
@@ -180,19 +167,36 @@ export default function ClientSignUpPage() {
           )}
 
           {/* Full Name Input */}
+          {/* First Name Input */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <User className="h-5 w-5 text-gray-500" />
             </div>
             <Input
               type="text"
-              placeholder="Full Name"
-              {...register('fullName')}
-              className={`h-14 pl-12 bg-[#2a3a2a] border-[#3a4a3a] text-white placeholder:text-gray-500 rounded-xl focus:border-[#c4a962] focus:ring-[#c4a962] ${errors.fullName ? 'border-red-500' : ''}`}
+              placeholder="First Name"
+              {...register('firstName')}
+              className={`h-14 pl-12 bg-[#2a3a2a] border-[#3a4a3a] text-white placeholder:text-gray-500 rounded-xl focus:border-[#c4a962] focus:ring-[#c4a962] ${errors.firstName ? 'border-red-500' : ''}`}
             />
           </div>
-          {errors.fullName && (
-            <p className="text-sm text-red-400 -mt-2">{errors.fullName.message}</p>
+          {errors.firstName && (
+            <p className="text-sm text-red-400 -mt-2">{errors.firstName.message}</p>
+          )}
+
+          {/* Last Name Input */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <User className="h-5 w-5 text-gray-500" />
+            </div>
+            <Input
+              type="text"
+              placeholder="Last Name"
+              {...register('lastName')}
+              className={`h-14 pl-12 bg-[#2a3a2a] border-[#3a4a3a] text-white placeholder:text-gray-500 rounded-xl focus:border-[#c4a962] focus:ring-[#c4a962] ${errors.lastName ? 'border-red-500' : ''}`}
+            />
+          </div>
+          {errors.lastName && (
+            <p className="text-sm text-red-400 -mt-2">{errors.lastName.message}</p>
           )}
 
           {/* Email or Phone Input */}

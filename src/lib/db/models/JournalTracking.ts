@@ -140,6 +140,36 @@ export interface IJournalTracking extends Document {
     isCompleted: boolean;
     completedAt?: Date;
   };
+  assignedSteps?: {
+    target: number;
+    assignedBy: mongoose.Types.ObjectId;
+    assignedAt: Date;
+    isCompleted: boolean;
+    completedAt?: Date;
+  };
+  assignedSleep?: {
+    targetHours: number;
+    targetMinutes: number;
+    assignedBy: mongoose.Types.ObjectId;
+    assignedAt: Date;
+    isCompleted: boolean;
+    completedAt?: Date;
+  };
+  assignedActivities?: {
+    activities: Array<{
+      name: string;
+      sets: number;
+      reps: number;
+      duration: number;
+      videoLink?: string;
+      completed: boolean;
+      completedAt?: Date;
+    }>;
+    assignedBy: mongoose.Types.ObjectId;
+    assignedAt: Date;
+    isCompleted: boolean;
+    completedAt?: Date;
+  };
   targets: {
     steps: number;
     water: number; // in ml
@@ -179,8 +209,8 @@ const stepsEntrySchema = new Schema({
 // Water Entry Schema
 const waterEntrySchema = new Schema({
   amount: { type: Number, required: true, min: 0 },
-  unit: { 
-    type: String, 
+  unit: {
+    type: String,
     required: true,
     enum: ['Glass (250ml)', 'Bottle (500ml)', 'Bottle (1L)', 'Cup (200ml)', 'glasses', 'ml', 'ML', 'L', 'l', 'cups']
   },
@@ -193,8 +223,8 @@ const waterEntrySchema = new Schema({
 const sleepEntrySchema = new Schema({
   hours: { type: Number, required: true, min: 0, max: 24 },
   minutes: { type: Number, default: 0, min: 0, max: 59 },
-  quality: { 
-    type: String, 
+  quality: {
+    type: String,
     enum: ['Excellent', 'Good', 'Fair', 'Poor'],
     default: 'Fair'
   },
@@ -209,8 +239,8 @@ const mealEntrySchema = new Schema({
   protein: { type: Number, default: 0, min: 0 },
   carbs: { type: Number, default: 0, min: 0 },
   fat: { type: Number, default: 0, min: 0 },
-  type: { 
-    type: String, 
+  type: {
+    type: String,
     enum: ['Breakfast', 'Mid Morning', 'Lunch', 'Evening Snack', 'Dinner', 'Bedtime', 'Snack'],
     required: true
   },
@@ -238,8 +268,8 @@ const progressEntrySchema = new Schema({
 
 // BCA Entry Schema
 const bcaEntrySchema = new Schema({
-  bcaType: { 
-    type: String, 
+  bcaType: {
+    type: String,
     enum: ['karada', 'inbody', 'tanita'],
     default: 'karada'
   },
@@ -309,6 +339,36 @@ const journalTrackingSchema = new Schema({
     isCompleted: { type: Boolean, default: false },
     completedAt: { type: Date }
   },
+  assignedSteps: {
+    target: { type: Number, default: 0 },
+    assignedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    assignedAt: { type: Date },
+    isCompleted: { type: Boolean, default: false },
+    completedAt: { type: Date }
+  },
+  assignedSleep: {
+    targetHours: { type: Number, default: 0 },
+    targetMinutes: { type: Number, default: 0 },
+    assignedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    assignedAt: { type: Date },
+    isCompleted: { type: Boolean, default: false },
+    completedAt: { type: Date }
+  },
+  assignedActivities: {
+    activities: [{
+      name: { type: String },
+      sets: { type: Number, default: 0 },
+      reps: { type: Number, default: 0 },
+      duration: { type: Number, default: 0 },
+      videoLink: { type: String, default: '' },
+      completed: { type: Boolean, default: false },
+      completedAt: { type: Date }
+    }],
+    assignedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    assignedAt: { type: Date },
+    isCompleted: { type: Boolean, default: false },
+    completedAt: { type: Date }
+  },
   targets: {
     steps: { type: Number, default: 10000 },
     water: { type: Number, default: 2500 }, // ml
@@ -327,12 +387,12 @@ const journalTrackingSchema = new Schema({
 journalTrackingSchema.index({ client: 1, date: 1 }, { unique: true });
 
 // Virtual for total steps
-journalTrackingSchema.virtual('totalSteps').get(function() {
+journalTrackingSchema.virtual('totalSteps').get(function () {
   return this.steps.reduce((sum, entry) => sum + entry.steps, 0);
 });
 
 // Virtual for total water in ml
-journalTrackingSchema.virtual('totalWaterMl').get(function() {
+journalTrackingSchema.virtual('totalWaterMl').get(function () {
   const unitToMl: Record<string, number> = {
     'Glass (250ml)': 250,
     'Bottle (500ml)': 500,
@@ -344,17 +404,17 @@ journalTrackingSchema.virtual('totalWaterMl').get(function() {
 });
 
 // Virtual for total sleep in minutes
-journalTrackingSchema.virtual('totalSleepMinutes').get(function() {
+journalTrackingSchema.virtual('totalSleepMinutes').get(function () {
   return this.sleep.reduce((sum, entry) => sum + (entry.hours * 60) + entry.minutes, 0);
 });
 
 // Virtual for total activity duration
-journalTrackingSchema.virtual('totalActivityMinutes').get(function() {
+journalTrackingSchema.virtual('totalActivityMinutes').get(function () {
   return this.activities.reduce((sum, entry) => sum + entry.duration, 0);
 });
 
 // Virtual for consumed calories
-journalTrackingSchema.virtual('consumedCalories').get(function() {
+journalTrackingSchema.virtual('consumedCalories').get(function () {
   return this.meals.filter(m => m.consumed).reduce((sum, entry) => sum + entry.calories, 0);
 });
 
