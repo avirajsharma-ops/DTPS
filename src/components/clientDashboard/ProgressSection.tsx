@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Activity, Target } from 'lucide-react';
+import BodyMeasurements from './BodyMeasurements';
 
 interface ClientData {
+  _id?: string;
   weight?: number;
   height?: number;
   activityLevel?: string;
@@ -17,7 +19,7 @@ interface ClientData {
 }
 
 interface ProgressSectionProps {
-  client: ClientData;
+  client: ClientData | null;
   setActiveSection: (section: string) => void;
   setActiveTab: (tab: string) => void;
   formatDate: (date: string) => string;
@@ -29,6 +31,18 @@ export default function ProgressSection({
   setActiveTab,
   formatDate
 }: ProgressSectionProps) {
+  if (!client) {
+    return (
+      <div className="mt-6">
+        <Card>
+          <CardContent className="p-6 text-center text-gray-500">
+            <p>No client data available</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
   return (
     <div className="mt-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -218,6 +232,11 @@ export default function ProgressSection({
           </div>
         </CardContent>
       </Card>
+
+      {/* Body Measurements Section */}
+      {client?._id && (
+        <BodyMeasurements clientId={client._id} />
+      )}
     </div>
   );
 }

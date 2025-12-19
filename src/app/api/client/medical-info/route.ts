@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db/connection";
 import MedicalInfo from "@/lib/db/models/MedicalInfo";
+import User from "@/lib/db/models/User";
 
 export async function GET() {
   try {
@@ -14,10 +15,15 @@ export async function GET() {
 
     await dbConnect();
 
+    // Get user's gender
+    const user = await User.findById(session.user.id).select('gender');
+    const gender = user?.gender || '';
+
     const medicalInfo = await MedicalInfo.findOne({ userId: session.user.id });
     
     if (!medicalInfo) {
       return NextResponse.json({
+        gender: gender,
         medicalConditions: [],
         allergies: [],
         dietaryRestrictions: [],
@@ -36,7 +42,10 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json(medicalInfo);
+    return NextResponse.json({
+      ...medicalInfo.toObject(),
+      gender: gender
+    });
   } catch (error) {
     console.error("Error fetching medical info:", error);
     return NextResponse.json({ error: "Failed to fetch medical info" }, { status: 500 });
@@ -68,8 +77,13 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json({ success: true, data: medicalInfo });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error saving medical info:", error);
+    // Return more detailed error for validation failures
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((e: any) => e.message);
+      return NextResponse.json({ error: messages.join(', ') }, { status: 400 });
+    }
     return NextResponse.json({ error: "Failed to save medical info" }, { status: 500 });
   }
 }

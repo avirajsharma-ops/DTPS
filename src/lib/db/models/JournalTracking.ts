@@ -28,7 +28,8 @@ export interface IStepsEntry {
 export interface IWaterEntry {
   _id?: mongoose.Types.ObjectId;
   amount: number;
-  unit: string; // 'Glass (250ml)', 'Bottle (500ml)', 'Bottle (1L)', 'Cup (200ml)'
+  unit: string; // 'Glass (250ml)', 'Bottle (500ml)', 'Bottle (1L)', 'Cup (200ml)', 'ml'
+  type?: string; // water, coffee, tea, juice, etc.
   time: string;
   createdAt: Date;
 }
@@ -116,6 +117,7 @@ export interface IMeasurementEntry {
   hips: number;
   thigh: number;
   date: Date;
+  addedBy?: string;
   createdAt: Date;
 }
 
@@ -131,6 +133,13 @@ export interface IJournalTracking extends Document {
   progress: IProgressEntry[];
   bca: IBCAEntry[];
   measurements: IMeasurementEntry[];
+  assignedWater?: {
+    amount: number;
+    assignedBy: mongoose.Types.ObjectId;
+    assignedAt: Date;
+    isCompleted: boolean;
+    completedAt?: Date;
+  };
   targets: {
     steps: number;
     water: number; // in ml
@@ -173,8 +182,9 @@ const waterEntrySchema = new Schema({
   unit: { 
     type: String, 
     required: true,
-    enum: ['Glass (250ml)', 'Bottle (500ml)', 'Bottle (1L)', 'Cup (200ml)', 'glasses']
+    enum: ['Glass (250ml)', 'Bottle (500ml)', 'Bottle (1L)', 'Cup (200ml)', 'glasses', 'ml', 'ML', 'L', 'l', 'cups']
   },
+  type: { type: String, default: 'water' }, // water, coffee, tea, juice, etc.
   time: { type: String, required: true },
   createdAt: { type: Date, default: Date.now }
 }, { _id: true });
@@ -269,6 +279,7 @@ const measurementEntrySchema = new Schema({
   hips: { type: Number, default: 0, min: 0 },
   thigh: { type: Number, default: 0, min: 0 },
   date: { type: Date, default: Date.now },
+  addedBy: { type: String, default: 'client' }, // 'client', 'dietitian', 'admin'
   createdAt: { type: Date, default: Date.now }
 }, { _id: true });
 
@@ -291,6 +302,13 @@ const journalTrackingSchema = new Schema({
   progress: [progressEntrySchema],
   bca: [bcaEntrySchema],
   measurements: [measurementEntrySchema],
+  assignedWater: {
+    amount: { type: Number, default: 0 },
+    assignedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    assignedAt: { type: Date },
+    isCompleted: { type: Boolean, default: false },
+    completedAt: { type: Date }
+  },
   targets: {
     steps: { type: Number, default: 10000 },
     water: { type: Number, default: 2500 }, // ml

@@ -45,7 +45,8 @@ const activityLevels = [
   { value: "sedentary", label: "Sedentary", desc: "Little or no exercise" },
   { value: "lightly_active", label: "Lightly Active", desc: "Light exercise 1-3 days/week" },
   { value: "moderately_active", label: "Moderately Active", desc: "Moderate exercise 3-5 days/week" },
-  { value: "very_active", label: "Very Active", desc: "Hard exercise 6-7 days/week" }
+  { value: "very_active", label: "Very Active", desc: "Hard exercise 6-7 days/week" },
+  { value: "extremely_active", label: "Extremely Active", desc: "Very hard exercise, physical job" }
 ];
 
 const healthGoals = [
@@ -159,11 +160,13 @@ export default function PersonalInfoPage() {
         body: JSON.stringify(saveData)
       });
 
+      const result = await res.json();
+      
       if (res.ok) {
         toast.success("Personal information saved successfully");
         router.push("/user/profile");
       } else {
-        toast.error("Failed to save personal information");
+        toast.error(result.error || "Failed to save personal information");
       }
     } catch (error) {
       console.error("Error saving profile:", error);

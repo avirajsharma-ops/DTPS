@@ -126,21 +126,23 @@ export default function UserDashboard() {
           </Card>
 
           {/* Water Card */}
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Droplet className="h-5 w-5 text-blue-600" />
+          <Link href="/user/hydration">
+            <Card className="border-0 shadow-sm hover:shadow-md transition-all cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <Droplet className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-2xl font-bold text-gray-900">{data.water.current}</p>
-              <p className="text-sm text-gray-500">of {data.water.target} glasses</p>
-              <Progress value={waterPercent} className="h-2 mt-3 [&>div]:bg-blue-500" />
-            </CardContent>
-          </Card>
+                <p className="text-2xl font-bold text-gray-900">{data.water.current}</p>
+                <p className="text-sm text-gray-500">of {data.water.target} glasses</p>
+                <Progress value={waterPercent} className="h-2 mt-3 [&>div]:bg-blue-500" />
+              </CardContent>
+            </Card>
+          </Link>
 
           {/* Protein Card */}
           <Card className="border-0 shadow-sm">

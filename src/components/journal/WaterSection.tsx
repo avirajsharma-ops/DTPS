@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Droplets, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Droplets, Plus, Trash2, Loader2, Check, Target, Send } from 'lucide-react';
 import TrackingStatsGrid from './TrackingStatsGrid';
 // import TimeBasedBarChart from './TimeBasedBarChart';
 import { format } from 'date-fns';
@@ -20,6 +20,13 @@ interface WaterEntry {
   time: string;
 }
 
+interface AssignedWater {
+  amount: number;
+  assignedAt?: string;
+  isCompleted: boolean;
+  completedAt?: string;
+}
+
 interface WaterSectionProps {
   clientId: string;
   selectedDate: Date;
@@ -30,6 +37,11 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [summary, setSummary] = useState({ totalMl: 0, totalLiters: '0', target: 2500, percentage: 0 });
+  
+  // Assigned water state
+  const [assignedWater, setAssignedWater] = useState<AssignedWater | null>(null);
+  const [assignAmount, setAssignAmount] = useState<number>(2500);
+  const [assigning, setAssigning] = useState(false);
   
   const [newEntry, setNewEntry] = useState({
     amount: 0,
@@ -64,9 +76,94 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
     }
   }, [clientId, selectedDate]);
 
+  // Fetch assigned water status
+  const fetchAssignedWater = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/assign-water`);
+      const data = await res.json();
+      
+      if (data.assignedWater) {
+        setAssignedWater(data.assignedWater);
+        setAssignAmount(data.assignedWater.amount || 2500);
+      } else {
+        setAssignedWater(null);
+      }
+    } catch (error) {
+      console.error('Error fetching assigned water:', error);
+    }
+  }, [clientId]);
+
   useEffect(() => {
     fetchWater();
-  }, [fetchWater]);
+    fetchAssignedWater();
+
+    // Auto-refresh every 5 seconds for real-time updates
+    const interval = setInterval(() => {
+      fetchWater();
+      fetchAssignedWater();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchWater, fetchAssignedWater]);
+
+  // Handle assigning water to client
+  const handleAssignWater = async () => {
+    if (!assignAmount || assignAmount <= 0) {
+      toast.error('Please enter a valid water amount');
+      return;
+    }
+
+    try {
+      setAssigning(true);
+      const res = await fetch(`/api/admin/clients/${clientId}/assign-water`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: assignAmount })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setAssignedWater({
+          amount: assignAmount,
+          assignedAt: new Date().toISOString(),
+          isCompleted: false
+        });
+        toast.success(`Assigned ${assignAmount}ml water intake to client`);
+      } else {
+        toast.error(data.error || 'Failed to assign water');
+      }
+    } catch (error) {
+      console.error('Error assigning water:', error);
+      toast.error('Failed to assign water');
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  // Handle removing assigned water
+  const handleRemoveAssignedWater = async () => {
+    try {
+      setAssigning(true);
+      const res = await fetch(`/api/admin/clients/${clientId}/assign-water`, {
+        method: 'DELETE'
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setAssignedWater(null);
+        toast.success('Assigned water removed');
+      } else {
+        toast.error(data.error || 'Failed to remove assigned water');
+      }
+    } catch (error) {
+      console.error('Error removing assigned water:', error);
+      toast.error('Failed to remove assigned water');
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   const handleAddEntry = async () => {
     if (!newEntry.amount) {
@@ -159,6 +256,119 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
 
   return (
     <div className="space-y-6 w-full">
+      {/* Assign Water to Client Card */}
+      <Card className="w-full border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Target className="h-4 w-4 text-blue-600" />
+            Assign Today's Water Intake Goal
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {assignedWater ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">
+                <div>
+                  <p className="font-medium text-gray-800">
+                    Today's Assigned Water: {assignedWater.amount}ml
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {assignedWater.assignedAt && `Assigned on ${format(new Date(assignedWater.assignedAt), 'MMM dd, yyyy hh:mm a')}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {assignedWater.isCompleted ? (
+                    <Badge className="bg-green-500 text-white flex items-center gap-1">
+                      <Check className="h-3 w-3" />
+                      Completed
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-orange-600 border-orange-300 animate-pulse">
+                      Pending
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              {assignedWater.isCompleted && assignedWater.completedAt && (
+                <p className="text-sm text-green-600 text-center">
+                  ✓ Client marked as completed on {format(new Date(assignedWater.completedAt), 'MMM dd, hh:mm a')}
+                </p>
+              )}
+              <p className="text-xs text-gray-500 text-center italic">
+                Water intake goal has been assigned for today. Updates will appear automatically when client tracks water.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600">
+                Set a daily water intake goal for this client. They will see this target on their hydration page.
+              </p>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    type="number"
+                    placeholder="Amount in ml (e.g., 2500)"
+                    value={assignAmount}
+                    onChange={(e) => setAssignAmount(parseInt(e.target.value) || 0)}
+                    className="bg-white"
+                  />
+                </div>
+                <Button 
+                  onClick={handleAssignWater} 
+                  disabled={assigning || assignAmount <= 0}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {assigning ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  Assign
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAssignAmount(2000)}
+                  className="text-xs"
+                >
+                  2L
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAssignAmount(2500)}
+                  className="text-xs"
+                >
+                  2.5L
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAssignAmount(3000)}
+                  className="text-xs"
+                >
+                  3L
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAssignAmount(3500)}
+                  className="text-xs"
+                >
+                  3.5L
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Add Water Intake Form */}
       <Card className="w-full">
         <CardHeader className="pb-4">

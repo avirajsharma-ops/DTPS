@@ -66,8 +66,13 @@ export async function PUT(request: Request) {
     }
 
     return NextResponse.json({ success: true, user });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating profile:", error);
+    // Return more detailed error for validation failures
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((e: any) => e.message);
+      return NextResponse.json({ error: messages.join(', ') }, { status: 400 });
+    }
     return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
   }
 }

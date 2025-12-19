@@ -35,6 +35,13 @@ interface MeasurementEntry {
   thighs?: number;
 }
 
+interface TransformationPhoto {
+  _id: string;
+  url: string;
+  date: string;
+  notes: string;
+}
+
 interface ProgressData {
   currentWeight: number;
   startWeight: number;
@@ -58,6 +65,9 @@ interface ProgressData {
     thighs: number;
   };
   measurementHistory: MeasurementEntry[];
+  lastMeasurementDate?: string;
+  canAddMeasurement?: boolean;
+  daysUntilNextMeasurement?: number;
   goals: {
     calories?: number;
     protein?: number;
@@ -73,6 +83,7 @@ interface ProgressData {
     fat: number;
   };
   calorieHistory?: Array<{ date: string; calories: number }>;
+  transformationPhotos?: TransformationPhoto[];
 }
 
 // Time Range Filter Component
@@ -302,6 +313,9 @@ export default function UserProgressPage() {
   const [loading, setLoading] = useState(true);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showMeasurementsModal, setShowMeasurementsModal] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showMeasurementReminderPopup, setShowMeasurementReminderPopup] = useState(false);
+  const [showMeasurementRestrictionPopup, setShowMeasurementRestrictionPopup] = useState(false);
   const [newWeight, setNewWeight] = useState('');
   const [measurements, setMeasurements] = useState({
     waist: '',
@@ -310,9 +324,13 @@ export default function UserProgressPage() {
     arms: '',
     thighs: ''
   });
+  const [photoNotes, setPhotoNotes] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'weight' | 'nutrition' | 'body'>('weight');
   const [timeRange, setTimeRange] = useState<TimeRange>('1W');
+  const [selectedPhoto, setSelectedPhoto] = useState<TransformationPhoto | null>(null);
+  const [showPhotoViewer, setShowPhotoViewer] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -342,11 +360,33 @@ export default function UserProgressPage() {
             thighs: data.measurements.thighs?.toString() || ''
           });
         }
+        // Check if it's time to remind user to add measurements (7 days passed)
+        if (data.canAddMeasurement && data.lastMeasurementDate) {
+          const lastMeasDate = new Date(data.lastMeasurementDate);
+          const daysSince = Math.floor((new Date().getTime() - lastMeasDate.getTime()) / (24 * 60 * 60 * 1000));
+          if (daysSince >= 7) {
+            // Show reminder popup once per session
+            const reminderShown = sessionStorage.getItem('measurementReminderShown');
+            if (!reminderShown) {
+              setShowMeasurementReminderPopup(true);
+              sessionStorage.setItem('measurementReminderShown', 'true');
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching progress:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handler for Add Measurement button click
+  const handleAddMeasurementClick = () => {
+    if (progressData?.canAddMeasurement === false) {
+      setShowMeasurementRestrictionPopup(true);
+    } else {
+      setShowMeasurementsModal(true);
     }
   };
 
@@ -414,6 +454,89 @@ export default function UserProgressPage() {
     }
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload a JPEG, PNG, or WebP image');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image size must be less than 10MB');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      // First upload the file
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'progress');
+
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!uploadRes.ok) {
+        toast.error('Failed to upload image');
+        return;
+      }
+
+      const uploadResult = await uploadRes.json();
+      const photoUrl = uploadResult.url || `/api/files/${uploadResult.fileId || uploadResult._id}`;
+
+      // Save the photo entry
+      const saveRes = await fetch('/api/client/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'photo',
+          photoUrl: photoUrl,
+          notes: photoNotes
+        })
+      });
+
+      if (saveRes.ok) {
+        toast.success('Photo added successfully!');
+        setShowPhotoModal(false);
+        setPhotoNotes('');
+        fetchProgressData();
+      } else {
+        toast.error('Failed to save photo');
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error('Something went wrong');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!confirm('Are you sure you want to delete this photo?')) return;
+
+    try {
+      const response = await fetch(`/api/client/progress?id=${photoId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        toast.success('Photo deleted successfully');
+        fetchProgressData();
+        setShowPhotoViewer(false);
+        setSelectedPhoto(null);
+      } else {
+        toast.error('Failed to delete photo');
+      }
+    } catch (error) {
+      toast.error('Something went wrong');
+    }
+  };
+
   // Default data if no API data
   const data: ProgressData = progressData || {
     currentWeight: 0,
@@ -428,7 +551,8 @@ export default function UserProgressPage() {
     measurementHistory: [],
     goals: { calories: 2000, protein: 120, carbs: 250, fat: 65, water: 8, steps: 10000 },
     todayIntake: { calories: 0, protein: 0, carbs: 0, fat: 0 },
-    calorieHistory: []
+    calorieHistory: [],
+    transformationPhotos: []
   };
 
   // Use today's measurements if available, otherwise use latest measurements
@@ -481,8 +605,10 @@ export default function UserProgressPage() {
     ? filteredMeasurementHistory.filter(e => e.waist).map(e => format(new Date(e.date), 'dd'))
     : [];
 
-  // BMI display value - ensure it's properly formatted
-  const bmiValue = data.bmi && !isNaN(data.bmi) ? data.bmi.toFixed(1) : '--';
+  // BMI display value - ensure it's properly formatted and reasonable
+  const bmiValue = data.bmi && !isNaN(data.bmi) && data.bmi > 0 && data.bmi < 100 
+    ? data.bmi.toFixed(1) 
+    : '--';
 
   if (status === 'loading' || loading) {
     return (
@@ -831,7 +957,7 @@ export default function UserProgressPage() {
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-bold text-gray-900">Body Measurements</h3>
                 <button 
-                  onClick={() => setShowMeasurementsModal(true)}
+                  onClick={handleAddMeasurementClick}
                   className="text-green-600 text-sm font-medium flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors"
                 >
                   <Plus className="w-4 h-4" /> Add
@@ -902,7 +1028,7 @@ export default function UserProgressPage() {
                   <Ruler className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500 text-sm">No measurement history yet</p>
                   <button 
-                    onClick={() => setShowMeasurementsModal(true)}
+                    onClick={handleAddMeasurementClick}
                     className="mt-2 text-green-600 font-medium text-sm"
                   >
                     Add your first measurement
@@ -916,8 +1042,8 @@ export default function UserProgressPage() {
               <h3 className="font-bold text-gray-900 mb-4">Body Mass Index (BMI)</h3>
               
               <div className="flex items-center gap-4">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 flex flex-col items-center justify-center flex-shrink-0">
-                  <span className="text-2xl sm:text-3xl font-bold text-green-600">{bmiValue}</span>
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 flex flex-col items-center justify-center flex-shrink-0 overflow-hidden">
+                  <span className="text-lg sm:text-xl font-bold text-green-600 truncate max-w-full px-2">{bmiValue}</span>
                   <span className="text-xs text-gray-500">BMI</span>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -954,20 +1080,55 @@ export default function UserProgressPage() {
               </div>
             </div>
 
-            {/* Progress Photos Placeholder */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
+            {/* Progress Photos */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900">Progress Photos</h3>
-                <button className="text-green-600 text-sm font-medium flex items-center gap-1">
+                <h3 className="font-bold text-gray-900">Transformation Photos</h3>
+                <button 
+                  onClick={() => setShowPhotoModal(true)}
+                  className="text-green-600 text-sm font-medium flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors"
+                >
                   <Camera className="w-4 h-4" /> Add
                 </button>
               </div>
               
-              <div className="text-center py-8">
-                <Camera className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No progress photos yet</p>
-                <p className="text-xs text-gray-400 mt-1">Track your transformation with photos</p>
-              </div>
+              {data.transformationPhotos && data.transformationPhotos.length > 0 ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {data.transformationPhotos.map((photo) => (
+                    <div 
+                      key={photo._id} 
+                      className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group"
+                      onClick={() => {
+                        setSelectedPhoto(photo);
+                        setShowPhotoViewer(true);
+                      }}
+                    >
+                      <img 
+                        src={photo.url} 
+                        alt="Progress photo" 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-end justify-center opacity-0 group-hover:opacity-100">
+                        <span className="text-white text-xs py-1 px-2 mb-2 bg-black/50 rounded">
+                          {format(new Date(photo.date), 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Camera className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No transformation photos yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Track your journey with photos</p>
+                  <button 
+                    onClick={() => setShowPhotoModal(true)}
+                    className="mt-3 text-green-600 font-medium text-sm"
+                  >
+                    Add your first photo
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -1059,6 +1220,171 @@ export default function UserProgressPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Upload Modal */}
+      {showPhotoModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Add Transformation Photo</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Date: {format(new Date(), 'MMMM d, yyyy')}
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Notes (optional)</label>
+                <textarea
+                  value={photoNotes}
+                  onChange={(e) => setPhotoNotes(e.target.value)}
+                  placeholder="E.g., Front view, After 2 weeks..."
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  rows={2}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Photo</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                  id="photo-upload"
+                  disabled={uploadingPhoto}
+                />
+                <label
+                  htmlFor="photo-upload"
+                  className={`w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors ${uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {uploadingPhoto ? (
+                    <>
+                      <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin mb-2" />
+                      <span className="text-sm text-gray-500">Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-500">Tap to select photo</span>
+                      <span className="text-xs text-gray-400 mt-1">JPEG, PNG or WebP (max 10MB)</span>
+                    </>
+                  )}
+                </label>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowPhotoModal(false);
+                  setPhotoNotes('');
+                }}
+                className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Viewer Modal */}
+      {showPhotoViewer && selectedPhoto && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
+          <div className="flex items-center justify-between p-4 text-white">
+            <div>
+              <p className="font-medium">{format(new Date(selectedPhoto.date), 'MMMM d, yyyy')}</p>
+              {selectedPhoto.notes && (
+                <p className="text-sm text-gray-300">{selectedPhoto.notes}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleDeletePhoto(selectedPhoto._id)}
+                className="p-2 text-red-400 hover:text-red-300 transition-colors"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => {
+                  setShowPhotoViewer(false);
+                  setSelectedPhoto(null);
+                }}
+                className="p-2 text-white hover:text-gray-300 transition-colors"
+              >
+                <Plus className="w-6 h-6 rotate-45" />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4">
+            <img 
+              src={selectedPhoto.url} 
+              alt="Progress photo" 
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Measurement Reminder Popup - Shows after 7 days */}
+      {showMeasurementReminderPopup && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 text-center animate-bounce-in">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Ruler className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Time to Measure!</h3>
+            <p className="text-gray-600 mb-6">
+              It's been 7 days since your last body measurement. Track your progress by adding new measurements today!
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowMeasurementReminderPopup(false)}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Later
+              </button>
+              <button
+                onClick={() => {
+                  setShowMeasurementReminderPopup(false);
+                  setShowMeasurementsModal(true);
+                }}
+                className="flex-1 px-4 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-colors"
+              >
+                Add Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Measurement Restriction Popup - Shows when trying to add before 7 days */}
+      {showMeasurementRestrictionPopup && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 text-center">
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Calendar className="w-8 h-8 text-amber-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Please Wait</h3>
+            <p className="text-gray-600 mb-2">
+              Body measurements can only be recorded once every 7 days for accurate tracking.
+            </p>
+            <p className="text-lg font-semibold text-green-600 mb-6">
+              {data.daysUntilNextMeasurement === 1 
+                ? '1 day remaining' 
+                : `${data.daysUntilNextMeasurement || 0} days remaining`}
+            </p>
+            {data.lastMeasurementDate && (
+              <p className="text-sm text-gray-500 mb-4">
+                Last recorded: {format(new Date(data.lastMeasurementDate), 'MMM d, yyyy')}
+              </p>
+            )}
+            <button
+              onClick={() => setShowMeasurementRestrictionPopup(false)}
+              className="w-full px-4 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-colors"
+            >
+              Got it
+            </button>
           </div>
         </div>
       )}

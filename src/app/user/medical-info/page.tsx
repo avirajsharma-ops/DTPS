@@ -24,12 +24,16 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 interface MedicalReport {
+  id?: string;
   _id?: string;
-  name: string;
-  url: string;
+  name?: string;
+  fileName?: string;
+  url?: string;
   type?: string;
+  fileType?: string;
   category?: string;
   uploadedAt?: string;
+  uploadedOn?: string;
 }
 
 interface MedicalData {
@@ -81,6 +85,7 @@ export default function MedicalInfoPage() {
   const [reportName, setReportName] = useState("");
   const [reportCategory, setReportCategory] = useState("Medical Report");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [userGender, setUserGender] = useState<string>("");
   const [data, setData] = useState<MedicalData>({
     medicalConditions: [],
     allergies: [],
@@ -113,6 +118,7 @@ export default function MedicalInfoPage() {
         const res = await fetch("/api/client/medical-info");
         if (res.ok) {
           const result = await res.json();
+          setUserGender(result.gender || "");
           setData({
             medicalConditions: result.medicalConditions || [],
             allergies: result.allergies || [],
@@ -151,11 +157,13 @@ export default function MedicalInfoPage() {
         body: JSON.stringify(data)
       });
 
+      const result = await res.json();
+      
       if (res.ok) {
         toast.success("Medical information saved successfully");
         router.push("/user/profile");
       } else {
-        toast.error("Failed to save medical information");
+        toast.error(result.error || "Failed to save medical information");
       }
     } catch (error) {
       console.error("Error saving medical info:", error);
@@ -228,11 +236,14 @@ export default function MedicalInfoPage() {
       if (res.ok) {
         const result = await res.json();
         const newReport: MedicalReport = {
-          _id: result.fileId || result._id,
+          id: result.fileId || result._id || Date.now().toString(),
+          fileName: reportName || pendingFile.name,
           name: reportName || pendingFile.name,
           url: result.url || `/api/files/${result.fileId || result._id}`,
+          fileType: pendingFile.type,
           type: pendingFile.type,
           category: reportCategory,
+          uploadedOn: new Date().toISOString(),
           uploadedAt: new Date().toISOString()
         };
         setData({ ...data, reports: [...data.reports, newReport] });
@@ -284,16 +295,25 @@ export default function MedicalInfoPage() {
 
   const isImageFile = (report: MedicalReport) => {
     const imageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (report.type) {
-      return imageTypes.includes(report.type);
+    if (report.type || report.fileType) {
+      return imageTypes.includes(report.type || report.fileType || '');
     }
-    const fileName = report.name || report.url || '';
+    const fileName = report.name || report.fileName || report.url || '';
     const ext = fileName.split('.').pop()?.toLowerCase() || '';
     return ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext);
   };
 
   const getReportName = (report: MedicalReport) => {
-    return report.name || 'Uploaded Report';
+    return report.name || report.fileName || 'Uploaded Report';
+  };
+
+  const getReportDate = (report: MedicalReport) => {
+    const dateStr = report.uploadedAt || report.uploadedOn;
+    return dateStr ? new Date(dateStr).toLocaleDateString('en-IN', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    }) : '-';
   };
 
   if (status === "loading" || loading) {
@@ -439,69 +459,71 @@ export default function MedicalInfoPage() {
           </div>
         </Section>
 
-        {/* Women's Health */}
-        <Section title="Women's Health" icon={Baby}>
-          <div className="space-y-4">
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={data.isPregnant}
-                  onChange={(e) => setData({ ...data, isPregnant: e.target.checked })}
-                  className="w-5 h-5 rounded border-gray-300 text-green-500 focus:ring-green-500"
-                />
-                <span className="text-sm text-gray-700">Pregnant</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={data.isLactating}
-                  onChange={(e) => setData({ ...data, isLactating: e.target.checked })}
-                  className="w-5 h-5 rounded border-gray-300 text-green-500 focus:ring-green-500"
-                />
-                <span className="text-sm text-gray-700">Lactating</span>
-              </label>
-            </div>
+        {/* Women's Health - Only show for females */}
+        {userGender?.toLowerCase() === 'female' && (
+          <Section title="Women's Health" icon={Baby}>
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={data.isPregnant}
+                    onChange={(e) => setData({ ...data, isPregnant: e.target.checked })}
+                    className="w-5 h-5 rounded border-gray-300 text-green-500 focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-700">Pregnant</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={data.isLactating}
+                    onChange={(e) => setData({ ...data, isLactating: e.target.checked })}
+                    className="w-5 h-5 rounded border-gray-300 text-green-500 focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-700">Lactating</span>
+                </label>
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Menstrual Cycle</label>
-              <div className="flex gap-2">
-                {["regular", "irregular"].map(cycle => (
-                  <button
-                    key={cycle}
-                    onClick={() => setData({ ...data, menstrualCycle: cycle })}
-                    className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                      data.menstrualCycle === cycle
-                        ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                    }`}
-                  >
-                    {cycle.charAt(0).toUpperCase() + cycle.slice(1)}
-                  </button>
-                ))}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Menstrual Cycle</label>
+                <div className="flex gap-2">
+                  {["regular", "irregular"].map(cycle => (
+                    <button
+                      key={cycle}
+                      onClick={() => setData({ ...data, menstrualCycle: cycle })}
+                      className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        data.menstrualCycle === cycle
+                          ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                          : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                      }`}
+                    >
+                      {cycle.charAt(0).toUpperCase() + cycle.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Blood Flow</label>
+                <div className="flex gap-2">
+                  {["light", "normal", "heavy"].map(flow => (
+                    <button
+                      key={flow}
+                      onClick={() => setData({ ...data, bloodFlow: flow })}
+                      className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        data.bloodFlow === flow
+                          ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                          : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                      }`}
+                    >
+                      {flow.charAt(0).toUpperCase() + flow.slice(1)}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Blood Flow</label>
-              <div className="flex gap-2">
-                {["light", "normal", "heavy"].map(flow => (
-                  <button
-                    key={flow}
-                    onClick={() => setData({ ...data, bloodFlow: flow })}
-                    className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                      data.bloodFlow === flow
-                        ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                    }`}
-                  >
-                    {flow.charAt(0).toUpperCase() + flow.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Section>
+          </Section>
+        )}
 
         {/* Additional Notes */}
         <Section title="Additional Information" icon={FileText}>
@@ -639,11 +661,7 @@ export default function MedicalInfoPage() {
                             </span>
                           </td>
                           <td className="py-2.5 px-3 text-gray-500 text-xs">
-                            {report.uploadedAt ? new Date(report.uploadedAt).toLocaleDateString('en-IN', { 
-                              day: 'numeric', 
-                              month: 'short', 
-                              year: 'numeric' 
-                            }) : '-'}
+                            {getReportDate(report)}
                           </td>
                           <td className="py-2.5 px-3">
                             <div className="flex items-center justify-center gap-1">

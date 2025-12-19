@@ -69,10 +69,15 @@ export async function GET(request: Request) {
     );
     const weightChange = weekAgoEntry ? latestWeight - weekAgoEntry.weight : 0;
 
-    // Calculate BMI - ensure proper calculation
+    // Calculate BMI - ensure proper calculation with validation
     const heightCm = parseFloat(user?.heightCm);
-    const heightM = heightCm && !isNaN(heightCm) ? heightCm / 100 : 1.7;
-    const bmi = latestWeight > 0 ? latestWeight / (heightM * heightM) : 0;
+    const heightM = heightCm && !isNaN(heightCm) && heightCm > 0 ? heightCm / 100 : 0;
+    const bmi = latestWeight > 0 && heightM > 0 
+      ? Math.round((latestWeight / (heightM * heightM)) * 10) / 10 
+      : 0;
+    
+    // Validate BMI is in reasonable range (10-60)
+    const validBmi = bmi > 10 && bmi < 60 ? bmi : 0;
 
     // Get latest measurements - each type is stored separately
     const measurementTypes = ['waist', 'hips', 'chest', 'arms', 'thighs'];
@@ -114,6 +119,21 @@ export async function GET(request: Request) {
     const measurementHistory = Array.from(measurementHistoryMap.values())
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+    // Get last measurement date for 7-day restriction check
+    const lastMeasurementEntry = allProgressEntries.find(entry => 
+      measurementTypes.includes(entry.type)
+    );
+    const lastMeasurementDate = lastMeasurementEntry?.recordedAt?.toISOString() || null;
+
+    // Check if user can add new measurement (7 days restriction)
+    const canAddMeasurement = !lastMeasurementEntry || 
+      (new Date().getTime() - new Date(lastMeasurementEntry.recordedAt).getTime()) >= 7 * 24 * 60 * 60 * 1000;
+
+    // Calculate days until next measurement
+    const daysUntilNextMeasurement = lastMeasurementEntry 
+      ? Math.max(0, 7 - Math.floor((new Date().getTime() - new Date(lastMeasurementEntry.recordedAt).getTime()) / (24 * 60 * 60 * 1000)))
+      : 0;
+
     // Calculate progress percentage
     const totalToLose = startWeight - targetWeight;
     const lost = startWeight - latestWeight;
@@ -148,20 +168,34 @@ export async function GET(request: Request) {
       calories: log.totalNutrition?.calories || 0
     })).reverse();
 
+    // Get transformation photos
+    const transformationPhotos = allProgressEntries
+      .filter(entry => entry.type === 'photo')
+      .map(entry => ({
+        _id: entry._id,
+        url: entry.value as string,
+        date: entry.recordedAt,
+        notes: entry.notes || ''
+      }));
+
     return NextResponse.json({
       currentWeight: latestWeight,
       startWeight: startWeight,
       targetWeight: targetWeight || 0,
       weightChange: Math.round(weightChange * 10) / 10,
-      bmi: bmi > 0 ? Math.round(bmi * 10) / 10 : 0,
+      bmi: validBmi,
       progressPercent: Math.max(0, Math.min(100, progressPercent)),
       weightHistory: weightEntries.slice(0, 365).reverse(),
       measurements: measurements,
       todayMeasurements: todayMeasurements,
       measurementHistory: measurementHistory,
+      lastMeasurementDate: lastMeasurementDate,
+      canAddMeasurement: canAddMeasurement,
+      daysUntilNextMeasurement: daysUntilNextMeasurement,
       goals: user?.goals || {},
       todayIntake: todayIntake,
-      calorieHistory: calorieHistory
+      calorieHistory: calorieHistory,
+      transformationPhotos: transformationPhotos
     });
   } catch (error) {
     console.error("Error fetching progress:", error);
@@ -180,7 +214,21 @@ export async function POST(request: Request) {
     await dbConnect();
     const data = await request.json();
 
-    const { type, value, measurements, notes } = data;
+    const { type, value, measurements, notes, photoUrl } = data;
+
+    // Handle transformation photo
+    if (type === 'photo' && photoUrl) {
+      const progressEntry = new ProgressEntry({
+        user: session.user.id,
+        type: 'photo',
+        value: photoUrl,
+        unit: '',
+        notes: notes || '',
+        recordedAt: new Date()
+      });
+      await progressEntry.save();
+      return NextResponse.json({ success: true, entry: progressEntry });
+    }
 
     // Handle saving body measurements (multiple entries)
     if (type === 'measurements' && measurements) {
@@ -228,5 +276,39 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error saving progress:", error);
     return NextResponse.json({ error: "Failed to save progress" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await dbConnect();
+    
+    const { searchParams } = new URL(request.url);
+    const entryId = searchParams.get('id');
+    
+    if (!entryId) {
+      return NextResponse.json({ error: "Entry ID is required" }, { status: 400 });
+    }
+
+    // Find and delete the entry, ensuring it belongs to the current user
+    const deletedEntry = await ProgressEntry.findOneAndDelete({
+      _id: entryId,
+      user: session.user.id
+    });
+
+    if (!deletedEntry) {
+      return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: "Entry deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting progress entry:", error);
+    return NextResponse.json({ error: "Failed to delete entry" }, { status: 500 });
   }
 }

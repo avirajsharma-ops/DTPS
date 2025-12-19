@@ -336,7 +336,7 @@ export default function UserHomePage() {
         {/* Water & Sleep Row */}
         <div className="grid grid-cols-2 gap-4">
           {/* Water Card */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <Link href="/user/hydration" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Water</p>
               <span className="text-green-500 text-sm font-semibold">{Math.round(waterPercent)}%</span>
@@ -358,7 +358,7 @@ export default function UserHomePage() {
               <span className="text-2xl font-bold text-gray-900">{data.water.current}</span>
               <span className="text-gray-500 text-sm"> / {data.water.goal}L</span>
             </p>
-          </div>
+          </Link>
 
           {/* Sleep Card */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
@@ -454,7 +454,7 @@ export default function UserHomePage() {
   <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
     
     {/* Water */}
-    <button className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
+    <Link href="/user/hydration" className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
       <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
         <GlassWater className="h-8 w-8 text-blue-600" />
       </div>
@@ -464,7 +464,7 @@ export default function UserHomePage() {
       <span className="text-sm text-gray-400">
         +250 ml
       </span>
-    </button>
+    </Link>
 
     {/* Exercise */}
     <button className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
