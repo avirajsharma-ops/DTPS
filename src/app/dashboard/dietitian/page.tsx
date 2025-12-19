@@ -17,9 +17,54 @@ import {
   Heart,
   CheckCircle,
   Activity,
-  Plus
+  Plus,
+  AlertTriangle,
+  X,
+  ExternalLink,
+  Phone,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
+import { format } from 'date-fns';
+
+interface PendingPlan {
+  clientId: string;
+  clientName: string;
+  phone: string;
+  email: string;
+  
+  // Current plan info
+  currentPlanName: string | null;
+  currentPlanStartDate: string | null;
+  currentPlanEndDate: string | null;
+  currentPlanRemainingDays: number;
+  
+  // Previous plan info
+  previousPlanName: string | null;
+  previousPlanEndDate?: string | null;
+  
+  // Upcoming plan info
+  upcomingPlanName?: string | null;
+  upcomingPlanStartDate?: string | null;
+  upcomingPlanEndDate?: string | null;
+  daysUntilStart?: number;
+  
+  // Purchase info
+  purchasedPlanName: string;
+  totalPurchasedDays: number;
+  totalMealPlanDays: number;
+  pendingDaysToCreate: number;
+  
+  // Expected dates
+  expectedStartDate?: string;
+  expectedEndDate?: string;
+  
+  // Status
+  reason: 'no_meal_plan' | 'current_ending_soon' | 'phase_gap' | 'upcoming_with_pending';
+  reasonText: string;
+  urgency: 'critical' | 'high' | 'medium';
+  hasNextPhase: boolean;
+}
 
 export default function DietitianDashboard() {
   const { data: session } = useSession();
@@ -40,6 +85,31 @@ export default function DietitianDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Pending plans state
+  const [showPendingPlans, setShowPendingPlans] = useState(false);
+  const [pendingPlans, setPendingPlans] = useState<PendingPlan[]>([]);
+  const [loadingPendingPlans, setLoadingPendingPlans] = useState(false);
+  const [pendingPlansCount, setPendingPlansCount] = useState(0);
+  const [criticalCount, setCriticalCount] = useState(0);
+
+  // Fetch pending plans
+  const fetchPendingPlans = async () => {
+    setLoadingPendingPlans(true);
+    try {
+      const response = await fetch('/api/dashboard/pending-plans');
+      if (response.ok) {
+        const data = await response.json();
+        setPendingPlans(data.pendingPlans || []);
+        setPendingPlansCount(data.totalCount || 0);
+        setCriticalCount(data.criticalCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching pending plans:', error);
+    } finally {
+      setLoadingPendingPlans(false);
+    }
+  };
+
   // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -59,6 +129,7 @@ export default function DietitianDashboard() {
     };
 
     fetchDashboardData();
+    fetchPendingPlans(); // Also fetch pending plans count
   }, []);
 
 
@@ -207,6 +278,8 @@ export default function DietitianDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+            
+              
               <Button asChild className="w-full bg-green-600 hover:bg-green-700">
                 <Link href="/dietician/clients/new">
                   <Plus className="h-4 w-4 mr-2" />
@@ -427,6 +500,291 @@ export default function DietitianDashboard() {
           </Card>
         </div> */}
       </div>
+
+      {/* Pending Plans Right Side Panel */}
+      {showPendingPlans && (
+        <>
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/40 z-40 transition-opacity"
+            onClick={() => setShowPendingPlans(false)}
+          />
+          
+          {/* Right Side Panel */}
+          <div className="fixed right-0 top-0 h-full w-full max-w-5xl bg-gray-50 shadow-2xl z-50 overflow-hidden flex flex-col animate-slide-in-right">
+            {/* Header - Website themed green gradient */}
+            <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-green-600 to-teal-600">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Pending Plans</h2>
+                  <p className="text-sm text-green-100">
+                    Clients requiring meal plan attention
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {criticalCount > 0 && (
+                  <Badge className="bg-red-500 text-white border-0">
+                    {criticalCount} Critical
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowPendingPlans(false)}
+                  className="text-white hover:bg-white/20 rounded-full"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-3 gap-4 p-4 bg-white border-b">
+              <div className="text-center p-3 bg-red-50 rounded-lg border border-red-100">
+                <div className="text-2xl font-bold text-red-600">{criticalCount}</div>
+                <div className="text-xs text-red-700">Critical</div>
+              </div>
+              <div className="text-center p-3 bg-amber-50 rounded-lg border border-amber-100">
+                <div className="text-2xl font-bold text-amber-600">
+                  {pendingPlans.filter(p => p.urgency === 'high').length}
+                </div>
+                <div className="text-xs text-amber-700">High Priority</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg border border-green-100">
+                <div className="text-2xl font-bold text-green-600">
+                  {pendingPlans.filter(p => p.urgency === 'medium').length}
+                </div>
+                <div className="text-xs text-green-700">Medium</div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-auto p-4">
+              {loadingPendingPlans ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+                  <span className="ml-2 text-gray-600">Loading pending plans...</span>
+                </div>
+              ) : pendingPlans.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-xl shadow-sm">
+                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-700">All Caught Up!</h3>
+                  <p className="text-gray-500 mt-2">No pending plans requiring attention</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-100 sticky top-0">
+                        <tr>
+                          <th className="px-3 py-3 text-left font-semibold text-gray-700">Client ID</th>
+                          <th className="px-3 py-3 text-left font-semibold text-gray-700">Client</th>
+                          <th className="px-3 py-3 text-left font-semibold text-gray-700">Phone</th>
+                          <th className="px-3 py-3 text-left font-semibold text-gray-700">Previous Plan</th>
+                          <th className="px-3 py-3 text-left font-semibold text-gray-700">Current Plan</th>
+                          <th className="px-3 py-3 text-center font-semibold text-gray-700">Plan Dates</th>
+                          <th className="px-3 py-3 text-center font-semibold text-gray-700">Expected Dates</th>
+                          <th className="px-3 py-3 text-center font-semibold text-gray-700">Remaining Days</th>
+                          <th className="px-3 py-3 text-center font-semibold text-gray-700">Pending Meal Days</th>
+                          <th className="px-3 py-3 text-center font-semibold text-gray-700">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {pendingPlans.map((plan) => (
+                          <tr 
+                            key={plan.clientId} 
+                            className={`hover:bg-gray-50 transition-colors ${
+                              plan.urgency === 'critical' ? 'bg-red-50/50' : 
+                              plan.urgency === 'high' ? 'bg-amber-50/50' : ''
+                            }`}
+                          >
+                            <td className="px-3 py-3">
+                              <Link 
+                                href={`/dietician/clients/${plan.clientId}`}
+                                className="text-blue-600 hover:underline font-medium text-xs"
+                              >
+                                P-{plan.clientId.toString().slice(-4).toUpperCase()}
+                              </Link>
+                            </td>
+                            <td className="px-3 py-3">
+                              <div>
+                                <p className="font-medium text-gray-900">{plan.clientName}</p>
+                                <p className="text-xs text-gray-500">{plan.email}</p>
+                              </div>
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="flex items-center gap-1 text-gray-600">
+                                <Phone className="h-3 w-3" />
+                                <span className="text-xs">{plan.phone}</span>
+                              </div>
+                            </td>
+                            {/* Previous Plan - Show name if exists, otherwise NA */}
+                            <td className="px-3 py-3">
+                              {plan.previousPlanName ? (
+                                <div>
+                                  <p className="font-medium text-gray-700 text-xs truncate max-w-[120px]">
+                                    {plan.previousPlanName}
+                                  </p>
+                                  {plan.previousPlanEndDate && (
+                                    <p className="text-xs text-gray-400">
+                                      Ended: {format(new Date(plan.previousPlanEndDate), 'dd MMM')}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-500 font-medium">NA</span>
+                              )}
+                            </td>
+                            {/* Current Plan - Show current plan, upcoming plan, or purchased plan name */}
+                            <td className="px-3 py-3">
+                              {plan.currentPlanName ? (
+                                <div>
+                                  <p className="font-medium text-gray-800 truncate max-w-[140px]">
+                                    {plan.currentPlanName}
+                                  </p>
+                                </div>
+                              ) : plan.upcomingPlanName ? (
+                                <div>
+                                  <p className="font-medium text-blue-700 truncate max-w-[140px]">
+                                    {plan.upcomingPlanName}
+                                  </p>
+                                  <Badge className="bg-blue-100 text-blue-700 text-xs mt-1">Upcoming</Badge>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="font-medium text-teal-700 truncate max-w-[140px]">
+                                    {plan.purchasedPlanName}
+                                  </p>
+                                  <p className="text-xs text-gray-400 italic">
+                                    (Purchased - No meal plan)
+                                  </p>
+                                </div>
+                              )}
+                            </td>
+                            {/* Plan Dates - Start and End dates */}
+                            <td className="px-3 py-3 text-center">
+                              {plan.currentPlanStartDate && plan.currentPlanEndDate ? (
+                                <div className="text-xs">
+                                  <p className="text-gray-600 font-medium">
+                                    {format(new Date(plan.currentPlanStartDate), 'dd MMM')}
+                                  </p>
+                                  <p className="text-gray-400">to</p>
+                                  <p className="text-gray-600 font-medium">
+                                    {format(new Date(plan.currentPlanEndDate), 'dd MMM yyyy')}
+                                  </p>
+                                </div>
+                              ) : plan.upcomingPlanStartDate && plan.upcomingPlanEndDate ? (
+                                <div className="text-xs">
+                                  <p className="text-blue-600 font-medium">
+                                    {format(new Date(plan.upcomingPlanStartDate), 'dd MMM')}
+                                  </p>
+                                  <p className="text-gray-400">to</p>
+                                  <p className="text-blue-600 font-medium">
+                                    {format(new Date(plan.upcomingPlanEndDate), 'dd MMM yyyy')}
+                                  </p>
+                                  <Badge className="bg-blue-100 text-blue-700 text-xs mt-1">Upcoming</Badge>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">—</span>
+                              )}
+                            </td>
+                            {/* Expected Dates - Expected start and end dates from purchase */}
+                            <td className="px-3 py-3 text-center">
+                              {plan.expectedStartDate && plan.expectedEndDate ? (
+                                <div className="text-xs">
+                                  <p className="text-amber-600 font-medium">
+                                    {format(new Date(plan.expectedStartDate), 'dd MMM')}
+                                  </p>
+                                  <p className="text-gray-400">to</p>
+                                  <p className="text-amber-600 font-medium">
+                                    {format(new Date(plan.expectedEndDate), 'dd MMM yyyy')}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">—</span>
+                              )}
+                            </td>
+                            {/* Remaining Days - Days left until current plan ends */}
+                            <td className="px-3 py-3 text-center">
+                              {plan.currentPlanRemainingDays > 0 ? (
+                                <Badge className={`${
+                                  plan.currentPlanRemainingDays <= 2 ? 'bg-red-500 text-white' :
+                                  plan.currentPlanRemainingDays <= 4 ? 'bg-amber-500 text-white' :
+                                  'bg-green-500 text-white'
+                                }`}>
+                                  {plan.currentPlanRemainingDays} days left
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-gray-200 text-gray-600">
+                                  0 days
+                                </Badge>
+                              )}
+                            </td>
+                            {/* Pending Meal Days - Days that need meal plans created */}
+                            <td className="px-3 py-3 text-center">
+                              <div>
+                                <Badge className={`${
+                                  plan.pendingDaysToCreate > 14 ? 'bg-red-500 text-white' :
+                                  plan.pendingDaysToCreate > 7 ? 'bg-amber-500 text-white' :
+                                  'bg-teal-500 text-white'
+                                }`}>
+                                  {plan.pendingDaysToCreate} days pending
+                                </Badge>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {plan.totalMealPlanDays} of {plan.totalPurchasedDays} days created
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <Button
+                                size="sm"
+                                className="text-xs bg-green-600 hover:bg-green-700 text-white"
+                                asChild
+                              >
+                                <Link href={`/dietician/clients/${plan.clientId}`}>
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  {plan.reason === 'no_meal_plan' ? 'Create Plan' : 'Create Phase'}
+                                </Link>
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t p-4 bg-white">
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>
+                  Total: <strong className="text-green-600">{pendingPlans.length}</strong> clients need attention
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchPendingPlans()}
+                  disabled={loadingPendingPlans}
+                  className="border-green-200 text-green-700 hover:bg-green-50"
+                >
+                  {loadingPendingPlans ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  ) : (
+                    <Clock className="h-4 w-4 mr-1" />
+                  )}
+                  Refresh
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </DashboardLayout>
   );
 }

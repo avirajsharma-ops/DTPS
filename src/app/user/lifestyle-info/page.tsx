@@ -1,0 +1,503 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { 
+  ArrowLeft, 
+  Save, 
+  Scale, 
+  Activity, 
+  Utensils,
+  ChefHat,
+  Wine,
+  Cigarette,
+  Plus,
+  X,
+  Loader2,
+  Calendar
+} from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+
+interface LifestyleData {
+  heightFeet: string;
+  heightInch: string;
+  heightCm: string;
+  weightKg: string;
+  targetWeightKg: string;
+  foodPreference: string;
+  preferredCuisine: string[];
+  allergiesFood: string[];
+  fastDays: string[];
+  nonVegExemptDays: string[];
+  foodLikes: string;
+  foodDislikes: string;
+  eatOutFrequency: string;
+  smokingFrequency: string;
+  alcoholFrequency: string;
+  activityLevel: string;
+  cookingOil: string[];
+  cravingType: string;
+}
+
+const foodPreferences = ["Veg", "Non-Veg", "Eggetarian", "Vegan"];
+const cuisines = ["Indian", "South Indian", "North Indian", "Chinese", "Italian", "Mexican", "Thai", "Continental", "Mediterranean"];
+const oils = ["Mustard Oil", "Sunflower Oil", "Olive Oil", "Coconut Oil", "Groundnut Oil", "Rice Bran Oil", "Ghee", "Butter"];
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const activityLevels = [
+  { value: "sedentary", label: "Sedentary", desc: "Little or no exercise" },
+  { value: "lightly_active", label: "Lightly Active", desc: "Light exercise 1-3 days/week" },
+  { value: "moderately_active", label: "Moderately Active", desc: "Moderate exercise 3-5 days/week" },
+  { value: "very_active", label: "Very Active", desc: "Hard exercise 6-7 days/week" },
+  { value: "extremely_active", label: "Extremely Active", desc: "Very hard exercise & physical job" }
+];
+const frequencies = ["Never", "Rarely", "Occasionally", "Sometimes", "Frequently", "Daily"];
+const cravings = ["Sweet", "Salty", "Spicy", "Sour", "Fried", "Crunchy"];
+
+export default function LifestyleInfoPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [data, setData] = useState<LifestyleData>({
+    heightFeet: "",
+    heightInch: "",
+    heightCm: "",
+    weightKg: "",
+    targetWeightKg: "",
+    foodPreference: "",
+    preferredCuisine: [],
+    allergiesFood: [],
+    fastDays: [],
+    nonVegExemptDays: [],
+    foodLikes: "",
+    foodDislikes: "",
+    eatOutFrequency: "",
+    smokingFrequency: "",
+    alcoholFrequency: "",
+    activityLevel: "",
+    cookingOil: [],
+    cravingType: ""
+  });
+
+  const [customAllergy, setCustomAllergy] = useState("");
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch("/api/client/lifestyle-info");
+        if (res.ok) {
+          const result = await res.json();
+          setData({
+            heightFeet: result.heightFeet || "",
+            heightInch: result.heightInch || "",
+            heightCm: result.heightCm || "",
+            weightKg: result.weightKg || "",
+            targetWeightKg: result.targetWeightKg || "",
+            foodPreference: result.foodPreference || "",
+            preferredCuisine: result.preferredCuisine || [],
+            allergiesFood: result.allergiesFood || [],
+            fastDays: result.fastDays || [],
+            nonVegExemptDays: result.nonVegExemptDays || [],
+            foodLikes: result.foodLikes || "",
+            foodDislikes: result.foodDislikes || "",
+            eatOutFrequency: result.eatOutFrequency || "",
+            smokingFrequency: result.smokingFrequency || "",
+            alcoholFrequency: result.alcoholFrequency || "",
+            activityLevel: result.activityLevel || "",
+            cookingOil: result.cookingOil || [],
+            cravingType: result.cravingType || ""
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching lifestyle info:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (session?.user) {
+      fetchData();
+    }
+  }, [session]);
+
+  // Helper function to convert CM to feet/inches
+  const cmToFeetInches = (cm: string) => {
+    const cmNum = parseFloat(cm);
+    if (isNaN(cmNum) || cmNum <= 0) return { feet: '', inch: '' };
+    const totalInches = cmNum / 2.54;
+    const feet = Math.floor(totalInches / 12);
+    const inches = Math.round(totalInches % 12);
+    return { feet: feet.toString(), inch: inches.toString() };
+  };
+
+  // Handle height CM change and auto-calculate feet/inches
+  const handleHeightCmChange = (cm: string) => {
+    const { feet, inch } = cmToFeetInches(cm);
+    setData(prev => ({ ...prev, heightCm: cm, heightFeet: feet, heightInch: inch }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const res = await fetch("/api/client/lifestyle-info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        toast.success("Lifestyle information saved successfully");
+        router.push("/user/profile");
+      } else {
+        toast.error("Failed to save lifestyle information");
+      }
+    } catch (error) {
+      console.error("Error saving lifestyle info:", error);
+      toast.error("Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleArrayItem = (field: keyof LifestyleData, item: string) => {
+    const currentArray = data[field] as string[];
+    if (currentArray.includes(item)) {
+      setData({ ...data, [field]: currentArray.filter(i => i !== item) });
+    } else {
+      setData({ ...data, [field]: [...currentArray, item] });
+    }
+  };
+
+  const addCustomAllergy = () => {
+    if (customAllergy.trim() && !data.allergiesFood.includes(customAllergy.trim())) {
+      setData({ ...data, allergiesFood: [...data.allergiesFood, customAllergy.trim()] });
+      setCustomAllergy("");
+    }
+  };
+
+  if (status === "loading" || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Link href="/user/profile" className="p-2 -ml-2 rounded-xl hover:bg-green-50 transition-colors">
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </Link>
+            <h1 className="text-lg font-bold text-gray-900">Lifestyle Information</h1>
+          </div>
+          <button 
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg shadow-green-500/25"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save
+          </button>
+        </div>
+      </div>
+
+      <div className="px-4 py-6 pb-24 space-y-6">
+        {/* Activity Level */}
+        <Section title="Activity Level" icon={Activity}>
+          <div className="space-y-2">
+            {activityLevels.map(level => (
+              <button
+                key={level.value}
+                onClick={() => setData({ ...data, activityLevel: level.value })}
+                className={`w-full p-3 rounded-xl text-left transition-all border ${
+                  data.activityLevel === level.value
+                    ? "bg-green-50 border-green-500 ring-2 ring-green-500"
+                    : "bg-gray-50 border-gray-200 hover:border-green-300"
+                }`}
+              >
+                <p className={`font-medium ${data.activityLevel === level.value ? 'text-green-700' : 'text-gray-900'}`}>
+                  {level.label}
+                </p>
+                <p className="text-xs text-gray-500">{level.desc}</p>
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* Food Preference */}
+        <Section title="Food Preference" icon={Utensils}>
+          <div className="flex flex-wrap gap-2">
+            {foodPreferences.map(pref => (
+              <button
+                key={pref}
+                onClick={() => setData({ ...data, foodPreference: pref })}
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  data.foodPreference === pref
+                    ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                }`}
+              >
+                {pref}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* Preferred Cuisines */}
+        <Section title="Preferred Cuisines" icon={ChefHat}>
+          <div className="flex flex-wrap gap-2">
+            {cuisines.map(cuisine => (
+              <button
+                key={cuisine}
+                onClick={() => toggleArrayItem("preferredCuisine", cuisine)}
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                  data.preferredCuisine.includes(cuisine)
+                    ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                }`}
+              >
+                {cuisine}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* Cooking Oil */}
+        <Section title="Cooking Oil Used" icon={ChefHat}>
+          <div className="flex flex-wrap gap-2">
+            {oils.map(oil => (
+              <button
+                key={oil}
+                onClick={() => toggleArrayItem("cookingOil", oil)}
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                  data.cookingOil.includes(oil)
+                    ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                }`}
+              >
+                {oil}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* Food Allergies */}
+        <Section title="Food Allergies" icon={Utensils}>
+          <div className="space-y-3">
+            {data.allergiesFood.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {data.allergiesFood.map(allergy => (
+                  <span 
+                    key={allergy}
+                    className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm flex items-center gap-1"
+                  >
+                    {allergy}
+                    <button 
+                      onClick={() => toggleArrayItem("allergiesFood", allergy)}
+                      className="hover:text-red-500"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customAllergy}
+                onChange={(e) => setCustomAllergy(e.target.value)}
+                placeholder="Add food allergy..."
+                className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                onKeyDown={(e) => e.key === 'Enter' && addCustomAllergy()}
+              />
+              <button
+                onClick={addCustomAllergy}
+                className="px-4 py-2.5 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </Section>
+
+        {/* Cravings */}
+        <Section title="Food Cravings" icon={Utensils}>
+          <div className="flex flex-wrap gap-2">
+            {cravings.map(craving => (
+              <button
+                key={craving}
+                onClick={() => setData({ ...data, cravingType: craving })}
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  data.cravingType === craving
+                    ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                }`}
+              >
+                {craving}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* Fast Days */}
+        <Section title="Fasting Days" icon={Calendar}>
+          <div className="flex flex-wrap gap-2">
+            {days.map(day => (
+              <button
+                key={day}
+                onClick={() => toggleArrayItem("fastDays", day)}
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                  data.fastDays.includes(day)
+                    ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                }`}
+              >
+                {day.slice(0, 3)}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* Non-Veg Exempt Days */}
+        {data.foodPreference !== "Veg" && data.foodPreference !== "Vegan" && (
+          <Section title="Non-Veg Exempt Days" icon={Calendar}>
+            <div className="flex flex-wrap gap-2">
+              {days.map(day => (
+                <button
+                  key={day}
+                  onClick={() => toggleArrayItem("nonVegExemptDays", day)}
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                    data.nonVegExemptDays.includes(day)
+                      ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                  }`}
+                >
+                  {day.slice(0, 3)}
+                </button>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Food Likes & Dislikes */}
+        <Section title="Food Preferences" icon={Utensils}>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Foods You Like</label>
+              <textarea
+                value={data.foodLikes}
+                onChange={(e) => setData({ ...data, foodLikes: e.target.value })}
+                placeholder="E.g., Dal, Rice, Paneer, Chicken..."
+                rows={2}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Foods You Dislike</label>
+              <textarea
+                value={data.foodDislikes}
+                onChange={(e) => setData({ ...data, foodDislikes: e.target.value })}
+                placeholder="E.g., Bitter gourd, Broccoli..."
+                rows={2}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              />
+            </div>
+          </div>
+        </Section>
+
+        {/* Eating Out Frequency */}
+        <Section title="Eating Out Frequency" icon={Utensils}>
+          <div className="flex flex-wrap gap-2">
+            {frequencies.map(freq => (
+              <button
+                key={freq}
+                onClick={() => setData({ ...data, eatOutFrequency: freq })}
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  data.eatOutFrequency === freq
+                    ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                }`}
+              >
+                {freq}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* Habits */}
+        <Section title="Lifestyle Habits" icon={Wine}>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Cigarette className="w-4 h-4" /> Smoking
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {frequencies.map(freq => (
+                  <button
+                    key={freq}
+                    onClick={() => setData({ ...data, smokingFrequency: freq })}
+                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                      data.smokingFrequency === freq
+                        ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    }`}
+                  >
+                    {freq}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Wine className="w-4 h-4" /> Alcohol
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {frequencies.map(freq => (
+                  <button
+                    key={freq}
+                    onClick={() => setData({ ...data, alcoholFrequency: freq })}
+                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                      data.alcoholFrequency === freq
+                        ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    }`}
+                  >
+                    {freq}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Section>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        <h3 className="font-bold text-gray-900">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}

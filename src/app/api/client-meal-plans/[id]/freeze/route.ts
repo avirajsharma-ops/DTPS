@@ -14,6 +14,46 @@ function calculateAllowedFreezeDays(durationDays: number): number {
   return months * 10;
 }
 
+// Helper function to get aggregated freeze info from all plans linked to the same purchase
+async function getSharedFreezeInfo(purchaseId: string | null, currentPlanId: string): Promise<{
+  totalFreezeCount: number;
+  allFreezedDays: any[];
+  linkedPlanIds: string[];
+  totalDurationDays: number;
+}> {
+  if (!purchaseId) {
+    return { totalFreezeCount: 0, allFreezedDays: [], linkedPlanIds: [], totalDurationDays: 0 };
+  }
+
+  // Find all meal plans linked to the same purchase
+  const linkedPlans: any[] = await ClientMealPlan.find({ purchaseId }).lean();
+  
+  let totalFreezeCount = 0;
+  let allFreezedDays: any[] = [];
+  let totalDurationDays = 0;
+  const linkedPlanIds: string[] = [];
+
+  for (const plan of linkedPlans) {
+    linkedPlanIds.push(plan._id.toString());
+    totalFreezeCount += plan.totalFreezeCount || 0;
+    
+    // Add all freezed days with plan info
+    const planFreezedDays = (plan.freezedDays || []).map((fd: any) => ({
+      ...fd,
+      planId: plan._id.toString(),
+      planName: plan.name
+    }));
+    allFreezedDays = allFreezedDays.concat(planFreezedDays);
+    
+    // Calculate total duration across all linked plans
+    const startDate = new Date(plan.startDate);
+    const endDate = new Date(plan.endDate);
+    totalDurationDays += differenceInDays(endDate, startDate) + 1;
+  }
+
+  return { totalFreezeCount, allFreezedDays, linkedPlanIds, totalDurationDays };
+}
+
 // GET - Get freeze information for a meal plan
 export async function GET(
   request: NextRequest,
@@ -40,12 +80,28 @@ export async function GET(
     const endDate = new Date(mealPlan.endDate);
     const durationDays = differenceInDays(endDate, startDate) + 1;
 
-    // Calculate allowed freeze days
-    const allowedFreezeDays = calculateAllowedFreezeDays(durationDays);
+    // Check if this plan is linked to a purchase (for shared freeze tracking)
+    const purchaseId = mealPlan.purchaseId?.toString() || null;
+    let totalFreezeCount = mealPlan.totalFreezeCount || 0;
+    let freezedDays = mealPlan.freezedDays || [];
+    let allowedFreezeDays = calculateAllowedFreezeDays(durationDays);
+    let isSharedFreeze = false;
+    let linkedPlanCount = 0;
 
-    // Get already frozen days
-    const freezedDays = mealPlan.freezedDays || [];
-    const totalFreezeCount = mealPlan.totalFreezeCount || 0;
+    if (purchaseId) {
+      // Get aggregated freeze info from all plans linked to the same purchase
+      const sharedInfo = await getSharedFreezeInfo(purchaseId, id);
+      
+      if (sharedInfo.linkedPlanIds.length > 1) {
+        // Multiple plans share the same purchase - use aggregated data
+        isSharedFreeze = true;
+        linkedPlanCount = sharedInfo.linkedPlanIds.length;
+        totalFreezeCount = sharedInfo.totalFreezeCount;
+        freezedDays = sharedInfo.allFreezedDays;
+        // Calculate allowed freeze days based on total duration of all linked plans
+        allowedFreezeDays = calculateAllowedFreezeDays(sharedInfo.totalDurationDays);
+      }
+    }
 
     // Calculate remaining freeze days
     const remainingFreezeDays = Math.max(0, allowedFreezeDays - totalFreezeCount);
@@ -64,9 +120,15 @@ export async function GET(
         freezedDays: freezedDays.map((fd: any) => ({
           date: fd.date,
           addedDate: fd.addedDate || null,
-          createdAt: fd.createdAt
+          createdAt: fd.createdAt,
+          planId: fd.planId || null,
+          planName: fd.planName || null
         })),
-        canFreeze: remainingFreezeDays > 0
+        canFreeze: remainingFreezeDays > 0,
+        // Shared freeze tracking info
+        isSharedFreeze,
+        linkedPlanCount,
+        purchaseId
       }
     });
   } catch (error) {
@@ -103,28 +165,45 @@ export async function POST(
       return NextResponse.json({ error: 'Meal plan not found' }, { status: 404 });
     }
 
-    // Calculate plan duration and allowed freeze days
+    // Calculate plan duration
     const startDate = startOfDay(new Date(mealPlan.startDate));
     const endDate = startOfDay(new Date(mealPlan.endDate));
     const durationDays = differenceInDays(endDate, startDate) + 1;
-    const allowedFreezeDays = calculateAllowedFreezeDays(durationDays);
+    
+    // Check for shared freeze tracking
+    const purchaseId = mealPlan.purchaseId?.toString() || null;
+    let currentFreezeCount = mealPlan.totalFreezeCount || 0;
+    let allowedFreezeDays = calculateAllowedFreezeDays(durationDays);
+    let existingFreezeSet = new Set(
+      (mealPlan.freezedDays || []).map((fd: any) => format(new Date(fd.date), 'yyyy-MM-dd'))
+    );
 
-    // Get current freeze count
-    const currentFreezeCount = mealPlan.totalFreezeCount || 0;
+    if (purchaseId) {
+      // Get aggregated freeze info from all plans linked to the same purchase
+      const sharedInfo = await getSharedFreezeInfo(purchaseId, id);
+      
+      if (sharedInfo.linkedPlanIds.length > 1) {
+        // Use aggregated freeze count from all linked plans
+        currentFreezeCount = sharedInfo.totalFreezeCount;
+        allowedFreezeDays = calculateAllowedFreezeDays(sharedInfo.totalDurationDays);
+        // Build set of all frozen dates across all linked plans
+        existingFreezeSet = new Set(
+          sharedInfo.allFreezedDays.map((fd: any) => format(new Date(fd.date), 'yyyy-MM-dd'))
+        );
+      }
+    }
+
     const existingFreezedDays = mealPlan.freezedDays || [];
 
     // Validate freeze dates
     const today = startOfDay(new Date());
     const validFreezeDates: Date[] = [];
-    const existingFreezeSet = new Set(
-      existingFreezedDays.map((fd: any) => format(new Date(fd.date), 'yyyy-MM-dd'))
-    );
 
     for (const dateStr of freezeDates) {
       const freezeDate = startOfDay(parseISO(dateStr));
       const formattedDate = format(freezeDate, 'yyyy-MM-dd');
 
-      // Check if date is already frozen
+      // Check if date is already frozen (across all linked plans if shared)
       if (existingFreezeSet.has(formattedDate)) {
         continue; // Skip already frozen dates
       }
@@ -152,11 +231,11 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Check if we have enough remaining freeze days
+    // Check if we have enough remaining freeze days (considering shared tracking)
     const newTotalFreezeCount = currentFreezeCount + validFreezeDates.length;
     if (newTotalFreezeCount > allowedFreezeDays) {
       return NextResponse.json({ 
-        error: `Cannot freeze ${validFreezeDates.length} days. Only ${allowedFreezeDays - currentFreezeCount} days remaining.`,
+        error: `Cannot freeze ${validFreezeDates.length} days. Only ${allowedFreezeDays - currentFreezeCount} days remaining${purchaseId ? ' (shared across all plan phases)' : ''}.`,
         allowedFreezeDays,
         currentFreezeCount,
         requestedDays: validFreezeDates.length
@@ -269,17 +348,42 @@ export async function POST(
 
     // Update the meal plan - extend endDate by frozen days count
     mealPlan.freezedDays = [...existingFreezedDays, ...newFreezeDays];
-    mealPlan.totalFreezeCount = newTotalFreezeCount;
+    // Update only THIS plan's freeze count (not the shared total)
+    const thisPlanNewFreezeCount = (mealPlan.totalFreezeCount || 0) + validFreezeDates.length;
+    mealPlan.totalFreezeCount = thisPlanNewFreezeCount;
     mealPlan.meals = updatedMeals;
     mealPlan.endDate = newEndDate; // Extend end date by frozen days
 
     await mealPlan.save();
 
-    // Also update ClientPurchase end date to keep in sync
+    // Also update ClientPurchase end date and expected end date to keep in sync
     await ClientPurchase.updateOne(
       { mealPlanId: mealPlan._id },
       { $set: { endDate: newEndDate } }
     );
+
+    // If this plan is linked to a purchase, also extend the purchase's expected end date
+    if (purchaseId) {
+      const purchase = await ClientPurchase.findById(purchaseId);
+      if (purchase && purchase.expectedEndDate) {
+        const newExpectedEndDate = addDays(new Date(purchase.expectedEndDate), validFreezeDates.length);
+        await ClientPurchase.updateOne(
+          { _id: purchaseId },
+          { 
+            $set: { 
+              expectedEndDate: newExpectedEndDate,
+              endDate: newExpectedEndDate // Also extend the purchase end date
+            } 
+          }
+        );
+        console.log(`✅ Extended purchase ${purchaseId} expected end date by ${validFreezeDates.length} days to ${format(newExpectedEndDate, 'yyyy-MM-dd')}`);
+      }
+    }
+
+    // Calculate the new shared freeze count for the response
+    const newSharedTotalFreezeCount = purchaseId 
+      ? (await getSharedFreezeInfo(purchaseId, id)).totalFreezeCount 
+      : thisPlanNewFreezeCount;
 
     return NextResponse.json({
       success: true,
@@ -288,12 +392,14 @@ export async function POST(
         planId: mealPlan._id,
         originalEndDate: format(endDate, 'yyyy-MM-dd'),
         newEndDate: format(newEndDate, 'yyyy-MM-dd'),
-        totalFreezeCount: newTotalFreezeCount,
+        totalFreezeCount: newSharedTotalFreezeCount, // Shared count if applicable
+        thisPlanFreezeCount: thisPlanNewFreezeCount, // This plan's count only
         allowedFreezeDays,
-        remainingFreezeDays: allowedFreezeDays - newTotalFreezeCount,
+        remainingFreezeDays: allowedFreezeDays - newSharedTotalFreezeCount,
         frozenDates: validFreezeDates.map(d => format(d, 'yyyy-MM-dd')),
         addedMealDates: addedMealDates,
-        copiedMeals: mealsToCopy.length
+        copiedMeals: mealsToCopy.length,
+        isSharedFreeze: !!purchaseId
       }
     });
 

@@ -45,6 +45,9 @@ export interface IClientMealPlan extends Document {
   dietitianId: mongoose.Types.ObjectId;
   templateId: mongoose.Types.ObjectId;
   
+  // Purchase tracking (for shared freeze days across plan phases)
+  purchaseId?: mongoose.Types.ObjectId;
+  
   // Plan details
   name: string;
   startDate: Date;
@@ -181,6 +184,13 @@ const ClientMealPlanSchema = new Schema({
     type: Schema.Types.ObjectId, 
     ref: 'DietTemplate', 
     required: false // Optional - can create plan without template
+  },
+  
+  // Purchase tracking (for shared freeze days across plan phases)
+  purchaseId: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'ClientPurchase', 
+    required: false
   },
   
   name: { 

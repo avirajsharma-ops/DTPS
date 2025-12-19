@@ -47,6 +47,13 @@ export interface IClientPurchase extends Document {
   startDate: Date;
   endDate: Date;
   
+  // Expected dates (dietitian's expected start/end for meal plan)
+  expectedStartDate?: Date;
+  expectedEndDate?: Date;
+  
+  // Parent purchase reference (for multi-phase plans sharing freeze days)
+  parentPurchaseId?: mongoose.Types.ObjectId;
+  
   // Status
   status: 'active' | 'expired' | 'cancelled';
   
@@ -206,6 +213,23 @@ const clientPurchaseSchema = new Schema({
   endDate: {
     type: Date,
     required: true
+  },
+  
+  // Expected dates (dietitian's expected start/end for meal plan)
+  expectedStartDate: {
+    type: Date,
+    required: false
+  },
+  expectedEndDate: {
+    type: Date,
+    required: false
+  },
+  
+  // Parent purchase reference (for multi-phase plans sharing freeze days)
+  parentPurchaseId: {
+    type: Schema.Types.ObjectId,
+    ref: 'ClientPurchase',
+    required: false
   },
   
   // Status

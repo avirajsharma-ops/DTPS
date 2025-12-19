@@ -247,6 +247,9 @@ export default function ClientDetailPage() {
     frozenDays?: number;
     extendedDays?: number;
     totalActivePlans?: number;
+    expectedStartDate?: string;
+    expectedEndDate?: string;
+    hasMealPlan?: boolean;
   } | null>(null);
   const [showPlanDetails, setShowPlanDetails] = useState(false);
 
@@ -401,6 +404,13 @@ export default function ClientDetailPage() {
   // Fetch active plan data (from client-meal-plans and client-purchases)
   const fetchActivePlan = async () => {
     try {
+      // First fetch purchase data to get expected dates
+      let purchaseData: any = null;
+      const purchaseRes = await fetch(`/api/client-purchases/check?clientId=${params.clientId}`);
+      if (purchaseRes.ok) {
+        purchaseData = await purchaseRes.json();
+      }
+
       // Fetch meal plans for this client
       const mealPlanRes = await fetch(`/api/client-meal-plans?clientId=${params.clientId}`);
       if (mealPlanRes.ok) {
@@ -462,7 +472,10 @@ export default function ClientDetailPage() {
               isFrozen: frozenDays > 0,
               frozenDays: frozenDays,
               extendedDays: extendedDays,
-              totalActivePlans: activePlans.length // Track total for display
+              totalActivePlans: activePlans.length,
+              expectedStartDate: purchaseData?.expectedStartDate || undefined,
+              expectedEndDate: purchaseData?.expectedEndDate || undefined,
+              hasMealPlan: true
             });
             return;
           }
@@ -487,7 +500,10 @@ export default function ClientDetailPage() {
               endDate: upcomingPlan.endDate,
               duration: planOriginalDuration || planCurrentDuration,
               status: 'upcoming',
-              totalActivePlans: activePlans.length
+              totalActivePlans: activePlans.length,
+              expectedStartDate: purchaseData?.expectedStartDate || undefined,
+              expectedEndDate: purchaseData?.expectedEndDate || undefined,
+              hasMealPlan: true
             });
             return;
           }
@@ -505,29 +521,29 @@ export default function ClientDetailPage() {
             endDate: mostRecentPlan.endDate,
             duration: planOriginalDuration || planCurrentDuration,
             status: 'completed',
-            totalActivePlans: activePlans.length
+            totalActivePlans: activePlans.length,
+            expectedStartDate: purchaseData?.expectedStartDate || undefined,
+            expectedEndDate: purchaseData?.expectedEndDate || undefined,
+            hasMealPlan: true
           });
           return;
         }
       }
       
       // If no meal plan, check for purchases to determine if inactive
-      const purchaseRes = await fetch(`/api/client-purchases/check?clientId=${params.clientId}`);
-      if (purchaseRes.ok) {
-        const purchaseData = await purchaseRes.json();
-        if (purchaseData.hasPaidPlan) {
-          setActivePlan({
-            name: 'Wellness Plan',
-            startDate: purchaseData.startDate || new Date().toISOString(),
-            endDate: purchaseData.endDate || new Date().toISOString(),
-            duration: purchaseData.totalDays || 0,
-            status: 'active',
-          });
-        } else {
-          setActivePlan(null); // No active plan
-        }
+      if (purchaseData && purchaseData.hasPaidPlan) {
+        setActivePlan({
+          name: 'Wellness Plan',
+          startDate: purchaseData.startDate || new Date().toISOString(),
+          endDate: purchaseData.endDate || new Date().toISOString(),
+          duration: purchaseData.totalDays || 0,
+          status: 'active',
+          expectedStartDate: purchaseData.expectedStartDate || undefined,
+          expectedEndDate: purchaseData.expectedEndDate || undefined,
+          hasMealPlan: false
+        });
       } else {
-        setActivePlan(null);
+        setActivePlan(null); // No active plan
       }
     } catch (error) {
       console.error('Error fetching active plan:', error);
@@ -1574,13 +1590,13 @@ export default function ClientDetailPage() {
                       </div>
                       <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
                         <div className="flex items-center gap-1.5">
-                          <span className={`inline-block h-2 w-2 rounded-full ${activePlan?.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                          <span className="capitalize">{activePlan?.status === 'active' ? 'Active' : 'Inactive'}</span>
+                          <span className={`inline-block h-2 w-2 rounded-full ${activePlan?.status === 'active' || activePlan?.status === 'upcoming' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <span className="capitalize">{activePlan?.status === 'active' || activePlan?.status === 'upcoming' ? 'Active' : 'Inactive'}</span>
                         </div>
                         <span className="text-gray-300">•</span>
                         <span>Practitioner: {client.assignedDietitian ? `${client.assignedDietitian.firstName} ${client.assignedDietitian.lastName}` : 'Not Assigned'}</span>
                         <span className="text-gray-300">•</span>
-                        <span className="whitespace-nowrap">Last seen: {formatLastSeen(client?.updatedAt || client?.lastLoginAt || client?.createdAt)}</span>
+                        <span className="whitespace-nowrap">Last seen: {formatLastSeen(client?.lastLoginAt || client?.createdAt)}</span>
                       </div>
                     </div>
                   </div>
@@ -1648,8 +1664,7 @@ export default function ClientDetailPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full ${
-                          activePlan.status === 'active' ? 'bg-emerald-400 animate-pulse' : 
-                          activePlan.status === 'upcoming' ? 'bg-yellow-400 animate-pulse' :
+                          activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'bg-emerald-400 animate-pulse' : 
                           'bg-gray-400'
                         }`}></div>
                         <p className="text-sm font-medium text-slate-300 uppercase tracking-wide">
@@ -1665,52 +1680,71 @@ export default function ClientDetailPage() {
                       </div>
                       <h2 className="mt-2 text-xl text-white font-bold">{activePlan.name}</h2>
                       <p className="mt-1 text-sm text-slate-400">
-                        {activePlan.status === 'active' ? 'Ongoing wellness journey' :
-                         activePlan.status === 'upcoming' ? 'Starting soon' :
+                        {activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'Ongoing wellness journey' :
                          'Plan completed'}
                       </p>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div className={`grid ${activePlan.expectedStartDate && activePlan.expectedEndDate && activePlan.hasMealPlan ? 'grid-cols-4' : 'grid-cols-3'} gap-3 text-xs`}>
                       <div className="rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 px-4 py-3 shadow-md">
                         <p className="text-xs font-medium text-cyan-100 uppercase tracking-wide">Duration</p>
                         <p className="mt-1.5 text-lg font-bold text-white">
                           {activePlan.duration} days
                         </p>
                       </div>
-                      <div 
-                        className={`rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 px-4 py-3 shadow-md ${(activePlan.isExtended || activePlan.isFrozen) ? 'cursor-pointer hover:from-violet-600 hover:to-purple-700 transition-colors' : ''}`}
-                        onClick={(e) => {
-                          if (activePlan.isExtended || activePlan.isFrozen) {
-                            e.stopPropagation();
-                            setShowPlanDetails(!showPlanDetails);
-                          }
-                        }}
-                      >
-                        <p className="text-xs font-medium text-violet-100 uppercase tracking-wide">
-                          Program dates {(activePlan.isExtended || activePlan.isFrozen) && <span className="text-yellow-300">ⓘ</span>}
-                        </p>
-                        <p className="mt-1.5 text-sm font-semibold text-white">
-                          {formatDate(activePlan.startDate)} – {formatDate(activePlan.endDate)}
-                        </p>
-                      </div>
+                      {/* Expected Dates - shown first if set */}
+                      {activePlan.expectedStartDate && activePlan.expectedEndDate && (
+                        <div className="rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 px-4 py-3 shadow-md">
+                          <p className="text-xs font-medium text-amber-100 uppercase tracking-wide">
+                            Expected dates
+                          </p>
+                          <p className="mt-1.5 text-sm font-semibold text-white">
+                            {formatDate(activePlan.expectedStartDate)} – {formatDate(activePlan.expectedEndDate)}
+                          </p>
+                        </div>
+                      )}
+                      {/* Meal Plan Dates - shown only when meal plan exists */}
+                      {activePlan.hasMealPlan && (
+                        <div 
+                          className={`rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 px-4 py-3 shadow-md ${(activePlan.isExtended || activePlan.isFrozen) ? 'cursor-pointer hover:from-violet-600 hover:to-purple-700 transition-colors' : ''}`}
+                          onClick={(e) => {
+                            if (activePlan.isExtended || activePlan.isFrozen) {
+                              e.stopPropagation();
+                              setShowPlanDetails(!showPlanDetails);
+                            }
+                          }}
+                        >
+                          <p className="text-xs font-medium text-violet-100 uppercase tracking-wide">
+                            Plan dates {(activePlan.isExtended || activePlan.isFrozen) && <span className="text-yellow-300">ⓘ</span>}
+                          </p>
+                          <p className="mt-1.5 text-sm font-semibold text-white">
+                            {formatDate(activePlan.startDate)} – {formatDate(activePlan.endDate)}
+                          </p>
+                        </div>
+                      )}
+                      {/* If no meal plan but has expected dates, show waiting message */}
+                      {!activePlan.hasMealPlan && !activePlan.expectedStartDate && (
+                        <div className="rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 px-4 py-3 shadow-md">
+                          <p className="text-xs font-medium text-violet-100 uppercase tracking-wide">
+                            Program dates
+                          </p>
+                          <p className="mt-1.5 text-sm font-semibold text-white">
+                            Meal plan not created
+                          </p>
+                        </div>
+                      )}
                       <div className={`rounded-xl bg-gradient-to-br ${
-                        activePlan.status === 'active' ? 'from-emerald-500 to-green-600' :
-                        activePlan.status === 'upcoming' ? 'from-yellow-500 to-orange-600' :
+                        activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'from-emerald-500 to-green-600' :
                         'from-gray-500 to-gray-600'
                       } px-4 py-3 shadow-md`}>
                         <p className={`text-xs font-medium uppercase tracking-wide ${
-                          activePlan.status === 'active' ? 'text-emerald-100' :
-                          activePlan.status === 'upcoming' ? 'text-yellow-100' :
+                          activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'text-emerald-100' :
                           'text-gray-100'
                         }`}>Status</p>
                         <Badge className={`mt-1.5 ${
-                          activePlan.status === 'active' ? 'bg-white/20' : 
-                          activePlan.status === 'upcoming' ? 'bg-yellow-500/20' :
+                          activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'bg-white/20' : 
                           'bg-gray-500/20'
                         } backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold`}>
-                          {activePlan.status === 'active' ? 'Running' : 
-                           activePlan.status === 'upcoming' ? 'Upcoming' :
-                           'Completed'}
+                          {activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'Active' : 'Completed'}
                         </Badge>
                       </div>
                     </div>

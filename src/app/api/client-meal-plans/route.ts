@@ -14,6 +14,7 @@ import { logHistoryServer } from '@/lib/server/history';
 const clientMealPlanSchema = z.object({
   clientId: z.string().min(1, 'Client ID is required'),
   templateId: z.string().optional(), // Optional - can create plan without template
+  purchaseId: z.string().optional(), // Optional - purchase ID for shared freeze tracking
   name: z.string().min(1, 'Plan name is required').max(200),
   description: z.string().max(2000).optional(),
   startDate: z.string().refine(date => !isNaN(Date.parse(date)), 'Invalid start date'),
@@ -279,6 +280,7 @@ export async function POST(request: NextRequest) {
     const mealPlanData: any = {
       clientId: validatedData.clientId,
       dietitianId: session.user.id,
+      purchaseId: validatedData.purchaseId || undefined, // For shared freeze tracking
       name: validatedData.name,
       description: validatedData.description,
       startDate: startDate,

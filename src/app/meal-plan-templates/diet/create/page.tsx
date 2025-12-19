@@ -455,9 +455,6 @@ console.log(template )
           <Button variant="outline" size="sm" className="gap-1" onClick={()=>setShowMedicalPanel(true)}>
             <Stethoscope className="h-4 w-4" /> Medical
           </Button>
-          <Button variant="default" size="sm" className="gap-1 bg-blue-600 hover:bg-blue-700" onClick={() => { fetchDietTemplates(); setShowTemplateDialog(true); }}>
-            <ChefHat className="h-4 w-4" /> Load Template
-          </Button>
         </div>
 
         {/* Steps indicator (3 steps) */}
@@ -635,74 +632,6 @@ console.log(template )
             <CardTitle className="text-sm flex items-center gap-2"><Stethoscope className="h-4 w-4" />Medical Info</CardTitle>
             <p className="text-xs text-gray-600 mt-2">No medical data available for templates. Use client profile to view user-specific medical details.</p>
             <div className="flex justify-end mt-4"><Button size="sm" onClick={()=>setShowMedicalPanel(false)}>Close</Button></div>
-          </DialogContent>
-        </Dialog>
-        {/* Load Template Dialog */}
-        <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-          <DialogContent className="max-w-2xl p-4 space-y-3 overflow-y-auto max-h-[80vh]">
-            <CardTitle className="text-lg flex items-center gap-2"><ChefHat className="h-5 w-5" />Load Diet Template</CardTitle>
-            <CardDescription>Select a template to load its data including meals and food items</CardDescription>
-            {loadingTemplates ? (
-              <div className="flex items-center justify-center py-8">
-                <LoadingSpinner />
-                <span className="ml-2 text-sm text-gray-500">Loading templates...</span>
-              </div>
-            ) : availableTemplates.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 text-sm">No templates available</p>
-                <p className="text-gray-400 text-xs mt-1">Create some templates first</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
-                {availableTemplates.map((tmpl) => (
-                  <Card 
-                    key={tmpl._id} 
-                    className={`cursor-pointer hover:border-blue-300 transition-all ${selectedTemplateId === tmpl._id ? 'border-blue-500 bg-blue-50' : ''}`}
-                    onClick={() => setSelectedTemplateId(tmpl._id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{tmpl.name}</h4>
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{tmpl.description || 'No description'}</p>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <Badge variant="outline" className="text-[10px]">{tmpl.duration} days</Badge>
-                            <Badge variant="outline" className="text-[10px] capitalize">{tmpl.category?.replace('-', ' ')}</Badge>
-                            <Badge variant="outline" className="text-[10px] capitalize">{tmpl.difficulty}</Badge>
-                            {tmpl.targetAudience?.goals?.length > 0 && (
-                              <Badge variant="secondary" className="text-[10px]">
-                                {tmpl.targetAudience.goals[0]}
-                              </Badge>
-                            )}
-                          </div>
-                          {tmpl.meals?.length > 0 && (
-                            <p className="text-xs text-green-600 mt-2">✓ Contains {tmpl.meals.length} day(s) of meal data</p>
-                          )}
-                        </div>
-                        {selectedTemplateId === tmpl._id && (
-                          <div className="text-blue-600">
-                            <Target className="h-5 w-5" />
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-            <div className="flex justify-end gap-2 pt-2 border-t">
-              <Button variant="outline" size="sm" onClick={() => setShowTemplateDialog(false)}>Cancel</Button>
-              <Button 
-                size="sm" 
-                disabled={!selectedTemplateId}
-                onClick={() => {
-                  const tmpl = availableTemplates.find(t => t._id === selectedTemplateId);
-                  if (tmpl) loadTemplateData(tmpl);
-                }}
-              >
-                Load Template
-              </Button>
-            </div>
           </DialogContent>
         </Dialog>
       </div>

@@ -24,7 +24,8 @@ import {
   CreditCard,
   DollarSign,
   Package,
-  Wallet
+  Wallet,
+  AlertTriangle
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -53,6 +54,12 @@ export default function Sidebar({ className }: SidebarProps) {
             label: 'My Clients',
             icon: Users,
             description: 'Manage your assigned clients'
+          },
+          {
+            href: '/dietician/pending-plans',
+            label: 'Pending Plans',
+            icon: AlertTriangle,
+            description: 'Clients needing meal plans'
           },
           {
             href: '/appointments',

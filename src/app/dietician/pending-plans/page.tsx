@@ -1,0 +1,524 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Users,
+  AlertTriangle,
+  CheckCircle,
+  ExternalLink,
+  Phone,
+  Loader2,
+  Search,
+  RefreshCw
+} from 'lucide-react';
+import Link from 'next/link';
+import { format } from 'date-fns';
+
+interface PendingPlan {
+  clientId: string;
+  clientName: string;
+  phone: string;
+  email: string;
+  
+  // Current plan info
+  currentPlanName: string | null;
+  currentPlanStartDate: string | null;
+  currentPlanEndDate: string | null;
+  currentPlanRemainingDays: number;
+  
+  // Previous plan info
+  previousPlanName: string | null;
+  previousPlanEndDate?: string | null;
+  
+  // Upcoming plan info
+  upcomingPlanName?: string | null;
+  upcomingPlanStartDate?: string | null;
+  upcomingPlanEndDate?: string | null;
+  daysUntilStart?: number;
+  
+  // Purchase info
+  purchasedPlanName: string;
+  totalPurchasedDays: number;
+  totalMealPlanDays: number;
+  pendingDaysToCreate: number;
+  
+  // Expected dates
+  expectedStartDate?: string;
+  expectedEndDate?: string;
+  
+  // Status
+  reason: 'no_meal_plan' | 'current_ending_soon' | 'phase_gap' | 'upcoming_with_pending';
+  reasonText: string;
+  urgency: 'critical' | 'high' | 'medium';
+  hasNextPhase: boolean;
+}
+
+export default function PendingPlansPage() {
+  const { data: session } = useSession();
+  const [pendingPlans, setPendingPlans] = useState<PendingPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [criticalCount, setCriticalCount] = useState(0);
+  const [highCount, setHighCount] = useState(0);
+  const [mediumCount, setMediumCount] = useState(0);
+
+  // Fetch pending plans
+  const fetchPendingPlans = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/dashboard/pending-plans');
+      if (response.ok) {
+        const text = await response.text();
+        if (text) {
+          const data = JSON.parse(text);
+          setPendingPlans(data.pendingPlans || []);
+          setCriticalCount(data.criticalCount || 0);
+          setHighCount(data.highCount || 0);
+          setMediumCount(data.mediumCount || 0);
+        } else {
+          setPendingPlans([]);
+          setCriticalCount(0);
+          setHighCount(0);
+          setMediumCount(0);
+        }
+      } else {
+        console.error('Failed to fetch pending plans');
+        setPendingPlans([]);
+      }
+    } catch (error) {
+      console.error('Error fetching pending plans:', error);
+      setPendingPlans([]);
+      setCriticalCount(0);
+      setHighCount(0);
+      setMediumCount(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingPlans();
+  }, []);
+
+  // Filter plans based on search
+  const filteredPlans = pendingPlans.filter(plan => 
+    plan.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    plan.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    plan.phone.includes(searchQuery)
+  );
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-teal-600 mx-auto mb-4" />
+            <p className="text-gray-600">Loading pending plans...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Pending Plans</h1>
+            <p className="text-gray-600 mt-1">
+              Clients requiring meal plan attention
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge className="bg-teal-100 text-teal-700 border-teal-200 px-3 py-1">
+              <Users className="h-4 w-4 mr-1" />
+              {pendingPlans.length} Clients
+            </Badge>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={fetchPendingPlans}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-700 font-medium">Critical</p>
+                  <p className="text-3xl font-bold text-red-600">{criticalCount}</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+              </div>
+              <p className="text-xs text-red-600 mt-2">Needs immediate attention</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-amber-700 font-medium">High Priority</p>
+                  <p className="text-3xl font-bold text-amber-600">{highCount}</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-amber-600" />
+                </div>
+              </div>
+              <p className="text-xs text-amber-600 mt-2">Plan ending soon</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-700 font-medium">Medium</p>
+                  <p className="text-3xl font-bold text-green-600">{mediumCount}</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+              <p className="text-xs text-green-600 mt-2">Can be scheduled</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search clients by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pending Plans - Responsive */}
+        {filteredPlans.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700">All Caught Up!</h3>
+              <p className="text-gray-500 mt-2">
+                {searchQuery ? 'No clients match your search' : 'No pending plans requiring attention'}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Mobile Cards View */}
+            <div className="lg:hidden space-y-4">
+              {filteredPlans.map((plan) => (
+                <Card 
+                  key={plan.clientId}
+                  className={`${
+                    plan.urgency === 'critical' ? 'border-red-300 bg-red-50/50' : 
+                    plan.urgency === 'high' ? 'border-amber-300 bg-amber-50/50' : 
+                    'border-gray-200'
+                  }`}
+                >
+                  <CardContent className="p-4">
+                    {/* Header with ID and Urgency */}
+                    <div className="flex items-center justify-between mb-3">
+                      <Link 
+                        href={`/dietician/clients/${plan.clientId}`}
+                        className="text-blue-600 hover:underline font-medium text-sm"
+                      >
+                        P-{plan.clientId.toString().slice(-4).toUpperCase()}
+                      </Link>
+                      <Badge className={`text-xs ${
+                        plan.urgency === 'critical' ? 'bg-red-500 text-white' :
+                        plan.urgency === 'high' ? 'bg-amber-500 text-white' :
+                        'bg-green-500 text-white'
+                      }`}>
+                        {plan.urgency.charAt(0).toUpperCase() + plan.urgency.slice(1)}
+                      </Badge>
+                    </div>
+
+                    {/* Client Info */}
+                    <div className="mb-3">
+                      <p className="font-semibold text-gray-900">{plan.clientName}</p>
+                      <p className="text-xs text-gray-500">{plan.email}</p>
+                      <div className="flex items-center gap-1 text-gray-600 mt-1">
+                        <Phone className="h-3 w-3" />
+                        <span className="text-xs">{plan.phone}</span>
+                      </div>
+                    </div>
+
+                    {/* Plan Info Grid */}
+                    <div className="grid grid-cols-2 gap-3 text-xs mb-3">
+                      <div>
+                        <p className="text-gray-500 font-medium">Current Plan</p>
+                        <p className="text-gray-900 truncate">
+                          {plan.currentPlanName || plan.upcomingPlanName || plan.purchasedPlanName || 'NA'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 font-medium">Previous Plan</p>
+                        <p className="text-gray-900 truncate">{plan.previousPlanName || 'NA'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 font-medium">Remaining</p>
+                        <Badge className={`text-xs ${
+                          plan.currentPlanRemainingDays <= 2 ? 'bg-red-500 text-white' :
+                          plan.currentPlanRemainingDays <= 4 ? 'bg-amber-500 text-white' :
+                          'bg-green-500 text-white'
+                        }`}>
+                          {plan.currentPlanRemainingDays} days
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 font-medium">Pending Days</p>
+                        <Badge className={`text-xs ${
+                          plan.pendingDaysToCreate > 14 ? 'bg-red-500 text-white' :
+                          plan.pendingDaysToCreate > 7 ? 'bg-amber-500 text-white' :
+                          'bg-teal-500 text-white'
+                        }`}>
+                          {plan.pendingDaysToCreate} days
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Expected Dates */}
+                    {plan.expectedStartDate && plan.expectedEndDate && (
+                      <div className="text-xs text-amber-600 mb-3">
+                        <span className="text-gray-500">Expected: </span>
+                        {format(new Date(plan.expectedStartDate), 'dd MMM')} - {format(new Date(plan.expectedEndDate), 'dd MMM yyyy')}
+                      </div>
+                    )}
+
+                    {/* Progress */}
+                    <div className="text-xs text-gray-500 mb-3">
+                      {plan.totalMealPlanDays} of {plan.totalPurchasedDays} days created
+                    </div>
+
+                    {/* Action Button */}
+                    <Button
+                      size="sm"
+                      className="w-full text-xs bg-green-600 hover:bg-green-700 text-white"
+                      asChild
+                    >
+                      <Link href={`/dietician/clients/${plan.clientId}`}>
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        {plan.reason === 'no_meal_plan' ? 'Create Plan' : 'Create Phase'}
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <Card className="hidden lg:block">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Client ID</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Client</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Phone</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Previous Plan</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Current Plan</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-700">Plan Dates</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-700">Expected Dates</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-700">Remaining Days</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-700">Pending Meal Days</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-700">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredPlans.map((plan) => (
+                        <tr 
+                          key={plan.clientId} 
+                          className={`hover:bg-gray-50 transition-colors ${
+                            plan.urgency === 'critical' ? 'bg-red-50/50' : 
+                            plan.urgency === 'high' ? 'bg-amber-50/50' : ''
+                          }`}
+                        >
+                          <td className="px-4 py-3">
+                            <Link 
+                              href={`/dietician/clients/${plan.clientId}`}
+                              className="text-blue-600 hover:underline font-medium text-xs"
+                            >
+                              P-{plan.clientId.toString().slice(-4).toUpperCase()}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div>
+                              <p className="font-medium text-gray-900">{plan.clientName}</p>
+                              <p className="text-xs text-gray-500">{plan.email}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1 text-gray-600">
+                              <Phone className="h-3 w-3" />
+                              <span className="text-xs">{plan.phone}</span>
+                            </div>
+                          </td>
+                          {/* Previous Plan */}
+                          <td className="px-4 py-3">
+                            {plan.previousPlanName ? (
+                              <div>
+                                <p className="font-medium text-gray-700 text-xs truncate max-w-[120px]">
+                                  {plan.previousPlanName}
+                                </p>
+                                {plan.previousPlanEndDate && (
+                                  <p className="text-xs text-gray-400">
+                                    Ended: {format(new Date(plan.previousPlanEndDate), 'dd MMM')}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-500 font-medium">NA</span>
+                            )}
+                          </td>
+                          {/* Current Plan */}
+                          <td className="px-4 py-3">
+                            {plan.currentPlanName ? (
+                              <div>
+                                <p className="font-medium text-gray-800 truncate max-w-[140px]">
+                                  {plan.currentPlanName}
+                                </p>
+                              </div>
+                            ) : plan.upcomingPlanName ? (
+                              <div>
+                                <p className="font-medium text-blue-700 truncate max-w-[140px]">
+                                  {plan.upcomingPlanName}
+                                </p>
+                                <Badge className="bg-blue-100 text-blue-700 text-xs mt-1">Upcoming</Badge>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="font-medium text-teal-700 truncate max-w-[140px]">
+                                  {plan.purchasedPlanName}
+                                </p>
+                                <p className="text-xs text-gray-400 italic">
+                                  (Purchased - No meal plan)
+                                </p>
+                              </div>
+                            )}
+                          </td>
+                          {/* Plan Dates */}
+                          <td className="px-4 py-3 text-center">
+                            {plan.currentPlanStartDate && plan.currentPlanEndDate ? (
+                              <div className="text-xs">
+                                <p className="text-gray-600 font-medium">
+                                  {format(new Date(plan.currentPlanStartDate), 'dd MMM')}
+                                </p>
+                                <p className="text-gray-400">to</p>
+                                <p className="text-gray-600 font-medium">
+                                  {format(new Date(plan.currentPlanEndDate), 'dd MMM yyyy')}
+                                </p>
+                              </div>
+                            ) : plan.upcomingPlanStartDate && plan.upcomingPlanEndDate ? (
+                              <div className="text-xs">
+                                <p className="text-blue-600 font-medium">
+                                  {format(new Date(plan.upcomingPlanStartDate), 'dd MMM')}
+                                </p>
+                                <p className="text-gray-400">to</p>
+                                <p className="text-blue-600 font-medium">
+                                  {format(new Date(plan.upcomingPlanEndDate), 'dd MMM yyyy')}
+                                </p>
+                                <Badge className="bg-blue-100 text-blue-700 text-xs mt-1">Upcoming</Badge>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
+                          </td>
+                          {/* Expected Dates */}
+                          <td className="px-4 py-3 text-center">
+                            {plan.expectedStartDate && plan.expectedEndDate ? (
+                              <div className="text-xs">
+                                <p className="text-amber-600 font-medium">
+                                  {format(new Date(plan.expectedStartDate), 'dd MMM')}
+                                </p>
+                                <p className="text-gray-400">to</p>
+                                <p className="text-amber-600 font-medium">
+                                  {format(new Date(plan.expectedEndDate), 'dd MMM yyyy')}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
+                          </td>
+                          {/* Remaining Days */}
+                          <td className="px-4 py-3 text-center">
+                            {plan.currentPlanRemainingDays > 0 ? (
+                              <Badge className={`${
+                                plan.currentPlanRemainingDays <= 2 ? 'bg-red-500 text-white' :
+                                plan.currentPlanRemainingDays <= 4 ? 'bg-amber-500 text-white' :
+                                'bg-green-500 text-white'
+                              }`}>
+                                {plan.currentPlanRemainingDays} days left
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-gray-200 text-gray-600">
+                                0 days
+                              </Badge>
+                            )}
+                          </td>
+                          {/* Pending Meal Days */}
+                          <td className="px-4 py-3 text-center">
+                            <div>
+                              <Badge className={`${
+                                plan.pendingDaysToCreate > 14 ? 'bg-red-500 text-white' :
+                                plan.pendingDaysToCreate > 7 ? 'bg-amber-500 text-white' :
+                                'bg-teal-500 text-white'
+                              }`}>
+                                {plan.pendingDaysToCreate} days pending
+                              </Badge>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {plan.totalMealPlanDays} of {plan.totalPurchasedDays} days created
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Button
+                              size="sm"
+                              className="text-xs bg-green-600 hover:bg-green-700 text-white"
+                              asChild
+                            >
+                              <Link href={`/dietician/clients/${plan.clientId}`}>
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                {plan.reason === 'no_meal_plan' ? 'Create Plan' : 'Create Phase'}
+                              </Link>
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}

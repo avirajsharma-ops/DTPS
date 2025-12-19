@@ -323,8 +323,11 @@ export async function GET(request: NextRequest) {
           );
           
           // Use the newly created purchase
-          activePurchase = await ClientPurchase.findById(newPurchase._id)
+          const createdPurchase = await ClientPurchase.findById(newPurchase._id)
             .populate('servicePlan', 'name category');
+          if (createdPurchase) {
+            activePurchase = createdPurchase;
+          }
         } else {
           // Use existing purchase if it's still active
           if (existingPurchase.status === 'active' && new Date(existingPurchase.endDate) >= new Date()) {
@@ -447,6 +450,9 @@ export async function GET(request: NextRequest) {
         durationLabel: activePurchase.durationLabel,
         startDate: activePurchase.startDate,
         endDate: activePurchase.endDate,
+        expectedStartDate: activePurchase.expectedStartDate || null,
+        expectedEndDate: activePurchase.expectedEndDate || null,
+        parentPurchaseId: activePurchase.parentPurchaseId || null,
         mealPlanCreated: activePurchase.mealPlanCreated,
         daysUsed: activePurchase.daysUsed,
         baseAmount: activePurchase.baseAmount,
@@ -478,7 +484,10 @@ export async function GET(request: NextRequest) {
         remainingDays: (p.durationDays || 0) - (p.daysUsed || 0),
         mealPlanCreated: p.mealPlanCreated,
         startDate: p.startDate,
-        endDate: p.endDate
+        endDate: p.endDate,
+        expectedStartDate: p.expectedStartDate || null,
+        expectedEndDate: p.expectedEndDate || null,
+        parentPurchaseId: p.parentPurchaseId || null
       })),
       message: canCreate 
         ? `Client has ${remainingDays} days remaining (${totalDaysUsed}/${totalPurchasedDays} days used) in their ${activePurchase.planName} plan.${purchasesNeedingMealPlan.length > 1 ? ` (${purchasesNeedingMealPlan.length} purchases need meal plans)` : ''}`

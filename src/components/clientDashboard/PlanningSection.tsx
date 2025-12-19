@@ -26,6 +26,9 @@ interface ClientPurchase {
   durationLabel: string;
   startDate: string;
   endDate: string;
+  expectedStartDate?: string;
+  expectedEndDate?: string;
+  parentPurchaseId?: string;
   mealPlanCreated: boolean;
   daysUsed: number;
 }
@@ -334,36 +337,86 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     toast.success(`Template "${template.name}" loaded successfully`);
   };
 
-  // Fetch the latest meal plan's end date
-  const getLatestMealPlanEndDate = async (): Promise<string | null> => {
-    try {
-      const res = await fetch(`/api/client-meal-plans?clientId=${client._id}`);
-      if (!res.ok) {
-        console.error('Failed to get latest meal plan with status:', res.status);
-        return null;
-      }
-      const data = await res.json();
-
-      if (data.success && data.mealPlans.length > 0) {
-        console.log('Fetched meal plans:', data.mealPlans); // Debug log
-        const sortedPlans = data.mealPlans.sort((a: any, b: any) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime());
-        console.log('Sorted meal plans by endDate:', sortedPlans); // Debug log
-        return sortedPlans[0].endDate;
-      }
-    } catch (error) {
-      console.error('Error fetching latest meal plan end date:', error);
+  // Fetch the latest meal plan's end date from already fetched clientPlans
+  const getLatestMealPlanEndDate = (): string | null => {
+    if (clientPlans && clientPlans.length > 0) {
+      const sortedPlans = [...clientPlans].sort((a: any, b: any) => 
+        new Date(b.endDate).getTime() - new Date(a.endDate).getTime()
+      );
+      console.log('Latest meal plan end date:', sortedPlans[0].endDate);
+      return sortedPlans[0].endDate;
     }
     return null;
   };
 
-  // Initialize start date based on latest plan's end date
+  // Initialize start date based on latest plan's end date + 1, respecting expected dates
   const initializeStartDate = async () => {
-    const latestEndDate = await getLatestMealPlanEndDate();
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const expectedStartDate = paymentCheck?.purchase?.expectedStartDate 
+      ? format(new Date(paymentCheck.purchase.expectedStartDate), 'yyyy-MM-dd') 
+      : null;
+    const expectedEndDate = paymentCheck?.purchase?.expectedEndDate 
+      ? format(new Date(paymentCheck.purchase.expectedEndDate), 'yyyy-MM-dd') 
+      : null;
+    
+    // Get latest meal plan's end date
+    const latestEndDate = getLatestMealPlanEndDate();
+    
+    let newStartDate = today;
+    
     if (latestEndDate) {
-      const nextStartDate = format(addDays(new Date(latestEndDate), 1), 'yyyy-MM-dd');
-      console.log('Initializing start date to:', nextStartDate); // Debug log
-      setStartDate(nextStartDate);
+      // Start from day after last plan ends
+      newStartDate = format(addDays(new Date(latestEndDate), 1), 'yyyy-MM-dd');
+      console.log('Setting start date from last plan end + 1:', newStartDate);
+    } else if (expectedStartDate) {
+      // No existing plans - use expected start date if available
+      newStartDate = expectedStartDate;
+      console.log('Setting start date from expected start date:', newStartDate);
     }
+    
+    // Validate against expected dates if set
+    if (expectedStartDate && expectedEndDate) {
+      // If calculated start date is before expected start, use expected start
+      if (newStartDate < expectedStartDate) {
+        newStartDate = expectedStartDate;
+        console.log('Adjusted start date to expected start:', newStartDate);
+      }
+      // If calculated start date is after expected end, still allow but show warning later
+      if (newStartDate > expectedEndDate) {
+        console.log('Warning: Start date is after expected end date');
+      }
+    }
+    
+    setStartDate(newStartDate);
+  };
+
+  // Helper function to check for overlapping meal plans
+  const checkDateOverlap = (newStart: string, newEnd: string, excludePlanId?: string) => {
+    const newStartDate = new Date(newStart);
+    const newEndDate = new Date(newEnd);
+    
+    for (const plan of clientPlans) {
+      // Skip the plan being edited
+      if (excludePlanId && plan._id === excludePlanId) continue;
+      
+      const planStart = new Date(plan.startDate);
+      const planEnd = new Date(plan.endDate);
+      
+      // Check if date ranges overlap
+      // Overlap occurs when: newStart <= planEnd AND newEnd >= planStart
+      if (newStartDate <= planEnd && newEndDate >= planStart) {
+        // Return the overlapping plan info with next available date
+        const nextAvailableDate = addDays(planEnd, 1);
+        return {
+          hasOverlap: true,
+          overlappingPlan: plan,
+          nextAvailableDate: format(nextAvailableDate, 'yyyy-MM-dd'),
+          nextAvailableDateFormatted: format(nextAvailableDate, 'dd MMM yyyy')
+        };
+      }
+    }
+    
+    return { hasOverlap: false };
   };
 
   // Handle form submission - move to meals step
@@ -386,6 +439,34 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       toast.error('Client needs to purchase a plan first');
       return;
     }
+    
+    // Validate start date is within expected range if set (end date can be outside)
+    if (paymentCheck?.purchase?.expectedStartDate && paymentCheck?.purchase?.expectedEndDate) {
+      const expectedStart = new Date(paymentCheck.purchase.expectedStartDate);
+      const expectedEnd = new Date(paymentCheck.purchase.expectedEndDate);
+      const planStartDate = new Date(startDate);
+      
+      if (planStartDate < expectedStart) {
+        toast.error(`Start date must be on or after expected start date (${format(expectedStart, 'dd MMM yyyy')})`);
+        return;
+      }
+      if (planStartDate > expectedEnd) {
+        toast.error(`Start date must be on or before expected end date (${format(expectedEnd, 'dd MMM yyyy')})`);
+        return;
+      }
+      // Note: End date CAN be outside expected dates - no restriction
+    }
+    
+    // Check for overlapping meal plans (exclude current plan if editing)
+    const overlapResult = checkDateOverlap(startDate, endDate, isEditMode ? editingPlan?._id : undefined);
+    if (overlapResult.hasOverlap) {
+      toast.error(
+        `Plan dates overlap with existing plan "${overlapResult.overlappingPlan?.name}". ` +
+        `Choose a start date on or after ${overlapResult.nextAvailableDateFormatted}.`
+      );
+      return;
+    }
+    
     setStep('meals');
   };
 
@@ -439,6 +520,11 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         payload.templateId = selectedTemplate._id;
       }
 
+      // Include purchaseId for shared freeze tracking across plan phases
+      if (paymentCheck?.purchase?._id) {
+        payload.purchaseId = paymentCheck.purchase._id;
+      }
+
       const res = await fetch('/api/client-meal-plans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -454,7 +540,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       const data = await res.json();
       
       if (data.success) {
-        // Update client purchase - ADD days used (not replace)
+        // Update client purchase - ADD days used (do not change expected dates)
         if (paymentCheck?.purchase?._id) {
           try {
             await fetch('/api/client-purchases', {
@@ -1189,9 +1275,12 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       allowedFreezeDays: number;
       totalFreezeCount: number;
       remainingFreezeDays: number;
-      freezedDays: { date: string; createdAt: string; addedDate?: string }[];
+      freezedDays: { date: string; createdAt: string; addedDate?: string; planId?: string; planName?: string }[];
       durationDays: number;
       canFreeze: boolean;
+      isSharedFreeze?: boolean;
+      linkedPlanCount?: number;
+      purchaseId?: string;
     } | null>(null);
 
     // Calculate plan duration
@@ -1480,7 +1569,10 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                   <div className="bg-blue-50 p-3 rounded border border-blue-200">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-blue-900">
-                        <strong>Allowed Freeze Days:</strong> {freezeInfo.allowedFreezeDays} days
+                        <strong>Total Freeze Days:</strong> {freezeInfo.allowedFreezeDays} days
+                        {(freezeInfo as any).isSharedFreeze && (
+                          <span className="text-xs ml-1 text-blue-700">(shared across {(freezeInfo as any).linkedPlanCount || 'all'} phases)</span>
+                        )}
                       </span>
                       <Badge variant={freezeInfo.remainingFreezeDays > 0 ? 'default' : 'destructive'}>
                         {freezeInfo.remainingFreezeDays} remaining
@@ -1488,7 +1580,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                     </div>
                     {freezeInfo.totalFreezeCount > 0 && (
                       <p className="text-xs text-blue-700 mt-1">
-                        Currently frozen: {freezeInfo.totalFreezeCount} days
+                        Total frozen: {freezeInfo.totalFreezeCount} days
+                        {(freezeInfo as any).isSharedFreeze && ' (across all phases)'}
                       </p>
                     )}
                   </div>
@@ -1644,17 +1737,29 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                 {/* UNFREEZE TAB CONTENT */}
                 {activeTab === 'unfreeze' && (
                   <>
-                    {freezeInfo && freezeInfo.totalFreezeCount > 0 ? (
+                    {/* Filter frozen dates to only show those belonging to this plan */}
+                    {(() => {
+                      const currentPlanFrozenDates = freezeInfo?.freezedDays.filter(
+                        fd => !fd.planId || fd.planId === plan._id
+                      ) || [];
+                      const hasCurrentPlanFrozenDates = currentPlanFrozenDates.length > 0;
+                      
+                      return hasCurrentPlanFrozenDates ? (
                       <>
-                        {/* List of Frozen Dates */}
+                        {/* List of Frozen Dates for this plan only */}
                         <div className="border rounded-lg p-3">
                           <Label className="text-sm font-medium mb-2 block">Select Frozen Dates to Unfreeze</Label>
                           <p className="text-xs text-gray-500 mb-3">
                             Select dates to unfreeze. The meals added at the end will be removed and original dates will be restored.
+                            {freezeInfo?.isSharedFreeze && (
+                              <span className="block mt-1 text-blue-600">
+                                Note: Only showing frozen dates from this phase. Other phases have their own frozen dates.
+                              </span>
+                            )}
                           </p>
                           
                           <div className="space-y-2 max-h-60 overflow-y-auto">
-                            {freezeInfo.freezedDays.map((fd) => {
+                            {currentPlanFrozenDates.map((fd) => {
                               const dateStr = format(new Date(fd.date), 'yyyy-MM-dd');
                               const isSelected = selectedUnfreezeDates.includes(dateStr);
                               return (
@@ -1735,10 +1840,16 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                     ) : (
                       <div className="text-center py-8 text-gray-500">
                         <Snowflake className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                        <p className="text-sm">No frozen dates to unfreeze</p>
-                        <p className="text-xs text-gray-400 mt-1">Freeze some dates first to use this feature</p>
+                        <p className="text-sm">No frozen dates to unfreeze in this phase</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {freezeInfo?.isSharedFreeze && freezeInfo?.totalFreezeCount > 0 
+                            ? 'Frozen dates from other phases can only be unfrozen from their respective phase'
+                            : 'Freeze some dates first to use this feature'
+                          }
+                        </p>
                       </div>
-                    )}
+                    )
+                    })()}
                   </>
                 )}
               </>
@@ -1750,180 +1861,40 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
   }
 
   function ExtendPlanDialog({ plan, onExtend, showAsText = false, showAsButton = false }: { plan: any; onExtend: (plan: any, startDate: string, endDate: string) => void; showAsText?: boolean; showAsButton?: boolean }) {
-    const [newStartDate, setNewStartDate] = useState(format(new Date(plan.startDate), 'yyyy-MM-dd'));
-    const [newEndDate, setNewEndDate] = useState(format(new Date(plan.endDate), 'yyyy-MM-dd'));
-    const [isLoading, setIsLoading] = useState(false);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const planStartDate = parseDate(plan.startDate);
-    const hasStarted = planStartDate <= today;
-
-    // Calculate original duration
-    const originalDuration = Math.ceil(
-      (new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)
-    ) + 1;
-
-    const handleStartDateChange = (date: string) => {
-      setNewStartDate(date);
-      // Auto-calculate end date based on original duration
-      // For 1 day: addDays(date, 0) = same date
-      // For 7 days: addDays(date, 6) = date + 6 days
-      const endDate = format(addDays(parseDate(date), Math.max(0, originalDuration - 1)), 'yyyy-MM-dd');
-      setNewEndDate(endDate);
-    };
-
-    const handleEndDateChange = (date: string) => {
-      setNewEndDate(date);
-    };
-
-    const handleSave = async () => {
-      // Validate date range using parseDate for consistent handling
-      if (parseDate(newStartDate) > parseDate(newEndDate)) {
-        toast.error('Start date cannot be after end date');
-        return;
-      }
-      setIsLoading(true);
-      await onExtend(plan, newStartDate, newEndDate);
-      setIsLoading(false);
+    // Show "Coming Soon" toast when clicking extend button
+    const handleComingSoon = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toast.info('Coming Soon! This feature is under development.');
     };
 
     return (
-      <Dialog>
-        <DialogTrigger asChild>
-          {showAsText ? (
-            <span className="text-sm cursor-pointer">Extend</span>
-          ) : showAsButton ? (
-            <Button 
-              size="sm" 
-              variant="outline"
-              title="Extend plan dates"
-              className="flex items-center gap-1.5"
-            >
-              <Repeat2 className="h-4 w-4" />
-              <span className="text-xs">Extend</span>
-            </Button>
-          ) : (
-            <Button 
-              size="sm" 
-              variant="outline"
-              title="Extend plan dates"
-              className="text-blue-600 hover:text-blue-700"
-            >
-              📅
-            </Button>
-          )}
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Extend Plan Dates</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {hasStarted ? (
-              <>
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                  <p className="text-sm font-medium text-blue-900">
-                    📅 Adjust end date to extend the plan
-                  </p>
-                </div>
-
-                <div>
-                  <Label>Start Date (Fixed)</Label>
-                  <Input
-                    type="date"
-                    value={newStartDate}
-                    disabled
-                    className="bg-gray-50"
-                  />
-                </div>
-
-                <div>
-                  <Label>End Date</Label>
-                  <Input
-                    type="date"
-                    value={newEndDate}
-                    onChange={(e) => handleEndDateChange(e.target.value)}
-                    min={newStartDate}
-                  />
-                </div>
-
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-xs text-gray-600">
-                    <strong>Current End Date:</strong> {plan.endDate}
-                  </p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    <strong>New End Date:</strong> {newEndDate}
-                  </p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    ✨ <strong>Auto-adjust:</strong> All other meal plans will adjust automatically to maintain continuity
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                  <p className="text-sm font-medium text-blue-900">
-                    📅 Adjust start date - Duration will remain {originalDuration} days (auto-calculated)
-                  </p>
-                </div>
-
-                <div>
-                  <Label>Start Date</Label>
-                  <Input
-                    type="date"
-                    value={newStartDate}
-                    onChange={(e) => handleStartDateChange(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <Label>End Date (Auto-calculated)</Label>
-                  <Input
-                    type="date"
-                    value={newEndDate}
-                    disabled
-                    className="bg-gray-50"
-                  />
-                </div>
-
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-xs text-gray-600">
-                    <strong>Duration:</strong> 
-                    {Math.ceil((parseDate(newEndDate).getTime() - parseDate(newStartDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days (Fixed)
-                  </p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    ✨ <strong>Auto-adjust:</strong> All other meal plans will adjust automatically to maintain continuity
-                  </p>
-                </div>
-              </>
-            )}
-
-            <div className="flex gap-2 pt-2">
-              <Button 
-                variant="outline" 
-                onClick={() => {}}
-              >
-                Cancel
-              </Button>
-              <Button 
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                onClick={handleSave}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  'Update Dates & Adjust All Plans'
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <>
+        {showAsText ? (
+          <span className="text-sm cursor-pointer" onClick={handleComingSoon}>Extend</span>
+        ) : showAsButton ? (
+          <Button 
+            size="sm" 
+            variant="outline"
+            title="Extend plan dates"
+            className="flex items-center gap-1.5"
+            onClick={handleComingSoon}
+          >
+            <Repeat2 className="h-4 w-4" />
+            <span className="text-xs">Extend</span>
+          </Button>
+        ) : (
+          <Button 
+            size="sm" 
+            variant="outline"
+            title="Extend plan dates"
+            className="text-blue-600 hover:text-blue-700"
+            onClick={handleComingSoon}
+          >
+            📅
+          </Button>
+        )}
+      </>
     );
   }
 
@@ -2508,8 +2479,38 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                   <Input
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={(e) => {
+                      const newStartDate = e.target.value;
+                      // Validate start date is within expected dates range (start date must be between expected start and end)
+                      if (paymentCheck?.purchase?.expectedStartDate && paymentCheck?.purchase?.expectedEndDate) {
+                        const expectedStart = new Date(paymentCheck.purchase.expectedStartDate);
+                        const expectedEnd = new Date(paymentCheck.purchase.expectedEndDate);
+                        const selectedDate = new Date(newStartDate);
+                        
+                        if (selectedDate < expectedStart) {
+                          toast.error(`Start date cannot be before expected start date (${format(expectedStart, 'dd MMM yyyy')})`);
+                          return;
+                        }
+                        if (selectedDate > expectedEnd) {
+                          toast.error(`Start date cannot be after expected end date (${format(expectedEnd, 'dd MMM yyyy')})`);
+                          return;
+                        }
+                      }
+                      setStartDate(newStartDate);
+                    }}
+                    min={paymentCheck?.purchase?.expectedStartDate ? format(new Date(paymentCheck.purchase.expectedStartDate), 'yyyy-MM-dd') : undefined}
+                    max={paymentCheck?.purchase?.expectedEndDate ? format(new Date(paymentCheck.purchase.expectedEndDate), 'yyyy-MM-dd') : undefined}
                   />
+                  {paymentCheck?.purchase?.expectedStartDate && paymentCheck?.purchase?.expectedEndDate && (
+                    <p className="text-xs text-green-600 mt-1">
+                      📅 Start date must be within: {format(new Date(paymentCheck.purchase.expectedStartDate), 'dd MMM')} - {format(new Date(paymentCheck.purchase.expectedEndDate), 'dd MMM yyyy')}
+                    </p>
+                  )}
+                  {!paymentCheck?.purchase?.expectedStartDate && paymentCheck?.hasPaidPlan && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      ⚠️ No expected dates set. Set expected dates in Payment section first.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium mb-2 block">

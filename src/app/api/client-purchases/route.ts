@@ -157,7 +157,7 @@ export async function PUT(request: NextRequest) {
     await dbConnect();
 
     const body = await request.json();
-    const { purchaseId, mealPlanId, mealPlanCreated, daysUsed, addDaysUsed, status } = body;
+    const { purchaseId, mealPlanId, mealPlanCreated, daysUsed, addDaysUsed, status, expectedStartDate, expectedEndDate, parentPurchaseId } = body;
 
     if (!purchaseId) {
       return NextResponse.json({ error: 'Purchase ID is required' }, { status: 400 });
@@ -172,6 +172,19 @@ export async function PUT(request: NextRequest) {
     const updateData: any = {};
     if (mealPlanId) updateData.mealPlanId = mealPlanId;
     if (mealPlanCreated !== undefined) updateData.mealPlanCreated = mealPlanCreated;
+    
+    // Update expected dates
+    if (expectedStartDate !== undefined) {
+      updateData.expectedStartDate = expectedStartDate ? new Date(expectedStartDate) : null;
+    }
+    if (expectedEndDate !== undefined) {
+      updateData.expectedEndDate = expectedEndDate ? new Date(expectedEndDate) : null;
+    }
+    
+    // Update parent purchase reference (for multi-phase plans)
+    if (parentPurchaseId !== undefined) {
+      updateData.parentPurchaseId = parentPurchaseId || null;
+    }
     
     // If addDaysUsed is provided, ADD to existing daysUsed (for multiple meal plans)
     if (addDaysUsed !== undefined && addDaysUsed > 0) {

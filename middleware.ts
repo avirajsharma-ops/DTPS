@@ -19,7 +19,7 @@ export default withAuth(
         const redirectPath = userRole === 'dietitian' || userRole === 'health_counselor'
           ? '/dashboard/dietitian'
           : userRole === 'client'
-          ? '/dashboard/client'
+          ? '/user'
           : '/auth/signin';
         return NextResponse.redirect(new URL(redirectPath, req.url));
       }
@@ -30,21 +30,23 @@ export default withAuth(
       if (userRole !== 'dietitian' && 
           userRole !== 'health_counselor' && 
           !userRole?.includes('admin')) {
+        console.log('Dietitian access denied. Role:', token?.role);
         // Redirect to appropriate dashboard
         const redirectPath = userRole === 'client'
-          ? '/dashboard/client'
-          : '/dashboard/admin';
+          ? '/user'
+          : '/auth/signin';
         return NextResponse.redirect(new URL(redirectPath, req.url));
       }
     }
     
-    // Client routes
-    if (pathname.startsWith('/dashboard/client') || pathname.startsWith('/client-dashboard')) {
+    // Client/User routes - only for clients
+    if (pathname.startsWith('/user') || pathname.startsWith('/dashboard/client') || pathname.startsWith('/client-dashboard')) {
       if (userRole !== 'client' && !userRole?.includes('admin')) {
+        console.log('Client access denied. Role:', token?.role);
         // Redirect to appropriate dashboard
         const redirectPath = userRole === 'dietitian' || userRole === 'health_counselor'
           ? '/dashboard/dietitian'
-          : '/dashboard/admin';
+          : '/auth/signin';
         return NextResponse.redirect(new URL(redirectPath, req.url));
       }
     }

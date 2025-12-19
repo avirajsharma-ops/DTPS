@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -67,6 +68,9 @@ export default function PaymentsSection({
   client?: any;
   formatDate?: (dateString?: string) => string;
 }) {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'admin';
+  
   const [paymentsState, setPaymentsState] = useState<PaymentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -411,6 +415,15 @@ export default function PaymentsSection({
   const [submittingOtherPayment, setSubmittingOtherPayment] = useState(false);
   const [otherPlatformPayments, setOtherPlatformPayments] = useState<any[]>([]);
 
+  // Expected Dates Modal states
+  const [showExpectedDatesModal, setShowExpectedDatesModal] = useState(false);
+  const [selectedPurchaseForDates, setSelectedPurchaseForDates] = useState<any | null>(null);
+  const [expectedStartDateInput, setExpectedStartDateInput] = useState("");
+  const [expectedEndDateInput, setExpectedEndDateInput] = useState("");
+  const [savingExpectedDates, setSavingExpectedDates] = useState(false);
+  const [clientPurchases, setClientPurchases] = useState<any[]>([]);
+  const [loadingPurchases, setLoadingPurchases] = useState(false);
+
   // Platform options
   const platformOptions = [
     { value: 'upi', label: 'UPI' },
@@ -436,10 +449,144 @@ export default function PaymentsSection({
     }
   }, [client?._id]);
 
+  // Fetch client purchases
+  const fetchClientPurchases = useCallback(async () => {
+    if (!client?._id) return;
+    setLoadingPurchases(true);
+    try {
+      const response = await fetch(`/api/client-purchases?clientId=${client._id}&activeOnly=true`);
+      const data = await response.json();
+      if (data.success) {
+        setClientPurchases(data.purchases || []);
+      }
+    } catch (error) {
+      console.error('Error fetching client purchases:', error);
+    } finally {
+      setLoadingPurchases(false);
+    }
+  }, [client?._id]);
+
   // Load other platform payments
   useEffect(() => {
     fetchOtherPlatformPayments();
   }, [fetchOtherPlatformPayments]);
+
+  // Load client purchases when payments are loaded
+  useEffect(() => {
+    fetchClientPurchases();
+  }, [fetchClientPurchases]);
+
+  // Open expected dates modal
+  const openExpectedDatesModal = (purchase: any) => {
+    setSelectedPurchaseForDates(purchase);
+    setExpectedStartDateInput(purchase.expectedStartDate ? new Date(purchase.expectedStartDate).toISOString().split('T')[0] : '');
+    setExpectedEndDateInput(purchase.expectedEndDate ? new Date(purchase.expectedEndDate).toISOString().split('T')[0] : '');
+    setShowExpectedDatesModal(true);
+  };
+
+  // Reset expected dates modal
+  const resetExpectedDatesModal = () => {
+    setShowExpectedDatesModal(false);
+    setSelectedPurchaseForDates(null);
+    setExpectedStartDateInput('');
+    setExpectedEndDateInput('');
+  };
+
+  // Open expected dates modal from payment three-dots menu
+  const openExpectedDatesModalForPayment = async (payment: PaymentItem) => {
+    setOpenRowMenuId(null); // Close the dropdown
+    
+    // Find the corresponding ClientPurchase for this payment
+    const purchase = clientPurchases.find(p => 
+      p.paymentLink?._id === payment._id || 
+      p.paymentLink === payment._id
+    );
+    
+    if (purchase) {
+      openExpectedDatesModal(purchase);
+    } else {
+      // If no purchase found, try to fetch it
+      try {
+        const response = await fetch(`/api/client-purchases?clientId=${client._id}&activeOnly=true`);
+        const data = await response.json();
+        if (data.success && data.purchases?.length > 0) {
+          // Find purchase matching this payment
+          const matchingPurchase = data.purchases.find((p: any) => 
+            p.planName === payment.planName && 
+            p.durationDays === payment.durationDays
+          );
+          if (matchingPurchase) {
+            setClientPurchases(data.purchases);
+            openExpectedDatesModal(matchingPurchase);
+          } else {
+            toast.error('No active purchase found for this payment. The purchase may have expired.');
+          }
+        } else {
+          toast.error('No active purchase found for this payment');
+        }
+      } catch (error) {
+        console.error('Error fetching purchases:', error);
+        toast.error('Failed to load purchase details');
+      }
+    }
+  };
+
+  // Calculate expected end date based on start date and duration
+  const calculateExpectedEndDate = (startDate: string, durationDays: number) => {
+    if (!startDate) return '';
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setDate(end.getDate() + durationDays - 1); // -1 because start day counts as day 1
+    return end.toISOString().split('T')[0];
+  };
+
+  // Auto-calculate expected end date when start date changes
+  useEffect(() => {
+    if (expectedStartDateInput && selectedPurchaseForDates?.durationDays) {
+      const calculatedEndDate = calculateExpectedEndDate(expectedStartDateInput, selectedPurchaseForDates.durationDays);
+      setExpectedEndDateInput(calculatedEndDate);
+    }
+  }, [expectedStartDateInput, selectedPurchaseForDates?.durationDays]);
+
+  // Save expected dates
+  const saveExpectedDates = async () => {
+    if (!selectedPurchaseForDates?._id) {
+      toast.error('No purchase selected');
+      return;
+    }
+    if (!expectedStartDateInput) {
+      toast.error('Please select expected start date');
+      return;
+    }
+
+    setSavingExpectedDates(true);
+    try {
+      const response = await fetch('/api/client-purchases', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          purchaseId: selectedPurchaseForDates._id,
+          expectedStartDate: expectedStartDateInput,
+          expectedEndDate: expectedEndDateInput || calculateExpectedEndDate(expectedStartDateInput, selectedPurchaseForDates.durationDays),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Expected dates saved successfully');
+        resetExpectedDatesModal();
+        fetchClientPurchases(); // Refresh the purchases list
+      } else {
+        toast.error(data.error || 'Failed to save expected dates');
+      }
+    } catch (error) {
+      console.error('Error saving expected dates:', error);
+      toast.error('Failed to save expected dates');
+    } finally {
+      setSavingExpectedDates(false);
+    }
+  };
 
   // Submit other platform payment
   const submitOtherPlatformPayment = async () => {
@@ -778,22 +925,27 @@ export default function PaymentsSection({
               
               return (
                 <>
-                  <button
-                    onClick={() => viewPayment(payment!)}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Open Payment Link
-                  </button>
-                  <button
-                    onClick={() => copyLink(payment!)}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copy Link
-                  </button>
-                  
-                  <div className="border-t border-gray-100 my-1"></div>
+                  {/* Only show payment link options if NOT paid */}
+                  {!isPaid && (
+                    <>
+                      <button
+                        onClick={() => viewPayment(payment!)}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Open Payment Link
+                      </button>
+                      <button
+                        onClick={() => copyLink(payment!)}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copy Link
+                      </button>
+                      
+                      <div className="border-t border-gray-100 my-1"></div>
+                    </>
+                  )}
                   
                   <button
                     onClick={() => generateInvoice(payment!)}
@@ -812,6 +964,37 @@ export default function PaymentsSection({
                       Email Invoice
                     </button>
                   )}
+                  
+                  {/* Set Expected Dates - only for paid payments */}
+                  {isPaid && (() => {
+                    // Find the purchase for this payment to check if dates are already set
+                    const purchase = clientPurchases.find(p => 
+                      p.paymentLink?._id === payment?._id || 
+                      p.paymentLink === payment?._id ||
+                      (p.planName === payment?.planName && p.durationDays === payment?.durationDays)
+                    );
+                    const hasExpectedDates = purchase?.expectedStartDate && purchase?.expectedEndDate;
+                    
+                    // If dates are already set, only admin can edit
+                    if (hasExpectedDates && !isAdmin) {
+                      return (
+                        <div className="w-full px-4 py-2 text-left text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed">
+                          <Calendar className="h-4 w-4" />
+                          <span>Expected dates set (Admin only)</span>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <button
+                        onClick={() => openExpectedDatesModalForPayment(payment!)}
+                        className="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
+                      >
+                        <Calendar className="h-4 w-4" />
+                        {hasExpectedDates ? 'Edit Expected Dates' : 'Set Expected Dates'}
+                      </button>
+                    );
+                  })()}
                   
                   {isPending && (
                     <button
@@ -1317,6 +1500,72 @@ export default function PaymentsSection({
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Expected Dates Modal */}
+      {showExpectedDatesModal && selectedPurchaseForDates && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              Set Expected Dates
+            </h2>
+            
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <p className="font-medium">{selectedPurchaseForDates.planName}</p>
+              <p className="text-sm text-gray-500">Duration: {selectedPurchaseForDates.durationLabel || `${selectedPurchaseForDates.durationDays} Days`}</p>
+              <p className="text-sm text-gray-500">Remaining Days: {selectedPurchaseForDates.remainingDays}</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Expected Start Date *</label>
+                <input
+                  type="date"
+                  value={expectedStartDateInput}
+                  onChange={(e) => setExpectedStartDateInput(e.target.value)}
+                  className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">When the client is expected to start the meal plan</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">Expected End Date</label>
+                <input
+                  type="date"
+                  value={expectedEndDateInput}
+                  onChange={(e) => setExpectedEndDateInput(e.target.value)}
+                  className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                />
+                <p className="text-xs text-gray-500 mt-1">Auto-calculated based on start date + duration</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <Button
+                onClick={resetExpectedDatesModal}
+                variant="outline"
+                disabled={savingExpectedDates}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={saveExpectedDates}
+                disabled={savingExpectedDates || !expectedStartDateInput}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {savingExpectedDates ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Expected Dates'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </Card>
   );

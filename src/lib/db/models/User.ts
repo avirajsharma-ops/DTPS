@@ -125,9 +125,12 @@ const userSchema = new Schema({
   // Additional basic info fields
   parentAccount: { type: String },
   alternativePhone: { type: String, trim: true },
-  alternativeEmail: { type: String, trim: true },
+  alternativeEmail: { type: String, trim: true, lowercase: true },
   anniversary: { type: Date },
-  source: { type: String },
+  source: { 
+    type: String,
+    enum: ['google_ads', 'facebook_ads', 'instagram', 'referral', 'other', '']
+  },
   referralSource: { type: String },
   maritalStatus: { type: String },
   occupation: { type: String },
@@ -151,7 +154,7 @@ const userSchema = new Schema({
   bmi: { type: String },
   activityLevel: {
     type: String,
-    enum: ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active']
+    enum: ['', 'sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active']
   },
 healthGoals: [{
   type: String
@@ -159,8 +162,8 @@ healthGoals: [{
 
 generalGoal: {
   type: String,
-  enum: ['not-specified', 'weight-loss', 'weight-gain', 'disease-management'],
-  default: 'not-specified'
+  enum: ['', 'not-specified', 'weight-loss', 'weight-gain', 'disease-management', 'muscle-gain', 'maintain-weight'],
+  default: ''
 },
 
   documents: [
@@ -248,6 +251,39 @@ generalGoal: {
   },
   googleCalendarTokenExpiry: {
     type: Date
+  },
+
+  // Track last login time
+  lastLoginAt: {
+    type: Date
+  },
+
+  // Onboarding status for new clients
+  onboardingCompleted: {
+    type: Boolean,
+    default: false
+  },
+  onboardingStep: {
+    type: Number,
+    default: 0
+  },
+  
+  // Daily goals set during onboarding
+  dailyGoals: {
+    calories: { type: Number, default: 2000 },
+    steps: { type: Number, default: 8000 },
+    water: { type: Number, default: 2500 },
+    sleep: { type: Number, default: 7.5 }
+  },
+  
+  // Dietary preferences
+  dietType: {
+    type: String,
+    default: ''
+  },
+  specificExclusions: {
+    alcoholFree: { type: Boolean, default: false },
+    porkFree: { type: Boolean, default: false }
   }
 }, {
   timestamps: true,

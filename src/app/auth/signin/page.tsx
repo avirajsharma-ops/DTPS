@@ -51,7 +51,7 @@ function SignInForm() {
             ? '/dashboard/dietitian'
             : session.user.role === 'admin'
             ? '/dashboard/admin'
-            : '/client-dashboard';
+            : '/user';
 
           router.push(redirectUrl);
         }

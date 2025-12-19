@@ -207,15 +207,6 @@ export default function CreatePlanTemplateBasicPage() {
             >
               Clear draft
             </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => { fetchPlanTemplates(); setShowTemplateDialog(true); }}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Load Template
-            </Button>
           </div>
         </div>
 
@@ -268,115 +259,12 @@ export default function CreatePlanTemplateBasicPage() {
               <Textarea value={description} onChange={(e)=>setDescription(e.target.value)} rows={3} placeholder="Short summary..." />
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Target className="h-4 w-4" /> Nutrition Targets (basic)
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label>Calories Min</Label>
-                  <Input type="number" value={calMin} onChange={e=>setCalMin(parseInt(e.target.value||'0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Calories Max</Label>
-                  <Input type="number" value={calMax} onChange={e=>setCalMax(parseInt(e.target.value||'0'))} />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <Label>Protein (g) Min</Label>
-                  <Input type="number" value={proteinMin} onChange={e=>setProteinMin(parseInt(e.target.value||'0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Carbs (g) Min</Label>
-                  <Input type="number" value={carbMin} onChange={e=>setCarbMin(parseInt(e.target.value||'0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Fat (g) Min</Label>
-                  <Input type="number" value={fatMin} onChange={e=>setFatMin(parseInt(e.target.value||'0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Protein (g) Max</Label>
-                  <Input type="number" value={proteinMax} onChange={e=>setProteinMax(parseInt(e.target.value||'0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Carbs (g) Max</Label>
-                  <Input type="number" value={carbMax} onChange={e=>setCarbMax(parseInt(e.target.value||'0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Fat (g) Max</Label>
-                  <Input type="number" value={fatMax} onChange={e=>setFatMax(parseInt(e.target.value||'0'))} />
-                </div>
-              </div>
-            </div>
-
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={()=>router.back()}><ArrowLeft className="h-4 w-4 mr-2" />Back</Button>
               <Button onClick={handleSave} disabled={loading || !name || !category}><Save className="h-4 w-4 mr-2" />{loading ? 'Saving...' : 'Create Template'}</Button>
             </div>
           </CardContent>
         </Card>
-
-        {/* Load Template Dialog */}
-        <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-          <DialogContent className="max-w-2xl p-4 space-y-3 overflow-y-auto max-h-[80vh]">
-            <CardTitle className="text-lg flex items-center gap-2"><FileText className="h-5 w-5" />Load Plan Template</CardTitle>
-            <CardDescription>Select a plan template to load its data</CardDescription>
-            {loadingTemplates ? (
-              <div className="flex items-center justify-center py-8">
-                <LoadingSpinner />
-                <span className="ml-2 text-sm text-gray-500">Loading templates...</span>
-              </div>
-            ) : availableTemplates.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 text-sm">No plan templates available</p>
-                <p className="text-gray-400 text-xs mt-1">Create some plan templates first</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
-                {availableTemplates.map((tmpl) => (
-                  <Card 
-                    key={tmpl._id} 
-                    className={`cursor-pointer hover:border-blue-300 transition-all ${selectedTemplateId === tmpl._id ? 'border-blue-500 bg-blue-50' : ''}`}
-                    onClick={() => setSelectedTemplateId(tmpl._id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{tmpl.name}</h4>
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{tmpl.description || 'No description'}</p>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <Badge variant="outline" className="text-[10px]">{tmpl.duration} days</Badge>
-                            <Badge variant="outline" className="text-[10px] capitalize">{tmpl.category?.replace('-', ' ')}</Badge>
-                            <Badge variant="outline" className="text-[10px] capitalize">{tmpl.difficulty}</Badge>
-                          </div>
-                        </div>
-                        {selectedTemplateId === tmpl._id && (
-                          <div className="text-blue-600">
-                            <Target className="h-5 w-5" />
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-            <div className="flex justify-end gap-2 pt-2 border-t">
-              <Button variant="outline" size="sm" onClick={() => setShowTemplateDialog(false)}>Cancel</Button>
-              <Button 
-                size="sm" 
-                disabled={!selectedTemplateId}
-                onClick={() => {
-                  const tmpl = availableTemplates.find(t => t._id === selectedTemplateId);
-                  if (tmpl) loadTemplateData(tmpl);
-                }}
-              >
-                Load Template
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </DashboardLayout>
   );

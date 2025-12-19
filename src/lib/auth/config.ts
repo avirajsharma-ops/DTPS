@@ -38,6 +38,9 @@ export const authOptions: NextAuthOptions = {
               throw new Error('Account is not active. Please contact support.');
             }
 
+            // Update lastLoginAt
+            await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
+
             return {
               id: user._id.toString(),
               email: user.email,
