@@ -140,8 +140,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET conversations list
-export async function getConversations(userId: string) {
+// Helper function to get conversations list (not exported as route handler)
+async function getConversations(userId: string) {
   const conversations = await Message.aggregate([
     {
       $match: {
