@@ -81,7 +81,7 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="phone">Phone</Label>
+          <Label htmlFor="phone">Phone *</Label>
           <div className="flex gap-2">
             <Select 
               value={phone?.startsWith('+91') ? '+91' : phone?.startsWith('+1') ? '+1' : phone?.startsWith('+44') ? '+44' : phone?.startsWith('+971') ? '+971' : '+91'}
@@ -112,7 +112,8 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
                 const code = phone?.match(/^\+\d+/)?.[0] || '+91';
                 onChange('phone', `${code} ${e.target.value}`);
               }} 
-              placeholder="90000 00000" 
+              placeholder="90000 00000"
+              required
             />
           </div>
         </div>

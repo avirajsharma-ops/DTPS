@@ -149,12 +149,22 @@ export default function TasksPage() {
             }
         };
 
+        // Listen for user-data-changed event (triggered when dietitian assigns new tasks)
+        const handleDataChange = () => {
+            if (session?.user) {
+                console.log('Data changed event received, refreshing tasks...');
+                fetchTasksData(false);
+            }
+        };
+
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('focus', handleFocus);
+        window.addEventListener('user-data-changed', handleDataChange);
 
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('user-data-changed', handleDataChange);
         };
     }, [session, fetchTasksData]);
 
@@ -229,6 +239,9 @@ export default function TasksPage() {
         );
     }
 
+    // Always show water card if assigned, even if not completed
+    const showWater = !!tasksData.water;
+
     return (
         <div className="min-h-screen bg-gray-50 pb-24">
             {/* Header */}
@@ -237,7 +250,10 @@ export default function TasksPage() {
                     <Link href="/user" className="p-2 -ml-2">
                         <ArrowLeft className="w-6 h-6 text-gray-700" />
                     </Link>
-                    <h1 className="text-lg font-bold text-gray-900">My Tasks</h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-lg font-bold text-gray-900">My Tasks</h1>
+                    
+                    </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleRefresh}
@@ -314,7 +330,7 @@ export default function TasksPage() {
                     </div>
                 </div>
 
-                {stats.total === 0 ? (
+                {stats.total === 0 && !showWater ? (
                     <div className="bg-white rounded-2xl p-8 text-center">
                         <Target className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                         <h3 className="text-lg font-semibold text-gray-800 mb-2">No Tasks Assigned</h3>
@@ -332,20 +348,20 @@ export default function TasksPage() {
                                     className="w-full p-4 flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tasksData.water.isCompleted ? 'bg-[#3AB1A0]/10' : 'bg-[#3AB1A0]/10'
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tasksData.water && tasksData.water.isCompleted ? 'bg-[#3AB1A0]/10' : 'bg-[#3AB1A0]/10'
                                             }`}>
-                                            <Droplets className={`w-6 h-6 ${tasksData.water.isCompleted ? 'text-[#3AB1A0]' : 'text-[#3AB1A0]'
+                                            <Droplets className={`w-6 h-6 ${tasksData.water && tasksData.water.isCompleted ? 'text-[#3AB1A0]' : 'text-[#3AB1A0]'
                                                 }`} />
                                         </div>
                                         <div className="text-left">
                                             <h3 className="font-semibold text-gray-800">Water Intake</h3>
                                             <p className="text-sm text-gray-500">
-                                                Goal: {tasksData.water.amount.toLocaleString()} ml
+                                                Goal: {tasksData.water ? tasksData.water.amount.toLocaleString() : '--'} ml
                                             </p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {tasksData.water.isCompleted ? (
+                                        {tasksData.water && tasksData.water.isCompleted ? (
                                             <CheckCircle2 className="w-6 h-6 text-[#3AB1A0]" />
                                         ) : (
                                             <Circle className="w-6 h-6 text-gray-300" />
@@ -363,15 +379,15 @@ export default function TasksPage() {
                                         <div className="pt-4 space-y-3">
                                             <div className="flex items-center justify-between text-sm">
                                                 <span className="text-gray-600">Target Amount</span>
-                                                <span className="font-medium">{tasksData.water.amount.toLocaleString()} ml</span>
+                                                <span className="font-medium">{tasksData.water ? tasksData.water.amount.toLocaleString() : '--'} ml</span>
                                             </div>
                                             <div className="flex items-center justify-between text-sm">
                                                 <span className="text-gray-600">Assigned</span>
                                                 <span className="text-gray-500">
-                                                    {format(new Date(tasksData.water.assignedAt), 'MMM d, h:mm a')}
+                                                    {tasksData.water && tasksData.water.assignedAt ? format(new Date(tasksData.water.assignedAt), 'MMM d, h:mm a') : '--'}
                                                 </span>
                                             </div>
-                                            {tasksData.water.isCompleted ? (
+                                            {tasksData.water && tasksData.water.isCompleted && stats.completed === stats.total ? (
                                                 <div className="flex items-center gap-2 text-[#3AB1A0] bg-[#3AB1A0]/10 p-3 rounded-lg">
                                                     <Check className="w-5 h-5" />
                                                     <span className="font-medium">Completed</span>
@@ -595,7 +611,7 @@ export default function TasksPage() {
                                 {expandedCards.activities && (
                                     <div className="px-4 pb-4 border-t border-gray-100">
                                         <div className="pt-4 space-y-3">
-                                            {tasksData.activities.map((activity) => (
+                                            {tasksData.activities.map((activity, index) => (
                                                 <div
                                                     key={activity._id}
                                                     className={`p-3 rounded-xl border ${activity.completed
@@ -630,11 +646,11 @@ export default function TasksPage() {
                                                             </div>
                                                         ) : (
                                                             <button
-                                                                onClick={() => handleCompleteTask('activity', activity._id)}
-                                                                disabled={completingTask === activity._id}
+                                                                onClick={() => handleCompleteTask('activity', `activity-${index}`)}
+                                                                disabled={completingTask === `activity-${index}`}
                                                                 className="p-2 bg-[#E06A26] text-white rounded-lg hover:bg-[#C55A1C] disabled:opacity-50"
                                                             >
-                                                                {completingTask === activity._id ? (
+                                                                {completingTask === `activity-${index}` ? (
                                                                     <Loader2 className="w-4 h-4 animate-spin" />
                                                                 ) : (
                                                                     <Check className="w-4 h-4" />

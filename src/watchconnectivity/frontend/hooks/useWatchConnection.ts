@@ -291,7 +291,7 @@ export function useWatchConnection() {
     }
   }, [fetchWatchConnection]);
 
-  // Initial fetch
+  // Initial fetch and auto-refresh every 5 minutes
   useEffect(() => {
     const init = async () => {
       setWatchLoading(true);
@@ -300,6 +300,26 @@ export function useWatchConnection() {
       setWatchLoading(false);
     };
     init();
+
+    // Auto-refresh watch data every 5 minutes (300000 ms)
+    const refreshInterval = setInterval(() => {
+      console.log('[Watch] Auto-refreshing watch data...');
+      fetchWatchHealthData();
+    }, 5 * 60 * 1000); // 5 minutes
+
+    // Also refresh when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[Watch] Page visible, refreshing data...');
+        fetchWatchHealthData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(refreshInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchWatchConnection, fetchWatchHealthData]);
 
   return {

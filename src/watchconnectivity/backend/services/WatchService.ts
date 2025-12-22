@@ -137,7 +137,7 @@ export class WatchService {
     return !!result;
   }
   
-  // Get today's health data
+  // Get today's health data - optimized for fast response
   static async getWatchHealthData(userId: string, date?: Date): Promise<IWatchHealthData | null> {
     const targetDate = date || new Date();
     const startOfDay = new Date(targetDate);
@@ -145,82 +145,31 @@ export class WatchService {
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Fetch from DB instantly
+    // Fetch from DB instantly - use lean() for faster query
     const data = await WatchHealthData.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       date: { $gte: startOfDay, $lte: endOfDay },
-    });
-    if (data) return data;
+    }).lean<IWatchHealthData>();
+    
+    if (data) {
+      // Check if data is stale (older than 5 minutes) and trigger background sync
+      const dataWithTimestamp = data as IWatchHealthData & { updatedAt?: Date; createdAt?: Date };
+      const lastUpdate = new Date(dataWithTimestamp.updatedAt || dataWithTimestamp.createdAt || Date.now());
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      if (lastUpdate < fiveMinutesAgo) {
+        // Trigger background sync without waiting
+        setImmediate(() => {
+          this.syncWatchData(userId).catch(err => 
+            console.error('[Watch] Background sync error:', err)
+          );
+        });
+      }
+      return data;
+    }
 
-    // Trigger background sync for fresh data (non-blocking)
-    this.syncWatchData(userId).catch(() => {});
-
-    // Return default/sample object instantly for fast UI
-    return {
-      _id: new mongoose.Types.ObjectId(),
-      userId: new mongoose.Types.ObjectId(userId),
-      date: startOfDay,
-      watchSteps: {
-        count: 0,
-        goal: 10000,
-        distance: 0,
-        timestamp: new Date(),
-      },
-      watchHeartRate: {
-        current: 0,
-        min: 0,
-        max: 0,
-        average: 0,
-        readings: [],
-      },
-      watchSleep: {
-        totalHours: 0,
-        deepSleepHours: 0,
-        lightSleepHours: 0,
-        remSleepHours: 0,
-        awakeDuration: 0,
-        sleepQuality: 'fair',
-      },
-      watchOxygen: {
-        current: 0,
-        min: 0,
-        max: 0,
-        average: 0,
-        readings: [],
-      },
-      watchStress: {
-        current: 0,
-        average: 0,
-        level: 'low',
-        readings: [],
-      },
-      watchBreathing: {
-        current: 0,
-        average: 0,
-        min: 0,
-        max: 0,
-      },
-      watchActivity: {
-        activeMinutes: 0,
-        sedentaryMinutes: 0,
-        standingHours: 0,
-        workouts: [],
-      },
-      watchCalories: {
-        total: 0,
-        active: 0,
-        resting: 0,
-        goal: 2000,
-      },
-      watchDevice: {
-        name: 'No Data',
-        type: 'other',
-        model: '',
-        lastSyncTime: new Date(),
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any;
+    // No data found - return null immediately for fast response
+    // The caller can trigger sync separately if needed
+    return null;
   }
   
   // Get health data for date range

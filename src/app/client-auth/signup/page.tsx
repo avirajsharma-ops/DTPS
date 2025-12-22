@@ -19,7 +19,8 @@ import {
   Shield,
   Gift,
   ArrowLeft,
-  Leaf
+  Leaf,
+  Phone
 } from 'lucide-react';
 import { z } from 'zod';
 
@@ -28,7 +29,7 @@ const clientSignUpSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Please enter a valid email'),
-  phone: z.string().optional(),
+  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
   referralCode: z.string().optional(),
@@ -184,20 +185,36 @@ export default function ClientSignUpPage() {
             <p className="-mt-2 text-sm text-red-400">{errors.lastName.message}</p>
           )}
 
-          {/* Email or Phone Input */}
+          {/* Email Input */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
               <Mail className="h-5 w-5 text-[#3AB1A0]" />
             </div>
             <Input
               type="email"
-              placeholder="Email or Phone Number"
+              placeholder="Email Address"
               {...register('email')}
               className={`h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.email ? 'border-red-500' : ''}`}
             />
           </div>
           {errors.email && (
             <p className="-mt-2 text-sm text-red-400">{errors.email.message}</p>
+          )}
+
+          {/* Phone Input */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <Phone className="h-5 w-5 text-[#3AB1A0]" />
+            </div>
+            <Input
+              type="tel"
+              placeholder="Phone Number"
+              {...register('phone')}
+              className={`h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.phone ? 'border-red-500' : ''}`}
+            />
+          </div>
+          {errors.phone && (
+            <p className="-mt-2 text-sm text-red-400">{errors.phone.message}</p>
           )}
 
           {/* Password Input */}

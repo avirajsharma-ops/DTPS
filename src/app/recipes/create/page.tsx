@@ -208,12 +208,24 @@ export default function CreateRecipePage() {
       return;
     }
 
-    if (prepTime && parseInt(prepTime) < 0) {
+    // Validate required nutrition fields
+    if (!calories || !protein || !carbs || !fat) {
+      setError('Please fill in all nutrition fields (calories, protein, carbs, fat)');
+      return;
+    }
+
+    // Validate required time fields
+    if (!prepTime || !cookTime) {
+      setError('Please fill in prep time and cook time');
+      return;
+    }
+
+    if (parseInt(prepTime) < 0) {
       setError('Prep time cannot be negative');
       return;
     }
 
-    if (cookTime && parseInt(cookTime) < 0) {
+    if (parseInt(cookTime) < 0) {
       setError('Cook time cannot be negative');
       return;
     }
@@ -360,23 +372,25 @@ export default function CreateRecipePage() {
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="prepTime">Prep Time (min)</Label>
+                    <Label htmlFor="prepTime">Prep Time (min) *</Label>
                     <Input
                       id="prepTime"
                       type="number"
                       value={prepTime}
                       onChange={(e) => setPrepTime(e.target.value)}
                       placeholder="15"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="cookTime">Cook Time (min)</Label>
+                    <Label htmlFor="cookTime">Cook Time (min) *</Label>
                     <Input
                       id="cookTime"
                       type="number"
                       value={cookTime}
                       onChange={(e) => setCookTime(e.target.value)}
                       placeholder="30"
+                      required
                     />
                   </div>
                   <div>
@@ -411,19 +425,20 @@ export default function CreateRecipePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="calories">Calories</Label>
+                  <Label htmlFor="calories">Calories *</Label>
                   <Input
                     id="calories"
                     type="number"
                     value={calories}
                     onChange={(e) => setCalories(e.target.value)}
                     placeholder="350"
+                    required
                   />
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="protein">Protein (g)</Label>
+                    <Label htmlFor="protein">Protein (g) *</Label>
                     <Input
                       id="protein"
                       type="number"
@@ -431,10 +446,11 @@ export default function CreateRecipePage() {
                       value={protein}
                       onChange={(e) => setProtein(e.target.value)}
                       placeholder="25"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="carbs">Carbs (g)</Label>
+                    <Label htmlFor="carbs">Carbs (g) *</Label>
                     <Input
                       id="carbs"
                       type="number"
@@ -442,10 +458,11 @@ export default function CreateRecipePage() {
                       value={carbs}
                       onChange={(e) => setCarbs(e.target.value)}
                       placeholder="30"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="fat">Fat (g)</Label>
+                    <Label htmlFor="fat">Fat (g) *</Label>
                     <Input
                       id="fat"
                       type="number"
@@ -453,6 +470,7 @@ export default function CreateRecipePage() {
                       value={fat}
                       onChange={(e) => setFat(e.target.value)}
                       placeholder="15"
+                      required
                     />
                   </div>
                 </div>

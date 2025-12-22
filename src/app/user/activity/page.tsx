@@ -422,8 +422,8 @@ export default function ActivityPage() {
                 {/* Assigned Activity Section */}
                 {activityData.assignedActivity && activityData.assignedActivity.amount > 0 && (
                     <div className={`rounded-3xl p-5 shadow-sm ${activityData.assignedActivity.isCompleted
-                        ? 'bg-green-50 border-2 border-green-200'
-                        : 'bg-[#E06A26]/10 border-2 border-orange-200'
+                        ? 'bg-[#3AB1A0]/10 border-2 border-[#3AB1A0]/30'
+                        : 'bg-[#3AB1A0]/10 border-2 border-[#3AB1A0]/30'
                         }`}>
                         <div className="flex items-start justify-between">
                             <div>

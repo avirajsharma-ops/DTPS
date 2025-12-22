@@ -345,7 +345,7 @@ function Step2Goals({ onNext, onBack, data, updateData }: StepProps) {
       </div>
 
       <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">What&apos;s your goal?</h1>
-      <p className="text-gray-500 text-center mb-10">We will customize your diet plan based on this.</p>
+      <p className="text-gray-500 text-center mb-10">We will customize your profile based on this.</p>
 
       {/* Goal Options */}
       <div className="space-y-4">
@@ -635,7 +635,7 @@ function Step5Summary({ onNext, onBack, data }: StepProps) {
       </div>
 
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Personalized Plan</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Profile </h2>
         <p className="text-gray-500">Review your information before we get started.</p>
       </div>
 

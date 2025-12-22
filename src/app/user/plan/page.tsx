@@ -168,17 +168,23 @@ export default function UserPlanPage() {
   // Scroll to today's date when dates are loaded - today is at index 15
   useEffect(() => {
     if (weekDates.length > 0 && dateScrollRef.current) {
-      // Scroll to position today (index 15) so it appears at START of visible area
       setTimeout(() => {
         if (dateScrollRef.current) {
-          const todayIndex = 15; // Today is at index 15 (after 15 previous days)
-          const buttonWidth = 58; // Approximate width of each date button
-          // Scroll so today is at the START (left edge)
-          dateScrollRef.current.scrollLeft = todayIndex * buttonWidth;
+          // Find the index of today in weekDates
+          const today = new Date();
+          const todayIndex = weekDates.findIndex(date =>
+            date.getFullYear() === today.getFullYear() &&
+            date.getMonth() === today.getMonth() &&
+            date.getDate() === today.getDate()
+          );
+          if (todayIndex !== -1) {
+            const buttonWidth = 58; // Approximate width of each date button
+            dateScrollRef.current.scrollLeft = todayIndex * buttonWidth;
+          }
         }
       }, 50);
     }
-  }, [weekDates]);
+  }, [weekDates, selectedDate]);
 
   useEffect(() => {
     fetchDayPlan(selectedDate, false);

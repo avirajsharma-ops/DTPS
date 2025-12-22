@@ -63,69 +63,92 @@ export function getPaymentReminderTemplate(data: {
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
     <tr>
-      <td style="padding: 40px 0;">
-        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-          <!-- Header -->
+      <td style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 480px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);">
+          <!-- Header with gradient -->
           <tr>
-            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Payment Reminder</h1>
-              <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">DTPS - Dietitian Practice System</p>
+            <td style="background: linear-gradient(135deg, #3AB1A0 0%, #2A9A8B 100%); padding: 32px 24px; text-align: center; border-radius: 16px 16px 0 0;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">Payment Reminder</h1>
+              ${data.dietitianName ? `
+              <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">DIETITIAN ${data.dietitianName.toUpperCase()}</p>
+              ` : ''}
             </td>
           </tr>
           
           <!-- Content -->
           <tr>
-            <td style="padding: 40px 30px;">
-              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                Dear <strong>${data.clientName}</strong>,
-              </p>
+            <td style="padding: 32px 24px;">
+              <!-- Greeting with icon -->
+              <table role="presentation" style="width: 100%; margin-bottom: 20px;">
+                <tr>
+                  <td style="width: 40px; vertical-align: top;">
+                    <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #3AB1A0 0%, #2A9A8B 100%); border-radius: 8px; text-align: center; line-height: 32px;">
+                      <span style="font-size: 16px;">🥗</span>
+                    </div>
+                  </td>
+                  <td style="vertical-align: middle; padding-left: 12px;">
+                    <p style="color: #1f2937; font-size: 18px; margin: 0; font-weight: 600;">
+                      Dear ${data.clientName},
+                    </p>
+                  </td>
+                </tr>
+              </table>
               
-              <p style="color: #555555; font-size: 15px; line-height: 1.6; margin: 0 0 25px 0;">
+              <p style="color: #6b7280; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
                 This is a friendly reminder that you have a pending payment. Please complete your payment to continue with your nutrition program.
               </p>
               
               <!-- Payment Details Card -->
-              <table role="presentation" style="width: 100%; background-color: #f8fafc; border-radius: 8px; margin-bottom: 30px;">
+              <table role="presentation" style="width: 100%; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 24px;">
                 <tr>
-                  <td style="padding: 25px;">
-                    <h3 style="color: #333333; margin: 0 0 15px 0; font-size: 18px;">Payment Details</h3>
-                    
-                    ${data.planName ? `
-                    <table role="presentation" style="width: 100%; margin-bottom: 8px;">
+                  <td style="padding: 20px;">
+                    <table role="presentation" style="width: 100%; margin-bottom: 4px;">
                       <tr>
-                        <td style="color: #666666; font-size: 14px; padding: 5px 0;">Plan:</td>
-                        <td style="color: #333333; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">${data.planName}</td>
-                      </tr>
-                    </table>
-                    ` : ''}
-                    
-                    ${data.duration ? `
-                    <table role="presentation" style="width: 100%; margin-bottom: 8px;">
-                      <tr>
-                        <td style="color: #666666; font-size: 14px; padding: 5px 0;">Duration:</td>
-                        <td style="color: #333333; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">${data.duration}</td>
-                      </tr>
-                    </table>
-                    ` : ''}
-                    
-                    <table role="presentation" style="width: 100%; margin-bottom: 8px;">
-                      <tr>
-                        <td style="color: #666666; font-size: 14px; padding: 5px 0;">Amount:</td>
-                        <td style="color: #333333; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">₹${data.amount.toLocaleString('en-IN')}</td>
+                        <td style="padding: 4px 0;">
+                          <span style="font-size: 14px; margin-right: 8px;">📋</span>
+                          <span style="color: #1f2937; font-size: 16px; font-weight: 600;">Payment Details</span>
+                        </td>
                       </tr>
                     </table>
                     
-                    <table role="presentation" style="width: 100%; border-top: 1px solid #e2e8f0; margin-top: 10px; padding-top: 10px;">
+                    <table role="presentation" style="width: 100%; margin-top: 16px;">
+                      ${data.planName ? `
                       <tr>
-                        <td style="color: #333333; font-size: 16px; font-weight: 700; padding: 5px 0;">Total Amount:</td>
-                        <td style="color: #667eea; font-size: 20px; font-weight: 700; text-align: right; padding: 5px 0;">₹${data.finalAmount.toLocaleString('en-IN')}</td>
+                        <td style="color: #6b7280; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">Plan</td>
+                        <td style="color: #1f2937; font-size: 14px; font-weight: 500; text-align: right; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${data.planName}</td>
+                      </tr>
+                      ` : ''}
+                      
+                      ${data.duration ? `
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">Duration</td>
+                        <td style="color: #1f2937; font-size: 14px; font-weight: 500; text-align: right; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${data.duration}</td>
+                      </tr>
+                      ` : ''}
+                      
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 8px 0; border-bottom: 1px dashed #e5e7eb;">Amount</td>
+                        <td style="color: #1f2937; font-size: 14px; font-weight: 500; text-align: right; padding: 8px 0; border-bottom: 1px dashed #e5e7eb;">₹${data.finalAmount.toLocaleString('en-IN')}</td>
+                      </tr>
+                    </table>
+                    
+                    <table role="presentation" style="width: 100%; margin-top: 12px;">
+                      <tr>
+                        <td style="color: #1f2937; font-size: 16px; font-weight: 700; padding: 8px 0;">Total Amount</td>
+                        <td style="color: #3AB1A0; font-size: 22px; font-weight: 700; text-align: right; padding: 8px 0;">₹${data.finalAmount.toLocaleString('en-IN')}</td>
                       </tr>
                     </table>
                     
                     ${data.expireDate ? `
-                    <p style="color: #ef4444; font-size: 13px; margin: 15px 0 0 0;">
-                      ⏰ Link expires on: ${data.expireDate}
-                    </p>
+                    <table role="presentation" style="width: 100%; margin-top: 16px;">
+                      <tr>
+                        <td style="background-color: #fef3cd; padding: 12px 16px; border-radius: 8px; text-align: center;">
+                          <span style="color: #856404; font-size: 13px;">
+                            ⏰ Link expires on: ${data.expireDate}
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
                     ` : ''}
                   </td>
                 </tr>
@@ -134,35 +157,24 @@ export function getPaymentReminderTemplate(data: {
               <!-- CTA Button -->
               <table role="presentation" style="width: 100%;">
                 <tr>
-                  <td style="text-align: center; padding: 10px 0 30px 0;">
-                    <a href="${data.paymentLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
-                      Pay Now ₹${data.finalAmount.toLocaleString('en-IN')}
+                  <td style="text-align: center; padding: 8px 0 24px 0;">
+                    <a href="${data.paymentLink}" style="display: inline-block; background: linear-gradient(135deg, #3AB1A0 0%, #2A9A8B 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 50px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(58, 177, 160, 0.35);">
+                      Pay Now ₹${data.finalAmount.toLocaleString('en-IN')} →
                     </a>
                   </td>
                 </tr>
               </table>
               
-              <p style="color: #888888; font-size: 13px; line-height: 1.6; margin: 0; text-align: center;">
-                If the button doesn't work, copy and paste this link in your browser:<br>
-                <a href="${data.paymentLink}" style="color: #667eea; word-break: break-all;">${data.paymentLink}</a>
+              <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                Secure payment powered by DTPS
               </p>
             </td>
           </tr>
           
-          <!-- Footer -->
+          <!-- Footer with gradient line -->
           <tr>
-            <td style="background-color: #f8fafc; padding: 25px 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-              ${data.dietitianName ? `
-              <p style="color: #666666; font-size: 14px; margin: 0 0 10px 0;">
-                Your Dietitian: <strong>${data.dietitianName}</strong>
-              </p>
-              ` : ''}
-              <p style="color: #888888; font-size: 13px; margin: 0;">
-                © ${new Date().getFullYear()} DTPS - Dietitian Practice System
-              </p>
-              <p style="color: #999999; font-size: 12px; margin: 10px 0 0 0;">
-                This is an automated reminder. Please do not reply to this email.
-              </p>
+            <td style="padding: 0;">
+              <div style="height: 4px; background: linear-gradient(90deg, #3AB1A0 0%, #2A9A8B 50%, #3AB1A0 100%); border-radius: 0 0 16px 16px;"></div>
             </td>
           </tr>
         </table>
@@ -183,7 +195,7 @@ This is a friendly reminder that you have a pending payment.
 Payment Details:
 ${data.planName ? `Plan: ${data.planName}` : ''}
 ${data.duration ? `Duration: ${data.duration}` : ''}
-Amount: ₹${data.amount.toLocaleString('en-IN')}
+Amount: ₹${data.finalAmount.toLocaleString('en-IN')}
 Total: ₹${data.finalAmount.toLocaleString('en-IN')}
 ${data.expireDate ? `Expires: ${data.expireDate}` : ''}
 
@@ -191,7 +203,7 @@ Pay Now: ${data.paymentLink}
 
 ${data.dietitianName ? `Your Dietitian: ${data.dietitianName}` : ''}
 
-© ${new Date().getFullYear()} DTPS - Dietitian Practice System
+Secure payment powered by DTPS
   `;
 
   return { subject, html, text };

@@ -1,6 +1,6 @@
-'use client';
+  'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -29,6 +29,28 @@ import {
 } from 'lucide-react';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import ServicePlansSwiper from '@/components/client/ServicePlansSwiper';
+
+// Utility function to dispatch data change events (meal plan, purchases, payments)
+export function triggerDataRefresh(dataType: 'meal-plan' | 'client-purchases' | 'payment' | 'dietitian-assigned' | 'all') {
+  window.dispatchEvent(new CustomEvent('user-data-changed', { detail: { dataType } }));
+}
+
+// Custom hook to listen for data changes and refresh UI
+function useDataChangeListener(onDataChange: (dataType?: string) => void) {
+  useEffect(() => {
+    const handleDataChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { dataType } = customEvent.detail || {};
+      console.log('Data change detected:', dataType);
+      onDataChange(dataType);
+    };
+
+    window.addEventListener('user-data-changed', handleDataChange);
+    return () => {
+      window.removeEventListener('user-data-changed', handleDataChange);
+    };
+  }, [onDataChange]);
+}
 
 interface DashboardData {
   caloriesLeft: number;
@@ -97,6 +119,57 @@ export default function UserHomePage() {
     steps: { current: 6540, goal: 10000 },
   });
 
+  // Function to refresh all data (called when meal plan, purchases, or payments change)
+  const refreshAllData = useCallback(async () => {
+    console.log('Refreshing all user data...');
+    try {
+      const [planRes, profileRes] = await Promise.all([
+        fetch('/api/client/service-plans'),
+        fetch('/api/client/profile')
+      ]);
+
+      if (planRes.ok) {
+        const planData = await planRes.json();
+        setHasActivePlan(planData.hasActivePlan || false);
+        setHasAnyPurchase(planData.hasAnyPurchase || false);
+        setHasPendingDietitianAssignment(planData.hasPendingDietitianAssignment || false);
+        setActivePurchases(planData.activePurchases || []);
+      }
+
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        setUserProfile({
+          bmi: profileData.bmi || '',
+          bmiCategory: profileData.bmiCategory || '',
+          weightKg: profileData.weightKg || '',
+          heightCm: profileData.heightCm || '',
+          generalGoal: profileData.generalGoal || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    }
+  }, []);
+
+  // Listen for data changes and refresh
+  useDataChangeListener(refreshAllData);
+
+  // Refresh data when page becomes visible (user switches back to tab)
+  // useEffect(() => {
+  //   const handleVisibilityChange = () => {
+  //     if (document.visibilityState === 'visible' && session?.user) {
+  //       Refresh when user comes back to the page
+  //       refreshAllData();
+  //     }
+  //   };
+
+  //   document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  //   return () => {
+  //     document.removeEventListener('visibilitychange', handleVisibilityChange);
+  //   };
+  // }, [session, refreshAllData]);
+
   // Handle payment callback verification
   useEffect(() => {
     const verifyPaymentCallback = async () => {
@@ -126,6 +199,8 @@ export default function UserHomePage() {
           if (data.success) {
             toast.success('Payment successful! Your plan is now active.');
             setHasAnyPurchase(true);
+            // Refresh all data to show updated status
+            refreshAllData();
             // Clear the URL parameters
             router.replace('/user');
           } else {
@@ -365,8 +440,13 @@ export default function UserHomePage() {
               /* STATE 1: Plan Purchased, Waiting for Dietitian Assignment */
               <div className="rounded-3xl bg-gradient-to-br from-[#E06A26]/10 to-[#DB9C6E]/10 p-6 shadow-sm border border-[#E06A26]/20">
                 <div className="flex items-start gap-4">
-                  <div className="h-14 w-14 rounded-2xl bg-[#E06A26]/20 flex items-center justify-center">
-                    <Loader2 className="h-7 w-7 text-[#E06A26] animate-spin" />
+                  <div className="h-14 w-14 rounded-2xl flex items-center justify-center">
+                     <img
+                       src="/images/dtps-logo.png"
+                       alt="DTPS"
+                       
+                       className="object-cover w-full h-full"
+                     />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-gray-900">Plan Purchased! 🎉</h3>
@@ -395,13 +475,7 @@ export default function UserHomePage() {
                       <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.durationDays} Days</p>
                     </div>
                   </div>
-                  {/* Notice about dates */}
-                  <div className="p-3 mt-3 border bg-amber-50 rounded-xl border-amber-200">
-                    <p className="flex items-center gap-2 text-xs text-amber-700">
-                      <Calendar className="w-4 h-4" />
-                      <span>Start & end dates will be set once your dietitian is assigned</span>
-                    </p>
-                  </div>
+               
                 </div>
               </div>
             ) : !currentPurchase.mealPlanCreated ? (
@@ -627,12 +701,16 @@ export default function UserHomePage() {
 
     {/* Progress Bar */}
     <div className="relative mt-6">
-      {/* Track */}
+      {/* Track - proportional to BMI ranges (15-40 scale) */}
       <div className="flex h-3 overflow-hidden rounded-full">
-        <div className="w-[20%] bg-blue-400/70" />
-        <div className="w-[30%] bg-[#3AB1A0]" />
+        {/* Underweight (15-18.5 = 3.5/25 = 14%) */}
+        <div className="w-[14%] bg-blue-400/70" />
+        {/* Normal (18.5-25 = 6.5/25 = 26%) */}
+        <div className="w-[26%] bg-[#3AB1A0]" />
+        {/* Overweight (25-29.9 = 4.9/25 = 19.6%) */}
         <div className="w-[20%] bg-[#DB9C6E]" />
-        <div className="w-[30%] bg-[#E06A26]" />
+        {/* Obese (30-40 = 10/25 = 40%) */}
+        <div className="w-[40%] bg-[#E06A26]" />
       </div>
 
       {/* Indicator - contained within bounds */}
@@ -640,7 +718,7 @@ export default function UserHomePage() {
         className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2"
         style={{
           left: `clamp(2.5%, ${Math.min(
-            Math.max(((parseFloat(userProfile.bmi) - 15) / 25) * 100, 2.5),
+            Math.max(((parseFloat(userProfile.bmi) - 15) / (40 - 15)) * 100, 2.5),
             97.5
           )}%, 97.5%)`,
         }}

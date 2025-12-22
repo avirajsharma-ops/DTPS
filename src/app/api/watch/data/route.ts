@@ -1,11 +1,11 @@
-// API Route: Watch Health Data
+// API Route: Watch Health Data - Optimized for fast response
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import { WatchService } from '@/watchconnectivity/backend/services/WatchService';
 
-// GET /api/watch/data - Get watch health data
+// GET /api/watch/data - Get watch health data (optimized)
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
     const dateParam = searchParams.get('date');
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
+    const forceSync = searchParams.get('sync') === 'true';
     
     // Range query
     if (startDateParam && endDateParam) {
@@ -39,21 +40,38 @@ export async function GET(req: NextRequest) {
       });
     }
     
-    // Single date query
+    // Single date query - optimized for fast response
     const targetDate = dateParam ? new Date(dateParam) : new Date();
+    
+    // If force sync requested, sync first then return data
+    if (forceSync) {
+      const syncResult = await WatchService.syncWatchData(session.user.id);
+      if (syncResult.success && syncResult.data) {
+        return NextResponse.json({
+          success: true,
+          watchHealthData: syncResult.data,
+          synced: true,
+        });
+      }
+    }
+    
+    // Get cached data first (fast)
     const watchHealthData = await WatchService.getWatchHealthData(session.user.id, targetDate);
     
-    if (!watchHealthData) {
+    if (watchHealthData) {
       return NextResponse.json({
         success: true,
-        watchHealthData: null,
-        message: 'No watch data for this date',
+        watchHealthData,
+        cached: true,
       });
     }
     
+    // No data found - return empty response with hint to sync
     return NextResponse.json({
       success: true,
-      watchHealthData,
+      watchHealthData: null,
+      message: 'No watch data for this date. Use ?sync=true to fetch fresh data.',
+      hint: 'Call POST /api/watch/sync to sync data from your watch',
     });
   } catch (error) {
     console.error('Watch data fetch error:', error);

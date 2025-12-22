@@ -264,14 +264,26 @@ export default function EditRecipePage() {
       return;
     }
     
-    if (!name || !description || !servings || ingredients.some(ing => !ing.name || !ing.unit)) {
-      toast.error('Please fill in all required fields (name, description, category, portion size, and complete ingredient details)');
+    if (!name || !servings || ingredients.some(ing => !ing.name || !ing.unit)) {
+      toast.error('Please fill in all required fields (name, portion size, and complete ingredient details)');
       return;
     }
 
     const validInstructions = instructions.filter(inst => inst.trim() !== '');
     if (validInstructions.length === 0) {
       toast.error('Please add at least one instruction');
+      return;
+    }
+
+    // Validate required nutrition fields
+    if (!calories || !protein || !carbs || !fat) {
+      toast.error('Please fill in all nutrition fields (calories, protein, carbs, fat)');
+      return;
+    }
+
+    // Validate required time fields
+    if (!prepTime || !cookTime) {
+      toast.error('Please fill in prep time and cook time');
       return;
     }
 
@@ -444,7 +456,7 @@ export default function EditRecipePage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="prepTime">Prep Time (min)</Label>
+                    <Label htmlFor="prepTime">Prep Time (min) *</Label>
                     <Input
                       id="prepTime"
                       type="number"
@@ -452,10 +464,11 @@ export default function EditRecipePage() {
                       onChange={(e) => setPrepTime(e.target.value)}
                       placeholder="30"
                       min="0"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="cookTime">Cook Time (min)</Label>
+                    <Label htmlFor="cookTime">Cook Time (min) *</Label>
                     <Input
                       id="cookTime"
                       type="number"
@@ -463,6 +476,7 @@ export default function EditRecipePage() {
                       onChange={(e) => setCookTime(e.target.value)}
                       placeholder="45"
                       min="0"
+                      required
                     />
                   </div>
                 </div>
@@ -492,13 +506,13 @@ export default function EditRecipePage() {
           {/* Nutrition Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Nutrition Information (per serving)</CardTitle>
-              <CardDescription>Optional - helps users track their nutritional goals</CardDescription>
+              <CardTitle>Nutrition Information (per serving) *</CardTitle>
+              <CardDescription>Required - helps users track their nutritional goals</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <Label htmlFor="calories">Calories</Label>
+                  <Label htmlFor="calories">Calories *</Label>
                   <Input
                     id="calories"
                     type="number"
@@ -506,10 +520,11 @@ export default function EditRecipePage() {
                     onChange={(e) => setCalories(e.target.value)}
                     placeholder="350"
                     min="0"
+                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="protein">Protein (g)</Label>
+                  <Label htmlFor="protein">Protein (g) *</Label>
                   <Input
                     id="protein"
                     type="number"
@@ -518,10 +533,11 @@ export default function EditRecipePage() {
                     onChange={(e) => setProtein(e.target.value)}
                     placeholder="25.5"
                     min="0"
+                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="carbs">Carbs (g)</Label>
+                  <Label htmlFor="carbs">Carbs (g) *</Label>
                   <Input
                     id="carbs"
                     type="number"
@@ -530,10 +546,11 @@ export default function EditRecipePage() {
                     onChange={(e) => setCarbs(e.target.value)}
                     placeholder="30.2"
                     min="0"
+                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="fat">Fat (g)</Label>
+                  <Label htmlFor="fat">Fat (g) *</Label>
                   <Input
                     id="fat"
                     type="number"
@@ -542,6 +559,7 @@ export default function EditRecipePage() {
                     onChange={(e) => setFat(e.target.value)}
                     placeholder="12.8"
                     min="0"
+                    required
                   />
                 </div>
               </div>

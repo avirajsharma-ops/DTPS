@@ -455,7 +455,7 @@ export default function HydrationPage() {
               </div>
 
               {hydrationData.assignedWater.isCompleted ? (
-                <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full">
+                <div className="flex items-center gap-2 bg-[#3AB1A0] text-white px-4 py-2 rounded-full">
                   <Check className="w-5 h-5" />
                   <span className="font-semibold">Completed</span>
                 </div>
