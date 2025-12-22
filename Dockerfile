@@ -12,7 +12,7 @@ COPY package.json package-lock.json* ./
 
 # Install dependencies with cache mount for faster builds
 RUN --mount=type=cache,target=/root/.npm \
-  npm ci --only=production --no-audit --no-fund
+  npm ci --only=production --no-audit --no-fund --legacy-peer-deps
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -21,7 +21,7 @@ WORKDIR /app
 # Copy package files and install ALL dependencies (including devDependencies)
 COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
-  npm ci --no-audit --no-fund
+  npm ci --no-audit --no-fund --legacy-peer-deps
 
 # Copy source code
 COPY . .
