@@ -43,6 +43,30 @@ const fitnessDataSchema = new Schema({
   lastSync: Date
 });
 
+// FCM Token schema for push notifications
+const fcmTokenSchema = new Schema({
+  token: {
+    type: String,
+    required: true
+  },
+  deviceType: {
+    type: String,
+    enum: ['web', 'android', 'ios'],
+    default: 'web'
+  },
+  deviceInfo: {
+    type: String
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  lastUsed: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const userSchema = new Schema({
   email: {
     type: String,
@@ -88,7 +112,7 @@ const userSchema = new Schema({
     type: Boolean,
     default: false
   },
-  
+
   // Dietitian specific fields
   credentials: [{
     type: String
@@ -127,7 +151,7 @@ const userSchema = new Schema({
   alternativePhone: { type: String, trim: true },
   alternativeEmail: { type: String, trim: true, lowercase: true },
   anniversary: { type: Date },
-  source: { 
+  source: {
     type: String,
     enum: ['google_ads', 'facebook_ads', 'instagram', 'referral', 'other', '']
   },
@@ -152,7 +176,7 @@ const userSchema = new Schema({
   targetWeightKg: { type: String },
   idealWeightKg: { type: String },
   bmi: { type: String },
-  bmiCategory: { 
+  bmiCategory: {
     type: String,
     enum: ['', 'Underweight', 'Normal', 'Overweight', 'Obese'],
     default: ''
@@ -161,28 +185,28 @@ const userSchema = new Schema({
     type: String,
     enum: ['', 'sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active']
   },
-healthGoals: [{
-  type: String
-}],
+  healthGoals: [{
+    type: String
+  }],
 
-generalGoal: {
-  type: String,
-  enum: ['', 'not-specified', 'weight-loss', 'weight-gain', 'disease-management', 'muscle-gain', 'maintain-weight'],
-  default: ''
-},
+  generalGoal: {
+    type: String,
+    enum: ['', 'not-specified', 'weight-loss', 'weight-gain', 'disease-management', 'muscle-gain', 'maintain-weight'],
+    default: ''
+  },
 
   documents: [
-  {
-    type: {
-      type: String,
-      enum: ["meal-picture", "medical-report"],
-      required: true,
-    },
-    fileName: { type: String, required: true },
-    filePath: { type: String, required: true },
-    uploadedAt: { type: Date, default: Date.now },
-  }
-],
+    {
+      type: {
+        type: String,
+        enum: ["meal-picture", "medical-report"],
+        required: true,
+      },
+      fileName: { type: String, required: true },
+      filePath: { type: String, required: true },
+      uploadedAt: { type: Date, default: Date.now },
+    }
+  ],
 
   goals: {
     calories: { type: Number, default: 1800 },
@@ -272,7 +296,7 @@ generalGoal: {
     type: Number,
     default: 0
   },
-  
+
   // Daily goals set during onboarding
   dailyGoals: {
     calories: { type: Number, default: 2000 },
@@ -280,7 +304,7 @@ generalGoal: {
     water: { type: Number, default: 2500 },
     sleep: { type: Number, default: 7.5 }
   },
-  
+
   // Dietary preferences
   dietType: {
     type: String,
@@ -290,7 +314,7 @@ generalGoal: {
     alcoholFree: { type: Boolean, default: false },
     porkFree: { type: Boolean, default: false }
   },
-  
+
   // User settings for notifications, reminders, appearance
   settings: {
     pushNotifications: { type: Boolean, default: true },
@@ -301,10 +325,13 @@ generalGoal: {
     darkMode: { type: Boolean, default: false },
     soundEnabled: { type: Boolean, default: true }
   },
-  
+
   // Push notification subscription
   pushNotificationEnabled: { type: Boolean, default: false },
-  
+
+  // FCM Push Notification Tokens (supports multiple devices)
+  fcmTokens: [fcmTokenSchema],
+
   // Reminder preferences
   reminderPreferences: {
     mealReminders: { type: Boolean, default: true },
@@ -324,7 +351,7 @@ userSchema.index({ assignedDietitian: 1 });
 userSchema.index({ assignedDietitians: 1 });
 
 // Pre-save hook to hash password with bcrypt
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) {
     return next();
@@ -332,7 +359,7 @@ userSchema.pre('save', async function(next) {
 
   try {
     const bcrypt = require('bcrypt');
-    
+
     // Skip if password is already hashed (starts with $2b$ or $2a$)
     if (this.password.startsWith('$2b$') || this.password.startsWith('$2a$')) {
       return next();
@@ -348,7 +375,7 @@ userSchema.pre('save', async function(next) {
 });
 
 // Password comparison method using bcrypt
-userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
   const bcrypt = require('bcrypt');
 
   // If password is already hashed (starts with $2b$), use bcrypt compare
@@ -361,14 +388,14 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
 };
 
 // Virtual for full name
-userSchema.virtual('fullName').get(function() {
+userSchema.virtual('fullName').get(function () {
   return `${this.firstName} ${this.lastName}`;
 });
 
 // Ensure virtual fields are serialized
 userSchema.set('toJSON', {
   virtuals: true,
-  transform: function(_doc: any, ret: any) {
+  transform: function (_doc: any, ret: any) {
     delete ret.password;
     return ret;
   }
