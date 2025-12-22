@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Clock, Users, Flame, ChefHat, Bookmark, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Flame, ChefHat, Bookmark, Lightbulb } from 'lucide-react';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface Recipe {
   _id: string;
@@ -55,8 +56,8 @@ export default function RecipeDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-[#3AB1A0]" />
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <SpoonGifLoader size="lg" />
       </div>
     );
   }
@@ -107,6 +108,7 @@ export default function RecipeDetailPage() {
             <img
               src={recipe.image}
               alt={recipe.name}
+              loading="lazy"
               className="w-full h-full object-cover"
             />
             {recipe.difficulty && (

@@ -16,3 +16,4 @@ export { useNotifications } from './useNotifications';
 export { useRealtime } from './useRealtime';
 export { useCallManager } from './useCallManager';
 export { useSimpleWebRTC } from './useSimpleWebRTC';
+export { useBodyScrollLock } from './useBodyScrollLock';

@@ -65,6 +65,7 @@ export type FoodOption = {
   fats: string;
   protein: string;
   fiber: string;
+  recipeUuid?: string; // UUID of the recipe if added from recipe database
 };
 
 export type Meal = {

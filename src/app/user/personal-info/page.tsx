@@ -241,7 +241,7 @@ export default function PersonalInfoPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -286,6 +286,7 @@ export default function PersonalInfoPage() {
               <img 
                 src={data.profileImage} 
                 alt="Profile" 
+                loading="lazy"
                 className="w-28 h-28 rounded-2xl border-4 border-[#3AB1A0]/20 object-cover shadow-xl"
               />
             ) : (

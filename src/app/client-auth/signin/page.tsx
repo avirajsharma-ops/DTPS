@@ -40,7 +40,7 @@ export default function ClientSignInPage() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setError('Wrong email or password');
       } else {
         // Get the updated session to verify client role
         const session = await getSession();
@@ -62,9 +62,9 @@ export default function ClientSignInPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4">
+    <div className="flex flex-col min-h-screen bg-white md:bg-gray-50">
+      {/* Header - Hidden on larger screens */}
+      <div className="flex items-center justify-between p-4 md:hidden">
         <Link href="/" className="text-gray-500 hover:text-gray-700">
           <ArrowLeft className="w-6 h-6" />
         </Link>
@@ -73,25 +73,26 @@ export default function ClientSignInPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center justify-center flex-1 px-6 pb-2 overflow-y-auto ">
-        {/* Logo */}
-        <div className="flex items-center justify-center overflow-hidden h-36 w-36 rounded-xl">
-                     <img
-                       src="/images/dtps-logo.png"
-                       alt="DTPS"
-                       
-                       className="object-cover w-full h-full"
-                     />
-                     </div>
+      <div className="flex flex-col items-center justify-center flex-1 px-4 py-4 overflow-y-auto sm:px-6 md:px-8">
+        {/* Card wrapper for larger screens */}
+        <div className="w-full max-w-md md:bg-white md:rounded-2xl md:shadow-lg md:p-8 lg:p-10">
+          {/* Logo */}
+          <div className="flex items-center justify-center overflow-hidden w-24 h-24 mx-auto rounded-xl sm:w-28 sm:h-28 md:w-32 md:h-32">
+            <img
+              src="/images/dtps-logo.png"
+              alt="DTPS"
+              className="object-cover w-full h-full"
+            />
+          </div>
 
-        {/* App Name */}
-        <Link href="/user" className="text-3xl font-bold text-[#E06A26] mb-2 hover:text-[#d15a1a] transition-colors">DTPS</Link>
-        <p className="mb-8 text-center text-gray-600">
-          Welcome back! Please enter your details.
-        </p>
+          {/* App Name */}
+          <Link href="/user" className="block text-2xl font-bold text-center text-[#E06A26] mt-4 mb-2 hover:text-[#d15a1a] transition-colors sm:text-3xl">DTPS</Link>
+          <p className="mb-6 text-center text-gray-600 text-sm sm:text-base sm:mb-8">
+            Welcome back! Please enter your details.
+          </p>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-4">
           {error && (
             <Alert variant="destructive" className="text-red-300 border-red-800 bg-red-900/30">
               <AlertDescription>{error}</AlertDescription>
@@ -109,7 +110,7 @@ export default function ClientSignInPage() {
                 type="email"
                 placeholder="Enter your email"
                 {...register('email')}
-                className={`h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.email ? 'border-red-500' : ''}`}
+                className={`h-12 sm:h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.email ? 'border-red-500' : ''}`}
               />
             </div>
             {errors.email && (
@@ -128,7 +129,7 @@ export default function ClientSignInPage() {
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 {...register('password')}
-                className={`h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.password ? 'border-red-500' : ''}`}
+                className={`h-12 sm:h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.password ? 'border-red-500' : ''}`}
               />
               <button
                 type="button"
@@ -160,7 +161,7 @@ export default function ClientSignInPage() {
           {/* Login Button */}
           <Button
             type="submit"
-            className="w-full h-14 bg-[#61a035] hover:bg-[#60953a] text-white font-semibold text-lg rounded-xl shadow-lg"
+            className="w-full h-12 sm:h-14 bg-[#61a035] hover:bg-[#60953a] text-white font-semibold text-base sm:text-lg rounded-xl shadow-lg"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -177,26 +178,26 @@ export default function ClientSignInPage() {
           </Button>
         </form>
 
-        {/* Divider */}
-        <div className="w-full max-w-sm my-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 tracking-wider text-gray-500 uppercase bg-white">
-                Or continue with
-              </span>
+          {/* Divider */}
+          <div className="w-full my-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 tracking-wider text-gray-500 uppercase bg-white md:bg-white">
+                  Or continue with
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Social Login Buttons */}
-        <div className="flex w-full max-w-sm gap-4">
-          <button
-            type="button"
-            className="flex-1 h-14 bg-white border-2 border-[#3AB1A0]/30 rounded-xl flex items-center justify-center hover:bg-[#3AB1A0]/5 hover:border-[#3AB1A0] transition-colors shadow-sm"
-          >
+          {/* Social Login Buttons */}
+          <div className="flex w-full gap-3 sm:gap-4">
+            <button
+              type="button"
+              className="flex-1 h-12 sm:h-14 bg-white border-2 border-[#3AB1A0]/30 rounded-xl flex items-center justify-center hover:bg-[#3AB1A0]/5 hover:border-[#3AB1A0] transition-colors shadow-sm"
+            >
             <svg className="w-6 h-6" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
@@ -216,23 +217,24 @@ export default function ClientSignInPage() {
               />
             </svg>
           </button>
-          <button
-            type="button"
-            className="flex-1 h-14 bg-white border-2 border-[#3AB1A0]/30 rounded-xl flex items-center justify-center hover:bg-gray-800 transition-colors shadow-sm"
-          >
-            <svg className="w-6 h-6 text-b" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
-            </svg>
-          </button>
-        </div>
+            <button
+              type="button"
+              className="flex-1 h-12 sm:h-14 bg-white border-2 border-[#3AB1A0]/30 rounded-xl flex items-center justify-center hover:bg-gray-800 transition-colors shadow-sm"
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-b" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
+              </svg>
+            </button>
+          </div>
 
-        {/* Sign Up Link */}
-        <p className="mt-8 text-gray-500">
-          Don't have an account?{' '}
-          <Link href="/client-auth/signup" className="text-[#E06A26] font-semibold hover:underline">
-            Sign up for free
-          </Link>
-        </p>
+          {/* Sign Up Link */}
+          <p className="mt-6 text-center text-gray-500 text-sm sm:text-base sm:mt-8">
+            Don't have an account?{' '}
+            <Link href="/client-auth/signup" className="text-[#E06A26] font-semibold hover:underline">
+              Sign up for free
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

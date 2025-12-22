@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Star, Check } from 'lucide-react';
+import { ArrowLeft, Star, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface ServicePlan {
   _id: string;
@@ -47,8 +48,8 @@ export default function ServicesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-[#3AB1A0]" />
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <SpoonGifLoader size="lg" />
       </div>
     );
   }
@@ -69,16 +70,17 @@ export default function ServicesPage() {
       </div>
 
       <div className="px-4 py-6 max-w-5xl mx-auto">
-        {/* Service Plans Grid - Column Layout */}
+        {/* Service Plans - Horizontal Scrollable Layout */}
         <div className="mb-8">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Service Plans</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {services.map((service) => (
-              <Link
-                key={service._id}
-                href={`/user/services/${service._id}`}
-                className="block p-5 bg-white rounded-2xl border border-gray-200 hover:border-[#3AB1A0] hover:shadow-lg transition-all group"
-              >
+          <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+            <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
+              {services.map((service) => (
+                <Link
+                  key={service._id}
+                  href={`/user/services/${service._id}`}
+                  className="block w-72 flex-shrink-0 p-5 bg-white rounded-2xl border border-gray-200 hover:border-[#3AB1A0] hover:shadow-lg transition-all group"
+                >
                 <div className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-[#3AB1A0]/10 text-[#3AB1A0] mb-3">
                   {service.category}
                 </div>
@@ -120,6 +122,7 @@ export default function ServicesPage() {
                 )}
               </Link>
             ))}
+            </div>
           </div>
         </div>
 

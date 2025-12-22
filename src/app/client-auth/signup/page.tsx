@@ -108,9 +108,9 @@ export default function ClientSignUpPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4">
+    <div className="flex flex-col min-h-screen bg-white md:bg-gray-50">
+      {/* Header - Hidden on larger screens */}
+      <div className="flex items-center justify-between p-4 md:hidden">
         <Link href="/" className="text-gray-500 hover:text-gray-700">
           <ArrowLeft className="w-6 h-6" />
         </Link>
@@ -119,27 +119,28 @@ export default function ClientSignUpPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center flex-1 px-6 pb-6 overflow-y-auto">
-        {/* Logo */}
+      <div className="flex flex-col items-center justify-center flex-1 px-4 py-6 overflow-y-auto sm:px-6 md:px-8">
+        {/* Card wrapper for larger screens */}
+        <div className="w-full max-w-md md:bg-white md:rounded-2xl md:shadow-lg md:p-8 lg:p-10">
           {/* Logo */}
-        <div className="flex items-center justify-center overflow-hidden h-34 w-34 rounded-xl">
-                     <img
-                       src="/images/dtps-logo.png"
-                       alt="DTPS"
-                       
-                       className="object-cover w-full h-full"
-                     />
-                     </div>
-        {/* Title */}
-        <div className="w-full max-w-sm mb-6">
-          <h2 className="text-2xl font-bold text-[#E06A26]">Create Account</h2>
-          <p className="mt-1 text-gray-600">
-            Track your macros, crush your goals, and join a community of achievers.
-          </p>
-        </div>
+          <div className="flex items-center justify-center overflow-hidden w-20 h-20 mx-auto rounded-xl sm:w-24 sm:h-24 md:w-28 md:h-28">
+            <img
+              src="/images/dtps-logo.png"
+              alt="DTPS"
+              className="object-cover w-full h-full"
+            />
+          </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
+          {/* Title */}
+          <div className="w-full mb-4 text-center sm:mb-6">
+            <h2 className="text-xl font-bold text-[#E06A26] sm:text-2xl">Create Account</h2>
+            <p className="mt-1 text-sm text-gray-600 sm:text-base">
+              Track your macros, crush your goals, and join a community of achievers.
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-3 sm:space-y-4">
           {error && (
             <Alert variant="destructive" className="text-red-300 border-red-800 bg-red-900/30">
               <AlertDescription>{error}</AlertDescription>
@@ -162,7 +163,7 @@ export default function ClientSignUpPage() {
               type="text"
               placeholder="First Name"
               {...register('firstName')}
-              className={`h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.firstName ? 'border-red-500' : ''}`}
+              className={`h-12 sm:h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.firstName ? 'border-red-500' : ''}`}
             />
           </div>
           {errors.firstName && (
@@ -178,7 +179,7 @@ export default function ClientSignUpPage() {
               type="text"
               placeholder="Last Name"
               {...register('lastName')}
-              className={`h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.lastName ? 'border-red-500' : ''}`}
+              className={`h-12 sm:h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.lastName ? 'border-red-500' : ''}`}
             />
           </div>
           {errors.lastName && (
@@ -194,7 +195,7 @@ export default function ClientSignUpPage() {
               type="email"
               placeholder="Email Address"
               {...register('email')}
-              className={`h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.email ? 'border-red-500' : ''}`}
+              className={`h-12 sm:h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.email ? 'border-red-500' : ''}`}
             />
           </div>
           {errors.email && (
@@ -210,7 +211,7 @@ export default function ClientSignUpPage() {
               type="tel"
               placeholder="Phone Number"
               {...register('phone')}
-              className={`h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.phone ? 'border-red-500' : ''}`}
+              className={`h-12 sm:h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.phone ? 'border-red-500' : ''}`}
             />
           </div>
           {errors.phone && (
@@ -226,7 +227,7 @@ export default function ClientSignUpPage() {
               type={showPassword ? 'text' : 'password'}
               placeholder="Password"
               {...register('password')}
-              className={`h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.password ? 'border-red-500' : ''}`}
+              className={`h-12 sm:h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.password ? 'border-red-500' : ''}`}
             />
             <button
               type="button"
@@ -253,7 +254,7 @@ export default function ClientSignUpPage() {
               type={showConfirmPassword ? 'text' : 'password'}
               placeholder="Confirm Password"
               {...register('confirmPassword')}
-              className={`h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.confirmPassword ? 'border-red-500' : ''}`}
+              className={`h-12 sm:h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.confirmPassword ? 'border-red-500' : ''}`}
             />
             <button
               type="button"
@@ -280,7 +281,7 @@ export default function ClientSignUpPage() {
               type="text"
               placeholder="Referral Code (Optional)"
               {...register('referralCode')}
-              className="h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white"
+              className="h-12 sm:h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white"
             />
           </div>
 
@@ -311,7 +312,7 @@ export default function ClientSignUpPage() {
           {/* Sign Up Button */}
           <Button
             type="submit"
-            className="w-full h-14 bg-[#61a035] hover:bg-[#60953a] text-white font-semibold text-lg rounded-xl shadow-lg"
+            className="w-full h-12 sm:h-14 bg-[#61a035] hover:bg-[#60953a] text-white font-semibold text-base sm:text-lg rounded-xl shadow-lg"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -328,26 +329,26 @@ export default function ClientSignUpPage() {
           </Button>
         </form>
 
-        {/* Divider */}
-        <div className="w-full max-w-sm my-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 text-gray-500 bg-white">
-                Or sign up with
-              </span>
+          {/* Divider */}
+          <div className="w-full my-4 sm:my-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 text-gray-500 uppercase tracking-wider bg-white md:bg-white">
+                  Or sign up with
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Social Signup Buttons */}
-        <div className="flex w-full max-w-sm gap-4">
-          <button
-            type="button"
-            className="flex-1 h-14 bg-white border-2 border-[#3AB1A0]/30 rounded-xl flex items-center justify-center hover:bg-[#3AB1A0]/5 hover:border-[#3AB1A0] transition-colors shadow-sm"
-          >
+          {/* Social Signup Buttons */}
+          <div className="flex w-full gap-3 sm:gap-4">
+            <button
+              type="button"
+              className="flex-1 h-12 sm:h-14 bg-white border-2 border-[#3AB1A0]/30 rounded-xl flex items-center justify-center hover:bg-[#3AB1A0]/5 hover:border-[#3AB1A0] transition-colors shadow-sm"
+            >
             <svg className="w-6 h-6" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
@@ -366,24 +367,25 @@ export default function ClientSignUpPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-          </button>
-          <button
-            type="button"
-            className="flex-1 h-14bg-white border-2 border-[#3AB1A0]/30  rounded-xl flex items-center justify-center hover:bg-gray-800 transition-colors shadow-sm"
-          >
-            <svg className="w-6 h-6 text-b" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
-            </svg>
-          </button>
-        </div>
+            </button>
+            <button
+              type="button"
+              className="flex-1 h-12 sm:h-14 bg-white border-2 border-[#3AB1A0]/30 rounded-xl flex items-center justify-center hover:bg-gray-800 transition-colors shadow-sm"
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-b" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
+              </svg>
+            </button>
+          </div>
 
-        {/* Login Link */}
-        <p className="mt-8 text-gray-600">
-          Already have an account?{' '}
-          <Link href="/client-auth/signin" className="text-[#E06A26] font-semibold hover:underline">
-            Log In
-          </Link>
-        </p>
+          {/* Login Link */}
+          <p className="mt-6 text-center text-gray-600 text-sm sm:text-base sm:mt-8">
+            Already have an account?{' '}
+            <Link href="/client-auth/signin" className="text-[#E06A26] font-semibold hover:underline">
+              Log In
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

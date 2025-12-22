@@ -11,6 +11,7 @@ interface IFoodOption {
   fats: string;
   protein: string;
   fiber: string;
+  recipeUuid?: string; // UUID of the recipe if added from recipe database
 }
 
 // Meal interface (from DietPlanDashboard)
@@ -93,7 +94,8 @@ const FoodOptionSchema = new Schema({
   carbs: String,
   fats: String,
   protein: String,
-  fiber: String
+  fiber: String,
+  recipeUuid: String // UUID of the recipe if added from recipe database
 }, { _id: false, strict: false });
 
 // Meal schema (from DietPlanDashboard)

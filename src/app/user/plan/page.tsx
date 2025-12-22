@@ -486,7 +486,7 @@ export default function UserPlanPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -955,6 +955,7 @@ export default function UserPlanPage() {
                             <img 
                               src={recipe.image} 
                               alt={recipeModal.item.name}
+                              loading="lazy"
                               className="w-full h-48 object-cover"
                             />
                           </div>

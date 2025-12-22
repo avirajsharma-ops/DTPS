@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import { IRecipe, INutrition } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 
 const nutritionSchema = new Schema<INutrition>({
   calories: {
@@ -59,6 +60,17 @@ const ingredientSchema = new Schema({
 });
 
 const recipeSchema = new Schema({
+  uuid: {
+    type: String,
+    unique: true,
+    default: () => uuidv4(),
+    index: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+    index: true
+  },
   name: {
     type: String,
     required: true,

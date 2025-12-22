@@ -26,6 +26,7 @@ import {
 import Link from 'next/link';
 import UserNavBar from '@/components/client/UserNavBar';
 import { SpoonLoader } from '@/components/ui/SpoonLoader';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { toast } from 'sonner';
 
 interface UserSettings {
@@ -265,23 +266,8 @@ export default function UserSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Navigation Bar */}
-        <UserNavBar 
-          title="Settings" 
-          subtitle="Manage your preferences"
-          showBack={true}
-          showMenu={false}
-          showProfile={true}
-          showNotification={true}
-          backHref="/user"
-        />
-        <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 80px)' }}>
-          <div className="flex flex-col items-center">
-            <div className="h-12 w-12 border-4 border-[#E06A26] border-t-transparent rounded-full animate-spin" />
-            <p className="mt-4 text-gray-600">Loading settings...</p>
-          </div>
-        </div>
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <SpoonGifLoader size="lg" />
       </div>
     );
   }

@@ -207,7 +207,7 @@ export default function BookAppointmentPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -272,7 +272,7 @@ export default function BookAppointmentPage() {
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden">
                 {dietitian.avatar ? (
-                  <img src={dietitian.avatar} alt={dietitian.firstName} className="w-full h-full object-cover" />
+                  <img src={dietitian.avatar} alt={dietitian.firstName} loading="lazy" className="w-full h-full object-cover" />
                 ) : (
                   <User className="h-7 w-7 text-[#3AB1A0]" />
                 )}

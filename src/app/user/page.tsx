@@ -1,6 +1,6 @@
   'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, Suspense, lazy } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -14,7 +14,6 @@ import {
   Utensils,
   Bed,
   User,
-  GlassWater,
   ChevronRight,
   ChevronLeft,
   Flame,
@@ -28,7 +27,10 @@ import {
   Mail
 } from 'lucide-react';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
-import ServicePlansSwiper from '@/components/client/ServicePlansSwiper';
+
+// Lazy load heavy components for better performance
+const ServicePlansSwiper = lazy(() => import('@/components/client/ServicePlansSwiper'));
+const TransformationSwiper = lazy(() => import('@/components/client/TransformationSwiper'));
 
 // Utility function to dispatch data change events (meal plan, purchases, payments)
 export function triggerDataRefresh(dataType: 'meal-plan' | 'client-purchases' | 'payment' | 'dietitian-assigned' | 'all') {
@@ -107,17 +109,69 @@ export default function UserHomePage() {
   const [paymentVerifying, setPaymentVerifying] = useState(false);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<DashboardData>({
-    caloriesLeft: 750,
+    caloriesLeft: 0,
     caloriesGoal: 2000,
-    protein: 120,
-    carbs: 180,
-    fat: 45,
-    water: { current: 1.8, goal: 2.5 },
-    sleep: { hours: 6, minutes: 30, quality: 81 },
-    activity: { minutes: 45, active: true },
-    meals: { eaten: 3, total: 4, calories: 1450 },
-    steps: { current: 6540, goal: 10000 },
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    water: { current: 0, goal: 2500 },
+    sleep: { hours: 0, minutes: 0, quality: 0 },
+    activity: { minutes: 0, active: false },
+    meals: { eaten: 0, total: 4, calories: 0 },
+    steps: { current: 0, goal: 10000 },
   });
+
+  // Function to fetch real-time health data (water, sleep, activity, steps)
+  const fetchHealthData = useCallback(async () => {
+    try {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const [hydrationRes, sleepRes, activityRes, stepsRes] = await Promise.all([
+        fetch(`/api/client/hydration?date=${today}`),
+        fetch(`/api/client/sleep?date=${today}`),
+        fetch(`/api/client/activity?date=${today}`),
+        fetch(`/api/client/steps?date=${today}`)
+      ]);
+
+      const newData = { ...data };
+
+      if (hydrationRes.ok) {
+        const hydrationData = await hydrationRes.json();
+        newData.water = {
+          current: (hydrationData.totalToday / 1000) || 0, // Convert ml to L
+          goal: (hydrationData.goal / 1000) || 2.5
+        };
+      }
+
+      if (sleepRes.ok) {
+        const sleepData = await sleepRes.json();
+        const totalHours = sleepData.totalToday || 0;
+        const hours = Math.floor(totalHours);
+        const minutes = Math.round((totalHours - hours) * 60);
+        const quality = sleepData.goal > 0 ? Math.round((totalHours / sleepData.goal) * 100) : 0;
+        newData.sleep = { hours, minutes, quality: Math.min(quality, 100) };
+      }
+
+      if (activityRes.ok) {
+        const activityData = await activityRes.json();
+        newData.activity = {
+          minutes: Math.round(activityData.totalToday || 0),
+          active: (activityData.totalToday || 0) > 0
+        };
+      }
+
+      if (stepsRes.ok) {
+        const stepsData = await stepsRes.json();
+        newData.steps = {
+          current: stepsData.totalToday || 0,
+          goal: stepsData.goal || 10000
+        };
+      }
+
+      setData(newData);
+    } catch (error) {
+      console.error('Error fetching health data:', error);
+    }
+  }, []);
 
   // Function to refresh all data (called when meal plan, purchases, or payments change)
   const refreshAllData = useCallback(async () => {
@@ -127,6 +181,9 @@ export default function UserHomePage() {
         fetch('/api/client/service-plans'),
         fetch('/api/client/profile')
       ]);
+      
+      // Also fetch health data
+      fetchHealthData();
 
       if (planRes.ok) {
         const planData = await planRes.json();
@@ -149,7 +206,7 @@ export default function UserHomePage() {
     } catch (error) {
       console.error('Error refreshing data:', error);
     }
-  }, []);
+  }, [fetchHealthData]);
 
   // Listen for data changes and refresh
   useDataChangeListener(refreshAllData);
@@ -269,6 +326,9 @@ export default function UserHomePage() {
         } catch (profileError) {
           console.error('Error fetching profile:', profileError);
         }
+        
+        // Fetch real-time health data (water, sleep, activity, steps)
+        fetchHealthData();
       } catch (error) {
         console.error('Error checking onboarding:', error);
         // If there's an error, assume no active plan so user can see available plans
@@ -305,7 +365,7 @@ export default function UserHomePage() {
   // Show loading while checking onboarding or verifying payment
   if (checkingOnboarding || paymentVerifying) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
         <SpoonGifLoader size="lg" />
         {paymentVerifying && (
           <p className="mt-4 text-gray-600 font-medium">Verifying your payment...</p>
@@ -333,7 +393,7 @@ export default function UserHomePage() {
                 <img
                   src={session.user.avatar}
                   alt="Profile"
-
+                  loading="lazy"
                   className="w-full h-full rounded-full "
                 />
               ) : (
@@ -426,7 +486,9 @@ export default function UserHomePage() {
 {/* Service Plans Swiper - Only shown when user has no purchases at all */}
 {!hasAnyPurchase && (
   <div className="pt-6 pb-4">
-    <ServicePlansSwiper />
+    <Suspense fallback={<div className="flex justify-center py-8"><SpoonGifLoader size="md" /></div>}>
+      <ServicePlansSwiper />
+    </Suspense>
   </div>
 )}
 
@@ -444,7 +506,7 @@ export default function UserHomePage() {
                      <img
                        src="/images/dtps-logo.png"
                        alt="DTPS"
-                       
+                       loading="lazy"
                        className="object-cover w-full h-full"
                      />
                   </div>
@@ -487,6 +549,7 @@ export default function UserHomePage() {
                       <img 
                         src={currentPurchase.dietitian.avatar} 
                         alt={currentPurchase.dietitian.name}
+                        loading="lazy"
                         className="object-cover w-full h-full"
                       />
                     ) : (
@@ -573,6 +636,7 @@ export default function UserHomePage() {
                       <img 
                         src={currentPurchase.dietitian.avatar} 
                         alt={currentPurchase.dietitian.name}
+                        loading="lazy"
                         className="object-cover w-full h-full"
                       />
                     ) : (
@@ -787,14 +851,14 @@ export default function UserHomePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=200&h=150&fit=crop" alt="Healthy breakfast" className="object-cover w-full h-full rounded-xl" />
+                      <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=200&h=150&fit=crop" alt="Healthy breakfast" loading="lazy" className="object-cover w-full h-full rounded-xl" />
                     </div>
                     <p className="text-sm font-semibold">Healthy Breakfast</p>
                     <p className="mt-1 text-xs text-white/80">Start your day right</p>
                   </div>
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&h=150&fit=crop" alt="Fresh salad" className="object-cover w-full h-full rounded-xl" />
+                      <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&h=150&fit=crop" alt="Fresh salad" loading="lazy" className="object-cover w-full h-full rounded-xl" />
                     </div>
                     <p className="text-sm font-semibold">Fresh Salads</p>
                     <p className="mt-1 text-xs text-white/80">Colorful vegetables</p>
@@ -808,14 +872,14 @@ export default function UserHomePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200&h=150&fit=crop" alt="Workout" className="object-cover w-full h-full rounded-xl" />
+                      <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200&h=150&fit=crop" alt="Workout" loading="lazy" className="object-cover w-full h-full rounded-xl" />
                     </div>
                     <p className="text-sm font-semibold">Daily Workout</p>
                     <p className="mt-1 text-xs text-white/80">30 mins exercise</p>
                   </div>
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=200&h=150&fit=crop" alt="Running" className="object-cover w-full h-full rounded-xl" />
+                      <img src="https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=200&h=150&fit=crop" alt="Running" loading="lazy" className="object-cover w-full h-full rounded-xl" />
                     </div>
                     <p className="text-sm font-semibold">Cardio Run</p>
                     <p className="mt-1 text-xs text-white/80">Build endurance</p>
@@ -829,14 +893,14 @@ export default function UserHomePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=200&h=150&fit=crop" alt="Yoga" className="object-cover w-full h-full rounded-xl" />
+                      <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=200&h=150&fit=crop" alt="Yoga" loading="lazy" className="object-cover w-full h-full rounded-xl" />
                     </div>
                     <p className="text-sm font-semibold">Morning Yoga</p>
                     <p className="mt-1 text-xs text-white/80">Stretch & relax</p>
                   </div>
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1531353826977-0941b4779a1c?w=200&h=150&fit=crop" alt="Sleep" className="object-cover w-full h-full rounded-xl" />
+                      <img src="https://images.unsplash.com/photo-1531353826977-0941b4779a1c?w=200&h=150&fit=crop" alt="Sleep" loading="lazy" className="object-cover w-full h-full rounded-xl" />
                     </div>
                     <p className="text-sm font-semibold">Quality Sleep</p>
                     <p className="mt-1 text-xs text-white/80">7-8 hours rest</p>
@@ -882,16 +946,24 @@ export default function UserHomePage() {
               <span className="text-[#3AB1A0] text-sm font-semibold">{Math.round(waterPercent)}%</span>
             </div>
             <div className="flex items-center justify-center mb-3">
-              <div className="relative">
-                <GlassWater className="h-16 w-16 text-[#3AB1A0]/20" fill="#3AB1A0" fillOpacity="0.1" />
-                <div
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-[#3AB1A0] rounded-b-full transition-all"
-                  style={{
-                    width: '50%',
-                    height: `${waterPercent * 0.6}%`,
-                    maxHeight: '60%'
-                  }}
-                />
+              <div className="relative w-16 h-16">
+                {/* Circular progress background */}
+                <svg className="w-16 h-16 transform -rotate-90">
+                  <circle cx="32" cy="32" r="28" stroke="#3AB1A0" strokeOpacity="0.2" strokeWidth="6" fill="none" />
+                  <circle
+                    cx="32" cy="32" r="28"
+                    stroke="#3AB1A0"
+                    strokeWidth="6"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeDasharray={`${waterPercent * 1.76} 176`}
+                    className="transition-all duration-500"
+                  />
+                </svg>
+                {/* Water drop icon in center */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Droplet className="h-6 w-6 text-[#3AB1A0]" fill="#3AB1A0" fillOpacity="0.3" />
+                </div>
               </div>
             </div>
             <p className="text-center">
@@ -999,7 +1071,7 @@ export default function UserHomePage() {
       className="flex flex-col items-center gap-4 p-6 transition-all bg-white shadow-md rounded-3xl hover:shadow-lg hover:bg-gray-50"
     >
       <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
-        <GlassWater className="h-8 w-8 text-[#3AB1A0]" />
+        <Droplet className="h-8 w-8 text-[#3AB1A0]" fill="#3AB1A0" fillOpacity="0.3" />
       </div>
       <span className="text-base font-semibold text-gray-900">Water</span>
       <span className="text-sm text-gray-400">+250 ml</span>
@@ -1046,6 +1118,10 @@ export default function UserHomePage() {
   </div>
 </div>
 
+        {/* Transformation Success Stories */}
+        <Suspense fallback={<div className="flex justify-center py-8"><SpoonGifLoader size="md" /></div>}>
+          <TransformationSwiper />
+        </Suspense>
 
         {/* Blogs Section */}
         <div className="">

@@ -319,7 +319,7 @@ export default function MedicalInfoPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -730,6 +730,7 @@ export default function MedicalInfoPage() {
               <img 
                 src={lightboxImage.url} 
                 alt={getReportName(lightboxImage)}
+                loading="lazy"
                 style={{ transform: `scale(${lightboxZoom})` }}
                 className="max-w-full max-h-[85vh] object-contain transition-transform"
               />

@@ -652,7 +652,7 @@ export default function UserProgressPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -1289,6 +1289,7 @@ export default function UserProgressPage() {
                       <img 
                         src={photo.url} 
                         alt="Progress photo" 
+                        loading="lazy"
                         className="object-cover w-full h-full"
                       />
                       <div className="absolute inset-0 flex items-end justify-center transition-all opacity-0 bg-black/0 group-hover:bg-black/30 group-hover:opacity-100">
@@ -1503,6 +1504,7 @@ export default function UserProgressPage() {
             <img 
               src={selectedPhoto.url} 
               alt="Progress photo" 
+              loading="lazy"
               className="object-contain max-w-full max-h-full rounded-lg"
             />
           </div>

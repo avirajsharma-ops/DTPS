@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
+import { useBodyScrollLock } from '@/hooks';
 
 interface StepsEntry {
     _id: string;
@@ -64,6 +65,9 @@ export default function StepsPage() {
     const [isAnimating, setIsAnimating] = useState(false);
     const [lastDataHash, setLastDataHash] = useState<string | null>(null);
 
+    // Prevent body scroll when modal is open
+    useBodyScrollLock(showAddModal || showDatePicker);
+
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.push('/login');
@@ -101,24 +105,30 @@ export default function StepsPage() {
         setIsAnimating(true);
         const startPercent = Math.min((from / goal) * 100, 100);
         const endPercent = Math.min((to / goal) * 100, 100);
-        const duration = 1500;
-        const steps = 60;
-        const stepDuration = duration / steps;
-        const increment = (endPercent - startPercent) / steps;
+        const duration = 1000; // 1 second for smoother animation
+        const startTime = performance.now();
 
-        let currentStep = 0;
         setAnimatedFill(startPercent);
 
-        const interval = setInterval(() => {
-            currentStep++;
-            setAnimatedFill(startPercent + (increment * currentStep));
+        const animate = (currentTime: number) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Ease-out cubic for smooth deceleration
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const currentPercent = startPercent + (endPercent - startPercent) * easeOut;
+            
+            setAnimatedFill(currentPercent);
 
-            if (currentStep >= steps) {
-                clearInterval(interval);
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
                 setAnimatedFill(endPercent);
                 setIsAnimating(false);
             }
-        }, stepDuration);
+        };
+
+        requestAnimationFrame(animate);
     };
 
     useEffect(() => {
@@ -240,7 +250,7 @@ export default function StepsPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
                 <SpoonGifLoader size="lg" />
             </div>
         );

@@ -180,7 +180,7 @@ export default function WatchPage() {
 
   if (status === 'loading' || watchLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
         <SpoonGifLoader size="lg" />
       </div>
     );

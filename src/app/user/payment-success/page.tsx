@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { CheckCircle, Download, Mail, ArrowRight, Loader2, Receipt, Calendar, CreditCard, User, Package } from 'lucide-react';
+import { CheckCircle, Download, Mail, ArrowRight, Receipt, Calendar, CreditCard, User, Package } from 'lucide-react';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { toast } from 'sonner';
 
 interface PaymentDetails {
@@ -176,10 +177,10 @@ export default function PaymentSuccessPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-gradient-to-br from-green-50 to-teal-50 flex items-center justify-center z-50">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-[#3AB1A0] mx-auto mb-4" />
-          <p className="text-gray-600">Loading payment details...</p>
+          <SpoonGifLoader size="lg" />
+          <p className="text-gray-600 mt-4">Loading payment details...</p>
         </div>
       </div>
     );

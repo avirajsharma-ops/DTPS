@@ -99,16 +99,16 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
     <div className="relative flex flex-col min-h-screen bg-gray-50">
       {/* Sidebar overlay for mobile - slow fade */}
       <div 
-        className={`fixed inset-0 bg-black z-40 lg:hidden transition-opacity duration-500 ease-out ${
+        className={`fixed inset-0 bg-black z-40 lg:hidden transition-opacity duration-700 ease-out ${
           sidebarOpen ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar for desktop - always mounted with slow animation */}
+      {/* Sidebar for desktop - always mounted with slower animation */}
       <div className={`
         fixed inset-y-0 left-0 z-50 lg:z-30
-        transform transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]
+        transform transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <UserSidebar 
@@ -143,7 +143,7 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
         {/* Page Content with delayed loader */}
         <div className="min-h-[calc(100vh-140px)] lg:min-h-[calc(100vh-20px)]">
           {showLoader && isNavigating ? (
-            <div className="fixed inset-0 z-30 flex items-center justify-center bg-white/80">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm">
               <SpoonGifLoader size="lg" text="Loading..." />
             </div>
           ) : (

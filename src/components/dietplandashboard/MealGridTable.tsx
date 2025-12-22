@@ -19,6 +19,7 @@ type FoodItem = {
   protein: number;
   fats: number;
   selected: boolean;
+  recipeUuid?: string; // UUID of the recipe
 };
 import { DatePicker } from './DatePicker';
 import { useState, useRef } from 'react';
@@ -1257,6 +1258,15 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, re
               updateFoodOption(dayIndex, mealType, optionIndex, 'carbs', firstFood.carbs.toString());
               updateFoodOption(dayIndex, mealType, optionIndex, 'fats', firstFood.fats.toString());
               updateFoodOption(dayIndex, mealType, optionIndex, 'protein', firstFood.protein.toString());
+              // Add recipeUuid if available
+              if (firstFood.recipeUuid) {
+                const newWeekPlan = [...weekPlan];
+                const meal = newWeekPlan[dayIndex].meals[mealType];
+                if (meal && meal.foodOptions[optionIndex]) {
+                  meal.foodOptions[optionIndex].recipeUuid = firstFood.recipeUuid;
+                  onUpdate?.(newWeekPlan);
+                }
+              }
             }
             
             // Create new boxes for additional selected foods
@@ -1277,7 +1287,8 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, re
                     carbs: food.carbs.toString(),
                     fats: food.fats.toString(),
                     protein: food.protein.toString(),
-                    fiber: ''
+                    fiber: '',
+                    recipeUuid: food.recipeUuid // Include recipe UUID
                   });
                 }
                 onUpdate(newWeekPlan);

@@ -23,7 +23,9 @@ import {
   Target,
   AlertCircle,
   ArrowLeft,
-  Save
+  Save,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 
 interface Ingredient {
@@ -82,6 +84,7 @@ export default function EditRecipePage() {
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  const [isActive, setIsActive] = useState(true);
   const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: '', quantity: 0, unit: '', remarks: '' }]);
 
   const portionSizes = [
@@ -181,6 +184,7 @@ export default function EditRecipePage() {
         setProtein(recipeData.nutrition?.protein?.toString() || '');
         setCarbs(recipeData.nutrition?.carbs?.toString() || '');
         setFat(recipeData.nutrition?.fat?.toString() || '');
+        setIsActive(recipeData.isActive !== false); // Default to true if not set
         setIngredients(recipeData.ingredients?.length > 0 ? recipeData.ingredients : [{ name: '', quantity: 0, unit: '', remarks: '' }]);
         setInstructions(recipeData.instructions?.length > 0 ? recipeData.instructions : ['']);
         setDietaryRestrictions(recipeData.dietaryRestrictions || []);
@@ -301,6 +305,7 @@ export default function EditRecipePage() {
           prepTime: prepTime ? parseInt(prepTime) : 0,
           cookTime: cookTime ? parseInt(cookTime) : 0,
           servings: servings,
+          isActive,
           nutrition: {
             calories: calories ? parseInt(calories) : 0,
             protein: protein ? parseFloat(protein) : 0,
@@ -403,7 +408,30 @@ export default function EditRecipePage() {
             {/* Basic Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Basic Information</CardTitle>
+                  <button
+                    type="button"
+                    onClick={() => setIsActive(!isActive)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      isActive 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {isActive ? (
+                      <>
+                        <ToggleRight className="w-5 h-5" />
+                        Active
+                      </>
+                    ) : (
+                      <>
+                        <ToggleLeft className="w-5 h-5" />
+                        Inactive
+                      </>
+                    )}
+                  </button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>

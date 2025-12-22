@@ -30,6 +30,7 @@ type FoodItem = {
   fats: number;
   fiber?: number;
   selected: boolean;
+  recipeUuid?: string; // UUID of the recipe
 };
 
 type FoodDatabasePanelProps = {
@@ -181,6 +182,7 @@ export function FoodDatabasePanel({
             fats: recipe.nutrition?.fat || 0,
             fiber: recipe.nutrition?.fiber || 0,
             selected: false,
+            recipeUuid: recipe.uuid || undefined, // Include recipe UUID
           }));
           
           setFoodData(transformedData);

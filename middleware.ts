@@ -39,13 +39,15 @@ export default withAuth(
       }
     }
     
-    // Client/User routes - only for clients
+    // Client/User routes - only for clients (NOT for admin or dietitian)
     if (pathname.startsWith('/user') || pathname.startsWith('/dashboard/client') || pathname.startsWith('/client-dashboard')) {
-      if (userRole !== 'client' && !userRole?.includes('admin')) {
+      if (userRole !== 'client') {
         console.log('Client access denied. Role:', token?.role);
         // Redirect to appropriate dashboard
         const redirectPath = userRole === 'dietitian' || userRole === 'health_counselor'
           ? '/dashboard/dietitian'
+          : userRole === 'admin'
+          ? '/admin'
           : '/auth/signin';
         return NextResponse.redirect(new URL(redirectPath, req.url));
       }

@@ -20,7 +20,9 @@ import {
   Clock,
   Users,
   Target,
-  AlertCircle
+  AlertCircle,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 
 interface Ingredient {
@@ -50,6 +52,7 @@ export default function CreateRecipePage() {
   const [fat, setFat] = useState('');
   const [image, setImage] = useState('');
   const [imagePreview, setImagePreview] = useState('');
+  const [isActive, setIsActive] = useState(true);
   const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: '', quantity: 0, unit: '', remarks: '' }]);
   const [instructions, setInstructions] = useState<string[]>(['']);
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
@@ -245,6 +248,7 @@ export default function CreateRecipePage() {
           servings: servings,
           calories: calories ? parseInt(calories) : 0,
           image: image || undefined,
+          isActive,
           macros: {
             protein: protein ? parseFloat(protein) : 0,
             carbs: carbs ? parseFloat(carbs) : 0,
@@ -303,7 +307,30 @@ export default function CreateRecipePage() {
             {/* Basic Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Basic Information</CardTitle>
+                  <button
+                    type="button"
+                    onClick={() => setIsActive(!isActive)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      isActive 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {isActive ? (
+                      <>
+                        <ToggleRight className="w-5 h-5" />
+                        Active
+                      </>
+                    ) : (
+                      <>
+                        <ToggleLeft className="w-5 h-5" />
+                        Inactive
+                      </>
+                    )}
+                  </button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>

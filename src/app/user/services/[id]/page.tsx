@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Star, Check, X } from 'lucide-react';
+import { ArrowLeft, Star, Check, X } from 'lucide-react';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface ServicePlan {
   _id: string;
@@ -50,8 +51,8 @@ export default function ServiceDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-[#3AB1A0]" />
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <SpoonGifLoader size="lg" />
       </div>
     );
   }

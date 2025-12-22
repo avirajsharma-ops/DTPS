@@ -31,7 +31,7 @@ export const authOptions: NextAuthOptions = {
             const isPasswordValid = await user.comparePassword(credentials.password);
 
             if (!isPasswordValid) {
-              throw new Error('Invalid email or password');
+              throw new Error('Wrong email or password');
             }
 
             if (user.status !== 'active') {
@@ -61,7 +61,7 @@ export const authOptions: NextAuthOptions = {
           if (wooClient) {
             // For WooCommerce clients, use plain text password comparison
             if (wooClient.password !== credentials.password) {
-              throw new Error('Invalid email or password');
+              throw new Error('Wrong email or password');
             }
 
             return {
@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
             };
           }
 
-          throw new Error('Invalid email or password');
+          throw new Error('Wrong email or password');
         } catch (error) {
           console.error('Auth error:', error);
           throw error;

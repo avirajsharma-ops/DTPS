@@ -21,6 +21,7 @@ export { default as Tag } from './Tag';
 export { History } from './History';
 export { default as OtherPlatformPayment } from './OtherPlatformPayment';
 export { default as PaymentLink } from './PaymentLink';
+export { default as Transformation } from './Transformation';
 
 // Re-export types for convenience
 export * from '@/types';

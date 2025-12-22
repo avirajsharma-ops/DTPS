@@ -29,6 +29,7 @@ import {
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
+import { useBodyScrollLock } from '@/hooks';
 
 interface ReceiptData {
   planName: string;
@@ -97,6 +98,9 @@ export default function UserSubscriptionsPage() {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [loadingReceipt, setLoadingReceipt] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+
+  // Prevent body scroll when modal is open
+  useBodyScrollLock(showReceiptModal);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -324,7 +328,7 @@ export default function UserSubscriptionsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
         <SpoonGifLoader size="lg" />
       </div>
     );

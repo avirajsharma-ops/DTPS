@@ -209,7 +209,7 @@ export default function UserMessagesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -250,7 +250,7 @@ export default function UserMessagesPage() {
                   <div className="relative">
                     <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center overflow-hidden">
                       {conv.user.avatar ? (
-                        <img src={conv.user.avatar} alt={conv.user.firstName} className="w-full h-full object-cover" />
+                        <img src={conv.user.avatar} alt={conv.user.firstName} loading="lazy" className="w-full h-full object-cover" />
                       ) : (
                         <User className="w-5 h-5 text-[#E06A26]" />
                       )}
@@ -297,7 +297,7 @@ export default function UserMessagesPage() {
                   </button>
                   <div className="h-10 w-10 rounded-full bg-[#E06A26]/10 flex items-center justify-center overflow-hidden">
                     {selectedConversation.user.avatar ? (
-                      <img src={selectedConversation.user.avatar} alt={selectedConversation.user.firstName} className="w-full h-full object-cover" />
+                      <img src={selectedConversation.user.avatar} alt={selectedConversation.user.firstName} loading="lazy" className="w-full h-full object-cover" />
                     ) : (
                       <User className="w-5 h-5 text-[#E06A26]" />
                     )}

@@ -51,6 +51,9 @@ const recipeSchema = z.object({
   dietaryRestrictions: z.array(z.string()).optional(),
   medicalContraindications: z.array(z.string()).optional(),
 
+  // Active status
+  isActive: z.boolean().optional(),
+
   // Allow any string for image URL
   image: z.string().optional().or(z.literal(''))
 });
