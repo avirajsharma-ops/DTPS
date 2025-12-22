@@ -154,7 +154,7 @@ export default function CreateRecipePage() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -170,45 +170,22 @@ export default function CreateRecipePage() {
       return;
     }
 
-    try {
-      setUploading(true);
-      setError('');
+    setUploading(true);
+    setError('');
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-
-      // Upload to server using GridFS
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', 'recipe-image');
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Upload error:', errorData);
-        throw new Error(errorData.error || 'Failed to upload image');
-      }
-
-      const data = await response.json();
-      console.log('Upload successful:', data);
-
-      // Use the file URL from GridFS
-      setImage(data.url);
-    } catch (err: any) {
-      console.error('Error uploading image:', err);
-      setError(err.message || 'Failed to upload image. Please try again.');
-      setImagePreview('');
-    } finally {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setImagePreview(base64);
+      setImage(base64); // Set base64 string directly for backend
       setUploading(false);
-    }
+    };
+    reader.onerror = () => {
+      setError('Failed to read image file.');
+      setImagePreview('');
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

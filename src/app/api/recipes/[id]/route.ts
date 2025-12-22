@@ -4,141 +4,89 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Recipe from '@/lib/db/models/Recipe';
 
-// GET /api/recipes/[id] - Get specific recipe
+/* -------- GET SINGLE -------- */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
-    const { id } = await params;
-
-    const recipe = await Recipe.findById(id)
-      .populate('createdBy', 'firstName lastName email avatar')
-      .lean();
-
-    if (!recipe) {
-      return NextResponse.json(
-        { error: 'Recipe not found' },
-        { status: 404 }
-      );
-    }
-
-    // Increment usage count
-    await Recipe.findByIdAndUpdate(id, { $inc: { usageCount: 1 } });
-
-    return NextResponse.json({
-      success: true,
-      recipe
-    });
-
-  } catch (error) {
-    console.error('Error fetching recipe:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch recipe' },
-      { status: 500 }
+    const recipe = await Recipe.findById(params.id).populate(
+      'createdBy',
+      'firstName lastName'
     );
+
+    if (!recipe)
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    await Recipe.findByIdAndUpdate(params.id, { $inc: { views: 1 } });
+
+    return NextResponse.json({ success: true, recipe });
+  } catch {
+    return NextResponse.json({ error: 'Failed to fetch recipe' }, { status: 500 });
   }
 }
 
-// PUT /api/recipes/[id] - Update recipe
+/* -------- UPDATE -------- */
 export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
-    const { id } = await params;
-    const data = await request.json();
+    const data = await req.json();
 
-    const recipe = await Recipe.findById(id);
-    if (!recipe) {
-      return NextResponse.json(
-        { error: 'Recipe not found' },
-        { status: 404 }
-      );
+    const recipe = await Recipe.findById(params.id);
+    if (!recipe)
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    if (
+      recipe.createdBy.toString() !== session.user.id &&
+      session.user.role !== 'admin'
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Check if user can edit this recipe
-    if (recipe.createdBy.toString() !== session.user.id && session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Forbidden - You can only edit your own recipes' },
-        { status: 403 }
-      );
-    }
-
-    const updatedRecipe = await Recipe.findByIdAndUpdate(
-      id,
-      { ...data, updatedAt: new Date() },
-      { new: true, runValidators: true }
-    ).populate('createdBy', 'firstName lastName email avatar');
-
-    return NextResponse.json({
-      success: true,
-      recipe: updatedRecipe
+    const updated = await Recipe.findByIdAndUpdate(params.id, data, {
+      new: true,
     });
 
-  } catch (error) {
-    console.error('Error updating recipe:', error);
-    return NextResponse.json(
-      { error: 'Failed to update recipe' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true, recipe: updated });
+  } catch {
+    return NextResponse.json({ error: 'Failed to update recipe' }, { status: 500 });
   }
 }
 
-// DELETE /api/recipes/[id] - Delete recipe
+/* -------- DELETE -------- */
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
-    const { id } = await params;
+    const recipe = await Recipe.findById(params.id);
+    if (!recipe)
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    const recipe = await Recipe.findById(id);
-    if (!recipe) {
-      return NextResponse.json(
-        { error: 'Recipe not found' },
-        { status: 404 }
-      );
+    if (
+      recipe.createdBy.toString() !== session.user.id &&
+      session.user.role !== 'admin'
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Check if user can delete this recipe
-    if (recipe.createdBy.toString() !== session.user.id && session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Forbidden - You can only delete your own recipes' },
-        { status: 403 }
-      );
-    }
-
-    await Recipe.findByIdAndDelete(id);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Recipe deleted successfully'
-    });
-
-  } catch (error) {
-    console.error('Error deleting recipe:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete recipe' },
-      { status: 500 }
-    );
+    await Recipe.findByIdAndDelete(params.id);
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: 'Failed to delete recipe' }, { status: 500 });
   }
 }

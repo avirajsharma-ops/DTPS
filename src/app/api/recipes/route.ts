@@ -5,6 +5,8 @@ import connectDB from '@/lib/db/connection';
 import Recipe from '@/lib/db/models/Recipe';
 import { UserRole } from '@/types';
 import { z } from 'zod';
+import { imagekit } from '@/lib/imagekit';
+import { v4 as uuidv4 } from 'uuid';
 
 // Recipe validation schema - flexible to handle both old and new formats
 const recipeSchema = z.object({
@@ -270,10 +272,35 @@ export async function POST(request: NextRequest) {
       recipeData.medicalContraindications = [];
     }
 
-    // Add image if provided (support WordPress URLs, data URLs, relative paths)
+
+    // Always upload the image to ImageKit if provided
     if (validatedData.image && validatedData.image.trim() !== '') {
-      recipeData.image = validatedData.image;
-      console.log('Image URL added:', validatedData.image);
+      const imageValue = validatedData.image.trim();
+      try {
+        let uploadFile = imageValue;
+        // If not base64, fetch the image and convert to base64
+        if (!imageValue.startsWith('data:image/')) {
+          const response = await fetch(imageValue);
+          const arrayBuffer = await response.arrayBuffer();
+          const base64String = Buffer.from(arrayBuffer).toString('base64');
+          // Try to detect mime type from URL or response headers
+          let mimeType = response.headers.get('content-type') || 'image/jpeg';
+          uploadFile = `data:${mimeType};base64,${base64String}`;
+        }
+        const uploadResponse = await imagekit.upload({
+          file: uploadFile,
+          fileName: `recipe_${uuidv4()}.jpg`,
+          folder: '/recipes',
+        });
+        recipeData.image = uploadResponse.url;
+        console.log('Image uploaded to ImageKit:', uploadResponse.url);
+      } catch (err) {
+        console.error('ImageKit upload failed:', err);
+        return NextResponse.json({
+          error: 'Image upload failed',
+          message: 'Could not upload image to ImageKit',
+        }, { status: 500 });
+      }
     } else {
       console.log('No image provided or empty image URL');
     }
