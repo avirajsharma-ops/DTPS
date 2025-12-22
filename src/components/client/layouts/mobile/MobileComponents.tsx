@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 /**
  * MobileContainer - Full-width container optimized for mobile
@@ -249,7 +250,14 @@ export function MobilePullIndicator({ isRefreshing, className }: MobilePullIndic
       'flex items-center justify-center py-4',
       className
     )}>
-      <div className="h-6 w-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+      <Image
+        src="/images/spoon-loader.gif"
+        alt="Loading..."
+        width={40}
+        height={60}
+        className="object-contain"
+        unoptimized
+      />
     </div>
   );
 }

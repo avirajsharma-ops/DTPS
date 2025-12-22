@@ -10,7 +10,7 @@ const paymentSchema = new Schema({
   dietitian: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false  // Made optional - dietitian may not be assigned yet
   },
   type: {
     type: String,
@@ -102,6 +102,32 @@ const paymentSchema = new Schema({
   payerName: {
     type: String,
     trim: true
+  },
+  
+  // Razorpay integration fields
+  razorpayOrderId: {
+    type: String,
+    trim: true,
+    index: true
+  },
+  razorpayPaymentId: {
+    type: String,
+    trim: true
+  },
+  razorpayPaymentLinkId: {
+    type: String,
+    trim: true
+  },
+  razorpayPaymentLinkUrl: {
+    type: String,
+    trim: true
+  },
+  razorpayPaymentLinkShortUrl: {
+    type: String,
+    trim: true
+  },
+  paidAt: {
+    type: Date
   }
 }, {
   timestamps: true,

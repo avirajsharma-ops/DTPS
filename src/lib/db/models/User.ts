@@ -152,6 +152,11 @@ const userSchema = new Schema({
   targetWeightKg: { type: String },
   idealWeightKg: { type: String },
   bmi: { type: String },
+  bmiCategory: { 
+    type: String,
+    enum: ['', 'Underweight', 'Normal', 'Overweight', 'Obese'],
+    default: ''
+  },
   activityLevel: {
     type: String,
     enum: ['', 'sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active']
@@ -284,6 +289,28 @@ generalGoal: {
   specificExclusions: {
     alcoholFree: { type: Boolean, default: false },
     porkFree: { type: Boolean, default: false }
+  },
+  
+  // User settings for notifications, reminders, appearance
+  settings: {
+    pushNotifications: { type: Boolean, default: true },
+    emailNotifications: { type: Boolean, default: true },
+    mealReminders: { type: Boolean, default: true },
+    appointmentReminders: { type: Boolean, default: true },
+    progressUpdates: { type: Boolean, default: false },
+    darkMode: { type: Boolean, default: false },
+    soundEnabled: { type: Boolean, default: true }
+  },
+  
+  // Push notification subscription
+  pushNotificationEnabled: { type: Boolean, default: false },
+  
+  // Reminder preferences
+  reminderPreferences: {
+    mealReminders: { type: Boolean, default: true },
+    mealTimes: [{ type: String }],
+    appointmentReminders: { type: Boolean, default: true },
+    reminderBefore: { type: Number, default: 30 } // minutes before appointment
   }
 }, {
   timestamps: true,

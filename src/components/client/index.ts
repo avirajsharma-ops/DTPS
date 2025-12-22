@@ -2,6 +2,7 @@
 // Layout Components
 export { default as ClientLayout } from './ClientLayout';
 export { default as ClientHeader } from './ClientHeader';
+export { default as UserNavBar } from './UserNavBar';
 // export { default as ClientBottomNav } from './ClientBottomNav';
 
 // Responsive Utilities

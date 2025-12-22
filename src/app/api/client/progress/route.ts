@@ -184,6 +184,7 @@ export async function GET(request: Request) {
       targetWeight: targetWeight || 0,
       weightChange: Math.round(weightChange * 10) / 10,
       bmi: validBmi,
+      heightCm: heightCm || 0,
       progressPercent: Math.max(0, Math.min(100, progressPercent)),
       weightHistory: weightEntries.slice(0, 365).reverse(),
       measurements: measurements,

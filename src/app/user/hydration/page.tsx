@@ -18,7 +18,7 @@ import {
   GlassWater
 } from 'lucide-react';
 import { toast } from 'sonner';
-import BottomNavBar from '@/components/client/BottomNavBar';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface WaterEntry {
   _id: string;
@@ -249,10 +249,10 @@ export default function HydrationPage() {
   const fillPercent = Math.min((hydrationData.totalToday / hydrationData.goal) * 100, 100);
   const completionPercent = Math.round(fillPercent);
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <SpoonGifLoader size="lg" />
       </div>
     );
   }
@@ -265,13 +265,13 @@ export default function HydrationPage() {
           <Link href="/user" className="p-2 -ml-2">
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </Link>
-          <h1 className="text-lg font-bold text-gray-900">Hydration</h1>
+          <h1 className="text-lg font-bold text-[#E06A26]">Hydration</h1>
           <button
             onClick={() => setShowDatePicker(!showDatePicker)}
-            className="flex items-center gap-1 p-2 -mr-2 bg-blue-50 rounded-lg"
+            className="flex items-center gap-1 p-2 -mr-2 bg-[#3AB1A0]/10 rounded-lg"
           >
-            <Calendar className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-medium text-blue-600">
+            <Calendar className="w-5 h-5 text-[#3AB1A0]" />
+            <span className="text-sm font-medium text-[#3AB1A0]">
               {format(selectedDate, 'dd MMM')}
             </span>
           </button>
@@ -300,8 +300,8 @@ export default function HydrationPage() {
             {/* Left side - Stats */}
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <Droplet className="w-5 h-5 text-blue-500" fill="#3b82f6" />
-                <span className="text-blue-500 font-semibold text-sm">TODAY</span>
+                <Droplet className="w-5 h-5 text-[#3AB1A0]" fill="#3AB1A0" />
+                <span className="text-[#3AB1A0] font-semibold text-sm">TODAY</span>
               </div>
               <div className="flex items-baseline">
                 <span className="text-5xl font-bold text-gray-900">
@@ -312,7 +312,7 @@ export default function HydrationPage() {
               <p className="text-gray-500 mt-1">Goal: {hydrationData.goal.toLocaleString()} ml</p>
 
               {/* Completion Badge */}
-              <div className="mt-4 inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full">
+              <div className="mt-4 inline-flex items-center gap-2 bg-[#3AB1A0]/10 text-[#3AB1A0] px-4 py-2 rounded-full">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -439,7 +439,7 @@ export default function HydrationPage() {
         {hydrationData.assignedWater && hydrationData.assignedWater.amount > 0 && (
           <div className={`rounded-3xl p-5 shadow-sm ${hydrationData.assignedWater.isCompleted
             ? 'bg-green-50 border-2 border-green-200'
-            : 'bg-blue-50 border-2 border-blue-200'
+            : 'bg-[#3AB1A0]/10 border-2 border-[#3AB1A0]/30'
             }`}>
             <div className="flex items-start justify-between">
               <div>
@@ -464,7 +464,7 @@ export default function HydrationPage() {
                   onClick={handleCompleteAssignedWater}
                   disabled={completingTask || hydrationData.totalToday < hydrationData.assignedWater.amount}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all ${hydrationData.totalToday >= hydrationData.assignedWater.amount
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    ? 'bg-[#3AB1A0] text-white hover:bg-[#2a9989]'
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     }`}
                 >
@@ -486,7 +486,7 @@ export default function HydrationPage() {
               </div>
               <div className="h-2 bg-white rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${hydrationData.assignedWater.isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                  className={`h-full rounded-full transition-all duration-500 ${hydrationData.assignedWater.isCompleted ? 'bg-green-500' : 'bg-[#3AB1A0]'
                     }`}
                   style={{ width: `${Math.min((hydrationData.totalToday / hydrationData.assignedWater.amount) * 100, 100)}%` }}
                 />
@@ -498,10 +498,10 @@ export default function HydrationPage() {
         {/* Quick Add Section */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Quick Add</h2>
+            <h2 className="text-lg font-bold text-[#E06A26]">Quick Add</h2>
             <button
               onClick={() => setShowAddModal(true)}
-              className="text-blue-500 font-semibold text-sm"
+              className="text-[#3AB1A0] font-semibold text-sm"
             >
               Custom amount
             </button>
@@ -514,8 +514,8 @@ export default function HydrationPage() {
               disabled={saving}
               className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
             >
-              <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
-                <GlassWater className="w-6 h-6 text-blue-500" />
+              <div className="h-12 w-12 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
+                <GlassWater className="w-6 h-6 text-[#3AB1A0]" />
               </div>
               <span className="font-semibold text-gray-900">+250 ml</span>
             </button>
@@ -526,8 +526,8 @@ export default function HydrationPage() {
               disabled={saving}
               className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
             >
-              <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+              <div className="h-12 w-12 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
+                <svg className="w-6 h-6 text-[#3AB1A0]" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M6 2v6h.01L6 8.01V12h10V8.01L16 8V2H6zm10 16h-4v2.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V18h1V8H8v10h1v2.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V18h4v-4h-4v-2h4v-2h-4V8h4v2h-4v2h4v4z" />
                 </svg>
               </div>
@@ -540,8 +540,8 @@ export default function HydrationPage() {
               disabled={saving}
               className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
             >
-              <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+              <div className="h-12 w-12 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
+                <svg className="w-6 h-6 text-[#3AB1A0]" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M5 2v3H3v2h2v2H3v2h2v10a1 1 0 001 1h12a1 1 0 001-1V11h2V9h-2V7h2V5h-2V2H5zm2 2h10v16H7V4z" />
                 </svg>
               </div>
@@ -552,7 +552,7 @@ export default function HydrationPage() {
 
         {/* Today's History */}
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Today's History</h2>
+          <h2 className="text-lg font-bold text-[#E06A26] mb-4">Today's History</h2>
 
           {hydrationData.entries.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
@@ -568,12 +568,12 @@ export default function HydrationPage() {
                   className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${entry.type === 'coffee' ? 'bg-amber-50' : 'bg-blue-50'
+                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${entry.type === 'coffee' ? 'bg-amber-50' : 'bg-[#3AB1A0]/10'
                       }`}>
                       {entry.type === 'coffee' ? (
                         <Coffee className="w-6 h-6 text-amber-600" />
                       ) : (
-                        <Droplet className="w-6 h-6 text-blue-500" fill="#3b82f6" />
+                        <Droplet className="w-6 h-6 text-[#3AB1A0]" fill="#3AB1A0" />
                       )}
                     </div>
                     <div>
@@ -638,9 +638,9 @@ export default function HydrationPage() {
 
               <button
                 onClick={() => setCustomAmount(customAmount + 50)}
-                className="w-14 h-14 rounded-2xl border-2 border-blue-500 flex items-center justify-center hover:bg-blue-50 transition-colors"
+                className="w-14 h-14 rounded-2xl border-2 border-[#3AB1A0] flex items-center justify-center hover:bg-[#3AB1A0]/10 transition-colors"
               >
-                <Plus className="w-5 h-5 text-blue-500" />
+                <Plus className="w-5 h-5 text-[#3AB1A0]" />
               </button>
             </div>
 
@@ -661,7 +661,7 @@ export default function HydrationPage() {
             <button
               onClick={handleCustomAdd}
               disabled={saving || customAmount <= 0}
-              className="w-full py-4 bg-blue-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors disabled:opacity-50"
+              className="w-full py-4 bg-[#3AB1A0] text-white rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-[#2a9989] transition-colors disabled:opacity-50"
             >
               <Droplet className="w-5 h-5" fill="white" />
               {saving ? 'Adding...' : 'Add Water'}
@@ -669,9 +669,6 @@ export default function HydrationPage() {
           </div>
         </div>
       )}
-
-      {/* Bottom Navigation */}
-      <BottomNavBar />
 
       <style jsx>{`
         @keyframes slide-up {

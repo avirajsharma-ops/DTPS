@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { WebLayout } from './web/WebLayout';
 import { MobileLayout } from './mobile/MobileLayout';
+import Image from 'next/image';
 
 interface ResponsiveLayoutProps {
   children: ReactNode;
@@ -63,8 +64,16 @@ export function ResponsiveLayout({
   // Prevent hydration mismatch
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">Loading...</div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Image
+          src="/images/spoon-loader.gif"
+          alt="Loading..."
+          width={100}
+          height={150}
+          className="object-contain"
+          unoptimized
+          priority
+        />
       </div>
     );
   }

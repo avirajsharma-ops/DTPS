@@ -12,6 +12,7 @@ import { ArrowLeft, Phone, Video, MoreVertical } from 'lucide-react';
 import { useCallManager } from '@/hooks/useCallManager';
 import { CallInterface } from '@/components/call/CallInterface';
 import { useNotifications } from '@/hooks/useNotifications';
+import Image from 'next/image';
 
 interface ChatUser {
   _id: string;
@@ -349,7 +350,14 @@ export function ChatInterface({ recipient, onBack, className, onUserStatusChange
       >
         {loading ? (
           <div className="flex justify-center items-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#075e54]" />
+            <Image
+              src="/images/spoon-loader.gif"
+              alt="Loading..."
+              width={80}
+              height={120}
+              className="object-contain"
+              unoptimized
+            />
           </div>
         ) : (
           <>

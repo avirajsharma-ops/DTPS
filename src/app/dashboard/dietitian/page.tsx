@@ -81,7 +81,12 @@ export default function DietitianDashboard() {
     completionRate: 0,
     activePercentage: 0,
     recentClients: [],
-    todaysSchedule: []
+    todaysSchedule: [],
+    // Payment data
+    totalRevenue: 0,
+    pendingPaymentsCount: 0,
+    completedPaymentsCount: 0,
+    recentPayments: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -201,7 +206,7 @@ export default function DietitianDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <StatsCard
             title="Total Clients"
             value={stats.totalClients}
@@ -227,6 +232,13 @@ export default function DietitianDashboard() {
             value={stats.completedSessions}
             description={`${stats.completionRate}% completion rate`}
             icon={<CheckCircle className="h-4 w-4" />}
+          />
+          <StatsCard
+            title="Total Revenue"
+            value={`₹${stats.totalRevenue?.toLocaleString() || 0}`}
+            description={`${stats.completedPaymentsCount} completed, ${stats.pendingPaymentsCount} pending`}
+            icon={<DollarSign className="h-4 w-4" />}
+            trend={{ value: 8, isPositive: true }}
           />
         </div>
 
@@ -421,6 +433,99 @@ export default function DietitianDashboard() {
                 <Button variant="outline" className="w-full mt-4" asChild>
                   <Link href="/clients">View All Clients</Link>
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Payments Section */}
+        <div className="grid grid-cols-1 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                <span>Recent Payments</span>
+              </CardTitle>
+              <CardDescription>
+                Payments from your assigned clients
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {loading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
+                    <p className="text-sm text-gray-600 mt-2">Loading payments...</p>
+                  </div>
+                ) : stats.recentPayments && stats.recentPayments.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium text-gray-600">Client</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-600">Plan</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-600">Duration</th>
+                          <th className="px-3 py-2 text-right font-medium text-gray-600">Amount</th>
+                          <th className="px-3 py-2 text-center font-medium text-gray-600">Status</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-600">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {stats.recentPayments.map((payment: any) => (
+                          <tr key={payment.id} className="hover:bg-gray-50">
+                            <td className="px-3 py-3">
+                              <div>
+                                <p className="font-medium text-gray-900">{payment.clientName}</p>
+                                <p className="text-xs text-gray-500">{payment.clientEmail}</p>
+                              </div>
+                            </td>
+                            <td className="px-3 py-3">
+                              <div>
+                                <p className="font-medium text-gray-800">{payment.planName}</p>
+                                {payment.planCategory && (
+                                  <Badge variant="outline" className="text-xs mt-1">
+                                    {payment.planCategory}
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className="text-gray-600">
+                                {payment.durationLabel || (payment.durationDays ? `${payment.durationDays} days` : 'N/A')}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              <span className="font-semibold text-gray-900">
+                                {payment.currency} {payment.amount?.toLocaleString()}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <Badge className={
+                                payment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                payment.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }>
+                                {payment.status}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className="text-gray-600 text-xs">
+                                {payment.createdAt ? format(new Date(payment.createdAt), 'dd MMM yyyy') : 'N/A'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <DollarSign className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                    <p className="text-sm text-gray-600">No payments yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Payments from assigned clients will appear here</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

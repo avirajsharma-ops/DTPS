@@ -53,6 +53,145 @@
     animation: slide-in-right 0.3s ease-out forwards;
   }
 
+  /* Page transition animations */
+  @keyframes page-enter {
+    0% {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes page-exit {
+    0% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+  }
+
+  @keyframes scale-fade-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes slide-in-bottom {
+    0% {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-out-bottom {
+    0% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes slide-in-left {
+    0% {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-out-left {
+    0% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes overlay-fade-in {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes stagger-fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Animation utility classes */
+  .animate-page-enter {
+    animation: page-enter 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  .animate-page-exit {
+    animation: page-exit 0.2s ease-in forwards;
+  }
+
+  .animate-scale-fade-in {
+    animation: scale-fade-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  .animate-slide-in-bottom {
+    animation: slide-in-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-slide-out-bottom {
+    animation: slide-out-bottom 0.25s ease-in forwards;
+  }
+
+  .animate-slide-in-left {
+    animation: slide-in-left 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-slide-out-left {
+    animation: slide-out-left 0.25s ease-in forwards;
+  }
+
+  .animate-overlay-fade-in {
+    animation: overlay-fade-in 0.25s ease-out forwards;
+  }
+
+  /* Stagger animation for lists and cards */
+  .animate-stagger-1 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.05s forwards; opacity: 0; }
+  .animate-stagger-2 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s forwards; opacity: 0; }
+  .animate-stagger-3 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.15s forwards; opacity: 0; }
+  .animate-stagger-4 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s forwards; opacity: 0; }
+  .animate-stagger-5 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.25s forwards; opacity: 0; }
+  .animate-stagger-6 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s forwards; opacity: 0; }
+
   /* Enhanced mobile responsiveness for quick actions */
   @media (max-width: 380px) {
     .quick-actions-grid {

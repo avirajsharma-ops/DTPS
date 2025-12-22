@@ -1,4 +1,5 @@
 'use client';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -42,19 +43,19 @@ export default function OnboardingPage() {
 
     if (status === 'loading') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+            <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 flex items-center justify-center">
+                <SpoonGifLoader size="md" text="Loading..." />
             </div>
         );
     }
 
     if (!session?.user) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 flex items-center justify-center">
                 <Card className="w-full max-w-md">
                     <CardContent className="pt-6 text-center">
                         <p className="text-gray-600 mb-4">Please sign in to continue onboarding</p>
-                        <Button onClick={() => router.push('/client-auth/signin')}>
+                        <Button onClick={() => router.push('/client-auth/signin')} className="bg-[#3AB1A0] hover:bg-[#2a9989]">
                             Go to Sign In
                         </Button>
                     </CardContent>
@@ -114,12 +115,12 @@ export default function OnboardingPage() {
     }[currentStep];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4">
+        <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 p-4">
             {/* Progress Bar */}
             <div className="mb-8">
                 <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-green-500 transition-all duration-500"
+                        className="h-full bg-[#3AB1A0] transition-all duration-500"
                         style={{ width: `${progressPercentage}%` }}
                     />
                 </div>
@@ -130,7 +131,7 @@ export default function OnboardingPage() {
                 {currentStep === 'welcome' && (
                     <Card className="border-0 shadow-lg">
                         <CardHeader className="text-center">
-                            <CardTitle className="text-3xl font-bold text-green-600 mb-2">
+                            <CardTitle className="text-3xl font-bold text-[#E06A26] mb-2">
                                 Welcome! 🎉
                             </CardTitle>
                             <CardDescription className="text-base">
@@ -139,8 +140,8 @@ export default function OnboardingPage() {
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="space-y-3 text-center">
-                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100">
-                                    <Target className="w-6 h-6 text-green-600" />
+                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#3AB1A0]/20">
+                                    <Target className="w-6 h-6 text-[#3AB1A0]" />
                                 </div>
                                 <p className="text-gray-600">
                                     We'll help you set personalized health goals and track your progress
@@ -148,7 +149,7 @@ export default function OnboardingPage() {
                             </div>
                             <Button
                                 onClick={() => setCurrentStep('profile')}
-                                className="w-full bg-green-600 hover:bg-green-700 h-12"
+                                className="w-full bg-[#3AB1A0] hover:bg-[#2a9989] h-12"
                             >
                                 Get Started
                                 <ChevronRight className="w-4 h-4 ml-2" />
@@ -218,7 +219,7 @@ export default function OnboardingPage() {
                                 </Button>
                                 <Button
                                     onClick={handleProfileSubmit}
-                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                    className="flex-1 bg-[#3AB1A0] hover:bg-[#2a9989]"
                                 >
                                     Next
                                     <ChevronRight className="w-4 h-4 ml-2" />
@@ -295,7 +296,7 @@ export default function OnboardingPage() {
                                 </Button>
                                 <Button
                                     onClick={handleGoalsSubmit}
-                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                    className="flex-1 bg-[#3AB1A0] hover:bg-[#2a9989]"
                                 >
                                     Next
                                     <ChevronRight className="w-4 h-4 ml-2" />
@@ -354,7 +355,7 @@ export default function OnboardingPage() {
                                 <Button
                                     onClick={handlePreferencesSubmit}
                                     disabled={loading}
-                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                    className="flex-1 bg-[#3AB1A0] hover:bg-[#2a9989]"
                                 >
                                     {loading ? (
                                         <>
@@ -377,8 +378,8 @@ export default function OnboardingPage() {
                 {currentStep === 'complete' && (
                     <Card className="border-0 shadow-lg">
                         <CardHeader className="text-center">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mx-auto mb-4">
-                                <Check className="w-8 h-8 text-green-600" />
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#3AB1A0]/20 mx-auto mb-4">
+                                <Check className="w-8 h-8 text-[#3AB1A0]" />
                             </div>
                             <CardTitle className="text-2xl">All Set! 🚀</CardTitle>
                             <CardDescription>Your profile is ready</CardDescription>
@@ -389,7 +390,7 @@ export default function OnboardingPage() {
                             </p>
                             <Button
                                 onClick={() => router.push('/user')}
-                                className="w-full bg-green-600 hover:bg-green-700"
+                                className="w-full bg-[#3AB1A0] hover:bg-[#2a9989]"
                             >
                                 Go to Dashboard
                             </Button>

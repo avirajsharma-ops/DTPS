@@ -26,12 +26,39 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     const userId = session.user.id;
 
+    // Calculate BMI from height and weight
+    let bmi = '';
+    let bmiCategory = '';
+    const weightKg = parseFloat(data.weightKg);
+    const heightCm = parseFloat(data.heightCm);
+    
+    if (weightKg > 0 && heightCm > 0) {
+      const heightM = heightCm / 100;
+      const bmiValue = weightKg / (heightM * heightM);
+      bmi = bmiValue.toFixed(1);
+      
+      // Determine BMI category
+      if (bmiValue < 18.5) {
+        bmiCategory = 'Underweight';
+      } else if (bmiValue < 25) {
+        bmiCategory = 'Normal';
+      } else if (bmiValue < 30) {
+        bmiCategory = 'Overweight';
+      } else {
+        bmiCategory = 'Obese';
+      }
+    }
+
     // Update user profile with onboarding data
     const updateData: any = {
       gender: data.gender,
       dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
       heightCm: data.heightCm,
       weightKg: data.weightKg,
+      weight: weightKg || undefined,
+      height: heightCm || undefined,
+      bmi: bmi,
+      bmiCategory: bmiCategory,
       activityLevel: data.activityLevel,
       generalGoal: data.generalGoal, // weight-loss, weight-gain, disease-management, weight-loss-disease-management
       dietType: data.dietType, // Vegetarian, Vegan, Gluten-Free, Non-Vegetarian, etc.

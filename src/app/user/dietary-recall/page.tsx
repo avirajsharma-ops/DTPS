@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface MealEntry {
   mealType: string;
@@ -149,10 +150,10 @@ export default function DietaryRecallPage() {
     };
   };
 
-  if (status === "loading" || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <SpoonGifLoader size="lg" />
       </div>
     );
   }

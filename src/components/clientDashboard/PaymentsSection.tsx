@@ -101,7 +101,7 @@ export default function PaymentsSection({
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedServicePlan, setSelectedServicePlan] = useState<ServicePlan | null>(null);
   const [selectedPricingTier, setSelectedPricingTier] = useState<PricingTier | null>(null);
-  const [maxDiscount, setMaxDiscount] = useState<number>(40);
+  const [maxDiscount, setMaxDiscount] = useState<number>(100);
 
   // Modal fields
   const [showModal, setShowModal] = useState(false);
@@ -156,7 +156,7 @@ export default function PaymentsSection({
     setAmount("");
     setDuration("");
     setDurationLabel("");
-    setMaxDiscount(40);
+    setMaxDiscount(100);
   };
 
   // Handle service plan selection
@@ -174,7 +174,7 @@ export default function PaymentsSection({
     } else {
       setSelectedServicePlan(null);
       setSelectedPricingTier(null);
-      setMaxDiscount(40);
+      setMaxDiscount(100);
     }
   };
 
@@ -187,6 +187,8 @@ export default function PaymentsSection({
       setAmount(tier.amount);
       setDuration(tier.durationDays);
       setDurationLabel(tier.durationLabel);
+      // Use tier-level max discount
+      setMaxDiscount((tier as any).maxDiscount || 100);
     }
   };
 
@@ -256,7 +258,7 @@ export default function PaymentsSection({
     setSelectedCategory("");
     setSelectedServicePlan(null);
     setSelectedPricingTier(null);
-    setMaxDiscount(40);
+    setMaxDiscount(100);
     setShowModal(false);
   };
 

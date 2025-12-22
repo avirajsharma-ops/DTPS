@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface PersonalData {
   firstName: string;
@@ -238,10 +239,10 @@ export default function PersonalInfoPage() {
     return { feet, inches };
   };
 
-  if (status === "loading" || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <SpoonGifLoader size="lg" />
       </div>
     );
   }
@@ -249,12 +250,12 @@ export default function PersonalInfoPage() {
   const heightDisplay = cmToFeetInches(data.heightCm);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 via-white to-[#3AB1A0]/10">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Link href="/user/profile" className="p-2 -ml-2 rounded-xl hover:bg-green-50 transition-colors">
+            <Link href="/user/profile" className="p-2 -ml-2 rounded-xl hover:bg-[#3AB1A0]/10 transition-colors">
               <ArrowLeft className="w-5 h-5 text-gray-600" />
             </Link>
             <h1 className="text-lg font-bold text-gray-900">Personal Information</h1>
@@ -262,7 +263,7 @@ export default function PersonalInfoPage() {
           <button 
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg shadow-green-500/25"
+            className="flex items-center gap-2 px-4 py-2 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2a9989] transition-colors disabled:opacity-50 shadow-lg shadow-[#3AB1A0]/25"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save
@@ -285,10 +286,10 @@ export default function PersonalInfoPage() {
               <img 
                 src={data.profileImage} 
                 alt="Profile" 
-                className="w-28 h-28 rounded-2xl border-4 border-green-100 object-cover shadow-xl"
+                className="w-28 h-28 rounded-2xl border-4 border-[#3AB1A0]/20 object-cover shadow-xl"
               />
             ) : (
-              <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center border-4 border-green-100 shadow-xl">
+              <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-[#3AB1A0] to-[#2a9989] flex items-center justify-center border-4 border-[#3AB1A0]/20 shadow-xl">
                 <span className="text-3xl font-bold text-white">
                   {getInitials(data.firstName, data.lastName)}
                 </span>
@@ -297,7 +298,7 @@ export default function PersonalInfoPage() {
             <button 
               onClick={handleImageClick}
               disabled={uploading}
-              className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors"
+              className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#3AB1A0] rounded-xl flex items-center justify-center shadow-lg hover:bg-[#2a9989] transition-colors"
             >
               {uploading ? (
                 <Loader2 className="w-5 h-5 text-white animate-spin" />
@@ -356,7 +357,7 @@ export default function PersonalInfoPage() {
                 type="date"
                 value={data.dateOfBirth}
                 onChange={(e) => setData({ ...data, dateOfBirth: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
               />
             </div>
 
@@ -369,8 +370,8 @@ export default function PersonalInfoPage() {
                     onClick={() => setData({ ...data, gender })}
                     className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       data.gender === gender
-                        ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                        ? "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25"
+                        : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10"
                     }`}
                   >
                     {gender.charAt(0).toUpperCase() + gender.slice(1)}
@@ -385,7 +386,7 @@ export default function PersonalInfoPage() {
                 type="date"
                 value={data.anniversary}
                 onChange={(e) => setData({ ...data, anniversary: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
               />
             </div>
           </div>
@@ -399,7 +400,7 @@ export default function PersonalInfoPage() {
               <select
                 value={data.source}
                 onChange={(e) => setData({ ...data, source: e.target.value, referralSource: e.target.value !== 'other' ? '' : data.referralSource })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
               >
                 <option value="">Select source</option>
                 <option value="google_ads">Google Ads</option>
@@ -430,7 +431,7 @@ export default function PersonalInfoPage() {
                 value={data.heightCm}
                 onChange={(e) => setData({ ...data, heightCm: e.target.value })}
                 placeholder="Height in CM"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
               />
               {data.heightCm && (
                 <p className="text-xs text-gray-500">
@@ -447,7 +448,7 @@ export default function PersonalInfoPage() {
                   value={data.weightKg}
                   onChange={(e) => setData({ ...data, weightKg: e.target.value })}
                   placeholder="Weight"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
                 />
               </div>
               <div className="space-y-2">
@@ -457,7 +458,7 @@ export default function PersonalInfoPage() {
                   value={data.targetWeightKg}
                   onChange={(e) => setData({ ...data, targetWeightKg: e.target.value })}
                   placeholder="Target"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
                 />
               </div>
             </div>
@@ -473,7 +474,7 @@ export default function PersonalInfoPage() {
                 onClick={() => setData({ ...data, activityLevel: level.value })}
                 className={`w-full p-3 rounded-xl text-left transition-all border ${
                   data.activityLevel === level.value
-                    ? "bg-green-50 border-green-500 ring-2 ring-green-500"
+                    ? "bg-[#3AB1A0]/10 border-[#3AB1A0] ring-2 ring-[#3AB1A0]"
                     : "bg-gray-50 border-gray-200 hover:border-green-300"
                 }`}
               >
@@ -495,8 +496,8 @@ export default function PersonalInfoPage() {
                 onClick={() => setData({ ...data, generalGoal: goal.value })}
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   data.generalGoal === goal.value
-                    ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    ? "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25"
+                    : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10"
                 }`}
               >
                 {goal.label}
@@ -514,8 +515,8 @@ export default function PersonalInfoPage() {
                 onClick={() => setData({ ...data, dietType: diet.value })}
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   data.dietType === diet.value
-                    ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    ? "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25"
+                    : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10"
                 }`}
               >
                 {diet.label}
@@ -552,7 +553,7 @@ function Section({
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
+        <div className="w-10 h-10 bg-[#3AB1A0] rounded-xl flex items-center justify-center shadow-lg shadow-[#3AB1A0]/25">
           <Icon className="w-5 h-5 text-white" />
         </div>
         <h3 className="font-bold text-gray-900">{title}</h3>
@@ -584,7 +585,7 @@ function InputField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
       />
     </div>
   );

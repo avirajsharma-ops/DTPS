@@ -1,99 +1,201 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Leaf } from 'lucide-react';
 
 export default function ClientAuthPage() {
   const router = useRouter();
   const [progress, setProgress] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading progress
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        // Random increment between 1-5 for realistic loading feel
-        const increment = Math.floor(Math.random() * 5) + 1;
-        return Math.min(prev + increment, 100);
-      });
+      setProgress((p) =>
+        p >= 100 ? 100 : p + Math.floor(Math.random() * 5) + 1
+      );
     }, 50);
 
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    // When loading reaches 100%, redirect to signin
-    if (progress === 100) {
-      const timeout = setTimeout(() => {
-        setIsLoading(false);
-        router.push('/client-auth/signin');
-      }, 500); // Small delay after reaching 100%
-
-      return () => clearTimeout(timeout);
+    if (progress >= 100) {
+      setTimeout(() => router.push('/client-auth/signin'), 600);
     }
   }, [progress, router]);
 
   return (
-    <div className=" min-h-screen bg-[#1a1a1a] flex flex-col items-center justify-between relative overflow-hidden">
-      {/* Background glow effect */}
+    <div className="min-h-screen relative flex items-center justify-center bg-gradient-to-br from-[#61a035]/10 via-white to-[#3AB1A0]/10 overflow-hidden">
+
+      {/* Glow */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-64 h-64 rounded-full bg-gradient-to-b from-green-500/20 to-transparent blur-3xl" />
+        <div className="w-72 h-72 bg-[#61a035]/20 rounded-full blur-3xl" />
       </div>
 
-      {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center justify-center flex-1">
-        {/* Logo with glow */}
-        <div className="relative mb-4">
-          {/* Glow effect */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-b from-green-400 to-emerald-500 blur-xl opacity-50 scale-110" />
+      {/* ================= CENTER ANIMATION ================= */}
+      <div className="relative z-10">
+        <div className="pill-container">
           
-          {/* Logo circle */}
-          <div className="relative h-28 w-28 rounded-full bg-gradient-to-b from-green-400 via-emerald-500 to-green-600 flex items-center justify-center shadow-2xl">
-            <Leaf className="h-16 w-16 text-[#1a1a1a] transform -rotate-45" strokeWidth={2.5} />
+          {/* Logo Section */}
+          <div className="logo-wrapper">
+            <img
+              src="/images/dtps-logo.png"
+              alt="DTPS Logo"
+              className="logo-image"
+            />
           </div>
-        </div>
 
-        {/* App Name */}
-        <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
-          DTPS
-        </h1>
-        
-        {/* Tagline */}
-        <p className="text-gray-400 text-lg tracking-wide">
-          Track. Eat. Thrive.
-        </p>
+          {/* Text Section */}
+          <div className="text-wrapper">
+            <div className="text-content">DTPS</div>
+          </div>
+
+        </div>
       </div>
 
-      {/* Loading section at bottom */}
-     <div className="w-full max-w-sm px-8 pb-20 mb-6">
-        {/* Loading text and percentage */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[#c4a962] text-sm font-medium tracking-widest uppercase">
-            Loading Resources
-          </span>
-          <span className="text-gray-400 text-sm font-medium">
-            {progress}%
-          </span>
+      {/* ================= LOADER ================= */}
+      <div className="absolute w-full max-w-sm px-8 bottom-16">
+        <div className="flex justify-between mb-2 text-sm">
+          <span className="text-[#E06A26] tracking-widest">LOADING</span>
+          <span className="text-[#3AB1A0]">{progress}%</span>
         </div>
 
-        {/* Progress bar */}
-        <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-1 overflow-hidden bg-gray-200 rounded-full">
           <div
-            className="h-full bg-gradient-to-r from-[#c4a962] to-[#d4b972] rounded-full transition-all duration-100 ease-out"
+            className="h-full bg-gradient-to-r from-[#61a035] via-[#3AB1A0] to-[#E06A26]"
             style={{ width: `${progress}%` }}
           />
         </div>
-
-        {/* Version */}
-        <p className="text-center text-gray-500 text-sm mt-6">
-          v2.4.0 (Build 302)
-        </p>
       </div>
+
+      {/* ================= CSS ANIMATION ================= */}
+      <style jsx>{`
+        /* 
+           The Main Pill Container 
+           - Flexbox to align Logo and Text side-by-side
+           - Rounded corners for pill shape
+           - Teal background
+        */
+        .pill-container {
+          display: flex;
+          align-items: center;
+          background-color: #3BA796;
+          border-radius: 9999px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          overflow: hidden;
+        }
+
+        /* 
+           The Logo Container
+           - Z-index to sit on top (visually)
+           - Fixed size (80px x 80px)
+        */
+        .logo-wrapper {
+          position: relative;
+          z-index: 10;
+          width: 5rem;
+          height: 5rem;
+          border-radius: 9999px;
+          overflow: hidden;
+          flex-shrink: 0;
+          opacity: 0;
+          transform: scale(0.5);
+          filter: blur(10px);
+          animation: popIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* 
+           The Image inside the Logo
+           - White background to prevent transparency issues
+           - Object fit to cover
+        */
+        .logo-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center top;
+          background-color: white;
+          display: block;
+        }
+
+        /* 
+           The Text Container 
+           - Starts with width 0 (hidden)
+           - Expands to reveal text
+        */
+        .text-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          height: 5rem;
+          width: 0;
+          opacity: 0;
+          animation: revealText 0.6s ease-out 0.8s forwards;
+        }
+
+        /* The Text Content */
+        .text-content {
+          padding: 0 2rem;
+          white-space: nowrap;
+          color: white;
+          font-size: 1.5rem;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+        }
+
+        /* Keyframes for Logo Pop-In */
+        @keyframes popIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.5);
+            filter: blur(10px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+            filter: blur(0px);
+          }
+        }
+
+        /* Keyframes for Text Reveal (Width Expansion) */
+        @keyframes revealText {
+          0% {
+            width: 0;
+            opacity: 0;
+          }
+          100% {
+            width: 140px;
+            opacity: 1;
+          }
+        }
+
+        /* Responsive Styles (sm breakpoint) */
+        @media (min-width: 640px) {
+          .logo-wrapper {
+            width: 6rem;
+            height: 6rem;
+          }
+          
+          .text-wrapper {
+            height: 6rem;
+          }
+          
+          .text-content {
+            font-size: 1.875rem;
+          }
+
+          @keyframes revealText {
+            0% {
+              width: 0;
+              opacity: 0;
+            }
+            100% {
+              width: 180px;
+              opacity: 1;
+            }
+          }
+        }
+      `}</style>
     </div>
   );
 }

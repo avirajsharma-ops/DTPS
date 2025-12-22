@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { ResponsiveLayout } from '@/components/client/layouts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -21,13 +20,29 @@ import {
   Mail,
   Volume2,
   Eye,
-  Shield
+  Shield,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
+import UserNavBar from '@/components/client/UserNavBar';
+import { SpoonLoader } from '@/components/ui/SpoonLoader';
+import { toast } from 'sonner';
+
+interface UserSettings {
+  pushNotifications: boolean;
+  emailNotifications: boolean;
+  mealReminders: boolean;
+  appointmentReminders: boolean;
+  progressUpdates: boolean;
+  darkMode: boolean;
+  soundEnabled: boolean;
+}
 
 export default function UserSettingsPage() {
   const { data: session } = useSession();
-  const [settings, setSettings] = useState({
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [settings, setSettings] = useState<UserSettings>({
     pushNotifications: true,
     emailNotifications: true,
     mealReminders: true,
@@ -37,15 +52,127 @@ export default function UserSettingsPage() {
     soundEnabled: true,
   });
 
-  const updateSetting = (key: string, value: boolean) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-    // Save to API
+  // Fetch settings on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('/api/client/settings');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.settings) {
+            setSettings(data.settings);
+            // Apply dark mode if enabled
+            if (data.settings.darkMode) {
+              document.documentElement.classList.add('dark');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  // Update individual setting
+  const updateSetting = async (key: string, value: boolean) => {
+    setSaving(key);
+    
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+
+    // Handle dark mode immediately
+    if (key === 'darkMode') {
+      if (value) {
+        document.documentElement.classList.add('dark');
+        document.body.style.backgroundColor = '#1a1a1a';
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.body.style.backgroundColor = '';
+      }
+    }
+
+    // Play sound effect if enabled
+    if (settings.soundEnabled && key !== 'soundEnabled') {
+      playToggleSound();
+    }
+
+    try {
+      const response = await fetch('/api/client/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: newSettings })
+      });
+
+      if (response.ok) {
+        // Show specific messages for certain settings
+        if (key === 'mealReminders') {
+          toast.success(value ? 'Meal reminders enabled! You\'ll be notified at meal times.' : 'Meal reminders disabled');
+        } else if (key === 'appointmentReminders') {
+          toast.success(value ? 'Appointment reminders enabled! You\'ll get notifications before appointments.' : 'Appointment reminders disabled');
+        } else if (key === 'pushNotifications') {
+          if (value) {
+            // Request push notification permission
+            requestNotificationPermission();
+          }
+          toast.success(value ? 'Push notifications enabled' : 'Push notifications disabled');
+        } else if (key === 'darkMode') {
+          toast.success(value ? 'Dark mode enabled' : 'Light mode enabled');
+        }
+      } else {
+        // Revert on error
+        setSettings(settings);
+        toast.error('Failed to update setting');
+      }
+    } catch (error) {
+      console.error('Error updating setting:', error);
+      setSettings(settings);
+      toast.error('Failed to update setting');
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  // Request notification permission
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        // Register for push notifications
+        if ('serviceWorker' in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            console.log('Push notification permission granted');
+          } catch (error) {
+            console.error('Error registering for push:', error);
+          }
+        }
+      } else if (permission === 'denied') {
+        toast.error('Please enable notifications in your browser settings');
+        setSettings(prev => ({ ...prev, pushNotifications: false }));
+      }
+    }
+  };
+
+  // Play toggle sound
+  const playToggleSound = () => {
+    try {
+      const audio = new Audio('/sounds/toggle.mp3');
+      audio.volume = 0.3;
+      audio.play().catch(() => {});
+    } catch (error) {
+      // Ignore audio errors
+    }
   };
 
   const settingSections = [
     {
       title: 'Notifications',
       icon: Bell,
+      description: 'Control how you receive updates',
       items: [
         {
           key: 'pushNotifications',
@@ -59,16 +186,23 @@ export default function UserSettingsPage() {
           description: 'Receive updates via email',
           icon: Mail,
         },
+      ],
+    },
+    {
+      title: 'Reminders',
+      icon: Bell,
+      description: 'Stay on track with timely reminders',
+      items: [
         {
           key: 'mealReminders',
           label: 'Meal Reminders',
-          description: 'Get reminded about your meals',
+          description: 'Get reminded about your meals at scheduled times',
           icon: Bell,
         },
         {
           key: 'appointmentReminders',
           label: 'Appointment Reminders',
-          description: 'Reminders for upcoming appointments',
+          description: 'Get notified 30 minutes before appointments',
           icon: Bell,
         },
         {
@@ -82,17 +216,18 @@ export default function UserSettingsPage() {
     {
       title: 'Appearance',
       icon: Eye,
+      description: 'Customize your app experience',
       items: [
         {
           key: 'darkMode',
           label: 'Dark Mode',
-          description: 'Use dark theme',
+          description: 'Use dark theme for better night viewing',
           icon: Moon,
         },
         {
           key: 'soundEnabled',
           label: 'Sound Effects',
-          description: 'Play sounds for notifications',
+          description: 'Play sounds for notifications and actions',
           icon: Volume2,
         },
       ],
@@ -128,34 +263,113 @@ export default function UserSettingsPage() {
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Navigation Bar */}
+        <UserNavBar 
+          title="Settings" 
+          subtitle="Manage your preferences"
+          showBack={true}
+          showMenu={false}
+          showProfile={true}
+          showNotification={true}
+          backHref="/user"
+        />
+        <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 80px)' }}>
+          <div className="flex flex-col items-center">
+            <div className="h-12 w-12 border-4 border-[#E06A26] border-t-transparent rounded-full animate-spin" />
+            <p className="mt-4 text-gray-600">Loading settings...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <ResponsiveLayout title="Settings" subtitle="Manage your preferences">
-      <div className="space-y-6">
+    <div className={`min-h-screen pb-24 ${settings.darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      {/* Navigation Bar */}
+      <UserNavBar 
+        title="Settings" 
+        subtitle="Manage your preferences"
+        showBack={true}
+        showMenu={false}
+        showProfile={true}
+        showNotification={true}
+        backHref="/user"
+      />
+
+      <div className="px-4 md:px-6 space-y-4 py-4">
         {/* Setting Sections with Toggles */}
         {settingSections.map((section) => (
-          <Card key={section.title} className="border-0 shadow-sm">
-            <CardHeader className="p-4 pb-2">
-              <div className="flex items-center gap-2">
-                <section.icon className="h-4 w-4 text-gray-500" />
-                <CardTitle className="text-sm font-semibold">{section.title}</CardTitle>
+          <Card 
+            key={section.title} 
+            className={`border-0 shadow-sm hover:shadow-md transition-shadow ${
+              settings.darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}
+          >
+            <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-[#E06A26]/10 flex items-center justify-center">
+                  <section.icon className="h-5 w-5 text-[#E06A26]" />
+                </div>
+                <div>
+                  <CardTitle className={`text-base font-semibold ${
+                    settings.darkMode ? 'text-white' : 'text-[#3AB1A0]'
+                  }`}>
+                    {section.title}
+                  </CardTitle>
+                  <p className={`text-xs ${settings.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {section.description}
+                  </p>
+                </div>
               </div>
             </CardHeader>
-            <CardContent className="p-4 pt-2 space-y-4">
+            <CardContent className="p-4 pt-3 space-y-3">
               {section.items.map((item) => (
-                <div key={item.key} className="flex items-center justify-between">
+                <div 
+                  key={item.key} 
+                  className={`flex items-center justify-between p-3 rounded-xl transition-colors ${
+                    settings.darkMode 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-[#3AB1A0]/5'
+                  }`}
+                >
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <item.icon className="h-4 w-4 text-gray-600" />
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+                      settings[item.key as keyof UserSettings] 
+                        ? 'bg-[#3AB1A0]/20' 
+                        : settings.darkMode ? 'bg-gray-700' : 'bg-gray-100'
+                    }`}>
+                      <item.icon className={`h-5 w-5 ${
+                        settings[item.key as keyof UserSettings] 
+                          ? 'text-[#3AB1A0]' 
+                          : settings.darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`} />
                     </div>
                     <div>
-                      <Label className="font-medium text-gray-900">{item.label}</Label>
-                      <p className="text-xs text-gray-500">{item.description}</p>
+                      <Label className={`font-medium ${
+                        settings.darkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {item.label}
+                      </Label>
+                      <p className={`text-xs ${
+                        settings.darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        {item.description}
+                      </p>
                     </div>
                   </div>
-                  <Switch
-                    checked={settings[item.key as keyof typeof settings] as boolean}
-                    onCheckedChange={(checked) => updateSetting(item.key, checked)}
-                  />
+                  <div className="flex items-center gap-2">
+                    {saving === item.key && (
+                      <Loader2 className="h-4 w-4 animate-spin text-[#3AB1A0]" />
+                    )}
+                    <Switch
+                      checked={settings[item.key as keyof UserSettings] as boolean}
+                      onCheckedChange={(checked) => updateSetting(item.key, checked)}
+                      className="data-[state=checked]:bg-[#3AB1A0]"
+                    />
+                  </div>
                 </div>
               ))}
             </CardContent>
@@ -164,11 +378,22 @@ export default function UserSettingsPage() {
 
         {/* Link Sections */}
         {linkSections.map((section) => (
-          <Card key={section.title} className="border-0 shadow-sm">
-            <CardHeader className="p-4 pb-2">
-              <div className="flex items-center gap-2">
-                <section.icon className="h-4 w-4 text-gray-500" />
-                <CardTitle className="text-sm font-semibold">{section.title}</CardTitle>
+          <Card 
+            key={section.title} 
+            className={`border-0 shadow-sm hover:shadow-md transition-shadow ${
+              settings.darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}
+          >
+            <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-[#DB9C6E]/10 flex items-center justify-center">
+                  <section.icon className="h-5 w-5 text-[#DB9C6E]" />
+                </div>
+                <CardTitle className={`text-base font-semibold ${
+                  settings.darkMode ? 'text-white' : 'text-[#3AB1A0]'
+                }`}>
+                  {section.title}
+                </CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-2 space-y-1">
@@ -176,13 +401,21 @@ export default function UserSettingsPage() {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  className={`flex items-center justify-between p-3 rounded-xl transition-colors ${
+                    settings.darkMode 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-[#3AB1A0]/10'
+                  }`}
                 >
                   <div className="flex items-center gap-3">
-                    <link.icon className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">{link.label}</span>
+                    <link.icon className="h-5 w-5 text-[#E06A26]" />
+                    <span className={`text-sm font-medium ${
+                      settings.darkMode ? 'text-white' : 'text-gray-700'
+                    }`}>
+                      {link.label}
+                    </span>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                  <ChevronRight className="h-4 w-4 text-[#3AB1A0]" />
                 </Link>
               ))}
             </CardContent>
@@ -190,41 +423,51 @@ export default function UserSettingsPage() {
         ))}
 
         {/* Language Selection */}
-        <Card className="border-0 shadow-sm">
+        <Card className={`border-0 shadow-sm hover:shadow-md transition-shadow ${
+          settings.darkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <Globe className="h-4 w-4 text-gray-600" />
+                <div className="h-10 w-10 rounded-xl bg-[#E06A26]/10 flex items-center justify-center">
+                  <Globe className="h-5 w-5 text-[#E06A26]" />
                 </div>
                 <div>
-                  <Label className="font-medium text-gray-900">Language</Label>
-                  <p className="text-xs text-gray-500">English (US)</p>
+                  <Label className={`font-medium ${
+                    settings.darkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    Language
+                  </Label>
+                  <p className={`text-xs ${
+                    settings.darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    English (US)
+                  </p>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
+              <ChevronRight className="h-4 w-4 text-[#3AB1A0]" />
             </div>
           </CardContent>
         </Card>
 
         {/* App Version */}
-        <Card className="border-0 shadow-sm bg-gray-50">
+        <Card className="border-0 shadow-sm bg-gradient-to-r from-[#E06A26]/10 to-[#3AB1A0]/10">
           <CardContent className="p-4 text-center">
-            <p className="text-sm text-gray-500">DTPS Nutrition</p>
-            <p className="text-xs text-gray-400">Version 1.0.0</p>
+            <p className="text-sm font-semibold text-[#3AB1A0]">DTPS Nutrition</p>
+            <p className="text-xs text-gray-500">Version 1.0.0</p>
           </CardContent>
         </Card>
 
         {/* Sign Out Button */}
         <Button 
-          variant="outline" 
-          className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+          className="w-full bg-[#E06A26] hover:bg-[#E06A26]/90 text-white font-medium h-12 rounded-xl"
           onClick={() => signOut({ callbackUrl: '/auth/signin' })}
         >
-          <LogOut className="h-4 w-4 mr-2" />
+          <LogOut className="h-5 w-5 mr-2" />
           Sign Out
         </Button>
       </div>
-    </ResponsiveLayout>
+
+    </div>
   );
 }

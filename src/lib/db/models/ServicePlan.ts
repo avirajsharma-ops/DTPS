@@ -5,7 +5,7 @@ export interface IPricingTier {
   durationDays: number;
   durationLabel: string; // e.g., "7 Days", "1 Month", "3 Months"
   amount: number;
-  maxDiscount: number; // Max discount percentage for this tier (0-40%)
+  maxDiscount: number; // Max discount percentage for this tier (0-100%)
   isActive: boolean;
 }
 
@@ -19,7 +19,7 @@ export interface IServicePlan extends Document {
   features: string[];
   isActive: boolean;
   showToClients: boolean; // Whether to show this plan to clients in the user dashboard
-  maxDiscountPercent: number; // Max 40%
+  maxDiscountPercent: number; // Max 100%
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -29,7 +29,7 @@ export interface IServicePlan extends Document {
 export interface IClientPurchase extends Document {
   _id: string;
   client: mongoose.Types.ObjectId;
-  dietitian: mongoose.Types.ObjectId;
+  dietitian?: mongoose.Types.ObjectId;
   servicePlan?: mongoose.Types.ObjectId;
   paymentLink?: mongoose.Types.ObjectId;
   otherPlatformPayment?: mongoose.Types.ObjectId;
@@ -39,15 +39,23 @@ export interface IClientPurchase extends Document {
   planCategory: string;
   durationDays: number;
   durationLabel: string;
-  baseAmount: number;
-  discountPercent: number;
-  taxPercent: number;
-  finalAmount: number;
+  
+  // Selected tier info
+  selectedTier?: {
+    durationDays: number;
+    durationLabel: string;
+    amount: number;
+  };
+  
+  baseAmount?: number;
+  discountPercent?: number;
+  taxPercent?: number;
+  finalAmount?: number;
 
   // Dates
-  purchaseDate: Date;
-  startDate: Date;
-  endDate: Date;
+  purchaseDate?: Date;
+  startDate?: Date;
+  endDate?: Date;
 
   // Expected dates (dietitian's expected start/end for meal plan)
   expectedStartDate?: Date;
@@ -57,7 +65,16 @@ export interface IClientPurchase extends Document {
   parentPurchaseId?: mongoose.Types.ObjectId;
 
   // Status
-  status: 'active' | 'expired' | 'cancelled';
+  status: 'active' | 'expired' | 'cancelled' | 'pending';
+  
+  // Payment status
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
+  
+  // Payment details
+  paymentMethod?: string;
+  razorpayPaymentId?: string;
+  razorpayOrderId?: string;
+  paidAt?: Date;
 
   // Meal plan tracking
   mealPlanCreated: boolean;
@@ -87,9 +104,9 @@ const pricingTierSchema = new Schema({
   },
   maxDiscount: {
     type: Number,
-    default: 40,
+    default: 0,
     min: 0,
-    max: 40
+    max: 100
   },
   isActive: {
     type: Boolean,
@@ -129,9 +146,9 @@ const servicePlanSchema = new Schema({
   },
   maxDiscountPercent: {
     type: Number,
-    default: 40,
+    default: 0,
     min: 0,
-    max: 40
+    max: 100
   },
   createdBy: {
     type: Schema.Types.ObjectId,
@@ -153,7 +170,7 @@ const clientPurchaseSchema = new Schema({
   dietitian: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false // Not always known at purchase time
   },
   servicePlan: {
     type: Schema.Types.ObjectId,
@@ -175,31 +192,44 @@ const clientPurchaseSchema = new Schema({
   // Plan details at time of purchase
   planName: {
     type: String,
-    required: true
+    required: false,
+    default: 'Diet Plan'
   },
   planCategory: {
     type: String,
-    required: true
+    required: false,
+    default: 'general'
   },
   durationDays: {
     type: Number,
-    required: true,
+    required: false,
+    default: 30,
     min: 1
   },
   durationLabel: {
     type: String,
-    required: true
+    required: false,
+    default: '30 Days'
   },
+  
+  // Selected tier info
+  selectedTier: {
+    durationDays: { type: Number },
+    durationLabel: { type: String },
+    amount: { type: Number }
+  },
+  
   baseAmount: {
     type: Number,
-    required: true,
+    required: false,
+    default: 0,
     min: 0
   },
   discountPercent: {
     type: Number,
     default: 0,
     min: 0,
-    max: 40
+    max: 100
   },
   taxPercent: {
     type: Number,
@@ -208,23 +238,25 @@ const clientPurchaseSchema = new Schema({
   },
   finalAmount: {
     type: Number,
-    required: true,
+    required: false,
+    default: 0,
     min: 0
   },
 
   // Dates
   purchaseDate: {
     type: Date,
-    required: true,
+    required: false,
     default: Date.now
   },
   startDate: {
     type: Date,
-    required: true
+    required: false,
+    default: Date.now
   },
   endDate: {
     type: Date,
-    required: true
+    required: false
   },
 
   // Expected dates (dietitian's expected start/end for meal plan)
@@ -247,9 +279,31 @@ const clientPurchaseSchema = new Schema({
   // Status
   status: {
     type: String,
-    required: true,
-    enum: ['active', 'expired', 'cancelled'],
+    required: false,
+    enum: ['active', 'expired', 'cancelled', 'pending'],
     default: 'active'
+  },
+  
+  // Payment status
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed', 'refunded'],
+    default: 'pending'
+  },
+  
+  // Payment details
+  paymentMethod: {
+    type: String,
+    default: 'razorpay'
+  },
+  razorpayPaymentId: {
+    type: String
+  },
+  razorpayOrderId: {
+    type: String
+  },
+  paidAt: {
+    type: Date
   },
 
   // Meal plan tracking

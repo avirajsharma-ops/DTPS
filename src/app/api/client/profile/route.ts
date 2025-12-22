@@ -16,7 +16,7 @@ export async function GET() {
 
     const user = await User.findById(session.user.id)
       .select(
-        "name firstName lastName email phone dateOfBirth gender address city state pincode profileImage avatar createdAt heightCm weightKg targetWeightKg activityLevel generalGoal dietType alternativeEmail alternativePhone anniversary source referralSource assignedDietitian"
+        "name firstName lastName email phone dateOfBirth gender address city state pincode profileImage avatar createdAt heightCm weightKg targetWeightKg activityLevel generalGoal dietType alternativeEmail alternativePhone anniversary source referralSource assignedDietitian bmi bmiCategory height weight"
       )
       .populate('assignedDietitian', 'firstName lastName email phone');
 
@@ -24,7 +24,35 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ user });
+    // Calculate BMI if not stored but weight and height available
+    let bmi = user.bmi;
+    let bmiCategory = user.bmiCategory;
+    
+    if (!bmi && user.weightKg && user.heightCm) {
+      const weightKg = parseFloat(user.weightKg);
+      const heightCm = parseFloat(user.heightCm);
+      if (weightKg > 0 && heightCm > 0) {
+        const heightM = heightCm / 100;
+        const bmiValue = weightKg / (heightM * heightM);
+        bmi = bmiValue.toFixed(1);
+        
+        if (bmiValue < 18.5) {
+          bmiCategory = 'Underweight';
+        } else if (bmiValue < 25) {
+          bmiCategory = 'Normal';
+        } else if (bmiValue < 30) {
+          bmiCategory = 'Overweight';
+        } else {
+          bmiCategory = 'Obese';
+        }
+      }
+    }
+
+    return NextResponse.json({ 
+      ...user.toObject(),
+      bmi,
+      bmiCategory
+    });
   } catch (error) {
     console.error("Error fetching profile:", error);
     return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 });

@@ -20,7 +20,7 @@ const createPaymentLinkSchema = z.object({
   clientId: z.string().min(1, 'Client ID is required'),
   amount: z.number().positive('Amount must be positive'),
   tax: z.number().min(0).default(0),
-  discount: z.number().min(0).max(40).default(0), // Max 40% discount
+  discount: z.number().min(0).max(100).default(0), // Max 100% discount
   finalAmount: z.number().positive('Final amount must be positive'),
   planCategory: z.string().optional(),
   planName: z.string().optional(),
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       dietitian: session.user.id,
       amount: validatedData.amount,
       tax: validatedData.tax,
-      discount: Math.min(validatedData.discount, 40), // Enforce max 40% discount
+      discount: validatedData.discount, // Allow any discount up to 100%
       finalAmount: validatedData.finalAmount,
       planCategory: validatedData.planCategory,
       planName: validatedData.planName,
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
             paymentDate: paymentDate,
             createdAt: today.toISOString(),
           },
-          callback_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/success`,
+          callback_url: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/user?payment_success=true`,
           callback_method: 'get'
         };
 

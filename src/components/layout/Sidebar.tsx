@@ -224,6 +224,12 @@ export default function Sidebar({ className }: SidebarProps) {
             description: 'Detailed revenue analytics'
           },
           {
+            href: '/admin/payments',
+            label: 'User Payments',
+            icon: CreditCard,
+            description: 'View all user payments'
+          },
+          {
             href: '/admin/other-platform-payments',
             label: 'Other Payments',
             icon: Wallet,

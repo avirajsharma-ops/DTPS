@@ -28,8 +28,12 @@ const FileSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['avatar', 'document', 'recipe-image', 'message', 'progress-photo', 'note-attachment'],
+    enum: ['avatar', 'document', 'recipe-image', 'message', 'progress-photo', 'progress', 'note-attachment'],
     required: true
+  },
+  localPath: {
+    type: String,
+    default: null
   },
   metadata: {
     type: mongoose.Schema.Types.Mixed,

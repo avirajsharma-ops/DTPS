@@ -25,6 +25,7 @@ import {
 import { toast } from 'sonner';
 import BottomNavBar from '@/components/client/BottomNavBar';
 import { Button } from '@/components/ui/button';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface AssignedWater {
     amount: number;
@@ -220,10 +221,10 @@ export default function TasksPage() {
 
     const stats = getTaskStats();
 
-    if (status === 'loading' || loading) {
+    if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <SpoonGifLoader size="lg" />
             </div>
         );
     }
@@ -247,10 +248,10 @@ export default function TasksPage() {
                         </button>
                         <button
                             onClick={() => setShowDatePicker(!showDatePicker)}
-                            className="flex items-center gap-1 p-2 bg-green-50 rounded-lg"
+                            className="flex items-center gap-1 p-2 bg-[#3AB1A0]/10 rounded-lg"
                         >
-                            <Calendar className="w-5 h-5 text-green-600" />
-                            <span className="text-sm font-medium text-green-600">
+                            <Calendar className="w-5 h-5 text-[#3AB1A0]" />
+                            <span className="text-sm font-medium text-[#3AB1A0]">
                                 {format(selectedDate, 'dd MMM')}
                             </span>
                         </button>
@@ -275,10 +276,10 @@ export default function TasksPage() {
 
             <div className="px-4 py-6 space-y-4">
                 {/* Progress Summary */}
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-4 text-white">
+                <div className="bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-2xl p-4 text-white">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-green-100 text-sm">Today's Progress</p>
+                            <p className="text-white/70 text-sm">Today's Progress</p>
                             <p className="text-3xl font-bold mt-1">
                                 {stats.completed}/{stats.total} Tasks
                             </p>
@@ -331,9 +332,9 @@ export default function TasksPage() {
                                     className="w-full p-4 flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tasksData.water.isCompleted ? 'bg-green-100' : 'bg-blue-100'
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tasksData.water.isCompleted ? 'bg-[#3AB1A0]/10' : 'bg-[#3AB1A0]/10'
                                             }`}>
-                                            <Droplets className={`w-6 h-6 ${tasksData.water.isCompleted ? 'text-green-600' : 'text-blue-600'
+                                            <Droplets className={`w-6 h-6 ${tasksData.water.isCompleted ? 'text-[#3AB1A0]' : 'text-[#3AB1A0]'
                                                 }`} />
                                         </div>
                                         <div className="text-left">
@@ -345,7 +346,7 @@ export default function TasksPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {tasksData.water.isCompleted ? (
-                                            <CheckCircle2 className="w-6 h-6 text-green-500" />
+                                            <CheckCircle2 className="w-6 h-6 text-[#3AB1A0]" />
                                         ) : (
                                             <Circle className="w-6 h-6 text-gray-300" />
                                         )}
@@ -371,11 +372,11 @@ export default function TasksPage() {
                                                 </span>
                                             </div>
                                             {tasksData.water.isCompleted ? (
-                                                <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
+                                                <div className="flex items-center gap-2 text-[#3AB1A0] bg-[#3AB1A0]/10 p-3 rounded-lg">
                                                     <Check className="w-5 h-5" />
                                                     <span className="font-medium">Completed</span>
                                                     {tasksData.water.completedAt && (
-                                                        <span className="text-sm text-green-500 ml-auto">
+                                                        <span className="text-sm text-[#3AB1A0] ml-auto">
                                                             {format(new Date(tasksData.water.completedAt), 'h:mm a')}
                                                         </span>
                                                     )}
@@ -384,7 +385,7 @@ export default function TasksPage() {
                                                 <button
                                                     onClick={() => handleCompleteTask('water')}
                                                     disabled={completingTask === 'water'}
-                                                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50"
+                                                    className="w-full py-3 bg-[#3AB1A0] text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#2A9A8B] disabled:opacity-50"
                                                 >
                                                     {completingTask === 'water' ? (
                                                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -408,9 +409,9 @@ export default function TasksPage() {
                                     className="w-full p-4 flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tasksData.steps.isCompleted ? 'bg-green-100' : 'bg-orange-100'
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tasksData.steps.isCompleted ? 'bg-[#3AB1A0]/10' : 'bg-[#E06A26]/10'
                                             }`}>
-                                            <Footprints className={`w-6 h-6 ${tasksData.steps.isCompleted ? 'text-green-600' : 'text-orange-600'
+                                            <Footprints className={`w-6 h-6 ${tasksData.steps.isCompleted ? 'text-[#3AB1A0]' : 'text-[#E06A26]'
                                                 }`} />
                                         </div>
                                         <div className="text-left">
@@ -422,7 +423,7 @@ export default function TasksPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {tasksData.steps.isCompleted ? (
-                                            <CheckCircle2 className="w-6 h-6 text-green-500" />
+                                            <CheckCircle2 className="w-6 h-6 text-[#3AB1A0]" />
                                         ) : (
                                             <Circle className="w-6 h-6 text-gray-300" />
                                         )}
@@ -447,13 +448,13 @@ export default function TasksPage() {
                                             </div>
                                             <div className="w-full bg-gray-200 rounded-full h-2">
                                                 <div
-                                                    className={`h-2 rounded-full transition-all ${tasksData.steps.isCompleted ? 'bg-green-500' : 'bg-orange-500'
+                                                    className={`h-2 rounded-full transition-all ${tasksData.steps.isCompleted ? 'bg-[#3AB1A0]' : 'bg-[#E06A26]'
                                                         }`}
                                                     style={{ width: `${Math.min((tasksData.steps.current / tasksData.steps.target) * 100, 100)}%` }}
                                                 />
                                             </div>
                                             {tasksData.steps.isCompleted ? (
-                                                <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
+                                                <div className="flex items-center gap-2 text-[#3AB1A0] bg-[#3AB1A0]/10 p-3 rounded-lg">
                                                     <Check className="w-5 h-5" />
                                                     <span className="font-medium">Goal Achieved!</span>
                                                 </div>
@@ -465,7 +466,7 @@ export default function TasksPage() {
                                                     <Button
                                                         onClick={() => handleCompleteTask('steps')}
                                                         disabled={completingTask === 'steps'}
-                                                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                                        className="w-full bg-[#3AB1A0] hover:bg-[#2A9A8B] text-white"
                                                     >
                                                         {completingTask === 'steps' ? (
                                                             <>
@@ -495,9 +496,9 @@ export default function TasksPage() {
                                     className="w-full p-4 flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tasksData.sleep.isCompleted ? 'bg-green-100' : 'bg-purple-100'
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tasksData.sleep.isCompleted ? 'bg-[#3AB1A0]/10' : 'bg-[#DB9C6E]/10'
                                             }`}>
-                                            <Moon className={`w-6 h-6 ${tasksData.sleep.isCompleted ? 'text-green-600' : 'text-purple-600'
+                                            <Moon className={`w-6 h-6 ${tasksData.sleep.isCompleted ? 'text-[#3AB1A0]' : 'text-[#DB9C6E]'
                                                 }`} />
                                         </div>
                                         <div className="text-left">
@@ -509,7 +510,7 @@ export default function TasksPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {tasksData.sleep.isCompleted ? (
-                                            <CheckCircle2 className="w-6 h-6 text-green-500" />
+                                            <CheckCircle2 className="w-6 h-6 text-[#3AB1A0]" />
                                         ) : (
                                             <Circle className="w-6 h-6 text-gray-300" />
                                         )}
@@ -533,7 +534,7 @@ export default function TasksPage() {
                                                 <span className="font-medium">{tasksData.sleep.currentHours}h {tasksData.sleep.currentMinutes}m</span>
                                             </div>
                                             {tasksData.sleep.isCompleted ? (
-                                                <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
+                                                <div className="flex items-center gap-2 text-[#3AB1A0] bg-[#3AB1A0]/10 p-3 rounded-lg">
                                                     <Check className="w-5 h-5" />
                                                     <span className="font-medium">Sleep Goal Met!</span>
                                                 </div>
@@ -541,7 +542,7 @@ export default function TasksPage() {
                                                 <button
                                                     onClick={() => handleCompleteTask('sleep')}
                                                     disabled={completingTask === 'sleep'}
-                                                    className="w-full py-3 bg-purple-600 text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-purple-700 disabled:opacity-50"
+                                                    className="w-full py-3 bg-[#DB9C6E] text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#C48A5E] disabled:opacity-50"
                                                 >
                                                     {completingTask === 'sleep' ? (
                                                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -565,9 +566,9 @@ export default function TasksPage() {
                                     className="w-full p-4 flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tasksData.activities.every(a => a.completed) ? 'bg-green-100' : 'bg-red-100'
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tasksData.activities.every(a => a.completed) ? 'bg-[#3AB1A0]/10' : 'bg-[#E06A26]/10'
                                             }`}>
-                                            <Dumbbell className={`w-6 h-6 ${tasksData.activities.every(a => a.completed) ? 'text-green-600' : 'text-red-600'
+                                            <Dumbbell className={`w-6 h-6 ${tasksData.activities.every(a => a.completed) ? 'text-[#3AB1A0]' : 'text-[#E06A26]'
                                                 }`} />
                                         </div>
                                         <div className="text-left">
@@ -579,7 +580,7 @@ export default function TasksPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {tasksData.activities.every(a => a.completed) ? (
-                                            <CheckCircle2 className="w-6 h-6 text-green-500" />
+                                            <CheckCircle2 className="w-6 h-6 text-[#3AB1A0]" />
                                         ) : (
                                             <Circle className="w-6 h-6 text-gray-300" />
                                         )}
@@ -598,7 +599,7 @@ export default function TasksPage() {
                                                 <div
                                                     key={activity._id}
                                                     className={`p-3 rounded-xl border ${activity.completed
-                                                        ? 'border-green-200 bg-green-50'
+                                                        ? 'border-[#3AB1A0]/30 bg-[#3AB1A0]/10'
                                                         : 'border-gray-200 bg-gray-50'
                                                         }`}
                                                 >
@@ -624,14 +625,14 @@ export default function TasksPage() {
                                                             </div>
                                                         </div>
                                                         {activity.completed ? (
-                                                            <div className="flex items-center gap-1 text-green-600">
+                                                            <div className="flex items-center gap-1 text-[#3AB1A0]">
                                                                 <Check className="w-5 h-5" />
                                                             </div>
                                                         ) : (
                                                             <button
                                                                 onClick={() => handleCompleteTask('activity', activity._id)}
                                                                 disabled={completingTask === activity._id}
-                                                                className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                                                                className="p-2 bg-[#E06A26] text-white rounded-lg hover:bg-[#C55A1C] disabled:opacity-50"
                                                             >
                                                                 {completingTask === activity._id ? (
                                                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -646,7 +647,7 @@ export default function TasksPage() {
                                                             href={activity.videoLink}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-xs text-blue-600 mt-2 inline-block"
+                                                            className="text-xs text-[#E06A26] mt-2 inline-block"
                                                         >
                                                             Watch Video →
                                                         </a>

@@ -1,29 +1,38 @@
 import { cn } from '@/lib/utils';
 import { memo } from 'react';
+import Image from 'next/image';
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-// Memoized spinner to prevent unnecessary re-renders
+// Memoized spinner to prevent unnecessary re-renders - using spoon-loader.gif
 export const LoadingSpinner = memo(function LoadingSpinner({ size = 'md', className }: LoadingSpinnerProps) {
-  const sizeClasses = {
-    sm: 'h-4 w-4 border-[1px]',
-    md: 'h-8 w-8 border-2',
-    lg: 'h-12 w-12 border-2',
+  const sizeConfig = {
+    sm: { width: 40, height: 60 },
+    md: { width: 60, height: 90 },
+    lg: { width: 100, height: 150 },
   };
+
+  const { width, height } = sizeConfig[size];
 
   return (
     <div
-      className={cn(
-        'animate-spin rounded-full border-gray-300 border-t-green-600',
-        sizeClasses[size],
-        className
-      )}
+      className={cn('flex items-center justify-center', className)}
       role="status"
       aria-label="Loading"
-    />
+    >
+      <Image
+        src="/images/spoon-loader.gif"
+        alt="Loading..."
+        width={width}
+        height={height}
+        className="object-contain"
+        unoptimized
+        priority
+      />
+    </div>
   );
 });
 
@@ -33,7 +42,6 @@ export const LoadingPage = memo(function LoadingPage() {
     <div className="min-h-screen flex items-center justify-center animate-fadeIn">
       <div className="text-center">
         <LoadingSpinner size="lg" />
-        <p className="mt-4 text-gray-600">Loading...</p>
       </div>
     </div>
   );

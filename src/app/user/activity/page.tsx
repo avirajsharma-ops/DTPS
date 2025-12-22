@@ -17,6 +17,7 @@ import {
     Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import BottomNavBar from '@/components/client/BottomNavBar';
 
 interface ActivityEntry {
@@ -244,10 +245,10 @@ export default function ActivityPage() {
     const fillPercent = Math.min((activityData.totalToday / activityData.goal) * 100, 100);
     const completionPercent = Math.round(fillPercent);
 
-    if (status === 'loading' || loading) {
+    if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <SpoonGifLoader size="lg" />
             </div>
         );
     }
@@ -263,10 +264,10 @@ export default function ActivityPage() {
                     <h1 className="text-lg font-bold text-gray-900">Activity</h1>
                     <button
                         onClick={() => setShowDatePicker(!showDatePicker)}
-                        className="flex items-center gap-1 p-2 -mr-2 bg-orange-50 rounded-lg"
+                        className="flex items-center gap-1 p-2 -mr-2 bg-[#E06A26]/10 rounded-lg"
                     >
-                        <Calendar className="w-5 h-5 text-orange-600" />
-                        <span className="text-sm font-medium text-orange-600">
+                        <Calendar className="w-5 h-5 text-[#c55a1f]" />
+                        <span className="text-sm font-medium text-[#c55a1f]">
                             {format(selectedDate, 'dd MMM')}
                         </span>
                     </button>
@@ -295,8 +296,8 @@ export default function ActivityPage() {
                         {/* Left side - Stats */}
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                                <Zap className="w-5 h-5 text-orange-500" />
-                                <span className="text-orange-500 font-semibold text-sm">TODAY</span>
+                                <Zap className="w-5 h-5 text-[#E06A26]" />
+                                <span className="text-[#E06A26] font-semibold text-sm">TODAY</span>
                             </div>
                             <div className="flex items-baseline">
                                 <span className="text-5xl font-bold text-gray-900">
@@ -307,7 +308,7 @@ export default function ActivityPage() {
                             <p className="text-gray-500 mt-1">Goal: {activityData.goal} minutes</p>
 
                             {/* Completion Badge */}
-                            <div className="mt-4 inline-flex items-center gap-2 bg-orange-50 text-orange-600 px-4 py-2 rounded-full">
+                            <div className="mt-4 inline-flex items-center gap-2 bg-[#E06A26]/10 text-[#c55a1f] px-4 py-2 rounded-full">
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
@@ -422,7 +423,7 @@ export default function ActivityPage() {
                 {activityData.assignedActivity && activityData.assignedActivity.amount > 0 && (
                     <div className={`rounded-3xl p-5 shadow-sm ${activityData.assignedActivity.isCompleted
                         ? 'bg-green-50 border-2 border-green-200'
-                        : 'bg-orange-50 border-2 border-orange-200'
+                        : 'bg-[#E06A26]/10 border-2 border-orange-200'
                         }`}>
                         <div className="flex items-start justify-between">
                             <div>
@@ -438,7 +439,7 @@ export default function ActivityPage() {
                             </div>
 
                             {activityData.assignedActivity.isCompleted ? (
-                                <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full">
+                                <div className="flex items-center gap-2 bg-[#3AB1A0] text-white px-4 py-2 rounded-full">
                                     <Check className="w-5 h-5" />
                                     <span className="font-semibold">Completed</span>
                                 </div>
@@ -447,7 +448,7 @@ export default function ActivityPage() {
                                     onClick={handleCompleteActivity}
                                     disabled={completingTask || activityData.totalToday < activityData.assignedActivity.amount}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all ${activityData.totalToday >= activityData.assignedActivity.amount
-                                        ? 'bg-orange-500 text-white hover:bg-orange-600'
+                                        ? 'bg-[#E06A26] text-white hover:bg-[#c55a1f]'
                                         : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                         }`}
                                 >
@@ -469,7 +470,7 @@ export default function ActivityPage() {
                             </div>
                             <div className="h-2 bg-white rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full rounded-full transition-all duration-500 ${activityData.assignedActivity.isCompleted ? 'bg-green-500' : 'bg-orange-500'
+                                    className={`h-full rounded-full transition-all duration-500 ${activityData.assignedActivity.isCompleted ? 'bg-[#3AB1A0]' : 'bg-[#E06A26]'
                                         }`}
                                     style={{ width: `${Math.min((activityData.totalToday / activityData.assignedActivity.amount) * 100, 100)}%` }}
                                 />
@@ -484,7 +485,7 @@ export default function ActivityPage() {
                         <h2 className="text-lg font-bold text-gray-900">Quick Add</h2>
                         <button
                             onClick={() => setShowAddModal(true)}
-                            className="text-orange-500 font-semibold text-sm"
+                            className="text-[#E06A26] font-semibold text-sm"
                         >
                             Custom activity
                         </button>
@@ -497,8 +498,8 @@ export default function ActivityPage() {
                             disabled={saving}
                             className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
                         >
-                            <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center">
-                                <Zap className="w-6 h-6 text-orange-500" />
+                            <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center">
+                                <Zap className="w-6 h-6 text-[#E06A26]" />
                             </div>
                             <span className="font-semibold text-gray-900 text-sm">15 min</span>
                         </button>
@@ -509,8 +510,8 @@ export default function ActivityPage() {
                             disabled={saving}
                             className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
                         >
-                            <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center">
-                                <Zap className="w-6 h-6 text-orange-500" />
+                            <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center">
+                                <Zap className="w-6 h-6 text-[#E06A26]" />
                             </div>
                             <span className="font-semibold text-gray-900 text-sm">30 min</span>
                         </button>
@@ -521,8 +522,8 @@ export default function ActivityPage() {
                             disabled={saving}
                             className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
                         >
-                            <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center">
-                                <Zap className="w-6 h-6 text-orange-500" />
+                            <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center">
+                                <Zap className="w-6 h-6 text-[#E06A26]" />
                             </div>
                             <span className="font-semibold text-gray-900 text-sm">45 min</span>
                         </button>
@@ -547,8 +548,8 @@ export default function ActivityPage() {
                                     className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-full flex items-center justify-center bg-orange-50">
-                                            <Zap className="w-6 h-6 text-orange-500" />
+                                        <div className="h-12 w-12 rounded-full flex items-center justify-center bg-[#E06A26]/10">
+                                            <Zap className="w-6 h-6 text-[#E06A26]" />
                                         </div>
                                         <div>
                                             <p className="font-semibold text-gray-900 capitalize">{entry.name}</p>
@@ -599,7 +600,7 @@ export default function ActivityPage() {
                                 value={customName}
                                 onChange={(e) => setCustomName(e.target.value)}
                                 placeholder="e.g., Running, Cycling, Swimming"
-                                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E06A26]"
                             />
                         </div>
 
@@ -626,9 +627,9 @@ export default function ActivityPage() {
 
                                 <button
                                     onClick={() => setCustomDuration(customDuration + 5)}
-                                    className="w-14 h-14 rounded-2xl border-2 border-orange-500 flex items-center justify-center hover:bg-orange-50 transition-colors"
+                                    className="w-14 h-14 rounded-2xl border-2 border-[#E06A26] flex items-center justify-center hover:bg-[#E06A26]/10 transition-colors"
                                 >
-                                    <Plus className="w-5 h-5 text-orange-500" />
+                                    <Plus className="w-5 h-5 text-[#E06A26]" />
                                 </button>
                             </div>
                         </div>
@@ -642,7 +643,7 @@ export default function ActivityPage() {
                                         key={intensity}
                                         onClick={() => setCustomIntensity(intensity)}
                                         className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors capitalize ${customIntensity === intensity
-                                            ? 'bg-orange-500 text-white'
+                                            ? 'bg-[#E06A26] text-white'
                                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                             }`}
                                     >
@@ -656,7 +657,7 @@ export default function ActivityPage() {
                         <button
                             onClick={handleCustomAdd}
                             disabled={saving || customDuration <= 0}
-                            className="w-full py-4 bg-orange-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors disabled:opacity-50"
+                            className="w-full py-4 bg-[#E06A26] text-white rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-[#c55a1f] transition-colors disabled:opacity-50"
                         >
                             <Zap className="w-5 h-5" />
                             {saving ? 'Adding...' : 'Add Activity'}
@@ -664,9 +665,6 @@ export default function ActivityPage() {
                     </div>
                 </div>
             )}
-
-            {/* Bottom Navigation */}
-            <BottomNavBar />
 
             <style jsx>{`
         @keyframes slide-up {

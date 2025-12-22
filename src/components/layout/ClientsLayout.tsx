@@ -7,6 +7,7 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { cn } from '@/lib/utils';
 import { useMobileDetection } from '@/hooks/useMobileDetection';
+import Image from 'next/image';
 
 interface ClientsLayoutProps {
   children: ReactNode;
@@ -34,8 +35,16 @@ export default function ClientsLayout({
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Image
+          src="/images/spoon-loader.gif"
+          alt="Loading..."
+          width={150}
+          height={225}
+          className="object-contain"
+          unoptimized
+          priority
+        />
       </div>
     );
   }

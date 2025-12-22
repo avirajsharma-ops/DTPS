@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db/connection";
 import JournalTracking from "@/lib/db/models/JournalTracking";
 import User from "@/lib/db/models/User";
+import mongoose from "mongoose";
 
 export async function GET(request: Request) {
   try {
@@ -97,41 +98,21 @@ export async function POST(request: Request) {
     await dbConnect();
     const data = await request.json();
 
-    const { amount, unit = 'ml', type = 'water', time } = data;
+    const { amount, unit = 'ml', type = 'water', time, date: dateParam } = data;
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
 
-    // Get today's date range
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get target date range (use provided date or today)
+    const targetDate = dateParam ? new Date(dateParam) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
 
-    // Find or create today's journal entry
-    let journal = await JournalTracking.findOne({
-      client: session.user.id,
-      date: { $gte: today, $lt: tomorrow }
-    });
-
-    if (!journal) {
-      journal = new JournalTracking({
-        client: session.user.id,
-        date: today,
-        water: [],
-        activities: [],
-        steps: [],
-        sleep: [],
-        meals: [],
-        progress: [],
-        bca: [],
-        measurements: []
-      });
-    }
-
-    // Add water entry
+    // Create water entry with ObjectId
     const waterEntry = {
+      _id: new mongoose.Types.ObjectId(),
       amount: amount,
       unit: unit,
       type: type,
@@ -143,15 +124,41 @@ export async function POST(request: Request) {
       createdAt: new Date()
     };
 
-    journal.water.push(waterEntry);
-    await journal.save();
+    // Find or create journal entry using upsert
+    const journal = await JournalTracking.findOneAndUpdate(
+      {
+        client: session.user.id,
+        date: { $gte: targetDate, $lt: nextDay }
+      },
+      {
+        $push: { water: waterEntry },
+        $setOnInsert: {
+          client: session.user.id,
+          date: targetDate,
+          targets: {
+            steps: 10000,
+            water: 2500,
+            sleep: 8,
+            calories: 2000,
+            protein: 150,
+            carbs: 250,
+            fat: 65,
+            activityMinutes: 60
+          }
+        }
+      },
+      { upsert: true, new: true }
+    );
 
     return NextResponse.json({
       success: true,
       entry: {
-        _id: journal.water[journal.water.length - 1]._id,
-        ...waterEntry,
-        amount: amount
+        _id: waterEntry._id.toString(),
+        amount: amount,
+        unit: unit,
+        type: type,
+        time: waterEntry.time,
+        createdAt: waterEntry.createdAt
       }
     });
   } catch (error) {
@@ -170,6 +177,7 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const entryId = searchParams.get('id');
+    const dateParam = searchParams.get('date');
 
     if (!entryId) {
       return NextResponse.json({ error: "Entry ID required" }, { status: 400 });
@@ -177,17 +185,17 @@ export async function DELETE(request: Request) {
 
     await dbConnect();
 
-    // Get today's date range
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get target date range (use provided date or today)
+    const targetDate = dateParam ? new Date(dateParam) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
 
-    // Find today's journal and remove the water entry
+    // Find journal for the target date and remove the water entry
     const result = await JournalTracking.updateOne(
       {
         client: session.user.id,
-        date: { $gte: today, $lt: tomorrow }
+        date: { $gte: targetDate, $lt: nextDay }
       },
       {
         $pull: { water: { _id: entryId } }
@@ -216,23 +224,23 @@ export async function PATCH(request: Request) {
 
     await dbConnect();
     const data = await request.json();
-    const { action } = data;
+    const { action, date: dateParam } = data;
 
     if (action !== 'complete') {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    // Get today's date range
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get target date range (use provided date or today)
+    const targetDate = dateParam ? new Date(dateParam) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
 
-    // Find today's journal and update assigned water
+    // Find journal for the target date and update assigned water
     const result = await JournalTracking.findOneAndUpdate(
       {
         client: session.user.id,
-        date: { $gte: today, $lt: tomorrow },
+        date: { $gte: targetDate, $lt: nextDay },
         'assignedWater.amount': { $gt: 0 }
       },
       {
@@ -245,7 +253,7 @@ export async function PATCH(request: Request) {
     );
 
     if (!result) {
-      return NextResponse.json({ error: "No assigned water found for today" }, { status: 404 });
+      return NextResponse.json({ error: "No assigned water found for this date" }, { status: 404 });
     }
 
     return NextResponse.json({

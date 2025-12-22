@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { ResponsiveLayout } from '@/components/client/layouts';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,9 +17,11 @@ import {
   IndianRupee,
   FileText,
   ChevronRight,
-  Calendar
+  Calendar,
+  ArrowLeft
 } from 'lucide-react';
 import { format } from 'date-fns';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface Invoice {
   id: string;
@@ -42,15 +45,24 @@ interface Subscription {
 }
 
 export default function UserBillingPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchBillingData();
-  }, []);
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchBillingData();
+    }
+  }, [session]);
 
   const fetchBillingData = async () => {
     try {
@@ -121,29 +133,29 @@ export default function UserBillingPage() {
       case 'paid':
       case 'active':
         return (
-          <Badge className="bg-green-100 text-green-700">
-            <CheckCircle className="h-3 w-3 mr-1" />
+          <Badge className="text-green-700 bg-green-100">
+            <CheckCircle className="w-3 h-3 mr-1" />
             {status === 'paid' ? 'Paid' : 'Active'}
           </Badge>
         );
       case 'pending':
         return (
-          <Badge className="bg-yellow-100 text-yellow-700">
-            <Clock className="h-3 w-3 mr-1" />
+          <Badge className="text-yellow-700 bg-yellow-100">
+            <Clock className="w-3 h-3 mr-1" />
             Pending
           </Badge>
         );
       case 'failed':
       case 'expired':
         return (
-          <Badge className="bg-red-100 text-red-700">
-            <AlertCircle className="h-3 w-3 mr-1" />
+          <Badge className="text-red-700 bg-red-100">
+            <AlertCircle className="w-3 h-3 mr-1" />
             {status === 'failed' ? 'Failed' : 'Expired'}
           </Badge>
         );
       case 'cancelled':
         return (
-          <Badge className="bg-gray-100 text-gray-700">
+          <Badge className="text-gray-700 bg-gray-100">
             Cancelled
           </Badge>
         );
@@ -152,11 +164,32 @@ export default function UserBillingPage() {
     }
   };
 
+  if (status === 'loading' || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <SpoonGifLoader size="lg" />
+      </div>
+    );
+  }
+
   return (
-    <ResponsiveLayout title="Billing" subtitle="Manage your subscription">
-      <div className="space-y-6">
+    <div className="min-h-screen pb-24 bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Link href="/user" className="p-2 -ml-2 transition-colors rounded-xl hover:bg-gray-100">
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </Link>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Billing</h1>
+            <p className="text-xs text-gray-500">Manage your subscription</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 py-4 space-y-4">
         {/* Subscription Card */}
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-emerald-50">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-[#3AB1A0]/10 to-emerald-50">
           <CardContent className="p-4 md:p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
@@ -173,21 +206,21 @@ export default function UserBillingPage() {
               <span className="text-gray-500">/{displaySubscription.billingCycle}</span>
             </div>
 
-            <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+            <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
               <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="w-4 h-4" />
                 <span>Next billing: {format(displaySubscription.nextBillingDate, 'MMM d, yyyy')}</span>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            {/* <div className="flex gap-2">
               <Button variant="outline" className="flex-1">
                 Change Plan
               </Button>
               <Button variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                 Cancel
               </Button>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
 
@@ -200,7 +233,7 @@ export default function UserBillingPage() {
             <ul className="space-y-2">
               {displaySubscription.features.map((feature, index) => (
                 <li key={index} className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-[#2a9989] flex-shrink-0" />
                   <span className="text-gray-700">{feature}</span>
                 </li>
               ))}
@@ -208,35 +241,14 @@ export default function UserBillingPage() {
           </CardContent>
         </Card>
 
-        {/* Payment Method */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Payment Method</CardTitle>
-              <Button variant="ghost" size="sm" className="text-green-600">
-                Change
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-2">
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <div className="h-10 w-14 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center">
-                <CreditCard className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">•••• •••• •••• 4242</p>
-                <p className="text-xs text-gray-500">Expires 12/25</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+     
 
         {/* Invoices */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold">Billing History</CardTitle>
-              <Button variant="ghost" size="sm" className="text-green-600">
+              <Button variant="ghost" size="sm" className="text-[#2a9989]">
                 View All
               </Button>
             </div>
@@ -249,11 +261,11 @@ export default function UserBillingPage() {
                   className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-gray-600" />
+                    <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg">
+                      <FileText className="w-5 h-5 text-gray-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 text-sm">{invoice.planName}</p>
+                      <p className="text-sm font-medium text-gray-900">{invoice.planName}</p>
                       <p className="text-xs text-gray-500">{format(invoice.date, 'MMM d, yyyy')}</p>
                     </div>
                   </div>
@@ -262,8 +274,8 @@ export default function UserBillingPage() {
                       <p className="font-medium text-gray-900">{formatCurrency(invoice.amount)}</p>
                       {getStatusBadge(invoice.status)}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Download className="h-4 w-4 text-gray-500" />
+                    <Button variant="ghost" size="icon" className="w-8 h-8">
+                      <Download className="w-4 h-4 text-gray-500" />
                     </Button>
                   </div>
                 </div>
@@ -282,12 +294,12 @@ export default function UserBillingPage() {
               </div>
               <Button variant="outline">
                 Get Help
-                <ChevronRight className="h-4 w-4 ml-1" />
+                <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
-    </ResponsiveLayout>
+    </div>
   );
 }

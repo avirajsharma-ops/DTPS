@@ -1,13 +1,12 @@
 'use client';
 
-// import { GlassWater, Activity, Moon, Footprints } from "lucide-react";
-
 import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import {
   Droplet,
   Moon,
@@ -22,10 +21,14 @@ import {
   Footprints,
   BookOpen,
   Clock,
-  Menu
+  UserCheck,
+  Loader2,
+  Calendar,
+  Phone,
+  Mail
 } from 'lucide-react';
-import BottomNavBar from '@/components/client/BottomNavBar';
-import UserSidebar from '@/components/client/UserSidebar';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
+import ServicePlansSwiper from '@/components/client/ServicePlansSwiper';
 
 interface DashboardData {
   caloriesLeft: number;
@@ -40,12 +43,46 @@ interface DashboardData {
   steps: { current: number; goal: number };
 }
 
+interface UserProfile {
+  bmi: string;
+  bmiCategory: string;
+  weightKg: string;
+  heightCm: string;
+  generalGoal: string;
+}
+
+interface PurchaseInfo {
+  _id: string;
+  planName: string;
+  planCategory: string;
+  durationDays: number;
+  durationLabel: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  hasDietitian: boolean;
+  mealPlanCreated: boolean;
+  dietitian: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    avatar?: string;
+  } | null;
+}
+
 export default function UserHomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const searchParams = useSearchParams();
   const [activeCard, setActiveCard] = useState(0);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [hasActivePlan, setHasActivePlan] = useState<boolean | null>(null);
+  const [hasAnyPurchase, setHasAnyPurchase] = useState(false);
+  const [hasPendingDietitianAssignment, setHasPendingDietitianAssignment] = useState(false);
+  const [activePurchases, setActivePurchases] = useState<PurchaseInfo[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [paymentVerifying, setPaymentVerifying] = useState(false);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<DashboardData>({
     caloriesLeft: 750,
@@ -60,22 +97,107 @@ export default function UserHomePage() {
     steps: { current: 6540, goal: 10000 },
   });
 
+  // Handle payment callback verification
+  useEffect(() => {
+    const verifyPaymentCallback = async () => {
+      const paymentSuccess = searchParams.get('payment_success');
+      const paymentLinkId = searchParams.get('razorpay_payment_link_id');
+      const razorpayPaymentId = searchParams.get('razorpay_payment_id');
+      const paymentStatus = searchParams.get('razorpay_payment_link_status');
+      const signature = searchParams.get('razorpay_signature');
+
+      // If payment callback parameters exist, verify the payment
+      if (paymentLinkId && paymentStatus === 'paid') {
+        setPaymentVerifying(true);
+        try {
+          // Try the client service-plans verify first (for purchases made via ServicePlansSwiper)
+          const response = await fetch('/api/client/service-plans/verify-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpayPaymentLinkId: paymentLinkId,
+              razorpayPaymentId: razorpayPaymentId,
+              signature
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            toast.success('Payment successful! Your plan is now active.');
+            setHasAnyPurchase(true);
+            // Clear the URL parameters
+            router.replace('/user');
+          } else {
+            toast.error(data.error || 'Payment verification failed');
+          }
+        } catch (error) {
+          console.error('Payment verification error:', error);
+          toast.error('Failed to verify payment. Please contact support.');
+        } finally {
+          setPaymentVerifying(false);
+        }
+      } else if (paymentSuccess === 'true' && !paymentLinkId) {
+        // Direct payment success without link ID - just show success
+        toast.success('Payment successful!');
+        router.replace('/user');
+      }
+    };
+
+    verifyPaymentCallback();
+  }, [searchParams, router]);
+
   // Check onboarding status on mount
   useEffect(() => {
     const checkOnboarding = async () => {
       if (status === 'loading') return;
 
       try {
-        const response = await fetch('/api/client/onboarding');
-        if (response.ok) {
-          const data = await response.json();
+        // Check onboarding and active plan in parallel
+        const [onboardingRes, planRes] = await Promise.all([
+          fetch('/api/client/onboarding'),
+          fetch('/api/client/service-plans')
+        ]);
+
+        if (onboardingRes.ok) {
+          const data = await onboardingRes.json();
           if (!data.onboardingCompleted) {
             router.replace('/user/onboarding');
             return;
           }
         }
+
+        if (planRes.ok) {
+          const planData = await planRes.json();
+          setHasActivePlan(planData.hasActivePlan || false);
+          setHasAnyPurchase(planData.hasAnyPurchase || false);
+          setHasPendingDietitianAssignment(planData.hasPendingDietitianAssignment || false);
+          setActivePurchases(planData.activePurchases || []);
+        } else {
+          // If API fails, assume no active plan so user can see available plans
+          setHasActivePlan(false);
+        }
+
+        // Fetch user profile data (BMI, weight, height, etc.)
+        try {
+          const profileRes = await fetch('/api/client/profile');
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            setUserProfile({
+              bmi: profileData.bmi || '',
+              bmiCategory: profileData.bmiCategory || '',
+              weightKg: profileData.weightKg || '',
+              heightCm: profileData.heightCm || '',
+              generalGoal: profileData.generalGoal || ''
+            });
+          }
+        } catch (profileError) {
+          console.error('Error fetching profile:', profileError);
+        }
       } catch (error) {
         console.error('Error checking onboarding:', error);
+        // If there's an error, assume no active plan so user can see available plans
+        setHasActivePlan(false);
       }
       setCheckingOnboarding(false);
     };
@@ -105,51 +227,42 @@ export default function UserHomePage() {
 
   const userName = session?.user?.firstName || 'Alex';
 
-  // Show loading while checking onboarding
-  if (checkingOnboarding || status === 'loading') {
+  // Show loading while checking onboarding or verifying payment
+  if (checkingOnboarding || paymentVerifying) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <SpoonGifLoader size="lg" />
+        {paymentVerifying && (
+          <p className="mt-4 text-gray-600 font-medium">Verifying your payment...</p>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Sidebar */}
-      <UserSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
+    <div className="bg-gray-50">
       {/* Header */}
-      <div className="bg-white px-5 pt-6 pb-4">
+      <div className="px-5 pt-6 pb-4 bg-white">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Hamburger Menu */}
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-            >
-              <Menu className="h-5 w-5 text-gray-700" />
-            </button>
-            <div>
-              <p className="text-xs text-gray-500 font-medium tracking-wider">
-                {dayName}, {dateStr}
-              </p>
-              <h1 className="text-2xl font-bold text-gray-900 mt-1">
-                Hi, {userName}
-              </h1>
-            </div>
+          <div>
+            <p className="text-xs font-medium tracking-wider text-gray-500">
+              {dayName}, {dateStr}
+            </p>
+            <h1 className="mt-1 text-2xl font-bold text-gray-900">
+              Hi, {userName}
+            </h1>
           </div>
           <Link href="/user/profile">
-            <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden border-2 border-orange-200">
+            <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center overflow-hidden border-2 border-[#E06A26]/30">
               {session?.user?.avatar ? (
                 <img
                   src={session.user.avatar}
                   alt="Profile"
 
-                  className=" w-full h-full rounded-full"
+                  className="w-full h-full rounded-full "
                 />
               ) : (
-                <User className="h-6 w-6 text-orange-400" />
+                <User className="h-6 w-6 text-[#E06A26]" />
               )}
             </div>
           </Link>
@@ -159,22 +272,22 @@ export default function UserHomePage() {
       {/* Main Content */}
       <div className="px-6 py-4 space-y-4 ">
         {/* Calories Card */}
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-5 shadow-sm">
+        <div className="bg-gradient-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/20 rounded-3xl p-5 shadow-sm border border-[#3AB1A0]/10">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Calories Left</p>
+              <p className="text-sm font-medium text-gray-600">Calories Left</p>
               <div className="flex items-baseline mt-1">
                 <span className="text-5xl font-bold text-gray-900">{data.caloriesLeft}</span>
-                <span className="text-gray-500 text-lg ml-1">kcal</span>
+                <span className="ml-1 text-lg text-gray-500">kcal</span>
               </div>
-              <div className="flex items-center mt-2 bg-white/60 rounded-full px-3 py-1 w-fit">
-                <span className="text-green-600 text-sm">🏁 Goal: {data.caloriesGoal.toLocaleString()}</span>
+              <div className="flex items-center px-3 py-1 mt-2 rounded-full bg-white/60 w-fit">
+                <span className="text-[#3AB1A0] text-sm">🏁 Goal: {data.caloriesGoal.toLocaleString()}</span>
               </div>
             </div>
 
             {/* Circular Progress */}
-            <div className="relative h-24 w-24">
-              <svg className="h-24 w-24 transform -rotate-90">
+            <div className="relative w-24 h-24">
+              <svg className="w-24 h-24 transform -rotate-90">
                 <circle
                   cx="48"
                   cy="48"
@@ -195,14 +308,14 @@ export default function UserHomePage() {
                 />
                 <defs>
                   <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#22c55e" />
-                    <stop offset="100%" stopColor="#10b981" />
+                    <stop offset="0%" stopColor="#3AB1A0" />
+                    <stop offset="100%" stopColor="#2d9a8a" />
                   </linearGradient>
                 </defs>
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-14 w-14 rounded-full bg-green-100 flex items-center justify-center">
-                  <Flame className="h-7 w-7 text-green-600" />
+                <div className="h-14 w-14 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center">
+                  <Flame className="h-7 w-7 text-[#3AB1A0]" />
                 </div>
               </div>
             </div>
@@ -211,140 +324,490 @@ export default function UserHomePage() {
           {/* Macros */}
           <div className="grid grid-cols-3 gap-4 mt-6">
             <div>
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Protein</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">{data.protein}g</p>
+              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Protein</p>
+              <p className="mt-1 text-xl font-bold text-gray-900">{data.protein}g</p>
               <div className="h-1.5 bg-white rounded-full mt-2 overflow-hidden">
-                <div className="h-full bg-green-500 rounded-full" style={{ width: '60%' }} />
+                <div className="h-full bg-[#3AB1A0] rounded-full" style={{ width: '60%' }} />
               </div>
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Carbs</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">{data.carbs}g</p>
+              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Carbs</p>
+              <p className="mt-1 text-xl font-bold text-gray-900">{data.carbs}g</p>
               <div className="h-1.5 bg-white rounded-full mt-2 overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full" style={{ width: '75%' }} />
+                <div className="h-full bg-[#E06A26] rounded-full" style={{ width: '75%' }} />
               </div>
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Fat</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">{data.fat}g</p>
+              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Fat</p>
+              <p className="mt-1 text-xl font-bold text-gray-900">{data.fat}g</p>
               <div className="h-1.5 bg-white rounded-full mt-2 overflow-hidden">
-                <div className="h-full bg-orange-400 rounded-full" style={{ width: '45%' }} />
+                <div className="h-full bg-[#DB9C6E] rounded-full" style={{ width: '45%' }} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Swipeable Image Cards - 1 at a time with 2 images per card */}
-        <div className="relative">
-          <div
-            ref={cardsContainerRef}
-            onScroll={handleCardsScroll}
-            className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide"
-          >
-            {/* Card 1 - Nutrition Tips */}
-            <div className="min-w-full snap-start bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-5 text-white">
-              <h4 className="font-bold text-lg mb-4">Nutrition Tips</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-sm">
-                  <div className="h-24 bg-white/30 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=200&h=150&fit=crop" alt="Healthy breakfast" className="w-full h-full object-cover rounded-xl" />
-                  </div>
-                  <p className="font-semibold text-sm">Healthy Breakfast</p>
-                  <p className="text-white/80 text-xs mt-1">Start your day right</p>
-                </div>
-                <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-sm">
-                  <div className="h-24 bg-white/30 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&h=150&fit=crop" alt="Fresh salad" className="w-full h-full object-cover rounded-xl" />
-                  </div>
-                  <p className="font-semibold text-sm">Fresh Salads</p>
-                  <p className="text-white/80 text-xs mt-1">Colorful vegetables</p>
-                </div>
-              </div>
-            </div>
+    
+{/* Service Plans Swiper - Only shown when user has no purchases at all */}
+{!hasAnyPurchase && (
+  <div className="pt-6 pb-4">
+    <ServicePlansSwiper />
+  </div>
+)}
 
-            {/* Card 2 - Fitness Goals */}
-            <div className="min-w-full snap-start bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-5 text-white">
-              <h4 className="font-bold text-lg mb-4">Fitness Goals</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-sm">
-                  <div className="h-24 bg-white/30 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200&h=150&fit=crop" alt="Workout" className="w-full h-full object-cover rounded-xl" />
+        {/* Purchase Status Cards - Show only the first/current active purchase */}
+        {activePurchases.length > 0 && (() => {
+          // Get the current active purchase (first one or most recent)
+          const currentPurchase = activePurchases[0];
+          return (
+          <div key={currentPurchase._id}>
+            {!currentPurchase.hasDietitian ? (
+              /* STATE 1: Plan Purchased, Waiting for Dietitian Assignment */
+              <div className="rounded-3xl bg-gradient-to-br from-[#E06A26]/10 to-[#DB9C6E]/10 p-6 shadow-sm border border-[#E06A26]/20">
+                <div className="flex items-start gap-4">
+                  <div className="h-14 w-14 rounded-2xl bg-[#E06A26]/20 flex items-center justify-center">
+                    <Loader2 className="h-7 w-7 text-[#E06A26] animate-spin" />
                   </div>
-                  <p className="font-semibold text-sm">Daily Workout</p>
-                  <p className="text-white/80 text-xs mt-1">30 mins exercise</p>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900">Plan Purchased! 🎉</h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      You've successfully purchased <span className="font-semibold text-[#E06A26]">{currentPurchase.planName}</span>
+                    </p>
+                    <div className="mt-3 flex items-center gap-2 text-sm text-[#DB9C6E]">
+                      <Clock className="w-4 h-4" />
+                      <span>Dietitian will be assigned shortly...</span>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Our team is reviewing your profile and will assign the best dietitian for your goals.
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-sm">
-                  <div className="h-24 bg-white/30 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=200&h=150&fit=crop" alt="Running" className="w-full h-full object-cover rounded-xl" />
+                
+                {/* Plan Details - Only show duration, no dates until dietitian assigned */}
+                <div className="mt-4 pt-4 border-t border-[#E06A26]/10">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-white/60 rounded-xl">
+                      <p className="text-xs tracking-wide text-gray-500 uppercase">Plan</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.planName}</p>
+                    </div>
+                    <div className="p-3 bg-white/60 rounded-xl">
+                      <p className="text-xs tracking-wide text-gray-500 uppercase">Duration</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.durationDays} Days</p>
+                    </div>
                   </div>
-                  <p className="font-semibold text-sm">Cardio Run</p>
-                  <p className="text-white/80 text-xs mt-1">Build endurance</p>
+                  {/* Notice about dates */}
+                  <div className="p-3 mt-3 border bg-amber-50 rounded-xl border-amber-200">
+                    <p className="flex items-center gap-2 text-xs text-amber-700">
+                      <Calendar className="w-4 h-4" />
+                      <span>Start & end dates will be set once your dietitian is assigned</span>
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : !currentPurchase.mealPlanCreated ? (
+              /* STATE 2: Dietitian Assigned but Meal Plan NOT Created Yet */
+              <div className="rounded-3xl bg-gradient-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20">
+                <div className="flex items-start gap-4">
+                  <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
+                    {currentPurchase.dietitian?.avatar ? (
+                      <img 
+                        src={currentPurchase.dietitian.avatar} 
+                        alt={currentPurchase.dietitian.name}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <UserCheck className="h-8 w-8 text-[#3AB1A0]" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-gray-900">Your Dietitian</h3>
+                      <span className="px-2 py-0.5 bg-[#3AB1A0] text-white text-xs font-semibold rounded-full">
+                        Assigned ✓
+                      </span>
+                    </div>
+                    <p className="text-base font-semibold text-[#3AB1A0] mt-1">
+                      {currentPurchase.dietitian?.name || 'Dietitian'}
+                    </p>
+                    {currentPurchase.dietitian?.email && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                        <Mail className="w-3 h-3" />
+                        <span>{currentPurchase.dietitian.email}</span>
+                      </div>
+                    )}
+                    {currentPurchase.dietitian?.phone && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                        <Phone className="w-3 h-3" />
+                        <span>{currentPurchase.dietitian.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-            {/* Card 3 - Wellness */}
-            <div className="min-w-full snap-start bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl p-5 text-white">
-              <h4 className="font-bold text-lg mb-4">Wellness & Rest</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-sm">
-                  <div className="h-24 bg-white/30 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=200&h=150&fit=crop" alt="Yoga" className="w-full h-full object-cover rounded-xl" />
+                {/* Plan Info - No meal plan yet */}
+                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Your Plan</span>
+                    <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      Plan Soon
+                    </span>
                   </div>
-                  <p className="font-semibold text-sm">Morning Yoga</p>
-                  <p className="text-white/80 text-xs mt-1">Stretch & relax</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-white/60 rounded-xl">
+                      <p className="text-xs tracking-wide text-gray-500 uppercase">Plan</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.planName}</p>
+                    </div>
+                    <div className="p-3 bg-white/60 rounded-xl">
+                      <p className="text-xs tracking-wide text-gray-500 uppercase">Duration</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.durationDays} Days</p>
+                    </div>
+                  </div>
+                  {/* Notice - Meal plan being prepared */}
+                  <div className="p-4 mt-3 border bg-blue-50 rounded-xl border-blue-200">
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <Utensils className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-blue-800">Meal Plan Coming Soon!</p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          Your dietitian is preparing a personalized meal plan for you. You'll be notified once it's ready.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-sm">
-                  <div className="h-24 bg-white/30 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1531353826977-0941b4779a1c?w=200&h=150&fit=crop" alt="Sleep" className="w-full h-full object-cover rounded-xl" />
-                  </div>
-                  <p className="font-semibold text-sm">Quality Sleep</p>
-                  <p className="text-white/80 text-xs mt-1">7-8 hours rest</p>
+
+                {/* Message Action Only */}
+                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
+                  <Link 
+                    href="/user/messages"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2A9A8B] transition-colors"
+                  >
+                    <Mail className="w-4 h-4" />
+                    <span>Message Your Dietitian</span>
+                  </Link>
                 </div>
               </div>
-            </div>
+            ) : (
+              /* STATE 3: Dietitian Assigned AND Meal Plan Created - Full Details */
+              <div className="rounded-3xl bg-gradient-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20">
+                <div className="flex items-start gap-4">
+                  <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
+                    {currentPurchase.dietitian?.avatar ? (
+                      <img 
+                        src={currentPurchase.dietitian.avatar} 
+                        alt={currentPurchase.dietitian.name}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <UserCheck className="h-8 w-8 text-[#3AB1A0]" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-gray-900">Your Dietitian</h3>
+                      <span className="px-2 py-0.5 bg-[#3AB1A0] text-white text-xs font-semibold rounded-full">
+                        Assigned ✓
+                      </span>
+                    </div>
+                    <p className="text-base font-semibold text-[#3AB1A0] mt-1">
+                      {currentPurchase.dietitian?.name || 'Dietitian'}
+                    </p>
+                    {currentPurchase.dietitian?.email && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                        <Mail className="w-3 h-3" />
+                        <span>{currentPurchase.dietitian.email}</span>
+                      </div>
+                    )}
+                    {currentPurchase.dietitian?.phone && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                        <Phone className="w-3 h-3" />
+                        <span>{currentPurchase.dietitian.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Plan Info - Full Details */}
+                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Active Plan</span>
+                    <span className="px-3 py-1 bg-[#61a035]/15 text-[#61a035] text-xs font-semibold rounded-full">
+                      🟢 Active
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-white/60 rounded-xl">
+                      <p className="text-xs tracking-wide text-gray-500 uppercase">Plan</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.planName}</p>
+                    </div>
+                    <div className="p-3 bg-white/60 rounded-xl">
+                      <p className="text-xs tracking-wide text-gray-500 uppercase">Duration</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.durationDays} Days</p>
+                    </div>
+                    {/* Show dates when meal plan is created */}
+                    {currentPurchase.startDate && (
+                      <div className="p-3 bg-white/60 rounded-xl">
+                        <p className="text-xs tracking-wide text-gray-500 uppercase">Start Date</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-800">
+                          {format(new Date(currentPurchase.startDate), 'dd MMM yyyy')}
+                        </p>
+                      </div>
+                    )}
+                    {currentPurchase.endDate && (
+                      <div className="p-3 bg-white/60 rounded-xl">
+                        <p className="text-xs tracking-wide text-gray-500 uppercase">End Date</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-800">
+                          {format(new Date(currentPurchase.endDate), 'dd MMM yyyy')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Actions - View Meal Plan & Message */}
+                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10 grid grid-cols-2 gap-3">
+                  <Link 
+                    href="/user/plan"
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2A9A8B] transition-colors"
+                  >
+                    <Utensils className="w-4 h-4" />
+                    <span>View Meal Plan</span>
+                  </Link>
+                  <Link 
+                    href="/user/messages"
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-[#3AB1A0] text-[#3AB1A0] rounded-xl text-sm font-semibold hover:bg-[#3AB1A0]/10 transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                    <span>Message</span>
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
-          {/* Swipe indicator dots */}
-          <div className="flex justify-center gap-1.5 mt-3">
-            {[0, 1, 2].map((index) => (
-              <span
-                key={index}
-                className={`w-2 h-2 rounded-full transition-colors ${activeCard === index ? 'bg-green-500' : 'bg-gray-300'
-                  }`}
-              />
-            ))}
-          </div>
+        );
+        })()}
+       
+    {/* BMI Card - Show if BMI is available */}
+    {/* BMI Card */}
+{userProfile?.bmi && (
+  <div className="rounded-3xl bg-white p-6 shadow-sm border border-[#E06A26]/15">
+    
+    {/* Header */}
+    <div className="flex items-center justify-between mb-5">
+      <div>
+        <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">
+          Body Mass Index
+        </p>
+        <div className="flex items-end gap-2 mt-1">
+          <span className="text-4xl font-bold text-gray-900">
+            {userProfile.bmi}
+          </span>
+          <span className="mb-1 text-sm text-gray-500">kg/m²</span>
         </div>
+      </div>
+
+      {/* Category Badge */}
+      <span
+        className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+          userProfile.bmiCategory === 'Normal'
+            ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
+            : userProfile.bmiCategory === 'Underweight'
+            ? 'bg-blue-100 text-blue-700'
+            : userProfile.bmiCategory === 'Overweight'
+            ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
+            : 'bg-[#E06A26]/15 text-[#E06A26]'
+        }`}
+      >
+        {userProfile.bmiCategory}
+      </span>
+    </div>
+
+    {/* Progress Bar */}
+    <div className="relative mt-6">
+      {/* Track */}
+      <div className="flex h-3 overflow-hidden rounded-full">
+        <div className="w-[20%] bg-blue-400/70" />
+        <div className="w-[30%] bg-[#3AB1A0]" />
+        <div className="w-[20%] bg-[#DB9C6E]" />
+        <div className="w-[30%] bg-[#E06A26]" />
+      </div>
+
+      {/* Indicator - contained within bounds */}
+      <div
+        className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2"
+        style={{
+          left: `clamp(2.5%, ${Math.min(
+            Math.max(((parseFloat(userProfile.bmi) - 15) / 25) * 100, 2.5),
+            97.5
+          )}%, 97.5%)`,
+        }}
+      >
+        <div className="w-5 h-5 bg-white border-2 border-gray-900 rounded-full shadow-md" />
+      </div>
+    </div>
+
+    {/* Scale */}
+    <div className="flex justify-between mt-2 text-xs text-gray-400">
+      <span>15</span>
+      <span>18.5</span>
+      <span>25</span>
+      <span>30</span>
+      <span>40</span>
+    </div>
+
+    <div className="flex justify-between mt-1 text-xs font-medium">
+      <span className="text-blue-500">Under</span>
+      <span className="text-[#3AB1A0]">Normal</span>
+      <span className="text-[#DB9C6E]">Over</span>
+      <span className="text-[#E06A26]">Obese</span>
+    </div>
+
+    {/* Weight & Height */}
+    <div className="grid grid-cols-2 gap-4 pt-4 mt-6 border-t border-gray-100">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/15 flex items-center justify-center">
+          <Activity className="h-5 w-5 text-[#3AB1A0]" />
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Weight</p>
+          <p className="font-semibold text-gray-900">
+            {userProfile.weightKg} kg
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-[#E06A26]/15 flex items-center justify-center">
+          <User className="h-5 w-5 text-[#E06A26]" />
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Height</p>
+          <p className="font-semibold text-gray-900">
+            {userProfile.heightCm} cm
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+        {/* Swipeable Image Cards - Only shown when user has no purchases at all */}
+        {!hasAnyPurchase && (
+          <div className="relative">
+            <div
+              ref={cardsContainerRef}
+              onScroll={handleCardsScroll}
+              className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+            >
+              {/* Card 1 - Nutrition Tips */}
+              <div className="min-w-full snap-start bg-gradient-to-br from-[#DB9C6E] to-[#c88b5d] rounded-3xl p-5 text-white">
+                <h4 className="mb-4 text-lg font-bold">Nutrition Tips</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
+                    <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
+                      <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=200&h=150&fit=crop" alt="Healthy breakfast" className="object-cover w-full h-full rounded-xl" />
+                    </div>
+                    <p className="text-sm font-semibold">Healthy Breakfast</p>
+                    <p className="mt-1 text-xs text-white/80">Start your day right</p>
+                  </div>
+                  <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
+                    <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
+                      <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&h=150&fit=crop" alt="Fresh salad" className="object-cover w-full h-full rounded-xl" />
+                    </div>
+                    <p className="text-sm font-semibold">Fresh Salads</p>
+                    <p className="mt-1 text-xs text-white/80">Colorful vegetables</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2 - Fitness Goals */}
+              <div className="min-w-full snap-start bg-gradient-to-br from-[#DB9C6E] to-[#c88b5d] rounded-3xl p-5 text-white">
+                <h4 className="mb-4 text-lg font-bold">Fitness Goals</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
+                    <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
+                      <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200&h=150&fit=crop" alt="Workout" className="object-cover w-full h-full rounded-xl" />
+                    </div>
+                    <p className="text-sm font-semibold">Daily Workout</p>
+                    <p className="mt-1 text-xs text-white/80">30 mins exercise</p>
+                  </div>
+                  <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
+                    <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
+                      <img src="https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=200&h=150&fit=crop" alt="Running" className="object-cover w-full h-full rounded-xl" />
+                    </div>
+                    <p className="text-sm font-semibold">Cardio Run</p>
+                    <p className="mt-1 text-xs text-white/80">Build endurance</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3 - Wellness */}
+              <div className="min-w-full snap-start bg-gradient-to-br from-[#DB9C6E] to-[#c88b5d] rounded-3xl p-5 text-white">
+                <h4 className="mb-4 text-lg font-bold">Wellness & Rest</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
+                    <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
+                      <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=200&h=150&fit=crop" alt="Yoga" className="object-cover w-full h-full rounded-xl" />
+                    </div>
+                    <p className="text-sm font-semibold">Morning Yoga</p>
+                    <p className="mt-1 text-xs text-white/80">Stretch & relax</p>
+                  </div>
+                  <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
+                    <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
+                      <img src="https://images.unsplash.com/photo-1531353826977-0941b4779a1c?w=200&h=150&fit=crop" alt="Sleep" className="object-cover w-full h-full rounded-xl" />
+                    </div>
+                    <p className="text-sm font-semibold">Quality Sleep</p>
+                    <p className="mt-1 text-xs text-white/80">7-8 hours rest</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Swipe indicator dots */}
+            <div className="flex justify-center gap-1.5 mt-3">
+              {[0, 1, 2].map((index) => (
+                <span
+                  key={index}
+                  className={`w-2 h-2 rounded-full transition-colors ${activeCard === index ? 'bg-[#E06A26]' : 'bg-gray-300'
+                    }`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Motivational Quote */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
+        <div className="p-5 bg-white shadow-sm rounded-2xl">
           <div className="flex items-start gap-3">
-            <span className="text-3xl text-gray-200">"</span>
+            <span className="text-3xl text-[#3AB1A0]/30">"</span>
             <div className="flex-1">
-              <p className="text-gray-700 italic">
+              <p className="italic text-gray-700">
                 "The only bad workout is the one that didn't happen."
               </p>
-              <p className="text-green-600 text-xs font-semibold mt-2 tracking-wider uppercase">
+              <p className="text-[#E06A26] text-xs font-semibold mt-2 tracking-wider uppercase">
                 Daily Motivation
               </p>
             </div>
-            <span className="text-3xl text-gray-200 self-end">"</span>
+            <span className="text-3xl text-[#3AB1A0]/30 self-end">"</span>
           </div>
         </div>
 
         {/* Water & Sleep Row */}
         <div className="grid grid-cols-2 gap-4">
           {/* Water Card */}
-          <Link href="" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
+          <Link href="/user/hydration" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#3AB1A0]/10">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Water</p>
-              <span className="text-green-500 text-sm font-semibold">{Math.round(waterPercent)}%</span>
+              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Water</p>
+              <span className="text-[#3AB1A0] text-sm font-semibold">{Math.round(waterPercent)}%</span>
             </div>
             <div className="flex items-center justify-center mb-3">
               <div className="relative">
-                <GlassWater className="h-16 w-16 text-blue-100" fill="#dbeafe" />
+                <GlassWater className="h-16 w-16 text-[#3AB1A0]/20" fill="#3AB1A0" fillOpacity="0.1" />
                 <div
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-blue-400 rounded-b-full transition-all"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-[#3AB1A0] rounded-b-full transition-all"
                   style={{
                     width: '50%',
                     height: `${waterPercent * 0.6}%`,
@@ -355,45 +818,45 @@ export default function UserHomePage() {
             </div>
             <p className="text-center">
               <span className="text-2xl font-bold text-gray-900">{data.water.current}</span>
-              <span className="text-gray-500 text-sm"> / {data.water.goal}L</span>
+              <span className="text-sm text-gray-500"> / {data.water.goal}L</span>
             </p>
           </Link>
 
           {/* Sleep Card */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <Link href="/user/sleep" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#DB9C6E]/10">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Sleep</p>
-              <span className="text-blue-500 text-sm font-semibold">{data.sleep.hours}h {data.sleep.minutes}m</span>
+              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Sleep</p>
+              <span className="text-[#DB9C6E] text-sm font-semibold">{data.sleep.hours}h {data.sleep.minutes}m</span>
             </div>
             <div className="flex items-center justify-center mb-3">
-              <div className="h-16 w-16 rounded-2xl bg-indigo-50 flex items-center justify-center">
-                <Bed className="h-8 w-8 text-indigo-400" />
+              <div className="h-16 w-16 rounded-2xl bg-[#DB9C6E]/10 flex items-center justify-center">
+                <Bed className="h-8 w-8 text-[#DB9C6E]" />
               </div>
             </div>
             <p className="text-center">
               <span className="text-2xl font-bold text-gray-900">{data.sleep.quality}</span>
-              <span className="text-gray-500 text-sm"> %</span>
+              <span className="text-sm text-gray-500"> %</span>
             </p>
-          </div>
+          </Link>
         </div>
 
-        {/* Activity & Meals Row */}
+        {/* Activity & Steps Row */}
         <div className="grid grid-cols-2 gap-4">
           {/* Activity Card */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <Link href="/user/activity" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#E06A26]/10">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Activity</p>
-              <span className={`text-sm font-semibold ${data.activity.active ? 'text-green-500' : 'text-gray-400'}`}>
+              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Activity</p>
+              <span className={`text-sm font-semibold ${data.activity.active ? 'text-[#E06A26]' : 'text-gray-400'}`}>
                 {data.activity.active ? 'Active' : 'Inactive'}
               </span>
             </div>
             <div className="flex items-center justify-center mb-3">
-              <div className="relative h-16 w-16">
-                <svg className="h-16 w-16 transform -rotate-90">
-                  <circle cx="32" cy="32" r="28" stroke="#fed7aa" strokeWidth="6" fill="none" />
+              <div className="relative w-16 h-16">
+                <svg className="w-16 h-16 transform -rotate-90">
+                  <circle cx="32" cy="32" r="28" stroke="#E06A26" strokeOpacity="0.2" strokeWidth="6" fill="none" />
                   <circle
                     cx="32" cy="32" r="28"
-                    stroke="#f97316"
+                    stroke="#E06A26"
                     strokeWidth="6"
                     fill="none"
                     strokeLinecap="round"
@@ -401,29 +864,29 @@ export default function UserHomePage() {
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Activity className="h-6 w-6 text-orange-500" />
+                  <Activity className="h-6 w-6 text-[#E06A26]" />
                 </div>
               </div>
             </div>
             <p className="text-center">
               <span className="text-2xl font-bold text-gray-900">{data.activity.minutes}</span>
-              <span className="text-gray-500 text-sm"> min</span>
+              <span className="text-sm text-gray-500"> min</span>
             </p>
-          </div>
+          </Link>
 
-          {/* Meals Card */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
+          {/* Steps Card */}
+          <Link href="/user/steps" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#3AB1A0]/10">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Steps</p>
-              <span className="text-green-500 text-sm font-semibold">{data.steps.current} / {data.steps.goal}</span>
+              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Steps</p>
+              <span className="text-[#3AB1A0] text-sm font-semibold">{data.steps.current} / {data.steps.goal}</span>
             </div>
             <div className="flex items-center justify-center mb-3">
-              <div className="relative h-16 w-16">
-                <svg className="h-16 w-16 transform -rotate-90">
-                  <circle cx="32" cy="32" r="28" stroke="#d1fae5" strokeWidth="6" fill="none" />
+              <div className="relative w-16 h-16">
+                <svg className="w-16 h-16 transform -rotate-90">
+                  <circle cx="32" cy="32" r="28" stroke="#3AB1A0" strokeOpacity="0.2" strokeWidth="6" fill="none" />
                   <circle
                     cx="32" cy="32" r="28"
-                    stroke="#10b981"
+                    stroke="#3AB1A0"
                     strokeWidth="6"
                     fill="none"
                     strokeLinecap="round"
@@ -431,164 +894,160 @@ export default function UserHomePage() {
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Utensils className="h-6 w-6 text-emerald-500" />
+                  <Footprints className="h-6 w-6 text-[#3AB1A0]" />
                 </div>
               </div>
             </div>
             <p className="text-center">
               <span className="text-2xl font-bold text-gray-900">{data.steps.current.toLocaleString()}</span>
-              <span className="text-gray-500 text-sm"> Steps</span>
+              <span className="text-sm text-gray-500"> Steps</span>
             </p>
-          </div>
+          </Link>
         </div>
 
         {/* Quick Log Section */}
 
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Quick Log
-          </h2>
+  <h2 className="text-lg font-bold text-[#E06A26] mb-4">
+    Quick Log
+  </h2>
 
-          {/* Scroll Container */}
-          <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
+  {/* Grid Container */}
+  <div className="grid grid-cols-2 gap-4">
+    
+    {/* Water */}
+    <Link
+      href="/user/hydration"
+      className="flex flex-col items-center gap-4 p-6 transition-all bg-white shadow-md rounded-3xl hover:shadow-lg hover:bg-gray-50"
+    >
+      <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
+        <GlassWater className="h-8 w-8 text-[#3AB1A0]" />
+      </div>
+      <span className="text-base font-semibold text-gray-900">Water</span>
+      <span className="text-sm text-gray-400">+250 ml</span>
+    </Link>
 
-            {/* Water */}
-            <Link href="/user/hydration" className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
-              <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
-                <GlassWater className="h-8 w-8 text-blue-600" />
-              </div>
-              <span className="text-base font-semibold text-gray-900">
-                Water
-              </span>
-              <span className="text-sm text-gray-400">
-                +250 ml
-              </span>
-            </Link>
+    {/* Exercise */}
+    <Link
+      href="/user/activity"
+      className="flex flex-col items-center gap-4 p-6 transition-all bg-white shadow-md rounded-3xl hover:shadow-lg hover:bg-gray-50"
+    >
+      <div className="h-16 w-16 rounded-full bg-[#E06A26]/10 flex items-center justify-center">
+        <Activity className="h-8 w-8 text-[#E06A26]" />
+      </div>
+      <span className="text-base font-semibold text-gray-900">Exercise</span>
+      <span className="text-sm text-gray-400">Log Activity</span>
+    </Link>
 
-            {/* Exercise */}
-            <Link href="/user/activity" className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
-              <div className="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center">
-                <Activity className="h-8 w-8 text-orange-500" />
-              </div>
-              <span className="text-base font-semibold text-gray-900">
-                Exercise
-              </span>
-              <span className="text-sm text-gray-400">
-                Log Activity
-              </span>
-            </Link>
+    {/* Sleep */}
+    <Link
+      href="/user/sleep"
+      className="flex flex-col items-center gap-4 p-6 transition-all bg-white shadow-md rounded-3xl hover:shadow-lg hover:bg-gray-50"
+    >
+      <div className="h-16 w-16 rounded-full bg-[#DB9C6E]/20 flex items-center justify-center">
+        <Moon className="h-8 w-8 text-[#DB9C6E]" />
+      </div>
+      <span className="text-base font-semibold text-gray-900">Sleep</span>
+      <span className="text-sm text-gray-400">Duration</span>
+    </Link>
 
-            {/* Sleep */}
-            <Link href="/user/sleep" className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
-              <div className="h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center">
-                <Moon className="h-8 w-8 text-indigo-500" />
-              </div>
-              <span className="text-base font-semibold text-gray-900">
-                Sleep
-              </span>
-              <span className="text-sm text-gray-400">
-                Duration
-              </span>
-            </Link>
+    {/* Steps */}
+    <Link
+      href="/user/steps"
+      className="flex flex-col items-center gap-4 p-6 transition-all bg-white shadow-md rounded-3xl hover:shadow-lg hover:bg-gray-50"
+    >
+      <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
+        <Footprints className="h-8 w-8 text-[#3AB1A0]" />
+      </div>
+      <span className="text-base font-semibold text-gray-900">Steps</span>
+      <span className="text-sm text-gray-400">
+        {data.steps.current.toLocaleString()}
+      </span>
+    </Link>
 
-            {/* Steps */}
-            <Link href="/user/steps" className="min-w-[180px] bg-white rounded-3xl p-6 shadow-md flex flex-col items-center gap-4 hover:shadow-lg hover:bg-gray-50 transition-all">
-              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-                <Footprints className="h-8 w-8 text-green-500" />
-              </div>
-              <span className="text-base font-semibold text-gray-900">
-                Steps
-              </span>
-              <span className="text-sm text-gray-400">
-                {data.steps.current.toLocaleString()}
-              </span>
-            </Link>
+  </div>
+</div>
 
-          </div>
-        </div>
 
         {/* Blogs Section */}
         <div className="">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-900">Blogs</h2>
-            <Link href="/user/blogs" className="text-gray-400 text-sm font-medium uppercase tracking-wider">
+            <h2 className="text-lg font-bold text-[#E06A26]">Blogs</h2>
+            <Link href="/user/blogs" className="text-[#3AB1A0] text-sm font-medium uppercase tracking-wider hover:underline">
               View All
             </Link>
           </div>
         </div>
         <div className="px-">
-          <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+          <div className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
             {/* Blog Card 1 */}
             <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="h-32 bg-gradient-to-br from-amber-100 to-orange-100 relative">
-                <span className="absolute top-3 left-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full text-gray-700">
+              <div className="relative h-32 bg-gradient-to-br from-amber-100 to-orange-100">
+                <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   NUTRITION
                 </span>
-                <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-                  <Clock className="h-3 w-3" />
+                <div className="absolute flex items-center gap-1 px-2 py-1 text-xs text-white rounded-full bottom-3 right-3 bg-black/50">
+                  <Clock className="w-3 h-3" />
                   5 min read
                 </div>
               </div>
               <div className="p-4">
                 <h3 className="font-bold text-gray-900">Meal Prep 101: A Guide</h3>
-                <p className="text-gray-500 text-sm mt-1 line-clamp-2">
+                <p className="mt-1 text-sm text-gray-500 line-clamp-2">
                   Master the art of preparing healthy meals for the entire week in under two hours.
                 </p>
-                <Link href="/user/blogs/1" className="text-green-600 text-sm font-semibold mt-3 inline-flex items-center">
-                  Read More <ChevronRight className="h-4 w-4 ml-1" />
+                <Link href="/user/blogs/1" className="text-[#E06A26] text-sm font-semibold mt-3 inline-flex items-center">
+                  Read More <ChevronRight className="w-4 h-4 ml-1" />
                 </Link>
               </div>
             </div>
 
             {/* Blog Card 2 */}
             <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="h-32 bg-gradient-to-br from-green-100 to-emerald-100 relative">
-                <span className="absolute top-3 left-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full text-gray-700">
+              <div className="h-32 bg-gradient-to-br from-[#3AB1A0]/20 to-[#3AB1A0]/10 relative">
+                <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   FITNESS
                 </span>
-                <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-                  <Clock className="h-3 w-3" />
+                <div className="absolute flex items-center gap-1 px-2 py-1 text-xs text-white rounded-full bottom-3 right-3 bg-black/50">
+                  <Clock className="w-3 h-3" />
                   4 min read
                 </div>
               </div>
               <div className="p-4">
                 <h3 className="font-bold text-gray-900">5 Moves for Core Strength</h3>
-                <p className="text-gray-500 text-sm mt-1 line-clamp-2">
+                <p className="mt-1 text-sm text-gray-500 line-clamp-2">
                   Strengthen your core with these simple yet effective exercises you can do anywhere.
                 </p>
-                <Link href="/user/blogs/2" className="text-green-600 text-sm font-semibold mt-3 inline-flex items-center">
-                  Read More <ChevronRight className="h-4 w-4 ml-1" />
+                <Link href="/user/blogs/2" className="text-[#3AB1A0] text-sm font-semibold mt-3 inline-flex items-center">
+                  Read More <ChevronRight className="w-4 h-4 ml-1" />
                 </Link>
               </div>
             </div>
 
             {/* Blog Card 3 */}
             <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="h-32 bg-gradient-to-br from-purple-100 to-pink-100 relative">
-                <span className="absolute top-3 left-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full text-gray-700">
+              <div className="h-32 bg-gradient-to-br from-[#DB9C6E]/20 to-[#DB9C6E]/10 relative">
+                <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   WELLNESS
                 </span>
-                <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-                  <Clock className="h-3 w-3" />
+                <div className="absolute flex items-center gap-1 px-2 py-1 text-xs text-white rounded-full bottom-3 right-3 bg-black/50">
+                  <Clock className="w-3 h-3" />
                   6 min read
                 </div>
               </div>
               <div className="p-4">
                 <h3 className="font-bold text-gray-900">Mindful Eating Habits</h3>
-                <p className="text-gray-500 text-sm mt-1 line-clamp-2">
+                <p className="mt-1 text-sm text-gray-500 line-clamp-2">
                   Learn how to develop a healthier relationship with food through mindfulness.
                 </p>
-                <Link href="/user/blogs/3" className="text-green-600 text-sm font-semibold mt-3 inline-flex items-center">
-                  Read More <ChevronRight className="h-4 w-4 ml-1" />
+                <Link href="/user/blogs/3" className="text-[#DB9C6E] text-sm font-semibold mt-3 inline-flex items-center">
+                  Read More <ChevronRight className="w-4 h-4 ml-1" />
                 </Link>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Bottom Navigation */}
-      <BottomNavBar />
     </div>
   );
 }

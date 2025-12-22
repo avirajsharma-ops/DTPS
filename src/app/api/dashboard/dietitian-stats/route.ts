@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import Appointment from '@/lib/db/models/Appointment';
+import Payment from '@/lib/db/models/Payment';
 import { UserRole } from '@/types';
 
 // GET /api/dashboard/dietitian-stats - Get real dashboard statistics
@@ -123,6 +124,41 @@ export async function GET(request: NextRequest) {
     .sort({ time: 1 })
     .lean();
 
+    // Get payments assigned to this dietitian
+    let paymentQuery: any = {};
+    if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
+      paymentQuery.dietitian = session.user.id;
+    }
+
+    // Get recent payments (last 10)
+    const recentPayments = await Payment.find(paymentQuery)
+      .populate('client', 'firstName lastName email phone')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    // Get total revenue for this dietitian
+    const totalRevenueResult = await Payment.aggregate([
+      { $match: { 
+        ...paymentQuery,
+        status: 'completed'
+      }},
+      { $group: { _id: null, total: { $sum: '$amount' } }}
+    ]);
+    const totalRevenue = totalRevenueResult[0]?.total || 0;
+
+    // Get pending payments count
+    const pendingPaymentsCount = await Payment.countDocuments({
+      ...paymentQuery,
+      status: 'pending'
+    });
+
+    // Get completed payments count
+    const completedPaymentsCount = await Payment.countDocuments({
+      ...paymentQuery,
+      status: 'completed'
+    });
+
     // Calculate active percentage
     const activePercentage = totalClients > 0 ? Math.round((activeClients / totalClients) * 100) : 0;
 
@@ -155,6 +191,27 @@ export async function GET(request: NextRequest) {
         clientEmail: (appointment as any).clientId?.email,
         status: (appointment as any).status,
         type: (appointment as any).type || 'Consultation'
+      })),
+      // Payment data for dietitian
+      totalRevenue,
+      pendingPaymentsCount,
+      completedPaymentsCount,
+      recentPayments: recentPayments.map(payment => ({
+        id: (payment as any)._id,
+        clientName: (payment as any).client ?
+          `${(payment as any).client.firstName} ${(payment as any).client.lastName}` :
+          'Unknown Client',
+        clientEmail: (payment as any).client?.email,
+        clientPhone: (payment as any).client?.phone,
+        amount: (payment as any).amount,
+        currency: (payment as any).currency || 'INR',
+        status: (payment as any).status,
+        planName: (payment as any).planName || 'N/A',
+        planCategory: (payment as any).planCategory,
+        durationDays: (payment as any).durationDays,
+        durationLabel: (payment as any).durationLabel,
+        transactionId: (payment as any).transactionId,
+        createdAt: (payment as any).createdAt
       }))
     });
 

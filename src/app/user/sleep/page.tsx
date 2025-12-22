@@ -16,7 +16,7 @@ import {
     Check
 } from 'lucide-react';
 import { toast } from 'sonner';
-import BottomNavBar from '@/components/client/BottomNavBar';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface SleepEntry {
     _id: string;
@@ -244,10 +244,10 @@ export default function SleepPage() {
     const hours = Math.floor(sleepData.totalToday);
     const minutes = Math.round((sleepData.totalToday - hours) * 60);
 
-    if (status === 'loading' || loading) {
+    if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <SpoonGifLoader size="lg" />
             </div>
         );
     }
@@ -263,10 +263,10 @@ export default function SleepPage() {
                     <h1 className="text-lg font-bold text-gray-900">Sleep</h1>
                     <button
                         onClick={() => setShowDatePicker(!showDatePicker)}
-                        className="flex items-center gap-1 p-2 -mr-2 bg-purple-50 rounded-lg"
+                        className="flex items-center gap-1 p-2 -mr-2 bg-[#DB9C6E]/10 rounded-lg"
                     >
-                        <Calendar className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-600">
+                        <Calendar className="w-5 h-5 text-[#DB9C6E]" />
+                        <span className="text-sm font-medium text-[#DB9C6E]">
                             {format(selectedDate, 'dd MMM')}
                         </span>
                     </button>
@@ -295,8 +295,8 @@ export default function SleepPage() {
                         {/* Left side - Stats */}
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                                <Moon className="w-5 h-5 text-purple-500" />
-                                <span className="text-purple-500 font-semibold text-sm">TODAY</span>
+                                <Moon className="w-5 h-5 text-[#DB9C6E]" />
+                                <span className="text-[#DB9C6E] font-semibold text-sm">TODAY</span>
                             </div>
                             <div className="flex items-baseline">
                                 <span className="text-5xl font-bold text-gray-900">{hours}</span>
@@ -307,7 +307,7 @@ export default function SleepPage() {
                             <p className="text-gray-500 mt-1">Goal: {sleepData.goal} hours</p>
 
                             {/* Completion Badge */}
-                            <div className="mt-4 inline-flex items-center gap-2 bg-purple-50 text-purple-600 px-4 py-2 rounded-full">
+                            <div className="mt-4 inline-flex items-center gap-2 bg-[#DB9C6E]/10 text-[#DB9C6E] px-4 py-2 rounded-full">
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
@@ -320,19 +320,19 @@ export default function SleepPage() {
                             <svg viewBox="0 0 120 160" className="w-full h-full">
                                 <defs>
                                     <linearGradient id="nightSky" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stopColor="#1e1b4b" />
-                                        <stop offset="50%" stopColor="#312e81" />
-                                        <stop offset="100%" stopColor="#4c1d95" />
+                                        <stop offset="0%" stopColor="#000000" />
+                                        <stop offset="50%" stopColor="#111111" />
+                                        <stop offset="100%" stopColor="#1a1a1a" />
                                     </linearGradient>
                                     <linearGradient id="moonGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#fef3c7" />
-                                        <stop offset="50%" stopColor="#fcd34d" />
-                                        <stop offset="100%" stopColor="#f59e0b" />
+                                        <stop offset="0%" stopColor="#F5E6D3" />
+                                        <stop offset="50%" stopColor="#EABB8C" />
+                                        <stop offset="100%" stopColor="#DB9C6E" />
                                     </linearGradient>
                                     <filter id="moonShadow" x="-50%" y="-50%" width="200%" height="200%">
                                         <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
                                         <feOffset dx="0" dy="2" result="offsetblur" />
-                                        <feFlood floodColor="#fcd34d" floodOpacity="0.5" />
+                                        <feFlood floodColor="#DB9C6E" floodOpacity="0.5" />
                                         <feComposite in2="offsetblur" operator="in" />
                                         <feMerge>
                                             <feMergeNode />
@@ -346,7 +346,7 @@ export default function SleepPage() {
 
                                 {/* Night sky background circle */}
                                 <circle cx="60" cy="80" r="55" fill="url(#nightSky)" opacity="0.9" />
-                                <circle cx="60" cy="80" r="55" fill="none" stroke="#6366f1" strokeWidth="2" opacity="0.3" />
+                                <circle cx="60" cy="80" r="55" fill="none" stroke="#DB9C6E" strokeWidth="2" opacity="0.3" />
 
                                 {/* Animated twinkling stars */}
                                 <g>
@@ -386,13 +386,13 @@ export default function SleepPage() {
                                 </g>
 
                                 {/* Moon surface details */}
-                                <circle cx="50" cy="75" r="4" fill="#fbbf24" opacity="0.3" />
-                                <circle cx="65" cy="90" r="3" fill="#fbbf24" opacity="0.2" />
-                                <circle cx="55" cy="85" r="2" fill="#fbbf24" opacity="0.25" />
+                                <circle cx="50" cy="75" r="4" fill="#DB9C6E" opacity="0.3" />
+                                <circle cx="65" cy="90" r="3" fill="#DB9C6E" opacity="0.2" />
+                                <circle cx="55" cy="85" r="2" fill="#DB9C6E" opacity="0.25" />
 
                                 {/* Floating Z's for sleep */}
                                 {animatedFill > 20 && (
-                                    <g fill="#a78bfa" fontFamily="sans-serif" fontWeight="bold">
+                                    <g fill="#DB9C6E" fontFamily="sans-serif" fontWeight="bold">
                                         <text x="95" y="50" fontSize="12" opacity="0.7">
                                             <animate attributeName="y" values="50;35;50" dur="3s" repeatCount="indefinite" />
                                             <animate attributeName="opacity" values="0;0.7;0" dur="3s" repeatCount="indefinite" />
@@ -412,7 +412,7 @@ export default function SleepPage() {
                                 )}
 
                                 {/* Progress text */}
-                                <text x="60" y="150" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#6366f1">
+                                <text x="60" y="150" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#DB9C6E">
                                     {completionPercent}%
                                 </text>
                             </svg>
@@ -440,7 +440,7 @@ export default function SleepPage() {
                             </div>
 
                             {sleepData.assignedSleep.isCompleted ? (
-                                <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full">
+                                <div className="flex items-center gap-2 bg-[#3AB1A0] text-white px-4 py-2 rounded-full">
                                     <Check className="w-5 h-5" />
                                     <span className="font-semibold">Completed</span>
                                 </div>
@@ -449,7 +449,7 @@ export default function SleepPage() {
                                     onClick={handleCompleteSleep}
                                     disabled={completingTask || sleepData.totalToday < sleepData.assignedSleep.amount}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all ${sleepData.totalToday >= sleepData.assignedSleep.amount
-                                        ? 'bg-purple-500 text-white hover:bg-purple-600'
+                                        ? 'bg-[#DB9C6E] text-white hover:bg-[#c58a5c]'
                                         : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                         }`}
                                 >
@@ -471,7 +471,7 @@ export default function SleepPage() {
                             </div>
                             <div className="h-2 bg-white rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full rounded-full transition-all duration-500 ${sleepData.assignedSleep.isCompleted ? 'bg-green-500' : 'bg-purple-500'
+                                    className={`h-full rounded-full transition-all duration-500 ${sleepData.assignedSleep.isCompleted ? 'bg-[#3AB1A0]' : 'bg-[#DB9C6E]'
                                         }`}
                                     style={{ width: `${Math.min((sleepData.totalToday / sleepData.assignedSleep.amount) * 100, 100)}%` }}
                                 />
@@ -486,7 +486,7 @@ export default function SleepPage() {
                         <h2 className="text-lg font-bold text-gray-900">Quick Add</h2>
                         <button
                             onClick={() => setShowAddModal(true)}
-                            className="text-purple-500 font-semibold text-sm"
+                            className="text-[#3AB1A0] font-semibold text-sm"
                         >
                             Custom sleep
                         </button>
@@ -499,8 +499,8 @@ export default function SleepPage() {
                             disabled={saving}
                             className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
                         >
-                            <div className="h-12 w-12 rounded-full bg-purple-50 flex items-center justify-center">
-                                <Moon className="w-6 h-6 text-purple-500" />
+                            <div className="h-12 w-12 rounded-full bg-[#DB9C6E]/10 flex items-center justify-center">
+                                <Moon className="w-6 h-6 text-[#DB9C6E]" />
                             </div>
                             <span className="font-semibold text-gray-900">6h</span>
                         </button>
@@ -511,8 +511,8 @@ export default function SleepPage() {
                             disabled={saving}
                             className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
                         >
-                            <div className="h-12 w-12 rounded-full bg-purple-50 flex items-center justify-center">
-                                <Moon className="w-6 h-6 text-purple-500" />
+                            <div className="h-12 w-12 rounded-full bg-[#DB9C6E]/10 flex items-center justify-center">
+                                <Moon className="w-6 h-6 text-[#DB9C6E]" />
                             </div>
                             <span className="font-semibold text-gray-900">7h</span>
                         </button>
@@ -523,8 +523,8 @@ export default function SleepPage() {
                             disabled={saving}
                             className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
                         >
-                            <div className="h-12 w-12 rounded-full bg-purple-50 flex items-center justify-center">
-                                <Moon className="w-6 h-6 text-purple-500" />
+                            <div className="h-12 w-12 rounded-full bg-[#DB9C6E]/10 flex items-center justify-center">
+                                <Moon className="w-6 h-6 text-[#DB9C6E]" />
                             </div>
                             <span className="font-semibold text-gray-900">8h</span>
                         </button>
@@ -549,8 +549,8 @@ export default function SleepPage() {
                                     className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-full flex items-center justify-center bg-purple-50">
-                                            <Moon className="w-6 h-6 text-purple-500" />
+                                        <div className="h-12 w-12 rounded-full flex items-center justify-center bg-[#DB9C6E]/10">
+                                            <Moon className="w-6 h-6 text-[#DB9C6E]" />
                                         </div>
                                         <div>
                                             <p className="font-semibold text-gray-900">Sleep</p>
@@ -617,9 +617,9 @@ export default function SleepPage() {
 
                                 <button
                                     onClick={() => setCustomHours(customHours + 1)}
-                                    className="w-14 h-14 rounded-2xl border-2 border-purple-500 flex items-center justify-center hover:bg-purple-50 transition-colors"
+                                    className="w-14 h-14 rounded-2xl border-2 border-[#DB9C6E] flex items-center justify-center hover:bg-[#DB9C6E]/10 transition-colors"
                                 >
-                                    <Plus className="w-5 h-5 text-purple-500" />
+                                    <Plus className="w-5 h-5 text-[#DB9C6E]" />
                                 </button>
                             </div>
                         </div>
@@ -647,9 +647,9 @@ export default function SleepPage() {
 
                                 <button
                                     onClick={() => setCustomMinutes(Math.min(59, customMinutes + 15))}
-                                    className="w-14 h-14 rounded-2xl border-2 border-purple-500 flex items-center justify-center hover:bg-purple-50 transition-colors"
+                                    className="w-14 h-14 rounded-2xl border-2 border-[#DB9C6E] flex items-center justify-center hover:bg-[#DB9C6E]/10 transition-colors"
                                 >
-                                    <Plus className="w-5 h-5 text-purple-500" />
+                                    <Plus className="w-5 h-5 text-[#DB9C6E]" />
                                 </button>
                             </div>
                         </div>
@@ -663,7 +663,7 @@ export default function SleepPage() {
                                         key={quality}
                                         onClick={() => setCustomQuality(quality)}
                                         className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors capitalize ${customQuality === quality
-                                            ? 'bg-purple-500 text-white'
+                                            ? 'bg-[#DB9C6E] text-white'
                                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                             }`}
                                     >
@@ -677,7 +677,7 @@ export default function SleepPage() {
                         <button
                             onClick={handleCustomAdd}
                             disabled={saving || (customHours === 0 && customMinutes === 0)}
-                            className="w-full py-4 bg-purple-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-purple-600 transition-colors disabled:opacity-50"
+                            className="w-full py-4 bg-[#E06A26] text-white rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-[#c55a1f] transition-colors disabled:opacity-50"
                         >
                             <Moon className="w-5 h-5" />
                             {saving ? 'Adding...' : 'Add Sleep'}
@@ -685,9 +685,6 @@ export default function SleepPage() {
                     </div>
                 </div>
             )}
-
-            {/* Bottom Navigation */}
-            <BottomNavBar />
 
             <style jsx>{`
         @keyframes slide-up {

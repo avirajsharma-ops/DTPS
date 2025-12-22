@@ -87,8 +87,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate max discount (max 40%)
-    const validMaxDiscount = Math.min(maxDiscountPercent || 40, 40);
+    // Validate max discount (0-100%)
+    const validMaxDiscount = Math.min(Math.max(maxDiscountPercent || 0, 0), 100);
 
     const servicePlan = new ServicePlan({
       name,
@@ -159,8 +159,8 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Validate max discount (max 40%)
-    const validMaxDiscount = maxDiscountPercent != null ? Math.min(maxDiscountPercent, 40) : undefined;
+    // Validate max discount (0-100%)
+    const validMaxDiscount = maxDiscountPercent != null ? Math.min(Math.max(maxDiscountPercent, 0), 100) : undefined;
 
     const updateData: any = {};
     if (name) updateData.name = name;

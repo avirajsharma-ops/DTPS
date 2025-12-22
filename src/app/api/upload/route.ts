@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import { File } from '@/lib/db/models/File';
+import { writeFile, mkdir } from 'fs/promises';
+import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +29,9 @@ export async function POST(request: NextRequest) {
       document: ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
       'recipe-image': ['image/jpeg', 'image/png', 'image/webp'],
       'message': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'audio/mpeg', 'audio/wav', 'audio/webm', 'video/mp4', 'video/webm'],
-      'note-attachment': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/aac']
+      'note-attachment': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/aac'],
+      'progress': ['image/jpeg', 'image/png', 'image/webp'],
+      'progress-photo': ['image/jpeg', 'image/png', 'image/webp']
     };
 
     const maxSizes = {
@@ -35,7 +39,9 @@ export async function POST(request: NextRequest) {
       document: 10 * 1024 * 1024, // 10MB
       'recipe-image': 10 * 1024 * 1024, // 10MB
       'message': 25 * 1024 * 1024, // 25MB for messages (images, videos, audio)
-      'note-attachment': 50 * 1024 * 1024 // 50MB for note attachments
+      'note-attachment': 50 * 1024 * 1024, // 50MB for note attachments
+      'progress': 10 * 1024 * 1024, // 10MB for progress photos
+      'progress-photo': 10 * 1024 * 1024 // 10MB for progress photos
     };
 
     const fileType = type as keyof typeof allowedTypes;
@@ -64,6 +70,19 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     const base64Data = buffer.toString('base64');
 
+    // Also save file locally for faster access
+    let localUrl = '';
+    try {
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', fileType);
+      await mkdir(uploadDir, { recursive: true });
+      const localPath = path.join(uploadDir, fileName);
+      await writeFile(localPath, buffer);
+      localUrl = `/uploads/${fileType}/${fileName}`;
+    } catch (localError) {
+      console.error('Error saving file locally:', localError);
+      // Continue even if local save fails - we still have DB storage
+    }
+
     // Save file to MongoDB
     const savedFile = await File.create({
       filename: fileName,
@@ -72,14 +91,17 @@ export async function POST(request: NextRequest) {
       size: file.size,
       data: base64Data,
       type: fileType,
+      localPath: localUrl || null,
       uploadedBy: session.user.id
     });
 
-    // Return the database file ID as URL
-    const fileUrl = `/api/files/${savedFile._id}`;
+    // Return local URL if available, otherwise DB file URL
+    const fileUrl = localUrl || `/api/files/${savedFile._id}`;
 
     return NextResponse.json({
       url: fileUrl,
+      dbUrl: `/api/files/${savedFile._id}`,
+      localUrl: localUrl || null,
       filename: fileName,
       size: file.size,
       type: file.type,

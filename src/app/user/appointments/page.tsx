@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { ResponsiveLayout } from '@/components/client/layouts';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,10 +18,13 @@ import {
   ChevronRight,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft
 } from 'lucide-react';
 import { format, isToday, isTomorrow, isPast, addDays } from 'date-fns';
 import Link from 'next/link';
+import { toast } from 'sonner';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface Appointment {
   id: string;
@@ -37,21 +40,41 @@ interface Appointment {
 }
 
 export default function UserAppointmentsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchAppointments();
-  }, []);
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchAppointments();
+    }
+  }, [session]);
 
   const fetchAppointments = async () => {
     try {
       const response = await fetch('/api/client/appointments');
       if (response.ok) {
         const data = await response.json();
-        setAppointments(data);
+        // Handle the API response format
+        if (data.appointments && Array.isArray(data.appointments)) {
+          setAppointments(data.appointments.map((apt: any) => ({
+            ...apt,
+            date: new Date(apt.date)
+          })));
+        } else if (Array.isArray(data)) {
+          setAppointments(data.map((apt: any) => ({
+            ...apt,
+            date: new Date(apt.date)
+          })));
+        }
       }
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -60,56 +83,8 @@ export default function UserAppointmentsPage() {
     }
   };
 
-  // Default appointments
-  const defaultAppointments: Appointment[] = [
-    {
-      id: '1',
-      dietitianId: 'd1',
-      dietitianName: 'Dr. Sarah Smith',
-      date: addDays(new Date(), 1),
-      time: '10:00 AM',
-      duration: 30,
-      type: 'video',
-      status: 'upcoming',
-      notes: 'Weekly check-in and meal plan review',
-    },
-    {
-      id: '2',
-      dietitianId: 'd1',
-      dietitianName: 'Dr. Sarah Smith',
-      date: addDays(new Date(), 7),
-      time: '2:00 PM',
-      duration: 45,
-      type: 'video',
-      status: 'upcoming',
-      notes: 'Monthly progress review',
-    },
-    {
-      id: '3',
-      dietitianId: 'd1',
-      dietitianName: 'Dr. Sarah Smith',
-      date: addDays(new Date(), -7),
-      time: '11:00 AM',
-      duration: 30,
-      type: 'video',
-      status: 'completed',
-    },
-    {
-      id: '4',
-      dietitianId: 'd1',
-      dietitianName: 'Dr. Sarah Smith',
-      date: addDays(new Date(), -14),
-      time: '3:00 PM',
-      duration: 30,
-      type: 'audio',
-      status: 'completed',
-    },
-  ];
-
-  const displayAppointments = appointments.length > 0 ? appointments : defaultAppointments;
-
-  const upcomingAppointments = displayAppointments.filter(a => a.status === 'upcoming');
-  const pastAppointments = displayAppointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
+  const upcomingAppointments = appointments.filter(a => a.status === 'upcoming');
+  const pastAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -123,13 +98,13 @@ export default function UserAppointmentsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'upcoming':
-        return <Badge className="bg-blue-100 text-blue-700">Upcoming</Badge>;
+        return <Badge className="bg-[#3AB1A0]/20 text-[#3AB1A0]">Upcoming</Badge>;
       case 'completed':
-        return <Badge className="bg-green-100 text-green-700">Completed</Badge>;
+        return <Badge className="bg-[#3AB1A0]/20 text-[#3AB1A0]">Completed</Badge>;
       case 'cancelled':
         return <Badge className="bg-red-100 text-red-700">Cancelled</Badge>;
       case 'rescheduled':
-        return <Badge className="bg-yellow-100 text-yellow-700">Rescheduled</Badge>;
+        return <Badge className="bg-[#DB9C6E]/20 text-[#DB9C6E]">Rescheduled</Badge>;
       default:
         return null;
     }
@@ -150,8 +125,8 @@ export default function UserAppointmentsPage() {
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <User className="h-6 w-6 text-green-600" />
+              <div className="h-12 w-12 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center">
+                <User className="h-6 w-6 text-[#3AB1A0]" />
               </div>
               <div>
                 <p className="font-medium text-gray-900">{appointment.dietitianName}</p>
@@ -185,11 +160,11 @@ export default function UserAppointmentsPage() {
 
           {isUpcoming && (
             <div className="flex items-center gap-2">
-              <Button className="flex-1 bg-green-600 hover:bg-green-700">
+              <Button className="flex-1 bg-[#E06A26] hover:bg-[#d15a1a]">
                 <TypeIcon className="h-4 w-4 mr-2" />
                 Join Call
               </Button>
-              <Button variant="outline" className="flex-1">
+              <Button variant="outline" className="flex-1 border-[#3AB1A0] text-[#3AB1A0] hover:bg-[#3AB1A0]/10">
                 Reschedule
               </Button>
             </div>
@@ -206,28 +181,45 @@ export default function UserAppointmentsPage() {
     );
   };
 
+  if (status === 'loading' || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <SpoonGifLoader size="lg" />
+      </div>
+    );
+  }
+
   return (
-    <ResponsiveLayout 
-      title="Appointments" 
-      subtitle="Manage your sessions"
-      headerAction={
-        <Link href="/user/appointments/book">
-          <Button size="sm" className="bg-green-600 hover:bg-green-700">
-            <Plus className="h-4 w-4 mr-1" />
-            <span className="hidden md:inline">Book Appointment</span>
-            <span className="md:hidden">Book</span>
-          </Button>
-        </Link>
-      }
-    >
-      <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Link href="/user" className="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors">
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </Link>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">Appointments</h1>
+              <p className="text-xs text-gray-500">Manage your sessions</p>
+            </div>
+          </div>
+          <Link href="/user/appointments/book">
+            <Button size="sm" className="bg-[#E06A26] hover:bg-[#d15a1a]">
+              <Plus className="h-4 w-4 mr-1" />
+              Book
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      <div className="px-4 py-4 space-y-4">
         {/* Next Appointment Highlight */}
         {upcomingAppointments.length > 0 && (
-          <Card className="border-0 shadow-sm bg-gradient-to-r from-green-50 to-emerald-50">
+          <Card className="border-0 shadow-sm bg-gradient-to-r from-[#3AB1A0]/10 to-[#3AB1A0]/20">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-700">Next Appointment</span>
+                <AlertCircle className="h-4 w-4 text-[#3AB1A0]" />
+                <span className="text-sm font-medium text-[#3AB1A0]">Next Appointment</span>
               </div>
               <div className="flex items-center justify-between">
                 <div>
@@ -238,7 +230,7 @@ export default function UserAppointmentsPage() {
                     {getDateLabel(upcomingAppointments[0].date)} at {upcomingAppointments[0].time}
                   </p>
                 </div>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                <Button size="sm" className="bg-[#E06A26] hover:bg-[#d15a1a]">
                   Join
                 </Button>
               </div>
@@ -267,7 +259,7 @@ export default function UserAppointmentsPage() {
                 <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500 mb-4">No upcoming appointments</p>
                 <Link href="/user/appointments/book">
-                  <Button className="bg-green-600 hover:bg-green-700">
+                  <Button className="bg-[#E06A26] hover:bg-[#d15a1a]">
                     Book an Appointment
                   </Button>
                 </Link>
@@ -289,6 +281,6 @@ export default function UserAppointmentsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </ResponsiveLayout>
+    </div>
   );
 }

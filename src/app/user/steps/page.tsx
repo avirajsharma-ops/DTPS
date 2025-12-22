@@ -16,7 +16,7 @@ import {
     Check
 } from 'lucide-react';
 import { toast } from 'sonner';
-import BottomNavBar from '@/components/client/BottomNavBar';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface StepsEntry {
     _id: string;
@@ -238,10 +238,10 @@ export default function StepsPage() {
     const completionPercent = Math.round(fillPercent);
     const distance = (stepsData.totalToday / 1315).toFixed(2);
 
-    if (status === 'loading' || loading) {
+    if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <SpoonGifLoader size="lg" />
             </div>
         );
     }
@@ -257,10 +257,10 @@ export default function StepsPage() {
                     <h1 className="text-lg font-bold text-gray-900">Steps</h1>
                     <button
                         onClick={() => setShowDatePicker(!showDatePicker)}
-                        className="flex items-center gap-1 p-2 -mr-2 bg-green-50 rounded-lg"
+                        className="flex items-center gap-1 p-2 -mr-2 bg-[#3AB1A0]/10 rounded-lg"
                     >
-                        <Calendar className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-600">
+                        <Calendar className="w-5 h-5 text-[#3AB1A0]" />
+                        <span className="text-sm font-medium text-[#3AB1A0]">
                             {format(selectedDate, 'dd MMM')}
                         </span>
                     </button>
@@ -289,8 +289,8 @@ export default function StepsPage() {
                         {/* Left side - Stats */}
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                                <Footprints className="w-5 h-5 text-green-500" />
-                                <span className="text-green-500 font-semibold text-sm">TODAY</span>
+                                <Footprints className="w-5 h-5 text-[#3AB1A0]" />
+                                <span className="text-[#3AB1A0] font-semibold text-sm">TODAY</span>
                             </div>
                             <div className="flex items-baseline">
                                 <span className="text-5xl font-bold text-gray-900">
@@ -310,7 +310,7 @@ export default function StepsPage() {
                             </div>
 
                             {/* Completion Badge */}
-                            <div className="mt-4 inline-flex items-center gap-2 bg-green-50 text-green-600 px-4 py-2 rounded-full">
+                            <div className="mt-4 inline-flex items-center gap-2 bg-[#3AB1A0]/10 text-[#3AB1A0] px-4 py-2 rounded-full">
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
@@ -323,13 +323,13 @@ export default function StepsPage() {
                             <svg viewBox="0 0 120 160" className="w-full h-full">
                                 <defs>
                                     <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#4ade80" />
-                                        <stop offset="50%" stopColor="#22c55e" />
-                                        <stop offset="100%" stopColor="#16a34a" />
+                                        <stop offset="0%" stopColor="#5FCFC0" />
+                                        <stop offset="50%" stopColor="#3AB1A0" />
+                                        <stop offset="100%" stopColor="#2A9A8B" />
                                     </linearGradient>
                                     <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stopColor="#86efac" />
-                                        <stop offset="100%" stopColor="#22c55e" />
+                                        <stop offset="0%" stopColor="#7DDDD0" />
+                                        <stop offset="100%" stopColor="#3AB1A0" />
                                     </linearGradient>
                                     <filter id="glowEffect" x="-50%" y="-50%" width="200%" height="200%">
                                         <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
@@ -378,7 +378,7 @@ export default function StepsPage() {
                                 />
 
                                 {/* Center content */}
-                                <text x="60" y="70" textAnchor="middle" fontSize="22" fontWeight="bold" fill="#16a34a">
+                                <text x="60" y="70" textAnchor="middle" fontSize="22" fontWeight="bold" fill="#3AB1A0">
                                     {completionPercent}%
                                 </text>
                                 <text x="60" y="88" textAnchor="middle" fontSize="10" fill="#6b7280">
@@ -388,7 +388,7 @@ export default function StepsPage() {
                                 {/* Animated walking path at bottom */}
                                 <g transform="translate(10, 135)">
                                     {/* Path line */}
-                                    <line x1="0" y1="10" x2="100" y2="10" stroke="#dcfce7" strokeWidth="4" strokeLinecap="round" />
+                                    <line x1="0" y1="10" x2="100" y2="10" stroke="#CBEEE9" strokeWidth="4" strokeLinecap="round" />
                                     <line
                                         x1="0"
                                         y1="10"
@@ -405,7 +405,7 @@ export default function StepsPage() {
                                         cx={Math.min(animatedFill, 100)}
                                         cy="10"
                                         r="6"
-                                        fill="#22c55e"
+                                        fill="#3AB1A0"
                                         style={{ transition: isAnimating ? 'none' : 'cx 0.5s ease-out' }}
                                     >
                                         <animate attributeName="r" values="6;7;6" dur="1s" repeatCount="indefinite" />
@@ -434,8 +434,8 @@ export default function StepsPage() {
                 {/* Assigned Steps Section */}
                 {stepsData.assignedSteps && stepsData.assignedSteps.amount > 0 && (
                     <div className={`rounded-3xl p-5 shadow-sm ${stepsData.assignedSteps.isCompleted
-                        ? 'bg-green-50 border-2 border-green-200'
-                        : 'bg-green-50 border-2 border-green-200'
+                        ? 'bg-[#3AB1A0]/10 border-2 border-[#3AB1A0]/30'
+                        : 'bg-[#3AB1A0]/10 border-2 border-[#3AB1A0]/30'
                         }`}>
                         <div className="flex items-start justify-between">
                             <div>
@@ -451,7 +451,7 @@ export default function StepsPage() {
                             </div>
 
                             {stepsData.assignedSteps.isCompleted ? (
-                                <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full">
+                                <div className="flex items-center gap-2 bg-[#3AB1A0] text-white px-4 py-2 rounded-full">
                                     <Check className="w-5 h-5" />
                                     <span className="font-semibold">Completed</span>
                                 </div>
@@ -460,7 +460,7 @@ export default function StepsPage() {
                                     onClick={handleCompleteSteps}
                                     disabled={completingTask || stepsData.totalToday < stepsData.assignedSteps.amount}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all ${stepsData.totalToday >= stepsData.assignedSteps.amount
-                                        ? 'bg-green-500 text-white hover:bg-green-600'
+                                        ? 'bg-[#3AB1A0] text-white hover:bg-[#2a9989]'
                                         : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                         }`}
                                 >
@@ -482,7 +482,7 @@ export default function StepsPage() {
                             </div>
                             <div className="h-2 bg-white rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full rounded-full transition-all duration-500 ${stepsData.assignedSteps.isCompleted ? 'bg-green-500' : 'bg-green-500'
+                                    className={`h-full rounded-full transition-all duration-500 ${stepsData.assignedSteps.isCompleted ? 'bg-[#3AB1A0]' : 'bg-[#3AB1A0]'
                                         }`}
                                     style={{ width: `${Math.min((stepsData.totalToday / stepsData.assignedSteps.amount) * 100, 100)}%` }}
                                 />
@@ -497,7 +497,7 @@ export default function StepsPage() {
                         <h2 className="text-lg font-bold text-gray-900">Quick Add</h2>
                         <button
                             onClick={() => setShowAddModal(true)}
-                            className="text-green-500 font-semibold text-sm"
+                            className="text-[#3AB1A0] font-semibold text-sm"
                         >
                             Custom steps
                         </button>
@@ -510,7 +510,7 @@ export default function StepsPage() {
                             disabled={saving}
                             className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
                         >
-                            <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-xl">
+                            <div className="h-12 w-12 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center text-xl">
                                 👣
                             </div>
                             <span className="font-semibold text-gray-900 text-sm">1K</span>
@@ -522,7 +522,7 @@ export default function StepsPage() {
                             disabled={saving}
                             className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
                         >
-                            <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-xl">
+                            <div className="h-12 w-12 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center text-xl">
                                 👣
                             </div>
                             <span className="font-semibold text-gray-900 text-sm">5K</span>
@@ -534,7 +534,7 @@ export default function StepsPage() {
                             disabled={saving}
                             className="bg-white rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all active:scale-95"
                         >
-                            <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-xl">
+                            <div className="h-12 w-12 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center text-xl">
                                 👣
                             </div>
                             <span className="font-semibold text-gray-900 text-sm">10K</span>
@@ -560,7 +560,7 @@ export default function StepsPage() {
                                     className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-full flex items-center justify-center bg-green-50 text-xl">
+                                        <div className="h-12 w-12 rounded-full flex items-center justify-center bg-[#3AB1A0]/10 text-xl">
                                             👣
                                         </div>
                                         <div>
@@ -628,9 +628,9 @@ export default function StepsPage() {
 
                             <button
                                 onClick={() => setCustomSteps(customSteps + 500)}
-                                className="w-14 h-14 rounded-2xl border-2 border-green-500 flex items-center justify-center hover:bg-green-50 transition-colors"
+                                className="w-14 h-14 rounded-2xl border-2 border-[#3AB1A0] flex items-center justify-center hover:bg-[#3AB1A0]/10 transition-colors"
                             >
-                                <Plus className="w-5 h-5 text-green-500" />
+                                <Plus className="w-5 h-5 text-[#3AB1A0]" />
                             </button>
                         </div>
 
@@ -651,7 +651,7 @@ export default function StepsPage() {
                         <button
                             onClick={handleCustomAdd}
                             disabled={saving || customSteps <= 0}
-                            className="w-full py-4 bg-green-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-green-600 transition-colors disabled:opacity-50"
+                            className="w-full py-4 bg-[#E06A26] text-white rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-[#c55a1f] transition-colors disabled:opacity-50"
                         >
                             <Footprints className="w-5 h-5" />
                             {saving ? 'Adding...' : 'Add Steps'}
@@ -659,9 +659,6 @@ export default function StepsPage() {
                     </div>
                 </div>
             )}
-
-            {/* Bottom Navigation */}
-            <BottomNavBar />
 
             <style jsx>{`
         @keyframes slide-up {

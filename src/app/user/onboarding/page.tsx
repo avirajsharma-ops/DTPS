@@ -21,6 +21,7 @@ import {
   Stethoscope
 } from 'lucide-react';
 import { toast } from 'sonner';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 // Step components
 interface StepProps {
@@ -136,7 +137,7 @@ function Step1BasicInfo({ onNext, data, updateData }: StepProps) {
     <div className="min-h-screen bg-gray-50 px-6 py-8 pb-32">
       {/* Progress Bar */}
       <div className="flex gap-1.5 mb-8">
-        <div className="h-1 flex-1 bg-green-500 rounded-full" />
+        <div className="h-1 flex-1 bg-[#E06A26] rounded-full" />
         <div className="h-1 flex-1 bg-gray-200 rounded-full" />
         <div className="h-1 flex-1 bg-gray-200 rounded-full" />
         <div className="h-1 flex-1 bg-gray-200 rounded-full" />
@@ -156,7 +157,7 @@ function Step1BasicInfo({ onNext, data, updateData }: StepProps) {
               onClick={() => updateData({ gender })}
               className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all ${
                 data.gender === gender
-                  ? 'bg-green-500 text-white'
+                  ? 'bg-[#3AB1A0] text-white'
                   : 'text-gray-600'
               }`}
             >
@@ -168,7 +169,7 @@ function Step1BasicInfo({ onNext, data, updateData }: StepProps) {
 
       {/* Date of Birth with Calendar */}
       <div className="mb-6">
-        <label className="text-sm font-semibold text-gray-700 mb-2 block flex items-center gap-2">
+        <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
           <Calendar className="w-4 h-4" />
           Date of Birth
         </label>
@@ -178,7 +179,7 @@ function Step1BasicInfo({ onNext, data, updateData }: StepProps) {
           onChange={(e) => updateData({ dateOfBirth: e.target.value })}
           max={maxDateStr}
           min={minDateStr}
-          className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+          className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-lg focus:ring-2 focus:ring-[#3AB1A0] focus:border-[#3AB1A0]"
         />
         {data.dateOfBirth && (
           <p className="text-sm text-gray-500 mt-1">
@@ -198,7 +199,7 @@ function Step1BasicInfo({ onNext, data, updateData }: StepProps) {
               value={data.heightCm}
               onChange={(e) => handleHeightCmChange(e.target.value)}
               placeholder="Height in CM"
-              className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-14"
+              className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-lg focus:ring-2 focus:ring-[#3AB1A0] focus:border-[#3AB1A0] pr-14"
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">cm</span>
           </div>
@@ -227,7 +228,7 @@ function Step1BasicInfo({ onNext, data, updateData }: StepProps) {
             value={data.weightKg}
             onChange={(e) => updateData({ weightKg: e.target.value })}
             placeholder="Weight in KG"
-            className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-14"
+            className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-lg focus:ring-2 focus:ring-[#3AB1A0] focus:border-[#3AB1A0] pr-14"
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">kg</span>
         </div>
@@ -252,23 +253,23 @@ function Step1BasicInfo({ onNext, data, updateData }: StepProps) {
                 onClick={() => updateData({ activityLevel: level.value as OnboardingData['activityLevel'] })}
                 className={`w-full p-4 rounded-2xl border-2 flex items-center gap-4 transition-all ${
                   data.activityLevel === level.value
-                    ? 'border-green-500 bg-green-50'
+                    ? 'border-[#3AB1A0] bg-[#3AB1A0]/10'
                     : 'border-gray-100 bg-white'
                 }`}
               >
                 <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
-                  data.activityLevel === level.value ? 'bg-green-100' : 'bg-gray-100'
+                  data.activityLevel === level.value ? 'bg-[#3AB1A0]/20' : 'bg-gray-100'
                 }`}>
-                  <Icon className={`h-6 w-6 ${data.activityLevel === level.value ? 'text-green-600' : 'text-gray-500'}`} />
+                  <Icon className={`h-6 w-6 ${data.activityLevel === level.value ? 'text-[#3AB1A0]' : 'text-gray-500'}`} />
                 </div>
                 <div className="text-left flex-1">
-                  <p className={`font-semibold ${data.activityLevel === level.value ? 'text-green-700' : 'text-gray-900'}`}>
+                  <p className={`font-semibold ${data.activityLevel === level.value ? 'text-[#3AB1A0]' : 'text-gray-900'}`}>
                     {level.label}
                   </p>
                   <p className="text-sm text-gray-500">{level.description}</p>
                 </div>
                 {data.activityLevel === level.value && (
-                  <div className="h-6 w-6 rounded-full bg-green-500 flex items-center justify-center">
+                  <div className="h-6 w-6 rounded-full bg-[#3AB1A0] flex items-center justify-center">
                     <Check className="h-4 w-4 text-white" />
                   </div>
                 )}
@@ -285,7 +286,7 @@ function Step1BasicInfo({ onNext, data, updateData }: StepProps) {
           disabled={!isValid}
           className={`w-full py-4 rounded-full font-semibold text-lg flex items-center justify-center gap-2 transition-all ${
             isValid
-              ? 'bg-green-500 text-white hover:bg-green-600'
+              ? 'bg-[#E06A26] text-white hover:bg-[#c55a1f]'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed'
           }`}
         >
@@ -335,7 +336,7 @@ function Step2Goals({ onNext, onBack, data, updateData }: StepProps) {
         </button>
         <div className="flex gap-1.5">
           <div className="h-2 w-2 rounded-full bg-gray-300" />
-          <div className="h-2 w-6 rounded-full bg-green-500" />
+          <div className="h-2 w-6 rounded-full bg-[#E06A26]" />
           <div className="h-2 w-2 rounded-full bg-gray-300" />
           <div className="h-2 w-2 rounded-full bg-gray-300" />
           <div className="h-2 w-2 rounded-full bg-gray-300" />
@@ -356,14 +357,14 @@ function Step2Goals({ onNext, onBack, data, updateData }: StepProps) {
               onClick={() => updateData({ primaryGoal: goal.value as OnboardingData['primaryGoal'] })}
               className={`w-full p-5 rounded-2xl border-2 flex items-center gap-4 transition-all ${
                 data.primaryGoal === goal.value
-                  ? 'border-green-500 bg-green-50'
+                  ? 'border-[#3AB1A0] bg-[#3AB1A0]/10'
                   : 'border-gray-100 bg-white'
               }`}
             >
               <div className={`h-14 w-14 rounded-2xl flex items-center justify-center ${
-                data.primaryGoal === goal.value ? 'bg-green-100' : 'bg-gray-100'
+                data.primaryGoal === goal.value ? 'bg-[#3AB1A0]/20' : 'bg-gray-100'
               }`}>
-                <Icon className={`h-7 w-7 ${data.primaryGoal === goal.value ? 'text-green-600' : 'text-gray-400'}`} />
+                <Icon className={`h-7 w-7 ${data.primaryGoal === goal.value ? 'text-[#3AB1A0]' : 'text-gray-400'}`} />
               </div>
               <div className="text-left flex-1">
                 <p className={`font-semibold text-lg ${data.primaryGoal === goal.value ? 'text-gray-900' : 'text-gray-700'}`}>
@@ -373,11 +374,11 @@ function Step2Goals({ onNext, onBack, data, updateData }: StepProps) {
               </div>
               <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center ${
                 data.primaryGoal === goal.value
-                  ? 'border-green-500 bg-white'
+                  ? 'border-[#3AB1A0] bg-white'
                   : 'border-gray-300'
               }`}>
                 {data.primaryGoal === goal.value && (
-                  <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#3AB1A0]" />
                 )}
               </div>
             </button>
@@ -389,7 +390,7 @@ function Step2Goals({ onNext, onBack, data, updateData }: StepProps) {
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100">
         <button
           onClick={onNext}
-          className="w-full py-4 rounded-full bg-green-500 text-white font-semibold text-lg hover:bg-green-600 transition-all"
+          className="w-full py-4 rounded-full bg-[#E06A26] text-white font-semibold text-lg hover:bg-[#c55a1f] transition-all"
         >
           Continue
         </button>
@@ -463,7 +464,7 @@ function Step3DailyGoals({ onNext, onBack, data, updateData }: StepProps) {
         <div className="flex gap-1.5">
           <div className="h-2 w-2 rounded-full bg-gray-300" />
           <div className="h-2 w-2 rounded-full bg-gray-300" />
-          <div className="h-2 w-6 rounded-full bg-green-500" />
+          <div className="h-2 w-6 rounded-full bg-[#E06A26]" />
           <div className="h-2 w-2 rounded-full bg-gray-300" />
           <div className="h-2 w-2 rounded-full bg-gray-300" />
         </div>
@@ -497,9 +498,9 @@ function Step3DailyGoals({ onNext, onBack, data, updateData }: StepProps) {
                 step={goal.step || 100}
                 value={goal.value}
                 onChange={(e) => updateGoal(goal.key, parseFloat(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-green-500"
+                className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#3AB1A0]"
                 style={{
-                  background: `linear-gradient(to right, #22c55e 0%, #22c55e ${((goal.value - goal.min) / (goal.max - goal.min)) * 100}%, #e5e7eb ${((goal.value - goal.min) / (goal.max - goal.min)) * 100}%, #e5e7eb 100%)`
+                  background: `linear-gradient(to right, #3AB1A0 0%, #3AB1A0 ${((goal.value - goal.min) / (goal.max - goal.min)) * 100}%, #e5e7eb ${((goal.value - goal.min) / (goal.max - goal.min)) * 100}%, #e5e7eb 100%)`
                 }}
               />
               <div className="flex justify-between mt-2 text-xs text-gray-400">
@@ -515,7 +516,7 @@ function Step3DailyGoals({ onNext, onBack, data, updateData }: StepProps) {
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100">
         <button
           onClick={onNext}
-          className="w-full py-4 rounded-full bg-green-500 text-white font-semibold text-lg hover:bg-green-600 transition-all"
+          className="w-full py-4 rounded-full bg-[#E06A26] text-white font-semibold text-lg hover:bg-[#c55a1f] transition-all"
         >
           Continue
         </button>
@@ -562,12 +563,12 @@ function Step4DietaryPreferences({ onNext, onBack, data, updateData }: StepProps
             onClick={() => updateData({ dietType: diet.value })}
             className={`p-4 rounded-2xl border-2 flex flex-col items-center text-center transition-all ${
               data.dietType === diet.value
-                ? 'border-green-500 bg-green-50'
+                ? 'border-[#3AB1A0] bg-[#3AB1A0]/10'
                 : 'border-gray-100 bg-white'
             }`}
           >
             <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-2xl mb-2 ${
-              data.dietType === diet.value ? 'bg-green-100' : 'bg-gray-100'
+              data.dietType === diet.value ? 'bg-[#3AB1A0]/20' : 'bg-gray-100'
             }`}>
               {diet.icon}
             </div>
@@ -577,7 +578,7 @@ function Step4DietaryPreferences({ onNext, onBack, data, updateData }: StepProps
             <p className="text-xs text-gray-500 mt-1 line-clamp-2">{diet.description}</p>
             {data.dietType === diet.value && (
               <div className="mt-2">
-                <Check className="h-5 w-5 text-green-500" />
+                <Check className="h-5 w-5 text-[#3AB1A0]" />
               </div>
             )}
           </button>
@@ -591,7 +592,7 @@ function Step4DietaryPreferences({ onNext, onBack, data, updateData }: StepProps
           disabled={!data.dietType}
           className={`w-full py-4 rounded-full font-semibold text-lg transition-all flex items-center justify-center gap-2 ${
             data.dietType
-              ? 'bg-green-500 text-white hover:bg-green-600'
+              ? 'bg-[#E06A26] text-white hover:bg-[#c55a1f]'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed'
           }`}
         >
@@ -683,7 +684,7 @@ function Step5Summary({ onNext, onBack, data }: StepProps) {
       {/* Daily Target Card */}
       <div className="bg-white rounded-2xl p-6 mb-4 shadow-sm relative overflow-hidden">
         <div className="absolute top-4 right-4 opacity-10">
-          <Flame className="h-24 w-24 text-green-500" />
+          <Flame className="h-24 w-24 text-[#E06A26]" />
         </div>
         <p className="text-sm text-gray-500 uppercase tracking-wider text-center mb-2">DAILY CALORIE TARGET</p>
         <p className="text-5xl font-bold text-gray-900 text-center">
@@ -697,12 +698,12 @@ function Step5Summary({ onNext, onBack, data }: StepProps) {
         <h3 className="font-bold text-gray-900 mb-3">Daily Macros</h3>
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-            <div className="h-2 w-2 rounded-full bg-blue-500 mx-auto mb-2" />
+            <div className="h-2 w-2 rounded-full bg-[#3AB1A0] mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-900">{protein}g</p>
             <p className="text-xs text-gray-500 uppercase">Protein</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-            <div className="h-2 w-2 rounded-full bg-green-500 mx-auto mb-2" />
+            <div className="h-2 w-2 rounded-full bg-[#E06A26] mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-900">{carbs}g</p>
             <p className="text-xs text-gray-500 uppercase">Carbs</p>
           </div>
@@ -739,7 +740,7 @@ function Step5Summary({ onNext, onBack, data }: StepProps) {
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100">
         <button
           onClick={onNext}
-          className="w-full py-4 rounded-full bg-green-500 text-white font-semibold text-lg hover:bg-green-600 transition-all flex items-center justify-center gap-2"
+          className="w-full py-4 rounded-full bg-[#E06A26] text-white font-semibold text-lg hover:bg-[#c55a1f] transition-all flex items-center justify-center gap-2"
         >
           Confirm & Start
           <Check className="h-5 w-5" />
@@ -842,8 +843,8 @@ export default function OnboardingPage() {
 
   if (status === 'loading' || saving || checkingStatus) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500" />
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <SpoonGifLoader size="lg" />
       </div>
     );
   }

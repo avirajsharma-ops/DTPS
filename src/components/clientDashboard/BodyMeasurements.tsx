@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Ruler, Plus, Trash2, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface MeasurementEntry {
   _id?: string;
@@ -128,8 +129,15 @@ export default function BodyMeasurements({ clientId, onUpdate }: BodyMeasurement
   if (loading) {
     return (
       <Card>
-        <CardContent className="py-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto" />
+        <CardContent className="py-8 text-center flex justify-center">
+          <Image
+            src="/images/spoon-loader.gif"
+            alt="Loading..."
+            width={60}
+            height={90}
+            className="object-contain"
+            unoptimized
+          />
         </CardContent>
       </Card>
     );

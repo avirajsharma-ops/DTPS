@@ -174,7 +174,7 @@ export function MobileLayout({
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user?.avatar || ''} />
-                  <AvatarFallback className="bg-green-100 text-green-700 text-xs">
+                  <AvatarFallback className="bg-[#3AB1A0]/10 text-[#3AB1A0] text-xs">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -200,7 +200,7 @@ export function MobileLayout({
         {/* Menu Header */}
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-lg font-bold text-green-600">DTPS</span>
+            <span className="text-lg font-bold text-[#E06A26]">DTPS</span>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -215,7 +215,7 @@ export function MobileLayout({
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
               <AvatarImage src={user?.avatar || ''} />
-              <AvatarFallback className="bg-green-100 text-green-700">
+              <AvatarFallback className="bg-[#3AB1A0]/10 text-[#3AB1A0]">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -242,14 +242,14 @@ export function MobileLayout({
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors",
                   active 
-                    ? "bg-green-50 text-green-700" 
+                    ? "bg-[#3AB1A0]/10 text-[#3AB1A0]" 
                     : "text-gray-700 hover:bg-gray-50"
                 )}
               >
-                <Icon className={cn("h-5 w-5", active && "text-green-600")} />
+                <Icon className={cn("h-5 w-5", active && "text-[#3AB1A0]")} />
                 <span className="font-medium">{item.label}</span>
                 {item.href === '/user/messages' && (
-                  <Badge className="ml-auto bg-green-100 text-green-700 text-xs">
+                  <Badge className="ml-auto bg-[#E06A26]/10 text-[#E06A26] text-xs">
                     2
                   </Badge>
                 )}

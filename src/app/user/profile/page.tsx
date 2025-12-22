@@ -35,7 +35,7 @@ import {
   UserCheck
 } from "lucide-react";
 import Link from "next/link";
-import BottomNavBar from '@/components/client/BottomNavBar';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface ProfileData {
   name: string;
@@ -176,10 +176,10 @@ export default function ProfilePage() {
     }
   }, [session]);
 
-  if (status === "loading" || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <SpoonGifLoader size="lg" />
       </div>
     );
   }
@@ -238,7 +238,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 via-white to-[#E06A26]/10">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
@@ -246,20 +246,20 @@ export default function ProfilePage() {
             <Link href="/user" className="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors">
               <ArrowLeft className="w-5 h-5 text-gray-600" />
             </Link>
-            <h1 className="text-lg font-bold text-gray-900">My Profile</h1>
+            <h1 className="text-lg font-bold text-[#E06A26]">My Profile</h1>
           </div>
           <Link
             href="/user/settings"
-            className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+            className="p-2 rounded-xl bg-[#3AB1A0]/10 hover:bg-[#3AB1A0]/20 transition-colors"
           >
-            <Settings className="w-5 h-5 text-blue-600" />
+            <Settings className="w-5 h-5 text-[#3AB1A0]" />
           </Link>
         </div>
       </div>
 
       {/* Profile Header Card */}
       <div className="px-4 py-6">
-        <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-green-500 rounded-3xl p-6 shadow-xl shadow-blue-500/20 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-[#3AB1A0] via-[#2a9989] to-[#E06A26] rounded-3xl p-6 shadow-xl shadow-[#3AB1A0]/20 relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
@@ -321,10 +321,10 @@ export default function ProfilePage() {
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             const colorClasses: Record<string, string> = {
-              blue: isActive ? "bg-blue-500 text-white shadow-blue-500/30" : "bg-white text-gray-600 hover:bg-blue-50",
-              red: isActive ? "bg-red-500 text-white shadow-red-500/30" : "bg-white text-gray-600 hover:bg-red-50",
-              green: isActive ? "bg-green-500 text-white shadow-green-500/30" : "bg-white text-gray-600 hover:bg-green-50",
-              orange: isActive ? "bg-orange-500 text-white shadow-orange-500/30" : "bg-white text-gray-600 hover:bg-orange-50",
+              blue: isActive ? "bg-[#3AB1A0] text-white shadow-[#3AB1A0]/30" : "bg-white text-gray-600 hover:bg-[#3AB1A0]/10",
+              red: isActive ? "bg-[#E06A26] text-white shadow-[#E06A26]/30" : "bg-white text-gray-600 hover:bg-[#E06A26]/10",
+              green: isActive ? "bg-[#3AB1A0] text-white shadow-[#3AB1A0]/30" : "bg-white text-gray-600 hover:bg-[#3AB1A0]/10",
+              orange: isActive ? "bg-[#E06A26] text-white shadow-[#E06A26]/30" : "bg-white text-gray-600 hover:bg-[#E06A26]/10",
             };
             return (
               <button
@@ -348,7 +348,7 @@ export default function ProfilePage() {
             <div className="flex justify-end">
               <Link
                 href="/user/personal-info"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-lg text-sm font-medium hover:bg-[#3AB1A0]/20 transition-colors"
               >
                 <Edit3 className="w-4 h-4" /> Edit Personal Info
               </Link>
@@ -395,7 +395,7 @@ export default function ProfilePage() {
             <div className="flex justify-end">
               <Link
                 href="/user/medical-info"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E06A26]/10 text-[#E06A26] rounded-lg text-sm font-medium hover:bg-[#E06A26]/20 transition-colors"
               >
                 <Edit3 className="w-4 h-4" /> Edit Medical Info
               </Link>
@@ -432,7 +432,7 @@ export default function ProfilePage() {
                 label="Gut Issues"
                 values={medicalData?.gutIssues || []}
                 emptyText="No gut issues"
-                colorClass="bg-purple-100 text-purple-600"
+                colorClass="bg-[#DB9C6E]/20 text-[#DB9C6E]"
               />
             </InfoCard>
 
@@ -463,7 +463,7 @@ export default function ProfilePage() {
                           <td className="py-3 px-2">
                             <span className="font-medium text-gray-700">{report.name}</span>
                             {report.category && (
-                              <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">{report.category}</span>
+                              <span className="ml-2 text-xs bg-[#3AB1A0]/20 text-[#3AB1A0] px-2 py-0.5 rounded-full">{report.category}</span>
                             )}
                           </td>
                           <td className="py-3 px-2 text-center">
@@ -473,7 +473,7 @@ export default function ProfilePage() {
                               rel="noopener noreferrer"
                               className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
                             >
-                              <Eye className="w-4 h-4 text-blue-600" />
+                              <Eye className="w-4 h-4 text-[#3AB1A0]" />
                             </a>
                           </td>
                         </tr>
@@ -488,32 +488,32 @@ export default function ProfilePage() {
 
             {/* Assigned Dietitian Section */}
             {profileData?.assignedDietitian && (
-              <InfoCard title="Your Dietitian" icon={UserCheck} color="green">
-                <div className="bg-green-50 rounded-xl p-4 space-y-3">
+              <InfoCard title="Your Dietitian" icon={UserCheck} color="orange">
+                <div className="bg-gradient-to-r from-[#E06A26]/10 to-[#3AB1A0]/10 rounded-xl p-4 space-y-3 border border-[#E06A26]/20">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                      <User className="w-6 h-6 text-green-600" />
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#E06A26] to-[#DB9C6E] flex items-center justify-center">
+                      <User className="w-6 h-6 text-white" />
                     </div>
                     <div>
                       <p className="font-semibold text-gray-800">
                         {profileData.assignedDietitian.firstName} {profileData.assignedDietitian.lastName}
                       </p>
-                      <p className="text-sm text-green-600">Your Assigned Dietitian</p>
+                      <p className="text-sm text-[#E06A26]">Your Assigned Dietitian</p>
                     </div>
                   </div>
 
                   {profileData.assignedDietitian.phone && (
                     <div className="flex items-center gap-3 text-sm">
-                      <Phone className="w-4 h-4 text-gray-400" />
-                      <a href={`tel:${profileData.assignedDietitian.phone}`} className="text-gray-700 hover:text-green-600">
+                      <Phone className="w-4 h-4 text-[#3AB1A0]" />
+                      <a href={`tel:${profileData.assignedDietitian.phone}`} className="text-gray-700 hover:text-[#E06A26]">
                         {profileData.assignedDietitian.phone}
                       </a>
                     </div>
                   )}
 
                   <div className="flex items-center gap-3 text-sm">
-                    <Mail className="w-4 h-4 text-gray-400" />
-                    <a href={`mailto:${profileData.assignedDietitian.email}`} className="text-gray-700 hover:text-green-600">
+                    <Mail className="w-4 h-4 text-[#3AB1A0]" />
+                    <a href={`mailto:${profileData.assignedDietitian.email}`} className="text-gray-700 hover:text-[#E06A26]">
                       {profileData.assignedDietitian.email}
                     </a>
                   </div>
@@ -529,7 +529,7 @@ export default function ProfilePage() {
             <div className="flex justify-end">
               <Link
                 href="/user/lifestyle-info"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-sm font-medium hover:bg-green-100 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-lg text-sm font-medium hover:bg-[#3AB1A0]/20 transition-colors"
               >
                 <Edit3 className="w-4 h-4" /> Edit Lifestyle Info
               </Link>
@@ -542,7 +542,7 @@ export default function ProfilePage() {
                 label="Preferred Cuisine"
                 values={lifestyleData?.preferredCuisine || []}
                 emptyText="Not specified"
-                colorClass="bg-green-100 text-green-600"
+                colorClass="bg-[#3AB1A0]/20 text-[#3AB1A0]"
               />
               <TagsRow
                 icon={AlertCircle}
@@ -556,7 +556,7 @@ export default function ProfilePage() {
                 label="Fasting Days"
                 values={lifestyleData?.fastDays || []}
                 emptyText="None"
-                colorClass="bg-purple-100 text-purple-600"
+                colorClass="bg-[#DB9C6E]/20 text-[#DB9C6E]"
               />
             </InfoCard>
 
@@ -592,7 +592,7 @@ export default function ProfilePage() {
             <div className="flex justify-end">
               <Link
                 href="/user/dietary-recall"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg text-sm font-medium hover:bg-orange-100 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E06A26]/10 text-[#E06A26] rounded-lg text-sm font-medium hover:bg-[#E06A26]/20 transition-colors"
               >
                 <Edit3 className="w-4 h-4" /> Edit Dietary Recall
               </Link>
@@ -642,8 +642,6 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Bottom Navigation */}
-      <BottomNavBar />
     </div>
   );
 }
@@ -651,11 +649,11 @@ export default function ProfilePage() {
 // Helper Components
 function InfoCard({ title, icon: Icon, color, children }: { title: string; icon: React.ComponentType<{ className?: string }>; color: string; children: React.ReactNode }) {
   const colorClasses: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-600",
-    red: "bg-red-50 text-red-600",
-    green: "bg-green-50 text-green-600",
-    orange: "bg-orange-50 text-orange-600",
-    pink: "bg-pink-50 text-pink-600"
+    blue: "bg-[#3AB1A0]/10 text-[#3AB1A0]",
+    red: "bg-[#E06A26]/10 text-[#E06A26]",
+    green: "bg-[#3AB1A0]/10 text-[#3AB1A0]",
+    orange: "bg-[#E06A26]/10 text-[#E06A26]",
+    pink: "bg-[#DB9C6E]/10 text-[#DB9C6E]"
   };
 
   return (
@@ -721,12 +719,12 @@ function TagsRow({
 
 function getMealColor(mealType: string): string {
   const colors: Record<string, string> = {
-    "early morning": "bg-yellow-100 text-yellow-600",
-    "breakfast": "bg-orange-100 text-orange-600",
-    "lunch": "bg-green-100 text-green-600",
-    "evening snack": "bg-blue-100 text-blue-600",
-    "dinner": "bg-purple-100 text-purple-600",
-    "post dinner": "bg-indigo-100 text-indigo-600",
+    "early morning": "bg-[#DB9C6E]/20 text-[#DB9C6E]",
+    "breakfast": "bg-[#E06A26]/20 text-[#E06A26]",
+    "lunch": "bg-[#3AB1A0]/20 text-[#3AB1A0]",
+    "evening snack": "bg-[#3AB1A0]/20 text-[#3AB1A0]",
+    "dinner": "bg-[#E06A26]/20 text-[#E06A26]",
+    "post dinner": "bg-[#DB9C6E]/20 text-[#DB9C6E]",
   };
   return colors[mealType?.toLowerCase()] || "bg-gray-100 text-gray-600";
 }

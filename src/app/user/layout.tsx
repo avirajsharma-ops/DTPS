@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
+import UserLayoutClient from './UserLayoutClient';
 
 interface UserLayoutProps {
   children: ReactNode;
@@ -42,5 +43,6 @@ export default async function UserLayout({ children }: UserLayoutProps) {
     console.error('Error checking onboarding status:', error);
   }
 
-  return <>{children}</>;
+  // Wrap children with client layout for persistent navigation
+  return <UserLayoutClient>{children}</UserLayoutClient>;
 }

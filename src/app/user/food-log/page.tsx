@@ -157,10 +157,10 @@ export default function UserFoodLogPage() {
 
   const getMealColor = (type: string) => {
     switch (type) {
-      case 'breakfast': return 'bg-orange-100 text-orange-600';
-      case 'lunch': return 'bg-yellow-100 text-yellow-600';
-      case 'snack': return 'bg-green-100 text-green-600';
-      case 'dinner': return 'bg-purple-100 text-purple-600';
+      case 'breakfast': return 'bg-[#E06A26]/20 text-[#E06A26]';
+      case 'lunch': return 'bg-[#3AB1A0]/20 text-[#3AB1A0]';
+      case 'snack': return 'bg-[#DB9C6E]/20 text-[#DB9C6E]';
+      case 'dinner': return 'bg-[#3AB1A0]/20 text-[#3AB1A0]';
       default: return 'bg-gray-100 text-gray-600';
     }
   };
@@ -180,7 +180,7 @@ export default function UserFoodLogPage() {
       title="Food Log" 
       subtitle={format(selectedDate, 'EEEE, MMMM d')}
       headerAction={
-        <Button size="sm" className="bg-green-600 hover:bg-green-700 hidden md:flex">
+        <Button size="sm" className="bg-[#E06A26] hover:bg-[#d15a1a] hidden md:flex">
           <Plus className="h-4 w-4 mr-1" />
           Add Food
         </Button>
@@ -200,7 +200,7 @@ export default function UserFoodLogPage() {
                 onClick={() => setSelectedDate(date)}
                 className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${
                   isSelected 
-                    ? 'bg-green-600 text-white' 
+                    ? 'bg-[#E06A26] text-white' 
                     : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
                 }`}
               >
@@ -218,9 +218,9 @@ export default function UserFoodLogPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Calories', value: log.totals.calories, target: log.targets.calories, unit: 'kcal', color: 'orange' },
-            { label: 'Protein', value: log.totals.protein, target: log.targets.protein, unit: 'g', color: 'green' },
-            { label: 'Carbs', value: log.totals.carbs, target: log.targets.carbs, unit: 'g', color: 'blue' },
-            { label: 'Fat', value: log.totals.fat, target: log.targets.fat, unit: 'g', color: 'purple' },
+            { label: 'Protein', value: log.totals.protein, target: log.targets.protein, unit: 'g', color: 'teal' },
+            { label: 'Carbs', value: log.totals.carbs, target: log.targets.carbs, unit: 'g', color: 'orange' },
+            { label: 'Fat', value: log.totals.fat, target: log.targets.fat, unit: 'g', color: 'tan' },
           ].map((stat) => (
             <Card key={stat.label} className="border-0 shadow-sm">
               <CardContent className="p-3">
@@ -232,9 +232,9 @@ export default function UserFoodLogPage() {
                 <div className="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all ${
-                      stat.color === 'orange' ? 'bg-orange-500' :
-                      stat.color === 'green' ? 'bg-green-500' :
-                      stat.color === 'blue' ? 'bg-blue-500' : 'bg-purple-500'
+                      stat.color === 'orange' ? 'bg-[#E06A26]' :
+                      stat.color === 'teal' ? 'bg-[#3AB1A0]' :
+                      stat.color === 'tan' ? 'bg-[#DB9C6E]' : 'bg-[#3AB1A0]'
                     }`}
                     style={{ width: `${Math.min((stat.value / stat.target) * 100, 100)}%` }}
                   />
@@ -280,7 +280,7 @@ export default function UserFoodLogPage() {
                         <p className="text-xs text-gray-500">{mealCalories} kcal</p>
                       </div>
                     </div>
-                    <Button size="sm" variant="ghost" className="text-green-600">
+                    <Button size="sm" variant="ghost" className="text-[#E06A26]">
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
@@ -312,7 +312,7 @@ export default function UserFoodLogPage() {
                   ) : (
                     <div className="text-center py-4">
                       <p className="text-sm text-gray-500">No entries yet</p>
-                      <Button variant="link" className="text-green-600 text-sm">
+                      <Button variant="link" className="text-[#E06A26] text-sm">
                         Add {mealType}
                       </Button>
                     </div>
@@ -327,7 +327,7 @@ export default function UserFoodLogPage() {
         <div className="fixed bottom-20 right-4 md:hidden">
           <Button 
             size="lg" 
-            className="h-14 w-14 rounded-full bg-green-600 hover:bg-green-700 shadow-lg"
+            className="h-14 w-14 rounded-full bg-[#E06A26] hover:bg-[#d15a1a] shadow-lg"
             onClick={() => setShowAddModal(true)}
           >
             <Plus className="h-6 w-6" />

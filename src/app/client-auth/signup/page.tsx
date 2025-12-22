@@ -107,47 +107,32 @@ export default function ClientSignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a] flex flex-col">
+    <div className="flex flex-col min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
-        <Link href="/" className="text-white/70 hover:text-white">
-          <ArrowLeft className="h-6 w-6" />
+        <Link href="/" className="text-gray-500 hover:text-gray-700">
+          <ArrowLeft className="w-6 h-6" />
         </Link>
-        <h1 className="text-white font-semibold text-lg">Sign Up</h1>
+        <h1 className="text-[#E06A26] font-semibold   text-lg">Sign Up</h1>
         <div className="w-6" />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center px-6 pb-8 overflow-y-auto">
-        {/* Hero Image */}
-        <div className="w-full max-w-sm mb-6">
-          <div className="relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-green-600 via-green-500 to-emerald-400">
-            {/* Decorative waves */}
-            <div className="absolute inset-0 opacity-30">
-              <svg viewBox="0 0 400 160" className="w-full h-full">
-                <path
-                  d="M0 80 Q100 20 200 80 T400 80 V160 H0 Z"
-                  fill="rgba(255,255,255,0.1)"
-                />
-                <path
-                  d="M0 100 Q100 40 200 100 T400 100 V160 H0 Z"
-                  fill="rgba(255,255,255,0.1)"
-                />
-              </svg>
-            </div>
-            {/* Icon */}
-            <div className="absolute bottom-4 left-4">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-b from-green-400 to-emerald-500 flex items-center justify-center shadow-lg">
-                <Leaf className="h-6 w-6 text-[#1a1a1a] transform -rotate-45" strokeWidth={2.5} />
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div className="flex flex-col items-center flex-1 px-6 pb-6 overflow-y-auto">
+        {/* Logo */}
+          {/* Logo */}
+        <div className="flex items-center justify-center overflow-hidden h-34 w-34 rounded-xl">
+                     <img
+                       src="/images/dtps-logo.png"
+                       alt="DTPS"
+                       
+                       className="object-cover w-full h-full"
+                     />
+                     </div>
         {/* Title */}
         <div className="w-full max-w-sm mb-6">
-          <h2 className="text-2xl font-bold text-white">Create Account</h2>
-          <p className="text-gray-400 mt-1">
+          <h2 className="text-2xl font-bold text-[#E06A26]">Create Account</h2>
+          <p className="mt-1 text-gray-600">
             Track your macros, crush your goals, and join a community of achievers.
           </p>
         </div>
@@ -155,13 +140,13 @@ export default function ClientSignUpPage() {
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
           {error && (
-            <Alert variant="destructive" className="bg-red-900/30 border-red-800 text-red-300">
+            <Alert variant="destructive" className="text-red-300 border-red-800 bg-red-900/30">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
           {success && (
-            <Alert className="bg-green-900/30 border-green-800 text-green-300">
+            <Alert className="text-green-300 border-green-800 bg-green-900/30">
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           )}
@@ -169,116 +154,116 @@ export default function ClientSignUpPage() {
           {/* Full Name Input */}
           {/* First Name Input */}
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <User className="h-5 w-5 text-gray-500" />
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <User className="h-5 w-5 text-[#3AB1A0]" />
             </div>
             <Input
               type="text"
               placeholder="First Name"
               {...register('firstName')}
-              className={`h-14 pl-12 bg-[#2a3a2a] border-[#3a4a3a] text-white placeholder:text-gray-500 rounded-xl focus:border-[#c4a962] focus:ring-[#c4a962] ${errors.firstName ? 'border-red-500' : ''}`}
+              className={`h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.firstName ? 'border-red-500' : ''}`}
             />
           </div>
           {errors.firstName && (
-            <p className="text-sm text-red-400 -mt-2">{errors.firstName.message}</p>
+            <p className="-mt-2 text-sm text-red-400">{errors.firstName.message}</p>
           )}
 
           {/* Last Name Input */}
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <User className="h-5 w-5 text-gray-500" />
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <User className="h-5 w-5 text-[#3AB1A0]" />
             </div>
             <Input
               type="text"
               placeholder="Last Name"
               {...register('lastName')}
-              className={`h-14 pl-12 bg-[#2a3a2a] border-[#3a4a3a] text-white placeholder:text-gray-500 rounded-xl focus:border-[#c4a962] focus:ring-[#c4a962] ${errors.lastName ? 'border-red-500' : ''}`}
+              className={`h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.lastName ? 'border-red-500' : ''}`}
             />
           </div>
           {errors.lastName && (
-            <p className="text-sm text-red-400 -mt-2">{errors.lastName.message}</p>
+            <p className="-mt-2 text-sm text-red-400">{errors.lastName.message}</p>
           )}
 
           {/* Email or Phone Input */}
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Mail className="h-5 w-5 text-gray-500" />
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <Mail className="h-5 w-5 text-[#3AB1A0]" />
             </div>
             <Input
               type="email"
               placeholder="Email or Phone Number"
               {...register('email')}
-              className={`h-14 pl-12 bg-[#2a3a2a] border-[#3a4a3a] text-white placeholder:text-gray-500 rounded-xl focus:border-[#c4a962] focus:ring-[#c4a962] ${errors.email ? 'border-red-500' : ''}`}
+              className={`h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.email ? 'border-red-500' : ''}`}
             />
           </div>
           {errors.email && (
-            <p className="text-sm text-red-400 -mt-2">{errors.email.message}</p>
+            <p className="-mt-2 text-sm text-red-400">{errors.email.message}</p>
           )}
 
           {/* Password Input */}
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-500" />
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <Lock className="h-5 w-5 text-[#3AB1A0]" />
             </div>
             <Input
               type={showPassword ? 'text' : 'password'}
               placeholder="Password"
               {...register('password')}
-              className={`h-14 pl-12 pr-12 bg-[#2a3a2a] border-[#3a4a3a] text-white placeholder:text-gray-500 rounded-xl focus:border-[#c4a962] focus:ring-[#c4a962] ${errors.password ? 'border-red-500' : ''}`}
+              className={`h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.password ? 'border-red-500' : ''}`}
             />
             <button
               type="button"
-              className="absolute inset-y-0 right-0 pr-4 flex items-center"
+              className="absolute inset-y-0 right-0 flex items-center pr-4"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
-                <Eye className="h-5 w-5 text-gray-500" />
+                <Eye className="w-5 h-5 text-gray-500" />
               ) : (
-                <EyeOff className="h-5 w-5 text-gray-500" />
+                <EyeOff className="w-5 h-5 text-gray-500" />
               )}
             </button>
           </div>
           {errors.password && (
-            <p className="text-sm text-red-400 -mt-2">{errors.password.message}</p>
+            <p className="-mt-2 text-sm text-red-400">{errors.password.message}</p>
           )}
 
           {/* Confirm Password Input */}
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Shield className="h-5 w-5 text-gray-500" />
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <Shield className="h-5 w-5 text-[#3AB1A0]" />
             </div>
             <Input
               type={showConfirmPassword ? 'text' : 'password'}
               placeholder="Confirm Password"
               {...register('confirmPassword')}
-              className={`h-14 pl-12 pr-12 bg-[#2a3a2a] border-[#3a4a3a] text-white placeholder:text-gray-500 rounded-xl focus:border-[#c4a962] focus:ring-[#c4a962] ${errors.confirmPassword ? 'border-red-500' : ''}`}
+              className={`h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.confirmPassword ? 'border-red-500' : ''}`}
             />
             <button
               type="button"
-              className="absolute inset-y-0 right-0 pr-4 flex items-center"
+              className="absolute inset-y-0 right-0 flex items-center pr-4"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               {showConfirmPassword ? (
-                <Eye className="h-5 w-5 text-gray-500" />
+                <Eye className="w-5 h-5 text-gray-500" />
               ) : (
-                <EyeOff className="h-5 w-5 text-gray-500" />
+                <EyeOff className="w-5 h-5 text-gray-500" />
               )}
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="text-sm text-red-400 -mt-2">{errors.confirmPassword.message}</p>
+            <p className="-mt-2 text-sm text-red-400">{errors.confirmPassword.message}</p>
           )}
 
           {/* Referral Code Input */}
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Gift className="h-5 w-5 text-gray-500" />
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <Gift className="h-5 w-5 text-[#DB9C6E]" />
             </div>
             <Input
               type="text"
               placeholder="Referral Code (Optional)"
               {...register('referralCode')}
-              className="h-14 pl-12 bg-[#2a3a2a] border-[#3a4a3a] text-white placeholder:text-gray-500 rounded-xl focus:border-[#c4a962] focus:ring-[#c4a962]"
+              className="h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white"
             />
           </div>
 
@@ -288,28 +273,28 @@ export default function ClientSignUpPage() {
               id="terms"
               checked={agreeToTerms}
               onCheckedChange={(checked) => setValue('agreeToTerms', checked as boolean)}
-              className="mt-0.5 border-gray-500 data-[state=checked]:bg-[#c4a962] data-[state=checked]:border-[#c4a962]"
+              className="mt-0.5 border-[#3AB1A0] data-[state=checked]:bg-[#3AB1A0] data-[state=checked]:border-[#3AB1A0]"
             />
-            <label htmlFor="terms" className="text-sm text-gray-400 leading-tight">
+            <label htmlFor="terms" className="text-sm leading-tight text-gray-600">
               I agree to the{' '}
-              <Link href="/terms" className="text-[#c4a962] hover:underline">
+              <Link href="/terms" className="text-[#E06A26] hover:underline font-medium">
                 Terms of Service
               </Link>{' '}
               and{' '}
-              <Link href="/privacy" className="text-[#c4a962] hover:underline">
+              <Link href="/privacy" className="text-[#E06A26] hover:underline font-medium">
                 Privacy Policy
               </Link>
               .
             </label>
           </div>
           {errors.agreeToTerms && (
-            <p className="text-sm text-red-400 -mt-2">{errors.agreeToTerms.message}</p>
+            <p className="-mt-2 text-sm text-red-400">{errors.agreeToTerms.message}</p>
           )}
 
           {/* Sign Up Button */}
           <Button
             type="submit"
-            className="w-full h-14 bg-[#c4a962] hover:bg-[#b39952] text-black font-semibold text-lg rounded-xl"
+            className="w-full h-14 bg-[#61a035] hover:bg-[#60953a] text-white font-semibold text-lg rounded-xl shadow-lg"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -330,10 +315,10 @@ export default function ClientSignUpPage() {
         <div className="w-full max-w-sm my-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-700" />
+              <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-[#1a1a1a] text-gray-500">
+              <span className="px-4 text-gray-500 bg-white">
                 Or sign up with
               </span>
             </div>
@@ -341,12 +326,12 @@ export default function ClientSignUpPage() {
         </div>
 
         {/* Social Signup Buttons */}
-        <div className="flex gap-4 w-full max-w-sm">
+        <div className="flex w-full max-w-sm gap-4">
           <button
             type="button"
-            className="flex-1 h-14 bg-[#2a3a2a] border border-[#3a4a3a] rounded-xl flex items-center justify-center hover:bg-[#3a4a3a] transition-colors"
+            className="flex-1 h-14 bg-white border-2 border-[#3AB1A0]/30 rounded-xl flex items-center justify-center hover:bg-[#3AB1A0]/5 hover:border-[#3AB1A0] transition-colors shadow-sm"
           >
-            <svg className="h-6 w-6" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -367,18 +352,18 @@ export default function ClientSignUpPage() {
           </button>
           <button
             type="button"
-            className="flex-1 h-14 bg-[#2a3a2a] border border-[#3a4a3a] rounded-xl flex items-center justify-center hover:bg-[#3a4a3a] transition-colors"
+            className="flex-1 h-14bg-white border-2 border-[#3AB1A0]/30  rounded-xl flex items-center justify-center hover:bg-gray-800 transition-colors shadow-sm"
           >
-            <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-b" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
             </svg>
           </button>
         </div>
 
         {/* Login Link */}
-        <p className="mt-8 text-gray-400">
+        <p className="mt-8 text-gray-600">
           Already have an account?{' '}
-          <Link href="/client-auth/signin" className="text-[#c4a962] font-semibold hover:underline">
+          <Link href="/client-auth/signin" className="text-[#E06A26] font-semibold hover:underline">
             Log In
           </Link>
         </p>

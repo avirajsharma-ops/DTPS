@@ -82,7 +82,6 @@ export default function AdminServicePlansPage() {
     name: '',
     category: 'general-wellness',
     description: '',
-    maxDiscountPercent: 40,
     isActive: true,
     showToClients: true,
     pricingTiers: [] as PricingTier[]
@@ -92,7 +91,7 @@ export default function AdminServicePlansPage() {
   const [newTier, setNewTier] = useState({
     durationDays: 30,
     amount: 0,
-    maxDiscount: 40
+    maxDiscount: 0
   });
 
   useEffect(() => {
@@ -120,13 +119,12 @@ export default function AdminServicePlansPage() {
       name: '',
       category: 'general-wellness',
       description: '',
-      maxDiscountPercent: 40,
       isActive: true,
       showToClients: true,
       pricingTiers: []
     });
     setEditingPlan(null);
-    setNewTier({ durationDays: 30, amount: 0, maxDiscount: 40 });
+    setNewTier({ durationDays: 30, amount: 0, maxDiscount: 0 });
   };
 
   // Auto-generate label from days
@@ -188,7 +186,6 @@ export default function AdminServicePlansPage() {
       name: plan.name,
       category: plan.category,
       description: plan.description || '',
-      maxDiscountPercent: plan.maxDiscountPercent,
       isActive: plan.isActive,
       showToClients: plan.showToClients ?? true,
       pricingTiers: plan.pricingTiers || []
@@ -312,7 +309,7 @@ export default function AdminServicePlansPage() {
 
               <div className="space-y-6 mt-4 pb-4">
                 {/* Basic Info */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Plan Name *</Label>
                     <Input
@@ -360,8 +357,8 @@ export default function AdminServicePlansPage() {
                   {formData.pricingTiers.length > 0 && (
                     <div className="space-y-3 mb-4">
                       {formData.pricingTiers.map((tier, index) => (
-                        <div key={index} className="flex items-center gap-3 bg-white p-3 rounded-lg border">
-                          <div className="flex-1 grid grid-cols-4 gap-3">
+                        <div key={index} className="bg-white p-3 rounded-lg border">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div>
                               <Label className="text-xs text-gray-500">Duration (Days)</Label>
                               <Input
@@ -390,12 +387,12 @@ export default function AdminServicePlansPage() {
                               <Input
                                 type="number"
                                 min="0"
-                                max="40"
-                                value={tier.maxDiscount || 40}
-                                onChange={(e) => updatePricingTier(index, 'maxDiscount', Math.min(40, parseInt(e.target.value) || 0))}
+                                max="100"
+                                value={tier.maxDiscount || 0}
+                                onChange={(e) => updatePricingTier(index, 'maxDiscount', Math.min(100, parseInt(e.target.value) || 0))}
                               />
                             </div>
-                            <div className="flex items-end justify-between">
+                            <div className="flex flex-col justify-between">
                               <div className="flex items-center gap-2">
                                 <Switch
                                   checked={tier.isActive}
@@ -408,7 +405,7 @@ export default function AdminServicePlansPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removePricingTier(index)}
-                                className="text-red-500 hover:text-red-700 p-2"
+                                className="text-red-500 hover:text-red-700 p-1 h-8 w-8 self-end"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -421,7 +418,7 @@ export default function AdminServicePlansPage() {
 
                   {/* Add New Tier */}
                   <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="grid grid-cols-4 gap-3 items-end">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
                       <div>
                         <Label className="text-xs">Duration</Label>
                         <Select
@@ -447,7 +444,7 @@ export default function AdminServicePlansPage() {
                           min="0"
                           value={newTier.amount}
                           onChange={(e) => setNewTier({ ...newTier, amount: parseInt(e.target.value) || 0 })}
-                          placeholder="Enter amount"
+                          placeholder="Amount"
                         />
                       </div>
                       <div>
@@ -455,14 +452,14 @@ export default function AdminServicePlansPage() {
                         <Input
                           type="number"
                           min="0"
-                          max="40"
+                          max="100"
                           value={newTier.maxDiscount}
-                          onChange={(e) => setNewTier({ ...newTier, maxDiscount: Math.min(40, parseInt(e.target.value) || 0) })}
-                          placeholder="0-40"
+                          onChange={(e) => setNewTier({ ...newTier, maxDiscount: Math.min(100, parseInt(e.target.value) || 0) })}
+                          placeholder="0-100"
                         />
                       </div>
-                      <Button type="button" onClick={addPricingTier} className="bg-green-600 hover:bg-green-700">
-                        <Plus className="h-4 w-4 mr-1" /> Add Tier
+                      <Button type="button" onClick={addPricingTier} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
+                        <Plus className="h-4 w-4 mr-1" /> Add
                       </Button>
                     </div>
                   </div>
@@ -497,22 +494,6 @@ export default function AdminServicePlansPage() {
                         {formData.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
-                  </div>
-
-                  <div>
-                    <Label>Max Discount % (Max 40%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="40"
-                      value={formData.maxDiscountPercent}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        maxDiscountPercent: Math.min(40, parseInt(e.target.value) || 0)
-                      })}
-                      className="w-32"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Maximum discount allowed on this plan</p>
                   </div>
                 </div>
 
@@ -601,19 +582,13 @@ export default function AdminServicePlansPage() {
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">
-                              Max {tier.maxDiscount || 40}% off
+                              {tier.maxDiscount > 0 ? `Max ${tier.maxDiscount}% off` : 'No discount'}
                             </span>
                             <span className="font-bold text-green-600">₹{tier.amount.toLocaleString()}</span>
                           </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Max Discount */}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Max Discount</span>
-                    <span className="font-medium">{plan.maxDiscountPercent}%</span>
                   </div>
 
                   {/* Actions */}

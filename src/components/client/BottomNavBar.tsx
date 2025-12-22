@@ -23,7 +23,7 @@ export default function BottomNavBar() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-9 py-3 z-50">
       <div className="pb-safe max-w-md mx-auto">
         <div className="flex items-center justify-between gap-4">
           {navItems.map((item) => (
@@ -33,7 +33,7 @@ export default function BottomNavBar() {
               className="flex items-center justify-center"
             >
               <item.icon
-                className={`h-6 w-6 ${isActive(item.href) ? 'text-green-600' : 'text-gray-400'
+                className={`h-6 w-6 ${isActive(item.href) ? 'text-[#E06A26]' : 'text-gray-400'
                   }`}
               />
             </Link>
