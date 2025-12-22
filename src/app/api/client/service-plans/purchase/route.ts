@@ -6,10 +6,16 @@ import Payment from '@/lib/db/models/Payment';
 import User from '@/lib/db/models/User';
 import Razorpay from 'razorpay';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+// Lazy initialization to avoid build-time errors
+const getRazorpay = () => {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    throw new Error('Razorpay credentials not configured');
+  }
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+};
 
 // POST /api/client/service-plans/purchase - Purchase a service plan
 export async function POST(request: NextRequest) {
@@ -63,6 +69,8 @@ export async function POST(request: NextRequest) {
     });
 
     await payment.save();
+
+    const razorpay = getRazorpay();
 
     try {
       // Create Razorpay payment link

@@ -8,10 +8,16 @@ import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import { PaymentStatus, PaymentType } from '@/types';
 import Razorpay from 'razorpay';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+// Lazy initialization to avoid build-time errors
+const getRazorpay = () => {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    throw new Error('Razorpay credentials not configured');
+  }
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+};
 
 // Helper function to create ClientPurchase from PaymentLink
 async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<any> {
@@ -148,6 +154,8 @@ export async function POST(request: NextRequest) {
     });
 
     console.log(`Found ${pendingPaymentLinks.length} pending payment links to sync`);
+
+    const razorpay = getRazorpay();
 
     for (const paymentLink of pendingPaymentLinks) {
       try {
