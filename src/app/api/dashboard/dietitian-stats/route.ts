@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         { assignedDietitian: session.user.id },
         { assignedDietitians: session.user.id }
       ];
-      appointmentQuery.dietitianId = session.user.id;
+      appointmentQuery.dietitian = session.user.id;
     }
     // Admin sees all clients (no filter needed)
 
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     // Get today's appointments (for this dietitian or all for admin)
     const todaysAppointments = await Appointment.countDocuments({
       ...appointmentQuery,
-      date: {
+      scheduledAt: {
         $gte: startOfToday,
         $lt: endOfToday
       }
@@ -72,17 +72,17 @@ export async function GET(request: NextRequest) {
     // Get confirmed appointments for today
     const confirmedAppointments = await Appointment.countDocuments({
       ...appointmentQuery,
-      date: {
+      scheduledAt: {
         $gte: startOfToday,
         $lt: endOfToday
       },
-      status: 'confirmed'
+      status: { $in: ['confirmed', 'scheduled'] }
     });
 
     // Get pending appointments for today
     const pendingAppointments = await Appointment.countDocuments({
       ...appointmentQuery,
-      date: {
+      scheduledAt: {
         $gte: startOfToday,
         $lt: endOfToday
       },
@@ -92,14 +92,14 @@ export async function GET(request: NextRequest) {
     // Get total completed sessions (all past confirmed appointments)
     const completedSessions = await Appointment.countDocuments({
       ...appointmentQuery,
-      date: { $lt: startOfToday },
-      status: 'confirmed'
+      scheduledAt: { $lt: startOfToday },
+      status: { $in: ['confirmed', 'completed'] }
     });
 
     // Calculate completion rate
     const totalPastAppointments = await Appointment.countDocuments({
       ...appointmentQuery,
-      date: { $lt: startOfToday }
+      scheduledAt: { $lt: startOfToday }
     });
     const completionRate = totalPastAppointments > 0
       ? Math.round((completedSessions / totalPastAppointments) * 100)
@@ -115,13 +115,13 @@ export async function GET(request: NextRequest) {
     // Get today's schedule (for this dietitian or all for admin)
     const todaysSchedule = await Appointment.find({
       ...appointmentQuery,
-      date: {
+      scheduledAt: {
         $gte: startOfToday,
         $lt: endOfToday
       }
     })
-    .populate('clientId', 'firstName lastName email')
-    .sort({ time: 1 })
+    .populate('client', 'firstName lastName email')
+    .sort({ scheduledAt: 1 })
     .lean();
 
     // Get payments assigned to this dietitian
@@ -184,11 +184,15 @@ export async function GET(request: NextRequest) {
       })),
       todaysSchedule: todaysSchedule.map(appointment => ({
         id: (appointment as any)._id,
-        time: (appointment as any).time,
-        clientName: (appointment as any).clientId ?
-          `${(appointment as any).clientId.firstName} ${(appointment as any).clientId.lastName}` :
+        time: new Date((appointment as any).scheduledAt).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        }),
+        clientName: (appointment as any).client ?
+          `${(appointment as any).client.firstName} ${(appointment as any).client.lastName}` :
           'Unknown Client',
-        clientEmail: (appointment as any).clientId?.email,
+        clientEmail: (appointment as any).client?.email,
         status: (appointment as any).status,
         type: (appointment as any).type || 'Consultation'
       })),

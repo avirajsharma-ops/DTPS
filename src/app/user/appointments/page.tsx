@@ -19,7 +19,9 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  X,
+  Edit
 } from 'lucide-react';
 import { format, isToday, isTomorrow, isPast, addDays } from 'date-fns';
 import Link from 'next/link';
@@ -45,6 +47,9 @@ export default function UserAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -81,6 +86,37 @@ export default function UserAppointmentsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    setCancellingId(appointmentId);
+    try {
+      const response = await fetch(`/api/appointments/${appointmentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
+      });
+
+      if (response.ok) {
+        toast.success('Appointment cancelled successfully');
+        fetchAppointments();
+        setShowCancelModal(false);
+        setSelectedAppointment(null);
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to cancel appointment');
+      }
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      toast.error('Failed to cancel appointment');
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const openCancelModal = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowCancelModal(true);
   };
 
   const upcomingAppointments = appointments.filter(a => a.status === 'upcoming');
@@ -164,8 +200,13 @@ export default function UserAppointmentsPage() {
                 <TypeIcon className="h-4 w-4 mr-2" />
                 Join Call
               </Button>
-              <Button variant="outline" className="flex-1 border-[#3AB1A0] text-[#3AB1A0] hover:bg-[#3AB1A0]/10">
-                Reschedule
+              <Button 
+                variant="outline" 
+                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                onClick={() => openCancelModal(appointment)}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Cancel
               </Button>
             </div>
           )}
@@ -281,6 +322,44 @@ export default function UserAppointmentsPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <div className="text-center">
+              <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                <XCircle className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Cancel Appointment?</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to cancel your appointment with{' '}
+                <span className="font-medium">{selectedAppointment.dietitianName}</span> on{' '}
+                <span className="font-medium">{format(selectedAppointment.date, 'MMM d, yyyy')}</span>?
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setSelectedAppointment(null);
+                  }}
+                >
+                  Keep It
+                </Button>
+                <Button
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                  onClick={() => handleCancelAppointment(selectedAppointment.id)}
+                  disabled={cancellingId === selectedAppointment.id}
+                >
+                  {cancellingId === selectedAppointment.id ? 'Cancelling...' : 'Yes, Cancel'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

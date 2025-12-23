@@ -97,7 +97,7 @@ export default function ClientSignUpPage() {
 
       setSuccess('Account created successfully! Redirecting to onboarding...');
       setTimeout(() => {
-        router.push('/client-auth/onboarding');
+        router.push('/user/onboarding');
       }, 2000);
 
     } catch (error) {
@@ -110,11 +110,9 @@ export default function ClientSignUpPage() {
   return (
     <div className="flex flex-col min-h-screen bg-white md:bg-gray-50">
       {/* Header - Hidden on larger screens */}
-      <div className="flex items-center justify-between p-4 md:hidden">
-        <Link href="/" className="text-gray-500 hover:text-gray-700">
-          <ArrowLeft className="w-6 h-6" />
-        </Link>
-        <h1 className="text-[#E06A26] font-semibold   text-lg">Sign Up</h1>
+      <div className="flex items-center justify-center p-4 md:hidden">
+        
+        <h1 className="text-[#E06A26] font-semibold   text-center text-lg">Sign Up</h1>
         <div className="w-6" />
       </div>
 
@@ -317,13 +315,13 @@ export default function ClientSignUpPage() {
           >
             {isLoading ? (
               <>
-                <LoadingSpinner size="sm" className="mr-2" />
+                
                 Creating account...
               </>
             ) : (
               <>
                 Sign Up
-                <span className="ml-2">→</span>
+               
               </>
             )}
           </Button>

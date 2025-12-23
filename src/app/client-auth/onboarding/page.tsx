@@ -49,20 +49,20 @@ export default function OnboardingPage() {
         );
     }
 
-    if (!session?.user) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 flex items-center justify-center">
-                <Card className="w-full max-w-md">
-                    <CardContent className="pt-6 text-center">
-                        <p className="text-gray-600 mb-4">Please sign in to continue onboarding</p>
-                        <Button onClick={() => router.push('/client-auth/signin')} className="bg-[#3AB1A0] hover:bg-[#2a9989]">
-                            Go to Sign In
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
+    // if (!session?.user) {
+    //     return (
+    //         <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 flex items-center justify-center">
+    //             <Card className="w-full max-w-md">
+    //                 <CardContent className="pt-6 text-center">
+    //                     <p className="text-gray-600 mb-4">Please sign in to continue onboarding</p>
+    //                     <Button onClick={() => router.push('/client-auth/signin')} className="bg-[#3AB1A0] hover:bg-[#2a9989]">
+    //                         Go to Sign In
+    //                     </Button>
+    //                 </CardContent>
+    //             </Card>
+    //         </div>
+    //     );
+    // }
 
     const handleProfileSubmit = async () => {
         if (!profile.age || !profile.height || !profile.weight) {

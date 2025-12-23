@@ -201,7 +201,24 @@ export default function ProfilePage() {
   };
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/' });
+    try {
+      // First clear cookies via our custom logout API
+      await fetch('/api/auth/logout', { method: 'POST' });
+      
+      // Clear local storage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user-preferences');
+        localStorage.removeItem('theme');
+        localStorage.removeItem('onboarding-data');
+        sessionStorage.clear();
+      }
+      
+      // Then call NextAuth signOut
+      await signOut({ callbackUrl: '/' });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      await signOut({ callbackUrl: '/' });
+    }
   };
 
   if (loading) {

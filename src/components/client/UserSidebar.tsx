@@ -150,39 +150,7 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
         
         </div>
 
-        {/* Services Section - Horizontal Scroll */}
-        {services.length > 0 && (
-          <div className="py-3 border-b border-gray-100">
-            <div className="flex items-center justify-between px-4 mb-2">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Services</h3>
-              <Link 
-                href="/user/services" 
-                onClick={handleLinkClick}
-                className="text-xs text-[#3AB1A0] font-medium flex items-center gap-1"
-              >
-                View All <ChevronRight className="w-3 h-3" />
-              </Link>
-            </div>
-            <div className="flex gap-2 overflow-x-auto px-4 pb-2 hide-scrollbar">
-              {services.slice(0, 5).map((service) => (
-                <Link
-                  key={service._id}
-                  href={`/user/services/${service._id}`}
-                  onClick={handleLinkClick}
-                  className="flex-shrink-0 w-36 p-3 bg-gradient-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/5 rounded-xl border border-[#3AB1A0]/20 hover:border-[#3AB1A0] transition-all"
-                >
-                  <div className="text-xs font-bold text-[#3AB1A0] mb-1 truncate">{service.category}</div>
-                  <div className="text-sm font-semibold text-gray-800 truncate">{service.name}</div>
-                  {service.pricingTiers && service.pricingTiers.length > 0 && (
-                    <div className="text-xs font-bold text-[#E06A26] mt-1">
-                      ₹{service.pricingTiers[0]?.amount}+
-                    </div>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+     
 
         {/* Menu Items */}
         <nav className="flex-1 py-2 overflow-y-auto">

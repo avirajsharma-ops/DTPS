@@ -336,7 +336,7 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                                 className="flex-shrink-0 w-[280px] min-w-[280px] max-w-[280px] snap-center animate-scale-fade-in"
                                 style={{ animationDelay: `${index * 100}ms` }}
                             >
-                                <div className="rounded-3xl overflow-hidden shadow-lg border-2 border-[#3AB1A0]/30 hover:shadow-xl transition-shadow duration-300 h-[320px] flex flex-col">
+                                <div className="rounded-3xl overflow-hidden border-2 border-[#3AB1A0]/30 transition-all duration-300 h-[320px] flex flex-col">
                                     <div className="bg-gradient-to-r from-[#E06A26] to-[#DB9C6E] p-4 text-white flex-shrink-0">
                                         <div className="flex items-start justify-between">
                                             <div>

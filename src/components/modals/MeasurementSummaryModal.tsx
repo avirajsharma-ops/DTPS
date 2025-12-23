@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { X, TrendingUp, TrendingDown, Ruler, Target, Scale } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -34,6 +35,24 @@ export function MeasurementSummaryModal({
   measurement, 
   previousValue 
 }: MeasurementSummaryModalProps) {
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${scrollY}px`;
+      return () => {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const config = measurementConfig[measurement.type as keyof typeof measurementConfig];
@@ -42,8 +61,11 @@ export function MeasurementSummaryModal({
   const changePercentage = previousValue ? ((change / previousValue) * 100) : 0;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-[90px] flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 max-h-[85vh] flex flex-col overflow-hidden my-auto">
         {/* Header */}
         <div className="relative p-6 pb-4">
           <button

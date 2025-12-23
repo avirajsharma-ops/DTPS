@@ -5,7 +5,7 @@ import connectDB from '@/lib/db/connection';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import Recipe from '@/lib/db/models/Recipe';
 import { UserRole } from '@/types';
-import { startOfDay, endOfDay, parseISO } from 'date-fns';
+import { startOfDay, endOfDay, parseISO, format } from 'date-fns';
 
 // GET /api/client/meal-plan - Get client's meal plan for a specific date
 export async function GET(request: NextRequest) {
@@ -109,6 +109,19 @@ export async function GET(request: NextRequest) {
     const totalCalories = dayMeals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0) || 
                          mealPlan.customizations?.targetCalories || 0;
 
+    // Check if this date is frozen
+    const dateStr = format(normalizedDate, 'yyyy-MM-dd');
+    const freezedDays = mealPlan.freezedDays || [];
+    const isFrozen = freezedDays.some((fd: any) => {
+      const freezeDate = format(new Date(fd.date), 'yyyy-MM-dd');
+      return freezeDate === dateStr;
+    });
+    
+    // Get freeze day details if frozen
+    const freezeInfo = isFrozen ? freezedDays.find((fd: any) => 
+      format(new Date(fd.date), 'yyyy-MM-dd') === dateStr
+    ) : null;
+
     return NextResponse.json({
       success: true,
       hasPlan: true,
@@ -116,6 +129,12 @@ export async function GET(request: NextRequest) {
       totalCalories,
       meals: dayMeals,
       mealsSource, // For debugging
+      isFrozen,
+      freezeInfo: freezeInfo ? {
+        date: freezeInfo.date,
+        reason: freezeInfo.reason || 'Day frozen by dietitian',
+        frozenAt: freezeInfo.createdAt
+      } : null,
       planDetails: {
         id: mealPlan._id,
         name: mealPlan.name,

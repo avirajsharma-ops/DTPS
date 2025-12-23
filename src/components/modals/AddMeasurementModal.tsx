@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Ruler, Target, Scale } from 'lucide-react';
 
 interface AddMeasurementModalProps {
@@ -26,6 +26,31 @@ export function AddMeasurementModal({ isOpen, onClose, onAdd }: AddMeasurementMo
   const [loading, setLoading] = useState(false);
 
   const selectedMeasurement = measurementTypes.find(m => m.value === selectedType);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${window.scrollY}px`;
+    } else {
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+    };
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,10 +80,13 @@ export function AddMeasurementModal({ isOpen, onClose, onAdd }: AddMeasurementMo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-[90px] flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden my-auto">
+        {/* Header - Sticky */}
+        <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-100 bg-white">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Add Measurement</h2>
             <p className="text-sm text-gray-500 mt-1">Track your body measurements</p>
@@ -71,8 +99,9 @@ export function AddMeasurementModal({ isOpen, onClose, onAdd }: AddMeasurementMo
           </button>
         </div>
 
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Content - Scrollable */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="p-6 space-y-6">
           {/* Measurement Type Selection */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-3">
@@ -129,9 +158,10 @@ export function AddMeasurementModal({ isOpen, onClose, onAdd }: AddMeasurementMo
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors resize-none"
             />
           </div>
+          </div>
 
-          {/* Action Buttons */}
-          <div className="flex space-x-3 pt-4">
+          {/* Action Buttons - Sticky Footer */}
+          <div className="flex-shrink-0 flex space-x-3 p-6 border-t border-gray-100 bg-white">
             <button
               type="button"
               onClick={onClose}

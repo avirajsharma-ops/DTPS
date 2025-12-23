@@ -81,6 +81,12 @@ interface DayPlan {
   meals: Meal[];
   totalCalories: number;
   hasPlan: boolean;
+  isFrozen?: boolean;
+  freezeInfo?: {
+    date: string;
+    reason: string;
+    frozenAt: string;
+  } | null;
   planDetails?: {
     id: string;
     name: string;
@@ -278,13 +284,17 @@ export default function UserPlanPage() {
               meals: data.meals || [],
               totalCalories: data.totalCalories || 0,
               hasPlan: true,
+              isFrozen: data.isFrozen || false,
+              freezeInfo: data.freezeInfo || null,
               planDetails: data.planDetails
             }
           : {
               date: date,
               meals: [],
               totalCalories: 0,
-              hasPlan: false
+              hasPlan: false,
+              isFrozen: false,
+              freezeInfo: null
             };
         
         // Cache the result
@@ -494,6 +504,11 @@ export default function UserPlanPage() {
 
   return (
     <div className="min-h-screen pb-24 bg-gray-50">
+      {/* Today's Date Banner */}
+      <div className="px-4 py-2 bg-[#E06A26] text-white text-center">
+        <p className="text-sm font-medium">📅 Today: {format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+      </div>
+
       {/* Header */}
       <div className="px-4 py-4 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between">
@@ -629,6 +644,44 @@ export default function UserPlanPage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : dayPlan?.isFrozen ? (
+          /* Frozen Day Message */
+          <div className="p-8 text-center bg-white shadow-sm rounded-2xl border-2 border-blue-200">
+            <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center">
+              <span className="text-5xl">❄️</span>
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-blue-800">This Day is Frozen</h3>
+            <p className="mb-2 text-sm text-gray-600 font-medium">
+              {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+            </p>
+            <p className="mb-4 text-sm text-gray-500">
+              Your dietitian has frozen this day. No meals are scheduled.
+            </p>
+            {dayPlan.freezeInfo?.reason && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-left">
+                <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Reason</p>
+                <p className="text-sm text-blue-800">{dayPlan.freezeInfo.reason}</p>
+              </div>
+            )}
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => {
+                  const nextDate = addDays(selectedDate, 1);
+                  setSelectedDate(nextDate);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C] text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg"
+              >
+                View Next Day
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <Link 
+                href="/user/messages"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors"
+              >
+                💬 Contact Dietitian
+              </Link>
+            </div>
           </div>
         ) : !dayPlan?.hasPlan ? (
           /* No Plan Message - Show Buy Plan option */
@@ -1343,7 +1396,7 @@ export default function UserPlanPage() {
                 className="w-full py-3 bg-[#3AB1A0] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-[#2A9A8B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
-                  <SpoonGifLoader size="sm" />
+                  <span>Submitting...</span>
                 ) : (
                   <>
                     <Check className="w-5 h-5" />

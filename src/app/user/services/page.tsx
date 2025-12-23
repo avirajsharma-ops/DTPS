@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { ArrowLeft, Star, Check } from 'lucide-react';
+import { ArrowLeft, Star, Check, Sparkles, Clock, Users, ChevronRight, Zap, Award, TrendingUp, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
+import UserNavBar from '@/components/client/UserNavBar';
 
 interface ServicePlan {
   _id: string;
@@ -19,13 +20,45 @@ interface ServicePlan {
   }>;
   features?: string[];
   maxDiscountPercent?: number;
+  isPopular?: boolean;
 }
+
+const getCategoryIcon = (category: string) => {
+  switch (category?.toLowerCase()) {
+    case 'weight loss':
+      return '🏃';
+    case 'muscle gain':
+      return '💪';
+    case 'general wellness':
+      return '🌿';
+    case 'sports nutrition':
+      return '⚡';
+    case 'medical diet':
+      return '🏥';
+    default:
+      return '🥗';
+  }
+};
+
+const getCategoryColor = (category: string) => {
+  switch (category?.toLowerCase()) {
+    case 'weight loss':
+      return 'from-[#E06A26]/20 to-[#DB9C6E]/20';
+    case 'muscle gain':
+      return 'from-blue-100 to-indigo-100';
+    case 'general wellness':
+      return 'from-[#3AB1A0]/20 to-[#2D8A7C]/20';
+    default:
+      return 'from-purple-100 to-pink-100';
+  }
+};
 
 export default function ServicesPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [services, setServices] = useState<ServicePlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
     fetchServices();
@@ -46,6 +79,13 @@ export default function ServicesPage() {
     }
   };
 
+  // Get unique categories
+  const categories = ['All', ...Array.from(new Set(services.map(s => s.category).filter(Boolean)))];
+  
+  const filteredServices = selectedCategory === 'All' 
+    ? services 
+    : services.filter(s => s.category === selectedCategory);
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
@@ -55,76 +95,174 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <div className="flex items-center gap-3 px-4 py-4 max-w-5xl mx-auto w-full">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-[#3AB1A0]" />
-          </button>
-          <h1 className="text-xl font-bold text-gray-900">Our Services</h1>
+        <div className="px-4 py-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-[#3AB1A0]" />
+            </button>
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-gray-900">Our Services</h1>
+              <p className="text-xs text-gray-500">Choose the perfect plan for you</p>
+            </div>
+            <div className="p-2 bg-gradient-to-br from-[#E06A26] to-[#DB9C6E] rounded-xl shadow-md">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+          </div>
+
+          {/* Category Filter - Horizontal Scroll */}
+          {categories.length > 1 && (
+            <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                    selectedCategory === category
+                      ? 'bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C] text-white shadow-md'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  {category !== 'All' && <span className="mr-1">{getCategoryIcon(category)}</span>}
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="px-4 py-6 max-w-5xl mx-auto">
-        {/* Service Plans - Horizontal Scrollable Layout */}
-        <div className="mb-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Service Plans</h2>
-          <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-            <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
-              {services.map((service) => (
-                <Link
-                  key={service._id}
-                  href={`/user/services/${service._id}`}
-                  className="block w-72 flex-shrink-0 p-5 bg-white rounded-2xl border border-gray-200 hover:border-[#3AB1A0] hover:shadow-lg transition-all group"
-                >
-                <div className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-[#3AB1A0]/10 text-[#3AB1A0] mb-3">
-                  {service.category}
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#3AB1A0] transition-colors">
-                  {service.name}
-                </h3>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
-                  {service.description || 'Premium service plan'}
-                </p>
-                
-                {/* Price */}
-                {service.pricingTiers && service.pricingTiers.length > 0 && (
-                  <div className="flex items-center justify-between">
-                    <div className="text-lg font-bold text-[#E06A26]">
-                      ₹{service.pricingTiers[0]?.amount}
-                      <span className="text-xs font-normal text-gray-500 ml-1">onwards</span>
-                    </div>
-                    <span className="text-xs font-medium text-[#3AB1A0] group-hover:translate-x-1 transition-transform">
-                      View Details →
-                    </span>
-                  </div>
-                )}
-
-                {/* Features Preview */}
-                {service.features && service.features.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex flex-wrap gap-2">
-                      {service.features.slice(0, 3).map((feature, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-full">
-                          <Check className="w-3 h-3 text-[#3AB1A0]" />
-                          {feature.length > 20 ? feature.substring(0, 20) + '...' : feature}
-                        </span>
-                      ))}
-                      {service.features.length > 3 && (
-                        <span className="text-xs text-gray-400">+{service.features.length - 3} more</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </Link>
-            ))}
+      {/* Hero Banner */}
+      <div className="px-4 py-4">
+        <div className="bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C] rounded-2xl p-5 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <Award className="h-5 w-5" />
+              <span className="text-sm font-medium opacity-90">Expert Dietitians</span>
+            </div>
+            <h2 className="text-xl font-bold mb-1">Transform Your Health</h2>
+            <p className="text-sm opacity-90">Get personalized diet plans from certified nutritionists</p>
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                <span className="text-xs font-medium">1000+ Clients</span>
+              </div>
+              
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Service Plans - Horizontal Scrollable Layout */}
+      <div className="px-4 py-2">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-[#E06A26]/10 rounded-lg">
+              <Zap className="h-4 w-4 text-[#E06A26]" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-900">Service Plans</h2>
+          </div>
+          <span className="text-xs text-gray-500">{filteredServices.length} plans available</span>
+        </div>
+        
+        <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+          <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
+            {filteredServices.map((service, index) => (
+              <Link
+                key={service._id}
+                href={`/user/services/${service._id}`}
+                className="block w-80 flex-shrink-0 bg-white rounded-2xl border border-gray-100 hover:border-[#3AB1A0] hover:shadow-xl transition-all group overflow-hidden"
+              >
+                {/* Card Header with Gradient */}
+                <div className={`bg-gradient-to-br ${getCategoryColor(service.category)} p-5 relative`}>
+                  {service.maxDiscountPercent && service.maxDiscountPercent > 0 && (
+                    <div className="absolute top-3 right-3 bg-[#E06A26] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      {service.maxDiscountPercent}% OFF
+                    </div>
+                  )}
+                  {index === 0 && (
+                    <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-current" />
+                      Popular
+                    </div>
+                  )}
+                  <div className="text-4xl mb-2 mt-4">{getCategoryIcon(service.category)}</div>
+                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-white/80 text-gray-700">
+                    {service.category || 'General'}
+                  </span>
+                </div>
+
+                <div className="p-5">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-[#3AB1A0] transition-colors line-clamp-1">
+                    {service.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4 line-clamp-2 leading-relaxed min-h-[40px]">
+                    {service.description || 'Premium nutrition and diet plan customized for your goals.'}
+                  </p>
+                  
+                  {/* Pricing Tiers - Horizontal */}
+                  {service.pricingTiers && service.pricingTiers.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-gray-400 mb-2 font-medium">PRICING OPTIONS</p>
+                      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
+                        {service.pricingTiers.slice(0, 3).map((tier, idx) => (
+                          <div key={idx} className="flex-shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-[80px] border border-gray-100">
+                            <p className="text-xs text-gray-500">{tier.durationLabel}</p>
+                            <p className="text-sm font-bold text-[#E06A26]">₹{tier.amount.toLocaleString()}</p>
+                          </div>
+                        ))}
+                        {service.pricingTiers.length > 3 && (
+                          <div className="flex-shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-[60px] border border-gray-100 flex items-center justify-center">
+                            <p className="text-xs text-gray-400">+{service.pricingTiers.length - 3}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Features Preview */}
+                  {service.features && service.features.length > 0 && (
+                    <div className="border-t border-gray-100 pt-4">
+                      <div className="space-y-2">
+                        {service.features.slice(0, 3).map((feature, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                            <Check className="w-4 h-4 text-[#3AB1A0] flex-shrink-0" />
+                            <span className="line-clamp-1">{feature}</span>
+                          </div>
+                        ))}
+                        {service.features.length > 3 && (
+                          <p className="text-xs text-[#3AB1A0] font-medium">+{service.features.length - 3} more features</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CTA */}
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                      <Clock className="h-3 w-3" />
+                      Starts from {service.pricingTiers?.[0]?.durationLabel || '1 Month'}
+                    </div>
+                    <span className="flex items-center gap-1 text-sm font-bold text-[#3AB1A0] group-hover:translate-x-1 transition-transform">
+                      View <ChevronRight className="w-4 h-4" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+    
 
         {services.length === 0 && (
           <div className="py-20 text-center">
@@ -132,7 +270,6 @@ export default function ServicesPage() {
             <p className="text-gray-500 font-medium">No services available</p>
           </div>
         )}
-      </div>
     </div>
   );
 }

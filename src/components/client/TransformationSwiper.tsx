@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Award, Clock, TrendingDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, Clock, TrendingDown, ArrowRight, Star, ImageOff } from 'lucide-react';
 
 interface Transformation {
   _id: string;
@@ -20,6 +19,7 @@ export default function TransformationSwiper() {
   const [transformations, setTransformations] = useState<Transformation[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function TransformationSwiper() {
   const scrollToIndex = (index: number) => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-    const cardWidth = container.children[0]?.clientWidth || 280;
+    const cardWidth = 320;
     const gap = 16;
     container.scrollTo({
       left: index * (cardWidth + gap),
@@ -55,10 +55,19 @@ export default function TransformationSwiper() {
   const handleScroll = () => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-    const cardWidth = container.children[0]?.clientWidth || 280;
+    const cardWidth = 320;
     const gap = 16;
     const newIndex = Math.round(container.scrollLeft / (cardWidth + gap));
     setActiveIndex(Math.min(newIndex, transformations.length - 1));
+  };
+
+  const handleImageError = (id: string, type: 'before' | 'after') => {
+    setImageErrors(prev => new Set(prev).add(`${id}-${type}`));
+  };
+
+  const getImageUrl = (url: string) => {
+    if (!url || url === 'undefined' || url === 'null') return '';
+    return url;
   };
 
   if (loading) {
@@ -69,7 +78,7 @@ export default function TransformationSwiper() {
         </div>
         <div className="flex gap-4 overflow-hidden">
           {[1, 2].map((i) => (
-            <div key={i} className="w-72 h-48 bg-gray-100 rounded-xl animate-pulse flex-shrink-0" />
+            <div key={i} className="w-80 h-64 bg-gray-100 rounded-xl animate-pulse flex-shrink-0" />
           ))}
         </div>
       </div>
@@ -77,30 +86,37 @@ export default function TransformationSwiper() {
   }
 
   if (transformations.length === 0) {
-    return null; // Don't show section if no transformations
+    return null;
   }
 
   return (
-    <div className="bg-gradient-to-r from-[#3AB1A0]/5 to-[#E06A26]/5 rounded-2xl p-4 shadow-sm border border-[#3AB1A0]/10">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Award className="h-5 w-5 text-[#3AB1A0]" />
-          <h2 className="text-base font-bold text-gray-900">Success Stories</h2>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between bg-gradient-to-r from-[#3AB1A0]/10 to-transparent rounded-xl p-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-br from-[#3AB1A0] to-[#2D8A7C] rounded-xl shadow-lg">
+            <Sparkles className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Success Stories</h2>
+            <p className="text-xs text-gray-500">Real transformations, real results</p>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
+        
+        <div className="flex gap-2">
           <button
             onClick={() => scrollToIndex(Math.max(0, activeIndex - 1))}
             disabled={activeIndex === 0}
-            className="p-1.5 rounded-full bg-white shadow-sm hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="p-2 rounded-xl bg-white shadow-sm hover:shadow-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-gray-100"
           >
-            <ChevronLeft className="h-4 w-4 text-gray-600" />
+            <ChevronLeft className="h-5 w-5 text-gray-600" />
           </button>
           <button
             onClick={() => scrollToIndex(Math.min(transformations.length - 1, activeIndex + 1))}
             disabled={activeIndex >= transformations.length - 1}
-            className="p-1.5 rounded-full bg-white shadow-sm hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="p-2 rounded-xl bg-white shadow-sm hover:shadow-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-gray-100"
           >
-            <ChevronRight className="h-4 w-4 text-gray-600" />
+            <ChevronRight className="h-5 w-5 text-gray-600" />
           </button>
         </div>
       </div>
@@ -109,68 +125,114 @@ export default function TransformationSwiper() {
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2 -mx-1 px-1"
+        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-3 -mx-1 px-1"
         style={{ scrollSnapType: 'x mandatory' }}
       >
-        {transformations.map((transformation, index) => (
+        {transformations.map((transformation) => (
           <div
             key={transformation._id}
-            className="w-72 flex-shrink-0 bg-white rounded-xl overflow-hidden shadow-md border border-gray-100 hover:shadow-lg transition-shadow"
+            className="w-80 flex-shrink-0 bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             style={{ scrollSnapAlign: 'start' }}
           >
             {/* Before/After Images */}
-            <div className="relative flex">
-              <div className="w-1/2 relative aspect-square bg-gray-100">
-                <Image
-                  src={transformation.beforeImage}
-                  alt="Before"
-                  fill
-                  className="object-cover"
-                />
-                <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
-                  Before
-                </span>
-              </div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                <div className="w-6 h-6 rounded-full bg-white shadow-lg flex items-center justify-center">
-                  <ChevronRight className="h-4 w-4 text-[#3AB1A0]" />
+            <div className="relative">
+              <div className="flex h-48">
+                {/* Before Image */}
+                <div className="w-1/2 relative bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                  {getImageUrl(transformation.beforeImage) && !imageErrors.has(`${transformation._id}-before`) ? (
+                    <img
+                      src={getImageUrl(transformation.beforeImage)}
+                      alt="Before transformation"
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                      loading="lazy"
+                      onError={() => handleImageError(transformation._id, 'before')}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                      <ImageOff className="h-8 w-8 text-gray-300 mb-1" />
+                      <span className="text-gray-400 text-xs">No image</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <span className="absolute bottom-2 left-2 bg-gray-900/80 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
+                    Before
+                  </span>
+                </div>
+                
+                {/* Center Arrow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+                  <div className="w-10 h-10 rounded-full bg-white shadow-xl flex items-center justify-center border-2 border-[#3AB1A0]">
+                    <ArrowRight className="h-5 w-5 text-[#3AB1A0]" />
+                  </div>
+                </div>
+                
+                {/* After Image */}
+                <div className="w-1/2 relative bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                  {getImageUrl(transformation.afterImage) && !imageErrors.has(`${transformation._id}-after`) ? (
+                    <img
+                      src={getImageUrl(transformation.afterImage)}
+                      alt="After transformation"
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                      loading="lazy"
+                      onError={() => handleImageError(transformation._id, 'after')}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                      <ImageOff className="h-8 w-8 text-gray-300 mb-1" />
+                      <span className="text-gray-400 text-xs">No image</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <span className="absolute bottom-2 right-2 bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C] text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-md">
+                    After
+                  </span>
                 </div>
               </div>
-              <div className="w-1/2 relative aspect-square bg-gray-100">
-                <Image
-                  src={transformation.afterImage}
-                  alt="After"
-                  fill
-                  className="object-cover"
-                />
-                <span className="absolute bottom-1 right-1 bg-[#3AB1A0] text-white text-[10px] px-1.5 py-0.5 rounded">
-                  After
-                </span>
+              
+              {/* Success Badge */}
+              <div className="absolute top-2 right-2 bg-yellow-400/90 backdrop-blur-sm text-yellow-900 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md">
+                <Star className="h-3 w-3 fill-yellow-900" />
+                Success
               </div>
             </div>
 
             {/* Content */}
-            <div className="p-3">
-              <h3 className="font-semibold text-gray-900 text-sm line-clamp-1 mb-1">
-                {transformation.title}
-              </h3>
-              {transformation.clientName && (
-                <p className="text-xs text-gray-500 mb-2">{transformation.clientName}</p>
-              )}
-              <div className="flex items-center gap-3">
+            <div className="p-4 space-y-3">
+              <div>
+                <h3 className="font-bold text-gray-900 text-base line-clamp-1">
+                  {transformation.title}
+                </h3>
+                {transformation.clientName && (
+                  <p className="text-sm text-gray-500 mt-0.5">{transformation.clientName}</p>
+                )}
+              </div>
+              
+              {/* Stats Row */}
+              <div className="flex items-center gap-4 pt-2 border-t border-gray-100">
                 {transformation.durationWeeks && (
-                  <div className="flex items-center gap-1 text-xs text-gray-600">
-                    <Clock className="h-3 w-3" />
-                    <span>{transformation.durationWeeks} weeks</span>
+                  <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                    <div className="p-1.5 bg-gray-100 rounded-lg">
+                      <Clock className="h-4 w-4" />
+                    </div>
+                    <span className="font-medium">{transformation.durationWeeks} weeks</span>
                   </div>
                 )}
                 {transformation.weightLoss && (
-                  <div className="flex items-center gap-1 text-xs text-[#3AB1A0] font-medium">
-                    <TrendingDown className="h-3 w-3" />
+                  <div className="flex items-center gap-1.5 text-sm text-[#3AB1A0] font-semibold">
+                    <div className="p-1.5 bg-[#3AB1A0]/10 rounded-lg">
+                      <TrendingDown className="h-4 w-4" />
+                    </div>
                     <span>-{transformation.weightLoss} kg</span>
                   </div>
                 )}
               </div>
+              
+              {/* Description */}
+              {transformation.description && (
+                <p className="text-xs text-gray-500 line-clamp-2 italic">
+                  &ldquo;{transformation.description}&rdquo;
+                </p>
+              )}
             </div>
           </div>
         ))}
@@ -178,15 +240,15 @@ export default function TransformationSwiper() {
 
       {/* Dots Indicator */}
       {transformations.length > 1 && (
-        <div className="flex justify-center gap-1.5 mt-3">
+        <div className="flex justify-center gap-2">
           {transformations.map((_, index) => (
             <button
               key={index}
               onClick={() => scrollToIndex(index)}
-              className={`h-1.5 rounded-full transition-all ${
+              className={`transition-all duration-300 rounded-full ${
                 index === activeIndex
-                  ? 'w-4 bg-[#3AB1A0]'
-                  : 'w-1.5 bg-gray-300 hover:bg-gray-400'
+                  ? 'w-6 h-2 bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C]'
+                  : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
               }`}
             />
           ))}

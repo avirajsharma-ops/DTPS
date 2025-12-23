@@ -408,13 +408,6 @@ export default function UserSubscriptionsPage() {
                       </div>
                     </div>
 
-                    {sub.startDate && sub.endDate && (
-                      <div className="text-xs text-gray-500 mb-3">
-                        <span>Valid: {format(new Date(sub.startDate), 'MMM d, yyyy')}</span>
-                        <span> - {format(new Date(sub.endDate), 'MMM d, yyyy')}</span>
-                      </div>
-                    )}
-
                     {sub.features && sub.features.length > 0 && (
                       <div className="space-y-2 mb-3">
                         {sub.features.slice(0, 3).map((feature, i) => (

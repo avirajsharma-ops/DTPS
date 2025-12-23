@@ -327,10 +327,10 @@ export default function TransformationsManagement() {
               <div className="relative">
                 <div className="grid grid-cols-2 gap-1">
                   <div className="relative aspect-[3/4] bg-gray-100">
-                    <Image
+                    <img
                       src={transformation.beforeImage}
                       alt="Before"
-                      fill
+                      
                       className="object-cover"
                     />
                     <span className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
@@ -338,10 +338,10 @@ export default function TransformationsManagement() {
                     </span>
                   </div>
                   <div className="relative aspect-[3/4] bg-gray-100">
-                    <Image
+                    <img
                       src={transformation.afterImage}
                       alt="After"
-                      fill
+                      
                       className="object-cover"
                     />
                     <span className="absolute bottom-2 left-2 bg-[#3AB1A0]/90 text-white text-xs px-2 py-1 rounded">
@@ -422,10 +422,10 @@ export default function TransformationsManagement() {
                 </label>
                 <div className="relative aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden border-2 border-dashed border-gray-300 hover:border-[#3AB1A0] transition-colors">
                   {beforePreview ? (
-                    <Image
+                    <img
                       src={beforePreview}
                       alt="Before preview"
-                      fill
+                      
                       className="object-cover"
                     />
                   ) : (
@@ -448,10 +448,10 @@ export default function TransformationsManagement() {
                 </label>
                 <div className="relative aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden border-2 border-dashed border-gray-300 hover:border-[#3AB1A0] transition-colors">
                   {afterPreview ? (
-                    <Image
+                    <img
                       src={afterPreview}
                       alt="After preview"
-                      fill
+                      
                       className="object-cover"
                     />
                   ) : (

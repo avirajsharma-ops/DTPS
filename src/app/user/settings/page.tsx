@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -41,7 +42,9 @@ interface UserSettings {
 
 export default function UserSettingsPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
   const [settings, setSettings] = useState<UserSettings>({
     pushNotifications: true,
@@ -52,6 +55,36 @@ export default function UserSettingsPage() {
     darkMode: false,
     soundEnabled: true,
   });
+
+  // Handle logout with proper cookie clearing
+  const handleLogout = useCallback(async () => {
+    try {
+      setLoggingOut(true);
+      
+      // First, call our custom logout API to clear cookies
+      await fetch('/api/auth/logout', { method: 'POST' });
+      
+      // Clear any local storage items
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user-preferences');
+        localStorage.removeItem('theme');
+        localStorage.removeItem('onboarding-data');
+        sessionStorage.clear();
+      }
+      
+      // Then call NextAuth signOut
+      await signOut({ 
+        callbackUrl: '/auth/signin',
+        redirect: true
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Fallback to just NextAuth signOut
+      await signOut({ callbackUrl: '/auth/signin' });
+    } finally {
+      setLoggingOut(false);
+    }
+  }, []);
 
   // Fetch settings on mount
   useEffect(() => {
@@ -446,11 +479,21 @@ export default function UserSettingsPage() {
 
         {/* Sign Out Button */}
         <Button 
-          className="w-full bg-[#E06A26] hover:bg-[#E06A26]/90 text-white font-medium h-12 rounded-xl"
-          onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+          className="w-full bg-[#E06A26] hover:bg-[#E06A26]/90 text-white font-medium h-12 rounded-xl disabled:opacity-50"
+          onClick={handleLogout}
+          disabled={loggingOut}
         >
-          <LogOut className="h-5 w-5 mr-2" />
-          Sign Out
+          {loggingOut ? (
+            <>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              Signing Out...
+            </>
+          ) : (
+            <>
+              <LogOut className="h-5 w-5 mr-2" />
+              Sign Out
+            </>
+          )}
         </Button>
       </div>
 

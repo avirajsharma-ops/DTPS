@@ -97,6 +97,17 @@ export async function GET(request: NextRequest) {
       // Calculate which day of the plan this is
       const dayIndex = differenceInDays(date, getDateOnly(clientMealPlan.startDate));
       
+      // Get meal completions for this date from ClientMealPlan
+      const mealCompletionsMap = new Map<string, any>();
+      if (clientMealPlan.mealCompletions && Array.isArray(clientMealPlan.mealCompletions)) {
+        for (const completion of clientMealPlan.mealCompletions) {
+          const completionDate = getDateOnly(completion.date);
+          if (completionDate.getTime() === date.getTime()) {
+            mealCompletionsMap.set(completion.mealType.toLowerCase(), completion);
+          }
+        }
+      }
+      
       // Get meal types from plan or template or use defaults
       const mealTypes = clientMealPlan.mealTypes || 
         (clientMealPlan.templateId as any)?.mealTypes || [
@@ -135,6 +146,11 @@ export async function GET(request: NextRequest) {
                 // Check if this meal was already tracked in journal
                 const journalMeal = journalMealsMap.get(mealPlanId);
                 
+                // Check meal completion from ClientMealPlan mealCompletions
+                const mealTypeKey = mealType.name.toLowerCase().replace(/\s+/g, '');
+                const mealCompletion = mealCompletionsMap.get(mealTypeKey) || 
+                                       mealCompletionsMap.get(mealType.name.toLowerCase());
+                
                 meals.push({
                   _id: journalMeal?._id || mealPlanId,
                   name: food.food || food.label || 'Unnamed Food',
@@ -144,9 +160,9 @@ export async function GET(request: NextRequest) {
                   fat: parseFloat(food.fats) || 0,
                   type: mealType.name as any,
                   time: mealData.time || mealType.time,
-                  consumed: journalMeal?.consumed || false,
-                  photo: journalMeal?.photo || '',
-                  notes: journalMeal?.notes || '',
+                  consumed: mealCompletion?.completed || journalMeal?.consumed || false,
+                  photo: mealCompletion?.imagePath || journalMeal?.photo || '',
+                  notes: mealCompletion?.notes || journalMeal?.notes || '',
                   fromMealPlan: true,
                   mealPlanId: mealPlanId,
                   unit: food.unit || ''

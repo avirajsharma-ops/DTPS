@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import { File } from '@/lib/db/models/File';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { getImageKit } from '@/lib/imagekit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,7 +71,45 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     const base64Data = buffer.toString('base64');
 
-    // Also save file locally for faster access
+    // For avatar uploads, use ImageKit
+    if (fileType === 'avatar') {
+      try {
+        const ik = getImageKit();
+        const uploadResponse = await ik.upload({
+          file: base64Data,
+          fileName: `${session.user.id}-${fileName}`,
+          folder: '/profile',
+        });
+
+        // Save file reference to MongoDB
+        const savedFile = await File.create({
+          filename: fileName,
+          originalName: file.name,
+          mimeType: file.type,
+          size: file.size,
+          data: base64Data,
+          type: fileType,
+          localPath: uploadResponse.url,
+          imageKitFileId: uploadResponse.fileId,
+          uploadedBy: session.user.id
+        });
+
+        return NextResponse.json({
+          url: uploadResponse.url,
+          dbUrl: `/api/files/${savedFile._id}`,
+          localUrl: uploadResponse.url,
+          filename: fileName,
+          size: file.size,
+          type: file.type,
+          fileId: savedFile._id
+        });
+      } catch (imagekitError) {
+        console.error('Error uploading to ImageKit:', imagekitError);
+        // Fall through to local storage if ImageKit fails
+      }
+    }
+
+    // Also save file locally for faster access (for non-avatar types or if ImageKit fails)
     let localUrl = '';
     try {
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', fileType);

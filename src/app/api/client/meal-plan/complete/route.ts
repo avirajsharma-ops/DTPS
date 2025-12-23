@@ -5,8 +5,7 @@ import connectDB from '@/lib/db/connection';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import { UserRole } from '@/types';
 import { parseISO, startOfDay, isToday } from 'date-fns';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { getImageKit } from '@/lib/imagekit';
 
 // POST /api/client/meal-plan/complete - Mark a meal as completed with image
 export async function POST(request: NextRequest) {
@@ -78,32 +77,35 @@ export async function POST(request: NextRequest) {
     const mealTypes = ['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'eveningSnack'];
     const determinedMealType = mealType || mealTypes[mealIndex % mealTypes.length];
 
-    // Handle image upload - save to server
+    // Handle image upload - save to ImageKit
     let imagePath: string | undefined;
     if (imageFile) {
       try {
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'meal-completions');
-        await mkdir(uploadsDir, { recursive: true });
-
         // Generate unique filename
         const timestamp = Date.now();
         const clientId = session.user.id;
         const ext = imageFile.name.split('.').pop() || 'jpg';
         const filename = `${clientId}-${timestamp}-${determinedMealType}.${ext}`;
-        const filepath = path.join(uploadsDir, filename);
 
-        // Convert File to Buffer and save
+        // Convert File to base64
         const bytes = await imageFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        await writeFile(filepath, buffer);
+        const base64 = buffer.toString('base64');
 
-        // Store the public URL path
-        imagePath = `/uploads/meal-completions/${filename}`;
+        // Upload to ImageKit in complete-meal folder
+        const ik = getImageKit();
+        const uploadResponse = await ik.upload({
+          file: base64,
+          fileName: filename,
+          folder: '/complete-meal',
+        });
+
+        // Store the ImageKit URL
+        imagePath = uploadResponse.url;
       } catch (uploadError) {
-        console.error('Error saving meal image:', uploadError);
+        console.error('Error uploading meal image to ImageKit:', uploadError);
         return NextResponse.json({ 
-          error: 'Failed to save meal image' 
+          error: 'Failed to upload meal image' 
         }, { status: 500 });
       }
     }

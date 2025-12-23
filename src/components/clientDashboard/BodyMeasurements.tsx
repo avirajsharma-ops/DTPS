@@ -46,6 +46,18 @@ export default function BodyMeasurements({ clientId, onUpdate }: BodyMeasurement
     fetchMeasurements();
   }, [clientId]);
 
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (showAddModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showAddModal]);
+
   const fetchMeasurements = async () => {
     try {
       const response = await fetch(`/api/admin/clients/${clientId}/measurements`);
@@ -276,54 +288,64 @@ export default function BodyMeasurements({ clientId, onUpdate }: BodyMeasurement
 
       {/* Add Measurement Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Add New Measurements</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Recording for: {format(new Date(), 'MMMM d, yyyy')}
-            </p>
+        <div 
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden"
+          onClick={(e) => e.target === e.currentTarget && setShowAddModal(false)}
+        >
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden my-auto">
+            {/* Header - Sticky */}
+            <div className="flex-shrink-0 p-6 border-b border-gray-100 bg-white">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Add New Measurements</h3>
+              <p className="text-sm text-gray-500">
+                Recording for: {format(new Date(), 'MMMM d, yyyy')}
+              </p>
+            </div>
 
-            <div className="space-y-4">
-              {[
-                { key: 'arm', label: 'Arm' },
-                { key: 'waist', label: 'Waist' },
-                { key: 'abd', label: 'Abdomen' },
-                { key: 'chest', label: 'Chest' },
-                { key: 'hips', label: 'Hips' },
-                { key: 'thigh', label: 'Thigh' }
-              ].map((field) => (
-                <div key={field.key}>
-                  <Label>{field.label} (cm)</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={newMeasurement[field.key as keyof typeof newMeasurement]}
-                    onChange={(e) => setNewMeasurement({
-                      ...newMeasurement,
-                      [field.key]: e.target.value
-                    })}
-                    placeholder={`Enter ${field.label.toLowerCase()}`}
-                    className="mt-1"
-                  />
-                </div>
-              ))}
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowAddModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={handleAddMeasurement}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Save'}
-                </Button>
+            {/* Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-6">
+              <div className="space-y-4">
+                {[
+                  { key: 'arm', label: 'Arm' },
+                  { key: 'waist', label: 'Waist' },
+                  { key: 'abd', label: 'Abdomen' },
+                  { key: 'chest', label: 'Chest' },
+                  { key: 'hips', label: 'Hips' },
+                  { key: 'thigh', label: 'Thigh' }
+                ].map((field) => (
+                  <div key={field.key}>
+                    <Label>{field.label} (cm)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={newMeasurement[field.key as keyof typeof newMeasurement]}
+                      onChange={(e) => setNewMeasurement({
+                        ...newMeasurement,
+                        [field.key]: e.target.value
+                      })}
+                      placeholder={`Enter ${field.label.toLowerCase()}`}
+                      className="mt-1"
+                    />
+                  </div>
+                ))}
               </div>
+            </div>
+
+            {/* Footer - Sticky */}
+            <div className="flex-shrink-0 flex gap-3 p-6 border-t border-gray-100 bg-white">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowAddModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleAddMeasurement}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
             </div>
           </div>
         </div>

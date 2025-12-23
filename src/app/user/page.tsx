@@ -121,15 +121,17 @@ export default function UserHomePage() {
     steps: { current: 0, goal: 10000 },
   });
 
-  // Function to fetch real-time health data (water, sleep, activity, steps)
+  // Function to fetch real-time health data (water, sleep, activity, steps, calories)
   const fetchHealthData = useCallback(async () => {
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
-      const [hydrationRes, sleepRes, activityRes, stepsRes] = await Promise.all([
+      const [hydrationRes, sleepRes, activityRes, stepsRes, mealPlanRes, foodLogRes] = await Promise.all([
         fetch(`/api/client/hydration?date=${today}`),
         fetch(`/api/client/sleep?date=${today}`),
         fetch(`/api/client/activity?date=${today}`),
-        fetch(`/api/client/steps?date=${today}`)
+        fetch(`/api/client/steps?date=${today}`),
+        fetch(`/api/client/meal-plan?date=${today}`),
+        fetch(`/api/client/food-log?date=${today}`)
       ]);
 
       const newData = { ...data };
@@ -166,6 +168,43 @@ export default function UserHomePage() {
           goal: stepsData.goal || 10000
         };
       }
+
+      // Calculate calories from meal plan and food log
+      let caloriesGoal = 2000; // Default goal
+      let caloriesConsumed = 0;
+      let mealsEaten = 0;
+      let totalMeals = 4;
+
+      if (mealPlanRes.ok) {
+        const mealPlanData = await mealPlanRes.json();
+        if (mealPlanData.hasPlan) {
+          // Get total calories goal from meal plan
+          caloriesGoal = mealPlanData.totalCalories || mealPlanData.planDetails?.customizations?.targetCalories || 2000;
+          totalMeals = mealPlanData.meals?.length || 4;
+          
+          // Count completed meals
+          mealsEaten = (mealPlanData.meals || []).filter((meal: any) => meal.isCompleted).length;
+          
+          // Calculate calories from completed meals
+          caloriesConsumed = (mealPlanData.meals || [])
+            .filter((meal: any) => meal.isCompleted)
+            .reduce((sum: number, meal: any) => sum + (meal.totalCalories || 0), 0);
+        }
+      }
+
+      // Also add calories from food log entries (manual food logging)
+      if (foodLogRes.ok) {
+        const foodLogData = await foodLogRes.json();
+        if (foodLogData.success && foodLogData.entries) {
+          const foodLogCalories = (foodLogData.entries || [])
+            .reduce((sum: number, entry: any) => sum + (entry.calories || 0), 0);
+          caloriesConsumed += foodLogCalories;
+        }
+      }
+
+      newData.caloriesGoal = caloriesGoal;
+      newData.caloriesLeft = Math.max(0, caloriesGoal - caloriesConsumed);
+      newData.meals = { eaten: mealsEaten, total: totalMeals, calories: caloriesConsumed };
 
       setData(newData);
     } catch (error) {

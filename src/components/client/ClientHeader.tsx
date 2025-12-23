@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { 
   Bell, 
@@ -40,6 +40,28 @@ export default function ClientHeader({ title, showBack, onBack }: ClientHeaderPr
   const initials = user?.name 
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
+
+  // Handle logout with proper cookie clearing
+  const handleLogout = useCallback(async () => {
+    try {
+      // First clear cookies via our custom logout API
+      await fetch('/api/auth/logout', { method: 'POST' });
+      
+      // Clear local storage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user-preferences');
+        localStorage.removeItem('theme');
+        localStorage.removeItem('onboarding-data');
+        sessionStorage.clear();
+      }
+      
+      // Then call NextAuth signOut
+      await signOut({ callbackUrl: '/auth/signin' });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      await signOut({ callbackUrl: '/auth/signin' });
+    }
+  }, []);
 
   const menuItems = [
     { href: '/user/appointments', label: 'Appointments', icon: Calendar },
@@ -110,7 +132,7 @@ export default function ClientHeader({ title, showBack, onBack }: ClientHeaderPr
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                  onClick={handleLogout}
                   className="text-red-600 cursor-pointer"
                 >
                   <LogOut className="h-4 w-4 mr-2" />

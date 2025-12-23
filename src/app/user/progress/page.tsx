@@ -695,10 +695,12 @@ export default function UserProgressPage() {
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Time Range Filter - shown for all tabs */}
-        <div className="p-3 bg-white shadow-sm rounded-2xl">
-          <TimeRangeFilter value={timeRange} onChange={setTimeRange} />
-        </div>
+        {/* Time Range Filter - shown for weight and nutrition tabs only */}
+        {activeTab !== 'body' && (
+          <div className="p-3 bg-white shadow-sm rounded-2xl">
+            <TimeRangeFilter value={timeRange} onChange={setTimeRange} />
+          </div>
+        )}
 
         {/* Weight Tab */}
         {activeTab === 'weight' && (

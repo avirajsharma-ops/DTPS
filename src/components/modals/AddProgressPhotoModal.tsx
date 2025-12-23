@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { X, Camera, Upload, Image as ImageIcon, Folder } from 'lucide-react';
 
 interface AddProgressPhotoModalProps {
@@ -23,6 +23,24 @@ export function AddProgressPhotoModal({ isOpen, onClose, onAdd }: AddProgressPho
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${scrollY}px`;
+      return () => {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,10 +104,13 @@ export function AddProgressPhotoModal({ isOpen, onClose, onAdd }: AddProgressPho
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-[90px] flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden my-auto">
+        {/* Header - Sticky */}
+        <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 bg-white">
           <h2 className="text-xl font-bold text-gray-900">Add Progress Photo</h2>
           <button
             onClick={onClose}
@@ -98,6 +119,9 @@ export function AddProgressPhotoModal({ isOpen, onClose, onAdd }: AddProgressPho
             <X className="h-4 w-4 text-gray-600" />
           </button>
         </div>
+        
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -237,6 +261,7 @@ export function AddProgressPhotoModal({ isOpen, onClose, onAdd }: AddProgressPho
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

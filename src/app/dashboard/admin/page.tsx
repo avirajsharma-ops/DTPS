@@ -224,24 +224,24 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Admin Dashboard
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
               System overview and management
             </p>
           </div>
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <Link href="/admin/reports">Generate Report</Link>
           </Button>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           <StatsCard
             title="Total Clients"
             value={stats.totalClients.toLocaleString()}
@@ -292,7 +292,7 @@ export default function AdminDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="p-4 bg-white rounded-lg border border-blue-100">
                 <div className="flex items-center justify-between">
                   <div>
@@ -489,38 +489,38 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="h-20 flex flex-col space-y-2" asChild>
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-3">
+                <Button variant="outline" className="h-16 sm:h-20 flex flex-col space-y-1 sm:space-y-2 text-xs sm:text-sm" asChild>
                   <Link href="/admin/allclients">
                     <Users className="h-6 w-6" />
                     <span>All Clients</span>
                   </Link>
                 </Button>
                 
-                <Button variant="outline" className="h-20 flex flex-col space-y-2" asChild>
+                <Button variant="outline" className="h-16 sm:h-20 flex flex-col space-y-1 sm:space-y-2 text-xs sm:text-sm" asChild>
                   <Link href="/admin/users">
-                    <UserCheck className="h-6 w-6" />
+                    <UserCheck className="h-5 w-5 sm:h-6 sm:w-6" />
                     <span>Manage Users</span>
                   </Link>
                 </Button>
                 
-                <Button variant="outline" className="h-20 flex flex-col space-y-2" asChild>
+                <Button variant="outline" className="h-16 sm:h-20 flex flex-col space-y-1 sm:space-y-2 text-xs sm:text-sm" asChild>
                   <Link href="/admin/analytics">
-                    <TrendingUp className="h-6 w-6" />
+                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" />
                     <span>Analytics</span>
                   </Link>
                 </Button>
                 
-                <Button variant="outline" className="h-20 flex flex-col space-y-2" asChild>
+                <Button variant="outline" className="h-16 sm:h-20 flex flex-col space-y-1 sm:space-y-2 text-xs sm:text-sm" asChild>
                   <Link href="/admin/support">
-                    <MessageSquare className="h-6 w-6" />
-                    <span>Support Tickets</span>
+                    <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
+                    <span>Support</span>
                   </Link>
                 </Button>
 
-                <Button variant="outline" className="h-20 flex flex-col space-y-2" asChild>
+                <Button variant="outline" className="h-16 sm:h-20 flex flex-col space-y-1 sm:space-y-2 text-xs sm:text-sm" asChild>
                   <Link href="/admin/tags">
-                    <Tag className="h-6 w-6" />
+                    <Tag className="h-5 w-5 sm:h-6 sm:w-6" />
                     <span>Manage Tags</span>
                   </Link>
                 </Button>

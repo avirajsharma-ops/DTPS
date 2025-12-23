@@ -93,14 +93,7 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, [page, search, roleFilter]);
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success('Password copied to clipboard');
-    } catch (error) {
-      toast.error('Failed to copy password');
-    }
-  };
+
 
   function openCreate() {
     setEditing(null);
@@ -266,7 +259,7 @@ export default function AdminUsersPage() {
                   <tr>
                     <th className="text-left p-3">Name</th>
                     <th className="text-left p-3">Email</th>
-                    <th className="text-left p-3">Password</th>
+                    
                     <th className="text-left p-3">Role</th>
                     <th className="text-left p-3">Status</th>
                     <th className="text-left p-3">Created</th>
@@ -279,24 +272,7 @@ export default function AdminUsersPage() {
                       <td className="p-3">{u.firstName} {u.lastName}</td>
                       <td className="p-3">{u.email}</td>
                       <td className="p-3">
-                        {u.password ? (
-                          <div className="flex items-center gap-2">
-                            <div className="font-mono text-sm bg-gray-100 px-2 py-1 rounded max-w-32 truncate">
-                              {u.password}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => copyToClipboard(u.password!)}
-                              title="Copy password"
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">N/A</span>
-                        )}
+                        {u.role.charAt(0).toUpperCase() + u.role.slice(1).replace('_', ' ')}
                       </td>
                       <td className="p-3 capitalize">{u.role}</td>
                       <td className="p-3 capitalize">{u.status}</td>
