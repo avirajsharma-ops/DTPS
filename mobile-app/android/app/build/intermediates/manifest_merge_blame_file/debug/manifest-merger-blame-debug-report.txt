@@ -1,0 +1,236 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.dtps.dietary.debug"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="34" />
+10
+11    <!-- Permissions -->
+12    <uses-permission android:name="android.permission.INTERNET" />
+12-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:6:5-67
+12-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:6:22-64
+13    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+13-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:7:5-79
+13-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:7:22-76
+14    <uses-permission android:name="android.permission.CAMERA" />
+14-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:8:5-65
+14-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:8:22-62
+15    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+15-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:9:5-71
+15-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:9:22-68
+16    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+16-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:10:5-80
+16-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:10:22-77
+17    <uses-permission android:name="android.permission.VIBRATE" />
+17-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:11:5-66
+17-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:11:22-63
+18    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+18-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:12:5-77
+18-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:12:22-74
+19    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+19-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:13:5-76
+19-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:13:22-73
+20    <uses-permission android:name="android.permission.WAKE_LOCK" />
+20-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:14:5-68
+20-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:14:22-65
+21    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+21-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:15:5-81
+21-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:15:22-78
+22
+23    <!-- Features -->
+24    <uses-feature
+24-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:18:5-85
+25        android:name="android.hardware.camera"
+25-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:18:19-57
+26        android:required="false" />
+26-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:18:58-82
+27    <uses-feature
+27-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:19:5-95
+28        android:name="android.hardware.camera.autofocus"
+28-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:19:19-67
+29        android:required="false" />
+29-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:19:68-92
+30    <uses-feature
+30-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:20:5-89
+31        android:name="android.hardware.microphone"
+31-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:20:19-61
+32        android:required="false" />
+32-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:20:62-86
+33
+34    <permission
+34-->[androidx.core:core:1.12.0] /Users/avirajsharma/.gradle/caches/transforms-3/217cd4443c329c3de6d6b6409afab4f6/transformed/core-1.12.0/AndroidManifest.xml:22:5-24:47
+35        android:name="com.dtps.dietary.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+35-->[androidx.core:core:1.12.0] /Users/avirajsharma/.gradle/caches/transforms-3/217cd4443c329c3de6d6b6409afab4f6/transformed/core-1.12.0/AndroidManifest.xml:23:9-81
+36        android:protectionLevel="signature" />
+36-->[androidx.core:core:1.12.0] /Users/avirajsharma/.gradle/caches/transforms-3/217cd4443c329c3de6d6b6409afab4f6/transformed/core-1.12.0/AndroidManifest.xml:24:9-44
+37
+38    <uses-permission android:name="com.dtps.dietary.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+38-->[androidx.core:core:1.12.0] /Users/avirajsharma/.gradle/caches/transforms-3/217cd4443c329c3de6d6b6409afab4f6/transformed/core-1.12.0/AndroidManifest.xml:26:5-97
+38-->[androidx.core:core:1.12.0] /Users/avirajsharma/.gradle/caches/transforms-3/217cd4443c329c3de6d6b6409afab4f6/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
+39
+40    <application
+40-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:22:5-62:19
+41        android:name="com.dtps.dietary.DTPSApplication"
+41-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:23:9-40
+42        android:allowBackup="true"
+42-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:24:9-35
+43        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+43-->[androidx.core:core:1.12.0] /Users/avirajsharma/.gradle/caches/transforms-3/217cd4443c329c3de6d6b6409afab4f6/transformed/core-1.12.0/AndroidManifest.xml:28:18-86
+44        android:debuggable="true"
+45        android:extractNativeLibs="false"
+46        android:icon="@mipmap/ic_launcher"
+46-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:25:9-43
+47        android:label="@string/app_name"
+47-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:27:9-41
+48        android:networkSecurityConfig="@xml/network_security_config"
+48-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:30:9-69
+49        android:roundIcon="@mipmap/ic_launcher_round"
+49-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:26:9-54
+50        android:supportsRtl="true"
+50-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:28:9-35
+51        android:theme="@style/Theme.DTPS"
+51-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:29:9-42
+52        android:usesCleartextTraffic="false" >
+52-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:31:9-45
+53        <activity
+53-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:34:9-61:20
+54            android:name="com.dtps.dietary.MainActivity"
+54-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:35:13-41
+55            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+55-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:37:13-87
+56            android:exported="true"
+56-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:36:13-36
+57            android:launchMode="singleTask"
+57-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:38:13-44
+58            android:theme="@style/Theme.DTPS.Splash"
+58-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:40:13-53
+59            android:windowSoftInputMode="adjustResize" >
+59-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:39:13-55
+60            <intent-filter>
+60-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:42:13-45:29
+61                <action android:name="android.intent.action.MAIN" />
+61-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:43:17-69
+61-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:43:25-66
+62
+63                <category android:name="android.intent.category.LAUNCHER" />
+63-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:44:17-77
+63-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:44:27-74
+64            </intent-filter>
+65
+66            <!-- Deep linking -->
+67            <intent-filter android:autoVerify="true" >
+67-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:48:13-53:29
+67-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:48:28-53
+68                <action android:name="android.intent.action.VIEW" />
+68-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:49:17-69
+68-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:49:25-66
+69
+70                <category android:name="android.intent.category.DEFAULT" />
+70-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:50:17-76
+70-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:50:27-73
+71                <category android:name="android.intent.category.BROWSABLE" />
+71-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:51:17-78
+71-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:51:27-75
+72
+73                <data
+73-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:17-100
+74                    android:host="dtps.tech"
+74-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:46-70
+75                    android:pathPrefix="/user"
+75-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:71-97
+76                    android:scheme="https" />
+76-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:23-45
+77            </intent-filter>
+78            <intent-filter>
+78-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:55:13-60:29
+79                <action android:name="android.intent.action.VIEW" />
+79-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:49:17-69
+79-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:49:25-66
+80
+81                <category android:name="android.intent.category.DEFAULT" />
+81-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:50:17-76
+81-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:50:27-73
+82                <category android:name="android.intent.category.BROWSABLE" />
+82-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:51:17-78
+82-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:51:27-75
+83
+84                <data
+84-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:17-100
+85                    android:host="user"
+85-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:46-70
+86                    android:scheme="dtps" />
+86-->/Users/avirajsharma/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:23-45
+87            </intent-filter>
+88        </activity>
+89
+90        <provider
+90-->[androidx.emoji2:emoji2:1.2.0] /Users/avirajsharma/.gradle/caches/transforms-3/3500ab73a4dc02317d7c308f4cc31c1b/transformed/emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
+91            android:name="androidx.startup.InitializationProvider"
+91-->[androidx.emoji2:emoji2:1.2.0] /Users/avirajsharma/.gradle/caches/transforms-3/3500ab73a4dc02317d7c308f4cc31c1b/transformed/emoji2-1.2.0/AndroidManifest.xml:25:13-67
+92            android:authorities="com.dtps.dietary.debug.androidx-startup"
+92-->[androidx.emoji2:emoji2:1.2.0] /Users/avirajsharma/.gradle/caches/transforms-3/3500ab73a4dc02317d7c308f4cc31c1b/transformed/emoji2-1.2.0/AndroidManifest.xml:26:13-68
+93            android:exported="false" >
+93-->[androidx.emoji2:emoji2:1.2.0] /Users/avirajsharma/.gradle/caches/transforms-3/3500ab73a4dc02317d7c308f4cc31c1b/transformed/emoji2-1.2.0/AndroidManifest.xml:27:13-37
+94            <meta-data
+94-->[androidx.emoji2:emoji2:1.2.0] /Users/avirajsharma/.gradle/caches/transforms-3/3500ab73a4dc02317d7c308f4cc31c1b/transformed/emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
+95                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+95-->[androidx.emoji2:emoji2:1.2.0] /Users/avirajsharma/.gradle/caches/transforms-3/3500ab73a4dc02317d7c308f4cc31c1b/transformed/emoji2-1.2.0/AndroidManifest.xml:30:17-75
+96                android:value="androidx.startup" />
+96-->[androidx.emoji2:emoji2:1.2.0] /Users/avirajsharma/.gradle/caches/transforms-3/3500ab73a4dc02317d7c308f4cc31c1b/transformed/emoji2-1.2.0/AndroidManifest.xml:31:17-49
+97            <meta-data
+97-->[androidx.lifecycle:lifecycle-process:2.6.1] /Users/avirajsharma/.gradle/caches/transforms-3/67962882c4107b59421cb12363728365/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:29:13-31:52
+98                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+98-->[androidx.lifecycle:lifecycle-process:2.6.1] /Users/avirajsharma/.gradle/caches/transforms-3/67962882c4107b59421cb12363728365/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:30:17-78
+99                android:value="androidx.startup" />
+99-->[androidx.lifecycle:lifecycle-process:2.6.1] /Users/avirajsharma/.gradle/caches/transforms-3/67962882c4107b59421cb12363728365/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:31:17-49
+100            <meta-data
+100-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:29:13-31:52
+101                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+101-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:30:17-85
+102                android:value="androidx.startup" />
+102-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:31:17-49
+103        </provider>
+104
+105        <receiver
+105-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:34:9-52:20
+106            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+106-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:35:13-76
+107            android:directBootAware="false"
+107-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:36:13-44
+108            android:enabled="true"
+108-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:37:13-35
+109            android:exported="true"
+109-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:38:13-36
+110            android:permission="android.permission.DUMP" >
+110-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:39:13-57
+111            <intent-filter>
+111-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:40:13-42:29
+112                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+112-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:17-91
+112-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:25-88
+113            </intent-filter>
+114            <intent-filter>
+114-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:43:13-45:29
+115                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+115-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:17-85
+115-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:25-82
+116            </intent-filter>
+117            <intent-filter>
+117-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:46:13-48:29
+118                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+118-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:17-88
+118-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:25-85
+119            </intent-filter>
+120            <intent-filter>
+120-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:49:13-51:29
+121                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+121-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:17-95
+121-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/avirajsharma/.gradle/caches/transforms-3/764738c037a5a4f530f4f25b536a10c2/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:25-92
+122            </intent-filter>
+123        </receiver>
+124    </application>
+125
+126</manifest>

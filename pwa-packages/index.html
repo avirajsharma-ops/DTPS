@@ -13,8 +13,6 @@
         h1 { color: #1f2937; margin-bottom: 10px; }
         .subtitle { color: #6b7280; margin-bottom: 30px; }
         .platform-btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; text-decoration: none; color: white; }
-        .android { background: #34d399; }
-        .android:hover { background: #10b981; }
         .ios { background: #3b82f6; }
         .ios:hover { background: #2563eb; }
         .windows { background: #8b5cf6; }
@@ -31,10 +29,6 @@
         <div class="logo">DN</div>
         <h1>DTPS Nutrition</h1>
         <p class="subtitle">Choose your platform to install the app</p>
-        
-        <a href="install-android.html" class="platform-btn android">
-            📱 Install on Android
-        </a>
         
         <a href="install-ios.html" class="platform-btn ios">
             🍎 Install on iPhone/iPad
@@ -59,10 +53,7 @@
     <script>
         // Auto-detect platform and highlight appropriate option
         const userAgent = navigator.userAgent.toLowerCase();
-        if (userAgent.includes('android')) {
-            document.querySelector('.android').style.transform = 'scale(1.05)';
-            document.querySelector('.android').style.boxShadow = '0 10px 20px rgba(52, 211, 153, 0.3)';
-        } else if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+        if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
             document.querySelector('.ios').style.transform = 'scale(1.05)';
             document.querySelector('.ios').style.boxShadow = '0 10px 20px rgba(59, 130, 246, 0.3)';
         } else if (userAgent.includes('windows')) {

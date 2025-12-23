@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DTPS</string>
+    <string name="no_internet">No Internet Connection</string>
+    <string name="check_connection">Please check your internet connection and try again.</string>
+    <string name="retry">Retry</string>
+    <string name="offline">Offline</string>
+    <string name="exit">Exit</string>
+    <string name="cancel">Cancel</string>
+    <string name="exit_message">Are you sure you want to exit?</string>
+</resources>
