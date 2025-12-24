@@ -11,8 +11,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install all dependencies (needed for build)
-RUN npm ci && npm cache clean --force
+# Install all dependencies (npm install is more resilient than npm ci)
+RUN npm install --legacy-peer-deps && npm cache clean --force
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
