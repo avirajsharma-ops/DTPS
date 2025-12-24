@@ -373,7 +373,7 @@ export default function UserSubscriptionsPage() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#E06A26]/20 to-[#E06A26]/10 flex items-center justify-center overflow-hidden">
+                        <div className="h-12 w-12 rounded-xl bg-linear-to-br from-[#E06A26]/20 to-[#E06A26]/10 flex items-center justify-center overflow-hidden">
                           <Image
                             src="/images/dtps-logo.png"
                             alt="DTPS"
@@ -462,7 +462,7 @@ export default function UserSubscriptionsPage() {
 
                 return (
                   <Card key={plan._id} className="border-0 shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-[#3AB1A0]/10 to-[#E06A26]/10 p-4">
+                    <div className="bg-linear-to-r from-[#3AB1A0]/10 to-[#E06A26]/10 p-4">
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
@@ -583,7 +583,7 @@ export default function UserSubscriptionsPage() {
                 <div id="receipt-content" className="bg-white p-6 rounded-xl">
                   {/* Receipt Header */}
                   <div className="text-center mb-6">
-                    <div className="h-16 w-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#E06A26] to-[#3AB1A0] flex items-center justify-center p-1">
+                    <div className="h-16 w-16 mx-auto mb-3 rounded-full bg-linear-to-br from-[#E06A26] to-[#3AB1A0] flex items-center justify-center p-1">
                       <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
                         <Image
                           src="/images/dtps-logo.png"
@@ -638,7 +638,7 @@ export default function UserSubscriptionsPage() {
                 <div className="space-y-4">
                   {/* Subscription Info */}
                   <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                    <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-[#E06A26]/20 to-[#E06A26]/10 flex items-center justify-center overflow-hidden">
+                    <div className="h-14 w-14 rounded-xl bg-linear-to-br from-[#E06A26]/20 to-[#E06A26]/10 flex items-center justify-center overflow-hidden">
                       <Image
                         src="/images/dtps-logo.png"
                         alt="DTPS"

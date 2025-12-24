@@ -120,7 +120,7 @@ export function ClientAppointmentCard({
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             {/* Dietitian Avatar */}
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-semibold">
+            <div className="h-10 w-10 rounded-full bg-linear-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-semibold">
               {dietitianImage ? (
                 <img 
                   src={dietitianImage} 

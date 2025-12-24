@@ -24,7 +24,7 @@ export default function ClientAuthPage() {
   }, [progress, router]);
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center bg-gradient-to-br from-[#61a035]/10 via-white to-[#3AB1A0]/10 overflow-hidden">
+    <div className="min-h-screen relative flex items-center justify-center bg-linear-to-br from-[#61a035]/10 via-white to-[#3AB1A0]/10 overflow-hidden">
 
       {/* Glow */}
       <div className="absolute inset-0 flex items-center justify-center">
@@ -61,7 +61,7 @@ export default function ClientAuthPage() {
 
         <div className="h-1 overflow-hidden bg-gray-200 rounded-full">
           <div
-            className="h-full bg-gradient-to-r from-[#61a035] via-[#3AB1A0] to-[#E06A26]"
+            className="h-full bg-linear-to-r from-[#61a035] via-[#3AB1A0] to-[#E06A26]"
             style={{ width: `${progress}%` }}
           />
         </div>

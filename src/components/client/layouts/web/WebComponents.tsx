@@ -130,7 +130,7 @@ export function WebSidebar({ children, width = 'md', className }: WebSidebarProp
 
   return (
     <aside className={cn(
-      'flex-shrink-0 bg-white border-r border-gray-200',
+      'shrink-0 bg-white border-r border-gray-200',
       widthClass[width],
       className
     )}>
@@ -215,7 +215,7 @@ export function WebTwoColumn({
   return (
     <div className={cn('flex gap-6', className)}>
       {sidebarPosition === 'left' && (
-        <div className={cn('flex-shrink-0', widthClass[sidebarWidth])}>
+        <div className={cn('shrink-0', widthClass[sidebarWidth])}>
           {sidebar}
         </div>
       )}
@@ -223,7 +223,7 @@ export function WebTwoColumn({
         {children}
       </div>
       {sidebarPosition === 'right' && (
-        <div className={cn('flex-shrink-0', widthClass[sidebarWidth])}>
+        <div className={cn('shrink-0', widthClass[sidebarWidth])}>
           {sidebar}
         </div>
       )}

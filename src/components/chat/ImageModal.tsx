@@ -104,7 +104,7 @@ export function ImageModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/90 border-none">
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-linear-to-b from-black/50 to-transparent">
           <div className="text-white">
             {filename && (
               <h3 className="text-lg font-medium truncate max-w-md">
@@ -215,7 +215,7 @@ export function ImageModal({
         </div>
 
         {/* Footer with zoom info */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 p-4 bg-gradient-to-t from-black/50 to-transparent">
+        <div className="absolute bottom-0 left-0 right-0 z-10 p-4 bg-linear-to-t from-black/50 to-transparent">
           <div className="text-center text-white text-sm">
             Zoom: {Math.round(zoom * 100)}%
           </div>

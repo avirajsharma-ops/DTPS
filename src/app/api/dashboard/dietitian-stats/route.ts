@@ -6,6 +6,7 @@ import User from '@/lib/db/models/User';
 import Appointment from '@/lib/db/models/Appointment';
 import Payment from '@/lib/db/models/Payment';
 import { UserRole } from '@/types';
+import mongoose from 'mongoose';
 
 // GET /api/dashboard/dietitian-stats - Get real dashboard statistics
 export async function GET(request: NextRequest) {
@@ -36,11 +37,12 @@ export async function GET(request: NextRequest) {
 
     // If dietitian or health counselor, filter by assigned clients only
     if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
+      const dietitianObjectId = new mongoose.Types.ObjectId(session.user.id);
       clientQuery.$or = [
-        { assignedDietitian: session.user.id },
-        { assignedDietitians: session.user.id }
+        { assignedDietitian: dietitianObjectId },
+        { assignedDietitians: dietitianObjectId }
       ];
-      appointmentQuery.dietitian = session.user.id;
+      appointmentQuery.dietitian = dietitianObjectId;
     }
     // Admin sees all clients (no filter needed)
 
@@ -124,11 +126,36 @@ export async function GET(request: NextRequest) {
     .sort({ scheduledAt: 1 })
     .lean();
 
-    // Get payments assigned to this dietitian
+    // Get payments ONLY from clients assigned to this dietitian
     let paymentQuery: any = {};
+    let assignedClientIds: mongoose.Types.ObjectId[] = [];
+    
     if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
-      paymentQuery.dietitian = session.user.id;
+      // Convert session user ID to ObjectId
+      const dietitianObjectId = new mongoose.Types.ObjectId(session.user.id);
+      
+      // Get list of client IDs assigned to this dietitian
+      assignedClientIds = await User.find({
+        role: 'client',
+        $or: [
+          { assignedDietitian: dietitianObjectId },
+          { assignedDietitians: dietitianObjectId }
+        ]
+      }).distinct('_id');
+      
+      console.log(`Dietitian ${session.user.id} has ${assignedClientIds.length} assigned clients`);
+      
+      // Only get payments from clients assigned to this dietitian
+      if (assignedClientIds.length > 0) {
+        paymentQuery = {
+          client: { $in: assignedClientIds }
+        };
+      } else {
+        // No assigned clients, return empty payments
+        paymentQuery = { _id: null }; // This will return no results
+      }
     }
+    // For admin, paymentQuery stays empty to show all payments
 
     // Get recent payments (last 10)
     const recentPayments = await Payment.find(paymentQuery)

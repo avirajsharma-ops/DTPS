@@ -127,7 +127,7 @@ export function PhotoGalleryModal({ isOpen, onClose, photos, photoType, onDelete
               <button
                 key={photo.id}
                 onClick={() => setCurrentIndex(index)}
-                className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
                   index === currentIndex
                     ? 'border-white'
                     : 'border-white/30 opacity-60 hover:opacity-80'

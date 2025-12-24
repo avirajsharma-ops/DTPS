@@ -301,7 +301,7 @@ export function ChatInput({
           size="sm"
           onClick={() => setShowMediaUpload(true)}
           disabled={disabled}
-          className="h-10 w-10 p-0 flex-shrink-0"
+          className="h-10 w-10 p-0 shrink-0"
         >
           <Paperclip className="w-5 h-5" />
         </Button>
@@ -339,7 +339,7 @@ export function ChatInput({
           <Button
             onClick={handleSendMessage}
             disabled={disabled}
-            className="h-10 w-10 p-0 flex-shrink-0 rounded-full"
+            className="h-10 w-10 p-0 shrink-0 rounded-full"
           >
             <Send className="w-4 h-4" />
           </Button>
@@ -349,7 +349,7 @@ export function ChatInput({
             onClick={handleVoiceRecord}
             disabled={disabled}
             className={cn(
-              "h-10 w-10 p-0 flex-shrink-0 rounded-full",
+              "h-10 w-10 p-0 shrink-0 rounded-full",
               isRecording && "bg-red-100 text-red-600"
             )}
           >

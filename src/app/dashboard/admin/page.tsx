@@ -212,7 +212,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="p-6 flex items-center justify-center min-h-100">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading admin dashboard...</p>
@@ -272,7 +272,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Client Management Section */}
-        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+        <Card className="border-blue-200 bg-linear-to-br from-blue-50 to-white">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -350,7 +350,7 @@ export default function AdminDashboard() {
               <div className="space-y-3">
                 {recentActivity.map((activity) => (
                   <div key={activity.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                    <div className="flex-shrink-0 mt-1">
+                    <div className="shrink-0 mt-1">
                       {getActivityIcon(activity.type)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -452,7 +452,7 @@ export default function AdminDashboard() {
                 {topDietitians.slice(0, 5).map((dietitian, index) => (
                   <div key={dietitian.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                           <span className="text-sm font-medium text-green-600">
                             #{index + 1}

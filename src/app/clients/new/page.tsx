@@ -573,7 +573,7 @@ export default function NewClientPage() {
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <div className="shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-blue-600" />
               </div>
               <div>

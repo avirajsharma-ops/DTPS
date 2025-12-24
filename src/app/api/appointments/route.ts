@@ -7,6 +7,8 @@ import User from '@/lib/db/models/User';
 import zoomService from '@/lib/services/zoom';
 import { UserRole, AppointmentStatus } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
+import { logActivity, logApiError } from '@/lib/utils/activityLogger';
+import { SSEManager } from '@/lib/realtime/sse-manager';
 
 // GET /api/appointments - Get appointments for current user
 export async function GET(request: NextRequest) {
@@ -22,12 +24,17 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const date = searchParams.get('date');
     const search = searchParams.get('search');
+    const dietitianId = searchParams.get('dietitianId');
     const limit = parseInt(searchParams.get('limit') || '10');
     const page = parseInt(searchParams.get('page') || '1');
 
     // Build query based on user role
     let query: any = {};
-    if (session.user.role === UserRole.DIETITIAN) {
+    
+    // If specific dietitianId is requested (for slots view)
+    if (dietitianId) {
+      query.dietitian = dietitianId;
+    } else if (session.user.role === UserRole.DIETITIAN) {
       // Get all clients assigned to this dietitian
       const assignedClients = await User.find({
         role: UserRole.CLIENT,
@@ -246,6 +253,61 @@ export async function POST(request: NextRequest) {
         status: appointment.status,
       },
     });
+
+    // Log activity
+    await logActivity({
+      userId: session.user.id,
+      userRole: session.user.role as any,
+      userName: session.user.name || 'Unknown',
+      userEmail: session.user.email || '',
+      action: 'Booked Appointment',
+      actionType: 'create',
+      category: 'appointment',
+      description: `Booked appointment with ${dietitian.firstName} ${dietitian.lastName} for ${client.firstName} ${client.lastName} on ${new Date(scheduledAt).toLocaleDateString()}`,
+      targetUserId: clientId,
+      targetUserName: `${client.firstName} ${client.lastName}`,
+      resourceId: appointment._id.toString(),
+      resourceType: 'Appointment',
+      details: { scheduledAt, duration: duration || 60, type }
+    });
+
+    // Send real-time notification to dietitian about new booking
+    try {
+      const sseManager = SSEManager.getInstance();
+      sseManager.sendToUser(dietitianId, 'appointment_booked', {
+        appointmentId: appointment._id,
+        client: {
+          _id: client._id,
+          firstName: client.firstName,
+          lastName: client.lastName,
+          avatar: client.avatar
+        },
+        scheduledAt: appointment.scheduledAt,
+        duration: appointment.duration,
+        type: appointment.type,
+        timestamp: Date.now()
+      });
+      
+      // Also notify the client if someone else booked for them
+      if (session.user.id !== clientId) {
+        sseManager.sendToUser(clientId, 'appointment_booked', {
+          appointmentId: appointment._id,
+          dietitian: {
+            _id: dietitian._id,
+            firstName: dietitian.firstName,
+            lastName: dietitian.lastName,
+            avatar: dietitian.avatar
+          },
+          scheduledAt: appointment.scheduledAt,
+          duration: appointment.duration,
+          type: appointment.type,
+          timestamp: Date.now()
+        });
+      }
+    } catch (sseError) {
+      console.error('Failed to send SSE notification:', sseError);
+      // Don't fail the request if SSE notification fails
+    }
 
     return NextResponse.json({ appointment }, { status: 201 });
 

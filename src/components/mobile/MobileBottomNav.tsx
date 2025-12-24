@@ -94,7 +94,7 @@ export function MobileBottomNav() {
                   <button
                     key={action.label}
                     onClick={() => handleQuickActionClick(action.action)}
-                    className={`quick-action-button p-3 sm:p-4 rounded-2xl bg-gradient-to-br ${action.gradient} text-white shadow-lg active:scale-95 transition-all animate-slide-up hover:shadow-xl`}
+                    className={`quick-action-button p-3 sm:p-4 rounded-2xl bg-linear-to-br ${action.gradient} text-white shadow-lg active:scale-95 transition-all animate-slide-up hover:shadow-xl`}
                     style={{ animationDelay: `${index * 80}ms` }}
                   >
                     <action.icon className="quick-action-icon h-6 w-6 sm:h-7 sm:w-7 mx-auto mb-2" />
@@ -142,7 +142,7 @@ export function MobileBottomNav() {
             onClick={() => setShowQuickActions(!showQuickActions)}
             className="flex flex-col items-center justify-center -mt-6"
           >
-            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+            <div className="h-14 w-14 rounded-full bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
               <Plus
                 className={`h-7 w-7 text-white transition-transform duration-300 ${
                   showQuickActions ? 'rotate-45' : 'rotate-0'

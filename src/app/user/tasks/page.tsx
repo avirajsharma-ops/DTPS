@@ -292,7 +292,7 @@ export default function TasksPage() {
 
             <div className="px-4 py-6 space-y-4">
                 {/* Progress Summary */}
-                <div className="bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-2xl p-4 text-white">
+                <div className="bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-2xl p-4 text-white">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-white/70 text-sm">Today's Progress</p>

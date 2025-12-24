@@ -129,7 +129,7 @@ export default function MobileAppointmentsPage() {
       <div className="bg-white px-4 pt-safe-top sticky top-0 z-50 shadow-sm border-b border-gray-100">
         <div className="flex items-center justify-between py-4">
           <div className="flex items-center space-x-3">
-            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
+            <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
               <Calendar className="h-7 w-7 text-white" />
             </div>
             <div>
@@ -192,7 +192,7 @@ export default function MobileAppointmentsPage() {
           upcomingAppointments.length === 0 ? (
             <div className="text-center py-16 px-6">
               <div className="relative inline-block mb-6">
-                <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mx-auto shadow-md border border-purple-200">
+                <div className="h-24 w-24 rounded-3xl bg-linear-to-br from-purple-100 to-pink-100 flex items-center justify-center mx-auto shadow-md border border-purple-200">
                   <Calendar className="h-12 w-12 text-purple-600" />
                 </div>
               </div>
@@ -202,7 +202,7 @@ export default function MobileAppointmentsPage() {
               </p>
               <Link
                 href="/appointments/book"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all"
               >
                 <Plus className="h-5 w-5" />
                 Book Your First Session
@@ -221,8 +221,8 @@ export default function MobileAppointmentsPage() {
                   <div className="bg-white rounded-3xl shadow-md border border-gray-100 p-5 transform transition-all duration-300 hover:shadow-lg active:scale-[0.98]">
                     <div className="flex items-start gap-4">
                       {/* Avatar with clean design */}
-                      <div className="relative flex-shrink-0">
-                        <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${getTypeColor(appointment.type)} p-0.5 shadow-md`}>
+                      <div className="relative shrink-0">
+                        <div className={`h-16 w-16 rounded-2xl bg-linear-to-br ${getTypeColor(appointment.type)} p-0.5 shadow-md`}>
                           <div className="h-full w-full rounded-2xl bg-white p-0.5">
                             {appointment.dietitian.avatar ? (
                               <img
@@ -231,7 +231,7 @@ export default function MobileAppointmentsPage() {
                                 className="h-full w-full rounded-2xl object-cover"
                               />
                             ) : (
-                              <div className={`h-full w-full rounded-2xl bg-gradient-to-br ${getTypeColor(appointment.type)} flex items-center justify-center`}>
+                              <div className={`h-full w-full rounded-2xl bg-linear-to-br ${getTypeColor(appointment.type)} flex items-center justify-center`}>
                                 <User className="h-7 w-7 text-white" />
                               </div>
                             )}
@@ -269,7 +269,7 @@ export default function MobileAppointmentsPage() {
 
                         {/* Type & Status badges */}
                         <div className="flex items-center gap-2">
-                          <div className={`flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-br ${getTypeColor(appointment.type)} rounded-xl shadow-sm`}>
+                          <div className={`flex items-center gap-1.5 px-3 py-1.5 bg-linear-to-br ${getTypeColor(appointment.type)} rounded-xl shadow-sm`}>
                             {getTypeIcon(appointment.type)}
                             <span className="text-xs font-bold text-white capitalize">{appointment.type}</span>
                           </div>
@@ -307,7 +307,7 @@ export default function MobileAppointmentsPage() {
                   <div className="bg-white rounded-3xl shadow-md p-5 transform transition-all duration-300 hover:shadow-lg active:scale-[0.98] border border-gray-200">
                     <div className="flex items-start gap-4">
                       {/* Avatar - clean design for past */}
-                      <div className="relative flex-shrink-0">
+                      <div className="relative shrink-0">
                         <div className="h-16 w-16 rounded-2xl bg-gray-200 p-0.5 shadow-sm">
                           <div className="h-full w-full rounded-2xl bg-white p-0.5">
                             {appointment.dietitian.avatar ? (
@@ -371,8 +371,8 @@ export default function MobileAppointmentsPage() {
         className="fixed bottom-24 right-6 z-40 group"
       >
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
-          <div className="relative h-16 w-16 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-2xl hover:shadow-3xl active:scale-95 transition-all flex items-center justify-center">
+          <div className="absolute inset-0 bg-linear-to-r from-purple-600 to-pink-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+          <div className="relative h-16 w-16 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-2xl hover:shadow-3xl active:scale-95 transition-all flex items-center justify-center">
             <Plus className="h-7 w-7" />
           </div>
         </div>

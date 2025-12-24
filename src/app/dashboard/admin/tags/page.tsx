@@ -300,7 +300,7 @@ export default function AdminTagsPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 flex-1">
                             <div
-                              className="h-4 w-4 rounded-full flex-shrink-0"
+                              className="h-4 w-4 rounded-full shrink-0"
                               style={{ backgroundColor: tag.color }}
                             />
                             <div className="flex-1">

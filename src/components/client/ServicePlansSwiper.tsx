@@ -273,7 +273,7 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                         <p className="text-sm text-gray-500">Start your nutrition journey</p>
                     </div>
                 </div>
-                <div className="bg-gradient-to-br from-[#E06A26] to-[#DB9C6E] rounded-3xl p-6 text-white">
+                <div className="bg-linear-to-br from-[#E06A26] to-[#DB9C6E] rounded-3xl p-6 text-white">
                     <div className="flex flex-col items-center text-center">
                         <div className="h-16 w-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
                             <Star className="h-8 w-8" />
@@ -304,14 +304,14 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                             <button
                                 onClick={() => scrollTo('left')}
                                 disabled={activeIndex === 0}
-                                className="p-2 rounded-full bg-white border-2 border-[#E06A26] shadow-sm disabled:opacity-40 hover:bg-[#E06A26]/10 transition-colors"
+                                className="p-2 rounded-full bg-white border-2 border-[#E06A26] disabled:opacity-40 hover:bg-[#E06A26]/10 transition-colors"
                             >
                                 <ChevronLeft className="h-4 w-4 text-[#E06A26]" />
                             </button>
                             <button
                                 onClick={() => scrollTo('right')}
                                 disabled={activeIndex === plans.length - 1}
-                                className="p-2 rounded-full bg-white border-2 border-[#E06A26] shadow-sm disabled:opacity-40 hover:bg-[#E06A26]/10 transition-colors"
+                                className="p-2 rounded-full bg-white border-2 border-[#E06A26]  disabled:opacity-40 hover:bg-[#E06A26]/10 transition-colors"
                             >
                                 <ChevronRight className="h-4 w-4 text-[#E06A26]" />
                             </button>
@@ -333,11 +333,11 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                         return (
                             <div
                                 key={plan._id}
-                                className="flex-shrink-0 w-[280px] min-w-[280px] max-w-[280px] snap-center animate-scale-fade-in"
+                                className="shrink-0 w-[280px] min-w-[280px] max-w-[280px] snap-center animate-scale-fade-in"
                                 style={{ animationDelay: `${index * 100}ms` }}
                             >
                                 <div className="rounded-3xl overflow-hidden border-2 border-[#3AB1A0]/30 transition-all duration-300 h-[320px] flex flex-col">
-                                    <div className="bg-gradient-to-r from-[#E06A26] to-[#DB9C6E] p-4 text-white flex-shrink-0">
+                                    <div className="bg-linear-to-r from-[#E06A26] to-[#DB9C6E] p-4 text-white shrink-0">
                                         <div className="flex items-start justify-between">
                                             <div>
                                                 <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">
@@ -345,7 +345,7 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                                                 </span>
                                                 <h3 className="text-lg font-bold mt-2 line-clamp-1">{plan.name}</h3>
                                             </div>
-                                            <div className="h-10 w-10 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
+                                            <div className="h-10 w-10 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
                                                 <Image
                                                     src="/images/dtps-logo.png"
                                                     alt="DTPS"
@@ -385,7 +385,7 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
 
                                         <button
                                             onClick={() => handleGetStarted(plan)}
-                                            className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#E06A26] to-[#DB9C6E] text-white font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all active:scale-[0.98]"
+                                            className="w-full py-3 rounded-2xl bg-linear-to-r from-[#E06A26] to-[#DB9C6E] text-white font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                                         >
                                             Get Started
                                             <ArrowRight className="h-4 w-4" />
@@ -416,7 +416,7 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                         className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-slide-up"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="sticky top-0 bg-gradient-to-r from-[#E06A26] to-[#DB9C6E] p-5 text-white">
+                        <div className="sticky top-0 bg-linear-to-r from-[#E06A26] to-[#DB9C6E] p-5 text-white">
                             <div className="flex items-start justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="h-14 w-14 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center">
@@ -503,7 +503,7 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                             <button
                                 onClick={handlePurchase}
                                 disabled={purchasing}
-                                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#E06A26] to-[#DB9C6E] text-white font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all disabled:opacity-70 active:scale-[0.98]"
+                                className="w-full py-4 rounded-2xl bg-linear-to-r from-[#E06A26] to-[#DB9C6E] text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-70 active:scale-[0.98]"
                             >
                                 {purchasing ? (
                                     <>

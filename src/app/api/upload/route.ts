@@ -6,6 +6,7 @@ import { File } from '@/lib/db/models/File';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { getImageKit } from '@/lib/imagekit';
+import { compressImageServer, serverCompressionPresets } from '@/lib/imageCompressionServer';
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,13 +72,17 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     const base64Data = buffer.toString('base64');
 
-    // For avatar uploads, use ImageKit
+    // For avatar uploads, use ImageKit with compression
     if (fileType === 'avatar') {
       try {
         const ik = getImageKit();
+        
+        // Compress image before upload
+        const compressedBase64 = await compressImageServer(buffer, serverCompressionPresets.avatar);
+        
         const uploadResponse = await ik.upload({
-          file: base64Data,
-          fileName: `${session.user.id}-${fileName}`,
+          file: compressedBase64,
+          fileName: `${session.user.id}-${fileName.replace(/\.[^/.]+$/, '.webp')}`,
           folder: '/profile',
         });
 
@@ -85,9 +90,9 @@ export async function POST(request: NextRequest) {
         const savedFile = await File.create({
           filename: fileName,
           originalName: file.name,
-          mimeType: file.type,
+          mimeType: 'image/webp',
           size: file.size,
-          data: base64Data,
+          data: compressedBase64,
           type: fileType,
           localPath: uploadResponse.url,
           imageKitFileId: uploadResponse.fileId,

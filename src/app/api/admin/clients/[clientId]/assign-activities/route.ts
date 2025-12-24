@@ -4,6 +4,24 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db/connection";
 import JournalTracking from "@/lib/db/models/JournalTracking";
 import User from "@/lib/db/models/User";
+import ClientMealPlan from "@/lib/db/models/ClientMealPlan";
+
+// Helper to check if client has active meal plan for a given date
+async function hasActiveMealPlan(clientId: string, targetDate: Date): Promise<boolean> {
+    const planStartOfDay = new Date(targetDate);
+    planStartOfDay.setHours(0, 0, 0, 0);
+    const planEndOfDay = new Date(targetDate);
+    planEndOfDay.setHours(23, 59, 59, 999);
+    
+    const activePlan = await ClientMealPlan.findOne({
+        clientId: clientId,
+        status: 'active',
+        startDate: { $lte: planEndOfDay },
+        endDate: { $gte: planStartOfDay }
+    });
+    
+    return !!activePlan;
+}
 
 // GET - Get assigned activities for a client
 export async function GET(
@@ -51,8 +69,11 @@ export async function GET(
         const assignedActivities = journal?.assignedActivities?.activities || [];
         const allCompleted = assignedActivities.length > 0 && assignedActivities.every((a: any) => a.completed);
 
+        // Only return assignedActivities if there are actual activities assigned
+        const hasActivities = journal?.assignedActivities && assignedActivities.length > 0;
+
         return NextResponse.json({
-            assignedActivities: journal?.assignedActivities ? {
+            assignedActivities: hasActivities ? {
                 activities: assignedActivities,
                 assignedAt: journal.assignedActivities.assignedAt,
                 isCompleted: journal.assignedActivities.isCompleted || allCompleted,
@@ -118,6 +139,9 @@ export async function POST(
         targetDate.setHours(0, 0, 0, 0);
         const nextDay = new Date(targetDate);
         nextDay.setDate(nextDay.getDate() + 1);
+
+        // Note: Activity assignment is allowed even without a meal plan
+        // This allows dietitians to assign activities independently
 
         // Find or create journal entry
         let journal = await JournalTracking.findOne({

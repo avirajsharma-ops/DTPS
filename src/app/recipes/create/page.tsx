@@ -635,7 +635,7 @@ export default function CreateRecipePage() {
             <CardContent className="space-y-4">
               {instructions.map((instruction, index) => (
                 <div key={index} className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
+                  <div className="shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
                     {index + 1}
                   </div>
                   <div className="flex-1">

@@ -110,7 +110,7 @@ export default function ServicesPage() {
               <h1 className="text-xl font-bold text-gray-900">Our Services</h1>
               <p className="text-xs text-gray-500">Choose the perfect plan for you</p>
             </div>
-            <div className="p-2 bg-gradient-to-br from-[#E06A26] to-[#DB9C6E] rounded-xl shadow-md">
+            <div className="p-2 bg-linear-to-br from-[#E06A26] to-[#DB9C6E] rounded-xl shadow-md">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function ServicesPage() {
                   onClick={() => setSelectedCategory(category)}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                     selectedCategory === category
-                      ? 'bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C] text-white shadow-md'
+                      ? 'bg-linear-to-r from-[#3AB1A0] to-[#2D8A7C] text-white shadow-md'
                       : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
@@ -139,7 +139,7 @@ export default function ServicesPage() {
 
       {/* Hero Banner */}
       <div className="px-4 py-4">
-        <div className="bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C] rounded-2xl p-5 text-white relative overflow-hidden">
+        <div className="bg-linear-to-r from-[#3AB1A0] to-[#2D8A7C] rounded-2xl p-5 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
           <div className="relative z-10">
@@ -178,10 +178,10 @@ export default function ServicesPage() {
               <Link
                 key={service._id}
                 href={`/user/services/${service._id}`}
-                className="block w-80 flex-shrink-0 bg-white rounded-2xl border border-gray-100 hover:border-[#3AB1A0] hover:shadow-xl transition-all group overflow-hidden"
+                className="block w-80 shrink-0 bg-white rounded-2xl border border-gray-100 hover:border-[#3AB1A0] hover:shadow-xl transition-all group overflow-hidden"
               >
                 {/* Card Header with Gradient */}
-                <div className={`bg-gradient-to-br ${getCategoryColor(service.category)} p-5 relative`}>
+                <div className={`bg-linear-to-br ${getCategoryColor(service.category)} p-5 relative`}>
                   {service.maxDiscountPercent && service.maxDiscountPercent > 0 && (
                     <div className="absolute top-3 right-3 bg-[#E06A26] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                       <Tag className="h-3 w-3" />
@@ -214,13 +214,13 @@ export default function ServicesPage() {
                       <p className="text-xs text-gray-400 mb-2 font-medium">PRICING OPTIONS</p>
                       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
                         {service.pricingTiers.slice(0, 3).map((tier, idx) => (
-                          <div key={idx} className="flex-shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-[80px] border border-gray-100">
+                          <div key={idx} className="shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-[80px] border border-gray-100">
                             <p className="text-xs text-gray-500">{tier.durationLabel}</p>
                             <p className="text-sm font-bold text-[#E06A26]">₹{tier.amount.toLocaleString()}</p>
                           </div>
                         ))}
                         {service.pricingTiers.length > 3 && (
-                          <div className="flex-shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-[60px] border border-gray-100 flex items-center justify-center">
+                          <div className="shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-[60px] border border-gray-100 flex items-center justify-center">
                             <p className="text-xs text-gray-400">+{service.pricingTiers.length - 3}</p>
                           </div>
                         )}
@@ -234,7 +234,7 @@ export default function ServicesPage() {
                       <div className="space-y-2">
                         {service.features.slice(0, 3).map((feature, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                            <Check className="w-4 h-4 text-[#3AB1A0] flex-shrink-0" />
+                            <Check className="w-4 h-4 text-[#3AB1A0] shrink-0" />
                             <span className="line-clamp-1">{feature}</span>
                           </div>
                         ))}

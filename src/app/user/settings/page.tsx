@@ -470,7 +470,7 @@ export default function UserSettingsPage() {
         </Card>
 
         {/* App Version */}
-        <Card className="border-0 shadow-sm bg-gradient-to-r from-[#E06A26]/10 to-[#3AB1A0]/10">
+        <Card className="border-0 shadow-sm bg-linear-to-r from-[#E06A26]/10 to-[#3AB1A0]/10">
           <CardContent className="p-4 text-center">
             <p className="text-sm font-semibold text-[#3AB1A0]">DTPS Nutrition</p>
             <p className="text-xs text-gray-500">Version 1.0.0</p>

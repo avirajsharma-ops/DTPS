@@ -86,7 +86,7 @@ export default function ManualPaymentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-purple-600 mx-auto" />
           <p className="mt-4 text-gray-600">Loading payment details...</p>
@@ -97,7 +97,7 @@ export default function ManualPaymentPage() {
 
   if (error || !paymentLink) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
@@ -116,10 +116,10 @@ export default function ManualPaymentPage() {
   const hasRazorpayLink = paymentLink.razorpayPaymentLinkUrl && !paymentLink.razorpayPaymentLinkUrl.includes('/payment/manual/');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-8 px-4">
+    <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-blue-50 py-8 px-4">
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
             DTPS
           </h1>
           <p className="text-gray-500 mt-1">Dietitian Practice System</p>
@@ -214,7 +214,7 @@ export default function ManualPaymentPage() {
               {isPending && hasRazorpayLink && (
                 <Button 
                   onClick={handlePayNow}
-                  className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  className="w-full h-14 text-lg font-semibold bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                 >
                   <CreditCard className="mr-2 h-5 w-5" />
                   Pay ₹{paymentLink.finalAmount.toLocaleString('en-IN')}

@@ -134,7 +134,7 @@ export function ConversationList({
                   )}
                 >
                   {/* Avatar with online indicator */}
-                  <div className="relative flex-shrink-0">
+                  <div className="relative shrink-0">
                     <Avatar className="w-12 h-12">
                       <AvatarImage src={conversation.participant.avatar} />
                       <AvatarFallback>
@@ -157,7 +157,7 @@ export function ConversationList({
                       </h3>
                       
                       {conversation.lastMessage && (
-                        <span className="text-xs text-gray-500 flex-shrink-0">
+                        <span className="text-xs text-gray-500 shrink-0">
                           {formatLastMessageTime(conversation.lastMessage.createdAt)}
                         </span>
                       )}

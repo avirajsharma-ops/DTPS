@@ -22,6 +22,7 @@ export { History } from './History';
 export { default as OtherPlatformPayment } from './OtherPlatformPayment';
 export { default as PaymentLink } from './PaymentLink';
 export { default as Transformation } from './Transformation';
+export { default as ActivityLog } from './ActivityLog';
 
 // Re-export types for convenience
 export * from '@/types';

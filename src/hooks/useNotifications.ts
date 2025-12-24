@@ -113,6 +113,30 @@ export function useNotifications() {
     }
   }, [notificationService, notificationState.isEnabled]);
 
+  const showAppointmentNotification = useCallback(async (
+    clientName: string,
+    scheduledAt: Date | string,
+    duration: number,
+    type: 'booked' | 'cancelled' | 'reminder' = 'booked',
+    clientAvatar?: string,
+    appointmentId?: string
+  ) => {
+    if (!notificationState.isEnabled) return;
+
+    try {
+      await notificationService.showAppointmentNotification(
+        clientName,
+        scheduledAt,
+        duration,
+        type,
+        clientAvatar,
+        appointmentId
+      );
+    } catch (error) {
+      console.error('Error showing appointment notification:', error);
+    }
+  }, [notificationService, notificationState.isEnabled]);
+
   const clearNotification = useCallback((tag: string) => {
     notificationService.clearNotification(tag);
   }, [notificationService]);
@@ -127,6 +151,7 @@ export function useNotifications() {
     showMessageNotification,
     showCallNotification,
     showStatusNotification,
+    showAppointmentNotification,
     clearNotification,
     clearAllNotifications
   };

@@ -79,7 +79,7 @@ export default function RecipeDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 pb-24">
+    <div className="min-h-screen bg-linear-to-b from-white to-gray-50 pb-24">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-4 max-w-4xl mx-auto w-full">
@@ -193,7 +193,7 @@ export default function RecipeDetailPage() {
             <h3 className="text-xl font-bold text-gray-900 mb-5">Ingredients</h3>
             <ul className="space-y-3">
               {recipe.ingredients.map((ingredient, index) => (
-                <li key={index} className="flex items-center gap-3 p-3 bg-gradient-to-r from-[#3AB1A0]/5 to-transparent rounded-lg border border-[#3AB1A0]/10">
+                <li key={index} className="flex items-center gap-3 p-3 bg-linear-to-r from-[#3AB1A0]/5 to-transparent rounded-lg border border-[#3AB1A0]/10">
                   <input type="checkbox" className="w-5 h-5 text-[#3AB1A0] rounded cursor-pointer accent-[#3AB1A0]" />
                   <span className="flex-1">
                     <span className="font-medium text-gray-900">{ingredient.name}</span>
@@ -214,7 +214,7 @@ export default function RecipeDetailPage() {
             <ol className="space-y-4">
               {recipe.instructions.map((instruction, index) => (
                 <li key={index} className="flex gap-4">
-                  <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#3AB1A0] text-white flex items-center justify-center font-bold text-sm">
+                  <span className="shrink-0 w-8 h-8 rounded-full bg-[#3AB1A0] text-white flex items-center justify-center font-bold text-sm">
                     {index + 1}
                   </span>
                   <span className="text-gray-700 pt-0.5 text-sm leading-relaxed">{instruction}</span>
@@ -228,7 +228,7 @@ export default function RecipeDetailPage() {
         {recipe.tips && recipe.tips.length > 0 && (
           <div className="bg-[#DB9C6E]/10 rounded-2xl p-6 shadow-sm border border-[#DB9C6E]/20 mb-8">
             <div className="flex items-start gap-3 mb-4">
-              <Lightbulb className="w-5 h-5 text-[#DB9C6E] flex-shrink-0 mt-0.5" />
+              <Lightbulb className="w-5 h-5 text-[#DB9C6E] shrink-0 mt-0.5" />
               <h3 className="text-lg font-bold text-gray-900">Cooking Tips</h3>
             </div>
             <ul className="space-y-2">

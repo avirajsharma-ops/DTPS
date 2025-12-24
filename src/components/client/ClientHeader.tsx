@@ -83,7 +83,7 @@ export default function ClientHeader({ title, showBack, onBack }: ClientHeaderPr
               </button>
             ) : (
               <Link href="/client-dashboard" className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-lg bg-linear-to-br from-green-500 to-teal-600 flex items-center justify-center">
                   <Heart className="h-4 w-4 text-white" />
                 </div>
                 <span className="font-bold text-lg text-gray-900">DTPS</span>

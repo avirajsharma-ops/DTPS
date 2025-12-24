@@ -616,7 +616,7 @@ export default function OtherPlatformPaymentsPage() {
 
               {actionType === 'reject' && (
                 <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
                   <p className="text-sm text-yellow-800">
                     Please provide a reason for rejection so the client knows what went wrong.
                   </p>

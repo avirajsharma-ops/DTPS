@@ -94,14 +94,15 @@ export async function PUT(
     }
 
     // Check if user can update this appointment
+    // Only admin, dietitian (who owns the appointment), or health_counselor can update
     const canUpdate = 
       session.user.role === UserRole.ADMIN ||
-      appointment.dietitian.toString() === session.user.id ||
-      (appointment.client.toString() === session.user.id && 
-       ['notes'].some(field => field in body)); // Clients can only update notes
+      session.user.role === UserRole.HEALTH_COUNSELOR ||
+      (session.user.role === UserRole.DIETITIAN && 
+       appointment.dietitian.toString() === session.user.id);
 
     if (!canUpdate) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Only admin, dietitian, or health counselor can edit appointments' }, { status: 403 });
     }
 
     // If updating schedule, check for conflicts
@@ -180,13 +181,15 @@ export async function DELETE(
     }
 
     // Check if user can cancel this appointment
+    // Only admin, dietitian (who owns the appointment), or health_counselor can cancel
     const canCancel = 
       session.user.role === UserRole.ADMIN ||
-      appointment.dietitian.toString() === session.user.id ||
-      appointment.client.toString() === session.user.id;
+      session.user.role === UserRole.HEALTH_COUNSELOR ||
+      (session.user.role === UserRole.DIETITIAN && 
+       appointment.dietitian.toString() === session.user.id);
 
     if (!canCancel) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Only admin, dietitian, or health counselor can cancel appointments' }, { status: 403 });
     }
 
     // Update status to cancelled instead of deleting

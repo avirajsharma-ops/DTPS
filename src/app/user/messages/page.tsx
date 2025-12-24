@@ -216,22 +216,22 @@ export default function UserMessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 md:pb-0">
-      <div className="h-[calc(100vh-80px)] md:h-[calc(100vh-120px)] flex flex-col md:flex-row md:gap-4 md:p-6">
+    <div className="min-h-screen bg-[#ECE5DD]">
+      <div className="h-screen md:h-[calc(100vh-120px)] flex flex-col md:flex-row md:gap-4 md:p-6">
         {/* Conversations List - Hidden on mobile when conversation selected */}
-        <div className={`md:w-80 flex-shrink-0 bg-white md:rounded-xl md:shadow-sm md:border border-gray-100 ${selectedConversation ? 'hidden md:block' : 'block'}`}>
+        <div className={`md:w-80 shrink-0 bg-white md:rounded-xl md:shadow-sm md:border border-gray-100 ${selectedConversation ? 'hidden md:block' : 'block'}`}>
           {/* Header */}
-          <div className="p-4 border-b border-gray-100 flex items-center gap-3">
+          <div className="p-4 border-b border-gray-100 flex items-center gap-3 bg-[#075E54] md:bg-white md:rounded-t-xl">
             <Link href="/user" className="p-2 -ml-2 md:hidden">
-              <ArrowLeft className="w-5 h-5 text-gray-700" />
+              <ArrowLeft className="w-5 h-5 text-white md:text-gray-700" />
             </Link>
-            <h2 className="font-bold text-lg text-[#E06A26]">Messages</h2>
+            <h2 className="font-bold text-lg text-white md:text-[#075E54]">Messages</h2>
           </div>
           <div className="overflow-y-auto">
             {conversations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4">
-                <div className="w-16 h-16 bg-[#3AB1A0]/10 rounded-full flex items-center justify-center mb-4">
-                  <Send className="w-8 h-8 text-[#3AB1A0]" />
+                <div className="w-16 h-16 bg-[#075E54]/10 rounded-full flex items-center justify-center mb-4">
+                  <Send className="w-8 h-8 text-[#075E54]" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">No conversations yet</h3>
                 <p className="text-gray-500 text-sm text-center">
@@ -243,20 +243,20 @@ export default function UserMessagesPage() {
                 <button
                   key={conv._id}
                   onClick={() => setSelectedConversation(conv)}
-                  className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors ${
-                    selectedConversation?._id === conv._id ? 'bg-[#E06A26]/5' : ''
+                  className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+                    selectedConversation?._id === conv._id ? 'bg-[#075E54]/5' : ''
                   }`}
                 >
                   <div className="relative">
-                    <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center overflow-hidden">
+                    <div className="h-12 w-12 rounded-full bg-[#075E54]/10 flex items-center justify-center overflow-hidden">
                       {conv.user.avatar ? (
                         <img src={conv.user.avatar} alt={conv.user.firstName} loading="lazy" className="w-full h-full object-cover" />
                       ) : (
-                        <User className="w-5 h-5 text-[#E06A26]" />
+                        <User className="w-5 h-5 text-[#075E54]" />
                       )}
                     </div>
                     {conv.unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-5 w-5 bg-[#E06A26] text-white text-xs font-semibold rounded-full flex items-center justify-center">
+                      <span className="absolute -top-1 -right-1 h-5 w-5 bg-[#25D366] text-white text-xs font-semibold rounded-full flex items-center justify-center">
                         {conv.unreadCount}
                       </span>
                     )}
@@ -283,59 +283,68 @@ export default function UserMessagesPage() {
         </div>
 
         {/* Chat Area */}
-        <div className={`flex-1 flex flex-col bg-white md:rounded-xl md:shadow-sm md:border border-gray-100 ${!selectedConversation ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 flex flex-col md:rounded-xl md:shadow-sm md:border border-gray-100 ${!selectedConversation ? 'hidden md:flex' : 'flex fixed inset-0 z-50 md:relative md:z-auto'}`}>
           {selectedConversation ? (
-            <>
-              {/* Chat Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <div className="flex flex-col h-dvh md:h-full">
+              {/* Chat Header - WhatsApp Style - Fixed at top */}
+              <div className="flex items-center justify-between p-3 bg-[#075E54] text-white md:bg-white md:text-gray-900 md:border-b md:border-gray-100 md:rounded-t-xl shrink-0">
                 <div className="flex items-center gap-3">
                   <button 
-                    className="p-2 -ml-2 md:hidden hover:bg-gray-100 rounded-full"
+                    className="p-2 -ml-2 md:hidden hover:bg-white/10 rounded-full"
                     onClick={() => setSelectedConversation(null)}
                   >
-                    <ArrowLeft className="w-5 h-5 text-gray-700" />
+                    <ArrowLeft className="w-5 h-5 text-white" />
                   </button>
-                  <div className="h-10 w-10 rounded-full bg-[#E06A26]/10 flex items-center justify-center overflow-hidden">
+                  <div className="h-10 w-10 rounded-full bg-white/20 md:bg-[#075E54]/10 flex items-center justify-center overflow-hidden">
                     {selectedConversation.user.avatar ? (
                       <img src={selectedConversation.user.avatar} alt={selectedConversation.user.firstName} loading="lazy" className="w-full h-full object-cover" />
                     ) : (
-                      <User className="w-5 h-5 text-[#E06A26]" />
+                      <User className="w-5 h-5 text-white md:text-[#075E54]" />
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-white md:text-gray-900">
                       {selectedConversation.user.firstName} {selectedConversation.user.lastName}
                     </p>
-                    <p className="text-xs text-[#3AB1A0] capitalize">
+                    <p className="text-xs text-white/80 md:text-[#25D366] capitalize">
                       {selectedConversation.user.role === 'dietitian' ? 'Your Dietitian' : selectedConversation.user.role}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <Phone className="h-5 w-5 text-[#3AB1A0]" />
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-white/10 md:hover:bg-gray-100">
+                    <Phone className="h-5 w-5 text-white md:text-[#075E54]" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <Video className="h-5 w-5 text-[#3AB1A0]" />
+                  <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-white/10 md:hover:bg-gray-100">
+                    <Video className="h-5 w-5 text-white md:text-[#075E54]" />
                   </Button>
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              {/* Messages - WhatsApp Style - Scrollable area */}
+              <div 
+                className="flex-1 overflow-y-auto p-4 space-y-2"
+                style={{
+                  backgroundColor: '#ECE5DD',
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%23ECE5DD\'/%3E%3Cpath d=\'M20 20h60v60H20z\' fill=\'%23D9D9D9\' opacity=\'.05\'/%3E%3C/svg%3E")',
+                  backgroundSize: '300px 300px'
+                }}
+              >
                 {loadingMessages ? (
                   <div className="flex justify-center py-8">
                     <SpoonGifLoader size="md" />
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full py-12">
-                    <div className="w-16 h-16 bg-[#3AB1A0]/10 rounded-full flex items-center justify-center mb-4">
-                      <Send className="w-8 h-8 text-[#3AB1A0]" />
+                    <div className="bg-white/80 rounded-2xl p-6 shadow-sm">
+                      <div className="w-16 h-16 bg-[#075E54]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Send className="w-8 h-8 text-[#075E54]" />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-1 text-center">Start a conversation</h3>
+                      <p className="text-gray-500 text-sm text-center">
+                        Send a message to {selectedConversation.user.firstName}
+                      </p>
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Start a conversation</h3>
-                    <p className="text-gray-500 text-sm">
-                      Send a message to {selectedConversation.user.firstName}
-                    </p>
                   </div>
                 ) : (
                   messages.map((message) => {
@@ -344,23 +353,23 @@ export default function UserMessagesPage() {
                     return (
                       <div
                         key={message._id}
-                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-1`}
                       >
-                        <div className={`max-w-[80%] ${isOwn ? 'order-2' : ''}`}>
+                        <div className={`max-w-[85%] sm:max-w-[75%] ${isOwn ? 'order-2' : ''}`}>
                           <div
-                            className={`px-4 py-2 rounded-2xl ${
+                            className={`px-3 py-2 rounded-lg shadow-sm inline-block ${
                               isOwn
-                                ? 'bg-[#E06A26] text-white rounded-br-md'
-                                : 'bg-white text-gray-900 rounded-bl-md shadow-sm'
+                                ? 'bg-[#DCF8C6] text-gray-900 rounded-tr-none'
+                                : 'bg-white text-gray-900 rounded-tl-none'
                             }`}
                           >
-                            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                          </div>
-                          <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : ''}`}>
-                            <span className="text-xs text-gray-400">
-                              {formatMessageTime(message.createdAt)}
-                            </span>
-                            {getStatusIcon(message.isRead, isOwn)}
+                            <p className="text-[14px] sm:text-[15px] leading-relaxed whitespace-pre-wrap wrap-break-word">{message.content}</p>
+                            <div className={`flex items-center justify-end gap-1 mt-1`}>
+                              <span className="text-[10px] sm:text-[11px] text-gray-500">
+                                {formatMessageTime(message.createdAt)}
+                              </span>
+                              {getStatusIcon(message.isRead, isOwn)}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -370,23 +379,25 @@ export default function UserMessagesPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input Area */}
-              <div className="p-4 border-t border-gray-100 bg-white">
+              {/* Input Area - WhatsApp Style - Fixed at bottom */}
+              <div className="p-2 sm:p-3 bg-[#F0F0F0] md:bg-white md:border-t md:border-gray-100 md:rounded-b-xl shrink-0">
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0">
+                  <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 hover:bg-gray-200 rounded-full">
                     <Paperclip className="h-5 w-5 text-gray-600" />
                   </Button>
-                  <Input
-                    ref={inputRef}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1 bg-gray-50 border-0 focus-visible:ring-1"
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                  />
+                  <div className="flex-1 bg-white rounded-3xl flex items-center px-4 py-2 shadow-sm">
+                    <Input
+                      ref={inputRef}
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Type a message..."
+                      className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-[14px] sm:text-[15px] p-0"
+                      onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    />
+                  </div>
                   <Button 
                     size="icon" 
-                    className="h-10 w-10 bg-[#E06A26] hover:bg-[#d55d1d] flex-shrink-0"
+                    className="h-10 w-10 bg-[#075E54] hover:bg-[#064e47] shrink-0 rounded-full shadow-lg"
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim() || sending}
                   >
@@ -394,12 +405,12 @@ export default function UserMessagesPage() {
                   </Button>
                 </div>
               </div>
-            </>
+            </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-[#3AB1A0]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Send className="w-8 h-8 text-[#3AB1A0]" />
+            <div className="flex-1 flex items-center justify-center bg-[#ECE5DD]">
+              <div className="text-center bg-white/80 rounded-2xl p-8 shadow-sm">
+                <div className="w-16 h-16 bg-[#075E54]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Send className="w-8 h-8 text-[#075E54]" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-1">Select a conversation</h3>
                 <p className="text-gray-500 text-sm">Choose a conversation from the list to start chatting</p>

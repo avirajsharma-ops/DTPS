@@ -357,7 +357,7 @@ export default function ClientDashboard() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-50 via-pink-50 to-blue-50">
         <div className="text-center">
           <LoadingSpinner className="h-12 w-12 mx-auto text-purple-500" />
           <p className="mt-4 text-gray-600 font-medium">Loading your dashboard...</p>
@@ -410,7 +410,7 @@ export default function ClientDashboard() {
                 </defs>
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{stats.todayStats.calories.remaining}</p>
+                <p className="text-5xl font-bold bg-linear-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{stats.todayStats.calories.remaining}</p>
                 <p className="text-sm text-gray-500 font-semibold mt-1">Remaining</p>
               </div>
             </div>
@@ -418,15 +418,15 @@ export default function ClientDashboard() {
 
           {/* Calorie Breakdown */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl border border-purple-200">
+            <div className="text-center p-4 bg-linear-to-br from-purple-50 to-purple-100 rounded-2xl border border-purple-200">
               <p className="text-xs text-purple-700 font-semibold mb-1">Consumed</p>
               <p className="text-xl font-bold text-purple-600">{stats.todayStats.calories.consumed}</p>
             </div>
-            <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl border border-orange-200">
+            <div className="text-center p-4 bg-linear-to-br from-orange-50 to-orange-100 rounded-2xl border border-orange-200">
               <p className="text-xs text-orange-700 font-semibold mb-1">Burned</p>
               <p className="text-xl font-bold text-orange-600">{stats.todayStats.calories.burned}</p>
             </div>
-            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200">
+            <div className="text-center p-4 bg-linear-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200">
               <p className="text-xs text-blue-700 font-semibold mb-1">Goal</p>
               <p className="text-xl font-bold text-blue-600">{stats.todayStats.calories.target}</p>
             </div>
@@ -441,7 +441,7 @@ export default function ClientDashboard() {
           <div className="mb-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                <div className="h-10 w-10 rounded-xl bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
                   <span className="text-base font-bold text-white">P</span>
                 </div>
                 <span className="text-base font-bold text-gray-800">Protein</span>
@@ -450,7 +450,7 @@ export default function ClientDashboard() {
             </div>
             <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-500 shadow-sm"
+                className="h-full bg-linear-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-500 shadow-sm"
                 style={{ width: `${Math.min(stats.todayStats.macros.protein.percentage, 100)}%` }}
               />
             </div>
@@ -460,7 +460,7 @@ export default function ClientDashboard() {
           <div className="mb-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-sm">
+                <div className="h-10 w-10 rounded-xl bg-linear-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-sm">
                   <span className="text-base font-bold text-white">C</span>
                 </div>
                 <span className="text-base font-bold text-gray-800">Carbs</span>
@@ -469,7 +469,7 @@ export default function ClientDashboard() {
             </div>
             <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-500 shadow-sm"
+                className="h-full bg-linear-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-500 shadow-sm"
                 style={{ width: `${Math.min(stats.todayStats.macros.carbs.percentage, 100)}%` }}
               />
             </div>
@@ -479,7 +479,7 @@ export default function ClientDashboard() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center shadow-sm">
+                <div className="h-10 w-10 rounded-xl bg-linear-to-br from-rose-500 to-rose-600 flex items-center justify-center shadow-sm">
                   <span className="text-base font-bold text-white">F</span>
                 </div>
                 <span className="text-base font-bold text-gray-800">Fats</span>
@@ -488,7 +488,7 @@ export default function ClientDashboard() {
             </div>
             <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-rose-400 to-rose-600 rounded-full transition-all duration-500 shadow-sm"
+                className="h-full bg-linear-to-r from-rose-400 to-rose-600 rounded-full transition-all duration-500 shadow-sm"
                 style={{ width: `${Math.min(stats.todayStats.macros.fats.percentage, 100)}%` }}
               />
             </div>
@@ -503,7 +503,7 @@ export default function ClientDashboard() {
             className="bg-white rounded-3xl shadow-md border border-gray-100 p-5 active:scale-95 transition-transform text-left"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm">
+              <div className="h-12 w-12 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm">
                 <Droplet className="h-6 w-6 text-white" />
               </div>
               <span className="text-2xl font-bold text-gray-900">{stats.todayStats.water.current}/{stats.todayStats.water.target}</span>
@@ -511,7 +511,7 @@ export default function ClientDashboard() {
             <p className="text-sm font-semibold text-gray-600 mb-2">Water Glasses</p>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full transition-all duration-500"
+                className="h-full bg-linear-to-r from-cyan-500 to-blue-600 rounded-full transition-all duration-500"
                 style={{ width: `${(stats.todayStats.water.current / stats.todayStats.water.target) * 100}%` }}
               />
             </div>
@@ -523,7 +523,7 @@ export default function ClientDashboard() {
             className="bg-white rounded-3xl shadow-md border border-gray-100 p-5 active:scale-95 transition-transform text-left"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-sm">
+              <div className="h-12 w-12 rounded-2xl bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-sm">
                 <Activity className="h-6 w-6 text-white" />
               </div>
               <span className="text-2xl font-bold text-gray-900">{(stats.todayStats.steps.current / 1000).toFixed(1)}k</span>
@@ -531,7 +531,7 @@ export default function ClientDashboard() {
             <p className="text-sm font-semibold text-gray-600 mb-2">Steps Today</p>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-600 rounded-full transition-all duration-500"
+                className="h-full bg-linear-to-r from-purple-500 to-pink-600 rounded-full transition-all duration-500"
                 style={{ width: `${(stats.todayStats.steps.current / stats.todayStats.steps.target) * 100}%` }}
               />
             </div>
@@ -546,7 +546,7 @@ export default function ClientDashboard() {
             className="bg-white rounded-3xl shadow-md border border-gray-100 p-5 active:scale-95 transition-transform text-left"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-sm text-2xl">
+              <div className="h-12 w-12 rounded-2xl bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-sm text-2xl">
                 😴
               </div>
               <span className="text-2xl font-bold text-gray-900">{stats.todayStats.sleep?.current || 0}h</span>
@@ -554,7 +554,7 @@ export default function ClientDashboard() {
             <p className="text-sm font-semibold text-gray-600 mb-2">Sleep Hours</p>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-500"
+                className="h-full bg-linear-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-500"
                 style={{ width: `${((stats.todayStats.sleep?.current || 0) / (stats.todayStats.sleep?.target || 8)) * 100}%` }}
               />
             </div>
@@ -566,7 +566,7 @@ export default function ClientDashboard() {
             className="bg-white rounded-3xl shadow-md border border-gray-100 p-5 active:scale-95 transition-transform text-left"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-sm text-2xl">
+              <div className="h-12 w-12 rounded-2xl bg-linear-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-sm text-2xl">
                 ⚖️
               </div>
               <span className="text-2xl font-bold text-gray-900">{stats.weight.current}kg</span>
@@ -574,7 +574,7 @@ export default function ClientDashboard() {
             <p className="text-sm font-semibold text-gray-600 mb-2">Current Weight</p>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-pink-500 to-rose-600 rounded-full transition-all duration-500"
+                className="h-full bg-linear-to-r from-pink-500 to-rose-600 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min((stats.weight.current / stats.weight.target) * 100, 100)}%` }}
               />
             </div>
@@ -583,7 +583,7 @@ export default function ClientDashboard() {
 
         {/* Weight Progress */}
         {stats.weight.current > 0 && (
-          <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-sm p-5 text-white">
+          <div className="bg-linear-to-br from-purple-500 to-pink-600 rounded-2xl shadow-sm p-5 text-white">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold">Weight Progress</h3>
               <TrendingUp className="h-6 w-6" />
@@ -620,7 +620,7 @@ export default function ClientDashboard() {
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 p-0.5 shadow-md flex-shrink-0">
+              <div className="h-16 w-16 rounded-2xl bg-linear-to-br from-purple-500 to-pink-600 p-0.5 shadow-md shrink-0">
                 <div className="h-full w-full rounded-2xl bg-white p-0.5">
                   {stats.assignedDietitian.avatar ? (
                     <img
@@ -629,7 +629,7 @@ export default function ClientDashboard() {
                       className="h-full w-full rounded-2xl object-cover"
                     />
                   ) : (
-                    <div className="h-full w-full rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                    <div className="h-full w-full rounded-2xl bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center">
                       <User className="h-8 w-8 text-white" />
                     </div>
                   )}
@@ -737,7 +737,7 @@ export default function ClientDashboard() {
               className="w-64 flex items-center gap-3 bg-white rounded-2xl shadow-xl px-6 py-4 active:scale-95 transition-all animate-slide-up"
               style={{ animationDelay: '0ms' }}
             >
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-linear-to-br from-cyan-500 to-blue-500 flex items-center justify-center shrink-0">
                 <Droplet className="h-6 w-6 text-white" />
               </div>
               <span className="font-bold text-gray-900">Add Water</span>
@@ -751,7 +751,7 @@ export default function ClientDashboard() {
               className="w-64 flex items-center gap-3 bg-white rounded-2xl shadow-xl px-6 py-4 active:scale-95 transition-all animate-slide-up"
               style={{ animationDelay: '50ms' }}
             >
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
                 <Activity className="h-6 w-6 text-white" />
               </div>
               <span className="font-bold text-gray-900">Log Steps</span>
@@ -765,7 +765,7 @@ export default function ClientDashboard() {
               className="w-64 flex items-center gap-3 bg-white rounded-2xl shadow-xl px-6 py-4 active:scale-95 transition-all animate-slide-up"
               style={{ animationDelay: '100ms' }}
             >
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0">
                 <span className="text-2xl">😴</span>
               </div>
               <span className="font-bold text-gray-900">Log Sleep</span>
@@ -779,7 +779,7 @@ export default function ClientDashboard() {
               className="w-64 flex items-center gap-3 bg-white rounded-2xl shadow-xl px-6 py-4 active:scale-95 transition-all animate-slide-up"
               style={{ animationDelay: '150ms' }}
             >
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center flex-shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-linear-to-br from-pink-500 to-rose-500 flex items-center justify-center shrink-0">
                 <span className="text-2xl">⚖️</span>
               </div>
               <span className="font-bold text-gray-900">Log Weight</span>
@@ -791,7 +791,7 @@ export default function ClientDashboard() {
               className="w-64 flex items-center gap-3 bg-white rounded-2xl shadow-xl px-6 py-4 active:scale-95 transition-all animate-slide-up"
               style={{ animationDelay: '200ms' }}
             >
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
                 <Calendar className="h-6 w-6 text-white" />
               </div>
               <span className="font-bold text-gray-900">Book Appointment</span>
@@ -803,7 +803,7 @@ export default function ClientDashboard() {
               className="w-64 flex items-center gap-3 bg-white rounded-2xl shadow-xl px-6 py-4 active:scale-95 transition-all animate-slide-up"
               style={{ animationDelay: '250ms' }}
             >
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center flex-shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-linear-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0">
                 <Utensils className="h-6 w-6 text-white" />
               </div>
               <span className="font-bold text-gray-900">View Meal Plan</span>
@@ -816,7 +816,7 @@ export default function ClientDashboard() {
       {waterAnimation && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
           <div className="animate-bounce-in">
-            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-8 py-6 rounded-3xl shadow-2xl text-center transform scale-110">
+            <div className="bg-linear-to-r from-cyan-500 to-blue-500 text-white px-8 py-6 rounded-3xl shadow-2xl text-center transform scale-110">
               <div className="text-6xl mb-3 animate-pulse">💧</div>
               <p className="text-xl font-bold">{celebrationMessage}</p>
             </div>
@@ -827,7 +827,7 @@ export default function ClientDashboard() {
       {stepsAnimation && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
           <div className="animate-bounce-in">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-6 rounded-3xl shadow-2xl text-center transform scale-110">
+            <div className="bg-linear-to-r from-purple-500 to-pink-500 text-white px-8 py-6 rounded-3xl shadow-2xl text-center transform scale-110">
               <div className="text-6xl mb-3 animate-pulse">👟</div>
               <p className="text-xl font-bold">{celebrationMessage}</p>
             </div>
@@ -838,7 +838,7 @@ export default function ClientDashboard() {
       {sleepAnimation && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
           <div className="animate-bounce-in">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-8 py-6 rounded-3xl shadow-2xl text-center transform scale-110">
+            <div className="bg-linear-to-r from-indigo-500 to-purple-500 text-white px-8 py-6 rounded-3xl shadow-2xl text-center transform scale-110">
               <div className="text-6xl mb-3 animate-pulse">😴</div>
               <p className="text-xl font-bold">{celebrationMessage}</p>
             </div>
@@ -849,7 +849,7 @@ export default function ClientDashboard() {
       {weightAnimation && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
           <div className="animate-bounce-in">
-            <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-8 py-6 rounded-3xl shadow-2xl text-center transform scale-110">
+            <div className="bg-linear-to-r from-pink-500 to-rose-500 text-white px-8 py-6 rounded-3xl shadow-2xl text-center transform scale-110">
               <div className="text-6xl mb-3 animate-pulse">⚖️</div>
               <p className="text-xl font-bold">{celebrationMessage}</p>
             </div>
@@ -862,11 +862,11 @@ export default function ClientDashboard() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setShowWaterModal(false)}>
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Animated background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-50 to-blue-50 opacity-50"></div>
+            <div className="absolute inset-0 bg-linear-to-br from-cyan-50 to-blue-50 opacity-50"></div>
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">Water Intake</h3>
+                <h3 className="text-2xl font-bold bg-linear-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">Water Intake</h3>
                 <button onClick={() => setShowWaterModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                   ✕
                 </button>
@@ -877,7 +877,7 @@ export default function ClientDashboard() {
                   <div className="absolute inset-0 bg-cyan-400 rounded-full blur-2xl opacity-30 animate-pulse"></div>
                   <Droplet className={`relative h-20 w-20 text-cyan-500 mx-auto transition-transform ${waterAnimation ? 'scale-125' : 'scale-100'}`} />
                 </div>
-                <div className={`text-7xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent mb-2 transition-transform ${waterAnimation ? 'scale-110' : 'scale-100'}`}>
+                <div className={`text-7xl font-bold bg-linear-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent mb-2 transition-transform ${waterAnimation ? 'scale-110' : 'scale-100'}`}>
                   {waterGlasses}
                 </div>
                 <p className="text-gray-600 font-medium">glasses today</p>
@@ -886,13 +886,13 @@ export default function ClientDashboard() {
               <div className="flex items-center justify-center gap-4 mb-6">
                 <button
                   onClick={() => updateWater('decrement')}
-                  className="h-16 w-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 active:scale-95 transition-all flex items-center justify-center text-3xl font-bold text-gray-700 shadow-md"
+                  className="h-16 w-16 rounded-2xl bg-linear-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 active:scale-95 transition-all flex items-center justify-center text-3xl font-bold text-gray-700 shadow-md"
                 >
                   −
                 </button>
                 <button
                   onClick={() => updateWater('increment')}
-                  className="h-16 w-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 active:scale-95 transition-all flex items-center justify-center text-3xl font-bold text-white shadow-lg"
+                  className="h-16 w-16 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 active:scale-95 transition-all flex items-center justify-center text-3xl font-bold text-white shadow-lg"
                 >
                   +
                 </button>
@@ -903,7 +903,7 @@ export default function ClientDashboard() {
                   <button
                     key={num}
                     onClick={() => updateWater('set', num)}
-                    className="py-3 px-3 rounded-xl bg-gradient-to-br from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 border border-cyan-200 active:scale-95 transition-all text-sm font-bold text-cyan-700"
+                    className="py-3 px-3 rounded-xl bg-linear-to-br from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 border border-cyan-200 active:scale-95 transition-all text-sm font-bold text-cyan-700"
                   >
                     {num}
                   </button>
@@ -919,11 +919,11 @@ export default function ClientDashboard() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setShowStepsModal(false)}>
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Animated background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-pink-50 opacity-50"></div>
+            <div className="absolute inset-0 bg-linear-to-br from-purple-50 to-pink-50 opacity-50"></div>
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Steps Today</h3>
+                <h3 className="text-2xl font-bold bg-linear-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Steps Today</h3>
                 <button onClick={() => setShowStepsModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                   ✕
                 </button>
@@ -934,7 +934,7 @@ export default function ClientDashboard() {
                   <div className="absolute inset-0 bg-purple-400 rounded-full blur-2xl opacity-30 animate-pulse"></div>
                   <Activity className={`relative h-20 w-20 text-purple-500 mx-auto transition-transform ${stepsAnimation ? 'scale-125' : 'scale-100'}`} />
                 </div>
-                <div className={`text-7xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2 transition-transform ${stepsAnimation ? 'scale-110' : 'scale-100'}`}>
+                <div className={`text-7xl font-bold bg-linear-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2 transition-transform ${stepsAnimation ? 'scale-110' : 'scale-100'}`}>
                   {stepsCount.toLocaleString()}
                 </div>
                 <p className="text-gray-600 font-medium">steps today</p>
@@ -945,7 +945,7 @@ export default function ClientDashboard() {
                   type="number"
                   value={stepsCount}
                   onChange={(e) => setStepsCount(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full px-4 py-4 rounded-2xl border-2 border-purple-200 focus:border-purple-500 focus:outline-none text-center text-3xl font-bold bg-gradient-to-br from-purple-50 to-pink-50 text-purple-700"
+                  className="w-full px-4 py-4 rounded-2xl border-2 border-purple-200 focus:border-purple-500 focus:outline-none text-center text-3xl font-bold bg-linear-to-br from-purple-50 to-pink-50 text-purple-700"
                   placeholder="Enter steps"
                 />
               </div>
@@ -955,7 +955,7 @@ export default function ClientDashboard() {
                   <button
                     key={num}
                     onClick={() => setStepsCount(num)}
-                    className="py-3 px-3 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 active:scale-95 transition-all text-sm font-bold text-purple-700"
+                    className="py-3 px-3 rounded-xl bg-linear-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 active:scale-95 transition-all text-sm font-bold text-purple-700"
                   >
                     {(num / 1000).toFixed(0)}k
                   </button>
@@ -967,7 +967,7 @@ export default function ClientDashboard() {
                   updateSteps(stepsCount);
                   setShowStepsModal(false);
                 }}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:scale-95 transition-all text-white font-bold text-lg shadow-lg"
+                className="w-full py-4 rounded-2xl bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:scale-95 transition-all text-white font-bold text-lg shadow-lg"
               >
                 Save Steps
               </button>
@@ -981,11 +981,11 @@ export default function ClientDashboard() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setShowSleepModal(false)}>
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             {/* Animated background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 opacity-50"></div>
+            <div className="absolute inset-0 bg-linear-to-br from-indigo-50 to-purple-50 opacity-50"></div>
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Sleep Tracking</h3>
+                <h3 className="text-2xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Sleep Tracking</h3>
                 <button onClick={() => setShowSleepModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                   ✕
                 </button>
@@ -997,7 +997,7 @@ export default function ClientDashboard() {
                   <div className="absolute inset-0 bg-indigo-400 rounded-full blur-2xl opacity-30 animate-pulse"></div>
                   <div className={`relative text-6xl transition-transform ${sleepAnimation ? 'scale-125' : 'scale-100'}`}>😴</div>
                 </div>
-                <div className={`text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2 transition-transform ${sleepAnimation ? 'scale-110' : 'scale-100'}`}>
+                <div className={`text-5xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2 transition-transform ${sleepAnimation ? 'scale-110' : 'scale-100'}`}>
                   {sleepHours.toFixed(1)}
                 </div>
                 <p className="text-gray-600 font-medium">hours last night</p>
@@ -1010,7 +1010,7 @@ export default function ClientDashboard() {
                   </div>
                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
+                      className="h-full bg-linear-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
                       style={{ width: `${Math.min(100, (sleepHours / 8) * 100)}%` }}
                     />
                   </div>
@@ -1030,7 +1030,7 @@ export default function ClientDashboard() {
                 <div className="flex items-center justify-center gap-4 mb-4">
                   <button
                     onClick={() => setSleepHours(Math.max(0, sleepHours - 0.5))}
-                    className="h-14 w-14 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 active:scale-95 transition-all flex items-center justify-center text-2xl font-bold text-gray-700 shadow-md"
+                    className="h-14 w-14 rounded-xl bg-linear-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 active:scale-95 transition-all flex items-center justify-center text-2xl font-bold text-gray-700 shadow-md"
                   >
                     −
                   </button>
@@ -1049,7 +1049,7 @@ export default function ClientDashboard() {
 
                   <button
                     onClick={() => setSleepHours(sleepHours + 0.5)}
-                    className="h-14 w-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 active:scale-95 transition-all flex items-center justify-center text-2xl font-bold text-white shadow-lg"
+                    className="h-14 w-14 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 active:scale-95 transition-all flex items-center justify-center text-2xl font-bold text-white shadow-lg"
                   >
                     +
                   </button>
@@ -1063,8 +1063,8 @@ export default function ClientDashboard() {
                       onClick={() => setSleepHours(num)}
                       className={`py-3 px-3 rounded-xl border active:scale-95 transition-all text-sm font-bold ${
                         sleepHours === num
-                          ? 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white border-indigo-500'
-                          : 'bg-gradient-to-br from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 border-indigo-200 text-indigo-700'
+                          ? 'bg-linear-to-br from-indigo-500 to-purple-500 text-white border-indigo-500'
+                          : 'bg-linear-to-br from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 border-indigo-200 text-indigo-700'
                       }`}
                     >
                       {num}h
@@ -1083,7 +1083,7 @@ export default function ClientDashboard() {
                     <button
                       key={preset.label}
                       onClick={() => setSleepHours(preset.hours)}
-                      className="py-2 px-3 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 border border-indigo-200 active:scale-95 transition-all text-xs font-medium text-indigo-700"
+                      className="py-2 px-3 rounded-lg bg-linear-to-br from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 border border-indigo-200 active:scale-95 transition-all text-xs font-medium text-indigo-700"
                     >
                       {preset.label}
                       <br />
@@ -1098,7 +1098,7 @@ export default function ClientDashboard() {
                   updateSleep(sleepHours);
                   setShowSleepModal(false);
                 }}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 active:scale-95 transition-all text-white font-bold text-lg shadow-lg"
+                className="w-full py-4 rounded-2xl bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 active:scale-95 transition-all text-white font-bold text-lg shadow-lg"
               >
                 Save Sleep
               </button>
@@ -1112,11 +1112,11 @@ export default function ClientDashboard() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setShowWeightModal(false)}>
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             {/* Animated background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-50 to-rose-50 opacity-50"></div>
+            <div className="absolute inset-0 bg-linear-to-br from-pink-50 to-rose-50 opacity-50"></div>
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">Weight Tracking</h3>
+                <h3 className="text-2xl font-bold bg-linear-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">Weight Tracking</h3>
                 <button onClick={() => setShowWeightModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                   ✕
                 </button>
@@ -1128,7 +1128,7 @@ export default function ClientDashboard() {
                   <div className="absolute inset-0 bg-pink-400 rounded-full blur-2xl opacity-30 animate-pulse"></div>
                   <div className={`relative text-6xl transition-transform ${weightAnimation ? 'scale-125' : 'scale-100'}`}>⚖️</div>
                 </div>
-                <div className={`text-5xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-2 transition-transform ${weightAnimation ? 'scale-110' : 'scale-100'}`}>
+                <div className={`text-5xl font-bold bg-linear-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-2 transition-transform ${weightAnimation ? 'scale-110' : 'scale-100'}`}>
                   {currentWeight.toFixed(1)}
                 </div>
                 <p className="text-gray-600 font-medium">kg current weight</p>
@@ -1141,7 +1141,7 @@ export default function ClientDashboard() {
                   </div>
                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full transition-all duration-500"
+                      className="h-full bg-linear-to-r from-pink-500 to-rose-500 rounded-full transition-all duration-500"
                       style={{
                         width: `${Math.min(100, Math.max(0, ((targetWeight - Math.abs(currentWeight - targetWeight)) / targetWeight) * 100))}%`
                       }}
@@ -1170,7 +1170,7 @@ export default function ClientDashboard() {
                       return (
                         <div key={index} className="flex-1 flex flex-col items-center">
                           <div
-                            className="w-full bg-gradient-to-t from-pink-500 to-rose-400 rounded-t-sm transition-all duration-300"
+                            className="w-full bg-linear-to-t from-pink-500 to-rose-400 rounded-t-sm transition-all duration-300"
                             style={{ height: `${Math.max(height, 10)}%` }}
                           />
                           <span className="text-xs text-gray-500 mt-1">
@@ -1192,7 +1192,7 @@ export default function ClientDashboard() {
                 <div className="flex items-center justify-center gap-4 mb-4">
                   <button
                     onClick={() => setCurrentWeight(Math.max(0, currentWeight - 0.1))}
-                    className="h-14 w-14 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 active:scale-95 transition-all flex items-center justify-center text-2xl font-bold text-gray-700 shadow-md"
+                    className="h-14 w-14 rounded-xl bg-linear-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 active:scale-95 transition-all flex items-center justify-center text-2xl font-bold text-gray-700 shadow-md"
                   >
                     −
                   </button>
@@ -1211,7 +1211,7 @@ export default function ClientDashboard() {
 
                   <button
                     onClick={() => setCurrentWeight(currentWeight + 0.1)}
-                    className="h-14 w-14 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 transition-all flex items-center justify-center text-2xl font-bold text-white shadow-lg"
+                    className="h-14 w-14 rounded-xl bg-linear-to-br from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 transition-all flex items-center justify-center text-2xl font-bold text-white shadow-lg"
                   >
                     +
                   </button>
@@ -1223,7 +1223,7 @@ export default function ClientDashboard() {
                     <button
                       key={change}
                       onClick={() => setCurrentWeight(Math.max(0, currentWeight + change))}
-                      className="py-2 px-3 rounded-lg bg-gradient-to-br from-pink-50 to-rose-50 hover:from-pink-100 hover:to-rose-100 border border-pink-200 active:scale-95 transition-all text-sm font-bold text-pink-700"
+                      className="py-2 px-3 rounded-lg bg-linear-to-br from-pink-50 to-rose-50 hover:from-pink-100 hover:to-rose-100 border border-pink-200 active:scale-95 transition-all text-sm font-bold text-pink-700"
                     >
                       {change > 0 ? '+' : ''}{change}kg
                     </button>
@@ -1236,7 +1236,7 @@ export default function ClientDashboard() {
                   updateWeight(currentWeight);
                   setShowWeightModal(false);
                 }}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 active:scale-95 transition-all text-white font-bold text-lg shadow-lg"
+                className="w-full py-4 rounded-2xl bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 active:scale-95 transition-all text-white font-bold text-lg shadow-lg"
               >
                 Save Weight
               </button>

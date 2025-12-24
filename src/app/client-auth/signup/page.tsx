@@ -140,7 +140,7 @@ export default function ClientSignUpPage() {
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-3 sm:space-y-4">
           {error && (
-            <Alert variant="destructive" className="text-red-300 border-red-800 bg-red-900/30">
+            <Alert variant="destructive" className="text-red-700 border-red-200 bg-red-50">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}

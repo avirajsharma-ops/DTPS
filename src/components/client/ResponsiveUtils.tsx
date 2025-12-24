@@ -60,7 +60,7 @@ export function PageHeader({ title, subtitle, action, className }: PageHeaderPro
         )}
       </div>
       {action && (
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {action}
         </div>
       )}
@@ -97,7 +97,7 @@ export function Section({ children, title, subtitle, action, className }: Sectio
             )}
           </div>
           {action && (
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               {action}
             </div>
           )}

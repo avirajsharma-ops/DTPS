@@ -11,6 +11,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { UserRole, UserStatus } from "@/types";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
+import { formatUserId } from "@/lib/utils";
 
 interface AdminUser {
   _id: string;
@@ -269,6 +270,16 @@ export default function AdminUsersPage() {
                 <tbody>
                   {filtered.map(u => (
                     <tr key={u._id} className="border-b hover:bg-gray-50">
+                      <td className="p-3">
+                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                          u.role === 'dietitian' ? 'bg-teal-100 text-teal-700' :
+                          u.role === 'client' ? 'bg-blue-100 text-blue-700' :
+                          u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                          'bg-orange-100 text-orange-700'
+                        }`}>
+                          {formatUserId(u._id, u.role)}
+                        </span>
+                      </td>
                       <td className="p-3">{u.firstName} {u.lastName}</td>
                       <td className="p-3">{u.email}</td>
                       <td className="p-3">

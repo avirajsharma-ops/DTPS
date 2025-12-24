@@ -171,7 +171,7 @@ export default function BlogsPage() {
               <h1 className="text-xl font-bold text-gray-900">Health Blogs</h1>
               <p className="text-xs text-gray-500">Tips & insights for your wellness journey</p>
             </div>
-            <div className="p-2 bg-gradient-to-br from-[#3AB1A0] to-[#2D8A7C] rounded-xl shadow-md">
+            <div className="p-2 bg-linear-to-br from-[#3AB1A0] to-[#2D8A7C] rounded-xl shadow-md">
               <BookOpen className="h-5 w-5 text-white" />
             </div>
           </div>
@@ -196,7 +196,7 @@ export default function BlogsPage() {
                 onClick={() => setSelectedCategory(category)}
                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                   selectedCategory === category
-                    ? 'bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C] text-white shadow-md'
+                    ? 'bg-linear-to-r from-[#3AB1A0] to-[#2D8A7C] text-white shadow-md'
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}
               >
@@ -222,9 +222,9 @@ export default function BlogsPage() {
               <Link
                 key={blog.id}
                 href={`/user/blogs/${blog.id}`}
-                className="block w-72 flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1"
+                className="block w-72 shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1"
               >
-                <div className={`h-32 bg-gradient-to-br ${blog.image} relative p-4 flex flex-col justify-end`}>
+                <div className={`h-32 bg-linear-to-br ${blog.image} relative p-4 flex flex-col justify-end`}>
                   <span className={`absolute top-3 left-3 text-xs font-bold px-2.5 py-1 rounded-full border ${getCategoryColor(blog.category)}`}>
                     {getCategoryIcon(blog.category)} {blog.category}
                   </span>
@@ -276,7 +276,7 @@ export default function BlogsPage() {
               href={`/user/blogs/${blog.id}`}
               className="flex gap-4 bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-all group"
             >
-              <div className={`w-24 h-24 flex-shrink-0 bg-gradient-to-br ${blog.image} rounded-xl flex items-center justify-center text-3xl`}>
+              <div className={`w-24 h-24 shrink-0 bg-linear-to-br ${blog.image} rounded-xl flex items-center justify-center text-3xl`}>
                 {getCategoryIcon(blog.category)}
               </div>
               <div className="flex-1 min-w-0 py-1">

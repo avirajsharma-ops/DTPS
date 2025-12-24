@@ -16,11 +16,11 @@ export async function GET(request: NextRequest) {
 
         await dbConnect();
 
-        // Check if client has any purchases in ClientPurchase collection (active, pending, or any status)
+        // Check if client has any purchases in ClientPurchase collection (active, pending, or on_hold status)
         const allPurchases = await ClientPurchase.find({
             client: session.user.id,
-            status: { $in: ['active', 'pending'] }
-        }).populate('dietitian', 'firstName lastName email phone avatar');
+            status: { $in: ['active', 'pending', 'on_hold'] }
+        }).populate('dietitian', 'firstName lastName email phone avatar').sort({ createdAt: -1 });
 
         // Also check Payment collection for any completed payments
         const completedPayments = await Payment.find({
@@ -52,6 +52,8 @@ export async function GET(request: NextRequest) {
             hasPendingDietitianAssignment,
             activePurchases: allPurchases.map(p => {
                 const dietitian = p.dietitian as any;
+                // Debug log to check mealPlanCreated value
+                console.log(`Purchase ${p._id}: mealPlanCreated=${p.mealPlanCreated}, dietitian=${!!dietitian}`);
                 return {
                     _id: p._id,
                     planName: p.planName,
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest) {
                     endDate: p.endDate,
                     status: p.status,
                     hasDietitian: !!dietitian,
-                    mealPlanCreated: p.mealPlanCreated || false,
+                    mealPlanCreated: Boolean(p.mealPlanCreated),
                     dietitian: dietitian ? {
                         id: dietitian._id,
                         name: `${dietitian.firstName || ''} ${dietitian.lastName || ''}`.trim(),

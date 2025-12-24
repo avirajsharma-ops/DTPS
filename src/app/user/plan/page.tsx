@@ -203,6 +203,33 @@ export default function UserPlanPage() {
     }, 100);
   }, [selectedDate]);
 
+  // Auto-refresh on visibility change and focus (when user comes back to tab/window)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Clear cache to force fresh data
+        const dateKey = format(selectedDate, 'yyyy-MM-dd');
+        mealPlanCache.current.delete(dateKey);
+        fetchDayPlan(selectedDate, false);
+      }
+    };
+
+    const handleFocus = () => {
+      // Clear cache to force fresh data
+      const dateKey = format(selectedDate, 'yyyy-MM-dd');
+      mealPlanCache.current.delete(dateKey);
+      fetchDayPlan(selectedDate, false);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [selectedDate]);
+
   // Prevent body scroll when any modal is open
   useEffect(() => {
     if (recipeModal.isOpen || alternativesModal.isOpen || completionModal.isOpen || showDatePicker) {
@@ -389,7 +416,18 @@ export default function UserPlanPage() {
       if (response.ok) {
         toast.success('Meal marked as complete!');
         closeCompletionModal();
+        // Clear cache to force fresh data fetch
+        const dateKey = format(selectedDate, 'yyyy-MM-dd');
+        mealPlanCache.current.delete(dateKey);
         await fetchDayPlan(selectedDate);
+        
+        // Emit events to notify other components about the change
+        window.dispatchEvent(new CustomEvent('meal-plan-updated', { 
+          detail: { mealId: completionModal.meal.id, date: dateKey } 
+        }));
+        window.dispatchEvent(new CustomEvent('user-data-changed', { 
+          detail: { dataType: 'meal' } 
+        }));
       } else {
         const data = await response.json();
         toast.error(data.error || 'Failed to mark meal as complete');
@@ -412,8 +450,19 @@ export default function UserPlanPage() {
       });
       if (response.ok) {
         toast.success('Meal marked as complete!');
+        // Clear cache to force fresh data fetch
+        const dateKey = format(selectedDate, 'yyyy-MM-dd');
+        mealPlanCache.current.delete(dateKey);
         // Refresh the plan
         await fetchDayPlan(selectedDate);
+        
+        // Emit events to notify other components about the change
+        window.dispatchEvent(new CustomEvent('meal-plan-updated', { 
+          detail: { mealId, date: dateKey } 
+        }));
+        window.dispatchEvent(new CustomEvent('user-data-changed', { 
+          detail: { dataType: 'meal' } 
+        }));
       } else {
         toast.error('Failed to mark meal as complete');
       }
@@ -504,11 +553,7 @@ export default function UserPlanPage() {
 
   return (
     <div className="min-h-screen pb-24 bg-gray-50">
-      {/* Today's Date Banner */}
-      <div className="px-4 py-2 bg-[#E06A26] text-white text-center">
-        <p className="text-sm font-medium">📅 Today: {format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
-      </div>
-
+     
       {/* Header */}
       <div className="px-4 py-4 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between">
@@ -545,7 +590,7 @@ export default function UserPlanPage() {
       </div>
 
       {/* Selected Date Display */}
-      <div className="px-4 py-4 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] text-white">
+      <div className="px-4 py-4 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B] text-white">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs tracking-wider opacity-90 uppercase">
@@ -648,7 +693,7 @@ export default function UserPlanPage() {
         ) : dayPlan?.isFrozen ? (
           /* Frozen Day Message */
           <div className="p-8 text-center bg-white shadow-sm rounded-2xl border-2 border-blue-200">
-            <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center">
+            <div className="w-24 h-24 mx-auto mb-4 bg-linear-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center">
               <span className="text-5xl">❄️</span>
             </div>
             <h3 className="mb-2 text-xl font-bold text-blue-800">This Day is Frozen</h3>
@@ -670,7 +715,7 @@ export default function UserPlanPage() {
                   const nextDate = addDays(selectedDate, 1);
                   setSelectedDate(nextDate);
                 }}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C] text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-[#3AB1A0] to-[#2D8A7C] text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg"
               >
                 View Next Day
                 <ChevronRight className="w-4 h-4" />
@@ -686,7 +731,7 @@ export default function UserPlanPage() {
         ) : !dayPlan?.hasPlan ? (
           /* No Plan Message - Show Buy Plan option */
           <div className="p-8 text-center bg-white shadow-sm rounded-2xl">
-            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-[#E06A26]/20 to-[#DB9C6E]/20 rounded-full flex items-center justify-center">
+            <div className="w-20 h-20 mx-auto mb-4 bg-linear-to-br from-[#E06A26]/20 to-[#DB9C6E]/20 rounded-full flex items-center justify-center">
               <span className="text-4xl">🍽️</span>
             </div>
             <h3 className="mb-2 text-xl font-bold text-gray-800">No Meal Plan Available</h3>
@@ -699,7 +744,7 @@ export default function UserPlanPage() {
             <div className="flex flex-col gap-3">
               <Link 
                 href="/user/services"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#E06A26] to-[#DB9C6E] text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-[#E06A26] to-[#DB9C6E] text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg"
               >
                 🛒 Buy a Plan
                 <ChevronRight className="w-4 h-4" />
@@ -937,7 +982,7 @@ export default function UserPlanPage() {
         >
           <div className="bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
             {/* Modal Header - Sticky */}
-            <div className="flex items-center justify-between p-5 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B]">
+            <div className="flex items-center justify-between p-5 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B]">
               <h3 className="text-lg font-bold text-white">{recipeModal.item.name}</h3>
               <button 
                 onClick={() => setRecipeModal({ item: {} as MealItem, isOpen: false })}
@@ -1146,7 +1191,7 @@ export default function UserPlanPage() {
                             <ul className="space-y-2">
                               {recipe.ingredients.map((ing, i) => (
                                 <li key={i} className="flex items-start gap-3 p-3 bg-[#3AB1A0]/5 rounded-lg">
-                                  <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 flex-shrink-0" />
+                                  <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 shrink-0" />
                                   <span className="text-gray-700 text-sm">{ing}</span>
                                 </li>
                               ))}
@@ -1161,7 +1206,7 @@ export default function UserPlanPage() {
                             <ol className="space-y-3">
                               {recipe.instructions.map((step, i) => (
                                 <li key={i} className="flex gap-3">
-                                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E06A26] text-white flex items-center justify-center text-xs font-bold">
+                                  <span className="shrink-0 w-7 h-7 rounded-full bg-[#E06A26] text-white flex items-center justify-center text-xs font-bold">
                                     {i + 1}
                                   </span>
                                   <span className="text-gray-700 text-sm pt-0.5">{step}</span>
@@ -1283,7 +1328,7 @@ export default function UserPlanPage() {
             
             <div className="p-4 overflow-y-auto max-h-[70vh] space-y-5">
               {/* Meal Type - Auto fetched */}
-              <div className="bg-gradient-to-r from-[#3AB1A0]/10 to-[#E06A26]/10 rounded-xl p-4">
+              <div className="bg-linear-to-r from-[#3AB1A0]/10 to-[#E06A26]/10 rounded-xl p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-12 h-12 text-2xl bg-white shadow-sm rounded-2xl">
                     {getMealIcon(completionModal.meal.type)}
@@ -1425,7 +1470,7 @@ export default function UserPlanPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B]">
+            <div className="flex items-center justify-between p-5 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B]">
               <h3 className="text-lg font-bold text-white">📅 Select Date</h3>
               <button 
                 onClick={() => setShowDatePicker(false)}

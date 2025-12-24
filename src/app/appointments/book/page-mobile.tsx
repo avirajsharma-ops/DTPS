@@ -174,16 +174,16 @@ export default function MobileBookAppointmentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-50 via-pink-50 to-blue-50">
         <LoadingSpinner className="h-12 w-12 text-purple-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 pb-6">
+    <div className="min-h-screen bg-linear-to-br from-purple-50 via-pink-50 to-blue-50 pb-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white px-4 pt-safe-top pb-6">
+      <div className="bg-linear-to-r from-purple-600 via-pink-600 to-blue-600 text-white px-4 pt-safe-top pb-6">
         <div className="flex items-center gap-3 py-4">
           <button onClick={() => step === 1 ? router.back() : setStep(step - 1)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
             <ArrowLeft className="h-6 w-6" />
@@ -227,7 +227,7 @@ export default function MobileBookAppointmentPage() {
               >
                 <div className="flex items-start gap-4">
                   {/* Avatar */}
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                  <div className="h-16 w-16 rounded-full bg-linear-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold text-xl shrink-0">
                     {dietitian.avatar ? (
                       <img
                         src={dietitian.avatar}
@@ -245,7 +245,7 @@ export default function MobileBookAppointmentPage() {
                       <h3 className="font-semibold text-gray-900 text-lg">
                         Dr. {dietitian.firstName} {dietitian.lastName}
                       </h3>
-                      <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                      <ChevronRight className="h-5 w-5 text-gray-400 shrink-0" />
                     </div>
 
                     {dietitian.specializations && dietitian.specializations.length > 0 && (
@@ -279,7 +279,7 @@ export default function MobileBookAppointmentPage() {
           {/* Selected Dietitian */}
           <div className="bg-white rounded-2xl shadow-sm p-4">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+              <div className="h-12 w-12 rounded-full bg-linear-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold shrink-0">
                 {selectedDietitian.avatar ? (
                   <img src={selectedDietitian.avatar} alt={selectedDietitian.firstName} className="h-full w-full rounded-full object-cover" />
                 ) : (
@@ -345,7 +345,7 @@ export default function MobileBookAppointmentPage() {
                   <button
                     key={date.toISOString()}
                     onClick={() => setSelectedDate(date)}
-                    className={`flex-shrink-0 w-16 p-3 rounded-xl border-2 transition-all ${
+                    className={`shrink-0 w-16 p-3 rounded-xl border-2 transition-all ${
                       isSelected
                         ? 'border-purple-500 bg-purple-50'
                         : 'border-gray-200 bg-white'
@@ -390,7 +390,7 @@ export default function MobileBookAppointmentPage() {
           <button
             onClick={() => setStep(3)}
             disabled={!selectedTime}
-            className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-4 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Continue
           </button>
@@ -405,7 +405,7 @@ export default function MobileBookAppointmentPage() {
             <h3 className="font-bold text-gray-900 text-lg mb-4">Booking Summary</h3>
             
             <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-              <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+              <div className="h-14 w-14 rounded-full bg-linear-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold shrink-0">
                 {selectedDietitian.avatar ? (
                   <img src={selectedDietitian.avatar} alt={selectedDietitian.firstName} className="h-full w-full rounded-full object-cover" />
                 ) : (
@@ -467,7 +467,7 @@ export default function MobileBookAppointmentPage() {
           <button
             onClick={handleBookAppointment}
             disabled={booking}
-            className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-4 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {booking ? (
               <>

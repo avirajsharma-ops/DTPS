@@ -278,8 +278,29 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
     });
   };
 
-  const handleRemoveMealType = (index: number) => {
-    setMealTypeConfigs(prev => prev.filter((_, i) => i !== index));
+  const handleRemoveMealType = (mealTypeName: string) => {
+    // Remove from mealTypeConfigs
+    setMealTypeConfigs(prev => prev.filter(config => config.name !== mealTypeName));
+    
+    // Also remove from weekPlan meals
+    setWeekPlan(prev => prev.map(day => {
+      const { [mealTypeName]: removed, ...remainingMeals } = day.meals;
+      return { ...day, meals: remainingMeals };
+    }));
+  };
+
+  const handleRemoveDay = (dayIndex: number) => {
+    // Remove the day at the given index
+    setWeekPlan(prev => {
+      if (prev.length <= 1) return prev; // Keep at least 1 day
+      const updated = prev.filter((_, i) => i !== dayIndex);
+      // Re-number days if needed
+      return updated.map((day, i) => ({
+        ...day,
+        day: `Day ${i + 1}`
+      }));
+    });
+    toast.success(`Day ${dayIndex + 1} deleted`);
   };
 
   const handleExport = () => {
@@ -290,7 +311,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white border-b-2 border-gray-200 shadow-sm">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-450 mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-5">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
@@ -326,12 +347,14 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       </div>
 
 
-      <div className="max-w-[2400px] z-mx-auto px-2 sm:px-4 lg:px-6 py-10"> 
+      <div className="max-w-600 z-mx-auto px-2 sm:px-4 lg:px-6 py-10"> 
         <MealGridTable 
           weekPlan={weekPlan} 
           mealTypes={mealTypes}
           onUpdate={readOnly ? undefined : setWeekPlan}
           onAddMealType={readOnly ? undefined : handleAddMealType}
+          onRemoveMealType={readOnly ? undefined : handleRemoveMealType}
+          onRemoveDay={readOnly ? undefined : handleRemoveDay}
           readOnly={readOnly}
           clientDietaryRestrictions={dietaryRestrictions}
           clientMedicalConditions={medicalConditions}

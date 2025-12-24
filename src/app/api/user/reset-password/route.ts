@@ -1,0 +1,132 @@
+import { NextRequest, NextResponse } from 'next/server';
+import connectDB from '@/lib/db/connection';
+import User from '@/lib/db/models/User';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+
+// GET /api/user/reset-password - Validate reset token for clients
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const token = searchParams.get('token');
+    const email = searchParams.get('email');
+
+    console.log('Validating reset token for:', email);
+
+    if (!token || !email) {
+      return NextResponse.json(
+        { valid: false, error: 'Invalid reset link. Missing token or email.' },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    // Find user with matching email, token, and unexpired token - only clients
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+      role: 'client',
+      passwordResetToken: hashedToken,
+      passwordResetTokenExpiry: { $gt: new Date() }
+    });
+
+    if (!user) {
+      console.log('Invalid or expired token for:', email);
+      return NextResponse.json(
+        { valid: false, error: 'This password reset link is invalid or has expired.' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Token valid for user:', user.firstName);
+
+    return NextResponse.json({
+      valid: true,
+      userName: user.firstName || 'User'
+    });
+
+  } catch (error) {
+    console.error('Error validating user reset token:', error);
+    return NextResponse.json(
+      { valid: false, error: 'An error occurred while validating the reset link.' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/user/reset-password - Reset password for clients
+export async function POST(request: NextRequest) {
+  try {
+    const { token, email, password } = await request.json();
+
+    console.log('Reset password request for:', email);
+
+    if (!token || !email || !password) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters long' },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    // Find user with matching email, token, and unexpired token - only clients
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+      role: 'client',
+      passwordResetToken: hashedToken,
+      passwordResetTokenExpiry: { $gt: new Date() }
+    });
+
+    if (!user) {
+      console.log('Invalid or expired token during reset for:', email);
+      return NextResponse.json(
+        { error: 'This password reset link is invalid or has expired.' },
+        { status: 400 }
+      );
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Update password and clear reset token
+    user.password = hashedPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetTokenExpiry = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    console.log(`Password reset successful for client: ${email}`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Password has been reset successfully'
+    });
+
+  } catch (error) {
+    console.error('Error resetting user password:', error);
+    return NextResponse.json(
+      { error: 'An error occurred while resetting your password. Please try again.' },
+      { status: 500 }
+    );
+  }
+}

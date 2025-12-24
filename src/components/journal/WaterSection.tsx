@@ -100,6 +100,29 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
     fetchAssignedWater();
   }, [fetchWater, fetchAssignedWater]);
 
+  // Auto-refresh on visibility change and focus (when user comes back to tab/window)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchWater();
+        fetchAssignedWater();
+      }
+    };
+
+    const handleFocus = () => {
+      fetchWater();
+      fetchAssignedWater();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [fetchWater, fetchAssignedWater]);
+
   // Handle assigning water to client
   const handleAssignWater = async () => {
     if (!assignAmount || assignAmount <= 0) {
@@ -187,6 +210,9 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
         setSummary(data.summary || summary);
         setNewEntry({ amount: 0, unit: 'Glass (250ml)' });
         toast.success('Water intake added successfully');
+        // Re-fetch to update assigned status
+        fetchWater();
+        fetchAssignedWater();
       } else {
         toast.error(data.error || 'Failed to add water intake');
       }
@@ -211,6 +237,9 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
         setEntries(data.entries || []);
         setSummary(data.summary || summary);
         toast.success('Entry deleted');
+        // Re-fetch to update assigned status
+        fetchWater();
+        fetchAssignedWater();
       } else {
         toast.error(data.error || 'Failed to delete entry');
       }
@@ -253,7 +282,7 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
   return (
     <div className="space-y-6 w-full">
       {/* Assign Water to Client Card */}
-      <Card className="w-full border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50">
+      <Card className="w-full border-blue-200 bg-linear-to-r from-blue-50 to-cyan-50">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-base">
             <Target className="h-4 w-4 text-blue-600" />

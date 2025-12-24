@@ -36,6 +36,7 @@ import { ExternalLink, RefreshCw, Search, Users, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { getClientId } from '@/lib/utils';
 
 interface Client {
   _id: string;
@@ -236,7 +237,7 @@ export default function DieticianClientsPage() {
               Bulk Action
             </Button>
             <Select value={filterFreeze} onValueChange={setFilterFreeze}>
-              <SelectTrigger className="w-[180px] h-9">
+              <SelectTrigger className="w-45 h-9">
                 <SelectValue placeholder="Filter Freeze" />
               </SelectTrigger>
               <SelectContent>
@@ -246,7 +247,7 @@ export default function DieticianClientsPage() {
               </SelectContent>
             </Select>
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-[180px] h-9">
+              <SelectTrigger className="w-45 h-9">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
@@ -314,19 +315,22 @@ export default function DieticianClientsPage() {
                                 href={`/dietician/clients/${client._id}`}
                                 className="text-blue-600 hover:underline font-medium text-sm"
                               >
-                                P-{client._id.slice(-4).toUpperCase()}
+                                {getClientId(client._id)}
                               </Link>
                             </TableCell>
                             <TableCell className="px-3">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-medium text-sm whitespace-nowrap">{client.firstName} {client.lastName}</span>
+                                <span className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded font-medium">
+                                  {getClientId(client._id)}
+                                </span>
                                 <Link href={`/dietician/clients/${client._id}`}>
                                   <ExternalLink className="h-3 w-3 text-gray-400 hover:text-gray-600" />
                                 </Link>
                               </div>
                             </TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.phone || '-'}</TableCell>
-                            <TableCell className="px-3 max-w-[150px] truncate text-sm">{client.email}</TableCell>
+                            <TableCell className="px-3 max-w-37.5 truncate text-sm">{client.email}</TableCell>
                             <TableCell className="px-3">
                               {client.tags && client.tags.length > 0 ? (
                                 <div className="flex gap-1">

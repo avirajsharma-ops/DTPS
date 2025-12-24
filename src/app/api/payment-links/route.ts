@@ -7,6 +7,7 @@ import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import Razorpay from 'razorpay';
+import { getPaymentCallbackUrl, getBaseUrl } from '@/lib/config';
 
 // Initialize Razorpay
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
@@ -210,7 +211,7 @@ export async function POST(request: NextRequest) {
             paymentDate: paymentDate,
             createdAt: today.toISOString(),
           },
-          callback_url: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/user?payment_success=true`,
+          callback_url: getPaymentCallbackUrl('/user?payment_success=true'),
           callback_method: 'get'
         };
 
@@ -237,7 +238,7 @@ export async function POST(request: NextRequest) {
     // If no Razorpay link was created, generate a placeholder
     if (!paymentLinkData.razorpayPaymentLinkUrl) {
       const linkId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-      paymentLinkData.razorpayPaymentLinkUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/manual/${linkId}`;
+      paymentLinkData.razorpayPaymentLinkUrl = `${getBaseUrl()}/payment/manual/${linkId}`;
     }
 
     const paymentLink = await PaymentLink.create(paymentLinkData);

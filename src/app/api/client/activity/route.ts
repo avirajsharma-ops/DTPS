@@ -44,13 +44,15 @@ export async function GET(request: NextRequest) {
         const dataHash = JSON.stringify(activityEntries).split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0).toString();
 
         // Transform assignedActivities to match frontend interface
+        const assignedActivitiesList = journal.assignedActivities?.activities || [];
         const transformedAssignedActivity = journal.assignedActivities ? {
-            amount: journal.assignedActivities.activities?.reduce((sum: number, act: any) => sum + (act.duration || 0), 0) || 0,
+            amount: assignedActivitiesList.reduce((sum: number, act: any) => sum + (act.duration || 0), 0) || 0,
+            activityCount: assignedActivitiesList.length,
             unit: 'minutes',
             assignedAt: journal.assignedActivities.assignedAt,
             isCompleted: journal.assignedActivities.isCompleted || false,
             completedAt: journal.assignedActivities.completedAt,
-            activities: journal.assignedActivities.activities
+            activities: assignedActivitiesList
         } : null;
 
         return NextResponse.json({

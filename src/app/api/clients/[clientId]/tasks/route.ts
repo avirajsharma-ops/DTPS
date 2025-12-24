@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/connection';
 import Task from '@/lib/db/models/Task';
+import User from '@/lib/db/models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/config';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 export async function GET(
   req: NextRequest,
@@ -96,6 +98,24 @@ export async function POST(
     await task.populate('client', 'firstName lastName email');
     await task.populate('dietitian', 'firstName lastName email');
     await task.populate('tags', 'name color icon');
+
+    // Log activity
+    const client = await User.findById(clientId).select('firstName lastName');
+    await logActivity({
+      userId: session.user?.id || '',
+      userRole: (session.user?.role as any) || 'dietitian',
+      userName: session.user?.name || 'Unknown',
+      userEmail: session.user?.email || '',
+      action: 'Created Task',
+      actionType: 'create',
+      category: 'task',
+      description: `Created task "${taskTitle}" for ${client?.firstName} ${client?.lastName}`,
+      targetUserId: clientId,
+      targetUserName: client ? `${client.firstName} ${client.lastName}` : undefined,
+      resourceId: task._id.toString(),
+      resourceType: 'Task',
+      resourceName: taskTitle
+    });
 
     return NextResponse.json(
       {

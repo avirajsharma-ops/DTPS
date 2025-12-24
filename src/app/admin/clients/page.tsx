@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { UserRole, UserStatus } from "@/types";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { getClientId, getDietitianId } from "@/lib/utils";
 
 interface Client {
   _id: string;
@@ -251,7 +252,14 @@ export default function AdminClientsPage() {
                 <tbody>
                   {filtered.map(u => (
                     <tr key={u._id} className="border-b hover:bg-gray-50">
-                      <td className="p-3">{u.firstName} {u.lastName}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <span>{u.firstName} {u.lastName}</span>
+                          <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
+                            {getClientId(u._id)}
+                          </span>
+                        </div>
+                      </td>
                       <td className="p-3">{u.email}</td>
                       <td className="p-3">{u.phone || '-'}</td>
                       <td className="p-3 capitalize">{u.gender || '-'}</td>
@@ -263,6 +271,9 @@ export default function AdminClientsPage() {
                                 ? (dietitians.find(d => d._id === u.assignedDietitian)?.firstName + ' ' + (dietitians.find(d => d._id === u.assignedDietitian)?.lastName || ''))
                                 : `${u.assignedDietitian.firstName} ${u.assignedDietitian.lastName}`
                               }
+                            </span>
+                            <span className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-medium">
+                              {getDietitianId(typeof u.assignedDietitian === 'string' ? u.assignedDietitian : u.assignedDietitian._id)}
                             </span>
                             <Button variant="ghost" size="sm" onClick={() => openAssignDialog(u)} className="h-6 px-2 text-xs">
                               Change

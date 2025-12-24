@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import Payment from '@/lib/db/models/Payment';
 import User from '@/lib/db/models/User';
 import Razorpay from 'razorpay';
+import { getPaymentCallbackUrl } from '@/lib/config';
 
 // Lazy initialization to avoid build-time errors
 const getRazorpay = () => {
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
           tier_id: tierId || '',
           client_id: session.user.id
         },
-        callback_url: `${process.env.NEXTAUTH_URL}/user?payment_success=true`,
+        callback_url: getPaymentCallbackUrl('/user?payment_success=true'),
         callback_method: 'get'
       }) as any;
 

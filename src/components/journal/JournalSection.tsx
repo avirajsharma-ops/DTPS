@@ -1461,6 +1461,31 @@ function FoodCompliance({ clientId, selectedDate }: { clientId: string; selected
     }
   }, [showFullReport, selectedDate, clientId]);
 
+  // Listen for data changes to refresh compliance data
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchComplianceData();
+        if (showFullReport) fetchPlannedMeals();
+      }
+    };
+
+    const handleDataChange = () => {
+      fetchComplianceData();
+      if (showFullReport) fetchPlannedMeals();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('user-data-changed', handleDataChange);
+    window.addEventListener('meal-plan-updated', handleDataChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('user-data-changed', handleDataChange);
+      window.removeEventListener('meal-plan-updated', handleDataChange);
+    };
+  }, [showFullReport]);
+
   // Calculate max for bar chart scaling
   const maxBarValue = Math.max(...weeklyData.map(d => d.taken + d.missed + d.notRecorded), 1);
   const barScale = 140 / maxBarValue; // Max height is 140px
@@ -1680,9 +1705,23 @@ function FoodCompliance({ clientId, selectedDate }: { clientId: string; selected
               <div className="mt-6 space-y-4">
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Utensils className="h-4 w-4 text-orange-500" />
-                      Planned Meals for {format(selectedDate, 'MMMM d, yyyy')}
+                    <CardTitle className="text-base flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Utensils className="h-4 w-4 text-orange-500" />
+                        Planned Meals for {format(selectedDate, 'MMMM d, yyyy')}
+                      </div>
+                      {!loadingMeals && plannedMeals.length > 0 && (
+                        <div className="flex items-center gap-3 text-sm font-normal">
+                          <span className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full" />
+                            {plannedMeals.filter(m => m.consumed).length} Consumed
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full" />
+                            {plannedMeals.filter(m => !m.consumed).length} Pending
+                          </span>
+                        </div>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1697,6 +1736,20 @@ function FoodCompliance({ clientId, selectedDate }: { clientId: string; selected
                       </div>
                     ) : (
                       <div className="space-y-3">
+                        {/* Meal completion progress bar */}
+                        <div className="mb-4">
+                          <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Meal Completion Progress</span>
+                            <span>{Math.round((plannedMeals.filter(m => m.consumed).length / plannedMeals.length) * 100)}%</span>
+                          </div>
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-green-500 rounded-full transition-all duration-500"
+                              style={{ width: `${(plannedMeals.filter(m => m.consumed).length / plannedMeals.length) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                        
                         {/* Group meals by type */}
                         {['Breakfast', 'Mid Morning', 'Lunch', 'Evening Snack', 'Dinner', 'Bedtime'].map(mealType => {
                           const mealsOfType = plannedMeals.filter(m => m.type === mealType);
@@ -1704,7 +1757,7 @@ function FoodCompliance({ clientId, selectedDate }: { clientId: string; selected
                           
                           return (
                             <div key={mealType} className="border rounded-lg overflow-hidden">
-                              <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2">
+                              <div className="bg-linear-to-r from-orange-500 to-orange-600 px-4 py-2">
                                 <h4 className="font-medium text-white">{mealType}</h4>
                               </div>
                               <div className="divide-y">

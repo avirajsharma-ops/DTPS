@@ -138,6 +138,19 @@ export async function POST(request: NextRequest) {
     };
 
     journal.water.push(newEntry);
+    
+    // Check if assigned water target is met and mark as completed
+    const totalMlAfterAdd = journal.water.reduce((sum: number, e: { amount: number; unit: string }) => {
+      return sum + (e.amount * (unitToMl[e.unit] || 250));
+    }, 0);
+    
+    if (journal.assignedWater && journal.assignedWater.amount && !journal.assignedWater.isCompleted) {
+      if (totalMlAfterAdd >= journal.assignedWater.amount) {
+        journal.assignedWater.isCompleted = true;
+        journal.assignedWater.completedAt = new Date();
+      }
+    }
+    
     await journal.save();
 
     // Log history for water intake

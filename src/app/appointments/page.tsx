@@ -15,7 +15,8 @@ import {
   User,
   Plus,
   Eye,
-  RefreshCw
+  RefreshCw,
+  CalendarDays
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -26,6 +27,11 @@ import dynamic from 'next/dynamic';
 
 // Import mobile version for clients
 const MobileAppointmentsPage = dynamic(() => import('./page-mobile'), {
+  ssr: false
+});
+
+// Import DietitianSlotsView for slots tab
+const DietitianSlotsView = dynamic(() => import('@/components/appointments/DietitianSlotsView'), {
   ssr: false
 });
 
@@ -278,6 +284,12 @@ function DesktopAppointmentsPage() {
             <TabsTrigger value="cancelled">
               Cancelled ({appointmentGroups.cancelled.length})
             </TabsTrigger>
+            {session?.user?.role === 'dietitian' && (
+              <TabsTrigger value="slots" className="flex items-center gap-1">
+                <CalendarDays className="h-4 w-4" />
+                My Slots
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="upcoming" className="space-y-4">
@@ -356,6 +368,13 @@ function DesktopAppointmentsPage() {
               </div>
             )}
           </TabsContent>
+
+          {/* My Slots Tab - Dietitian Only */}
+          {session?.user?.role === 'dietitian' && (
+            <TabsContent value="slots" className="space-y-4">
+              <DietitianSlotsView />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </DashboardLayout>

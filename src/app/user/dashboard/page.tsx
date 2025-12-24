@@ -214,7 +214,7 @@ export default function UserDashboard() {
         <div className="grid grid-cols-2 gap-4">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4 text-center">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center mx-auto mb-2">
+              <div className="h-12 w-12 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center mx-auto mb-2">
                 <span className="text-xl">🔥</span>
               </div>
               <p className="text-3xl font-bold text-gray-900">{data.streak}</p>
@@ -224,7 +224,7 @@ export default function UserDashboard() {
 
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4 text-center">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-2">
+              <div className="h-12 w-12 rounded-full bg-linear-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-2">
                 <TrendingUp className="h-6 w-6 text-white" />
               </div>
               <p className="text-3xl font-bold text-gray-900">{data.weight.current} kg</p>
@@ -234,7 +234,7 @@ export default function UserDashboard() {
         </div>
 
         {/* Upcoming Appointment */}
-        <Card className="border-0 shadow-sm bg-gradient-to-r from-green-50 to-emerald-50">
+        <Card className="border-0 shadow-sm bg-linear-to-r from-green-50 to-emerald-50">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

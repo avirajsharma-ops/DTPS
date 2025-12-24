@@ -2167,7 +2167,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                                     )}
                                   </div>
                                 </div>
-                                <Check className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                <Check className="h-4 w-4 text-gray-400 shrink-0" />
                               </div>
                             </div>
                           ))}
@@ -2373,7 +2373,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                                     )}
                                   </div>
                                 </div>
-                                <Check className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                <Check className="h-4 w-4 text-gray-400 shrink-0" />
                               </div>
                             </div>
                           ))}
@@ -2609,7 +2609,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
         <Card className="border-amber-300 bg-amber-50">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
               <div className="flex-1">
                 <h4 className="font-medium text-amber-900">No Active Plan Purchased</h4>
                 <p className="text-sm text-amber-700 mt-1">
@@ -2652,7 +2652,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
           <Card className="border-green-300 bg-green-50">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <h4 className="font-medium text-green-900">✅ Active Plan: {paymentCheck.purchase?.planName}</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-sm">
@@ -2710,7 +2710,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm text-amber-700 font-medium">
                       All {paymentCheck.totalPurchasedDays || paymentCheck.purchase?.durationDays} days used • 

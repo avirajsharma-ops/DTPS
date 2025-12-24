@@ -385,3 +385,130 @@ Thank you for your payment!
 
   return { subject, html, text };
 }
+
+// Password Reset Email Template
+export function getPasswordResetTemplate(data: {
+  userName: string;
+  resetLink: string;
+  expiryMinutes?: number;
+}): { subject: string; html: string; text: string } {
+  const expiryTime = data.expiryMinutes || 60;
+  const subject = 'Reset Your Password - DTPS';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Your Password</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 480px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);">
+          <!-- Header with gradient -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #3AB1A0 0%, #2A9A8B 100%); padding: 32px 24px; text-align: center; border-radius: 16px 16px 0 0;">
+              <div style="width: 60px; height: 60px; background-color: rgba(255, 255, 255, 0.2); border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 28px;">🔐</span>
+              </div>
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">Password Reset</h1>
+              <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 14px;">DTPS - Dietitian Practice System</p>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 32px 24px;">
+              <p style="color: #1f2937; font-size: 16px; margin: 0 0 16px 0;">
+                Hello <strong>${data.userName}</strong>,
+              </p>
+              
+              <p style="color: #6b7280; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
+                We received a request to reset your password. Click the button below to create a new password.
+              </p>
+              
+              <!-- Reset Button -->
+              <table role="presentation" style="width: 100%; margin-bottom: 24px;">
+                <tr>
+                  <td style="text-align: center;">
+                    <a href="${data.resetLink}" style="display: inline-block; background: linear-gradient(135deg, #3AB1A0 0%, #2A9A8B 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(58, 177, 160, 0.3);">
+                      Reset Password
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Expiry Warning -->
+              <table role="presentation" style="width: 100%; background-color: #fef3cd; border-radius: 12px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 16px;">
+                    <p style="color: #856404; font-size: 14px; margin: 0; text-align: center;">
+                      ⏰ This link will expire in <strong>${expiryTime} minutes</strong>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Alternative Link -->
+              <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0 0 16px 0;">
+                If the button doesn't work, copy and paste this link into your browser:
+              </p>
+              <p style="color: #3AB1A0; font-size: 12px; word-break: break-all; margin: 0 0 24px 0; background-color: #f3f4f6; padding: 12px; border-radius: 8px;">
+                ${data.resetLink}
+              </p>
+              
+              <!-- Security Notice -->
+              <table role="presentation" style="width: 100%; background-color: #fee2e2; border-radius: 12px;">
+                <tr>
+                  <td style="padding: 16px;">
+                    <p style="color: #dc2626; font-size: 13px; margin: 0; text-align: center;">
+                      ⚠️ If you didn't request this password reset, please ignore this email or contact support.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 24px; text-align: center; border-radius: 0 0 16px 16px;">
+              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                © ${new Date().getFullYear()} DTPS - Dietitian Practice System
+              </p>
+              <p style="color: #9ca3af; font-size: 11px; margin: 8px 0 0 0;">
+                This is an automated message. Please do not reply to this email.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const text = `
+Password Reset Request - DTPS
+
+Hello ${data.userName},
+
+We received a request to reset your password for your DTPS account.
+
+Click the link below to reset your password:
+${data.resetLink}
+
+This link will expire in ${expiryTime} minutes.
+
+If you didn't request this password reset, please ignore this email or contact support.
+
+© ${new Date().getFullYear()} DTPS - Dietitian Practice System
+  `;
+
+  return { subject, html, text };
+}
+

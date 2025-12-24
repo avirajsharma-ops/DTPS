@@ -162,7 +162,7 @@ export default function FoodLogPage() {
             </div>
             <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-500"
+                className="h-full bg-linear-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(caloriesPercentage, 100)}%` }}
               />
             </div>
@@ -201,7 +201,7 @@ export default function FoodLogPage() {
               <div className={`p-4 ${getMealBgColor(mealType)}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${getMealColor(mealType)} flex items-center justify-center text-white shadow-md`}>
+                    <div className={`h-10 w-10 rounded-xl bg-linear-to-br ${getMealColor(mealType)} flex items-center justify-center text-white shadow-md`}>
                       {getMealIcon(mealType)}
                     </div>
                     <div>

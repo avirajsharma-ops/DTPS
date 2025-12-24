@@ -102,7 +102,7 @@ export default function RecipeDetailMobile({ params }: { params: Promise<{ id: s
 
       {/* Recipe Image */}
       <div className="px-4 mb-6">
-        <div className="relative h-64 w-full bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 rounded-3xl overflow-hidden shadow-lg">
+        <div className="relative h-64 w-full bg-linear-to-br from-orange-50 via-amber-50 to-yellow-50 rounded-3xl overflow-hidden shadow-lg">
           {recipe.image ? (
             <img
               src={recipe.image}
@@ -154,7 +154,7 @@ export default function RecipeDetailMobile({ params }: { params: Promise<{ id: s
         <ul className="space-y-3">
           {recipe.ingredients.map((ingredient, index) => (
             <li key={index} className="flex items-start text-gray-700">
-              <span className="mr-3 mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-900 flex-shrink-0"></span>
+              <span className="mr-3 mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-900 shrink-0"></span>
               <span className="text-base leading-relaxed">
                 {ingredient.quantity} {ingredient.unit} {ingredient.name}
                 {ingredient.remarks && (
@@ -174,7 +174,7 @@ export default function RecipeDetailMobile({ params }: { params: Promise<{ id: s
         <ol className="space-y-4">
           {recipe.instructions.map((instruction, index) => (
             <li key={index} className="flex items-start text-gray-700">
-              <span className="mr-3 font-bold text-gray-900 flex-shrink-0">
+              <span className="mr-3 font-bold text-gray-900 shrink-0">
                 {index + 1}.
               </span>
               <span className="text-base leading-relaxed flex-1">

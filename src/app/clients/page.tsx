@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { getClientId } from '@/lib/utils';
 
 interface Client {
   _id: string;
@@ -159,9 +160,14 @@ export default function ClientsPage() {
                       </Avatar>
                       
                       <div>
-                        <CardTitle className="text-lg">
-                          {client.firstName} {client.lastName}
-                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-lg">
+                            {client.firstName} {client.lastName}
+                          </CardTitle>
+                          <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
+                            {getClientId(client._id)}
+                          </span>
+                        </div>
                         <CardDescription>{client.email}</CardDescription>
                       </div>
                     </div>

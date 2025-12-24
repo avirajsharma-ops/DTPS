@@ -75,7 +75,7 @@ export default function Home() {
       <PageTransition>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-50 to-blue-50 py-20">
+      <section className="relative bg-linear-to-br from-green-50 to-blue-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">

@@ -19,51 +19,22 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Default business hours availability (Monday to Friday, 9 AM to 5 PM)
-    const defaultAvailability = {
-      schedule: [
-        {
-          dayOfWeek: 1, // Monday
-          timeSlots: [
-            { startTime: '09:00', endTime: '12:00', isAvailable: true },
-            { startTime: '13:00', endTime: '17:00', isAvailable: true }
-          ]
-        },
-        {
-          dayOfWeek: 2, // Tuesday
-          timeSlots: [
-            { startTime: '09:00', endTime: '12:00', isAvailable: true },
-            { startTime: '13:00', endTime: '17:00', isAvailable: true }
-          ]
-        },
-        {
-          dayOfWeek: 3, // Wednesday
-          timeSlots: [
-            { startTime: '09:00', endTime: '12:00', isAvailable: true },
-            { startTime: '13:00', endTime: '17:00', isAvailable: true }
-          ]
-        },
-        {
-          dayOfWeek: 4, // Thursday
-          timeSlots: [
-            { startTime: '09:00', endTime: '12:00', isAvailable: true },
-            { startTime: '13:00', endTime: '17:00', isAvailable: true }
-          ]
-        },
-        {
-          dayOfWeek: 5, // Friday
-          timeSlots: [
-            { startTime: '09:00', endTime: '12:00', isAvailable: true },
-            { startTime: '13:00', endTime: '17:00', isAvailable: true }
-          ]
-        }
-      ],
-      timezone: 'UTC',
-      consultationDuration: 60,
-      bufferTime: 15,
-      maxAdvanceBooking: 30,
-      minAdvanceBooking: 1
-    };
+    // Default business hours availability (Monday to Saturday, 10 AM to 6 PM with lunch break)
+    // Using simple format that matches User model schema
+    const defaultAvailability = [
+      { day: 'monday', startTime: '10:00', endTime: '13:00' },
+      { day: 'monday', startTime: '14:00', endTime: '18:00' },
+      { day: 'tuesday', startTime: '10:00', endTime: '13:00' },
+      { day: 'tuesday', startTime: '14:00', endTime: '18:00' },
+      { day: 'wednesday', startTime: '10:00', endTime: '13:00' },
+      { day: 'wednesday', startTime: '14:00', endTime: '18:00' },
+      { day: 'thursday', startTime: '10:00', endTime: '13:00' },
+      { day: 'thursday', startTime: '14:00', endTime: '18:00' },
+      { day: 'friday', startTime: '10:00', endTime: '13:00' },
+      { day: 'friday', startTime: '14:00', endTime: '18:00' },
+      { day: 'saturday', startTime: '10:00', endTime: '13:00' },
+      { day: 'saturday', startTime: '14:00', endTime: '18:00' }
+    ];
 
     // Update dietitian's availability
     const dietitian = await User.findByIdAndUpdate(
@@ -81,8 +52,8 @@ export async function POST(request: NextRequest) {
       message: 'Default availability setup completed successfully',
       availability: dietitian?.availability,
       summary: {
-        days: 'Monday to Friday',
-        hours: '9:00 AM - 12:00 PM, 1:00 PM - 5:00 PM',
+        days: 'Monday to Saturday',
+        hours: '10:00 AM - 1:00 PM, 2:00 PM - 6:00 PM',
         duration: '60 minutes per consultation',
         bufferTime: '15 minutes between appointments'
       }

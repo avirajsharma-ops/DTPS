@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Plus, X, Minus, Copy, ChevronLeft, ChevronRight, Check, Maximize2, Minimize2 } from 'lucide-react';
+import { Plus, X, Minus, Copy, ChevronLeft, ChevronRight, Check, Maximize2, Minimize2, Trash2 } from 'lucide-react';
 import { DayPlan, Meal, FoodOption } from './DietPlanDashboard';
 import { FoodDatabasePanel } from './FoodSheet';
 // Define FoodItem shape to type foods parameter from FoodDatabasePanel selection
@@ -30,6 +30,8 @@ type MealGridTableProps = {
   mealTypes: string[];
   onUpdate?: (weekPlan: DayPlan[]) => void;
   onAddMealType?: (mealType: string, position?: number) => void;
+  onRemoveMealType?: (mealType: string) => void;
+  onRemoveDay?: (dayIndex: number) => void;
   readOnly?: boolean;
   clientDietaryRestrictions?: string;
   clientMedicalConditions?: string;
@@ -49,7 +51,7 @@ const mealTimeSuggestions: { [key: string]: string } = {
 
 const DAYS_PER_PAGE = 14;
 
-export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
+export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
   // Debug logging
   console.log('MealGridTable render - weekPlan days:', weekPlan.length);
   console.log('MealGridTable render - first day meals:', weekPlan[0]?.meals ? Object.keys(weekPlan[0].meals) : 'none');
@@ -645,14 +647,27 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, re
         <table className="w-full border-collapse relative">
           <thead className="sticky top-0 bg-white shadow-sm" style={{ zIndex: 10 }}>
             <tr>
-              <th className="border-r border-b-2 border-gray-300 p-6 bg-slate-100 w-48 min-w-[192px]">
+              <th className="border-r border-b-2 border-gray-300 p-6 bg-slate-100 w-48 min-w-48">
                 <div className="text-slate-800 font-semibold tracking-wide uppercase text-sm">Day</div>
               </th>
               {displayMealTypes.map((mealType, index) => (
                 <React.Fragment key={mealType}>
-                  <th className="border-r border-b-2 border-gray-300 p-5 bg-slate-50 min-w-[280px]">
+                  <th className="border-r border-b-2 border-gray-300 p-5 bg-slate-50 min-w-70">
                     <div className="space-y-2.5">
-                      <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs">{mealType}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs">{mealType}</div>
+                        {!readOnly && onRemoveMealType && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onRemoveMealType(mealType)}
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            title={`Delete ${mealType}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                       <Input
                         type="time"
                         value={customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00'}
@@ -665,7 +680,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, re
                 </React.Fragment>
               ))}
               {/* Add Meal Type Column at the end */}
-              <th className="border-b-2 border-gray-300 p-5 bg-slate-100/50 min-w-[280px]">
+              <th className="border-b-2 border-gray-300 p-5 bg-slate-100/50 min-w-70">
                 <div className="space-y-2.5">
                   <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs flex items-center justify-center gap-2">
                     <Plus className="w-3.5 h-3.5" />
@@ -718,7 +733,20 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, re
                 <tr key={day.id} className={`hover:opacity-90 transition-opacity ${isFrozenDay ? 'opacity-40 blur-[1px]' : ''}`}>
                   <td className="border-r border-b border-gray-300 p-5 align-top" style={{ backgroundColor: rowColor }}>
                     <div className="space-y-2.5">
-                      <div className="text-slate-900 font-semibold text-base">{formatDayLabel()}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-slate-900 font-semibold text-base">{formatDayLabel()}</div>
+                        {!readOnly && onRemoveDay && weekPlan.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onRemoveDay(actualDayIndex)}
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            title={`Delete Day ${actualDayIndex + 1}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                       {isFreezeRecovery && originalFreezeDateLabel && (
                         <div className="text-xs text-gray-500 italic">
                           (Freeze Recovery from {originalFreezeDateLabel})

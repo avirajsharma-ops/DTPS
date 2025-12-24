@@ -91,7 +91,7 @@ export default function BlogDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header Image */}
-      <div className={`h-64 bg-gradient-to-br ${blog.image} relative`}>
+      <div className={`h-64 bg-linear-to-br ${blog.image} relative`}>
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 pt-8">
           <Link href="/user/blogs" className="h-10 w-10 bg-white/90 rounded-full flex items-center justify-center">
             <ArrowLeft className="h-5 w-5 text-gray-700" />

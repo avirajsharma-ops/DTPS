@@ -7,6 +7,7 @@ import { UserRole } from '@/types';
 import { z } from 'zod';
 import { imagekit } from '@/lib/imagekit';
 import { v4 as uuidv4 } from 'uuid';
+import { compressImageServer } from '@/lib/imageCompressionServer';
 
 // Recipe validation schema - flexible to handle both old and new formats
 const recipeSchema = z.object({
@@ -280,23 +281,40 @@ export async function POST(request: NextRequest) {
     if (validatedData.image && validatedData.image.trim() !== '') {
       const imageValue = validatedData.image.trim();
       try {
-        let uploadFile = imageValue;
-        // If not base64, fetch the image and convert to base64
-        if (!imageValue.startsWith('data:image/')) {
+        let compressedBase64: string;
+        
+        if (imageValue.startsWith('data:image/')) {
+          // Base64 image - extract and compress
+          const base64Data = imageValue.split(',')[1];
+          const buffer = Buffer.from(base64Data, 'base64');
+          const compressed = await compressImageServer(buffer, {
+            quality: 85,
+            maxWidth: 1200,
+            maxHeight: 1200,
+            format: 'jpeg'
+          });
+          compressedBase64 = `data:image/jpeg;base64,${compressed}`;
+        } else {
+          // URL - fetch, compress, and convert to base64
           const response = await fetch(imageValue);
           const arrayBuffer = await response.arrayBuffer();
-          const base64String = Buffer.from(arrayBuffer).toString('base64');
-          // Try to detect mime type from URL or response headers
-          let mimeType = response.headers.get('content-type') || 'image/jpeg';
-          uploadFile = `data:${mimeType};base64,${base64String}`;
+          const buffer = Buffer.from(arrayBuffer);
+          const compressed = await compressImageServer(buffer, {
+            quality: 85,
+            maxWidth: 1200,
+            maxHeight: 1200,
+            format: 'jpeg'
+          });
+          compressedBase64 = `data:image/jpeg;base64,${compressed}`;
         }
+        
         const uploadResponse = await imagekit.upload({
-          file: uploadFile,
+          file: compressedBase64,
           fileName: `recipe_${uuidv4()}.jpg`,
           folder: '/recipes',
         });
         recipeData.image = uploadResponse.url;
-        console.log('Image uploaded to ImageKit:', uploadResponse.url);
+        console.log('Image compressed and uploaded to ImageKit:', uploadResponse.url);
       } catch (err) {
         console.error('ImageKit upload failed:', err);
         return NextResponse.json({

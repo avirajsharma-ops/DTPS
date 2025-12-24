@@ -59,7 +59,7 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
 
   return (
     <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
+            <CardHeader className="bg-linear-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
         <CardTitle className="text-lg sm:text-xl font-bold text-white">Basic Information</CardTitle>
         <CardDescription className="text-blue-100 text-sm">Client's personal details</CardDescription>
       </CardHeader>

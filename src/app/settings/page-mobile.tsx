@@ -99,7 +99,7 @@ export default function MobileSettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-500 rounded-xl to-teal-600 text-white px-4 pt-safe-top pb-8">
+      <div className="bg-linear-to-r from-emerald-500 rounded-xl to-teal-600 text-white px-4 pt-safe-top pb-8">
         <h1 className="text-2xl font-bold py-4">Settings</h1>
         
         {/* Profile Card */}

@@ -4,6 +4,24 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db/connection";
 import JournalTracking from "@/lib/db/models/JournalTracking";
 import User from "@/lib/db/models/User";
+import ClientMealPlan from "@/lib/db/models/ClientMealPlan";
+
+// Helper to check if client has active meal plan for a given date
+async function hasActiveMealPlan(clientId: string, targetDate: Date): Promise<boolean> {
+    const planStartOfDay = new Date(targetDate);
+    planStartOfDay.setHours(0, 0, 0, 0);
+    const planEndOfDay = new Date(targetDate);
+    planEndOfDay.setHours(23, 59, 59, 999);
+    
+    const activePlan = await ClientMealPlan.findOne({
+        clientId: clientId,
+        status: 'active',
+        startDate: { $lte: planEndOfDay },
+        endDate: { $gte: planStartOfDay }
+    });
+    
+    return !!activePlan;
+}
 
 // GET - Get assigned water status for a client
 export async function GET(
@@ -118,6 +136,15 @@ export async function POST(
     targetDate.setHours(0, 0, 0, 0);
     const nextDay = new Date(targetDate);
     nextDay.setDate(nextDay.getDate() + 1);
+
+    // Check if client has active meal plan for this date
+    const hasPlan = await hasActiveMealPlan(clientId, targetDate);
+    if (!hasPlan) {
+      return NextResponse.json({ 
+        error: "Cannot assign tasks - Client does not have an active meal plan for this date",
+        noActivePlan: true 
+      }, { status: 400 });
+    }
 
     // Find or create journal entry
     let journal = await JournalTracking.findOne({

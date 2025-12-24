@@ -287,7 +287,7 @@ export default function ProfilePage() {
           )}
 
           {/* Profile Card */}
-          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-sm p-6 text-white">
+          <div className="bg-linear-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-sm p-6 text-white">
             <div className="flex flex-col items-center">
               <div className="relative mb-4">
                 <div className="h-24 w-24 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl font-bold border-4 border-white shadow-lg">
@@ -346,7 +346,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl shadow-sm p-3 text-white font-semibold active:scale-98 transition-transform disabled:opacity-50"
+                className="flex-1 bg-linear-to-r from-emerald-500 to-teal-600 rounded-xl shadow-sm p-3 text-white font-semibold active:scale-98 transition-transform disabled:opacity-50"
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>

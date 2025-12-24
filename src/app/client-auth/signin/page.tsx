@@ -92,7 +92,7 @@ export default function ClientSignInPage() {
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-4">
           {error && (
-            <Alert variant="destructive" className="text-red-300 border-red-800 bg-red-900/30">
+            <Alert variant="destructive" className="text-red-700 border-red-200 bg-red-50">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -149,7 +149,7 @@ export default function ClientSignInPage() {
           {/* Forgot Password */}
           <div className="text-right">
             <Link
-              href="/auth/forgot-password"
+              href="/user/forget-password"
               className="text-[#E06A26] text-sm hover:underline"
             >
               Forgot Password?

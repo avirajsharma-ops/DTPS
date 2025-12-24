@@ -67,7 +67,7 @@ export function WatchManualEntryModal({
     >
       <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B]">
+        <div className="flex items-center justify-between p-5 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B]">
           <h3 className="text-lg font-bold text-white">📝 Manual Entry</h3>
           <button 
             onClick={onWatchClose}

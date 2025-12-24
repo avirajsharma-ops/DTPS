@@ -110,7 +110,7 @@ export function AddProgressPhotoModal({ isOpen, onClose, onAdd }: AddProgressPho
     >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden my-auto">
         {/* Header - Sticky */}
-        <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 bg-white">
+        <div className="shrink-0 flex items-center justify-between p-6 border-b border-gray-200 bg-white">
           <h2 className="text-xl font-bold text-gray-900">Add Progress Photo</h2>
           <button
             onClick={onClose}
@@ -255,7 +255,7 @@ export function AddProgressPhotoModal({ isOpen, onClose, onAdd }: AddProgressPho
             <button
               type="submit"
               disabled={!selectedFile || loading}
-              className="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:from-emerald-600 hover:to-teal-700 transition-all"
+              className="flex-1 py-3 px-4 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:from-emerald-600 hover:to-teal-700 transition-all"
             >
               {loading ? 'Uploading...' : 'Add Photo'}
             </button>

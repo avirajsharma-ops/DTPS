@@ -6,6 +6,7 @@ import Payment from '@/lib/db/models/Payment';
 import SubscriptionPlan from '@/lib/db/models/SubscriptionPlan';
 import User from '@/lib/db/models/User';
 import Razorpay from 'razorpay';
+import { getPaymentCallbackUrl } from '@/lib/config';
 
 // Lazy initialization to avoid build-time errors
 const getRazorpay = () => {
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
           plan_id: plan._id.toString(),
           client_id: session.user.id
         },
-        callback_url: `${process.env.NEXTAUTH_URL}/user/subscriptions?payment_success=true`,
+        callback_url: getPaymentCallbackUrl('/user/subscriptions?payment_success=true'),
         callback_method: 'get'
       }) as any;
 

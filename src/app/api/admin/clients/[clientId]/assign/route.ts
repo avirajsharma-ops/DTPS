@@ -3,7 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
+import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import { UserRole } from '@/types';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 // PATCH /api/admin/clients/[clientId]/assign - Assign/Add dietitian to client
 export async function PATCH(
@@ -141,6 +143,22 @@ export async function PATCH(
 
     await client.save();
 
+    // Sync dietitian assignment to ClientPurchase records
+    // This ensures the user dashboard shows correct dietitian status
+    const dietitianToSync = client.assignedDietitian;
+    if (dietitianToSync) {
+      // Update all active purchases for this client with the assigned dietitian
+      await ClientPurchase.updateMany(
+        { 
+          user: client._id,
+          status: { $in: ['active', 'pending', 'on_hold'] }
+        },
+        { 
+          $set: { dietitian: dietitianToSync } 
+        }
+      );
+    }
+
     // Populate the assigned dietitian info
     await client.populate('assignedDietitian', 'firstName lastName email avatar');
     await client.populate('assignedDietitians', 'firstName lastName email avatar');
@@ -151,6 +169,22 @@ export async function PATCH(
       'transfer': 'Client transferred successfully',
       'replace': dietitianId ? 'Dietitian assigned successfully' : 'Dietitian unassigned successfully'
     };
+
+    // Log activity
+    const dietitianInfo = await User.findById(dietitianId || client.assignedDietitian);
+    await logActivity({
+      userId: session.user.id,
+      userRole: session.user.role as any,
+      userName: session.user.name || 'Unknown',
+      userEmail: session.user.email || '',
+      action: `Client ${assignAction === 'add' ? 'Assigned' : assignAction === 'remove' ? 'Unassigned' : 'Transferred'} to Dietitian`,
+      actionType: 'assign',
+      category: 'client_assignment',
+      description: `${assignAction === 'add' ? 'Assigned' : assignAction === 'remove' ? 'Removed' : 'Transferred'} ${client.firstName} ${client.lastName} ${dietitianInfo ? `${assignAction === 'remove' ? 'from' : 'to'} ${dietitianInfo.firstName} ${dietitianInfo.lastName}` : ''}`,
+      targetUserId: clientId,
+      targetUserName: `${client.firstName} ${client.lastName}`,
+      details: { dietitianId, action: assignAction }
+    });
 
     return NextResponse.json({
       message: actionMessages[assignAction] || 'Dietitian updated successfully',

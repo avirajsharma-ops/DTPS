@@ -6,6 +6,7 @@ import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import { UserRole } from '@/types';
 import { parseISO, startOfDay, isToday } from 'date-fns';
 import { getImageKit } from '@/lib/imagekit';
+import { compressImageServer } from '@/lib/imageCompressionServer';
 
 // POST /api/client/meal-plan/complete - Mark a meal as completed with image
 export async function POST(request: NextRequest) {
@@ -84,18 +85,25 @@ export async function POST(request: NextRequest) {
         // Generate unique filename
         const timestamp = Date.now();
         const clientId = session.user.id;
-        const ext = imageFile.name.split('.').pop() || 'jpg';
-        const filename = `${clientId}-${timestamp}-${determinedMealType}.${ext}`;
+        const determinedExt = 'jpg'; // Will be jpg after compression
+        const filename = `${clientId}-${timestamp}-${determinedMealType}.${determinedExt}`;
 
-        // Convert File to base64
+        // Convert File to buffer and compress
         const bytes = await imageFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const base64 = buffer.toString('base64');
+        
+        // Compress the image before upload
+        const compressedBase64 = await compressImageServer(buffer, {
+          quality: 85,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          format: 'jpeg'
+        });
 
         // Upload to ImageKit in complete-meal folder
         const ik = getImageKit();
         const uploadResponse = await ik.upload({
-          file: base64,
+          file: compressedBase64,
           fileName: filename,
           folder: '/complete-meal',
         });

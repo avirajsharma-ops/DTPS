@@ -392,7 +392,7 @@ export default function ProgressPage() {
         {selectedTab === 'weight' && (
           <>
             {/* Weight Summary Card */}
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg p-6 text-white">
+            <div className="bg-linear-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold">Weight Progress</h2>
                 <Scale className="h-6 w-6" />
@@ -442,7 +442,7 @@ export default function ProgressPage() {
               </div>
               
               {/* Enhanced Weight Chart Visualization */}
-              <div className="h-48 flex items-end justify-between space-x-1 bg-gradient-to-t from-gray-50 to-white rounded-xl p-4">
+              <div className="h-48 flex items-end justify-between space-x-1 bg-linear-to-t from-gray-50 to-white rounded-xl p-4">
                 {weightData.length > 0 ? weightData.map((point, index) => {
                   const minWeight = Math.min(...weightData.map(d => d.value)) - 2;
                   const maxWeight = Math.max(...weightData.map(d => d.value)) + 2;
@@ -457,8 +457,8 @@ export default function ProgressPage() {
                         <div
                           className={`w-full rounded-t-xl transition-all duration-700 shadow-sm ${
                             isLatest
-                              ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 shadow-emerald-200'
-                              : 'bg-gradient-to-t from-emerald-500 to-emerald-300'
+                              ? 'bg-linear-to-t from-emerald-600 to-emerald-400 shadow-emerald-200'
+                              : 'bg-linear-to-t from-emerald-500 to-emerald-300'
                           }`}
                           style={{ height: `${Math.max(height, 15)}%` }}
                         />
@@ -483,7 +483,7 @@ export default function ProgressPage() {
                 }) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     <div className="text-center">
-                      <div className="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center mx-auto mb-4">
+                      <div className="h-16 w-16 rounded-full bg-linear-to-br from-emerald-100 to-teal-100 flex items-center justify-center mx-auto mb-4">
                         <TrendingUp className="h-8 w-8 text-emerald-500" />
                       </div>
                       <p className="font-semibold text-gray-600">No weight data yet</p>
@@ -497,7 +497,7 @@ export default function ProgressPage() {
             {/* Quick Add Weight Button */}
             <button
               onClick={() => setShowMeasurementModal(true)}
-              className="w-full py-6 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-lg flex items-center justify-center space-x-3 text-white font-bold text-lg active:scale-98 transition-all hover:shadow-xl"
+              className="w-full py-6 bg-linear-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-lg flex items-center justify-center space-x-3 text-white font-bold text-lg active:scale-98 transition-all hover:shadow-xl"
             >
               <Scale className="h-6 w-6" />
               <span>Add Weight Entry</span>
@@ -522,12 +522,12 @@ export default function ProgressPage() {
 
                   return (
                     <div key={index} className={`flex items-center justify-between p-3 rounded-xl transition-all ${
-                      isLatest ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200' : 'hover:bg-gray-50'
+                      isLatest ? 'bg-linear-to-r from-emerald-50 to-teal-50 border border-emerald-200' : 'hover:bg-gray-50'
                     }`}>
                       <div className="flex items-center space-x-3">
                         <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
                           isLatest
-                            ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg'
+                            ? 'bg-linear-to-br from-emerald-500 to-teal-600 shadow-lg'
                             : 'bg-emerald-100'
                         }`}>
                           <Scale className={`h-6 w-6 ${isLatest ? 'text-white' : 'text-emerald-600'}`} />
@@ -566,14 +566,14 @@ export default function ProgressPage() {
                   );
                 }) : (
                   <div className="text-center py-12">
-                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center mx-auto mb-4">
+                    <div className="h-20 w-20 rounded-full bg-linear-to-br from-emerald-100 to-teal-100 flex items-center justify-center mx-auto mb-4">
                       <Scale className="h-10 w-10 text-emerald-500" />
                     </div>
                     <p className="text-lg font-semibold text-gray-700 mb-2">Ready to start tracking?</p>
                     <p className="text-sm text-gray-500 mb-4">Add your first weight entry to see your progress</p>
                     <button
                       onClick={() => setShowMeasurementModal(true)}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform"
+                      className="px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform"
                     >
                       Add First Entry
                     </button>
@@ -592,7 +592,7 @@ export default function ProgressPage() {
                 <div className="grid grid-cols-2 gap-3">
                   {measurements.map((measurement, index) => (
                     <div key={index} className="bg-white rounded-2xl shadow-sm p-4">
-                      <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${measurement.color} flex items-center justify-center text-white mb-3`}>
+                      <div className={`h-12 w-12 rounded-xl bg-linear-to-br ${measurement.color} flex items-center justify-center text-white mb-3`}>
                         <measurement.icon className="h-6 w-6" />
                       </div>
                       <p className="text-xs text-gray-600 mb-1">{measurement.type}</p>
@@ -617,7 +617,7 @@ export default function ProgressPage() {
                 {/* Add Measurement Button */}
                 <button
                   onClick={() => setShowMeasurementModal(true)}
-                  className="w-full py-6 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl shadow-lg flex items-center justify-center space-x-3 text-white font-bold text-lg active:scale-98 transition-all hover:shadow-xl"
+                  className="w-full py-6 bg-linear-to-r from-purple-500 to-pink-600 rounded-2xl shadow-lg flex items-center justify-center space-x-3 text-white font-bold text-lg active:scale-98 transition-all hover:shadow-xl"
                 >
                   <Ruler className="h-6 w-6" />
                   <span>Add Measurement</span>
@@ -634,7 +634,7 @@ export default function ProgressPage() {
                 <p className="text-sm text-gray-500 mb-6">Track your body measurements to see detailed progress</p>
                 <button
                   onClick={() => setShowMeasurementModal(true)}
-                  className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform"
+                  className="px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform"
                 >
                   Add First Measurement
                 </button>
@@ -723,7 +723,7 @@ export default function ProgressPage() {
                 <p className="text-sm text-gray-500 mb-6">Take photos to track your visual progress over time</p>
                 <button
                   onClick={() => setShowPhotoModal(true)}
-                  className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform"
+                  className="px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform"
                 >
                   Take First Photo
                 </button>
@@ -745,7 +745,7 @@ export default function ProgressPage() {
                     : 'border-gray-200 bg-gray-50 opacity-50'
                 }`}
               >
-                <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${achievement.color} flex items-center justify-center text-white mb-2`}>
+                <div className={`h-12 w-12 rounded-xl bg-linear-to-br ${achievement.color} flex items-center justify-center text-white mb-2`}>
                   <achievement.icon className="h-6 w-6" />
                 </div>
                 <p className="text-sm font-semibold text-gray-900">{achievement.title}</p>

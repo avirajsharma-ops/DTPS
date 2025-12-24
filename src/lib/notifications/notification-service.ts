@@ -223,6 +223,60 @@ export class NotificationService {
     });
   }
 
+  public async showAppointmentNotification(
+    clientName: string,
+    scheduledAt: Date | string,
+    duration: number,
+    type: 'booked' | 'cancelled' | 'reminder' = 'booked',
+    clientAvatar?: string,
+    appointmentId?: string
+  ): Promise<void> {
+    const scheduledDate = new Date(scheduledAt);
+    const formattedDate = scheduledDate.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+
+    const titles: Record<string, string> = {
+      booked: '📅 New Appointment Booked!',
+      cancelled: '❌ Appointment Cancelled',
+      reminder: '⏰ Appointment Reminder'
+    };
+
+    const bodies: Record<string, string> = {
+      booked: `${clientName} booked an appointment for ${formattedDate} (${duration} min)`,
+      cancelled: `Appointment with ${clientName} on ${formattedDate} has been cancelled`,
+      reminder: `You have an appointment with ${clientName} at ${formattedDate}`
+    };
+
+    await this.showNotification({
+      title: titles[type],
+      body: bodies[type],
+      icon: clientAvatar || '/icons/icon-192x192.png',
+      tag: `appointment-${appointmentId || Date.now()}`,
+      data: {
+        type: 'appointment',
+        appointmentType: type,
+        appointmentId,
+        clientName,
+        scheduledAt: scheduledDate.toISOString(),
+        timestamp: Date.now()
+      },
+      actions: [
+        {
+          action: 'view',
+          title: 'View Details',
+          icon: '/icons/icon-72x72.png'
+        }
+      ],
+      requireInteraction: type === 'booked' || type === 'reminder',
+      silent: false
+    });
+  }
+
   public clearNotification(tag: string): void {
     if (this.registration) {
       this.registration.getNotifications({ tag }).then(notifications => {

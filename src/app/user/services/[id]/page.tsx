@@ -191,7 +191,7 @@ export default function ServiceDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 pb-32">
+    <div className="min-h-screen bg-linear-to-b from-white to-gray-50 pb-32">
       {/* Razorpay Script */}
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
@@ -213,7 +213,7 @@ export default function ServiceDetailPage() {
 
       <div className="px-4 py-6 max-w-5xl mx-auto">
         {/* Service Hero Section */}
-        <div className="bg-gradient-to-br from-[#3AB1A0] to-[#2A9A8B] rounded-3xl shadow-lg p-8 mb-8 text-white">
+        <div className="bg-linear-to-br from-[#3AB1A0] to-[#2A9A8B] rounded-3xl shadow-lg p-8 mb-8 text-white">
           <div className="mb-4">
             <span className="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white">
               {service.category}
@@ -244,7 +244,7 @@ export default function ServiceDetailPage() {
                   onClick={() => setSelectedTier(index)}
                   className={`w-full p-6 rounded-2xl border-2 transition-all ${
                     selectedTier === index
-                      ? 'border-[#3AB1A0] bg-gradient-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/5 shadow-md'
+                      ? 'border-[#3AB1A0] bg-linear-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/5 shadow-md'
                       : 'border-gray-200 hover:border-[#3AB1A0] bg-white'
                   }`}
                 >
@@ -274,7 +274,7 @@ export default function ServiceDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {service.features.map((feature, index) => (
                 <div key={index} className="flex items-start gap-3">
-                  <Check className="w-6 h-6 text-[#3AB1A0] mt-0.5 flex-shrink-0" />
+                  <Check className="w-6 h-6 text-[#3AB1A0] mt-0.5 shrink-0" />
                   <span className="text-gray-700 font-medium">{feature}</span>
                 </div>
               ))}
@@ -290,7 +290,7 @@ export default function ServiceDetailPage() {
               {service.benefits.map((benefit, index) => (
                 <div key={index} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all">
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#DB9C6E]/10 flex items-center justify-center">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-[#DB9C6E]/10 flex items-center justify-center">
                       <Star className="w-5 h-5 text-[#DB9C6E]" />
                     </div>
                     <span className="text-gray-700 font-medium">{benefit}</span>
@@ -302,11 +302,11 @@ export default function ServiceDetailPage() {
         )}
 
         {/* Purchase Button */}
-        <div className="sticky bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent pt-4 pb-6 -mx-4 px-4">
+        <div className="sticky bottom-0 left-0 right-0 bg-linear-to-t from-white via-white to-transparent pt-4 pb-6 -mx-4 px-4">
           <button 
             onClick={handlePurchase}
             disabled={isPurchasing || selectedTier === null}
-            className="w-full py-4 px-6 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] text-white rounded-2xl font-bold text-lg hover:shadow-lg transition-all max-w-5xl mx-auto disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            className="w-full py-4 px-6 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B] text-white rounded-2xl font-bold text-lg hover:shadow-lg transition-all max-w-5xl mx-auto disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
             {isPurchasing ? (
               <>

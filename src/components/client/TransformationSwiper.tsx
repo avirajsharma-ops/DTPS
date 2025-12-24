@@ -78,7 +78,7 @@ export default function TransformationSwiper() {
         </div>
         <div className="flex gap-4 overflow-hidden">
           {[1, 2].map((i) => (
-            <div key={i} className="w-80 h-64 bg-gray-100 rounded-xl animate-pulse flex-shrink-0" />
+            <div key={i} className="w-80 h-64 bg-gray-100 rounded-xl animate-pulse shrink-0" />
           ))}
         </div>
       </div>
@@ -92,9 +92,9 @@ export default function TransformationSwiper() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-[#3AB1A0]/10 to-transparent rounded-xl p-3">
+      <div className="flex items-center justify-between bg-linear-to-r from-[#3AB1A0]/10 to-transparent rounded-xl p-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-[#3AB1A0] to-[#2D8A7C] rounded-xl shadow-lg">
+          <div className="p-2.5 bg-linear-to-br from-[#3AB1A0] to-[#2D8A7C] rounded-xl shadow-lg">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -131,14 +131,14 @@ export default function TransformationSwiper() {
         {transformations.map((transformation) => (
           <div
             key={transformation._id}
-            className="w-80 flex-shrink-0 bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+            className="w-80 shrink-0 bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             style={{ scrollSnapAlign: 'start' }}
           >
             {/* Before/After Images */}
             <div className="relative">
               <div className="flex h-48">
                 {/* Before Image */}
-                <div className="w-1/2 relative bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                <div className="w-1/2 relative bg-linear-to-br from-gray-100 to-gray-200 overflow-hidden">
                   {getImageUrl(transformation.beforeImage) && !imageErrors.has(`${transformation._id}-before`) ? (
                     <img
                       src={getImageUrl(transformation.beforeImage)}
@@ -148,12 +148,12 @@ export default function TransformationSwiper() {
                       onError={() => handleImageError(transformation._id, 'before')}
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-linear-to-br from-gray-100 to-gray-200">
                       <ImageOff className="h-8 w-8 text-gray-300 mb-1" />
                       <span className="text-gray-400 text-xs">No image</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
                   <span className="absolute bottom-2 left-2 bg-gray-900/80 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
                     Before
                   </span>
@@ -167,7 +167,7 @@ export default function TransformationSwiper() {
                 </div>
                 
                 {/* After Image */}
-                <div className="w-1/2 relative bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                <div className="w-1/2 relative bg-linear-to-br from-gray-100 to-gray-200 overflow-hidden">
                   {getImageUrl(transformation.afterImage) && !imageErrors.has(`${transformation._id}-after`) ? (
                     <img
                       src={getImageUrl(transformation.afterImage)}
@@ -177,13 +177,13 @@ export default function TransformationSwiper() {
                       onError={() => handleImageError(transformation._id, 'after')}
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-linear-to-br from-gray-100 to-gray-200">
                       <ImageOff className="h-8 w-8 text-gray-300 mb-1" />
                       <span className="text-gray-400 text-xs">No image</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  <span className="absolute bottom-2 right-2 bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C] text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-md">
+                  <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
+                  <span className="absolute bottom-2 right-2 bg-linear-to-r from-[#3AB1A0] to-[#2D8A7C] text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-md">
                     After
                   </span>
                 </div>
@@ -247,7 +247,7 @@ export default function TransformationSwiper() {
               onClick={() => scrollToIndex(index)}
               className={`transition-all duration-300 rounded-full ${
                 index === activeIndex
-                  ? 'w-6 h-2 bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C]'
+                  ? 'w-6 h-2 bg-linear-to-r from-[#3AB1A0] to-[#2D8A7C]'
                   : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
               }`}
             />

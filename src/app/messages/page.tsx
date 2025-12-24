@@ -914,7 +914,7 @@ function ClientMessagesUI() {
   // Incoming Call Interface
   if (callState === 'incoming' && incomingCall) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 z-50 flex flex-col items-center justify-center text-white">
+      <div className="fixed inset-0 bg-linear-to-br from-purple-900 via-blue-900 to-indigo-900 z-50 flex flex-col items-center justify-center text-white">
         {/* Background blur effect */}
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
@@ -931,7 +931,7 @@ function ClientMessagesUI() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <div className="w-full h-full bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                   <UserIcon className="w-16 h-16 text-white" />
                 </div>
               )}
@@ -990,7 +990,7 @@ function ClientMessagesUI() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <div className="w-full h-full bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                     <UserIcon className="w-6 h-6 text-white" />
                   </div>
                 )}
@@ -1043,7 +1043,7 @@ function ClientMessagesUI() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <div className="w-full h-full bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                     <UserIcon className="w-16 h-16 text-white" />
                   </div>
                 )}
@@ -1315,7 +1315,7 @@ function ClientMessagesUI() {
           <div className="flex items-end space-x-1.5 sm:space-x-2">
             <div className="flex-1 bg-white rounded-3xl flex items-center px-2 sm:px-3 py-1.5 sm:py-2 shadow-sm min-w-0">
               <button
-                className="p-0.5 sm:p-1 hover:bg-gray-100 rounded-full active:scale-95 transition-all flex-shrink-0"
+                className="p-0.5 sm:p-1 hover:bg-gray-100 rounded-full active:scale-95 transition-all shrink-0"
                 onClick={handleEmojiClick}
               >
                 <Smile className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" />
@@ -1332,7 +1332,7 @@ function ClientMessagesUI() {
 
               <button
                 onClick={handleFileAttachment}
-                className="p-0.5 sm:p-1 hover:bg-gray-100 rounded-full active:scale-95 transition-all flex-shrink-0"
+                className="p-0.5 sm:p-1 hover:bg-gray-100 rounded-full active:scale-95 transition-all shrink-0"
               >
                 <Paperclip className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" />
               </button>
@@ -1340,7 +1340,7 @@ function ClientMessagesUI() {
               {!newMessage.trim() && !isRecording && (
                 <button
                   onClick={handleCameraClick}
-                  className="p-0.5 sm:p-1 hover:bg-gray-100 rounded-full active:scale-95 transition-all ml-0.5 sm:ml-1 flex-shrink-0"
+                  className="p-0.5 sm:p-1 hover:bg-gray-100 rounded-full active:scale-95 transition-all ml-0.5 sm:ml-1 shrink-0"
                 >
                   <Camera className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" />
                 </button>
@@ -1350,7 +1350,7 @@ function ClientMessagesUI() {
             <button
               onClick={newMessage.trim() ? sendMessage : (isRecording ? stopRecording : startRecording)}
               disabled={sending}
-              className={`p-2.5 sm:p-3 rounded-full shadow-lg active:scale-95 transition-all flex-shrink-0 ${
+              className={`p-2.5 sm:p-3 rounded-full shadow-lg active:scale-95 transition-all shrink-0 ${
                 isRecording
                   ? 'bg-red-500 hover:bg-red-600'
                   : 'bg-[#075E54] hover:bg-[#064e47]'
@@ -1453,7 +1453,7 @@ function ClientMessagesUI() {
                     className="h-14 w-14 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-semibold text-lg">
+                  <div className="h-14 w-14 rounded-full bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-semibold text-lg">
                     {getInitials(conv.user.firstName, conv.user.lastName)}
                   </div>
                 )}
@@ -1467,7 +1467,7 @@ function ClientMessagesUI() {
                   <h3 className="text-[16px] font-semibold text-gray-900 truncate">
                     {conv.user.firstName} {conv.user.lastName}
                   </h3>
-                  <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                  <span className="text-xs text-gray-500 ml-2 shrink-0">
                     {formatLastMessageTime(conv.lastMessage.createdAt)}
                   </span>
                 </div>
@@ -1480,7 +1480,7 @@ function ClientMessagesUI() {
                     {conv.lastMessage.content}
                   </p>
                   {conv.unreadCount > 0 && (
-                    <div className="flex-shrink-0 h-5 min-w-[20px] px-1.5 rounded-full bg-[#25D366] flex items-center justify-center">
+                    <div className="shrink-0 h-5 min-w-[20px] px-1.5 rounded-full bg-[#25D366] flex items-center justify-center">
                       <span className="text-xs font-semibold text-white">{conv.unreadCount}</span>
                     </div>
                   )}
@@ -1572,7 +1572,7 @@ function ClientMessagesUI() {
                             className="h-12 w-12 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-semibold">
+                          <div className="h-12 w-12 rounded-full bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-semibold">
                             {getInitials(dietitian.firstName, dietitian.lastName)}
                           </div>
                         )}
@@ -1614,7 +1614,7 @@ function ClientMessagesUI() {
               <span className="text-xs font-medium">Food</span>
             </Link>
             <button className="flex flex-col items-center justify-center -mt-6">
-              <div className="h-14 w-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+              <div className="h-14 w-14 rounded-full bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
                 <Plus className="h-7 w-7 text-white" />
               </div>
             </button>

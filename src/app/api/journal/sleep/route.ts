@@ -140,6 +140,20 @@ export async function POST(request: NextRequest) {
     };
 
     journal.sleep.push(newEntry);
+    
+    // Check if assigned sleep target is met and mark as completed
+    const totalMinutesAfterAdd = journal.sleep.reduce((sum: number, e: { hours: number; minutes: number }) => {
+      return sum + (e.hours * 60) + e.minutes;
+    }, 0);
+    
+    if (journal.assignedSleep && !journal.assignedSleep.isCompleted) {
+      const targetMinutes = (journal.assignedSleep.targetHours || 0) * 60 + (journal.assignedSleep.targetMinutes || 0);
+      if (totalMinutesAfterAdd >= targetMinutes) {
+        journal.assignedSleep.isCompleted = true;
+        journal.assignedSleep.completedAt = new Date();
+      }
+    }
+    
     await journal.save();
 
     // Log history for sleep entry

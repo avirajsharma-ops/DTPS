@@ -33,10 +33,12 @@ interface ActivityEntry {
 
 interface AssignedActivity {
     amount: number;
+    activityCount?: number;
     unit: string;
     assignedAt: string;
     isCompleted: boolean;
     completedAt?: string;
+    activities?: any[];
 }
 
 interface ActivityData {
@@ -430,7 +432,7 @@ export default function ActivityPage() {
                 </div>
 
                 {/* Assigned Activity Section */}
-                {activityData.assignedActivity && activityData.assignedActivity.amount > 0 && (
+                {activityData.assignedActivity && (activityData.assignedActivity.amount > 0 || (activityData.assignedActivity.activityCount || 0) > 0) && (
                     <div className={`rounded-3xl p-5 shadow-sm ${activityData.assignedActivity.isCompleted
                         ? 'bg-[#3AB1A0]/10 border-2 border-[#3AB1A0]/30'
                         : 'bg-[#3AB1A0]/10 border-2 border-[#3AB1A0]/30'
@@ -441,7 +443,8 @@ export default function ActivityPage() {
                                     Today's Activity Goal
                                 </p>
                                 <p className="text-2xl font-bold text-gray-900">
-                                    {activityData.assignedActivity.amount} minutes
+                                    {activityData.assignedActivity.activityCount || 0} activities
+                                    {activityData.assignedActivity.amount > 0 && ` (${activityData.assignedActivity.amount} min)`}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
                                     Assigned: {format(new Date(activityData.assignedActivity.assignedAt), 'MMM d, h:mm a')}
@@ -456,11 +459,8 @@ export default function ActivityPage() {
                             ) : (
                                 <button
                                     onClick={handleCompleteActivity}
-                                    disabled={completingTask || activityData.totalToday < activityData.assignedActivity.amount}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all ${activityData.totalToday >= activityData.assignedActivity.amount
-                                        ? 'bg-[#E06A26] text-white hover:bg-[#c55a1f]'
-                                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                        }`}
+                                    disabled={completingTask}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all bg-[#E06A26] text-white hover:bg-[#c55a1f]"
                                 >
                                     {completingTask ? (
                                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
@@ -472,20 +472,46 @@ export default function ActivityPage() {
                             )}
                         </div>
 
-                        {/* Progress bar */}
-                        <div className="mt-4">
-                            <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                <span>Progress</span>
-                                <span>{Math.min(Math.round((activityData.totalToday / activityData.assignedActivity.amount) * 100), 100)}%</span>
+                        {/* Progress bar - only show if there's a duration target */}
+                        {activityData.assignedActivity.amount > 0 && (
+                            <div className="mt-4">
+                                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>Progress</span>
+                                    <span>{Math.min(Math.round((activityData.totalToday / activityData.assignedActivity.amount) * 100), 100)}%</span>
+                                </div>
+                                <div className="h-2 bg-white rounded-full overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-500 ${activityData.assignedActivity.isCompleted ? 'bg-[#3AB1A0]' : 'bg-[#E06A26]'
+                                            }`}
+                                        style={{ width: `${Math.min((activityData.totalToday / activityData.assignedActivity.amount) * 100, 100)}%` }}
+                                    />
+                                </div>
                             </div>
-                            <div className="h-2 bg-white rounded-full overflow-hidden">
-                                <div
-                                    className={`h-full rounded-full transition-all duration-500 ${activityData.assignedActivity.isCompleted ? 'bg-[#3AB1A0]' : 'bg-[#E06A26]'
-                                        }`}
-                                    style={{ width: `${Math.min((activityData.totalToday / activityData.assignedActivity.amount) * 100, 100)}%` }}
-                                />
+                        )}
+
+                        {/* Show assigned activities list */}
+                        {activityData.assignedActivity.activities && activityData.assignedActivity.activities.length > 0 && (
+                            <div className="mt-4 space-y-2">
+                                <p className="text-xs text-gray-500 font-medium">Activities to complete:</p>
+                                {activityData.assignedActivity.activities.map((activity: any, index: number) => (
+                                    <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg">
+                                        <div>
+                                            <span className="font-medium text-sm text-gray-800">{activity.name}</span>
+                                            <div className="flex gap-2 text-xs text-gray-500 mt-0.5">
+                                                {activity.sets > 0 && <span>{activity.sets} sets</span>}
+                                                {activity.reps > 0 && <span>{activity.reps} reps</span>}
+                                                {activity.duration > 0 && <span>{activity.duration} min</span>}
+                                            </div>
+                                        </div>
+                                        {activity.completed ? (
+                                            <Check className="w-5 h-5 text-[#3AB1A0]" />
+                                        ) : (
+                                            <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+                                        )}
+                                    </div>
+                                ))}
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
 

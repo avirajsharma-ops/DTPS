@@ -215,7 +215,7 @@ export default function WatchPage() {
 
       {/* Connection Status Banner */}
       {watchConnection?.watchIsConnected ? (
-        <div className="px-4 py-4 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] text-white">
+        <div className="px-4 py-4 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B] text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -261,7 +261,7 @@ export default function WatchPage() {
           </div>
         </div>
       ) : (
-        <div className="px-4 py-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white">
+        <div className="px-4 py-4 bg-linear-to-r from-gray-600 to-gray-700 text-white">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
               <WifiOff className="w-6 h-6" />

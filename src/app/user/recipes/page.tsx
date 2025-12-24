@@ -68,7 +68,7 @@ export default function RecipesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 pb-24">
+    <div className="min-h-screen bg-linear-to-b from-white to-gray-50 pb-24">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <div className="flex items-center gap-3 px-4 py-4 max-w-5xl mx-auto w-full">
@@ -134,7 +134,7 @@ export default function RecipesPage() {
             >
               {/* Recipe Image */}
               {recipe.image && (
-                <div className="relative h-44 bg-gradient-to-br from-gray-200 to-gray-300">
+                <div className="relative h-44 bg-linear-to-br from-gray-200 to-gray-300">
                   <img
                     src={recipe.image}
                     alt={recipe.name}

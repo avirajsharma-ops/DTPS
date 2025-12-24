@@ -243,7 +243,7 @@ function RecipesPageContent() {
                     />
                   </div>
                 ) : (
-                  <div className="relative h-48 w-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
+                  <div className="relative h-48 w-full flex items-center justify-center bg-linear-to-br from-green-50 to-emerald-100">
                     <ChefHat className="h-16 w-16 text-green-300" />
                   </div>
                 )}

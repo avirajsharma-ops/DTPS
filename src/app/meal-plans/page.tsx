@@ -368,7 +368,7 @@ function MealPlansPageContent() {
           ) : (
             <Card>
               <CardContent className="p-0">
-                <div className="border-b px-6 py-5 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between">
+                <div className="border-b px-6 py-5 bg-linear-to-r from-slate-50 to-white flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-semibold text-slate-900">Clients Overview</h3>
                     <p className="text-sm text-slate-600 mt-1">No diet plans yet. Review your clients and start a program.</p>

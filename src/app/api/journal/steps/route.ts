@@ -126,6 +126,17 @@ export async function POST(request: NextRequest) {
     };
 
     journal.steps.push(newEntry);
+    
+    // Check if assigned steps target is met and mark as completed
+    const totalStepsAfterAdd = journal.steps.reduce((sum: number, e: { steps: number }) => sum + e.steps, 0);
+    
+    if (journal.assignedSteps && journal.assignedSteps.target && !journal.assignedSteps.isCompleted) {
+      if (totalStepsAfterAdd >= journal.assignedSteps.target) {
+        journal.assignedSteps.isCompleted = true;
+        journal.assignedSteps.completedAt = new Date();
+      }
+    }
+    
     await journal.save();
 
     // Log history for steps entry

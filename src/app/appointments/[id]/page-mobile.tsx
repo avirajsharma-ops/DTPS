@@ -105,11 +105,11 @@ export default function MobileAppointmentDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmed': return 'bg-gradient-to-r from-green-500 to-emerald-500 text-white';
-      case 'scheduled': return 'bg-gradient-to-r from-blue-500 to-purple-500 text-white';
-      case 'completed': return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
-      case 'cancelled': return 'bg-gradient-to-r from-red-500 to-pink-500 text-white';
-      default: return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
+      case 'confirmed': return 'bg-linear-to-r from-green-500 to-emerald-500 text-white';
+      case 'scheduled': return 'bg-linear-to-r from-blue-500 to-purple-500 text-white';
+      case 'completed': return 'bg-linear-to-r from-gray-500 to-gray-600 text-white';
+      case 'cancelled': return 'bg-linear-to-r from-red-500 to-pink-500 text-white';
+      default: return 'bg-linear-to-r from-gray-500 to-gray-600 text-white';
     }
   };
 
@@ -144,11 +144,11 @@ export default function MobileAppointmentDetailPage() {
 
   if (!appointment) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-50 via-pink-50 to-blue-50">
         <div className="text-center px-6">
           <div className="relative inline-block mb-6">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full blur-2xl opacity-30 animate-pulse"></div>
-            <div className="relative h-24 w-24 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mx-auto">
+            <div className="absolute inset-0 bg-linear-to-r from-purple-400 to-pink-400 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+            <div className="relative h-24 w-24 rounded-full bg-linear-to-br from-purple-100 to-pink-100 flex items-center justify-center mx-auto">
               <AlertCircle className="h-12 w-12 text-purple-600" />
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function MobileAppointmentDetailPage() {
           </p>
           <Link
             href="/appointments"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-xl hover:shadow-2xl active:scale-95 transition-all"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-xl hover:shadow-2xl active:scale-95 transition-all"
           >
             <ArrowLeft className="h-5 w-5" />
             Back to Appointments
@@ -172,9 +172,9 @@ export default function MobileAppointmentDetailPage() {
   const canCancel = isUpcoming && appointment.status === 'scheduled';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 pb-6">
+    <div className="min-h-screen bg-linear-to-br from-purple-50 via-pink-50 to-blue-50 pb-6">
       {/* Modern Gradient Header */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white px-4 pt-safe-top pb-6 shadow-xl">
+      <div className="bg-linear-to-r from-purple-600 via-pink-600 to-blue-600 text-white px-4 pt-safe-top pb-6 shadow-xl">
         <div className="flex items-center gap-3 py-4">
           <button
             onClick={() => router.back()}
@@ -206,9 +206,9 @@ export default function MobileAppointmentDetailPage() {
         <div className="bg-white rounded-3xl shadow-xl p-6 border border-purple-100/50">
           <div className="flex items-center gap-4 mb-6">
             {/* Avatar with gradient ring */}
-            <div className="relative flex-shrink-0">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full blur-md opacity-50"></div>
-              <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-0.5">
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 bg-linear-to-br from-purple-500 to-pink-500 rounded-full blur-md opacity-50"></div>
+              <div className="relative h-20 w-20 rounded-full bg-linear-to-br from-purple-500 to-pink-500 p-0.5">
                 <div className="h-full w-full rounded-full bg-white p-0.5">
                   {appointment.dietitian.avatar ? (
                     <img
@@ -217,7 +217,7 @@ export default function MobileAppointmentDetailPage() {
                       className="h-full w-full rounded-full object-cover"
                     />
                   ) : (
-                    <div className="h-full w-full rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <div className="h-full w-full rounded-full bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                       <User className="h-10 w-10 text-white" />
                     </div>
                   )}
@@ -238,7 +238,7 @@ export default function MobileAppointmentDetailPage() {
 
           <Link
             href={`/messages?dietitian=${appointment.dietitian._id}`}
-            className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all"
+            className="w-full flex items-center justify-center gap-2 py-4 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all"
           >
             <MessageCircle className="h-5 w-5" />
             Send Message
@@ -248,7 +248,7 @@ export default function MobileAppointmentDetailPage() {
         {/* Appointment Details - Enhanced Design */}
         <div className="bg-white rounded-3xl shadow-xl p-6 border border-blue-100/50">
           <h3 className="font-bold text-gray-900 text-xl mb-6 flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-xl bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center">
               <Calendar className="h-4 w-4 text-white" />
             </div>
             Session Details
@@ -256,8 +256,8 @@ export default function MobileAppointmentDetailPage() {
 
           <div className="space-y-5">
             {/* Date */}
-            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-100">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0 shadow-lg">
+            <div className="flex items-start gap-4 p-4 bg-linear-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-100">
+              <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0 shadow-lg">
                 <Calendar className="h-7 w-7 text-white" />
               </div>
               <div className="flex-1">
@@ -269,8 +269,8 @@ export default function MobileAppointmentDetailPage() {
             </div>
 
             {/* Time */}
-            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-lg">
+            <div className="flex items-start gap-4 p-4 bg-linear-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100">
+              <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0 shadow-lg">
                 <Clock className="h-7 w-7 text-white" />
               </div>
               <div className="flex-1">
@@ -283,8 +283,8 @@ export default function MobileAppointmentDetailPage() {
             </div>
 
             {/* Type */}
-            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0 shadow-lg">
+            <div className="flex items-start gap-4 p-4 bg-linear-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100">
+              <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0 shadow-lg">
                 {getTypeIcon(appointment.type)}
               </div>
               <div className="flex-1">
@@ -299,12 +299,12 @@ export default function MobileAppointmentDetailPage() {
         {appointment.notes && (
           <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-100/50">
             <h3 className="font-bold text-gray-900 text-xl mb-4 flex items-center gap-2">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
+              <div className="h-8 w-8 rounded-xl bg-linear-to-br from-gray-500 to-gray-600 flex items-center justify-center">
                 <MessageCircle className="h-4 w-4 text-white" />
               </div>
               Notes
             </h3>
-            <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200">
+            <div className="p-4 bg-linear-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200">
               <p className="text-gray-700 leading-relaxed">{appointment.notes}</p>
             </div>
           </div>
@@ -312,7 +312,7 @@ export default function MobileAppointmentDetailPage() {
 
         {/* Meeting Link - Enhanced Design */}
         {appointment.meetingLink && isUpcoming && (
-          <div className="bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 rounded-3xl shadow-2xl p-6 text-white relative overflow-hidden">
+          <div className="bg-linear-to-br from-purple-600 via-pink-600 to-blue-600 rounded-3xl shadow-2xl p-6 text-white relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>

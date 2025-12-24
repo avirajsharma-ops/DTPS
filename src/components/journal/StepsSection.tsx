@@ -93,6 +93,29 @@ export default function StepsSection({ clientId, selectedDate }: StepsSectionPro
     fetchAssignedSteps();
   }, [fetchSteps, fetchAssignedSteps]);
 
+  // Auto-refresh on visibility change and focus (when user comes back to tab/window)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchSteps();
+        fetchAssignedSteps();
+      }
+    };
+
+    const handleFocus = () => {
+      fetchSteps();
+      fetchAssignedSteps();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [fetchSteps, fetchAssignedSteps]);
+
   // Handle assigning steps to client
   const handleAssignSteps = async () => {
     if (!assignTarget || assignTarget <= 0) {
@@ -180,6 +203,9 @@ export default function StepsSection({ clientId, selectedDate }: StepsSectionPro
         setSummary(data.summary || summary);
         setNewEntry({ steps: 0, distance: 0, calories: 0 });
         toast.success('Steps added successfully');
+        // Re-fetch to update assigned status
+        fetchSteps();
+        fetchAssignedSteps();
       } else {
         toast.error(data.error || 'Failed to add steps');
       }
@@ -204,6 +230,9 @@ export default function StepsSection({ clientId, selectedDate }: StepsSectionPro
         setEntries(data.entries || []);
         setSummary(data.summary || summary);
         toast.success('Entry deleted');
+        // Re-fetch to update assigned status
+        fetchSteps();
+        fetchAssignedSteps();
       } else {
         toast.error(data.error || 'Failed to delete entry');
       }
@@ -247,7 +276,7 @@ export default function StepsSection({ clientId, selectedDate }: StepsSectionPro
   return (
     <div className="space-y-6 w-full">
       {/* Assign Steps to Client Card */}
-      <Card className="w-full border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
+      <Card className="w-full border-green-200 bg-linear-to-r from-green-50 to-emerald-50">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-base">
             <Target className="h-4 w-4 text-green-600" />

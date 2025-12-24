@@ -5,6 +5,7 @@ import dbConnect from '@/lib/db/connection';
 import Transformation from '@/lib/db/models/Transformation';
 import { imagekit } from '@/lib/imagekit';
 import { UserRole } from '@/types';
+import { compressBase64ImageServer } from '@/lib/imageCompressionServer';
 
 // GET - Get single transformation
 export async function GET(
@@ -75,12 +76,19 @@ export async function PUT(
     transformation.isActive = isActive;
     transformation.displayOrder = displayOrder;
 
-    // Upload new images if provided
+    // Upload new images if provided (with compression)
     if (beforeImageData && beforeImageData.includes('base64')) {
       try {
         const beforeBase64 = beforeImageData.split('base64,')[1];
+        // Compress before upload
+        const compressedBefore = await compressBase64ImageServer(beforeBase64, {
+          quality: 85,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          format: 'jpeg'
+        });
         const beforeUpload = await imagekit.upload({
-          file: beforeBase64,
+          file: compressedBefore,
           fileName: `transformation_before_${Date.now()}.jpg`,
           folder: '/transformations',
         });
@@ -93,8 +101,15 @@ export async function PUT(
     if (afterImageData && afterImageData.includes('base64')) {
       try {
         const afterBase64 = afterImageData.split('base64,')[1];
+        // Compress before upload
+        const compressedAfter = await compressBase64ImageServer(afterBase64, {
+          quality: 85,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          format: 'jpeg'
+        });
         const afterUpload = await imagekit.upload({
-          file: afterBase64,
+          file: compressedAfter,
           fileName: `transformation_after_${Date.now()}.jpg`,
           folder: '/transformations',
         });

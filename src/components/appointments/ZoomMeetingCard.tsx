@@ -142,7 +142,7 @@ export function ZoomMeetingCard({
           <Button
             variant="outline"
             onClick={() => copyToClipboard(zoomMeeting.joinUrl, 'Meeting link')}
-            className="flex-shrink-0"
+            className="shrink-0"
           >
             {copied ? (
               <CheckCircle className="h-4 w-4 mr-2" />

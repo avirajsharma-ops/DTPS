@@ -3,8 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import JournalTracking from '@/lib/db/models/JournalTracking';
+import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import { UserRole } from '@/types';
-import { subDays, format } from 'date-fns';
+import { subDays, format, differenceInDays } from 'date-fns';
 import mongoose from 'mongoose';
 
 // Helper to check if user has permission to access client data
@@ -54,6 +55,28 @@ export async function GET(request: NextRequest) {
       date: { $gte: startDate, $lte: endDate }
     }).sort({ date: 1 });
 
+    // Get active meal plans for the date range to check mealCompletions
+    const mealPlans = await ClientMealPlan.find({
+      clientId: clientObjectId,
+      status: 'active',
+      startDate: { $lte: endDate },
+      endDate: { $gte: startDate }
+    });
+
+    // Build a map of meal completions from ClientMealPlan
+    const mealCompletionsMap = new Map<string, any[]>();
+    for (const plan of mealPlans) {
+      if (plan.mealCompletions && Array.isArray(plan.mealCompletions)) {
+        for (const completion of plan.mealCompletions) {
+          const dateKey = format(new Date(completion.date), 'yyyy-MM-dd');
+          if (!mealCompletionsMap.has(dateKey)) {
+            mealCompletionsMap.set(dateKey, []);
+          }
+          mealCompletionsMap.get(dateKey)!.push(completion);
+        }
+      }
+    }
+
     // Build daily data for chart
     const dailyData: any[] = [];
     let totalTaken = 0;
@@ -64,6 +87,7 @@ export async function GET(request: NextRequest) {
     for (let i = 0; i < days; i++) {
       const currentDate = subDays(endDate, days - 1 - i);
       currentDate.setHours(0, 0, 0, 0);
+      const dateKey = format(currentDate, 'yyyy-MM-dd');
       
       const journal = journals.find(j => {
         const journalDate = new Date(j.date);
@@ -71,35 +95,45 @@ export async function GET(request: NextRequest) {
         return journalDate.getTime() === currentDate.getTime();
       });
 
-      let meals = journal?.meals || [];
+      // Get meal completions from ClientMealPlan for this date
+      const planCompletions = mealCompletionsMap.get(dateKey) || [];
+      const completedFromPlan = planCompletions.filter((c: any) => c.completed);
+      const pendingFromPlan = planCompletions.filter((c: any) => !c.completed);
+
+      // Also check journal meals
+      let journalMeals = journal?.meals || [];
       
       // Filter by meal type if specified
       if (mealType !== 'all') {
-        meals = meals.filter((m: any) => m.type.toLowerCase() === mealType.toLowerCase());
+        journalMeals = journalMeals.filter((m: any) => m.type?.toLowerCase() === mealType.toLowerCase());
       }
 
-      const consumed = meals.filter((m: any) => m.consumed);
-      const notConsumed = meals.filter((m: any) => !m.consumed);
+      const consumedFromJournal = journalMeals.filter((m: any) => m.consumed);
+      const notConsumedFromJournal = journalMeals.filter((m: any) => !m.consumed);
       
-      // Calculate expected meals per day (4 by default: Breakfast, Lunch, Dinner, Snack)
-      const expectedMeals = mealType === 'all' ? 4 : 1;
-      const recordedMeals = meals.length;
+      // Combine completions - prefer plan completions, fallback to journal
+      const totalCompleted = completedFromPlan.length > 0 ? completedFromPlan.length : consumedFromJournal.length;
+      const totalPending = pendingFromPlan.length > 0 ? pendingFromPlan.length : notConsumedFromJournal.length;
+      
+      // Calculate expected meals per day (6 by default for full meal plan)
+      const expectedMeals = mealType === 'all' ? 6 : 1;
+      const recordedMeals = totalCompleted + totalPending;
       const notRecorded = Math.max(0, expectedMeals - recordedMeals);
 
       const dayData = {
         date: format(currentDate, 'dd/MM'),
         fullDate: currentDate.toISOString(),
-        taken: consumed.length,
-        missed: notConsumed.length,
+        taken: totalCompleted,
+        missed: totalPending,
         notRecorded: notRecorded,
-        options: 0, // Could be meal options/alternatives if implemented
-        totalMeals: meals.length
+        options: 0,
+        totalMeals: recordedMeals
       };
 
       dailyData.push(dayData);
 
-      totalTaken += consumed.length;
-      totalMissed += notConsumed.length;
+      totalTaken += totalCompleted;
+      totalMissed += totalPending;
       totalNotRecorded += notRecorded;
     }
 

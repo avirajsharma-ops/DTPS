@@ -178,6 +178,19 @@ export async function GET(request: NextRequest) {
           const hasNextPlan = upcomingPlans.length > 0;
 
           if (!hasNextPlan) {
+            // Updated urgency logic based on days remaining
+            // 0 days or expired = Highly Critical
+            // 1-3 days = High Priority
+            // 4+ days = Medium
+            let urgency: 'critical' | 'high' | 'medium' = 'medium';
+            if (daysRemaining <= 0) {
+              urgency = 'critical';
+            } else if (daysRemaining <= 3) {
+              urgency = 'high';
+            } else {
+              urgency = 'medium';
+            }
+
             pendingPlans.push({
               clientId: (client as any)._id,
               clientName: `${(client as any).firstName} ${(client as any).lastName}`,
@@ -206,7 +219,7 @@ export async function GET(request: NextRequest) {
               // Status
               reason: 'current_ending_soon',
               reasonText: `Current phase ends in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`,
-              urgency: daysRemaining <= 2 ? 'critical' : daysRemaining <= 4 ? 'high' : 'medium',
+              urgency,
               hasNextPhase: false
             });
           }
@@ -247,8 +260,12 @@ export async function GET(request: NextRequest) {
             expectedEndDate: latestPurchase.expectedEndDate,
             
             // Status
+            // Status
             reason: 'phase_gap',
             reasonText: `Previous phase ended ${daysSinceLastPlan} day${daysSinceLastPlan !== 1 ? 's' : ''} ago`,
+            // 3+ days since last plan = critical (client without active plan)
+            // 1-2 days = high
+            // 0 days = medium (just ended today)
             urgency: daysSinceLastPlan >= 3 ? 'critical' : daysSinceLastPlan >= 1 ? 'high' : 'medium',
             hasNextPhase: false
           });

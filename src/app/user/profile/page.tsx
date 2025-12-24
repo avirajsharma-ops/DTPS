@@ -238,7 +238,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 via-white to-[#E06A26]/10">
+    <div className="min-h-screen bg-linear-to-br from-[#3AB1A0]/10 via-white to-[#E06A26]/10">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
@@ -259,7 +259,7 @@ export default function ProfilePage() {
 
       {/* Profile Header Card */}
       <div className="px-4 py-6">
-        <div className="bg-gradient-to-r from-[#3AB1A0] via-[#2a9989] to-[#E06A26] rounded-3xl p-6 shadow-xl shadow-[#3AB1A0]/20 relative overflow-hidden">
+        <div className="bg-linear-to-r from-[#3AB1A0] via-[#2a9989] to-[#E06A26] rounded-3xl p-6 shadow-xl shadow-[#3AB1A0]/20 relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
@@ -489,9 +489,9 @@ export default function ProfilePage() {
             {/* Assigned Dietitian Section */}
             {profileData?.assignedDietitian && (
               <InfoCard title="Your Dietitian" icon={UserCheck} color="orange">
-                <div className="bg-gradient-to-r from-[#E06A26]/10 to-[#3AB1A0]/10 rounded-xl p-4 space-y-3 border border-[#E06A26]/20">
+                <div className="bg-linear-to-r from-[#E06A26]/10 to-[#3AB1A0]/10 rounded-xl p-4 space-y-3 border border-[#E06A26]/20">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#E06A26] to-[#DB9C6E] flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-[#E06A26] to-[#DB9C6E] flex items-center justify-center">
                       <User className="w-6 h-6 text-white" />
                     </div>
                     <div>
@@ -674,7 +674,7 @@ function InfoCard({ title, icon: Icon, color, children }: { title: string; icon:
 function InfoRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
     <div className="flex items-start gap-3 py-1">
-      <Icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+      <Icon className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-400 font-medium">{label}</p>
         <p className="text-sm text-gray-700 font-medium truncate">{value}</p>
@@ -698,7 +698,7 @@ function TagsRow({
 }) {
   return (
     <div className="flex items-start gap-3 py-1">
-      <Icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+      <Icon className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-400 font-medium mb-1.5">{label}</p>
         {values && values.length > 0 ? (

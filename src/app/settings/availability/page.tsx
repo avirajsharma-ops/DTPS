@@ -82,7 +82,7 @@ export default function AvailabilityPage() {
   };
 
   const addAvailabilitySlot = () => {
-    setAvailability([...availability, { day: 'monday', startTime: '09:00', endTime: '10:00' }]);
+    setAvailability([...availability, { day: 'monday', startTime: '10:00', endTime: '18:00' }]);
   };
 
   const removeAvailabilitySlot = (index: number) => {

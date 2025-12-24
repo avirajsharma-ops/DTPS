@@ -303,7 +303,7 @@ export default function DietitianNewClientPage() {
 
         {/* Section Navigation */}
         <Card className="border-2 border-green-500 shadow-lg rounded-xl overflow-hidden">
-          <CardContent className="p-3 sm:p-4 bg-gradient-to-r from-green-50 to-emerald-50">
+          <CardContent className="p-3 sm:p-4 bg-linear-to-r from-green-50 to-emerald-50">
             <div className="flex flex-wrap gap-2 sm:gap-3">
               <Button 
                 variant={activeSection === 'basic' ? 'default':'outline'} 
@@ -488,7 +488,7 @@ export default function DietitianNewClientPage() {
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <div className="shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-blue-600" />
               </div>
               <div>

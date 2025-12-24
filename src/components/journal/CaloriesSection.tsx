@@ -34,6 +34,12 @@ interface ActiveMealPlan {
   endDate: string;
 }
 
+interface FreezeInfo {
+  date: string;
+  reason: string;
+  frozenAt?: string;
+}
+
 interface CaloriesSectionProps {
   clientId: string;
   selectedDate: Date;
@@ -44,6 +50,8 @@ export default function CaloriesSection({ clientId, selectedDate }: CaloriesSect
   const [loading, setLoading] = useState(true);
   const [activeMealPlan, setActiveMealPlan] = useState<ActiveMealPlan | null>(null);
   const [userName, setUserName] = useState<string>('');
+  const [isFrozen, setIsFrozen] = useState(false);
+  const [freezeInfo, setFreezeInfo] = useState<FreezeInfo | null>(null);
   const [summary, setSummary] = useState({
     totalMeals: 0,
     consumedMeals: 0,
@@ -92,6 +100,8 @@ export default function CaloriesSection({ clientId, selectedDate }: CaloriesSect
         setMeals(data.meals || []);
         setSummary(data.summary || summary);
         setActiveMealPlan(data.activeMealPlan || null);
+        setIsFrozen(data.isFrozen || false);
+        setFreezeInfo(data.freezeInfo || null);
         if (data.user) {
           setUserName(`${data.user.firstName} ${data.user.lastName}`);
         }
@@ -106,6 +116,29 @@ export default function CaloriesSection({ clientId, selectedDate }: CaloriesSect
 
   useEffect(() => {
     fetchMeals();
+  }, [fetchMeals]);
+
+  // Listen for visibility change to refresh data when user comes back
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchMeals();
+      }
+    };
+
+    const handleDataChange = () => {
+      fetchMeals();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('user-data-changed', handleDataChange);
+    window.addEventListener('meal-plan-updated', handleDataChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('user-data-changed', handleDataChange);
+      window.removeEventListener('meal-plan-updated', handleDataChange);
+    };
   }, [fetchMeals]);
 
   const targetCalories = summary.targets.calories;
@@ -156,6 +189,14 @@ export default function CaloriesSection({ clientId, selectedDate }: CaloriesSect
         ));
         setSummary(prev => ({ ...prev, ...data.summary }));
         toast.success('Meal completed successfully!');
+        
+        // Emit event to notify other components about the change
+        window.dispatchEvent(new CustomEvent('meal-plan-updated', { 
+          detail: { mealId: meal._id, consumed, date: dateStr } 
+        }));
+        window.dispatchEvent(new CustomEvent('user-data-changed', { 
+          detail: { dataType: 'meal' } 
+        }));
       } else {
         toast.error(data.error || 'Failed to update meal');
       }
@@ -227,6 +268,57 @@ export default function CaloriesSection({ clientId, selectedDate }: CaloriesSect
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-green-500" />
+      </div>
+    );
+  }
+
+  // Show frozen day message
+  if (isFrozen) {
+    return (
+      <div className="space-y-6 w-full">
+        {/* Active Meal Plan Info */}
+        {activeMealPlan && (
+          <Card className="w-full border-green-200 bg-green-50/50">
+            <CardContent className="py-3 px-4">
+              <div className="flex items-center gap-3">
+                <CalendarCheck className="h-5 w-5 text-green-600" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-800">Active Meal Plan: {activeMealPlan.name}</p>
+                  <p className="text-xs text-green-600">
+                    {format(new Date(activeMealPlan.startDate), 'MMM d, yyyy')} - {format(new Date(activeMealPlan.endDate), 'MMM d, yyyy')}
+                  </p>
+                </div>
+                <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                  Active
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Frozen Day Message */}
+        <Card className="w-full border-blue-200 bg-blue-50/50">
+          <CardContent className="py-8 px-6">
+            <div className="text-center">
+              <div className="w-24 h-24 mx-auto mb-4 bg-linear-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center">
+                <span className="text-5xl">❄️</span>
+              </div>
+              <h3 className="mb-2 text-xl font-bold text-blue-800">This Day is Frozen</h3>
+              <p className="mb-2 text-sm text-gray-600 font-medium">
+                {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+              </p>
+              <p className="mb-4 text-sm text-gray-500">
+                Your dietitian has frozen this day. No meals are scheduled.
+              </p>
+              {freezeInfo?.reason && (
+                <div className="bg-blue-100 border border-blue-200 rounded-xl p-4 mb-4 text-left max-w-md mx-auto">
+                  <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Reason</p>
+                  <p className="text-sm text-blue-800">{freezeInfo.reason}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

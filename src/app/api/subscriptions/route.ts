@@ -7,6 +7,7 @@ import SubscriptionPlan from '@/lib/db/models/SubscriptionPlan';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import Razorpay from 'razorpay';
+import { getPaymentCallbackUrl } from '@/lib/config';
 
 // Initialize Razorpay
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
@@ -205,7 +206,7 @@ export async function POST(request: NextRequest) {
             subscriptionId: subscription._id.toString(),
             planName: plan.name
           },
-          callback_url: `${process.env.NEXTAUTH_URL}/subscriptions/payment-success`,
+          callback_url: getPaymentCallbackUrl('/subscriptions/payment-success'),
           callback_method: 'get'
         });
 

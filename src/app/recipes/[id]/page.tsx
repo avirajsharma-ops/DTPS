@@ -708,7 +708,7 @@ export default function RecipeViewPage() {
               <ol className="space-y-4">
                 {recipe.instructions.map((instruction, index) => (
                   <li key={index} className="flex space-x-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
+                    <div className="shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
                       {index + 1}
                     </div>
                     <div className="flex-1">
@@ -737,7 +737,7 @@ export default function RecipeViewPage() {
                   <ul className="space-y-2">
                     {recipe.tips.map((tip, index) => (
                       <li key={index} className="flex items-start space-x-2">
-                        <span className="w-2 h-2 bg-yellow-400 rounded-full mt-2 flex-shrink-0"></span>
+                        <span className="w-2 h-2 bg-yellow-400 rounded-full mt-2 shrink-0"></span>
                         <span className="text-gray-700">{tip}</span>
                       </li>
                     ))}
@@ -825,7 +825,7 @@ export default function RecipeViewPage() {
               alt={recipe.name}
               className="w-full h-full object-contain rounded-lg"
             />
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 rounded-b-lg">
+            <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent p-4 rounded-b-lg">
               <h3 className="text-white text-lg font-semibold">{recipe.name}</h3>
             </div>
           </div>

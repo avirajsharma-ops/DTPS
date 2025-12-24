@@ -97,6 +97,29 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
     fetchAssignedSleep();
   }, [fetchSleep, fetchAssignedSleep]);
 
+  // Auto-refresh on visibility change and focus (when user comes back to tab/window)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchSleep();
+        fetchAssignedSleep();
+      }
+    };
+
+    const handleFocus = () => {
+      fetchSleep();
+      fetchAssignedSleep();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [fetchSleep, fetchAssignedSleep]);
+
   // Handle assigning sleep to client
   const handleAssignSleep = async () => {
     if (assignHours <= 0 && assignMinutes <= 0) {
@@ -186,6 +209,9 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
         setSummary(data.summary || summary);
         setNewEntry({ hours: 0, minutes: 0, quality: '' });
         toast.success('Sleep record added successfully');
+        // Re-fetch to update assigned status
+        fetchSleep();
+        fetchAssignedSleep();
       } else {
         toast.error(data.error || 'Failed to add sleep record');
       }
@@ -210,6 +236,9 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
         setEntries(data.entries || []);
         setSummary(data.summary || summary);
         toast.success('Entry deleted');
+        // Re-fetch to update assigned status
+        fetchSleep();
+        fetchAssignedSleep();
       } else {
         toast.error(data.error || 'Failed to delete entry');
       }
@@ -265,7 +294,7 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
   return (
     <div className="space-y-6 w-full">
       {/* Assign Sleep to Client Card */}
-      <Card className="w-full border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+      <Card className="w-full border-indigo-200 bg-linear-to-r from-indigo-50 to-purple-50">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-base">
             <Target className="h-4 w-4 text-indigo-600" />

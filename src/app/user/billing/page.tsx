@@ -189,7 +189,7 @@ export default function UserBillingPage() {
 
       <div className="px-4 py-4 space-y-4">
         {/* Subscription Card */}
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-[#3AB1A0]/10 to-emerald-50">
+        <Card className="border-0 shadow-sm bg-linear-to-br from-[#3AB1A0]/10 to-emerald-50">
           <CardContent className="p-4 md:p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
@@ -233,7 +233,7 @@ export default function UserBillingPage() {
             <ul className="space-y-2">
               {displaySubscription.features.map((feature, index) => (
                 <li key={index} className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-[#2a9989] flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-[#2a9989] shrink-0" />
                   <span className="text-gray-700">{feature}</span>
                 </li>
               ))}

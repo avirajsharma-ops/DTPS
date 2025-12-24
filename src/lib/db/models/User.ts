@@ -338,6 +338,16 @@ const userSchema = new Schema({
     mealTimes: [{ type: String }],
     appointmentReminders: { type: Boolean, default: true },
     reminderBefore: { type: Number, default: 30 } // minutes before appointment
+  },
+
+  // Password Reset Token fields
+  passwordResetToken: {
+    type: String,
+    default: null
+  },
+  passwordResetTokenExpiry: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true,

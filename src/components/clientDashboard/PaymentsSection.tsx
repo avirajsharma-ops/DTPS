@@ -913,11 +913,11 @@ export default function PaymentsSection({
       {openRowMenuId && dropdownPosition && (
         <>
           <div 
-            className="fixed inset-0 z-[9998]" 
+            className="fixed inset-0 z-9998" 
             onClick={() => setOpenRowMenuId(null)}
           />
           <div 
-            className="fixed w-52 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[9999]"
+            className="fixed w-52 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-9999"
             style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
           >
             {(() => {
@@ -1526,6 +1526,7 @@ export default function PaymentsSection({
                   type="date"
                   value={expectedStartDateInput}
                   onChange={(e) => setExpectedStartDateInput(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
                   className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">When the client is expected to start the meal plan</p>

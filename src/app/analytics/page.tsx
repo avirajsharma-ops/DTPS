@@ -555,7 +555,7 @@ export default function AnalyticsPage() {
                 {analytics.clientProgress.map((client, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
+                      <div className="shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
                         {index + 1}
                       </div>
                       <div>
@@ -649,7 +649,7 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
               {/* Total Clients Summary */}
               <div className="md:col-span-5 mb-4">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-semibold text-blue-900">Nutrition App Clients</h3>

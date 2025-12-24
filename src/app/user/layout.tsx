@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import UserLayoutClient from './UserLayoutClient';
+import { headers } from 'next/headers';
 
 interface UserLayoutProps {
   children: ReactNode;
@@ -14,12 +15,30 @@ interface UserLayoutProps {
  * User Layout - Server component for authentication check
  * Redirects to signin if not authenticated or not a client
  * Redirects to onboarding if client hasn't completed onboarding
+ * Password reset pages are excluded from auth check
  */
 export default async function UserLayout({ children }: UserLayoutProps) {
+  // Try to get the referer or other headers to determine the path
+  const headersList = await headers();
+  const referer = headersList.get('referer') || '';
+  const xUrl = headersList.get('x-url') || '';
+  
+  // Check if accessing password reset pages (these don't require auth)
+  const isPasswordResetPage = 
+    referer.includes('/forget-password') || 
+    referer.includes('/reset-password') ||
+    xUrl.includes('/forget-password') ||
+    xUrl.includes('/reset-password');
+
   const session = await getServerSession(authOptions);
 
-  // Redirect to signin if not authenticated
+  // For password reset pages, allow access without session
   if (!session) {
+    // Only allow password reset pages without auth
+    if (isPasswordResetPage) {
+      return <>{children}</>;
+    }
+    // Redirect to signin for all other user pages
     redirect('/client-auth/signin');
   }
 

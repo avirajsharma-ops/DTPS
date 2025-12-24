@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useRealtime } from '@/hooks/useRealtime';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import {
 import { format, addDays, isBefore, isAfter } from 'date-fns';
 import { toast } from 'sonner';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
+import { getDietitianId } from '@/lib/utils';
 
 interface Dietitian {
   _id: string;
@@ -58,6 +60,18 @@ export default function BookAppointmentPage() {
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [step, setStep] = useState(1);
 
+  // Use SSE for real-time slot updates (when someone else books)
+  const { isConnected } = useRealtime({
+    onMessage: (event) => {
+      if (event.type === 'appointment_booked' || event.type === 'appointment_cancelled') {
+        // Refresh slots when any appointment changes
+        if (dietitian && selectedDate) {
+          generateTimeSlots();
+        }
+      }
+    }
+  });
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
@@ -83,14 +97,34 @@ export default function BookAppointmentPage() {
       const userResponse = await fetch('/api/client/profile');
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        const assignedDietitianId = userData.user?.assignedDietitian || userData.assignedDietitian;
+        // assignedDietitian is populated as an object, or could be just an ID string
+        const assignedDietitianData = userData.assignedDietitian;
         
-        if (assignedDietitianId) {
-          // Fetch dietitian details
-          const dietitianResponse = await fetch(`/api/users/${assignedDietitianId}`);
-          if (dietitianResponse.ok) {
-            const dietitianData = await dietitianResponse.json();
-            setDietitian(dietitianData.user || dietitianData);
+        if (assignedDietitianData) {
+          // If it's already populated as an object, use it directly
+          if (typeof assignedDietitianData === 'object' && assignedDietitianData._id) {
+            setDietitian({
+              _id: assignedDietitianData._id,
+              firstName: assignedDietitianData.firstName || '',
+              lastName: assignedDietitianData.lastName || '',
+              avatar: assignedDietitianData.avatar,
+              specializations: assignedDietitianData.specializations,
+              consultationFee: assignedDietitianData.consultationFee,
+              availability: assignedDietitianData.availability
+            });
+            // If we need more details (availability), fetch the full dietitian data
+            const dietitianResponse = await fetch(`/api/users/${assignedDietitianData._id}`);
+            if (dietitianResponse.ok) {
+              const dietitianData = await dietitianResponse.json();
+              setDietitian(dietitianData.user || dietitianData);
+            }
+          } else if (typeof assignedDietitianData === 'string') {
+            // It's just an ID string, fetch the dietitian details
+            const dietitianResponse = await fetch(`/api/users/${assignedDietitianData}`);
+            if (dietitianResponse.ok) {
+              const dietitianData = await dietitianResponse.json();
+              setDietitian(dietitianData.user || dietitianData);
+            }
           }
         }
       }
@@ -102,63 +136,112 @@ export default function BookAppointmentPage() {
     }
   };
 
-  const generateTimeSlots = () => {
+  const generateTimeSlots = async () => {
     if (!dietitian || !selectedDate) {
       setAvailableSlots([]);
       return;
     }
 
-    const dayOfWeek = selectedDate.getDay();
-    const availability = dietitian.availability?.find(
-      avail => avail.dayOfWeek === dayOfWeek
-    );
+    try {
+      // Fetch available slots from API (checks against existing appointments)
+      const dateStr = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      const response = await fetch(
+        `/api/appointments/available-slots?dietitianId=${dietitian._id}&date=${dateStr}&duration=30`
+      );
 
-    if (!availability) {
-      setAvailableSlots([]);
-      return;
-    }
+      if (response.ok) {
+        const data = await response.json();
+        const availableSlotTimes = new Set(data.availableSlots || []);
 
-    const slots: TimeSlot[] = [];
-    const [startHour, startMin] = availability.startTime.split(':').map(Number);
-    const [endHour, endMin] = availability.endTime.split(':').map(Number);
-    
-    let currentHour = startHour;
-    let currentMin = startMin;
+        // Generate display slots from dietitian's availability
+        const dayOfWeek = selectedDate.getDay();
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const dayName = dayNames[dayOfWeek];
+        
+        // Find ALL schedules for this day (can have multiple like morning + afternoon)
+        const daySchedules = dietitian.availability?.filter(
+          (avail: any) => avail.day === dayName || avail.dayOfWeek === dayOfWeek
+        ) || [];
 
-    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-      const time24 = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
-      const hour12 = currentHour > 12 ? currentHour - 12 : currentHour === 0 ? 12 : currentHour;
-      const ampm = currentHour >= 12 ? 'PM' : 'AM';
-      const display = `${hour12}:${currentMin.toString().padStart(2, '0')} ${ampm}`;
-      
-      slots.push({
-        time: time24,
-        display,
-        available: true // In production, check against existing appointments
-      });
-      
-      currentMin += 30;
-      if (currentMin >= 60) {
-        currentMin = 0;
-        currentHour += 1;
+        if (daySchedules.length === 0) {
+          setAvailableSlots([]);
+          return;
+        }
+
+        const slots: TimeSlot[] = [];
+        
+        // Process each schedule for the day
+        for (const schedule of daySchedules) {
+          const startTime = schedule.startTime || '09:00';
+          const endTime = schedule.endTime || '17:00';
+          const [startHour, startMin] = startTime.split(':').map(Number);
+          const [endHour, endMin] = endTime.split(':').map(Number);
+          
+          let currentHour = startHour;
+          let currentMin = startMin;
+          const now = new Date();
+
+          while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+            const time24 = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
+            const hour12 = currentHour > 12 ? currentHour - 12 : currentHour === 0 ? 12 : currentHour;
+            const ampm = currentHour >= 12 ? 'PM' : 'AM';
+            const display = `${hour12}:${currentMin.toString().padStart(2, '0')} ${ampm}`;
+            
+            // Check if slot time has passed
+            const slotDateTime = new Date(selectedDate);
+            slotDateTime.setHours(currentHour, currentMin, 0, 0);
+            const isPastTime = slotDateTime <= now;
+
+            // Only add if not already in the list
+            if (!slots.some(s => s.time === time24)) {
+              // Available if: in availableSlots API response AND time hasn't passed
+              // If time has passed, mark as not available (will show as white/disabled)
+              slots.push({
+                time: time24,
+                display,
+                available: !isPastTime && availableSlotTimes.has(time24)
+              });
+            }
+            
+            currentMin += 30;
+            if (currentMin >= 60) {
+              currentMin = 0;
+              currentHour += 1;
+            }
+          }
+        }
+
+        // Sort slots by time
+        slots.sort((a, b) => a.time.localeCompare(b.time));
+        setAvailableSlots(slots);
+      } else {
+        // Fallback to local generation if API fails
+        setAvailableSlots([]);
       }
+    } catch (error) {
+      console.error('Error fetching available slots:', error);
+      setAvailableSlots([]);
     }
-
-    setAvailableSlots(slots);
   };
 
   const isDateDisabled = (date: Date) => {
-    // Disable past dates
-    if (isBefore(date, new Date())) return true;
+    // Disable past dates (but allow today)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date < today) return true;
     
     // Disable dates more than 30 days in the future
     if (isAfter(date, addDays(new Date(), 30))) return true;
     
     // Check dietitian availability for this day
-    if (dietitian?.availability) {
+    if (dietitian?.availability && dietitian.availability.length > 0) {
       const dayOfWeek = date.getDay();
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayName = dayNames[dayOfWeek];
+      
+      // Check both 'day' (string) and 'dayOfWeek' (number) formats
       const hasAvailability = dietitian.availability.some(
-        avail => avail.dayOfWeek === dayOfWeek
+        (avail: any) => avail.day === dayName || avail.dayOfWeek === dayOfWeek
       );
       return !hasAvailability;
     }
@@ -278,9 +361,14 @@ export default function BookAppointmentPage() {
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">
-                  {dietitian.firstName} {dietitian.lastName}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-gray-900">
+                    {dietitian.firstName} {dietitian.lastName}
+                  </h3>
+                  <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">
+                    {getDietitianId(dietitian._id)}
+                  </span>
+                </div>
                 <p className="text-sm text-gray-500">Your Dietitian</p>
                 {dietitian.specializations && dietitian.specializations.length > 0 && (
                   <p className="text-xs text-[#3AB1A0] mt-1">
@@ -332,24 +420,41 @@ export default function BookAppointmentPage() {
               </CardHeader>
               <CardContent className="p-4 pt-2">
                 {availableSlots.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-2">
-                    {availableSlots.map((slot) => (
-                      <button
-                        key={slot.time}
-                        onClick={() => setSelectedTime(slot.time)}
-                        disabled={!slot.available}
-                        className={`py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${
-                          selectedTime === slot.time
-                            ? 'bg-[#E06A26] text-white'
-                            : slot.available
-                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            : 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                        }`}
-                      >
-                        {slot.display}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    {/* Legend */}
+                    <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                        Available
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-full bg-gray-200"></span>
+                        Unavailable
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-full bg-[#E06A26]"></span>
+                        Selected
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {availableSlots.map((slot) => (
+                        <button
+                          key={slot.time}
+                          onClick={() => setSelectedTime(slot.time)}
+                          disabled={!slot.available}
+                          className={`py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${
+                            selectedTime === slot.time
+                              ? 'bg-[#E06A26] text-white'
+                              : slot.available
+                              ? 'bg-green-100 text-green-700 border border-green-300 hover:bg-green-200'
+                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          {slot.display}
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <Clock className="h-10 w-10 mx-auto mb-2 text-gray-300" />

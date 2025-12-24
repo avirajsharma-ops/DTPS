@@ -337,7 +337,7 @@ export default function Sidebar({ className }: SidebarProps) {
           "flex items-center space-x-3",
           isCollapsed && "justify-center"
         )}>
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
               <User className="h-4 w-4 text-green-600" />
             </div>

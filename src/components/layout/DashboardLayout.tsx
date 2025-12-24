@@ -39,7 +39,7 @@ export default function DashboardLayout({
     <div className="h-screen bg-gray-50 flex overflow-hidden">
       {/* Sidebar - Full Height on Dashboard */}
       {showSidebar && (
-        <div className="hidden lg:block h-screen flex-shrink-0">
+        <div className="hidden lg:block h-screen shrink-0">
           <Sidebar />
         </div>
       )}

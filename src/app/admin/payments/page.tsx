@@ -517,7 +517,7 @@ export default function AdminPaymentsPage() {
       {showModal && selectedPayment && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-[#E06A26] to-[#DB9C6E] p-6 text-white rounded-t-2xl">
+            <div className="bg-linear-to-r from-[#E06A26] to-[#DB9C6E] p-6 text-white rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-bold">Payment Details</h3>

@@ -706,7 +706,7 @@ export default function UserProgressPage() {
         {activeTab === 'weight' && (
           <>
             {/* Weight Overview Card */}
-            <div className="bg-gradient-to-br from-[#3AB1A0] to-[#2a9989] rounded-3xl p-5 text-white shadow-xl">
+            <div className="bg-linear-to-br from-[#3AB1A0] to-[#2a9989] rounded-3xl p-5 text-white shadow-xl">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <p className="text-sm text-white/70">Current Weight</p>

@@ -52,43 +52,13 @@ export async function GET(request: NextRequest) {
     const { searchParams: urlParams } = new URL(request.url);
     const format = urlParams.get('format');
 
-    const availability = dietitian.availability || {
-      schedule: [],
-      timezone: 'UTC',
-      consultationDuration: 60,
-      bufferTime: 15,
-      maxAdvanceBooking: 30,
-      minAdvanceBooking: 1
-    };
+    // The availability is stored as simple array: [{day, startTime, endTime}]
+    const availability = dietitian.availability || [];
 
-    // Return simple format if requested
+    // Return simple format if requested (same as stored format)
     if (format === 'simple') {
-      const dayMap: { [key: number]: string } = {
-        0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
-        4: 'thursday', 5: 'friday', 6: 'saturday'
-      };
-
-      const simpleAvailability: any[] = [];
-
-      if (availability.schedule) {
-        availability.schedule.forEach((day: any) => {
-          const dayName = dayMap[day.dayOfWeek];
-          if (dayName && day.timeSlots) {
-            day.timeSlots.forEach((slot: any) => {
-              if (slot.isAvailable !== false) {
-                simpleAvailability.push({
-                  day: dayName,
-                  startTime: slot.startTime,
-                  endTime: slot.endTime
-                });
-              }
-            });
-          }
-        });
-      }
-
       return NextResponse.json({
-        availability: simpleAvailability
+        availability: availability
       });
     }
 
@@ -187,7 +157,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.user.role !== UserRole.DIETITIAN) {
+    if (session.user.role !== UserRole.DIETITIAN && session.user.role !== UserRole.HEALTH_COUNSELOR) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -197,60 +167,26 @@ export async function PUT(request: NextRequest) {
 
     // Check if this is a simple availability update (from our new UI)
     if (body.availability && Array.isArray(body.availability)) {
-      // Convert simple availability format to complex format
-      const simpleAvailability = body.availability;
-      const dayMap: { [key: string]: number } = {
-        'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3,
-        'thursday': 4, 'friday': 5, 'saturday': 6
-      };
+      // Validate and format simple availability
+      const simpleAvailability = body.availability.map((slot: any) => ({
+        day: slot.day.toLowerCase(),
+        startTime: slot.startTime,
+        endTime: slot.endTime
+      }));
 
-      const schedule: any[] = [];
-
-      // Group by day
-      const dayGroups: { [key: number]: any[] } = {};
-
-      simpleAvailability.forEach((slot: any) => {
-        const dayOfWeek = dayMap[slot.day.toLowerCase()];
-        if (dayOfWeek !== undefined) {
-          if (!dayGroups[dayOfWeek]) {
-            dayGroups[dayOfWeek] = [];
-          }
-          dayGroups[dayOfWeek].push({
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            isAvailable: true
-          });
-        }
-      });
-
-      // Convert to schedule format
-      Object.keys(dayGroups).forEach(dayOfWeek => {
-        schedule.push({
-          dayOfWeek: parseInt(dayOfWeek),
-          timeSlots: dayGroups[parseInt(dayOfWeek)]
-        });
-      });
-
-      const complexAvailability = {
-        schedule,
-        timezone: 'UTC',
-        consultationDuration: 60,
-        bufferTime: 15,
-        maxAdvanceBooking: 30,
-        minAdvanceBooking: 1
-      };
-
-      // Update with complex format
+      // Update with simple format (matches User model schema)
       const dietitian = await User.findByIdAndUpdate(
         session.user.id,
         {
           $set: {
-            availability: complexAvailability,
+            availability: simpleAvailability,
             updatedAt: new Date()
           }
         },
         { new: true }
       ).select('availability');
+
+      console.log('Saved availability:', dietitian?.availability);
 
       return NextResponse.json({
         message: 'Availability updated successfully',

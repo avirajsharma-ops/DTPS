@@ -41,6 +41,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { getClientId, getDietitianId } from '@/lib/utils';
 
 interface Client {
   _id: string;
@@ -104,6 +105,7 @@ export default function AdminAllClientsPage() {
   const [selectedDietitianId, setSelectedDietitianId] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [assignMode, setAssignMode] = useState<'add' | 'replace' | 'remove'>('add');
+  const [dietitianSearchTerm, setDietitianSearchTerm] = useState('');
 
   // Transfer dialog state (bulk transfer)
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
@@ -155,6 +157,7 @@ export default function AdminAllClientsPage() {
     setSelectedClient(client);
     setSelectedDietitianId('');
     setAssignMode('add');
+    setDietitianSearchTerm('');
     setAssignDialogOpen(true);
   };
 
@@ -525,16 +528,21 @@ export default function AdminAllClientsPage() {
                           <div className="flex items-center">
                             <Avatar className="h-8 sm:h-10 w-8 sm:w-10">
                               <AvatarImage src={client.avatar} />
-                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs sm:text-sm">
+                              <AvatarFallback className="bg-linear-to-br from-blue-500 to-purple-600 text-white text-xs sm:text-sm">
                                 {client.firstName?.[0] || 'U'}{client.lastName?.[0] || 'N'}
                               </AvatarFallback>
                             </Avatar>
                             <div className="ml-2 sm:ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {client.firstName} {client.lastName}
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {client.firstName} {client.lastName}
+                                </div>
+                                <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
+                                  {getClientId(client._id)}
+                                </span>
                               </div>
                               {/* Show email on mobile */}
-                              <div className="text-xs text-gray-500 sm:hidden truncate max-w-[120px]">
+                              <div className="text-xs text-gray-500 sm:hidden truncate max-w-30">
                                 {client.email}
                               </div>
                               {client.dateOfBirth && calculateAge(client.dateOfBirth) && (
@@ -697,6 +705,15 @@ export default function AdminAllClientsPage() {
                 <label className="text-sm font-medium mb-2 block">
                   Select Dietitian to Add
                 </label>
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search dietitians..."
+                    value={dietitianSearchTerm}
+                    onChange={(e) => setDietitianSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
                 <Select value={selectedDietitianId} onValueChange={setSelectedDietitianId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a dietitian..." />
@@ -704,6 +721,12 @@ export default function AdminAllClientsPage() {
                   <SelectContent>
                     {dietitians
                       .filter(d => assignMode === 'replace' || !selectedClient?.assignedDietitians?.some(ad => ad._id === d._id))
+                      .filter(d => {
+                        if (!dietitianSearchTerm.trim()) return true;
+                        const searchLower = dietitianSearchTerm.toLowerCase();
+                        const fullName = `${d.firstName} ${d.lastName}`.toLowerCase();
+                        return fullName.includes(searchLower) || d.email?.toLowerCase().includes(searchLower);
+                      })
                       .map((dietitian) => (
                       <SelectItem key={dietitian._id} value={dietitian._id}>
                         <div className="flex items-center justify-between w-full">

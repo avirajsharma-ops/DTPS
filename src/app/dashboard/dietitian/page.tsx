@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { StatsCard } from '@/components/ui/stats-card';
@@ -22,10 +22,15 @@ import {
   X,
   ExternalLink,
   Phone,
-  Loader2
+  Loader2,
+  Bell
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { useRealtime } from '@/hooks/useRealtime';
+import { useNotifications } from '@/hooks/useNotifications';
+import { toast } from 'sonner';
+import { getClientId } from '@/lib/utils';
 
 interface PendingPlan {
   clientId: string;
@@ -97,6 +102,64 @@ export default function DietitianDashboard() {
   const [pendingPlansCount, setPendingPlansCount] = useState(0);
   const [criticalCount, setCriticalCount] = useState(0);
 
+  // Real-time appointment notifications
+  const { showAppointmentNotification } = useNotifications();
+  
+  // Handle real-time events (appointment bookings)
+  const handleRealtimeMessage = useCallback((event: { type: string; data: string }) => {
+    if (event.type === 'appointment_booked') {
+      try {
+        const data = JSON.parse(event.data);
+        // Show toast notification
+        toast.success(
+          `New appointment booked by ${data.client?.firstName} ${data.client?.lastName}`,
+          {
+            description: `Scheduled for ${new Date(data.scheduledAt).toLocaleString()}`,
+            duration: 6000,
+            icon: <Bell className="h-4 w-4 text-green-500" />,
+          }
+        );
+        
+        // Show browser notification
+        showAppointmentNotification(
+          `${data.client?.firstName} ${data.client?.lastName}`,
+          data.scheduledAt,
+          data.duration,
+          'booked',
+          data.client?.avatar,
+          data.appointmentId
+        );
+
+        // Refresh stats to update today's appointments
+        fetchDashboardData();
+      } catch (error) {
+        console.error('Error parsing appointment_booked event:', error);
+      }
+    }
+  }, [showAppointmentNotification]);
+
+  // Connect to real-time updates
+  const { isConnected } = useRealtime({
+    onMessage: handleRealtimeMessage
+  });
+
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('/api/dashboard/dietitian-stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      } else {
+        console.error('Failed to fetch dashboard data');
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch pending plans
   const fetchPendingPlans = async () => {
     setLoadingPendingPlans(true);
@@ -115,31 +178,11 @@ export default function DietitianDashboard() {
     }
   };
 
-  // Fetch dashboard data
+  // Initial data fetch
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await fetch('/api/dashboard/dietitian-stats');
-        if (response.ok) {
-          const data = await response.json();
-          setStats(data);
-        } else {
-          console.error('Failed to fetch dashboard data');
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboardData();
-    fetchPendingPlans(); // Also fetch pending plans count
+    fetchPendingPlans();
   }, []);
-
-
-
-
 
   const pendingTasks = [
     { id: 1, task: 'Review Sarah\'s food log', priority: 'high' },
@@ -174,19 +217,6 @@ export default function DietitianDashboard() {
     }
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="p-6 flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading dashboard...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
       <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
@@ -209,34 +239,34 @@ export default function DietitianDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
           <StatsCard
             title="Total Clients"
-            value={stats.totalClients}
-            description={`${stats.activeClients} active`}
+            value={loading ? '-' : stats.totalClients}
+            description={loading ? 'Loading...' : `${stats.activeClients} active`}
             icon={<Users className="h-4 w-4" />}
             trend={{ value: 12, isPositive: true }}
           />
           <StatsCard
             title="Today's Appointments"
-            value={stats.todaysAppointments}
-            description={`${stats.confirmedAppointments} confirmed, ${stats.pendingAppointments} pending`}
+            value={loading ? '-' : stats.todaysAppointments}
+            description={loading ? 'Loading...' : `${stats.confirmedAppointments} confirmed, ${stats.pendingAppointments} pending`}
             icon={<Calendar className="h-4 w-4" />}
           />
           <StatsCard
             title="Active Programs"
-            value={stats.clientsWithMealPlans}
-            description="Clients with Diet plans"
+            value={loading ? '-' : stats.clientsWithMealPlans}
+            description={loading ? 'Loading...' : 'Clients with Diet plans'}
             icon={<Activity className="h-4 w-4" />}
             trend={{ value: 15, isPositive: true }}
           />
           <StatsCard
             title="Completed Sessions"
-            value={stats.completedSessions}
-            description={`${stats.completionRate}% completion rate`}
+            value={loading ? '-' : stats.completedSessions}
+            description={loading ? 'Loading...' : `${stats.completionRate}% completion rate`}
             icon={<CheckCircle className="h-4 w-4" />}
           />
           <StatsCard
             title="Total Revenue"
-            value={`₹${stats.totalRevenue?.toLocaleString() || 0}`}
-            description={`${stats.completedPaymentsCount} completed, ${stats.pendingPaymentsCount} pending`}
+            value={loading ? '-' : `₹${stats.totalRevenue?.toLocaleString() || 0}`}
+            description={loading ? 'Loading...' : `${stats.completedPaymentsCount} completed, ${stats.pendingPaymentsCount} pending`}
             icon={<DollarSign className="h-4 w-4" />}
             trend={{ value: 8, isPositive: true }}
           />
@@ -244,7 +274,7 @@ export default function DietitianDashboard() {
 
         {/* Client Overview Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-2 overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Users className="h-5 w-5 text-blue-600" />
@@ -255,30 +285,37 @@ export default function DietitianDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{stats.totalClients}</div>
-                    <div className="text-sm text-blue-700">Total Clients</div>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <span className="ml-2 text-gray-600">Loading client data...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">{stats.totalClients}</div>
+                      <div className="text-sm text-blue-700">Total Clients</div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">{stats.activeClients}</div>
+                      <div className="text-sm text-green-700">Active Clients</div>
+                    </div>
                   </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{stats.activeClients}</div>
-                    <div className="text-sm text-green-700">Active Clients</div>
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                      <span>Client Progress</span>
+                      <span>{stats.activePercentage}% Active</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(100, Math.max(0, stats.activePercentage))}%` }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-4">
-                  <div className="flex justify-between text-sm text-gray-600 mb-2">
-                    <span>Client Progress</span>
-                    <span>{stats.activePercentage}% Active</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${stats.activePercentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -444,7 +481,7 @@ export default function DietitianDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <DollarSign className="h-5 w-5 text-green-600" />
-                <span>Recent Payments</span>
+                <span> Payments</span>
               </CardTitle>
               <CardDescription>
                 Payments from your assigned clients
@@ -475,7 +512,14 @@ export default function DietitianDashboard() {
                           <tr key={payment.id} className="hover:bg-gray-50">
                             <td className="px-3 py-3">
                               <div>
-                                <p className="font-medium text-gray-900">{payment.clientName}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-gray-900">{payment.clientName}</p>
+                                  {payment.clientId && (
+                                    <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
+                                      {getClientId(payment.clientId)}
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-xs text-gray-500">{payment.clientEmail}</p>
                               </div>
                             </td>
@@ -618,7 +662,7 @@ export default function DietitianDashboard() {
           {/* Right Side Panel */}
           <div className="fixed right-0 top-0 h-full w-full max-w-5xl bg-gray-50 shadow-2xl z-50 overflow-hidden flex flex-col animate-slide-in-right">
             {/* Header - Website themed green gradient */}
-            <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-green-600 to-teal-600">
+            <div className="flex items-center justify-between p-4 border-b bg-linear-to-r from-green-600 to-teal-600">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-lg">
                   <AlertTriangle className="h-5 w-5 text-white" />
@@ -731,7 +775,7 @@ export default function DietitianDashboard() {
                             <td className="px-3 py-3">
                               {plan.previousPlanName ? (
                                 <div>
-                                  <p className="font-medium text-gray-700 text-xs truncate max-w-[120px]">
+                                  <p className="font-medium text-gray-700 text-xs truncate max-w-30">
                                     {plan.previousPlanName}
                                   </p>
                                   {plan.previousPlanEndDate && (
@@ -748,20 +792,20 @@ export default function DietitianDashboard() {
                             <td className="px-3 py-3">
                               {plan.currentPlanName ? (
                                 <div>
-                                  <p className="font-medium text-gray-800 truncate max-w-[140px]">
+                                  <p className="font-medium text-gray-800 truncate max-w-35">
                                     {plan.currentPlanName}
                                   </p>
                                 </div>
                               ) : plan.upcomingPlanName ? (
                                 <div>
-                                  <p className="font-medium text-blue-700 truncate max-w-[140px]">
+                                  <p className="font-medium text-blue-700 truncate max-w-35">
                                     {plan.upcomingPlanName}
                                   </p>
                                   <Badge className="bg-blue-100 text-blue-700 text-xs mt-1">Upcoming</Badge>
                                 </div>
                               ) : (
                                 <div>
-                                  <p className="font-medium text-teal-700 truncate max-w-[140px]">
+                                  <p className="font-medium text-teal-700 truncate max-w-35">
                                     {plan.purchasedPlanName}
                                   </p>
                                   <p className="text-xs text-gray-400 italic">

@@ -51,7 +51,7 @@ export function RecipeCarousel() {
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex-shrink-0 w-40 h-48 bg-gray-200 rounded-2xl animate-pulse"></div>
+            <div key={i} className="shrink-0 w-40 h-48 bg-gray-200 rounded-2xl animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -88,12 +88,12 @@ export function RecipeCarousel() {
           <Link
             key={recipe._id}
             href={`/recipes/${recipe._id}`}
-            className="flex-shrink-0 w-64 snap-center active:scale-[0.98] transition-transform"
+            className="shrink-0 w-64 snap-center active:scale-[0.98] transition-transform"
           >
             {/* Recipe Card - Fixed Width */}
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl border border-gray-100 overflow-hidden">
+            <div className="bg-linear-to-br from-white to-gray-50 rounded-3xl border border-gray-100 overflow-hidden">
               {/* Recipe Image */}
-              <div className="relative h-40 w-full bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 overflow-hidden">
+              <div className="relative h-40 w-full bg-linear-to-br from-orange-50 via-amber-50 to-yellow-50 overflow-hidden">
                 {recipe.image ? (
                   <img
                     src={recipe.image}
@@ -110,7 +110,7 @@ export function RecipeCarousel() {
                 )}
 
                 {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+                <div className="absolute inset-0 bg-linear-to-t from-black/30 to-transparent"></div>
               </div>
 
               {/* Recipe Info */}
@@ -121,15 +121,15 @@ export function RecipeCarousel() {
 
                 {/* Stats Row */}
                 <div className="grid grid-cols-3 gap-2 mb-2">
-                  <div className="text-center p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg shadow-sm">
+                  <div className="text-center p-2 bg-linear-to-br from-orange-500 to-red-500 rounded-lg shadow-sm">
                     <p className="text-lg font-bold text-white">{recipe.nutrition.calories}</p>
                     <p className="text-xs text-orange-100 font-medium">Calories</p>
                   </div>
-                  <div className="text-center p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg shadow-sm">
+                  <div className="text-center p-2 bg-linear-to-br from-green-500 to-emerald-500 rounded-lg shadow-sm">
                     <p className="text-lg font-bold text-white">{recipe.servings}</p>
                     <p className="text-xs text-green-100 font-medium">Servings</p>
                   </div>
-                  <div className="text-center p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg shadow-sm">
+                  <div className="text-center p-2 bg-linear-to-br from-purple-500 to-indigo-500 rounded-lg shadow-sm">
                     <p className="text-lg font-bold text-white">{recipe.prepTime + recipe.cookTime}</p>
                     <p className="text-xs text-purple-100 font-medium">Minutes</p>
                   </div>

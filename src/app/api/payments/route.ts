@@ -3,9 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Payment from '@/lib/db/models/Payment';
+import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import Stripe from 'stripe';
 import { logHistoryServer } from '@/lib/server/history';
+import { logActivity, logPaymentFailure } from '@/lib/utils/activityLogger';
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-07-30.basil',
@@ -124,6 +126,21 @@ export async function POST(request: NextRequest) {
         currency,
         status: payment.status,
       },
+    });
+
+    // Log activity
+    await logActivity({
+      userId: session.user.id,
+      userRole: session.user.role as any,
+      userName: session.user.name || 'Unknown',
+      userEmail: session.user.email || '',
+      action: 'Created Payment',
+      actionType: 'payment',
+      category: 'payment',
+      description: `Created payment of ${amount} ${currency.toUpperCase()}: ${description}`,
+      resourceId: payment._id.toString(),
+      resourceType: 'Payment',
+      details: { amount, currency, description }
     });
 
     // Create Stripe payment intent

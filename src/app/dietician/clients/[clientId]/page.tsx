@@ -1574,7 +1574,7 @@ export default function ClientDetailPage() {
                 {/* Left: Avatar + Name + meta */}
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 rounded-xl flex items-center justify-center text-white text-lg font-semibold bg-gradient-to-br from-blue-500 to-blue-600">
+                    <div className="h-14 w-14 rounded-xl flex items-center justify-center text-white text-lg font-semibold bg-linear-to-br from-blue-500 to-blue-600">
                       {client?.firstName?.[0] || ''}{client?.lastName?.[0] || ''}
                     </div>
                     <div className="min-w-0">
@@ -1659,7 +1659,7 @@ export default function ClientDetailPage() {
 
               {/* Program Banner */}
               {activePlan ? (
-                <div className="mt-5 rounded-2xl bg-gradient-to-r from-slate-600 via-slate-500 to-slate-400 px-6 py-5 shadow-lg">
+                <div className="mt-5 rounded-2xl bg-linear-to-r from-slate-600 via-slate-500 to-slate-400 px-6 py-5 shadow-lg">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
@@ -1685,7 +1685,7 @@ export default function ClientDetailPage() {
                       </p>
                     </div>
                     <div className={`grid ${activePlan.expectedStartDate && activePlan.expectedEndDate && activePlan.hasMealPlan ? 'grid-cols-4' : 'grid-cols-3'} gap-3 text-xs`}>
-                      <div className="rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 px-4 py-3 shadow-md">
+                      <div className="rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 px-4 py-3 shadow-md">
                         <p className="text-xs font-medium text-cyan-100 uppercase tracking-wide">Duration</p>
                         <p className="mt-1.5 text-lg font-bold text-white">
                           {activePlan.duration} days
@@ -1693,7 +1693,7 @@ export default function ClientDetailPage() {
                       </div>
                       {/* Expected Dates - shown first if set */}
                       {activePlan.expectedStartDate && activePlan.expectedEndDate && (
-                        <div className="rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 px-4 py-3 shadow-md">
+                        <div className="rounded-xl bg-linear-to-br from-amber-500 to-orange-600 px-4 py-3 shadow-md">
                           <p className="text-xs font-medium text-amber-100 uppercase tracking-wide">
                             Expected dates
                           </p>
@@ -1705,7 +1705,7 @@ export default function ClientDetailPage() {
                       {/* Meal Plan Dates - shown only when meal plan exists */}
                       {activePlan.hasMealPlan && (
                         <div 
-                          className={`rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 px-4 py-3 shadow-md ${(activePlan.isExtended || activePlan.isFrozen) ? 'cursor-pointer hover:from-violet-600 hover:to-purple-700 transition-colors' : ''}`}
+                          className={`rounded-xl bg-linear-to-br from-violet-500 to-purple-600 px-4 py-3 shadow-md ${(activePlan.isExtended || activePlan.isFrozen) ? 'cursor-pointer hover:from-violet-600 hover:to-purple-700 transition-colors' : ''}`}
                           onClick={(e) => {
                             if (activePlan.isExtended || activePlan.isFrozen) {
                               e.stopPropagation();
@@ -1723,7 +1723,7 @@ export default function ClientDetailPage() {
                       )}
                       {/* If no meal plan but has expected dates, show waiting message */}
                       {!activePlan.hasMealPlan && !activePlan.expectedStartDate && (
-                        <div className="rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 px-4 py-3 shadow-md">
+                        <div className="rounded-xl bg-linear-to-br from-violet-500 to-purple-600 px-4 py-3 shadow-md">
                           <p className="text-xs font-medium text-violet-100 uppercase tracking-wide">
                             Program dates
                           </p>
@@ -1732,7 +1732,7 @@ export default function ClientDetailPage() {
                           </p>
                         </div>
                       )}
-                      <div className={`rounded-xl bg-gradient-to-br ${
+                      <div className={`rounded-xl bg-linear-to-br ${
                         activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'from-emerald-500 to-green-600' :
                         'from-gray-500 to-gray-600'
                       } px-4 py-3 shadow-md`}>
@@ -1786,7 +1786,7 @@ export default function ClientDetailPage() {
                   )}
                 </div>
               ) : (
-                <div className="mt-5 rounded-2xl bg-gradient-to-r from-gray-500 via-gray-400 to-gray-300 px-6 py-5 shadow-lg">
+                <div className="mt-5 rounded-2xl bg-linear-to-r from-gray-500 via-gray-400 to-gray-300 px-6 py-5 shadow-lg">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
@@ -1799,15 +1799,15 @@ export default function ClientDetailPage() {
                       </p>
                     </div>
                     <div className="grid grid-cols-3 gap-3 text-xs">
-                      <div className="rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 px-4 py-3 shadow-md">
+                      <div className="rounded-xl bg-linear-to-br from-gray-600 to-gray-700 px-4 py-3 shadow-md">
                         <p className="text-xs font-medium text-gray-300 uppercase tracking-wide">Duration</p>
                         <p className="mt-1.5 text-lg font-bold text-white">No days</p>
                       </div>
-                      <div className="rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 px-4 py-3 shadow-md">
+                      <div className="rounded-xl bg-linear-to-br from-gray-600 to-gray-700 px-4 py-3 shadow-md">
                         <p className="text-xs font-medium text-gray-300 uppercase tracking-wide">Program dates</p>
                         <p className="mt-1.5 text-sm font-semibold text-white">No dates</p>
                       </div>
-                      <div className="rounded-xl bg-gradient-to-br from-red-600 to-red-700 px-4 py-3 shadow-md">
+                      <div className="rounded-xl bg-linear-to-br from-red-600 to-red-700 px-4 py-3 shadow-md">
                         <p className="text-xs font-medium text-red-200 uppercase tracking-wide">Status</p>
                         <Badge className="mt-1.5 bg-red-500/30 backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold">
                           Inactive
@@ -1898,7 +1898,7 @@ export default function ClientDetailPage() {
           }`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-blue-50 to-white">
+          <div className="flex items-center justify-between px-5 py-3 border-b bg-linear-to-r from-blue-50 to-white">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
                 <StickyNote className="h-4 w-4 text-blue-600" />
@@ -2441,7 +2441,7 @@ export default function ClientDetailPage() {
           }`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-green-50 to-white">
+          <div className="flex items-center justify-between px-5 py-3 border-b bg-linear-to-r from-green-50 to-white">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
                 <Calendar className="h-4 w-4 text-green-600" />
@@ -2837,7 +2837,7 @@ export default function ClientDetailPage() {
           }`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-purple-50 to-white">
+          <div className="flex items-center justify-between px-5 py-3 border-b bg-linear-to-r from-purple-50 to-white">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
                 <Badge className="h-4 w-4 text-purple-600" />
@@ -2936,7 +2936,7 @@ export default function ClientDetailPage() {
                             <CardContent className="p-3">
                               <div className="flex items-center gap-2">
                                 <div 
-                                  className="h-3 w-3 rounded-full flex-shrink-0"
+                                  className="h-3 w-3 rounded-full shrink-0"
                                   style={{ backgroundColor: tag.color || '#3B82F6' }}
                                 />
                                 <div className="flex-1 min-w-0">
@@ -2945,7 +2945,7 @@ export default function ClientDetailPage() {
                                     <p className="text-xs text-gray-600 line-clamp-1">{tag.description}</p>
                                   )}
                                 </div>
-                                <Plus className="h-4 w-4 text-gray-400 group-hover:text-purple-600 transition-colors flex-shrink-0" />
+                                <Plus className="h-4 w-4 text-gray-400 group-hover:text-purple-600 transition-colors shrink-0" />
                               </div>
                             </CardContent>
                           </Card>

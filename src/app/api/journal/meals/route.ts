@@ -18,6 +18,37 @@ const getDateOnly = (date: Date | string): Date => {
   return d;
 };
 
+// Helper to normalize meal type keys for consistent matching
+// Maps various meal type formats to a canonical key
+const normalizeMealTypeKey = (mealType: string): string => {
+  const normalized = mealType.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  // Map common variations to canonical keys
+  const mappings: { [key: string]: string } = {
+    // Breakfast variations
+    'breakfast': 'breakfast',
+    // Mid Morning / Morning Snack variations
+    'midmorning': 'midmorning',
+    'morningsnack': 'midmorning',
+    'mid_morning': 'midmorning',
+    'morning_snack': 'midmorning',
+    // Lunch variations
+    'lunch': 'lunch',
+    // Evening Snack / Afternoon Snack variations
+    'eveningsnack': 'eveningsnack',
+    'afternoonsnack': 'eveningsnack',
+    'evening_snack': 'eveningsnack',
+    'afternoon_snack': 'eveningsnack',
+    // Dinner variations
+    'dinner': 'dinner',
+    // Bedtime variations
+    'bedtime': 'bedtime',
+    'bedtimesnack': 'bedtime',
+    'bedtime_snack': 'bedtime',
+    'nightsnack': 'bedtime',
+  };
+  return mappings[normalized] || normalized;
+};
+
 // Helper to check if user has permission to access client data
 const checkPermission = (session: any, clientId?: string): boolean => {
   const userRole = session?.user?.role;
@@ -97,13 +128,64 @@ export async function GET(request: NextRequest) {
       // Calculate which day of the plan this is
       const dayIndex = differenceInDays(date, getDateOnly(clientMealPlan.startDate));
       
+      // Check if this date is frozen
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const freezedDays = clientMealPlan.freezedDays || [];
+      const isFrozen = freezedDays.some((fd: any) => {
+        const freezeDate = format(new Date(fd.date), 'yyyy-MM-dd');
+        return freezeDate === dateStr;
+      });
+      
+      // Get freeze info if frozen
+      const freezeInfo = isFrozen ? freezedDays.find((fd: any) => 
+        format(new Date(fd.date), 'yyyy-MM-dd') === dateStr
+      ) : null;
+      
+      // If frozen, return empty meals with frozen status
+      if (isFrozen) {
+        const summary = {
+          totalMeals: 0,
+          consumedMeals: 0,
+          totalCalories: 0,
+          consumedCalories: 0,
+          consumedProtein: 0,
+          consumedCarbs: 0,
+          consumedFat: 0,
+          targets,
+          percentage: 0
+        };
+        
+        return NextResponse.json({
+          success: true,
+          meals: [],
+          targets,
+          summary,
+          activeMealPlan: {
+            _id: clientMealPlan._id,
+            name: clientMealPlan.name || (clientMealPlan.templateId as any)?.name,
+            startDate: clientMealPlan.startDate,
+            endDate: clientMealPlan.endDate
+          },
+          isFrozen: true,
+          freezeInfo: freezeInfo ? {
+            date: freezeInfo.date,
+            reason: freezeInfo.reason || 'Day frozen by dietitian',
+            frozenAt: freezeInfo.createdAt
+          } : null,
+          user: user ? { firstName: user.firstName, lastName: user.lastName } : null
+        });
+      }
+      
       // Get meal completions for this date from ClientMealPlan
       const mealCompletionsMap = new Map<string, any>();
       if (clientMealPlan.mealCompletions && Array.isArray(clientMealPlan.mealCompletions)) {
         for (const completion of clientMealPlan.mealCompletions) {
           const completionDate = getDateOnly(completion.date);
           if (completionDate.getTime() === date.getTime()) {
-            mealCompletionsMap.set(completion.mealType.toLowerCase(), completion);
+            // Use normalized key for consistent matching
+            const normalizedKey = normalizeMealTypeKey(completion.mealType);
+            mealCompletionsMap.set(normalizedKey, completion);
+            console.log('Added completion to map:', completion.mealType, '-> normalized:', normalizedKey);
           }
         }
       }
@@ -147,9 +229,10 @@ export async function GET(request: NextRequest) {
                 const journalMeal = journalMealsMap.get(mealPlanId);
                 
                 // Check meal completion from ClientMealPlan mealCompletions
-                const mealTypeKey = mealType.name.toLowerCase().replace(/\s+/g, '');
-                const mealCompletion = mealCompletionsMap.get(mealTypeKey) || 
-                                       mealCompletionsMap.get(mealType.name.toLowerCase());
+                // Use normalized key for consistent matching
+                const normalizedMealTypeKey = normalizeMealTypeKey(mealType.name);
+                const mealCompletion = mealCompletionsMap.get(normalizedMealTypeKey);
+                console.log('Looking up meal type:', mealType.name, '-> normalized:', normalizedMealTypeKey, '-> found:', !!mealCompletion);
                 
                 meals.push({
                   _id: journalMeal?._id || mealPlanId,

@@ -45,7 +45,7 @@ export function PhotoComparisonModal({
           </button>
           
           <div className="text-center">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white mx-auto mb-3">
+            <div className="h-12 w-12 rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white mx-auto mb-3">
               <Camera className="h-6 w-6" />
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-1">
@@ -62,7 +62,7 @@ export function PhotoComparisonModal({
           {previousPhoto ? (
             <>
               {/* Progress Stats */}
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-4 mb-6">
+              <div className="bg-linear-to-r from-emerald-50 to-teal-50 rounded-2xl p-4 mb-6">
                 <div className="flex items-center justify-center space-x-6">
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-1 mb-1">
@@ -131,7 +131,7 @@ export function PhotoComparisonModal({
 
               {/* Motivational Message */}
               <div className="mt-6 text-center">
-                <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-white">
+                <div className="bg-linear-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-white">
                   <h3 className="text-lg font-bold mb-2">Keep Up the Great Work! 🎉</h3>
                   <p className="text-emerald-100">
                     You've been consistently tracking your progress for {daysDifference} days. 
@@ -161,7 +161,7 @@ export function PhotoComparisonModal({
               )}
 
               <div className="mt-6">
-                <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-white max-w-md mx-auto">
+                <div className="bg-linear-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-white max-w-md mx-auto">
                   <h3 className="text-lg font-bold mb-2">Your Journey Starts Now! 🚀</h3>
                   <p className="text-emerald-100">
                     This is your first progress photo. Keep taking photos regularly to see your amazing transformation!
@@ -181,7 +181,7 @@ export function PhotoComparisonModal({
             </button>
             <button
               onClick={onClose}
-              className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform"
+              className="flex-1 py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform"
             >
               Continue Tracking
             </button>

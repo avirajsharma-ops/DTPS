@@ -297,11 +297,11 @@ export default function EnhancedFitnessTracker({ className = '', clientOnly = fa
 
   return (
     <div className={className}>
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-purple-50">
+      <Card className="border-0 shadow-lg bg-linear-to-br from-blue-50 to-purple-50">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500">
+              <div className="p-2 rounded-lg bg-linear-to-r from-blue-500 to-purple-500">
                 <Activity className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl font-bold">Fitness Tracker</span>
@@ -455,7 +455,7 @@ export default function EnhancedFitnessTracker({ className = '', clientOnly = fa
           <div className="text-center">
             <Button
               onClick={() => setShowDeviceList(!showDeviceList)}
-              className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
+              className="bg-linear-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
             >
               <Activity className="h-4 w-4 mr-2" />
               Connect Google Fit

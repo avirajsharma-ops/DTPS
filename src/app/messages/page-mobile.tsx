@@ -205,7 +205,7 @@ export default function MessagesPage() {
                 >
                   <ChevronLeft className="h-5 w-5 text-gray-700" />
                 </button>
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
+                <div className="h-10 w-10 rounded-full bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
                   {currentChat?.user.avatar ? (
                     <img src={currentChat.user.avatar} alt="" className="h-full w-full rounded-full object-cover" />
                   ) : (
@@ -250,7 +250,7 @@ export default function MessagesPage() {
                     <div
                       className={`rounded-2xl px-4 py-2 ${
                         isSent
-                          ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
+                          ? 'bg-linear-to-br from-emerald-500 to-teal-600 text-white'
                           : 'bg-white text-gray-900 shadow-sm'
                       }`}
                     >
@@ -296,7 +296,7 @@ export default function MessagesPage() {
               <button
                 onClick={sendMessage}
                 disabled={!newMessage.trim() || sending}
-                className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform disabled:opacity-50"
+                className="h-10 w-10 rounded-full bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform disabled:opacity-50"
               >
                 <Send className="h-5 w-5 text-white" />
               </button>
@@ -347,7 +347,7 @@ export default function MessagesPage() {
               className="w-full bg-white rounded-2xl shadow-sm p-4 flex items-center space-x-3 active:scale-98 transition-transform"
             >
               <div className="relative">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
+                <div className="h-12 w-12 rounded-full bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
                   {conv.user.avatar ? (
                     <img src={conv.user.avatar} alt="" className="h-full w-full rounded-full object-cover" />
                   ) : (
@@ -395,7 +395,7 @@ export default function MessagesPage() {
             <span className="text-xs font-medium">Food</span>
           </Link>
           <button className="flex flex-col items-center justify-center -mt-6">
-            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+            <div className="h-14 w-14 rounded-full bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
               <Plus className="h-7 w-7 text-white" />
             </div>
           </button>

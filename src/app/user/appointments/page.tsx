@@ -256,7 +256,7 @@ export default function UserAppointmentsPage() {
       <div className="px-4 py-4 space-y-4">
         {/* Next Appointment Highlight */}
         {upcomingAppointments.length > 0 && (
-          <Card className="border-0 shadow-sm bg-gradient-to-r from-[#3AB1A0]/10 to-[#3AB1A0]/20">
+          <Card className="border-0 shadow-sm bg-linear-to-r from-[#3AB1A0]/10 to-[#3AB1A0]/20">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle className="h-4 w-4 text-[#3AB1A0]" />

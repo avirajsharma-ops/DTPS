@@ -574,7 +574,7 @@ export default function AdminServicePlansPage() {
                     <Label className="text-sm text-gray-500">Pricing Options</Label>
                     <div className="space-y-1">
                       {plan.pricingTiers.filter(t => t.isActive).map((tier, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-2 border border-green-100">
+                        <div key={idx} className="flex items-center justify-between bg-linear-to-r from-green-50 to-blue-50 rounded-lg p-2 border border-green-100">
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-green-600" />
                             <span className="text-sm font-medium">{tier.durationLabel}</span>

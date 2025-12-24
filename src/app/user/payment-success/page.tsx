@@ -177,7 +177,7 @@ export default function PaymentSuccessPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-green-50 to-teal-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-linear-to-br from-green-50 to-teal-50 flex items-center justify-center z-50">
         <div className="text-center">
           <SpoonGifLoader size="lg" />
           <p className="text-gray-600 mt-4">Loading payment details...</p>
@@ -188,7 +188,7 @@ export default function PaymentSuccessPage() {
 
   if (!payment) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-green-50 to-teal-50 flex items-center justify-center p-4">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Payment details not found</p>
           <button
@@ -203,7 +203,7 @@ export default function PaymentSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 py-8 px-4">
+    <div className="min-h-screen bg-linear-to-br from-green-50 to-teal-50 py-8 px-4">
       <div className="max-w-lg mx-auto">
         {/* Success Animation */}
         <div className="text-center mb-6">
@@ -217,7 +217,7 @@ export default function PaymentSuccessPage() {
         {/* Receipt Card */}
         <div ref={receiptRef} className="bg-white rounded-3xl shadow-xl overflow-hidden mb-6">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#E06A26] to-[#DB9C6E] p-6 text-white">
+          <div className="bg-linear-to-r from-[#E06A26] to-[#DB9C6E] p-6 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -351,7 +351,7 @@ export default function PaymentSuccessPage() {
 
           <button
             onClick={() => router.push('/user/subscriptions')}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#E06A26] to-[#DB9C6E] text-white font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all"
+            className="w-full py-4 rounded-2xl bg-linear-to-r from-[#E06A26] to-[#DB9C6E] text-white font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all"
           >
             View My Subscriptions
             <ArrowRight className="h-5 w-5" />

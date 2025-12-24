@@ -73,7 +73,7 @@ export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEnt
 
   return (
     <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
-           <CardHeader className="bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
+           <CardHeader className="bg-linear-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
         <CardTitle className="text-lg sm:text-xl font-bold text-white">24h Dietary Recall</CardTitle>
         <CardDescription className="text-blue-100 text-sm">Record foods consumed in the past 24 hours</CardDescription>
       </CardHeader>

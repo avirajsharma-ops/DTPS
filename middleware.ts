@@ -20,7 +20,7 @@ export default withAuth(
           ? '/dashboard/dietitian'
           : userRole === 'client'
           ? '/user'
-          : '/auth/signin';
+          : '/client-auth/signin';
         return NextResponse.redirect(new URL(redirectPath, req.url));
       }
     }
@@ -34,13 +34,15 @@ export default withAuth(
         // Redirect to appropriate dashboard
         const redirectPath = userRole === 'client'
           ? '/user'
-          : '/auth/signin';
+          : '/client-auth/signin';
         return NextResponse.redirect(new URL(redirectPath, req.url));
       }
     }
     
     // Client/User routes - only for clients (NOT for admin or dietitian)
-    if (pathname.startsWith('/user') || pathname.startsWith('/dashboard/client') || pathname.startsWith('/client-dashboard')) {
+    // Skip auth routes that are under /user but should be publicly accessible
+    const isUserPublicRoute = pathname === '/user/forget-password' || pathname === '/user/reset-password';
+    if (!isUserPublicRoute && (pathname.startsWith('/user') || pathname.startsWith('/dashboard/client') || pathname.startsWith('/client-dashboard'))) {
       if (userRole !== 'client') {
         console.log('Client access denied. Role:', token?.role);
         // Redirect to appropriate dashboard
@@ -48,7 +50,7 @@ export default withAuth(
           ? '/dashboard/dietitian'
           : userRole === 'admin'
           ? '/admin'
-          : '/auth/signin';
+          : '/client-auth/signin';
         return NextResponse.redirect(new URL(redirectPath, req.url));
       }
     }
@@ -63,13 +65,24 @@ export default withAuth(
 
         // Public routes that don't require authentication
         const publicRoutes = [
-          '/',
           '/auth/signin',
           '/auth/signup',
           '/auth/error',
           '/api/auth',
+          '/api/user/forget-password',
+          '/api/user/reset-password',
           '/client-login',
+          '/user/forget-password',
+          '/user/reset-password',
+          '/client-auth/signin',
+          '/client-auth/signup',
+          '/client-auth/onboarding',
         ];
+        
+        // Exact match for home page
+        if (pathname === '/') {
+          return true;
+        }
 
         // Check if the route is public
         const isPublicRoute = publicRoutes.some(route => 

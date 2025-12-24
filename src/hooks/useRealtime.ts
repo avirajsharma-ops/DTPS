@@ -59,13 +59,10 @@ class GlobalSSEManager {
     this.connectionStates.set(userId, 'connecting');
     
     const connectionPromise = new Promise<EventSource>((resolve, reject) => {
-      console.log('Creating new SSE connection for user:', userId);
-      
       try {
         const eventSource = new EventSource('/api/realtime/sse');
         
         eventSource.onopen = () => {
-          console.log('SSE connection opened for user:', userId);
           this.connections.set(userId, eventSource);
           this.connectionStates.set(userId, 'connected');
           this.connectionPromises.delete(userId);
@@ -73,31 +70,33 @@ class GlobalSSEManager {
           // Set up heartbeat to keep connection alive
           const heartbeatInterval = setInterval(() => {
             if (eventSource.readyState === EventSource.CLOSED) {
-              console.log('SSE connection closed, clearing heartbeat');
               clearInterval(heartbeatInterval);
-            } else {
-              console.log('SSE heartbeat - connection alive');
             }
+            // Silently keep connection alive - no need to log every heartbeat
           }, 30000); // Check every 30 seconds
 
           resolve(eventSource);
         };
 
-        eventSource.onerror = (error) => {
-          console.error('SSE connection error for user:', userId, error);
-          console.log('SSE readyState:', eventSource.readyState);
-
-          // Only reject if this is a permanent error (readyState 2 = CLOSED)
+        eventSource.onerror = () => {
+          // EventSource automatically attempts to reconnect on error
+          // Only log if connection is permanently closed (readyState 2 = CLOSED)
           if (eventSource.readyState === EventSource.CLOSED) {
-            console.log('SSE connection permanently closed, cleaning up');
+            console.warn('SSE connection closed for user:', userId, '- Will attempt to reconnect');
             this.connectionStates.set(userId, 'disconnected');
             this.connectionPromises.delete(userId);
             this.connections.delete(userId);
-            reject(error);
-          } else {
-            console.log('SSE connection error but not closed, keeping connection alive');
-            // Don't reject, let the connection attempt to recover
+            
+            // Notify subscribers about disconnection
+            const subscribers = this.subscribers.get(userId);
+            if (subscribers) {
+              subscribers.forEach(callback => callback({ type: 'connection_closed', data: null }));
+            }
+            
+            reject(new Error('SSE connection closed'));
           }
+          // If readyState is CONNECTING (0), EventSource is automatically reconnecting
+          // No need to log - this is normal behavior
         };
 
         // Set up message forwarding to subscribers

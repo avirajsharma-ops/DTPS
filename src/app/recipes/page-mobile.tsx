@@ -124,7 +124,7 @@ export default function RecipesListMobile() {
                 {/* First recipe - Large featured card */}
                 {index === 0 ? (
                   <div className="relative">
-                    <div className="relative h-56 w-full bg-gradient-to-br from-amber-100 to-orange-100">
+                    <div className="relative h-56 w-full bg-linear-to-br from-amber-100 to-orange-100">
                       {recipe.image ? (
                         <img
                           src={recipe.image}
@@ -154,8 +154,8 @@ export default function RecipesListMobile() {
                         {recipe.name}
                       </h3>
                     </div>
-                    <div className="flex-shrink-0">
-                      <div className="relative h-20 w-28 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden">
+                    <div className="shrink-0">
+                      <div className="relative h-20 w-28 bg-linear-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden">
                         {recipe.image ? (
                           <img
                             src={recipe.image}

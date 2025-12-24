@@ -86,7 +86,7 @@ export function AddMeasurementModal({ isOpen, onClose, onAdd }: AddMeasurementMo
     >
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden my-auto">
         {/* Header - Sticky */}
-        <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-100 bg-white">
+        <div className="shrink-0 flex items-center justify-between p-6 border-b border-gray-100 bg-white">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Add Measurement</h2>
             <p className="text-sm text-gray-500 mt-1">Track your body measurements</p>
@@ -119,7 +119,7 @@ export function AddMeasurementModal({ isOpen, onClose, onAdd }: AddMeasurementMo
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                   }`}
                 >
-                  <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${type.color} flex items-center justify-center text-white mx-auto mb-3 shadow-lg`}>
+                  <div className={`h-12 w-12 rounded-xl bg-linear-to-br ${type.color} flex items-center justify-center text-white mx-auto mb-3 shadow-lg`}>
                     <type.icon className="h-6 w-6" />
                   </div>
                   <p className="text-sm font-bold text-gray-900">{type.label}</p>
@@ -161,7 +161,7 @@ export function AddMeasurementModal({ isOpen, onClose, onAdd }: AddMeasurementMo
           </div>
 
           {/* Action Buttons - Sticky Footer */}
-          <div className="flex-shrink-0 flex space-x-3 p-6 border-t border-gray-100 bg-white">
+          <div className="shrink-0 flex space-x-3 p-6 border-t border-gray-100 bg-white">
             <button
               type="button"
               onClick={onClose}
@@ -172,7 +172,7 @@ export function AddMeasurementModal({ isOpen, onClose, onAdd }: AddMeasurementMo
             <button
               type="submit"
               disabled={!selectedType || !value || loading}
-              className="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:from-emerald-600 hover:to-teal-700 transition-all"
+              className="flex-1 py-3 px-4 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:from-emerald-600 hover:to-teal-700 transition-all"
             >
               {loading ? 'Adding...' : 'Add Measurement'}
             </button>

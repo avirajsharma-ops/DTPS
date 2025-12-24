@@ -140,7 +140,7 @@ export default function RecentActivityPage() {
               <div className="space-y-3">
                 {activities.map((activity) => (
                   <div key={activity.id} className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="flex-shrink-0 mt-1">
+                    <div className="shrink-0 mt-1">
                       {getActivityIcon(activity.type)}
                     </div>
                     <div className="flex-1 min-w-0">

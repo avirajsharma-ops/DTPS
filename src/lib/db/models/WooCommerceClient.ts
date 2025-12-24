@@ -18,7 +18,7 @@ export interface IWooCommerceOrder {
 
 // WooCommerce Client interface
 export interface IWooCommerceClient extends Document {
-  _id: string;
+  _id: import('mongoose').Types.ObjectId;
   name: string;
   email: string;
   password: string;

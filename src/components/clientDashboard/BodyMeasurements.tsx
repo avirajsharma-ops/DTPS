@@ -294,7 +294,7 @@ export default function BodyMeasurements({ clientId, onUpdate }: BodyMeasurement
         >
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden my-auto">
             {/* Header - Sticky */}
-            <div className="flex-shrink-0 p-6 border-b border-gray-100 bg-white">
+            <div className="shrink-0 p-6 border-b border-gray-100 bg-white">
               <h3 className="text-xl font-bold text-gray-900 mb-2">Add New Measurements</h3>
               <p className="text-sm text-gray-500">
                 Recording for: {format(new Date(), 'MMMM d, yyyy')}
@@ -331,7 +331,7 @@ export default function BodyMeasurements({ clientId, onUpdate }: BodyMeasurement
             </div>
 
             {/* Footer - Sticky */}
-            <div className="flex-shrink-0 flex gap-3 p-6 border-t border-gray-100 bg-white">
+            <div className="shrink-0 flex gap-3 p-6 border-t border-gray-100 bg-white">
               <Button
                 variant="outline"
                 className="flex-1"

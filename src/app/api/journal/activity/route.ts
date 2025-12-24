@@ -241,13 +241,26 @@ export async function PATCH(request: NextRequest) {
         'activities._id': entryId 
       },
       { 
-        $set: { 'activities.$.completed': completed !== false } 
+        $set: { 
+          'activities.$.completed': completed !== false,
+          'activities.$.completedAt': completed !== false ? new Date() : undefined
+        } 
       },
       { new: true }
     );
 
     if (!journal) {
       return NextResponse.json({ error: 'Activity entry not found' }, { status: 404 });
+    }
+
+    // Check if all assigned activities are completed
+    if (journal.assignedActivities && journal.assignedActivities.activities?.length > 0) {
+      const allCompleted = journal.activities.every((a: any) => a.completed === true);
+      if (allCompleted && !journal.assignedActivities.isCompleted) {
+        journal.assignedActivities.isCompleted = true;
+        journal.assignedActivities.completedAt = new Date();
+        await journal.save();
+      }
     }
 
     return NextResponse.json({

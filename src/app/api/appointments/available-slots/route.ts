@@ -48,9 +48,9 @@ export async function GET(request: NextRequest) {
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayName = dayNames[dayOfWeek];
 
-    // Find the schedule for this day of week
-    const daySchedule = availability.find((avail: any) => avail.day === dayName);
-    if (!daySchedule) {
+    // Find ALL schedules for this day of week (can have multiple slots like morning + afternoon)
+    const daySchedules = availability.filter((avail: any) => avail.day === dayName);
+    if (!daySchedules || daySchedules.length === 0) {
       return NextResponse.json({ availableSlots: [] });
     }
 
@@ -70,50 +70,55 @@ export async function GET(request: NextRequest) {
       status: { $in: ['scheduled', 'confirmed'] }
     }).select('scheduledAt duration');
 
-    // Generate available time slots
+    // Generate available time slots from ALL day schedules
     const availableSlots: string[] = [];
     const consultationDuration = duration || 60;
     const bufferTime = 15; // 15 minutes buffer between appointments
 
-    // Parse start and end times from the day schedule
-    const [startHour, startMinute] = daySchedule.startTime.split(':').map(Number);
-    const [endHour, endMinute] = daySchedule.endTime.split(':').map(Number);
+    // Process each schedule for the day (e.g., morning 10-13, afternoon 14-18)
+    for (const daySchedule of daySchedules) {
+      // Parse start and end times from the day schedule
+      const [startHour, startMinute] = daySchedule.startTime.split(':').map(Number);
+      const [endHour, endMinute] = daySchedule.endTime.split(':').map(Number);
 
-    const slotStart = new Date(requestedDate);
-    slotStart.setHours(startHour, startMinute, 0, 0);
+      const slotStart = new Date(requestedDate);
+      slotStart.setHours(startHour, startMinute, 0, 0);
 
-    const slotEnd = new Date(requestedDate);
-    slotEnd.setHours(endHour, endMinute, 0, 0);
+      const slotEnd = new Date(requestedDate);
+      slotEnd.setHours(endHour, endMinute, 0, 0);
 
-    // Generate time slots within this time range
-    let currentTime = new Date(slotStart);
+      // Generate time slots within this time range
+      let currentTime = new Date(slotStart);
 
-    while (currentTime.getTime() + (consultationDuration * 60 * 1000) <= slotEnd.getTime()) {
-      const appointmentEnd = new Date(currentTime.getTime() + (consultationDuration * 60 * 1000));
+      while (currentTime.getTime() + (consultationDuration * 60 * 1000) <= slotEnd.getTime()) {
+        const appointmentEnd = new Date(currentTime.getTime() + (consultationDuration * 60 * 1000));
 
-      // Check if this slot conflicts with existing appointments
-      const hasConflict = existingAppointments.some(appointment => {
-        const appointmentStart = new Date(appointment.scheduledAt);
-        const appointmentEndTime = new Date(appointmentStart.getTime() + (appointment.duration * 60 * 1000));
+        // Check if this slot conflicts with existing appointments
+        const hasConflict = existingAppointments.some(appointment => {
+          const appointmentStart = new Date(appointment.scheduledAt);
+          const appointmentEndTime = new Date(appointmentStart.getTime() + (appointment.duration * 60 * 1000));
 
-        // Check for overlap (including buffer time)
-        const bufferStart = new Date(currentTime.getTime() - (bufferTime * 60 * 1000));
-        const bufferEnd = new Date(appointmentEnd.getTime() + (bufferTime * 60 * 1000));
+          // Check for overlap (including buffer time)
+          const bufferStart = new Date(currentTime.getTime() - (bufferTime * 60 * 1000));
+          const bufferEnd = new Date(appointmentEnd.getTime() + (bufferTime * 60 * 1000));
 
-        return (bufferStart < appointmentEndTime && bufferEnd > appointmentStart);
-      });
+          return (bufferStart < appointmentEndTime && bufferEnd > appointmentStart);
+        });
 
-      if (!hasConflict) {
-        // Check if slot is not in the past
-        const now = new Date();
-        if (currentTime > now) {
-          const timeString = currentTime.toTimeString().slice(0, 5); // HH:MM format
-          availableSlots.push(timeString);
+        if (!hasConflict) {
+          // Check if slot is not in the past
+          const now = new Date();
+          if (currentTime > now) {
+            const timeString = currentTime.toTimeString().slice(0, 5); // HH:MM format
+            if (!availableSlots.includes(timeString)) {
+              availableSlots.push(timeString);
+            }
+          }
         }
-      }
 
-      // Move to next slot (every 15 minutes)
-      currentTime = new Date(currentTime.getTime() + (15 * 60 * 1000));
+        // Move to next slot (every 15 minutes)
+        currentTime = new Date(currentTime.getTime() + (15 * 60 * 1000));
+      }
     }
 
     return NextResponse.json({

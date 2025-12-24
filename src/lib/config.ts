@@ -1,0 +1,40 @@
+// Application configuration
+// This file contains configuration constants for the application
+
+// Production URL - used for payment links, callbacks, etc.
+export const PRODUCTION_URL = 'https://dtps.tech';
+
+/**
+ * Get the base URL for the application
+ * In production, always use the production URL
+ * In development, use localhost
+ */
+export function getBaseUrl(): string {
+  // Check if we're in production (using environment variable or Node env)
+  const isProduction = process.env.NODE_ENV === 'production' || 
+                       process.env.VERCEL_ENV === 'production' ||
+                       process.env.NEXTAUTH_URL?.includes('dtps.tech');
+  
+  if (isProduction) {
+    return PRODUCTION_URL;
+  }
+  
+  // In development, use NEXTAUTH_URL or fallback to localhost
+  return process.env.NEXTAUTH_URL || 'http://localhost:3000';
+}
+
+/**
+ * Get URL for payment callbacks
+ * Always uses production URL for Razorpay callbacks since
+ * these need to be accessible from Razorpay servers
+ */
+export function getPaymentCallbackUrl(path: string = '/user?payment_success=true'): string {
+  // For payment callbacks in production, always use production URL
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction) {
+    return `${PRODUCTION_URL}${path}`;
+  }
+  
+  return `${getBaseUrl()}${path}`;
+}

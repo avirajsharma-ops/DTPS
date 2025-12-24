@@ -249,7 +249,7 @@ export function FoodDatabasePanel({
 <div className="fixed left-0 top-0 h-full w-1/2 bg-white shadow-2xl z-120 flex flex-col animate-slide-in">
 
         {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white flex-shrink-0">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shrink-0">
       <div className="flex items-center gap-3">
             <Button
               variant="ghost"

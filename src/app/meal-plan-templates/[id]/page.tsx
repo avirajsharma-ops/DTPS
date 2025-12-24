@@ -197,23 +197,23 @@ export default function MealPlanTemplateViewPage() {
               <CardContent className="space-y-6">
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                  <div className="bg-linear-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
                     <div className="text-xs text-blue-600 font-medium mb-1">Category</div>
                     <Badge className={`${getCategoryColor(template.category)} border`}>
                       {formatCategoryName(template.category)}
                     </Badge>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
+                  <div className="bg-linear-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
                     <div className="text-xs text-purple-600 font-medium mb-1">Duration</div>
                     <div className="text-lg font-bold text-purple-800">{template.duration} Days</div>
                   </div>
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
+                  <div className="bg-linear-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
                     <div className="text-xs text-orange-600 font-medium mb-1">Difficulty</div>
                     <Badge className={getDifficultyColor(template.difficulty || 'intermediate')}>
                       {(template.difficulty || 'Intermediate').charAt(0).toUpperCase() + (template.difficulty || 'intermediate').slice(1)}
                     </Badge>
                   </div>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                  <div className="bg-linear-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
                     <div className="text-xs text-green-600 font-medium mb-1">Usage Count</div>
                     <div className="text-lg font-bold text-green-800">{template.usageCount || 0}</div>
                   </div>

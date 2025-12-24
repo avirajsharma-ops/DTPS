@@ -224,7 +224,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
 
   return (
     <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
+          <CardHeader className="bg-linear-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
         <CardTitle className="text-lg sm:text-xl font-bold text-white">Medical Information</CardTitle>
         <CardDescription className="text-blue-100 text-sm">Health conditions and dietary restrictions</CardDescription>
       </CardHeader>

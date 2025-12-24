@@ -250,7 +250,7 @@ export default function PersonalInfoPage() {
   const heightDisplay = cmToFeetInches(data.heightCm);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 via-white to-[#3AB1A0]/10">
+    <div className="min-h-screen bg-linear-to-br from-[#3AB1A0]/10 via-white to-[#3AB1A0]/10">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
@@ -290,7 +290,7 @@ export default function PersonalInfoPage() {
                 className="w-28 h-28 rounded-2xl border-4 border-[#3AB1A0]/20 object-cover shadow-xl"
               />
             ) : (
-              <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-[#3AB1A0] to-[#2a9989] flex items-center justify-center border-4 border-[#3AB1A0]/20 shadow-xl">
+              <div className="w-28 h-28 rounded-2xl bg-linear-to-br from-[#3AB1A0] to-[#2a9989] flex items-center justify-center border-4 border-[#3AB1A0]/20 shadow-xl">
                 <span className="text-3xl font-bold text-white">
                   {getInitials(data.firstName, data.lastName)}
                 </span>

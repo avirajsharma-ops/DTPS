@@ -43,7 +43,7 @@ export default function OnboardingPage() {
 
     if (status === 'loading') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 flex items-center justify-center">
+            <div className="min-h-screen bg-linear-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 flex items-center justify-center">
                 <SpoonGifLoader size="md" text="Loading..." />
             </div>
         );
@@ -51,7 +51,7 @@ export default function OnboardingPage() {
 
     // if (!session?.user) {
     //     return (
-    //         <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 flex items-center justify-center">
+    //         <div className="min-h-screen bg-linear-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 flex items-center justify-center">
     //             <Card className="w-full max-w-md">
     //                 <CardContent className="pt-6 text-center">
     //                     <p className="text-gray-600 mb-4">Please sign in to continue onboarding</p>
@@ -115,7 +115,7 @@ export default function OnboardingPage() {
     }[currentStep];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 p-4">
+        <div className="min-h-screen bg-linear-to-br from-[#3AB1A0]/10 to-[#E06A26]/5 p-4">
             {/* Progress Bar */}
             <div className="mb-8">
                 <div className="h-1 bg-gray-200 rounded-full overflow-hidden">

@@ -76,7 +76,7 @@ export function MeasurementSummaryModal({
           </button>
           
           <div className="text-center">
-            <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${config?.color || 'from-gray-400 to-gray-500'} flex items-center justify-center text-white mx-auto mb-4`}>
+            <div className={`h-16 w-16 rounded-2xl bg-linear-to-br ${config?.color || 'from-gray-400 to-gray-500'} flex items-center justify-center text-white mx-auto mb-4`}>
               <Icon className="h-8 w-8" />
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-1">
@@ -157,7 +157,7 @@ export function MeasurementSummaryModal({
           {/* Action Button */}
           <button
             onClick={onClose}
-            className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform"
+            className="w-full py-3 bg-linear-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform"
           >
             Continue Tracking
           </button>

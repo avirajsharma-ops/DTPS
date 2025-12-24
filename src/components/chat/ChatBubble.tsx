@@ -287,7 +287,7 @@ export function ChatBubble({
       )}>
         {/* Avatar for received messages */}
         {!isOwn && showAvatar && (
-          <Avatar className="w-8 h-8 flex-shrink-0">
+          <Avatar className="w-8 h-8 shrink-0">
             <AvatarImage src={message.sender.avatar} />
             <AvatarFallback className="text-xs">
               {message.sender.firstName[0]}{message.sender.lastName[0]}
@@ -394,7 +394,7 @@ export function TypingIndicator({
 }) {
   return (
     <div className={cn("flex items-end space-x-2 mb-4", className)}>
-      <Avatar className="w-8 h-8 flex-shrink-0">
+      <Avatar className="w-8 h-8 shrink-0">
         <AvatarImage src={user.avatar} />
         <AvatarFallback className="text-xs">
           {user.firstName[0]}{user.lastName[0]}

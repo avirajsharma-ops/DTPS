@@ -87,7 +87,7 @@ export async function GET(request: Request) {
             water: journal?.assignedWater?.amount ? {
                 amount: journal.assignedWater.amount,
                 assignedAt: journal.assignedWater.assignedAt,
-                isCompleted: journal.assignedWater.isCompleted || false,
+                isCompleted: journal.assignedWater.isCompleted || currentWater >= journal.assignedWater.amount,
                 completedAt: journal.assignedWater.completedAt,
                 currentIntake: currentWater
             } : null,

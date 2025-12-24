@@ -58,8 +58,11 @@ interface DashboardData {
   caloriesLeft: number;
   caloriesGoal: number;
   protein: number;
+  proteinGoal: number;
   carbs: number;
+  carbsGoal: number;
   fat: number;
+  fatGoal: number;
   water: { current: number; goal: number };
   sleep: { hours: number; minutes: number; quality: number };
   activity: { minutes: number; active: boolean };
@@ -112,8 +115,11 @@ export default function UserHomePage() {
     caloriesLeft: 0,
     caloriesGoal: 2000,
     protein: 0,
+    proteinGoal: 120,
     carbs: 0,
+    carbsGoal: 250,
     fat: 0,
+    fatGoal: 65,
     water: { current: 0, goal: 2500 },
     sleep: { hours: 0, minutes: 0, quality: 0 },
     activity: { minutes: 0, active: false },
@@ -171,7 +177,13 @@ export default function UserHomePage() {
 
       // Calculate calories from meal plan and food log
       let caloriesGoal = 2000; // Default goal
+      let proteinGoal = 120; // Default protein goal in grams
+      let carbsGoal = 250; // Default carbs goal in grams
+      let fatGoal = 65; // Default fat goal in grams
       let caloriesConsumed = 0;
+      let proteinConsumed = 0;
+      let carbsConsumed = 0;
+      let fatConsumed = 0;
       let mealsEaten = 0;
       let totalMeals = 4;
 
@@ -182,13 +194,20 @@ export default function UserHomePage() {
           caloriesGoal = mealPlanData.totalCalories || mealPlanData.planDetails?.customizations?.targetCalories || 2000;
           totalMeals = mealPlanData.meals?.length || 4;
           
+          // Get macros goals from plan
+          proteinGoal = mealPlanData.planDetails?.customizations?.proteinGoal || 120;
+          carbsGoal = mealPlanData.planDetails?.customizations?.carbsGoal || 250;
+          fatGoal = mealPlanData.planDetails?.customizations?.fatGoal || 65;
+          
           // Count completed meals
           mealsEaten = (mealPlanData.meals || []).filter((meal: any) => meal.isCompleted).length;
           
-          // Calculate calories from completed meals
-          caloriesConsumed = (mealPlanData.meals || [])
-            .filter((meal: any) => meal.isCompleted)
-            .reduce((sum: number, meal: any) => sum + (meal.totalCalories || 0), 0);
+          // Calculate calories and macros from completed meals
+          const completedMeals = (mealPlanData.meals || []).filter((meal: any) => meal.isCompleted);
+          caloriesConsumed = completedMeals.reduce((sum: number, meal: any) => sum + (meal.totalCalories || 0), 0);
+          proteinConsumed = completedMeals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
+          carbsConsumed = completedMeals.reduce((sum: number, meal: any) => sum + (meal.carbs || 0), 0);
+          fatConsumed = completedMeals.reduce((sum: number, meal: any) => sum + (meal.fat || 0), 0);
         }
       }
 
@@ -196,14 +215,26 @@ export default function UserHomePage() {
       if (foodLogRes.ok) {
         const foodLogData = await foodLogRes.json();
         if (foodLogData.success && foodLogData.entries) {
-          const foodLogCalories = (foodLogData.entries || [])
-            .reduce((sum: number, entry: any) => sum + (entry.calories || 0), 0);
+          const entries = foodLogData.entries || [];
+          const foodLogCalories = entries.reduce((sum: number, entry: any) => sum + (entry.calories || 0), 0);
+          const foodLogProtein = entries.reduce((sum: number, entry: any) => sum + (entry.protein || 0), 0);
+          const foodLogCarbs = entries.reduce((sum: number, entry: any) => sum + (entry.carbs || 0), 0);
+          const foodLogFat = entries.reduce((sum: number, entry: any) => sum + (entry.fat || 0), 0);
           caloriesConsumed += foodLogCalories;
+          proteinConsumed += foodLogProtein;
+          carbsConsumed += foodLogCarbs;
+          fatConsumed += foodLogFat;
         }
       }
 
       newData.caloriesGoal = caloriesGoal;
       newData.caloriesLeft = Math.max(0, caloriesGoal - caloriesConsumed);
+      newData.protein = proteinConsumed;
+      newData.proteinGoal = proteinGoal;
+      newData.carbs = carbsConsumed;
+      newData.carbsGoal = carbsGoal;
+      newData.fat = fatConsumed;
+      newData.fatGoal = fatGoal;
       newData.meals = { eaten: mealsEaten, total: totalMeals, calories: caloriesConsumed };
 
       setData(newData);
@@ -446,7 +477,7 @@ export default function UserHomePage() {
       {/* Main Content */}
       <div className="px-6 py-4 space-y-4 ">
         {/* Calories Card */}
-        <div className="bg-gradient-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/20 rounded-3xl p-5 shadow-sm border border-[#3AB1A0]/10">
+        <div className="bg-linear-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/20 rounded-3xl p-5 shadow-sm border border-[#3AB1A0]/10">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Calories Left</p>
@@ -498,24 +529,42 @@ export default function UserHomePage() {
           {/* Macros */}
           <div className="grid grid-cols-3 gap-4 mt-6">
             <div>
-              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Protein</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Protein</p>
+                <p className="text-xs text-gray-400">/{data.proteinGoal}g</p>
+              </div>
               <p className="mt-1 text-xl font-bold text-gray-900">{data.protein}g</p>
               <div className="h-1.5 bg-white rounded-full mt-2 overflow-hidden">
-                <div className="h-full bg-[#3AB1A0] rounded-full" style={{ width: '60%' }} />
+                <div 
+                  className="h-full bg-[#3AB1A0] rounded-full transition-all duration-300" 
+                  style={{ width: `${Math.min((data.protein / data.proteinGoal) * 100, 100)}%` }} 
+                />
               </div>
             </div>
             <div>
-              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Carbs</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Carbs</p>
+                <p className="text-xs text-gray-400">/{data.carbsGoal}g</p>
+              </div>
               <p className="mt-1 text-xl font-bold text-gray-900">{data.carbs}g</p>
               <div className="h-1.5 bg-white rounded-full mt-2 overflow-hidden">
-                <div className="h-full bg-[#E06A26] rounded-full" style={{ width: '75%' }} />
+                <div 
+                  className="h-full bg-[#E06A26] rounded-full transition-all duration-300" 
+                  style={{ width: `${Math.min((data.carbs / data.carbsGoal) * 100, 100)}%` }} 
+                />
               </div>
             </div>
             <div>
-              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Fat</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Fat</p>
+                <p className="text-xs text-gray-400">/{data.fatGoal}g</p>
+              </div>
               <p className="mt-1 text-xl font-bold text-gray-900">{data.fat}g</p>
               <div className="h-1.5 bg-white rounded-full mt-2 overflow-hidden">
-                <div className="h-full bg-[#DB9C6E] rounded-full" style={{ width: '45%' }} />
+                <div 
+                  className="h-full bg-[#DB9C6E] rounded-full transition-all duration-300" 
+                  style={{ width: `${Math.min((data.fat / data.fatGoal) * 100, 100)}%` }} 
+                />
               </div>
             </div>
           </div>
@@ -537,35 +586,66 @@ export default function UserHomePage() {
           const currentPurchase = activePurchases[0];
           return (
           <div key={currentPurchase._id}>
-            {!currentPurchase.hasDietitian ? (
-              /* STATE 1: Plan Purchased, Waiting for Dietitian Assignment */
-              <div className="rounded-3xl bg-gradient-to-br from-[#E06A26]/10 to-[#DB9C6E]/10 p-6 shadow-sm border border-[#E06A26]/20">
+            {currentPurchase.mealPlanCreated ? (
+              /* STATE 3: Meal Plan Created - Full Details with actions */
+              <div className="rounded-3xl bg-linear-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20">
                 <div className="flex items-start gap-4">
-                  <div className="h-14 w-14 rounded-2xl flex items-center justify-center">
-                     <img
-                       src="/images/dtps-logo.png"
-                       alt="DTPS"
-                       loading="lazy"
-                       className="object-cover w-full h-full"
-                     />
+                  <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
+                    {currentPurchase.dietitian?.avatar ? (
+                      <img 
+                        src={currentPurchase.dietitian.avatar} 
+                        alt={currentPurchase.dietitian.name}
+                        loading="lazy"
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <UserCheck className="h-8 w-8 text-[#3AB1A0]" />
+                    )}
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900">Plan Purchased! 🎉</h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      You've successfully purchased <span className="font-semibold text-[#E06A26]">{currentPurchase.planName}</span>
-                    </p>
-                    <div className="mt-3 flex items-center gap-2 text-sm text-[#DB9C6E]">
-                      <Clock className="w-4 h-4" />
-                      <span>Dietitian will be assigned shortly...</span>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-gray-900">
+                        {currentPurchase.hasDietitian ? 'Your Dietitian' : 'Your Plan'}
+                      </h3>
+                      <span className="px-2 py-0.5 bg-[#3AB1A0] text-white text-xs font-semibold rounded-full">
+                        Active ✓
+                      </span>
                     </div>
-                    <p className="mt-2 text-xs text-gray-500">
-                      Our team is reviewing your profile and will assign the best dietitian for your goals.
-                    </p>
+                    {currentPurchase.hasDietitian && (
+                      <>
+                        <p className="text-base font-semibold text-[#3AB1A0] mt-1">
+                          {currentPurchase.dietitian?.name || 'Dietitian'}
+                        </p>
+                        {currentPurchase.dietitian?.email && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                            <Mail className="w-3 h-3" />
+                            <span>{currentPurchase.dietitian.email}</span>
+                          </div>
+                        )}
+                        {currentPurchase.dietitian?.phone && (
+                          <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                            <Phone className="w-3 h-3" />
+                            <span>{currentPurchase.dietitian.phone}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {!currentPurchase.hasDietitian && (
+                      <p className="text-base font-semibold text-[#3AB1A0] mt-1">
+                        {currentPurchase.planName}
+                      </p>
+                    )}
                   </div>
                 </div>
-                
-                {/* Plan Details - Only show duration, no dates until dietitian assigned */}
-                <div className="mt-4 pt-4 border-t border-[#E06A26]/10">
+
+                {/* Plan Info - Full Details */}
+                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Active Plan</span>
+                    <span className="px-3 py-1 bg-[#61a035]/15 text-[#61a035] text-xs font-semibold rounded-full">
+                      🟢 Active
+                    </span>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 bg-white/60 rounded-xl">
                       <p className="text-xs tracking-wide text-gray-500 uppercase">Plan</p>
@@ -575,13 +655,58 @@ export default function UserHomePage() {
                       <p className="text-xs tracking-wide text-gray-500 uppercase">Duration</p>
                       <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.durationDays} Days</p>
                     </div>
+                    {/* Show dates when meal plan is created */}
+                    {currentPurchase.startDate && (
+                      <div className="p-3 bg-white/60 rounded-xl">
+                        <p className="text-xs tracking-wide text-gray-500 uppercase">Start Date</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-800">
+                          {format(new Date(currentPurchase.startDate), 'dd MMM yyyy')}
+                        </p>
+                      </div>
+                    )}
+                    {currentPurchase.endDate && (
+                      <div className="p-3 bg-white/60 rounded-xl">
+                        <p className="text-xs tracking-wide text-gray-500 uppercase">End Date</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-800">
+                          {format(new Date(currentPurchase.endDate), 'dd MMM yyyy')}
+                        </p>
+                      </div>
+                    )}
                   </div>
-               
+                </div>
+
+                {/* Quick Actions - View Meal Plan, Message & Book Appointment */}
+                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link 
+                      href="/user/plan"
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2A9A8B] transition-colors"
+                    >
+                      <Utensils className="w-4 h-4" />
+                      <span>View Meal Plan</span>
+                    </Link>
+                    <Link 
+                      href="/user/messages"
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-[#3AB1A0] text-[#3AB1A0] rounded-xl text-sm font-semibold hover:bg-[#3AB1A0]/10 transition-colors"
+                    >
+                      <Mail className="w-4 h-4" />
+                      <span>Message</span>
+                    </Link>
+                  </div>
+                  {currentPurchase.hasDietitian && (
+                    <Link 
+                      href="/user/appointments/book"
+                      className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#E06A26] text-white rounded-xl text-sm font-semibold hover:bg-[#d55f1f] transition-colors"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      <span>Book Appointment</span>
+                    </Link>
+                  )}
                 </div>
               </div>
-            ) : !currentPurchase.mealPlanCreated ? (
+            ) : currentPurchase.hasDietitian ? (
               /* STATE 2: Dietitian Assigned but Meal Plan NOT Created Yet */
-              <div className="rounded-3xl bg-gradient-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20">
+              <div className="rounded-3xl bg-linear-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20">
                 <div className="flex items-start gap-4">
                   <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
                     {currentPurchase.dietitian?.avatar ? (
@@ -642,7 +767,7 @@ export default function UserHomePage() {
                   {/* Notice - Meal plan being prepared */}
                   <div className="p-4 mt-3 border bg-blue-50 rounded-xl border-blue-200">
                     <div className="flex items-start gap-3">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                         <Utensils className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
@@ -655,8 +780,8 @@ export default function UserHomePage() {
                   </div>
                 </div>
 
-                {/* Message Action Only */}
-                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
+                {/* Message & Book Appointment Actions */}
+                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10 space-y-3">
                   <Link 
                     href="/user/messages"
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2A9A8B] transition-colors"
@@ -664,57 +789,44 @@ export default function UserHomePage() {
                     <Mail className="w-4 h-4" />
                     <span>Message Your Dietitian</span>
                   </Link>
+                  <Link 
+                    href="/user/appointments/book"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#E06A26] text-white rounded-xl text-sm font-semibold hover:bg-[#d55f1f] transition-colors"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Book Appointment</span>
+                  </Link>
                 </div>
               </div>
             ) : (
-              /* STATE 3: Dietitian Assigned AND Meal Plan Created - Full Details */
-              <div className="rounded-3xl bg-gradient-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20">
+              /* STATE 1: Plan Purchased, Waiting for Dietitian Assignment */
+              <div className="rounded-3xl bg-linear-to-br from-[#E06A26]/10 to-[#DB9C6E]/10 p-6 shadow-sm border border-[#E06A26]/20">
                 <div className="flex items-start gap-4">
-                  <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
-                    {currentPurchase.dietitian?.avatar ? (
-                      <img 
-                        src={currentPurchase.dietitian.avatar} 
-                        alt={currentPurchase.dietitian.name}
-                        loading="lazy"
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <UserCheck className="h-8 w-8 text-[#3AB1A0]" />
-                    )}
+                  <div className="h-14 w-14 rounded-2xl flex items-center justify-center">
+                     <img
+                       src="/images/dtps-logo.png"
+                       alt="DTPS"
+                       loading="lazy"
+                       className="object-cover w-full h-full"
+                     />
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-gray-900">Your Dietitian</h3>
-                      <span className="px-2 py-0.5 bg-[#3AB1A0] text-white text-xs font-semibold rounded-full">
-                        Assigned ✓
-                      </span>
-                    </div>
-                    <p className="text-base font-semibold text-[#3AB1A0] mt-1">
-                      {currentPurchase.dietitian?.name || 'Dietitian'}
+                    <h3 className="text-lg font-bold text-gray-900">Plan Purchased! 🎉</h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      You've successfully purchased <span className="font-semibold text-[#E06A26]">{currentPurchase.planName}</span>
                     </p>
-                    {currentPurchase.dietitian?.email && (
-                      <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
-                        <Mail className="w-3 h-3" />
-                        <span>{currentPurchase.dietitian.email}</span>
-                      </div>
-                    )}
-                    {currentPurchase.dietitian?.phone && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                        <Phone className="w-3 h-3" />
-                        <span>{currentPurchase.dietitian.phone}</span>
-                      </div>
-                    )}
+                    <div className="mt-3 flex items-center gap-2 text-sm text-[#DB9C6E]">
+                      <Clock className="w-4 h-4" />
+                      <span>Dietitian will be assigned shortly...</span>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Our team is reviewing your profile and will assign the best dietitian for your goals.
+                    </p>
                   </div>
                 </div>
-
-                {/* Plan Info - Full Details */}
-                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">Active Plan</span>
-                    <span className="px-3 py-1 bg-[#61a035]/15 text-[#61a035] text-xs font-semibold rounded-full">
-                      🟢 Active
-                    </span>
-                  </div>
+                
+                {/* Plan Details - Only show duration, no dates until dietitian assigned */}
+                <div className="mt-4 pt-4 border-t border-[#E06A26]/10">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 bg-white/60 rounded-xl">
                       <p className="text-xs tracking-wide text-gray-500 uppercase">Plan</p>
@@ -724,42 +836,7 @@ export default function UserHomePage() {
                       <p className="text-xs tracking-wide text-gray-500 uppercase">Duration</p>
                       <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.durationDays} Days</p>
                     </div>
-                    {/* Show dates when meal plan is created */}
-                    {currentPurchase.startDate && (
-                      <div className="p-3 bg-white/60 rounded-xl">
-                        <p className="text-xs tracking-wide text-gray-500 uppercase">Start Date</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-800">
-                          {format(new Date(currentPurchase.startDate), 'dd MMM yyyy')}
-                        </p>
-                      </div>
-                    )}
-                    {currentPurchase.endDate && (
-                      <div className="p-3 bg-white/60 rounded-xl">
-                        <p className="text-xs tracking-wide text-gray-500 uppercase">End Date</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-800">
-                          {format(new Date(currentPurchase.endDate), 'dd MMM yyyy')}
-                        </p>
-                      </div>
-                    )}
                   </div>
-                </div>
-
-                {/* Quick Actions - View Meal Plan & Message */}
-                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10 grid grid-cols-2 gap-3">
-                  <Link 
-                    href="/user/plan"
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2A9A8B] transition-colors"
-                  >
-                    <Utensils className="w-4 h-4" />
-                    <span>View Meal Plan</span>
-                  </Link>
-                  <Link 
-                    href="/user/messages"
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-[#3AB1A0] text-[#3AB1A0] rounded-xl text-sm font-semibold hover:bg-[#3AB1A0]/10 transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                    <span>Message</span>
-                  </Link>
                 </div>
               </div>
             )}
@@ -885,7 +962,7 @@ export default function UserHomePage() {
               className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide"
             >
               {/* Card 1 - Nutrition Tips */}
-              <div className="min-w-full snap-start bg-gradient-to-br from-[#DB9C6E] to-[#c88b5d] rounded-3xl p-5 text-white">
+              <div className="min-w-full snap-start bg-linear-to-br from-[#DB9C6E] to-[#c88b5d] rounded-3xl p-5 text-white">
                 <h4 className="mb-4 text-lg font-bold">Nutrition Tips</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
@@ -906,7 +983,7 @@ export default function UserHomePage() {
               </div>
 
               {/* Card 2 - Fitness Goals */}
-              <div className="min-w-full snap-start bg-gradient-to-br from-[#DB9C6E] to-[#c88b5d] rounded-3xl p-5 text-white">
+              <div className="min-w-full snap-start bg-linear-to-br from-[#DB9C6E] to-[#c88b5d] rounded-3xl p-5 text-white">
                 <h4 className="mb-4 text-lg font-bold">Fitness Goals</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
@@ -927,7 +1004,7 @@ export default function UserHomePage() {
               </div>
 
               {/* Card 3 - Wellness */}
-              <div className="min-w-full snap-start bg-gradient-to-br from-[#DB9C6E] to-[#c88b5d] rounded-3xl p-5 text-white">
+              <div className="min-w-full snap-start bg-linear-to-br from-[#DB9C6E] to-[#c88b5d] rounded-3xl p-5 text-white">
                 <h4 className="mb-4 text-lg font-bold">Wellness & Rest</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
@@ -1175,7 +1252,7 @@ export default function UserHomePage() {
           <div className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
             {/* Blog Card 1 */}
             <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="relative h-32 bg-gradient-to-br from-amber-100 to-orange-100">
+              <div className="relative h-32 bg-linear-to-br from-amber-100 to-orange-100">
                 <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   NUTRITION
                 </span>
@@ -1197,7 +1274,7 @@ export default function UserHomePage() {
 
             {/* Blog Card 2 */}
             <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="h-32 bg-gradient-to-br from-[#3AB1A0]/20 to-[#3AB1A0]/10 relative">
+              <div className="h-32 bg-linear-to-br from-[#3AB1A0]/20 to-[#3AB1A0]/10 relative">
                 <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   FITNESS
                 </span>
@@ -1219,7 +1296,7 @@ export default function UserHomePage() {
 
             {/* Blog Card 3 */}
             <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="h-32 bg-gradient-to-br from-[#DB9C6E]/20 to-[#DB9C6E]/10 relative">
+              <div className="h-32 bg-linear-to-br from-[#DB9C6E]/20 to-[#DB9C6E]/10 relative">
                 <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   WELLNESS
                 </span>

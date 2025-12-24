@@ -74,7 +74,7 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   // Show loading state only on initial mount, not on route changes
   if (!mounted || status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#61a035]/10 to-[#3AB1A0]/10">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#61a035]/10 to-[#3AB1A0]/10">
         <SpoonGifLoader size="lg" text="Loading..." />
       </div>
     );
@@ -84,7 +84,7 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   if (status === 'unauthenticated') {
     router.push('/client-auth/signin');
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#61a035]/10 to-[#3AB1A0]/10">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#61a035]/10 to-[#3AB1A0]/10">
         <SpoonGifLoader size="lg" text="Redirecting..." />
       </div>
     );

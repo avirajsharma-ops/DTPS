@@ -116,6 +116,29 @@ export default function ActivitySection({ clientId, selectedDate, isClient = fal
     fetchAssignedActivities();
   }, [fetchActivities, fetchAssignedActivities]);
 
+  // Auto-refresh on visibility change and focus (when user comes back to tab/window)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchActivities();
+        fetchAssignedActivities();
+      }
+    };
+
+    const handleFocus = () => {
+      fetchActivities();
+      fetchAssignedActivities();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [fetchActivities, fetchAssignedActivities]);
+
   // Add activity to list for assignment
   const handleAddToActivityList = () => {
     if (!newAssignActivity.name) {
@@ -271,6 +294,9 @@ export default function ActivitySection({ clientId, selectedDate, isClient = fal
       if (data.success) {
         setActivities(data.activities || []);
         toast.success(completed ? 'Marked as incomplete' : 'Marked as completed!');
+        // Re-fetch to get updated summary and assigned status
+        fetchActivities();
+        fetchAssignedActivities();
       } else {
         toast.error(data.error || 'Failed to update status');
       }
@@ -316,7 +342,7 @@ export default function ActivitySection({ clientId, selectedDate, isClient = fal
     <div className="space-y-6 w-full">
       {/* Assign Activities to Client Card - Only for Dietitian */}
       {!isClient && (
-        <Card className="w-full border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
+        <Card className="w-full border-orange-200 bg-linear-to-r from-orange-50 to-amber-50">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-base">
               <Target className="h-4 w-4 text-orange-600" />
@@ -391,6 +417,64 @@ export default function ActivitySection({ clientId, selectedDate, isClient = fal
                 <p className="text-sm text-gray-600">
                   Add activities to assign to this client. They will see them on their Tasks page.
                 </p>
+
+                {/* Quick Activity Presets */}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActivityList([...activityList, { name: 'Walking', sets: 1, reps: 1, duration: 30, videoLink: '', completed: false }])}
+                    className="text-xs"
+                  >
+                    🚶 Walking 30min
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActivityList([...activityList, { name: 'Push-ups', sets: 3, reps: 15, duration: 10, videoLink: '', completed: false }])}
+                    className="text-xs"
+                  >
+                    💪 Push-ups 3x15
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActivityList([...activityList, { name: 'Squats', sets: 3, reps: 20, duration: 10, videoLink: '', completed: false }])}
+                    className="text-xs"
+                  >
+                    🏋️ Squats 3x20
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActivityList([...activityList, { name: 'Plank', sets: 3, reps: 1, duration: 5, videoLink: '', completed: false }])}
+                    className="text-xs"
+                  >
+                    🧘 Plank 3x1min
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActivityList([...activityList, { name: 'Jogging', sets: 1, reps: 1, duration: 20, videoLink: '', completed: false }])}
+                    className="text-xs"
+                  >
+                    🏃 Jogging 20min
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActivityList([...activityList, { name: 'Yoga', sets: 1, reps: 1, duration: 30, videoLink: '', completed: false }])}
+                    className="text-xs"
+                  >
+                    🧘‍♀️ Yoga 30min
+                  </Button>
+                </div>
 
                 {/* Activity Input Form */}
                 <div className="space-y-3 p-3 bg-white rounded-lg border border-orange-100">
@@ -513,22 +597,48 @@ export default function ActivitySection({ clientId, selectedDate, isClient = fal
           </div>
         </CardHeader>
         <CardContent>
-          {/* For Dietitian: Only show completed activities */}
+          {/* For Dietitian: Show ALL activities (both pending and completed) */}
           {!isClient ? (
-            completedActivities.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">No completed activities yet</p>
+            activities.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No activities recorded today</p>
             ) : (
               <div className="space-y-3">
-                {completedActivities.map((activity) => (
+                {/* Summary */}
+                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                  <span className="text-sm text-gray-600">
+                    Total: {activities.length} activities
+                  </span>
+                  <div className="flex gap-2">
+                    <Badge className="bg-green-100 text-green-700 text-xs">
+                      {completedActivities.length} Done
+                    </Badge>
+                    <Badge className="bg-orange-100 text-orange-700 text-xs">
+                      {pendingActivities.length} Pending
+                    </Badge>
+                  </div>
+                </div>
+                
+                {/* All Activities */}
+                {activities.map((activity) => (
                   <div
                     key={activity._id}
-                    className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100"
+                    className={`flex items-center justify-between p-3 rounded-lg border ${
+                      activity.completed 
+                        ? 'bg-green-50 border-green-100' 
+                        : 'bg-gray-50 border-gray-100'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      {activity.completed ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-gray-400" />
+                      )}
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-700">{activity.name}</p>
+                          <p className={`font-medium ${activity.completed ? 'text-gray-700' : 'text-gray-800'}`}>
+                            {activity.name}
+                          </p>
                           {activity.videoLink && (
                             <a
                               href={activity.videoLink}
@@ -546,7 +656,9 @@ export default function ActivitySection({ clientId, selectedDate, isClient = fal
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge className="bg-green-100 text-green-700 text-xs">Done</Badge>
+                      <Badge className={activity.completed ? "bg-green-100 text-green-700 text-xs" : "bg-orange-100 text-orange-700 text-xs"}>
+                        {activity.completed ? 'Done' : 'Pending'}
+                      </Badge>
                       <span className="text-xs text-gray-400">{activity.time}</span>
                       <Button
                         variant="ghost"
