@@ -254,6 +254,43 @@ export default function ActivityPage() {
         }
     };
 
+    // State for tracking which individual activity is being completed
+    const [completingActivityIndex, setCompletingActivityIndex] = useState<number | null>(null);
+
+    const handleCompleteIndividualActivity = async (index: number) => {
+        setCompletingActivityIndex(index);
+        try {
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            const response = await fetch('/api/client/tasks', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    taskType: 'activity',
+                    taskId: `activity-${index}`,
+                    date: dateStr,
+                    action: 'complete'
+                })
+            });
+
+            if (response.ok) {
+                toast.success('Activity marked as complete!');
+                // Refresh activity data
+                const newResponse = await fetch(`/api/client/activity?date=${dateStr}`);
+                if (newResponse.ok) {
+                    const newData = await newResponse.json();
+                    setActivityData(newData);
+                }
+            } else {
+                const error = await response.json();
+                toast.error(error.error || 'Failed to complete activity');
+            }
+        } catch (error) {
+            toast.error('Something went wrong');
+        } finally {
+            setCompletingActivityIndex(null);
+        }
+    };
+
     const fillPercent = Math.min((activityData.totalToday / activityData.goal) * 100, 100);
     const completionPercent = Math.round(fillPercent);
 
@@ -451,25 +488,41 @@ export default function ActivityPage() {
                                 </p>
                             </div>
 
-                            {activityData.assignedActivity.isCompleted ? (
-                                <div className="flex items-center gap-2 bg-[#3AB1A0] text-white px-4 py-2 rounded-full">
-                                    <Check className="w-5 h-5" />
-                                    <span className="font-semibold">Completed</span>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={handleCompleteActivity}
-                                    disabled={completingTask}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all bg-[#E06A26] text-white hover:bg-[#c55a1f]"
-                                >
-                                    {completingTask ? (
-                                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                                    ) : (
+                            {(() => {
+                                // Check if activity goal is met
+                                const allActivitiesCompleted = activityData.assignedActivity?.activities?.length 
+                                    ? activityData.assignedActivity.activities.every((a: any) => a.completed)
+                                    : false;
+                                const durationGoalMet = activityData.assignedActivity?.amount 
+                                    ? activityData.totalToday >= activityData.assignedActivity.amount
+                                    : true;
+                                const canComplete = allActivitiesCompleted || durationGoalMet;
+
+                                return activityData.assignedActivity?.isCompleted ? (
+                                    <div className="flex items-center gap-2 bg-[#3AB1A0] text-white px-4 py-2 rounded-full">
                                         <Check className="w-5 h-5" />
-                                    )}
-                                    <span>Done</span>
-                                </button>
-                            )}
+                                        <span className="font-semibold">Completed</span>
+                                    </div>
+                                ) : canComplete ? (
+                                    <button
+                                        onClick={handleCompleteActivity}
+                                        disabled={completingTask}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all bg-[#E06A26] text-white hover:bg-[#c55a1f]"
+                                    >
+                                        {completingTask ? (
+                                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                                        ) : (
+                                            <Check className="w-5 h-5" />
+                                        )}
+                                        <span>Done</span>
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-gray-200 text-gray-500 cursor-not-allowed">
+                                        <Check className="w-5 h-5" />
+                                        <span>Done</span>
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         {/* Progress bar - only show if there's a duration target */}
@@ -492,21 +545,43 @@ export default function ActivityPage() {
                         {/* Show assigned activities list */}
                         {activityData.assignedActivity.activities && activityData.assignedActivity.activities.length > 0 && (
                             <div className="mt-4 space-y-2">
-                                <p className="text-xs text-gray-500 font-medium">Activities to complete:</p>
+                                <p className="text-xs text-gray-500 font-medium">Activities to complete (click to mark done):</p>
                                 {activityData.assignedActivity.activities.map((activity: any, index: number) => (
                                     <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg">
-                                        <div>
+                                        <div className="flex-1">
                                             <span className="font-medium text-sm text-gray-800">{activity.name}</span>
                                             <div className="flex gap-2 text-xs text-gray-500 mt-0.5">
                                                 {activity.sets > 0 && <span>{activity.sets} sets</span>}
                                                 {activity.reps > 0 && <span>{activity.reps} reps</span>}
                                                 {activity.duration > 0 && <span>{activity.duration} min</span>}
                                             </div>
+                                            {activity.videoLink && (
+                                                <a
+                                                    href={activity.videoLink}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs text-[#E06A26] mt-1 inline-block"
+                                                >
+                                                    Watch Video →
+                                                </a>
+                                            )}
                                         </div>
                                         {activity.completed ? (
-                                            <Check className="w-5 h-5 text-[#3AB1A0]" />
+                                            <div className="flex items-center gap-1 text-[#3AB1A0]">
+                                                <Check className="w-5 h-5" />
+                                            </div>
                                         ) : (
-                                            <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+                                            <button
+                                                onClick={() => handleCompleteIndividualActivity(index)}
+                                                disabled={completingActivityIndex === index}
+                                                className="p-2 bg-[#E06A26] text-white rounded-lg hover:bg-[#C55A1C] disabled:opacity-50 transition-colors"
+                                            >
+                                                {completingActivityIndex === index ? (
+                                                    <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                ) : (
+                                                    <Check className="w-4 h-4" />
+                                                )}
+                                            </button>
                                         )}
                                     </div>
                                 ))}

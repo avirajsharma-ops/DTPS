@@ -57,7 +57,6 @@ export async function POST(request: NextRequest) {
           };
           await payment.save();
           
-          console.log('Payment completed:', paymentIntent.id);
         }
         break;
 
@@ -76,7 +75,6 @@ export async function POST(request: NextRequest) {
           };
           await failedPaymentRecord.save();
           
-          console.log('Payment failed:', failedPayment.id);
         }
         break;
 
@@ -91,36 +89,30 @@ export async function POST(request: NextRequest) {
           canceledPaymentRecord.status = 'cancelled';
           await canceledPaymentRecord.save();
           
-          console.log('Payment canceled:', canceledPayment.id);
         }
         break;
 
       case 'invoice.payment_succeeded':
         // Handle subscription payments if you implement subscriptions
         const invoice = event.data.object as Stripe.Invoice;
-        console.log('Invoice payment succeeded:', invoice.id);
         break;
 
       case 'customer.subscription.created':
         // Handle new subscriptions
         const subscription = event.data.object as Stripe.Subscription;
-        console.log('Subscription created:', subscription.id);
         break;
 
       case 'customer.subscription.updated':
         // Handle subscription updates
         const updatedSubscription = event.data.object as Stripe.Subscription;
-        console.log('Subscription updated:', updatedSubscription.id);
         break;
 
       case 'customer.subscription.deleted':
         // Handle subscription cancellations
         const deletedSubscription = event.data.object as Stripe.Subscription;
-        console.log('Subscription deleted:', deletedSubscription.id);
         break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });

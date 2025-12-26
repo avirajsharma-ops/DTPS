@@ -50,6 +50,7 @@ interface ProfileData {
   state: string;
   pincode: string;
   profileImage: string;
+  avatar?: string;
   createdAt: string;
   heightCm: number;
   weightKg: number;
@@ -268,10 +269,20 @@ export default function ProfilePage() {
 
           <div className="relative flex items-center gap-4">
             <div className="relative">
+             
+             
               <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border-4 border-white/30 shadow-lg">
-                <span className="text-2xl font-bold text-white">
-                  {getInitials(profileData?.firstName && profileData?.lastName ? `${profileData.firstName} ${profileData.lastName}` : profileData?.name || session?.user?.name || "User")}
-                </span>
+                {profileData?.avatar ? (
+                  <img 
+                    src={session?.user?.avatar} 
+                    alt="Profile" 
+                    className="object-cover w-full h-full rounded-2xl"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-white">
+                    {getInitials(profileData?.firstName && profileData?.lastName ? `${profileData.firstName} ${profileData.lastName}` : profileData?.name || session?.user?.name || "User")}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex-1">
@@ -308,12 +319,14 @@ export default function ProfilePage() {
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 text-center">
               <p className="text-white/70 text-xs">Weight</p>
               <p className="text-white font-bold text-lg">
-                {lifestyleData?.weightKg || profileData?.weightKg || "--"} kg
+                {profileData?.weightKg  || "--"} kg
               </p>
             </div>
           </div>
         </div>
       </div>
+
+
 
       {/* Tab Pills */}
       <div className="px-4 pb-2">

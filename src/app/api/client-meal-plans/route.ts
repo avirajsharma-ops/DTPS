@@ -189,7 +189,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log('Received client meal plan data:', JSON.stringify(body, null, 2));
 
     // Validate input
     let validatedData;

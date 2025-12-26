@@ -43,7 +43,6 @@ export class WebhookManager {
     };
     
     this.endpoints.set(id, webhookEndpoint);
-    console.log(`Webhook endpoint registered: ${id} -> ${endpoint.url}`);
     return id;
   }
 
@@ -51,7 +50,6 @@ export class WebhookManager {
   removeEndpoint(id: string): boolean {
     const removed = this.endpoints.delete(id);
     if (removed) {
-      console.log(`Webhook endpoint removed: ${id}`);
     }
     return removed;
   }
@@ -84,7 +82,6 @@ export class WebhookManager {
       );
 
     if (relevantEndpoints.length === 0) {
-      console.log(`No active endpoints for event type: ${event.type}`);
       return;
     }
 
@@ -115,7 +112,6 @@ export class WebhookManager {
       });
 
       if (response.ok) {
-        console.log(`Webhook delivered successfully to ${endpoint.url}`);
         this.updateEndpoint(endpoint.id, { 
           lastDelivery: new Date(),
           retryCount: 0 
@@ -133,7 +129,6 @@ export class WebhookManager {
 
       // Disable endpoint after too many failures
       if (newRetryCount >= 5) {
-        console.log(`Disabling webhook endpoint ${endpoint.id} after ${newRetryCount} failures`);
         this.updateEndpoint(endpoint.id, { isActive: false });
       } else {
         // Schedule retry with exponential backoff

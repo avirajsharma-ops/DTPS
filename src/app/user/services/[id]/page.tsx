@@ -13,6 +13,27 @@ declare global {
   }
 }
 
+// Helper function to strip HTML tags from text
+const stripHtmlTags = (html: string): string => {
+  if (!html) return '';
+  // Replace common HTML entities
+  let text = html
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/p>/gi, ' ')
+    .replace(/<\/div>/gi, ' ')
+    .replace(/<\/li>/gi, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"');
+  // Remove all remaining HTML tags
+  text = text.replace(/<[^>]*>/g, '');
+  // Clean up extra whitespace
+  text = text.replace(/\s+/g, ' ').trim();
+  return text;
+};
+
 interface ServicePlan {
   _id: string;
   name: string;
@@ -220,7 +241,7 @@ export default function ServiceDetailPage() {
             </span>
           </div>
           <h2 className="text-4xl font-bold mb-3">{service.name}</h2>
-          <p className="text-lg text-white/90 mb-6 max-w-2xl">{service.description}</p>
+          <p className="text-lg text-white/90 mb-6 max-w-2xl">{stripHtmlTags(service.description || '')}</p>
 
           {/* Ratings */}
           <div className="flex items-center gap-3">

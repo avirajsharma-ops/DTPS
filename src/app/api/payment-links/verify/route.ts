@@ -16,7 +16,6 @@ async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<an
     });
 
     if (existingPurchase) {
-      console.log('ClientPurchase already exists:', existingPurchase._id);
       return existingPurchase;
     }
 
@@ -50,7 +49,6 @@ async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<an
     });
 
     await purchase.save();
-    console.log('ClientPurchase created from payment link:', purchase._id);
     return purchase;
   } catch (error) {
     console.error('Error creating ClientPurchase:', error);
@@ -67,7 +65,6 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<any> {
     });
 
     if (existingPayment) {
-      console.log('Payment record already exists:', existingPayment._id);
       return existingPayment;
     }
 
@@ -95,7 +92,6 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<any> {
     });
 
     await paymentRecord.save();
-    console.log('Payment record created:', paymentRecord._id);
     return paymentRecord;
   } catch (error) {
     console.error('Error creating Payment record:', error);
@@ -158,7 +154,6 @@ export async function POST(request: NextRequest) {
       // Create Payment record for accounting
       const payment = await createPaymentRecordFromLink(paymentLink);
       
-      console.log('Payment verified - ClientPurchase:', purchase?._id, 'Payment:', payment?._id);
     }
 
     return NextResponse.json({

@@ -20,7 +20,8 @@ import {
   CheckCheck,
   Clock,
   ArrowLeft,
-  User
+  User,
+  Loader2
 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { toast } from 'sonner';
@@ -332,7 +333,7 @@ export default function UserMessagesPage() {
               >
                 {loadingMessages ? (
                   <div className="flex justify-center py-8">
-                    <SpoonGifLoader size="md" />
+                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full py-12">

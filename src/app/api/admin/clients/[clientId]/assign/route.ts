@@ -22,7 +22,6 @@ export async function PATCH(
 
     // Check if user has admin role (case-insensitive and flexible)
     const userRole = session.user.role?.toLowerCase();
-    console.log('API assign - User role:', session.user.role);
     
     if (!userRole || (!userRole.includes('admin') && userRole !== 'admin')) {
       return NextResponse.json({ 

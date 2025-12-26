@@ -62,7 +62,6 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    console.log('GET /api/diet-templates/[id] - Fetching template:', id);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -128,7 +127,6 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    console.log('PUT /api/diet-templates/[id] - Updating template:', id);
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -204,7 +202,6 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    console.log('DELETE /api/diet-templates/[id] - Deleting template:', id);
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {

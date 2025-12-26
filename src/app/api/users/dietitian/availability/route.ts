@@ -186,7 +186,6 @@ export async function PUT(request: NextRequest) {
         { new: true }
       ).select('availability');
 
-      console.log('Saved availability:', dietitian?.availability);
 
       return NextResponse.json({
         message: 'Availability updated successfully',

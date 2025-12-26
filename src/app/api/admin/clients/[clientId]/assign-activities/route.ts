@@ -180,7 +180,6 @@ export async function POST(
         }
 
         await journal.save();
-        console.log('Activities assigned successfully:', journal.assignedActivities);
 
         return NextResponse.json({
             success: true,

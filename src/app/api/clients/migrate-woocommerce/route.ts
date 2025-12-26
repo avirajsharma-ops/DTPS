@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
             }
           });
           updatedCount++;
-          console.log(`Updated existing user: ${wooClient.email}`);
         } else {
           // Create new user from WooCommerce client
           const nameParts = wooClient.name.split(' ');

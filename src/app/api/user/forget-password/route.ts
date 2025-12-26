@@ -9,7 +9,6 @@ export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
 
-    console.log('Forget password request received for:', email);
 
     if (!email) {
       return NextResponse.json(
@@ -28,14 +27,12 @@ export async function POST(request: NextRequest) {
 
     // Always return success message to prevent email enumeration
     if (!user) {
-      console.log(`Password reset requested for non-existent client email: ${email}`);
       return NextResponse.json({
         success: true,
         message: 'If an account exists with this email, you will receive a password reset link.'
       });
     }
 
-    console.log('User found:', user._id, user.firstName);
 
     // Generate secure reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -52,13 +49,11 @@ export async function POST(request: NextRequest) {
     user.passwordResetTokenExpiry = tokenExpiry;
     await user.save({ validateBeforeSave: false });
 
-    console.log('Token saved for user');
 
     // Generate reset link for user/client section
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const resetLink = `${baseUrl}/user/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
-    console.log('Reset link generated:', resetLink);
 
     // Send password reset email
     const emailTemplate = getPasswordResetTemplate({
@@ -77,7 +72,6 @@ export async function POST(request: NextRequest) {
     if (!emailSent) {
       console.error(`Failed to send password reset email to: ${email}`);
     } else {
-      console.log(`Password reset email sent to client: ${email}`);
     }
 
     return NextResponse.json({

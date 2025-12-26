@@ -43,7 +43,6 @@ function useDataChangeListener(onDataChange: (dataType?: string) => void) {
     const handleDataChange = (event: Event) => {
       const customEvent = event as CustomEvent;
       const { dataType } = customEvent.detail || {};
-      console.log('Data change detected:', dataType);
       onDataChange(dataType);
     };
 
@@ -131,13 +130,14 @@ export default function UserHomePage() {
   const fetchHealthData = useCallback(async () => {
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
-      const [hydrationRes, sleepRes, activityRes, stepsRes, mealPlanRes, foodLogRes] = await Promise.all([
+      const [hydrationRes, sleepRes, activityRes, stepsRes, mealPlanRes, foodLogRes, progressRes] = await Promise.all([
         fetch(`/api/client/hydration?date=${today}`),
         fetch(`/api/client/sleep?date=${today}`),
         fetch(`/api/client/activity?date=${today}`),
         fetch(`/api/client/steps?date=${today}`),
         fetch(`/api/client/meal-plan?date=${today}`),
-        fetch(`/api/client/food-log?date=${today}`)
+        fetch(`/api/client/food-log?date=${today}`),
+        fetch(`/api/client/progress`)
       ]);
 
       const newData = { ...data };
@@ -187,39 +187,99 @@ export default function UserHomePage() {
       let mealsEaten = 0;
       let totalMeals = 4;
 
+      // First, try to get goals from progress API
+      if (progressRes.ok) {
+        const progressData = await progressRes.json();
+        if (progressData.goals) {
+          caloriesGoal = progressData.goals.calories || caloriesGoal;
+          proteinGoal = progressData.goals.protein || proteinGoal;
+          carbsGoal = progressData.goals.carbs || carbsGoal;
+          fatGoal = progressData.goals.fat || fatGoal;
+        }
+        // Also get today's intake from progress API if available
+        if (progressData.todayIntake) {
+          caloriesConsumed = progressData.todayIntake.calories || 0;
+          proteinConsumed = progressData.todayIntake.protein || 0;
+          carbsConsumed = progressData.todayIntake.carbs || 0;
+          fatConsumed = progressData.todayIntake.fat || 0;
+        }
+      }
+
       if (mealPlanRes.ok) {
         const mealPlanData = await mealPlanRes.json();
         if (mealPlanData.hasPlan) {
           // Get total calories goal from meal plan
-          caloriesGoal = mealPlanData.totalCalories || mealPlanData.planDetails?.customizations?.targetCalories || 2000;
+          caloriesGoal = mealPlanData.totalCalories || mealPlanData.planDetails?.customizations?.targetCalories || caloriesGoal;
           totalMeals = mealPlanData.meals?.length || 4;
           
-          // Get macros goals from plan
-          proteinGoal = mealPlanData.planDetails?.customizations?.proteinGoal || 120;
-          carbsGoal = mealPlanData.planDetails?.customizations?.carbsGoal || 250;
-          fatGoal = mealPlanData.planDetails?.customizations?.fatGoal || 65;
+          // Only calculate macro goals from meal plan if progress API didn't provide them
+          if (!progressRes.ok || caloriesConsumed === 0) {
+            // Calculate macro goals from actual meal plan food items (sum of all meals for today)
+            let totalProteinGoal = 0;
+            let totalCarbsGoal = 0;
+            let totalFatGoal = 0;
+            
+            // Calculate from all meals in today's plan
+            for (const meal of (mealPlanData.meals || [])) {
+              // Sum up macros from meal items
+              if (meal.items && Array.isArray(meal.items)) {
+                for (const item of meal.items) {
+                  totalProteinGoal += parseFloat(item.protein) || 0;
+                  totalCarbsGoal += parseFloat(item.carbs) || 0;
+                  totalFatGoal += parseFloat(item.fats) || parseFloat(item.fat) || 0;
+                }
+              }
+              // Also try meal-level macros if available
+              if (meal.protein) totalProteinGoal += parseFloat(meal.protein) || 0;
+              if (meal.carbs) totalCarbsGoal += parseFloat(meal.carbs) || 0;
+              if (meal.fat) totalFatGoal += parseFloat(meal.fat) || 0;
+            }
+            
+            // Use calculated goals if > 0, otherwise fall back to customizations or defaults
+            proteinGoal = totalProteinGoal > 0 ? Math.round(totalProteinGoal) : (mealPlanData.planDetails?.customizations?.proteinGoal || proteinGoal);
+            carbsGoal = totalCarbsGoal > 0 ? Math.round(totalCarbsGoal) : (mealPlanData.planDetails?.customizations?.carbsGoal || carbsGoal);
+            fatGoal = totalFatGoal > 0 ? Math.round(totalFatGoal) : (mealPlanData.planDetails?.customizations?.fatGoal || fatGoal);
+          }
           
           // Count completed meals
           mealsEaten = (mealPlanData.meals || []).filter((meal: any) => meal.isCompleted).length;
           
-          // Calculate calories and macros from completed meals
-          const completedMeals = (mealPlanData.meals || []).filter((meal: any) => meal.isCompleted);
-          caloriesConsumed = completedMeals.reduce((sum: number, meal: any) => sum + (meal.totalCalories || 0), 0);
-          proteinConsumed = completedMeals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
-          carbsConsumed = completedMeals.reduce((sum: number, meal: any) => sum + (meal.carbs || 0), 0);
-          fatConsumed = completedMeals.reduce((sum: number, meal: any) => sum + (meal.fat || 0), 0);
+          // Only calculate consumed from meal plan if progress API didn't provide them
+          if (!progressRes.ok || caloriesConsumed === 0) {
+            // Calculate calories and macros from completed meals
+            const completedMeals = (mealPlanData.meals || []).filter((meal: any) => meal.isCompleted);
+            
+            for (const meal of completedMeals) {
+              // First try to use meal-level macros
+              if (meal.totalCalories || meal.protein || meal.carbs || meal.fat) {
+                caloriesConsumed += parseFloat(meal.totalCalories) || 0;
+                proteinConsumed += parseFloat(meal.protein) || 0;
+                carbsConsumed += parseFloat(meal.carbs) || 0;
+                fatConsumed += parseFloat(meal.fat) || 0;
+              }
+              // If no meal-level macros, calculate from items
+              else if (meal.items && Array.isArray(meal.items)) {
+                for (const item of meal.items) {
+                  caloriesConsumed += parseFloat(item.calories) || parseFloat(item.cal) || 0;
+                  proteinConsumed += parseFloat(item.protein) || 0;
+                  carbsConsumed += parseFloat(item.carbs) || 0;
+                  fatConsumed += parseFloat(item.fats) || parseFloat(item.fat) || 0;
+                }
+              }
+            }
+          }
         }
       }
 
-      // Also add calories from food log entries (manual food logging)
-      if (foodLogRes.ok) {
+      // Also add calories from food log entries (manual food logging) if progress API didn't provide data
+      if (caloriesConsumed === 0 && foodLogRes.ok) {
         const foodLogData = await foodLogRes.json();
         if (foodLogData.success && foodLogData.entries) {
           const entries = foodLogData.entries || [];
-          const foodLogCalories = entries.reduce((sum: number, entry: any) => sum + (entry.calories || 0), 0);
-          const foodLogProtein = entries.reduce((sum: number, entry: any) => sum + (entry.protein || 0), 0);
-          const foodLogCarbs = entries.reduce((sum: number, entry: any) => sum + (entry.carbs || 0), 0);
-          const foodLogFat = entries.reduce((sum: number, entry: any) => sum + (entry.fat || 0), 0);
+          const foodLogCalories = entries.reduce((sum: number, entry: any) => sum + (parseFloat(entry.calories) || 0), 0);
+          const foodLogProtein = entries.reduce((sum: number, entry: any) => sum + (parseFloat(entry.protein) || 0), 0);
+          const foodLogCarbs = entries.reduce((sum: number, entry: any) => sum + (parseFloat(entry.carbs) || 0), 0);
+          const foodLogFat = entries.reduce((sum: number, entry: any) => sum + (parseFloat(entry.fat) || 0), 0);
           caloriesConsumed += foodLogCalories;
           proteinConsumed += foodLogProtein;
           carbsConsumed += foodLogCarbs;
@@ -243,9 +303,9 @@ export default function UserHomePage() {
     }
   }, []);
 
+  
   // Function to refresh all data (called when meal plan, purchases, or payments change)
   const refreshAllData = useCallback(async () => {
-    console.log('Refreshing all user data...');
     try {
       const [planRes, profileRes] = await Promise.all([
         fetch('/api/client/service-plans'),
@@ -280,6 +340,38 @@ export default function UserHomePage() {
 
   // Listen for data changes and refresh
   useDataChangeListener(refreshAllData);
+
+  // SSE listener for real-time BMI updates
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const eventSource = new EventSource('/api/realtime/sse');
+
+    eventSource.addEventListener('bmi_update', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        // Update the userProfile state with new BMI data
+        setUserProfile(prev => prev ? {
+          ...prev,
+          bmi: data.bmi || prev.bmi,
+          bmiCategory: data.bmiCategory || prev.bmiCategory,
+          weightKg: data.weightKg || prev.weightKg,
+          heightCm: data.heightCm || prev.heightCm
+        } : null);
+      } catch (error) {
+        console.error('Error parsing BMI SSE event:', error);
+      }
+    });
+
+    eventSource.onerror = (error) => {
+      console.warn('SSE connection error:', error);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [session?.user?.id]);
 
   // Refresh data when page becomes visible (user switches back to tab)
   // useEffect(() => {
@@ -444,6 +536,15 @@ export default function UserHomePage() {
     );
   }
 
+  // BMI values derived from userProfile
+  const bmiValue = userProfile?.bmi || '';
+  const bmiCategory = userProfile?.bmiCategory || '';
+  // Calculate BMI progress for indicator (between 15 and 40)
+  const bmiNum = parseFloat(bmiValue);
+  const bmiProgress = !isNaN(bmiNum)
+    ? Math.min(100, Math.max(0, ((bmiNum - 15) / (40 - 15)) * 100))
+    : 0;
+
   return (
     <div className="bg-gray-50">
       {/* Header */}
@@ -574,7 +675,7 @@ export default function UserHomePage() {
 {/* Service Plans Swiper - Only shown when user has no purchases at all */}
 {!hasAnyPurchase && (
   <div className="pt-6 pb-4">
-    <Suspense fallback={<div className="flex justify-center py-8"><SpoonGifLoader size="md" /></div>}>
+    <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-5 w-5 mr-2 animate-spin" /></div>}>
       <ServicePlansSwiper />
     </Suspense>
   </div>
@@ -846,9 +947,9 @@ export default function UserHomePage() {
        
     {/* BMI Card - Show if BMI is available */}
     {/* BMI Card */}
-{userProfile?.bmi && (
+{bmiValue && (
   <div className="rounded-3xl bg-white p-6 shadow-sm border border-[#E06A26]/15">
-    
+
     {/* Header */}
     <div className="flex items-center justify-between mb-5">
       <div>
@@ -857,7 +958,7 @@ export default function UserHomePage() {
         </p>
         <div className="flex items-end gap-2 mt-1">
           <span className="text-4xl font-bold text-gray-900">
-            {userProfile.bmi}
+            {bmiValue}
           </span>
           <span className="mb-1 text-sm text-gray-500">kg/m²</span>
         </div>
@@ -866,42 +967,32 @@ export default function UserHomePage() {
       {/* Category Badge */}
       <span
         className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-          userProfile.bmiCategory === 'Normal'
+          bmiCategory === 'Normal'
             ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
-            : userProfile.bmiCategory === 'Underweight'
+            : bmiCategory === 'Underweight'
             ? 'bg-blue-100 text-blue-700'
-            : userProfile.bmiCategory === 'Overweight'
+            : bmiCategory === 'Overweight'
             ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
             : 'bg-[#E06A26]/15 text-[#E06A26]'
         }`}
       >
-        {userProfile.bmiCategory}
+        {bmiCategory}
       </span>
     </div>
 
     {/* Progress Bar */}
     <div className="relative mt-6">
-      {/* Track - proportional to BMI ranges (15-40 scale) */}
       <div className="flex h-3 overflow-hidden rounded-full">
-        {/* Underweight (15-18.5 = 3.5/25 = 14%) */}
         <div className="w-[14%] bg-blue-400/70" />
-        {/* Normal (18.5-25 = 6.5/25 = 26%) */}
         <div className="w-[26%] bg-[#3AB1A0]" />
-        {/* Overweight (25-29.9 = 4.9/25 = 19.6%) */}
         <div className="w-[20%] bg-[#DB9C6E]" />
-        {/* Obese (30-40 = 10/25 = 40%) */}
         <div className="w-[40%] bg-[#E06A26]" />
       </div>
 
-      {/* Indicator - contained within bounds */}
+      {/* Indicator */}
       <div
-        className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2"
-        style={{
-          left: `clamp(2.5%, ${Math.min(
-            Math.max(((parseFloat(userProfile.bmi) - 15) / (40 - 15)) * 100, 2.5),
-            97.5
-          )}%, 97.5%)`,
-        }}
+        className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2 transition-all duration-300"
+        style={{ left: `${bmiProgress}%` }}
       >
         <div className="w-5 h-5 bg-white border-2 border-gray-900 rounded-full shadow-md" />
       </div>
@@ -932,7 +1023,7 @@ export default function UserHomePage() {
         <div>
           <p className="text-xs text-gray-500">Weight</p>
           <p className="font-semibold text-gray-900">
-            {userProfile.weightKg} kg
+            {userProfile?.weightKg} kg
           </p>
         </div>
       </div>
@@ -944,13 +1035,14 @@ export default function UserHomePage() {
         <div>
           <p className="text-xs text-gray-500">Height</p>
           <p className="font-semibold text-gray-900">
-            {userProfile.heightCm} cm
+            {userProfile?.heightCm} cm
           </p>
         </div>
       </div>
     </div>
   </div>
 )}
+
 
 
         {/* Swipeable Image Cards - Only shown when user has no purchases at all */}
@@ -1235,7 +1327,7 @@ export default function UserHomePage() {
 </div>
 
         {/* Transformation Success Stories */}
-        <Suspense fallback={<div className="flex justify-center py-8"><SpoonGifLoader size="md" /></div>}>
+        <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-5 w-5 mr-2 animate-spin" /></div>}>
           <TransformationSwiper />
         </Suspense>
 
@@ -1251,7 +1343,7 @@ export default function UserHomePage() {
         <div className="px-">
           <div className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
             {/* Blog Card 1 */}
-            <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="min-w-65 snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className="relative h-32 bg-linear-to-br from-amber-100 to-orange-100">
                 <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   NUTRITION
@@ -1273,7 +1365,7 @@ export default function UserHomePage() {
             </div>
 
             {/* Blog Card 2 */}
-            <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="min-w-65 snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className="h-32 bg-linear-to-br from-[#3AB1A0]/20 to-[#3AB1A0]/10 relative">
                 <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   FITNESS
@@ -1295,7 +1387,7 @@ export default function UserHomePage() {
             </div>
 
             {/* Blog Card 3 */}
-            <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="min-w-65 snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className="h-32 bg-linear-to-br from-[#DB9C6E]/20 to-[#DB9C6E]/10 relative">
                 <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   WELLNESS

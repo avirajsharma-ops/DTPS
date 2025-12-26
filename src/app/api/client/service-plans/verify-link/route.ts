@@ -19,7 +19,6 @@ async function createClientPurchaseFromPayment(payment: any): Promise<any> {
     });
 
     if (existingPurchase) {
-      console.log('ClientPurchase already exists:', existingPurchase._id);
       return existingPurchase;
     }
 
@@ -53,7 +52,6 @@ async function createClientPurchaseFromPayment(payment: any): Promise<any> {
     });
 
     await purchase.save();
-    console.log('ClientPurchase created from verify-link:', purchase._id);
     return purchase;
   } catch (error) {
     console.error('Error creating ClientPurchase:', error);
@@ -77,7 +75,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment link ID is required' }, { status: 400 });
     }
 
-    console.log('Verifying payment link:', razorpayPaymentLinkId);
 
     // First, try to find in Payment collection (from ServicePlansSwiper)
     let payment = await Payment.findOne({
@@ -86,7 +83,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (payment) {
-      console.log('Found Payment record:', payment._id);
       
       // Update payment status if not already completed
       if (payment.status !== 'completed') {
@@ -95,7 +91,6 @@ export async function POST(request: NextRequest) {
         payment.paidAt = new Date();
         payment.transactionId = razorpayPaymentId;
         await payment.save();
-        console.log('Payment marked as completed');
       }
 
       // Create ClientPurchase
@@ -116,7 +111,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (paymentLink) {
-      console.log('Found PaymentLink record:', paymentLink._id);
       
       // Update payment link status
       if (paymentLink.status !== 'paid') {
@@ -124,7 +118,6 @@ export async function POST(request: NextRequest) {
         paymentLink.razorpayPaymentId = razorpayPaymentId;
         paymentLink.paidAt = new Date();
         await paymentLink.save();
-        console.log('PaymentLink marked as paid');
       }
 
       // Create ClientPurchase from PaymentLink
@@ -164,7 +157,6 @@ export async function POST(request: NextRequest) {
           mealPlanCreated: false
         });
         await purchase.save();
-        console.log('ClientPurchase created from PaymentLink:', purchase._id);
       }
 
       return NextResponse.json({
@@ -176,11 +168,9 @@ export async function POST(request: NextRequest) {
     }
 
     // If neither found, log and return error
-    console.log('No payment record found for:', razorpayPaymentLinkId);
     
     // As a last resort, create a ClientPurchase anyway for this user
     // This handles edge cases where the payment was made but record wasn't created properly
-    console.log('Creating ClientPurchase as fallback for user:', session.user.id);
     
     const fallbackPurchase = new ClientPurchase({
       client: session.user.id,
@@ -204,7 +194,6 @@ export async function POST(request: NextRequest) {
     });
     
     await fallbackPurchase.save();
-    console.log('Fallback ClientPurchase created:', fallbackPurchase._id);
 
     return NextResponse.json({
       success: true,

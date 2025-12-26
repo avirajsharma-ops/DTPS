@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
     const state = searchParams.get('state');
     const error = searchParams.get('error');
     
-    console.log('Watch OAuth callback received:', { code: code?.substring(0, 20) + '...', state, error });
     
     if (error) {
       console.error('OAuth error from provider:', error);
@@ -39,25 +38,20 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log('Connecting to DB...');
     await connectDB();
-    console.log('DB connected');
     
     // Get the actual redirect URI from the request (to match exactly)
     const actualRedirectUri = `${req.nextUrl.origin}/api/watch/oauth/callback`;
-    console.log('Using redirect URI:', actualRedirectUri);
     
     // Exchange code for tokens based on provider
     let watchTokens = null;
     
     try {
-      console.log('Exchanging code for tokens...');
       if (watchProvider === 'google_fit') {
         watchTokens = await exchangeWatchGoogleFitCode(code, actualRedirectUri);
       } else if (watchProvider === 'fitbit') {
         watchTokens = await exchangeWatchFitbitCode(code, actualRedirectUri);
       }
-      console.log('Token exchange successful');
     } catch (tokenError) {
       console.error('Watch token exchange error:', tokenError);
       return NextResponse.redirect(
@@ -66,9 +60,7 @@ export async function GET(req: NextRequest) {
     }
     
     // Connect the watch with tokens
-    console.log('Saving watch connection...');
     await WatchService.connectWatch(userId, watchProvider, watchTokens || undefined);
-    console.log('Watch connected successfully');
     
     return NextResponse.redirect(
       new URL('/user/watch?success=connected', req.url)
@@ -85,7 +77,6 @@ export async function GET(req: NextRequest) {
 async function exchangeWatchGoogleFitCode(code: string, redirectUri: string) {
   const config = WATCH_PROVIDER_CONFIGS.google_fit;
   
-  console.log('Exchanging Google Fit code with redirect_uri:', redirectUri);
   
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -106,7 +97,6 @@ async function exchangeWatchGoogleFitCode(code: string, redirectUri: string) {
   }
   
   const data = await response.json();
-  console.log('Google token received successfully');
   
   return {
     accessToken: data.access_token,

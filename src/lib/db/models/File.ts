@@ -24,11 +24,11 @@ const FileSchema = new mongoose.Schema({
   },
   data: {
     type: String, // Base64 encoded file data
-    required: true
+    required: false // Make optional for ImageKit uploads
   },
   type: {
     type: String,
-    enum: ['avatar', 'document', 'recipe-image', 'message', 'progress-photo', 'progress', 'note-attachment'],
+    enum: ['avatar', 'document', 'recipe-image', 'message', 'progress-photo', 'progress', 'note-attachment', 'medical-report'],
     required: true
   },
   localPath: {

@@ -376,7 +376,6 @@ export async function POST(
             } 
           }
         );
-        console.log(`✅ Extended purchase ${purchaseId} expected end date by ${validFreezeDates.length} days to ${format(newExpectedEndDate, 'yyyy-MM-dd')}`);
       }
     }
 

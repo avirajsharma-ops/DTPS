@@ -349,7 +349,7 @@ export default function CreateDietTemplatePage() {
     { name: 'Dinner', time: '7:00 PM' },
     { name: 'Bedtime', time: '9:30 PM' }
   ]);
-console.log(template )
+
   // -------------- SAVE/PUBLISH TEMPLATE -------------
   const saveTemplate = async (weekPlan?: any[], mealTypes?: {name: string; time: string}[]) => {
     try {
@@ -384,7 +384,6 @@ console.log(template )
       // Remove templateType as it's not needed for diet templates (separate collection)
       delete (submitPayload as any).templateType;
       
-      console.log('Submitting diet template:', submitPayload);
       
       const res = await fetch('/api/diet-templates', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(submitPayload) });
       if (res.ok) {

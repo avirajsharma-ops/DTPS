@@ -33,7 +33,6 @@ export function ServiceWorkerRegistration() {
         scope: '/',
       });
 
-      console.log('Service Worker registered successfully:', registration);
 
       // Handle service worker updates
       registration.addEventListener('updatefound', () => {
@@ -61,7 +60,6 @@ export function ServiceWorkerRegistration() {
 
         switch (type) {
           case 'CACHE_UPDATED':
-            console.log('Cache updated:', payload);
             break;
           case 'OFFLINE_READY':
             toast.success('App ready for offline use', {
@@ -80,12 +78,10 @@ export function ServiceWorkerRegistration() {
 
       // Check if the service worker is controlling the page
       if (navigator.serviceWorker.controller) {
-        console.log('Service Worker is controlling the page');
       }
 
       // Listen for service worker controller changes
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('Service Worker controller changed');
         // Optionally reload the page when a new service worker takes control
         // window.location.reload();
       });

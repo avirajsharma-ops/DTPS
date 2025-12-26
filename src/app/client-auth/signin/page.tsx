@@ -67,7 +67,7 @@ export default function ClientSignInPage() {
       <div className="flex items-center justify-center p-4 md:hidden">
         
         <h1 className="text-[#E06A26] text-center  font-semibold text-lg">Log In</h1>
-        <div className="w-6" />
+      
       </div>
 
       {/* Main Content */}

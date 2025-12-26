@@ -19,7 +19,6 @@ async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<an
     });
 
     if (existingPurchase) {
-      console.log('ClientPurchase already exists:', existingPurchase._id);
       return existingPurchase;
     }
 
@@ -53,7 +52,6 @@ async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<an
     });
 
     await purchase.save();
-    console.log('ClientPurchase created from webhook:', purchase._id);
     return purchase;
   } catch (error) {
     console.error('Error creating ClientPurchase:', error);
@@ -70,7 +68,6 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<any> {
     });
 
     if (existingPayment) {
-      console.log('Payment record already exists:', existingPayment._id);
       return existingPayment;
     }
 
@@ -98,7 +95,6 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<any> {
     });
 
     await paymentRecord.save();
-    console.log('Payment record created from webhook:', paymentRecord._id);
     return paymentRecord;
   } catch (error) {
     console.error('Error creating Payment record:', error);
@@ -134,7 +130,6 @@ export async function POST(request: NextRequest) {
     }
 
     const event = JSON.parse(body);
-    console.log('Razorpay webhook event:', event.event);
 
     await connectDB();
 
@@ -211,7 +206,6 @@ export async function POST(request: NextRequest) {
         // Create Payment record for accounting
         const payment = await createPaymentRecordFromLink(paymentLink);
 
-        console.log('Payment link marked as paid:', paymentLink._id, 'Transaction ID:', paymentLink.transactionId, 'ClientPurchase:', purchase?._id, 'Payment:', payment?._id);
         break;
       }
 
@@ -229,7 +223,6 @@ export async function POST(request: NextRequest) {
         if (paymentLink && paymentLink.status !== 'paid') {
           paymentLink.status = 'expired';
           await paymentLink.save();
-          console.log('Payment link marked as expired:', paymentLink._id);
         }
         break;
       }
@@ -248,7 +241,6 @@ export async function POST(request: NextRequest) {
         if (paymentLink && paymentLink.status !== 'paid') {
           paymentLink.status = 'cancelled';
           await paymentLink.save();
-          console.log('Payment link marked as cancelled:', paymentLink._id);
         }
         break;
       }
@@ -297,13 +289,11 @@ export async function POST(request: NextRequest) {
           // Create Payment record for accounting
           const payment = await createPaymentRecordFromLink(paymentLink);
           
-          console.log('Payment captured and saved:', paymentLink._id, 'ClientPurchase:', purchase?._id, 'Payment:', payment?._id);
         }
         break;
       }
 
       default:
-        console.log('Unhandled webhook event:', event.event);
     }
 
     return NextResponse.json({ success: true, received: true });

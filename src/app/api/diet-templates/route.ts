@@ -73,7 +73,6 @@ const dietTemplateSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('GET /api/diet-templates - Starting request');
 
     const session = await getServerSession(authOptions);
     
@@ -214,7 +213,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('POST /api/diet-templates - Starting request');
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -238,13 +236,6 @@ export async function POST(request: NextRequest) {
 
     // Validate input
     const validatedData = dietTemplateSchema.parse(body);
-    console.log('Validated diet template data:', {
-      name: validatedData.name,
-      duration: validatedData.duration,
-      mealsCount: Array.isArray(validatedData.meals) ? validatedData.meals.length : 0,
-      dietaryRestrictions: validatedData.dietaryRestrictions
-    });
-
     // Create new diet template
     const template = new DietTemplate({
       ...validatedData,

@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
       ]
     }).sort({ createdAt: 1 });
 
-    console.log(`Found ${clientsWithoutPasswords.length} clients without passwords`);
 
     let updatedCount = 0;
 
@@ -44,7 +43,6 @@ export async function POST(request: NextRequest) {
       });
       
       updatedCount++;
-      console.log(`Updated client ${client.email} with password ${password}`);
     }
 
     // Also update any clients that have the default password

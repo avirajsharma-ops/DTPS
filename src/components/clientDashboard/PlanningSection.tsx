@@ -343,7 +343,6 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       const sortedPlans = [...clientPlans].sort((a: any, b: any) => 
         new Date(b.endDate).getTime() - new Date(a.endDate).getTime()
       );
-      console.log('Latest meal plan end date:', sortedPlans[0].endDate);
       return sortedPlans[0].endDate;
     }
     return null;
@@ -367,11 +366,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     if (latestEndDate) {
       // Start from day after last plan ends
       newStartDate = format(addDays(new Date(latestEndDate), 1), 'yyyy-MM-dd');
-      console.log('Setting start date from last plan end + 1:', newStartDate);
     } else if (expectedStartDate) {
       // No existing plans - use expected start date if available
       newStartDate = expectedStartDate;
-      console.log('Setting start date from expected start date:', newStartDate);
     }
     
     // Validate against expected dates if set
@@ -379,11 +376,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       // If calculated start date is before expected start, use expected start
       if (newStartDate < expectedStartDate) {
         newStartDate = expectedStartDate;
-        console.log('Adjusted start date to expected start:', newStartDate);
       }
       // If calculated start date is after expected end, still allow but show warning later
       if (newStartDate > expectedEndDate) {
-        console.log('Warning: Start date is after expected end date');
       }
     }
     
@@ -627,14 +622,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
 
   // View plan details
   const handleViewPlan = (plan: any) => {
-    console.log('handleViewPlan - plan:', plan);
-    console.log('handleViewPlan - plan.meals:', plan.meals);
-    console.log('handleViewPlan - plan.meals length:', plan.meals?.length);
-    console.log('handleViewPlan - plan.mealTypes:', plan.mealTypes);
     
     // Log first day's meals for debugging
     if (plan.meals && plan.meals.length > 0) {
-      console.log('handleViewPlan - first day meals:', JSON.stringify(plan.meals[0]));
     }
     
     // Use stored duration if available, otherwise calculate from dates
@@ -649,7 +639,6 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       { name: 'Bedtime', time: '9:30 PM' }
     ];
     
-    console.log('handleViewPlan - setting initialMeals with:', planMeals.length, 'days');
     
     setViewingPlan(plan);
     setPlanTitle(plan.name);
@@ -666,14 +655,9 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
 
   // Edit plan
   const handleEditPlan = (plan: any) => {
-    console.log('handleEditPlan - plan:', plan);
-    console.log('handleEditPlan - plan.meals:', plan.meals);
-    console.log('handleEditPlan - plan.meals length:', plan.meals?.length);
-    console.log('handleEditPlan - plan.mealTypes:', plan.mealTypes);
     
     // Log first day's meals for debugging
     if (plan.meals && plan.meals.length > 0) {
-      console.log('handleEditPlan - first day meals:', JSON.stringify(plan.meals[0]));
     }
     
     // Use stored duration if available, otherwise calculate from dates
@@ -688,7 +672,6 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
       { name: 'Bedtime', time: '9:30 PM' }
     ];
     
-    console.log('handleEditPlan - setting initialMeals with:', planMeals.length, 'days');
     
     setEditingPlan(plan);
     setIsEditMode(true);
@@ -1903,11 +1886,6 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
   // Step 3: View Plan (Read-only)
   if (step === 'view' && viewingPlan) {
     // Debug logging
-    console.log('Rendering VIEW mode:');
-    console.log('  viewingPlan:', viewingPlan);
-    console.log('  viewingPlan.meals:', viewingPlan.meals);
-    console.log('  viewingPlan.meals?.length:', viewingPlan.meals?.length);
-    console.log('  viewingPlan.mealTypes:', viewingPlan.mealTypes);
     
     return (
       <div className="mt-6">

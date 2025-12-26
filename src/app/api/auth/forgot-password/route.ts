@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
 
     // Always return success message to prevent email enumeration
     if (!user) {
-      console.log(`Password reset requested for non-existent email: ${email}`);
       return NextResponse.json({
         success: true,
         message: 'If an account exists with this email, you will receive a password reset link.'
@@ -90,7 +89,6 @@ export async function POST(request: NextRequest) {
       console.error(`Failed to send password reset email to: ${email}`);
       // Still return success to prevent email enumeration
     } else {
-      console.log(`Password reset email sent to: ${email}`);
     }
 
     return NextResponse.json({

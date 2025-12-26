@@ -41,7 +41,6 @@ export function initializeFirebaseApp(): FirebaseApp | null {
 
     if (getApps().length === 0) {
         firebaseApp = initializeApp(firebaseConfig);
-        console.log('Firebase app initialized');
     } else {
         firebaseApp = getApps()[0];
     }
@@ -97,7 +96,6 @@ export async function requestNotificationPermission(): Promise<'granted' | 'deni
 
     try {
         const permission = await Notification.requestPermission();
-        console.log('Notification permission:', permission);
         return permission;
     } catch (error) {
         console.error('Error requesting notification permission:', error);
@@ -143,7 +141,6 @@ export async function getFCMToken(): Promise<string | null> {
 
         if (token) {
             currentToken = token;
-            console.log('FCM Token obtained successfully');
             return token;
         } else {
             console.warn('No FCM token available');
@@ -184,7 +181,6 @@ export async function registerFCMTokenWithBackend(): Promise<boolean> {
         const result = await response.json();
 
         if (result.success) {
-            console.log('FCM token registered with backend');
             return true;
         } else {
             console.error('Failed to register FCM token:', result.error);
@@ -219,7 +215,6 @@ export async function unregisterFCMToken(): Promise<boolean> {
 
         if (result.success) {
             currentToken = null;
-            console.log('FCM token unregistered');
             return true;
         } else {
             console.error('Failed to unregister FCM token:', result.error);
@@ -241,7 +236,6 @@ export function onForegroundMessage(callback: (payload: any) => void): (() => vo
     }
 
     const unsubscribe = onMessage(messagingInstance, (payload) => {
-        console.log('Foreground message received:', payload);
         callback(payload);
     });
 

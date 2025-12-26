@@ -179,7 +179,6 @@ export async function POST(
         }
 
         await journal.save();
-        console.log('Sleep assigned successfully:', journal.assignedSleep);
 
         return NextResponse.json({
             success: true,

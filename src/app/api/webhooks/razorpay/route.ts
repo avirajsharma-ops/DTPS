@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
     }
 
     const event = JSON.parse(body);
-    console.log('Razorpay webhook event:', event.event);
 
     await connectDB();
 
@@ -75,7 +74,6 @@ export async function POST(request: NextRequest) {
         break;
 
       default:
-        console.log(`Unhandled event type: ${event.event}`);
     }
 
     return NextResponse.json({ success: true });
@@ -95,7 +93,6 @@ async function handlePaymentSuccess(payload: any) {
     const orderId = payment.order_id;
 
     if (!orderId) {
-      console.log('No order ID in payment');
       return;
     }
 
@@ -105,7 +102,6 @@ async function handlePaymentSuccess(payload: any) {
     });
 
     if (!subscription) {
-      console.log(`Subscription not found for order: ${orderId}`);
       return;
     }
 
@@ -133,13 +129,10 @@ async function handlePaymentSuccess(payload: any) {
       });
 
       await paymentRecord.save();
-      console.log(`Created Payment record ${paymentRecord._id} for client ${subscription.client}`);
     } catch (paymentError) {
       console.error('Error creating Payment record:', paymentError);
     }
 
-    console.log(`Payment successful for subscription: ${subscription._id}`);
-    console.log(`Client: ${subscription.client}, Amount: ${subscription.amount}`);
 
     // TODO: Send email notification to client
     // TODO: Send SMS notification to client
@@ -156,7 +149,6 @@ async function handlePaymentFailed(payload: any) {
     const orderId = payment.order_id;
 
     if (!orderId) {
-      console.log('No order ID in failed payment');
       return;
     }
 
@@ -166,7 +158,6 @@ async function handlePaymentFailed(payload: any) {
     });
 
     if (!subscription) {
-      console.log(`Subscription not found for order: ${orderId}`);
       return;
     }
 
@@ -191,13 +182,10 @@ async function handlePaymentFailed(payload: any) {
       });
 
       await paymentRecord.save();
-      console.log(`Created Failed Payment record ${paymentRecord._id} for client ${subscription.client}`);
     } catch (paymentError) {
       console.error('Error creating Failed Payment record:', paymentError);
     }
 
-    console.log(`Payment failed for subscription: ${subscription._id}`);
-    console.log(`Reason: ${payment.description}`);
 
     // TODO: Send email notification to client about failed payment
     // TODO: Send SMS notification to client
@@ -243,7 +231,6 @@ async function handlePaymentLinkCompleted(payload: any) {
       paymentLink.payerPhone = payerPhone;
 
       await paymentLink.save();
-      console.log(`Payment link ${paymentLink._id} marked as paid`);
 
       // Create Payment record in Payment schema with full plan details
       let paymentRecordId = null;
@@ -255,7 +242,6 @@ async function handlePaymentLinkCompleted(payload: any) {
         });
 
         if (existingPayment) {
-          console.log(`⚠️ Payment record already exists for transaction ${razorpayPaymentId}`);
           paymentRecordId = existingPayment._id;
         } else {
           const paymentRecord = new Payment({
@@ -286,8 +272,6 @@ async function handlePaymentLinkCompleted(payload: any) {
           // Save the Payment record
           const savedPayment = await paymentRecord.save();
           paymentRecordId = savedPayment._id;
-          console.log(`✅ Created Payment record ${paymentRecordId} for client ${paymentLink.client}`);
-          console.log(`   Amount: ₹${paymentLink.finalAmount}, Status: COMPLETED, TransactionId: ${razorpayPaymentId}`);
         }
       } catch (paymentError) {
         console.error('Error creating Payment record:', paymentError);
@@ -300,7 +284,6 @@ async function handlePaymentLinkCompleted(payload: any) {
           const existingPurchase = await ClientPurchase.findOne({ paymentLink: paymentLink._id });
           
           if (existingPurchase) {
-            console.log(`⚠️ ClientPurchase already exists for PaymentLink ${paymentLink._id}`);
           } else {
             const startDate = new Date();
             const endDate = new Date();
@@ -328,10 +311,6 @@ async function handlePaymentLinkCompleted(payload: any) {
             });
 
             const savedPurchase = await clientPurchase.save();
-            console.log(`✅ Created ClientPurchase ${savedPurchase._id} for client ${paymentLink.client}`);
-            console.log(`   PaymentLink Reference: ${savedPurchase.paymentLink}`);
-            console.log(`   Status: ${savedPurchase.status}, Duration: ${paymentLink.durationDays} days`);
-            console.log(`   Start: ${startDate.toISOString()}, End: ${endDate.toISOString()}`);
             
             // Update Payment record with ClientPurchase reference
             if (paymentRecordId) {
@@ -340,14 +319,12 @@ async function handlePaymentLinkCompleted(payload: any) {
                 { clientPurchase: savedPurchase._id },
                 { new: true }
               );
-              console.log(`✅ Updated Payment record with ClientPurchase reference: ${updatedPayment?.clientPurchase}`);
             }
           }
         } catch (purchaseError) {
           console.error('Error creating ClientPurchase:', purchaseError);
         }
       } else {
-        console.log(`⚠️ Cannot create ClientPurchase - missing servicePlanId (${paymentLink.servicePlanId}) or durationDays (${paymentLink.durationDays})`);
       }
 
       return;
@@ -355,7 +332,6 @@ async function handlePaymentLinkCompleted(payload: any) {
 
     // Legacy handling for ClientSubscription
     if (!subscriptionId) {
-      console.log('No subscription ID in payment link');
       return;
     }
 
@@ -363,7 +339,6 @@ async function handlePaymentLinkCompleted(payload: any) {
     const subscription = await ClientSubscription.findById(subscriptionId);
 
     if (!subscription) {
-      console.log(`Subscription not found: ${subscriptionId}`);
       return;
     }
 
@@ -374,7 +349,6 @@ async function handlePaymentLinkCompleted(payload: any) {
 
     await subscription.save();
 
-    console.log(`Payment link completed for subscription: ${subscriptionId}`);
 
     // TODO: Send confirmation email
     // TODO: Send SMS notification
@@ -391,7 +365,6 @@ async function handlePaymentLinkCancelled(payload: any) {
     const subscriptionId = notes.subscriptionId;
 
     if (!subscriptionId) {
-      console.log('No subscription ID in payment link');
       return;
     }
 
@@ -399,7 +372,6 @@ async function handlePaymentLinkCancelled(payload: any) {
     const subscription = await ClientSubscription.findById(subscriptionId);
 
     if (!subscription) {
-      console.log(`Subscription not found: ${subscriptionId}`);
       return;
     }
 
@@ -409,7 +381,6 @@ async function handlePaymentLinkCancelled(payload: any) {
 
     await subscription.save();
 
-    console.log(`Payment link cancelled for subscription: ${subscriptionId}`);
 
     // TODO: Send notification to client
   } catch (error) {

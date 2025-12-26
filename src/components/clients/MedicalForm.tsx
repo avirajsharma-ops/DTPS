@@ -123,9 +123,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
 
         if (response.ok) {
           const data = await response.json();
-          console.log('Upload response:', data);
           if (data.report) {
-            console.log('Report with URL:', data.report);
             onChange('reports', [...reports, data.report]);
             toast.success('Report uploaded successfully');
           }
@@ -153,7 +151,6 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
   const removeReport = (id: string) => onChange('reports', reports.filter(r => r.id !== id));
 
   const handleViewReport = (report: UploadedReport) => {
-    console.log('Viewing report:', report);
     if (!report.url) {
       toast.error('File URL not available. Please save the form first.');
       return;
@@ -161,7 +158,6 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
 
     // Open file in new tab - let the browser handle errors
     const url = report.url.startsWith('/') ? window.location.origin + report.url : report.url;
-    console.log('Opening URL:', url);
     window.open(url, '_blank');
   };
 

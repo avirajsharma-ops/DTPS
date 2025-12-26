@@ -200,7 +200,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log('Received recipe data:', JSON.stringify(body, null, 2));
 
     // Validate input
     let validatedData;
@@ -314,7 +313,6 @@ export async function POST(request: NextRequest) {
           folder: '/recipes',
         });
         recipeData.image = uploadResponse.url;
-        console.log('Image compressed and uploaded to ImageKit:', uploadResponse.url);
       } catch (err) {
         console.error('ImageKit upload failed:', err);
         return NextResponse.json({
@@ -323,10 +321,8 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
     } else {
-      console.log('No image provided or empty image URL');
     }
 
-    console.log('Transformed recipe data:', JSON.stringify(recipeData, null, 2));
 
     // Create recipe
     const recipe = new Recipe(recipeData);

@@ -56,7 +56,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    console.log('Session user:', session?.user);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -85,15 +84,6 @@ export async function POST(request: NextRequest) {
     wpFormData.append('file', blob, file.name);
     wpFormData.append('title', `Progress Photo - ${photoType}`);
     wpFormData.append('alt', `Progress photo - ${photoType} view`);
-
-    console.log('Uploading to WordPress:', {
-      filename: file.name,
-      type: file.type,
-      size: file.size,
-      photoType,
-      notes
-    });
-
     const wpResponse = await fetch(`${API_BASE}/media`, {
       method: 'POST',
       headers: {
@@ -111,7 +101,6 @@ export async function POST(request: NextRequest) {
     }
 
     const wpData = JSON.parse(text);
-    console.log('WordPress upload successful:', wpData);
 
     // Connect to database AFTER successful WordPress upload
     await connectDB();

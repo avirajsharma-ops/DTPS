@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
     try {
       const razorpayLink: any = await razorpay.paymentLink.fetch(paymentLink.razorpayPaymentLinkId);
       
-      console.log('Razorpay link status:', razorpayLink);
 
       // Update status based on Razorpay response
       if (razorpayLink.status === 'paid') {
@@ -157,7 +156,6 @@ export async function POST(request: NextRequest) {
 
               await newPurchase.save();
               clientPurchaseCreated = true;
-              console.log(`Created ClientPurchase ${newPurchase._id} from synced payment ${paymentLink._id}`);
             }
           } catch (purchaseError) {
             console.error('Error creating ClientPurchase during sync:', purchaseError);

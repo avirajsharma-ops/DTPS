@@ -96,13 +96,25 @@ export default function LifestyleInfoPage() {
         const res = await fetch("/api/client/lifestyle-info");
         if (res.ok) {
           const result = await res.json();
+          
+          // Map backend food preference to display format
+          const mapFoodPreference = (pref: string): string => {
+            const prefMap: Record<string, string> = {
+              'veg': 'Veg',
+              'non-veg': 'Non-Veg',
+              'eggetarian': 'Eggetarian',
+              'vegan': 'Vegan'
+            };
+            return prefMap[pref] || pref || '';
+          };
+          
           setData({
             heightFeet: result.heightFeet || "",
             heightInch: result.heightInch || "",
             heightCm: result.heightCm || "",
             weightKg: result.weightKg || "",
             targetWeightKg: result.targetWeightKg || "",
-            foodPreference: result.foodPreference || "",
+            foodPreference: mapFoodPreference(result.foodPreference),
             preferredCuisine: result.preferredCuisine || [],
             allergiesFood: result.allergiesFood || [],
             fastDays: result.fastDays || [],
@@ -148,16 +160,26 @@ export default function LifestyleInfoPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
+      
+      // Transform data to match backend schema
+      const transformedData = {
+        ...data,
+        // Convert food preference to lowercase for backend enum validation
+        foodPreference: data.foodPreference ? data.foodPreference.toLowerCase().replace(' ', '-') : '',
+      };
+      
       const res = await fetch("/api/client/lifestyle-info", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify(transformedData)
       });
 
       if (res.ok) {
         toast.success("Lifestyle information saved successfully");
         router.push("/user/profile");
       } else {
+        const errorData = await res.json();
+        console.error("API Error:", errorData);
         toast.error("Failed to save lifestyle information");
       }
     } catch (error) {

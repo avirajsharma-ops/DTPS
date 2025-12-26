@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
       'message': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'audio/mpeg', 'audio/wav', 'audio/webm', 'video/mp4', 'video/webm'],
       'note-attachment': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/aac'],
       'progress': ['image/jpeg', 'image/png', 'image/webp'],
-      'progress-photo': ['image/jpeg', 'image/png', 'image/webp']
+      'progress-photo': ['image/jpeg', 'image/png', 'image/webp'],
+      'medical-report': ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
     };
 
     const maxSizes = {
@@ -43,7 +44,8 @@ export async function POST(request: NextRequest) {
       'message': 25 * 1024 * 1024, // 25MB for messages (images, videos, audio)
       'note-attachment': 50 * 1024 * 1024, // 50MB for note attachments
       'progress': 10 * 1024 * 1024, // 10MB for progress photos
-      'progress-photo': 10 * 1024 * 1024 // 10MB for progress photos
+      'progress-photo': 10 * 1024 * 1024, // 10MB for progress photos
+      'medical-report': 10 * 1024 * 1024 // 10MB for medical reports
     };
 
     const fileType = type as keyof typeof allowedTypes;
@@ -110,6 +112,67 @@ export async function POST(request: NextRequest) {
         });
       } catch (imagekitError) {
         console.error('Error uploading to ImageKit:', imagekitError);
+        // Fall through to local storage if ImageKit fails
+      }
+    }
+
+    // For medical-report uploads, use ImageKit with compression (for images)
+    if (fileType === 'medical-report') {
+      try {
+        const ik = getImageKit();
+        const isImage = file.type.startsWith('image/');
+        
+        let uploadData: string;
+        let uploadMimeType: string;
+        let uploadFileName: string;
+        
+        if (isImage) {
+          // Compress image before upload
+          const compressedBase64 = await compressImageServer(buffer, {
+            maxWidth: 1600,
+            maxHeight: 1600,
+            quality: 85
+          });
+          uploadData = compressedBase64;
+          uploadMimeType = 'image/webp';
+          uploadFileName = `${session.user.id}-${timestamp}.webp`;
+        } else {
+          // For PDFs, just upload as-is
+          uploadData = base64Data;
+          uploadMimeType = file.type;
+          uploadFileName = `${session.user.id}-${fileName}`;
+        }
+        
+        const uploadResponse = await ik.upload({
+          file: uploadData,
+          fileName: uploadFileName,
+          folder: '/medical-reports',
+        });
+
+        // Save file reference to MongoDB (without full base64 data since it's in ImageKit)
+        const savedFile = await File.create({
+          filename: uploadFileName,
+          originalName: file.name,
+          mimeType: uploadMimeType,
+          size: file.size,
+          data: '', // Don't store full base64 for ImageKit uploads to save space
+          type: fileType,
+          localPath: uploadResponse.url,
+          imageKitFileId: uploadResponse.fileId,
+          uploadedBy: session.user.id
+        });
+
+        return NextResponse.json({
+          url: uploadResponse.url,
+          dbUrl: `/api/files/${savedFile._id}`,
+          localUrl: uploadResponse.url,
+          filename: uploadFileName,
+          size: file.size,
+          type: uploadMimeType,
+          fileId: savedFile._id
+        });
+      } catch (imagekitError) {
+        console.error('Error uploading medical report to ImageKit:', imagekitError);
         // Fall through to local storage if ImageKit fails
       }
     }

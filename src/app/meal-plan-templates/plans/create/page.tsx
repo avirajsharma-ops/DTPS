@@ -149,7 +149,6 @@ export default function CreatePlanTemplateBasicPage() {
         setLoading(false);
         return;
       }
-      console.log('Submitting meal plan template payload:', body);
       const res = await fetch('/api/meal-plan-templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

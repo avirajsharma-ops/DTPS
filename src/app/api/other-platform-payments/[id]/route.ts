@@ -150,7 +150,6 @@ export async function PUT(
         });
 
         await clientPurchase.save();
-        console.log(`✅ Created ClientPurchase ${clientPurchase._id} from Other Platform Payment ${otherPayment._id}`);
 
         // Update payment record with clientPurchase reference
         paymentRecord.clientPurchase = clientPurchase._id;

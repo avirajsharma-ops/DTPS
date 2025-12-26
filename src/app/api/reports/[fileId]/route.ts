@@ -14,7 +14,6 @@ export async function GET(
     await connectDB();
     const { fileId } = await params;
 
-    console.log('Fetching file with ID:', fileId);
 
     const db = mongoose.connection.db;
     if (!db) {
@@ -48,7 +47,6 @@ export async function GET(
       .replace(/[<>:"/\\|?*]/g, '_')   // Replace invalid filename chars
       .trim() || 'file';
 
-    console.log('File found:', { rawFileName, sanitizedFileName, contentType, size: fileDoc.length });
 
     // Download file to buffer first
     const chunks: Buffer[] = [];
@@ -64,7 +62,6 @@ export async function GET(
     });
 
     const fileBuffer = Buffer.concat(chunks);
-    console.log('File downloaded successfully, size:', fileBuffer.length);
 
     return new NextResponse(fileBuffer, {
       status: 200,

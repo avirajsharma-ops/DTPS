@@ -104,7 +104,6 @@ export default function TestWebRTCPage() {
               <SimpleWebRTCCall
                 remoteUserId={targetUserId}
                 onCallEnd={() => {
-                  console.log('Call ended, returning to main interface');
                   // Optionally return to main interface
                   // setShowCall(false);
                 }}

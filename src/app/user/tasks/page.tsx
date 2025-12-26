@@ -32,6 +32,7 @@ interface AssignedWater {
     assignedAt: string;
     isCompleted: boolean;
     completedAt?: string;
+    currentIntake?: number;
 }
 
 interface AssignedActivity {
@@ -108,7 +109,6 @@ export default function TasksPage() {
             const response = await fetch(`/api/client/tasks?date=${dateStr}`);
             if (response.ok) {
                 const data = await response.json();
-                console.log('Tasks data fetched:', data);
                 setTasksData(data);
                 setLastDataHash(data.dataHash || null);
             }
@@ -137,14 +137,12 @@ export default function TasksPage() {
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible' && session?.user) {
-                console.log('Page became visible, refreshing tasks...');
                 fetchTasksData(false);
             }
         };
 
         const handleFocus = () => {
             if (session?.user) {
-                console.log('Window focused, refreshing tasks...');
                 fetchTasksData(false);
             }
         };
@@ -152,7 +150,6 @@ export default function TasksPage() {
         // Listen for user-data-changed event (triggered when dietitian assigns new tasks)
         const handleDataChange = () => {
             if (session?.user) {
-                console.log('Data changed event received, refreshing tasks...');
                 fetchTasksData(false);
             }
         };
@@ -382,35 +379,68 @@ export default function TasksPage() {
                                                 <span className="font-medium">{tasksData.water ? tasksData.water.amount.toLocaleString() : '--'} ml</span>
                                             </div>
                                             <div className="flex items-center justify-between text-sm">
+                                                <span className="text-gray-600">Current Intake</span>
+                                                <span className="font-medium">{tasksData.water?.currentIntake ? tasksData.water.currentIntake.toLocaleString() : '0'} ml</span>
+                                            </div>
+                                            {/* Progress bar for water */}
+                                            {tasksData.water && (
+                                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                                    <div
+                                                        className={`h-2 rounded-full transition-all ${tasksData.water.isCompleted ? 'bg-[#3AB1A0]' : 'bg-[#3AB1A0]'}`}
+                                                        style={{ width: `${Math.min(((tasksData.water.currentIntake || 0) / tasksData.water.amount) * 100, 100)}%` }}
+                                                    />
+                                                </div>
+                                            )}
+                                            <div className="flex items-center justify-between text-sm">
                                                 <span className="text-gray-600">Assigned</span>
                                                 <span className="text-gray-500">
                                                     {tasksData.water && tasksData.water.assignedAt ? format(new Date(tasksData.water.assignedAt), 'MMM d, h:mm a') : '--'}
                                                 </span>
                                             </div>
-                                            {tasksData.water && tasksData.water.isCompleted && stats.completed === stats.total ? (
-                                                <div className="flex items-center gap-2 text-[#3AB1A0] bg-[#3AB1A0]/10 p-3 rounded-lg">
-                                                    <Check className="w-5 h-5" />
-                                                    <span className="font-medium">Completed</span>
-                                                    {tasksData.water.completedAt && (
-                                                        <span className="text-sm text-[#3AB1A0] ml-auto">
-                                                            {format(new Date(tasksData.water.completedAt), 'h:mm a')}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleCompleteTask('water')}
-                                                    disabled={completingTask === 'water'}
-                                                    className="w-full py-3 bg-[#3AB1A0] text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#2A9A8B] disabled:opacity-50"
-                                                >
-                                                    {completingTask === 'water' ? (
-                                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                                    ) : (
-                                                        <Check className="w-5 h-5" />
-                                                    )}
-                                                    Mark as Complete
-                                                </button>
-                                            )}
+                                            {(() => {
+                                                const waterGoalMet = tasksData.water && (tasksData.water.currentIntake || 0) >= tasksData.water.amount;
+                                                
+                                                if (tasksData.water?.isCompleted) {
+                                                    return (
+                                                        <div className="flex items-center gap-2 text-[#3AB1A0] bg-[#3AB1A0]/10 p-3 rounded-lg">
+                                                            <Check className="w-5 h-5" />
+                                                            <span className="font-medium">Completed</span>
+                                                            {tasksData.water.completedAt && (
+                                                                <span className="text-sm text-[#3AB1A0] ml-auto">
+                                                                    {format(new Date(tasksData.water.completedAt), 'h:mm a')}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                } else if (waterGoalMet) {
+                                                    return (
+                                                        <button
+                                                            onClick={() => handleCompleteTask('water')}
+                                                            disabled={completingTask === 'water'}
+                                                            className="w-full py-3 bg-[#3AB1A0] text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#2A9A8B] disabled:opacity-50"
+                                                        >
+                                                            {completingTask === 'water' ? (
+                                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                            ) : (
+                                                                <Check className="w-5 h-5" />
+                                                            )}
+                                                            Mark as Complete
+                                                        </button>
+                                                    );
+                                                } else {
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <p className="text-sm text-gray-500 text-center">
+                                                                Drink {((tasksData.water?.amount || 0) - (tasksData.water?.currentIntake || 0)).toLocaleString()} ml more to complete
+                                                            </p>
+                                                            <div className="w-full py-3 bg-gray-200 text-gray-500 rounded-xl font-medium flex items-center justify-center gap-2 cursor-not-allowed">
+                                                                <Check className="w-5 h-5" />
+                                                                Mark as Complete
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                            })()}
                                         </div>
                                     </div>
                                 )}
@@ -474,10 +504,10 @@ export default function TasksPage() {
                                                     <Check className="w-5 h-5" />
                                                     <span className="font-medium">Goal Achieved!</span>
                                                 </div>
-                                            ) : (
+                                            ) : tasksData.steps.current >= tasksData.steps.target ? (
                                                 <div className="space-y-3">
-                                                    <p className="text-sm text-gray-500 text-center">
-                                                        Keep walking! You need {(tasksData.steps.target - tasksData.steps.current).toLocaleString()} more steps.
+                                                    <p className="text-sm text-[#3AB1A0] text-center font-medium">
+                                                        🎉 You've reached your step goal!
                                                     </p>
                                                     <Button
                                                         onClick={() => handleCompleteTask('steps')}
@@ -496,6 +526,16 @@ export default function TasksPage() {
                                                             </>
                                                         )}
                                                     </Button>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <p className="text-sm text-gray-500 text-center">
+                                                        Keep walking! You need {(tasksData.steps.target - tasksData.steps.current).toLocaleString()} more steps.
+                                                    </p>
+                                                    <div className="w-full py-2 bg-gray-200 text-gray-500 rounded-lg font-medium flex items-center justify-center gap-2 cursor-not-allowed">
+                                                        <Check className="h-4 w-4" />
+                                                        Mark as Done
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -549,25 +589,64 @@ export default function TasksPage() {
                                                 <span className="text-gray-600">Logged Sleep</span>
                                                 <span className="font-medium">{tasksData.sleep.currentHours}h {tasksData.sleep.currentMinutes}m</span>
                                             </div>
-                                            {tasksData.sleep.isCompleted ? (
-                                                <div className="flex items-center gap-2 text-[#3AB1A0] bg-[#3AB1A0]/10 p-3 rounded-lg">
-                                                    <Check className="w-5 h-5" />
-                                                    <span className="font-medium">Sleep Goal Met!</span>
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleCompleteTask('sleep')}
-                                                    disabled={completingTask === 'sleep'}
-                                                    className="w-full py-3 bg-[#DB9C6E] text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#C48A5E] disabled:opacity-50"
-                                                >
-                                                    {completingTask === 'sleep' ? (
-                                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                                    ) : (
-                                                        <Check className="w-5 h-5" />
-                                                    )}
-                                                    Mark as Complete
-                                                </button>
-                                            )}
+                                            {/* Progress bar for sleep */}
+                                            {(() => {
+                                                const targetMinutes = (tasksData.sleep?.targetHours || 0) * 60 + (tasksData.sleep?.targetMinutes || 0);
+                                                const currentMinutes = (tasksData.sleep?.currentHours || 0) * 60 + (tasksData.sleep?.currentMinutes || 0);
+                                                const sleepProgress = targetMinutes > 0 ? Math.min((currentMinutes / targetMinutes) * 100, 100) : 0;
+                                                return (
+                                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                                        <div
+                                                            className={`h-2 rounded-full transition-all ${tasksData.sleep?.isCompleted ? 'bg-[#3AB1A0]' : 'bg-[#DB9C6E]'}`}
+                                                            style={{ width: `${sleepProgress}%` }}
+                                                        />
+                                                    </div>
+                                                );
+                                            })()}
+                                            {(() => {
+                                                const targetMinutes = (tasksData.sleep?.targetHours || 0) * 60 + (tasksData.sleep?.targetMinutes || 0);
+                                                const currentMinutes = (tasksData.sleep?.currentHours || 0) * 60 + (tasksData.sleep?.currentMinutes || 0);
+                                                const sleepGoalMet = currentMinutes >= targetMinutes;
+                                                
+                                                if (tasksData.sleep?.isCompleted) {
+                                                    return (
+                                                        <div className="flex items-center gap-2 text-[#3AB1A0] bg-[#3AB1A0]/10 p-3 rounded-lg">
+                                                            <Check className="w-5 h-5" />
+                                                            <span className="font-medium">Sleep Goal Met!</span>
+                                                        </div>
+                                                    );
+                                                } else if (sleepGoalMet) {
+                                                    return (
+                                                        <button
+                                                            onClick={() => handleCompleteTask('sleep')}
+                                                            disabled={completingTask === 'sleep'}
+                                                            className="w-full py-3 bg-[#DB9C6E] text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#C48A5E] disabled:opacity-50"
+                                                        >
+                                                            {completingTask === 'sleep' ? (
+                                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                            ) : (
+                                                                <Check className="w-5 h-5" />
+                                                            )}
+                                                            Mark as Complete
+                                                        </button>
+                                                    );
+                                                } else {
+                                                    const remainingMinutes = targetMinutes - currentMinutes;
+                                                    const remainingHours = Math.floor(remainingMinutes / 60);
+                                                    const remainingMins = remainingMinutes % 60;
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <p className="text-sm text-gray-500 text-center">
+                                                                Log {remainingHours > 0 ? `${remainingHours}h ` : ''}{remainingMins}m more sleep to complete
+                                                            </p>
+                                                            <div className="w-full py-3 bg-gray-200 text-gray-500 rounded-xl font-medium flex items-center justify-center gap-2 cursor-not-allowed">
+                                                                <Check className="w-5 h-5" />
+                                                                Mark as Complete
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                            })()}
                                         </div>
                                     </div>
                                 )}

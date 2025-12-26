@@ -60,7 +60,6 @@ export async function GET(request: NextRequest) {
     const per_page = searchParams.get('per_page') || '50';
     const page = searchParams.get('page') || '1';
 
-    console.log(`Fetching WooCommerce orders: status=${status}, per_page=${per_page}, page=${page}`);
 
     // Build WooCommerce API URL with authentication
     const apiUrl = new URL(WOOCOMMERCE_API_URL);
@@ -125,16 +124,13 @@ export async function GET(request: NextRequest) {
         hasMorePages = pageOrders.length === 100 && currentPage < totalPages;
         currentPage++;
 
-        console.log(`Fetched page ${currentPage - 1}, got ${pageOrders.length} orders, total so far: ${allOrders.length}`);
 
         // Break if we've reached the limit
         if (currentPage > maxPages) {
-          console.log(`Reached maximum page limit (${maxPages}). Stopping fetch.`);
           break;
         }
       }
 
-      console.log(`Finished fetching orders. Total: ${allOrders.length} (limited to ${maxPages} pages)`);
     } else {
       // Regular single page fetch
       const response = await fetch(apiUrl.toString(), {

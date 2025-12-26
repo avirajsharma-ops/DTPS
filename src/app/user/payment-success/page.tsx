@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { CheckCircle, Download, Mail, ArrowRight, Receipt, Calendar, CreditCard, User, Package } from 'lucide-react';
+import { CheckCircle, Download, Mail, ArrowRight, Receipt, Calendar, CreditCard, User, Package, Loader2 } from 'lucide-react';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { toast } from 'sonner';
 

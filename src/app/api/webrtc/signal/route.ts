@@ -12,7 +12,6 @@ export async function POST(request: NextRequest) {
     }
 
     const signalData = await request.json();
-    console.log('WebRTC Signal received:', { type: signalData.type, callId: signalData.callId, from: session.user.id });
     const {
       callId,
       callerId,

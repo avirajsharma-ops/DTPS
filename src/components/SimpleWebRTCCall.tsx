@@ -26,24 +26,19 @@ export default function SimpleWebRTCCall({ remoteUserId, onCallEnd }: SimpleWebR
     handleSignal
   } = useSimpleWebRTC({
     onIncomingCall: (callData) => {
-      console.log('📞 Incoming call received:', callData);
       setIncomingCall(callData);
     },
     onCallAccepted: () => {
-      console.log('✅ Call accepted!');
       setIncomingCall(null);
     },
     onCallRejected: () => {
-      console.log('❌ Call rejected');
       setIncomingCall(null);
     },
     onCallEnded: () => {
-      console.log('📞 Call ended');
       setIncomingCall(null);
       onCallEnd?.();
     },
     onRemoteStream: (stream) => {
-      console.log('📺 Remote stream received');
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = stream;
       }
@@ -54,7 +49,6 @@ export default function SimpleWebRTCCall({ remoteUserId, onCallEnd }: SimpleWebR
   useRealtime({
     onMessage: (evt) => {
       if (evt.type === 'webrtc-signal') {
-        console.log('📥 WebRTC signal received via SSE:', evt.data);
         handleSignal(evt.data);
       }
     }

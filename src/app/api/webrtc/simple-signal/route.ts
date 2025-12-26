@@ -14,14 +14,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { type, callId, fromUserId, toUserId, data, callType } = body;
-
-    console.log(`📡 Simple WebRTC Signal: ${type}`, {
-      callId,
-      fromUserId,
-      toUserId,
-      callType
-    });
-
     // Validate required fields
     if (!type || !fromUserId || !toUserId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -71,7 +63,6 @@ export async function POST(request: NextRequest) {
       const { SSEManager } = await import('@/lib/realtime/sse-manager');
       const sse = SSEManager.getInstance();
       sse.sendToUser(toUserId, 'webrtc-signal', signalPayload);
-      console.log(`✅ Signal sent successfully: ${type} -> ${toUserId}`);
     } catch (sseError) {
       console.error('❌ SSE delivery error:', sseError);
       return NextResponse.json({ error: 'Failed to deliver signal via SSE' }, { status: 500 });

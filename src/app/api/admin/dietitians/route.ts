@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
 
     // Check if user has admin role (case-insensitive and flexible)
     const userRole = session.user.role?.toLowerCase();
-    console.log('API dietitians - User role:', session.user.role);
     
     if (!userRole || (!userRole.includes('admin') && userRole !== 'admin')) {
       return NextResponse.json({ 

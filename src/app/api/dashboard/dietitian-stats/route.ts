@@ -143,7 +143,6 @@ export async function GET(request: NextRequest) {
         ]
       }).distinct('_id');
       
-      console.log(`Dietitian ${session.user.id} has ${assignedClientIds.length} assigned clients`);
       
       // Only get payments from clients assigned to this dietitian
       if (assignedClientIds.length > 0) {

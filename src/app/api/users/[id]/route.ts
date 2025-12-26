@@ -301,7 +301,6 @@ export async function PUT(
         if (key === 'generalGoal' && value) {
           const validGoals = ['not-specified', 'weight-loss', 'weight-gain', 'disease-management'];
           if (!validGoals.includes(value)) {
-            console.log(`Invalid generalGoal value: ${value}, skipping...`);
             return obj; // Skip invalid values
           }
         }
@@ -309,7 +308,6 @@ export async function PUT(
         return obj;
       }, {});
 
-    console.log('Update data for generalGoal:', updateData.generalGoal);
 
     Object.assign(targetUser, updateData);
     await targetUser.save();

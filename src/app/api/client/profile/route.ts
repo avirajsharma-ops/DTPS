@@ -3,6 +3,31 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db/connection";
 import User from "@/lib/db/models/User";
+import { SSEManager } from "@/lib/realtime/sse-manager";
+
+// BMI Calculation Helper
+function calculateBMI(weightKg: number, heightCm: number): { bmi: string; bmiCategory: string } {
+  if (weightKg <= 0 || heightCm <= 0) {
+    return { bmi: '', bmiCategory: '' };
+  }
+  
+  const heightM = heightCm / 100;
+  const bmiValue = weightKg / (heightM * heightM);
+  const bmi = bmiValue.toFixed(1);
+  
+  let bmiCategory: string;
+  if (bmiValue < 18.5) {
+    bmiCategory = 'Underweight';
+  } else if (bmiValue < 25) {
+    bmiCategory = 'Normal';
+  } else if (bmiValue < 30) {
+    bmiCategory = 'Overweight';
+  } else {
+    bmiCategory = 'Obese';
+  }
+  
+  return { bmi, bmiCategory };
+}
 
 export async function GET() {
   try {
@@ -85,14 +110,53 @@ export async function PUT(request: Request) {
       }
     }
 
+    // Sync profileImage to avatar field so session can pick it up
+    if (data.profileImage) {
+      updateData.avatar = data.profileImage;
+    }
+
+    // Check if weight or height is being updated - recalculate BMI
+    const isWeightOrHeightUpdated = data.weightKg !== undefined || data.heightCm !== undefined;
+    
+    if (isWeightOrHeightUpdated) {
+      // Get current user data to calculate BMI with new values
+      const currentUser = await User.findById(session.user.id).select('weightKg heightCm');
+      
+      const finalWeightKg = parseFloat(data.weightKg !== undefined ? String(data.weightKg) : currentUser?.weightKg || '0');
+      const finalHeightCm = parseFloat(data.heightCm !== undefined ? String(data.heightCm) : currentUser?.heightCm || '0');
+      
+      // Calculate BMI if both weight and height are available
+      if (finalWeightKg > 0 && finalHeightCm > 0) {
+        const bmiData = calculateBMI(finalWeightKg, finalHeightCm);
+        updateData.bmi = bmiData.bmi;
+        updateData.bmiCategory = bmiData.bmiCategory;
+      }
+    }
+
     const user = await User.findByIdAndUpdate(
       session.user.id,
       updateData,
       { new: true, runValidators: true }
-    ).select("name firstName lastName email phone dateOfBirth gender address city state pincode profileImage avatar createdAt heightCm weightKg targetWeightKg activityLevel generalGoal dietType alternativeEmail alternativePhone anniversary source referralSource");
+    ).select("name firstName lastName email phone dateOfBirth gender address city state pincode profileImage avatar createdAt heightCm weightKg targetWeightKg activityLevel generalGoal dietType alternativeEmail alternativePhone anniversary source referralSource bmi bmiCategory");
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Send SSE update if BMI was recalculated
+    if (isWeightOrHeightUpdated && user.bmi) {
+      try {
+        const sseManager = SSEManager.getInstance();
+        sseManager.sendToUser(session.user.id, 'bmi_update', {
+          weightKg: user.weightKg || '',
+          heightCm: user.heightCm || '',
+          bmi: user.bmi || '',
+          bmiCategory: user.bmiCategory || '',
+          timestamp: Date.now()
+        });
+      } catch (sseError) {
+        console.warn('SSE notification failed:', sseError);
+      }
     }
 
     return NextResponse.json({ success: true, user });

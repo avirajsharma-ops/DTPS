@@ -30,7 +30,6 @@ export class OnlineStatusManager {
     userStatus.connections.add(connectionId);
     this.onlineUsers.set(userId, userStatus);
 
-    console.log(`User ${userId} is now online (connection: ${connectionId})`);
   }
 
   // Mark user as offline
@@ -50,7 +49,6 @@ export class OnlineStatusManager {
 
     // Remove user from online list
     this.onlineUsers.delete(userId);
-    console.log(`User ${userId} is now offline`);
   }
 
   // Check if user is online
@@ -108,7 +106,6 @@ export class OnlineStatusManager {
     for (const [userId, status] of this.onlineUsers.entries()) {
       if (status.lastSeen < fiveMinutesAgo) {
         this.onlineUsers.delete(userId);
-        console.log(`Cleaned up inactive user: ${userId}`);
       }
     }
   }
@@ -162,7 +159,6 @@ export class TypingManager {
     }, duration);
 
     this.typingUsers.set(userId, { targetUserId, timeout });
-    console.log(`User ${userId} is typing to ${targetUserId}`);
   }
 
   // Set user as not typing
@@ -171,7 +167,6 @@ export class TypingManager {
     if (existing) {
       clearTimeout(existing.timeout);
       this.typingUsers.delete(userId);
-      console.log(`User ${userId} stopped typing`);
     }
   }
 

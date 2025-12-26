@@ -193,7 +193,6 @@ class ZoomService {
       } catch (userError: any) {
         // If user doesn't exist, try with 'me' (the account owner)
         if (userError.response?.data?.code === 1001) {
-          console.log(`User ${userId} not found in Zoom, using account owner instead`);
           response = await axios.post(
             `${this.baseURL}/users/me/meetings`,
             meetingConfig,

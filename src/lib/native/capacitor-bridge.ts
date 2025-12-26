@@ -61,7 +61,6 @@ export async function initializeApp() {
 
         // Listen for app state changes
         App.addListener('appStateChange', ({ isActive }) => {
-            console.log('App state changed. Active:', isActive);
             // Trigger custom event for the web app
             window.dispatchEvent(
                 new CustomEvent('appStateChange', { detail: { isActive } })
@@ -70,13 +69,11 @@ export async function initializeApp() {
 
         // Listen for app URL open (deep links)
         App.addListener('appUrlOpen', (data) => {
-            console.log('App URL opened:', data.url);
             window.dispatchEvent(
                 new CustomEvent('appUrlOpen', { detail: { url: data.url } })
             );
         });
 
-        console.log('Native app initialized successfully');
     } catch (error) {
         console.error('Error initializing native app:', error);
     }
@@ -184,7 +181,6 @@ export async function clearStorage() {
 
 export async function registerPushNotifications() {
     if (!isNative) {
-        console.log('Push notifications only work on native platforms');
         return null;
     }
 
@@ -193,7 +189,6 @@ export async function registerPushNotifications() {
         const permStatus = await PushNotifications.requestPermissions();
 
         if (permStatus.receive !== 'granted') {
-            console.log('Push notification permission not granted');
             return null;
         }
 
@@ -203,7 +198,6 @@ export async function registerPushNotifications() {
         // Get token
         return new Promise<string>((resolve) => {
             PushNotifications.addListener('registration', (token) => {
-                console.log('Push registration success, token:', token.value);
                 resolve(token.value);
             });
 
@@ -383,7 +377,6 @@ export async function downloadFile(url: string, fileName: string) {
             directory: Directory.Documents,
         });
 
-        console.log('File downloaded:', fileName);
         return true;
     } catch (error) {
         console.error('Error downloading file:', error);

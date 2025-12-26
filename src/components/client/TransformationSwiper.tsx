@@ -131,12 +131,13 @@ export default function TransformationSwiper() {
         {transformations.map((transformation) => (
           <div
             key={transformation._id}
-            className="w-80 shrink-0 bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+            className="max-w-96 shrink-0 bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl 
+            transition-all duration-300 hover:-translate-y-1"
             style={{ scrollSnapAlign: 'start' }}
           >
             {/* Before/After Images */}
             <div className="relative">
-              <div className="flex h-48">
+              <div className="flex h-56">
                 {/* Before Image */}
                 <div className="w-1/2 relative bg-linear-to-br from-gray-100 to-gray-200 overflow-hidden">
                   {getImageUrl(transformation.beforeImage) && !imageErrors.has(`${transformation._id}-before`) ? (

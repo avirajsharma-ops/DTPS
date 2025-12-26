@@ -183,9 +183,6 @@ export default function AnalyticsPage() {
         setCurrentPage(page);
 
         // Log the data for debugging
-        console.log('All Orders Data:', allOrdersData);
-        console.log('Total Clients:', allOrdersData.clients?.length || 0);
-        console.log('Summary:', allOrdersData.summary);
       } else {
         console.error('Failed to fetch WooCommerce orders');
       }
@@ -209,8 +206,6 @@ export default function AnalyticsPage() {
         setWooSummary(allOrdersData.summary || null);
         setIsFullDataLoaded(true);
 
-        console.log('Full Data Loaded:', allOrdersData);
-        console.log('Total Clients (Full):', allOrdersData.clients?.length || 0);
       } else {
         console.error('Failed to fetch all WooCommerce data');
       }
@@ -246,7 +241,6 @@ export default function AnalyticsPage() {
 
         if (saveResponse.ok) {
           const result = await saveResponse.json();
-          console.log('Data saved to MongoDB:', result);
           setDbLastSync(result.timestamp);
           alert(`Successfully saved to MongoDB!\n• ${result.savedClientsCount || 0} new clients\n• ${result.updatedClientsCount || 0} updated clients\n• ${result.ordersCount || 0} orders processed`);
         } else {
@@ -277,8 +271,6 @@ export default function AnalyticsPage() {
         setDataSource('database');
         setDbLastSync(dbData.summary?.lastSync || null);
 
-        console.log('Data loaded from MongoDB:', dbData);
-        console.log('Total Clients from MongoDB:', dbData.clients?.length || 0);
         // alert(`Successfully loaded from MongoDB!\n• ${dbData.clients?.length || 0} clients\n• ${dbData.orders?.length || 0} orders`);
       } else {
         console.error('Failed to load data from MongoDB');

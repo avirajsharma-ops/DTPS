@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, 
@@ -68,7 +68,7 @@ const dietTypes = [
 ];
 
 export default function PersonalInfoPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
@@ -164,6 +164,15 @@ export default function PersonalInfoPage() {
       const result = await res.json();
       
       if (res.ok) {
+        // Update session with new avatar if profileImage was changed
+        if (data.profileImage) {
+          await updateSession({
+            avatar: data.profileImage,
+            firstName: data.firstName,
+            lastName: data.lastName
+          });
+        }
+        
         toast.success("Personal information saved successfully");
         router.push("/user/profile");
       } else {

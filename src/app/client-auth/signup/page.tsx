@@ -113,7 +113,7 @@ export default function ClientSignUpPage() {
       <div className="flex items-center justify-center p-4 md:hidden">
         
         <h1 className="text-[#E06A26] font-semibold   text-center text-lg">Sign Up</h1>
-        <div className="w-6" />
+       
       </div>
 
       {/* Main Content */}

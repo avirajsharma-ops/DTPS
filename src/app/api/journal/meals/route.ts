@@ -185,7 +185,6 @@ export async function GET(request: NextRequest) {
             // Use normalized key for consistent matching
             const normalizedKey = normalizeMealTypeKey(completion.mealType);
             mealCompletionsMap.set(normalizedKey, completion);
-            console.log('Added completion to map:', completion.mealType, '-> normalized:', normalizedKey);
           }
         }
       }
@@ -206,13 +205,11 @@ export async function GET(request: NextRequest) {
       if (clientMealPlan.meals && Array.isArray(clientMealPlan.meals) && clientMealPlan.meals.length > 0) {
         // Meals stored directly in the plan
         dayPlan = clientMealPlan.meals[dayIndex % clientMealPlan.meals.length];
-        console.log('Using meals from clientMealPlan.meals, dayIndex:', dayIndex, 'dayPlan:', dayPlan);
       } else if (clientMealPlan.templateId) {
         // Fallback to template meals
         const template = clientMealPlan.templateId as any;
         if (template.meals && template.meals.length > 0) {
           dayPlan = template.meals[dayIndex % template.meals.length];
-          console.log('Using meals from template, dayIndex:', dayIndex);
         }
       }
       
@@ -232,7 +229,6 @@ export async function GET(request: NextRequest) {
                 // Use normalized key for consistent matching
                 const normalizedMealTypeKey = normalizeMealTypeKey(mealType.name);
                 const mealCompletion = mealCompletionsMap.get(normalizedMealTypeKey);
-                console.log('Looking up meal type:', mealType.name, '-> normalized:', normalizedMealTypeKey, '-> found:', !!mealCompletion);
                 
                 meals.push({
                   _id: journalMeal?._id || mealPlanId,

@@ -19,6 +19,7 @@ export default function SpoonGifLoader({
     lg: 150,
     xl: 200,
   };
+  
   const px = sizes[size] || sizes.md;
   
   return (

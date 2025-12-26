@@ -36,7 +36,6 @@ class DataEventEmitter {
 
   // Emit an event to trigger all listeners
   emit(event: EventType, data?: any): void {
-    console.log(`📢 Data event emitted: ${event}`, data);
     
     // Trigger specific event listeners
     this.listeners.get(event)?.forEach(callback => {

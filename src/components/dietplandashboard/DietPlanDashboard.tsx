@@ -148,17 +148,14 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   
   // Initialize weekPlan with the correct duration and initialMeals
   const [weekPlan, setWeekPlan] = useState<DayPlan[]>(() => {
-    console.log('DietPlanDashboard INIT - duration:', duration, 'initialMeals:', initialMeals?.length);
     
     // Always start with correct number of days based on duration
     const newDays = buildDays(duration);
     
     // If we have initialMeals, merge it into the days
     if (initialMeals && Array.isArray(initialMeals) && initialMeals.length > 0) {
-      console.log('DietPlanDashboard INIT - merging initialMeals');
       // Log sample data
       if (initialMeals[0]) {
-        console.log('First day data:', JSON.stringify(initialMeals[0]).slice(0, 500));
       }
       
       return newDays.map((d, i) => ({
@@ -174,7 +171,6 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   
   // Rebuild when duration changes
   useEffect(() => {
-    console.log('Duration changed to:', duration, 'Current weekPlan length:', weekPlan.length);
     if (weekPlan.length !== duration) {
       const newDays = buildDays(duration);
       setWeekPlan(prev => {
@@ -192,17 +188,14 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   // Using JSON stringify for deep comparison since object reference may not change
   const initialMealsKey = JSON.stringify(initialMeals);
   useEffect(() => {
-    console.log('initialMeals effect triggered:', initialMeals?.length, 'duration:', duration);
     
     const newDays = buildDays(duration);
     
     if (initialMeals && Array.isArray(initialMeals) && initialMeals.length > 0) {
       // Log what we're loading
-      console.log('Loading initialMeals data:');
       initialMeals.forEach((day, i) => {
         const mealCount = day?.meals ? Object.keys(day.meals).length : 0;
         const isHeld = (day as any)?.isHeld || false;
-        console.log(`  Day ${i + 1}: ${mealCount} meal types, isHeld: ${isHeld}`);
       });
       
       // Always set the weekPlan from initialMeals if provided
@@ -218,7 +211,6 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         note: initialMeals[i]?.note || ''
       })));
     } else {
-      console.log('No initialMeals, resetting to empty days');
       // Reset to empty days
       setWeekPlan(newDays);
     }

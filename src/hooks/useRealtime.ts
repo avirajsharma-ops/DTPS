@@ -192,13 +192,11 @@ class GlobalSSEManager {
       this.connections.delete(userId);
       this.connectionStates.set(userId, 'disconnected');
       this.connectionPromises.delete(userId);
-      console.log('Force disconnected user:', userId);
     }
   }
 
   // Force reconnect a user's connection
   async forceReconnect(userId: string): Promise<EventSource> {
-    console.log('Force reconnecting user:', userId);
     this.forceDisconnect(userId);
     // Wait a bit before reconnecting
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -226,7 +224,6 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
 
   const connect = useCallback(async () => {
     if (!session?.user?.id) {
-      console.log('Skipping connection - no user session');
       return;
     }
 
@@ -370,14 +367,11 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
         connectionCheckRef.current = setInterval(() => {
           const connection = globalManager.getConnection(session.user.id);
           if (!connection || connection.readyState === EventSource.CLOSED) {
-            console.log('SSE connection lost, attempting reconnect...');
             setIsConnected(false);
             // Trigger reconnection
             connect();
           } else if (connection.readyState === EventSource.CONNECTING) {
-            console.log('SSE connection still connecting...');
           } else {
-            console.log('SSE connection healthy');
           }
         }, 10000); // Check every 10 seconds
       }
@@ -410,13 +404,11 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
     if (session?.user?.id) {
       const userId = session.user.id;
       if (!globalManager.hasConnection(userId) && !globalManager.isConnecting(userId)) {
-        console.log('Session available, connecting for user:', userId);
         connect();
       } else {
         setIsConnected(true);
       }
     } else {
-      console.log('No session, disconnecting...');
       disconnect();
     }
 
@@ -447,7 +439,6 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
 
   const forceReconnect = useCallback(async () => {
     if (session?.user?.id) {
-      console.log('Force reconnecting SSE connection...');
       disconnect();
       await new Promise(resolve => setTimeout(resolve, 1000));
       connect();

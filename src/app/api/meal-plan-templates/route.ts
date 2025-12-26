@@ -52,7 +52,6 @@ const mealPlanTemplateSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('GET /api/meal-plan-templates - Starting request');
 
     await connectDB();
 
@@ -164,7 +163,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('POST /api/meal-plan-templates - Starting request');
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -188,13 +186,6 @@ export async function POST(request: NextRequest) {
 
     // Validate input
     const validatedData = mealPlanTemplateSchema.parse(body);
-    console.log('Validated meal plan template data:', {
-      name: validatedData.name,
-      templateType: validatedData.templateType,
-      duration: validatedData.duration,
-      mealsCount: Array.isArray(validatedData.meals) ? validatedData.meals.length : 0
-    });
-
     // Create new meal plan template
     const template = new MealPlanTemplate({
       ...validatedData,

@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     const token = searchParams.get('token');
     const email = searchParams.get('email');
 
-    console.log('Validating reset token for:', email);
 
     if (!token || !email) {
       return NextResponse.json(
@@ -37,14 +36,12 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      console.log('Invalid or expired token for:', email);
       return NextResponse.json(
         { valid: false, error: 'This password reset link is invalid or has expired.' },
         { status: 400 }
       );
     }
 
-    console.log('Token valid for user:', user.firstName);
 
     return NextResponse.json({
       valid: true,
@@ -65,7 +62,6 @@ export async function POST(request: NextRequest) {
   try {
     const { token, email, password } = await request.json();
 
-    console.log('Reset password request for:', email);
 
     if (!token || !email || !password) {
       return NextResponse.json(
@@ -98,7 +94,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      console.log('Invalid or expired token during reset for:', email);
       return NextResponse.json(
         { error: 'This password reset link is invalid or has expired.' },
         { status: 400 }
@@ -115,7 +110,6 @@ export async function POST(request: NextRequest) {
     user.passwordResetTokenExpiry = undefined;
     await user.save({ validateBeforeSave: false });
 
-    console.log(`Password reset successful for client: ${email}`);
 
     return NextResponse.json({
       success: true,

@@ -32,7 +32,6 @@ async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<an
     });
 
     if (existingPurchase) {
-      console.log('ClientPurchase already exists:', existingPurchase._id);
       return existingPurchase;
     }
 
@@ -66,7 +65,6 @@ async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<an
     });
 
     await purchase.save();
-    console.log('ClientPurchase created from sync:', purchase._id);
     return purchase;
   } catch (error) {
     console.error('Error creating ClientPurchase:', error);
@@ -93,7 +91,6 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<any> {
         existingPayment.paidAt = paymentLink.paidAt || new Date();
         existingPayment.transactionId = paymentLink.razorpayPaymentId || paymentLink.transactionId;
         await existingPayment.save();
-        console.log('Payment record updated:', existingPayment._id);
       }
       return existingPayment;
     }
@@ -123,7 +120,6 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<any> {
     });
 
     await paymentRecord.save();
-    console.log('Payment record created from sync:', paymentRecord._id);
     return paymentRecord;
   } catch (error) {
     console.error('Error creating Payment record:', error);
@@ -153,7 +149,6 @@ export async function POST(request: NextRequest) {
       razorpayPaymentLinkId: { $exists: true, $ne: null }
     });
 
-    console.log(`Found ${pendingPaymentLinks.length} pending payment links to sync`);
 
     const razorpay = getRazorpay();
 
@@ -173,7 +168,6 @@ export async function POST(request: NextRequest) {
           }
           
           await paymentLink.save();
-          console.log(`PaymentLink ${paymentLink._id} marked as paid`);
           
           // Create ClientPurchase record
           const purchase = await createClientPurchaseFromPaymentLink(paymentLink);
@@ -217,7 +211,6 @@ export async function POST(request: NextRequest) {
         const purchase = await createClientPurchaseFromPaymentLink(paymentLink);
         if (purchase) {
           clientPurchasesCreated++;
-          console.log(`Created missing ClientPurchase for PaymentLink ${paymentLink._id}`);
         }
         
         // Also ensure Payment record exists
@@ -236,7 +229,6 @@ export async function POST(request: NextRequest) {
       ]
     });
 
-    console.log(`Found ${pendingPayments.length} pending payments to sync`);
 
     for (const payment of pendingPayments) {
       try {
@@ -327,7 +319,6 @@ export async function POST(request: NextRequest) {
             });
             await purchase.save();
             clientPurchasesCreated++;
-            console.log(`Created ClientPurchase from Payment: ${purchase._id}`);
           }
         }
       } catch (error: any) {

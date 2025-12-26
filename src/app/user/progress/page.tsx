@@ -47,6 +47,7 @@ interface TransformationPhoto {
   url: string;
   date: string;
   notes: string;
+  side?: 'front' | 'back' | 'right-side' | 'left-side';
 }
 
 interface ProgressData {
@@ -91,6 +92,7 @@ interface ProgressData {
     fat: number;
   };
   calorieHistory?: Array<{ date: string; calories: number }>;
+  nutritionHistory?: Array<{ date: string; calories: number; protein: number; carbs: number; fat: number }>;
   transformationPhotos?: TransformationPhoto[];
 }
 
@@ -146,21 +148,23 @@ function LineChart({
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
-  const padding = 10;
+  const paddingY = 15;
+  const paddingX = 20; // Add horizontal padding to prevent edge cutoff
   const chartWidth = 300;
-  const chartHeight = height - padding * 2;
+  const chartHeight = height - paddingY * 2;
+  const totalWidth = chartWidth + paddingX * 2;
 
   const points = data.map((value, index) => {
-    const x = (index / (data.length - 1)) * chartWidth;
-    const y = chartHeight - ((value - min) / range) * chartHeight + padding;
+    const x = paddingX + (index / (data.length - 1)) * chartWidth;
+    const y = chartHeight - ((value - min) / range) * chartHeight + paddingY;
     return `${x},${y}`;
   }).join(' ');
 
-  const areaPoints = `0,${chartHeight + padding} ${points} ${chartWidth},${chartHeight + padding}`;
+  const areaPoints = `${paddingX},${chartHeight + paddingY} ${points} ${paddingX + chartWidth},${chartHeight + paddingY}`;
 
   return (
-    <div>
-      <svg viewBox={`0 0 ${chartWidth} ${height}`} className="w-full h-auto" preserveAspectRatio="none">
+    <div className="overflow-visible">
+      <svg viewBox={`0 0 ${totalWidth} ${height}`} className="w-full h-auto overflow-visible" preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id={`areaGradient-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={color} stopOpacity="0.3" />
@@ -180,8 +184,8 @@ function LineChart({
         />
         
         {data.map((value, index) => {
-          const x = (index / (data.length - 1)) * chartWidth;
-          const y = chartHeight - ((value - min) / range) * chartHeight + padding;
+          const x = paddingX + (index / (data.length - 1)) * chartWidth;
+          const y = chartHeight - ((value - min) / range) * chartHeight + paddingY;
           return (
             <circle
               key={index}
@@ -196,9 +200,9 @@ function LineChart({
         })}
       </svg>
       {labels.length > 0 && (
-        <div className="flex justify-between px-1 mt-1">
+        <div className="flex justify-between px-5 mt-2">
           {labels.map((label, i) => (
-            <span key={i} className="text-[10px] text-gray-400">{label}</span>
+            <span key={i} className="text-[11px] text-gray-500 font-medium">{label}</span>
           ))}
         </div>
       )}
@@ -334,6 +338,7 @@ export default function UserProgressPage() {
     thighs: ''
   });
   const [photoNotes, setPhotoNotes] = useState('');
+  const [photoSide, setPhotoSide] = useState<'front' | 'back' | 'right-side' | 'left-side'>('front');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'weight' | 'nutrition' | 'body'>('weight');
@@ -359,7 +364,6 @@ export default function UserProgressPage() {
       const response = await fetch(`/api/client/progress?range=${timeRange}`);
       if (response.ok) {
         const data = await response.json();
-        setProgressData(data);
         if (data.measurements) {
           setMeasurements({
             waist: data.measurements.waist?.toString() || '',
@@ -434,6 +438,35 @@ export default function UserProgressPage() {
       });
 
       if (response.ok) {
+        // Also update BMI by updating profile weight
+        try {
+          const bmiResponse = await fetch('/api/client/bmi', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              weightKg: parseFloat(newWeight)
+            })
+          });
+          
+          if (bmiResponse.ok) {
+            const bmiData = await bmiResponse.json();
+            // Update local profile state with new BMI
+            setUserProfile(prev => {
+              if (!prev) return null;
+              return {
+                ...prev,
+                bmi: bmiData.bmi?.toString() || prev.bmi,
+                bmiCategory: bmiData.bmiCategory || prev.bmiCategory,
+                weightKg: newWeight,
+                heightCm: prev.heightCm ?? '',
+                generalGoal: prev.generalGoal ?? ''
+              };
+            });
+          }
+        } catch (bmiError) {
+          console.error('Error updating BMI:', bmiError);
+        }
+        
         toast.success('Weight logged successfully!');
         setShowWeightModal(false);
         setNewWeight('');
@@ -523,7 +556,8 @@ export default function UserProgressPage() {
         body: JSON.stringify({
           type: 'photo',
           photoUrl: photoUrl,
-          notes: photoNotes
+          notes: photoNotes,
+          side: photoSide
         })
       });
 
@@ -531,6 +565,7 @@ export default function UserProgressPage() {
         toast.success('Photo added successfully!');
         setShowPhotoModal(false);
         setPhotoNotes('');
+        setPhotoSide('front');
         fetchProgressData();
       } else {
         toast.error('Failed to save photo');
@@ -606,6 +641,12 @@ export default function UserProgressPage() {
     return (data.calorieHistory || []).filter(entry => new Date(entry.date) >= startDate);
   }, [data.calorieHistory, timeRange]);
 
+  // Filter nutrition history for macros charts
+  const filteredNutritionHistory = useMemo(() => {
+    const startDate = getDateRange(timeRange);
+    return (data.nutritionHistory || []).filter(entry => new Date(entry.date) >= startDate);
+  }, [data.nutritionHistory, timeRange]);
+
   // Chart data
   const weightChartData = filteredWeightHistory.length > 1 
     ? filteredWeightHistory.map(e => e.weight)
@@ -621,6 +662,23 @@ export default function UserProgressPage() {
 
   const calorieChartLabels = filteredCalorieHistory.length > 1
     ? filteredCalorieHistory.map(e => format(new Date(e.date), 'dd'))
+    : [];
+
+  // Macros chart data
+  const proteinChartData = filteredNutritionHistory.length > 1
+    ? filteredNutritionHistory.map(e => e.protein)
+    : [];
+  
+  const carbsChartData = filteredNutritionHistory.length > 1
+    ? filteredNutritionHistory.map(e => e.carbs)
+    : [];
+  
+  const fatChartData = filteredNutritionHistory.length > 1
+    ? filteredNutritionHistory.map(e => e.fat)
+    : [];
+
+  const macroChartLabels = filteredNutritionHistory.length > 1
+    ? filteredNutritionHistory.map(e => format(new Date(e.date), 'dd'))
     : [];
 
   // Get waist history for body measurements chart
@@ -657,7 +715,6 @@ export default function UserProgressPage() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen pb-24 bg-gray-50">
       {/* Header */}
@@ -760,7 +817,7 @@ export default function UserProgressPage() {
                    timeRange === '6M' ? 'Last 6 months' : 'Last year'}
                 </span>
               </div>
-              <div className="h-32">
+              <div className="h-38">
                 {weightChartData.length > 1 ? (
                   <LineChart data={weightChartData} color="#3AB1A0" labels={weightChartLabels} />
                 ) : (
@@ -942,7 +999,7 @@ export default function UserProgressPage() {
                    timeRange === '6M' ? 'Last 6 months' : 'Last year'}
                 </span>
               </div>
-              <div className="h-32">
+              <div className="h-38">
                 {calorieChartData.length > 1 ? (
                   <LineChart data={calorieChartData} color="#E06A26" labels={calorieChartLabels} />
                 ) : (
@@ -1042,6 +1099,65 @@ export default function UserProgressPage() {
                   color="bg-[#DB9C6E]" 
                   icon={Droplets}
                 />
+              </div>
+            </div>
+
+            {/* Macros Trend Charts */}
+            <div className="p-5 bg-white shadow-sm rounded-2xl">
+              <h3 className="mb-4 font-bold text-gray-900">Macros Trend</h3>
+              <div className="space-y-8">
+                {/* Protein Chart */}
+                <div className="pb-6 border-b border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-[#3AB1A0]">Protein (g)</span>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Goal: {data.goals?.protein || 120}g</span>
+                  </div>
+
+                  
+                  <div className="h-38">
+                    {proteinChartData.length > 1 ? (
+                      <LineChart data={proteinChartData} color="#3AB1A0" labels={macroChartLabels} height={96} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-xs text-gray-400">
+                        Complete more meals to see protein trend
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Carbs Chart */}
+                <div className="pb-6 border-b border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-[#E06A26]">Carbs (g)</span>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Goal: {data.goals?.carbs || 250}g</span>
+                  </div>
+                  <div className="h-38">
+                    {carbsChartData.length > 1 ? (
+                      <LineChart data={carbsChartData} color="#E06A26" labels={macroChartLabels} height={96} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-xs text-gray-400">
+                        Complete more meals to see carbs trend
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Fat Chart */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-[#DB9C6E]">Fat (g)</span>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Goal: {data.goals?.fat || 65}g</span>
+                  </div>
+                  <div className="h-38">
+                    {fatChartData.length > 1 ? (
+                      <LineChart data={fatChartData} color="#DB9C6E" labels={macroChartLabels} height={96} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-xs text-gray-400">
+                        Complete more meals to see fat trend
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1421,11 +1537,25 @@ export default function UserProgressPage() {
             
             <div className="space-y-4">
               <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">Side *</label>
+                <select
+                  value={photoSide}
+                  onChange={(e) => setPhotoSide(e.target.value as 'front' | 'back' | 'right-side' | 'left-side')}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0]"
+                >
+                  <option value="front">Front</option>
+                  <option value="back">Back</option>
+                  <option value="right-side">Right Side</option>
+                  <option value="left-side">Left Side</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">Notes (optional)</label>
                 <textarea
                   value={photoNotes}
                   onChange={(e) => setPhotoNotes(e.target.value)}
-                  placeholder="E.g., Front view, After 2 weeks..."
+                  placeholder="E.g., After 2 weeks..."
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] resize-none"
                   rows={2}
                 />
@@ -1464,6 +1594,7 @@ export default function UserProgressPage() {
                 onClick={() => {
                   setShowPhotoModal(false);
                   setPhotoNotes('');
+                  setPhotoSide('front');
                 }}
                 className="w-full px-4 py-3 font-semibold text-gray-700 transition-colors bg-gray-100 rounded-xl hover:bg-gray-200"
               >
@@ -1480,6 +1611,9 @@ export default function UserProgressPage() {
           <div className="flex items-center justify-between p-4 text-white">
             <div>
               <p className="font-medium">{format(new Date(selectedPhoto.date), 'MMMM d, yyyy')}</p>
+              {selectedPhoto.side && (
+                <p className="text-sm text-[#3AB1A0] capitalize">{selectedPhoto.side.replace('-', ' ')}</p>
+              )}
               {selectedPhoto.notes && (
                 <p className="text-sm text-gray-300">{selectedPhoto.notes}</p>
               )}

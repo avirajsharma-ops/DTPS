@@ -25,7 +25,6 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<string | n
     });
     
     if (existingPayment) {
-      console.log(`Payment record already exists for PaymentLink ${paymentLink._id}`);
       return existingPayment._id.toString();
     }
     
@@ -50,7 +49,6 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<string | n
     });
     
     await paymentRecord.save();
-    console.log(`✅ Created Payment record ${paymentRecord._id} for PaymentLink ${paymentLink._id}`);
     return paymentRecord._id.toString();
   } catch (error) {
     console.error('Error creating Payment record:', error);
@@ -79,7 +77,6 @@ async function syncPaymentLinkWithRazorpay(paymentLink: any): Promise<boolean> {
       }
       
       await paymentLink.save();
-      console.log(`✅ Synced payment link ${paymentLink._id} as PAID from Razorpay`);
       
       // Create Payment record for this newly synced payment
       await createPaymentRecordFromLink(paymentLink);
@@ -114,7 +111,6 @@ export async function GET(request: NextRequest) {
 
     // If force sync requested, use aggressive checking
     if (forceSync) {
-      console.log(`🔄 Force syncing payment for client ${clientId}`);
 
       // Aggressively sync ALL payment links for this client
       const allPaymentLinks = await PaymentLink.find({
@@ -123,7 +119,6 @@ export async function GET(request: NextRequest) {
         durationDays: { $exists: true, $gt: 0 }
       }).sort({ createdAt: -1 }).limit(10); // Check all recent links
 
-      console.log(`Found ${allPaymentLinks.length} payment links to check for client ${clientId}`);
 
       let syncedCount = 0;
       for (const paymentLink of allPaymentLinks) {
@@ -131,7 +126,6 @@ export async function GET(request: NextRequest) {
           const wasPaid = await syncPaymentLinkWithRazorpay(paymentLink);
           if (wasPaid) {
             syncedCount++;
-            console.log(`✅ Synced payment link ${paymentLink._id} as PAID`);
 
             // Create Payment record from synced link
             await createPaymentRecordFromLink(paymentLink);
@@ -168,13 +162,11 @@ export async function GET(request: NextRequest) {
               });
 
               await newPurchase.save();
-              console.log(`✅ Created ClientPurchase ${newPurchase._id} from force-synced payment`);
             }
           }
         }
       }
 
-      console.log(`Force sync complete: ${syncedCount} payments synced for client ${clientId}`);
     } else {
       // STEP 1: Try to sync any pending payment links with Razorpay
       // This ensures we catch payments that webhook might have missed
@@ -216,7 +208,6 @@ export async function GET(request: NextRequest) {
               daysUsed: 0
             });
             await newPurchase.save();
-            console.log(`Created ClientPurchase ${newPurchase._id} from synced pending payment ${pendingLink._id}`);
           }
 
           // Create Payment record for the synced payment
@@ -226,7 +217,6 @@ export async function GET(request: NextRequest) {
     }
 
     // STEP 2: Find ALL client's active purchases that haven't expired
-    console.log(`🔍 Looking for active ClientPurchases for client ${clientId}`);
     
     const allActivePurchases = await ClientPurchase.find({
       client: clientId,
@@ -236,7 +226,6 @@ export async function GET(request: NextRequest) {
     .populate('servicePlan', 'name category')
     .sort({ createdAt: -1 });
 
-    console.log(`Found ${allActivePurchases.length} active purchases for client ${clientId}`);
 
     // Prioritize purchase that needs meal plan (mealPlanCreated: false and has remaining days)
     let activePurchase = allActivePurchases.find(p => 
@@ -256,16 +245,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (activePurchase) {
-      console.log(`✅ Selected ClientPurchase:`, {
-        _id: activePurchase._id,
-        planName: activePurchase.planName,
-        mealPlanCreated: activePurchase.mealPlanCreated,
-        daysUsed: activePurchase.daysUsed,
-        durationDays: activePurchase.durationDays,
-        remainingDays: activePurchase.durationDays - (activePurchase.daysUsed || 0)
-      });
     } else {
-      console.log(`⚠️ No active ClientPurchase found for client ${clientId}`);
     }
 
     // STEP 3: If no active purchase found, check for paid payment links without ClientPurchase
@@ -314,7 +294,6 @@ export async function GET(request: NextRequest) {
           });
 
           await newPurchase.save();
-          console.log(`✅ Created missing ClientPurchase ${newPurchase._id} from paid PaymentLink ${paidPaymentLink._id}`);
           
           // Update Payment record with ClientPurchase reference
           await Payment.findOneAndUpdate(
@@ -360,8 +339,6 @@ export async function GET(request: NextRequest) {
       !p.mealPlanCreated && (p.durationDays - (p.daysUsed || 0)) > 0
     );
 
-    console.log(`📊 Aggregated Stats: Total Purchased: ${aggregatedTotalPurchasedDays}, Used: ${aggregatedTotalDaysUsed}, Remaining: ${aggregatedRemainingDays}`);
-    console.log(`📋 Purchases needing meal plan: ${purchasesNeedingMealPlan.length}`);
 
     // Calculate remaining days based on daysUsed (not date difference)
     // This allows multiple meal plans to use the total purchased days
@@ -375,17 +352,12 @@ export async function GET(request: NextRequest) {
     // Get associated payment details
     let paymentDetails = null;
     try {
-      console.log('🔍 Searching for Payment record...');
-      console.log(`   ClientPurchase ID: ${activePurchase._id}`);
-      console.log(`   PaymentLink ID: ${activePurchase.paymentLink}`);
-      console.log(`   Client ID: ${clientId}`);
       
       // First try: Find by clientPurchase
       let payment: any = null;
       if (activePurchase._id) {
         payment = await Payment.findOne({ clientPurchase: activePurchase._id }).lean();
         if (payment) {
-          console.log(`✅ Found Payment by clientPurchase ID`);
         }
       }
       
@@ -393,7 +365,6 @@ export async function GET(request: NextRequest) {
       if (!payment && activePurchase.paymentLink) {
         payment = await Payment.findOne({ paymentLink: activePurchase.paymentLink }).lean();
         if (payment) {
-          console.log(`✅ Found Payment by paymentLink ID`);
         }
       }
       
@@ -404,21 +375,10 @@ export async function GET(request: NextRequest) {
           status: PaymentStatus.COMPLETED
         }).sort({ createdAt: -1 }).lean();
         if (payment) {
-          console.log(`✅ Found Payment by client ID (most recent)`);
         }
       }
       
       if (payment && typeof payment === 'object' && '_id' in payment) {
-        console.log('✅ Payment Details:', {
-          _id: payment._id,
-          amount: payment.amount,
-          currency: payment.currency,
-          status: payment.status,
-          paymentMethod: payment.paymentMethod,
-          transactionId: payment.transactionId,
-          planName: payment.planName
-        });
-        
         paymentDetails = {
           _id: payment._id,
           amount: payment.amount,
@@ -431,8 +391,6 @@ export async function GET(request: NextRequest) {
           mealPlanId: payment.mealPlanId || null,
         };
       } else {
-        console.log('⚠️ No Payment record found for this purchase');
-        console.log('   Checked: clientPurchase, paymentLink, and client filters');
       }
     } catch (err) {
       console.error('❌ Error fetching payment details:', err);

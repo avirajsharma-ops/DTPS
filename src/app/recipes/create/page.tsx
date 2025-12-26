@@ -263,7 +263,6 @@ export default function CreateRecipePage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Recipe created successfully:', data);
         router.push('/recipes?success=created');
       } else {
         const data = await response.json();

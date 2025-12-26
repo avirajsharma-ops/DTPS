@@ -52,9 +52,17 @@ export async function GET(request: NextRequest) {
     let dayMeals: any[] = [];
     let mealsSource = 'none';
     
+    // Store daily note
+    let dailyNote = '';
+
     // 1. Try direct meals array on the plan
     if (mealPlan.meals?.length > 0) {
       const dayData = mealPlan.meals[dayIndex % mealPlan.meals.length];
+      
+      // Capture daily note
+      if (dayData?.note) {
+        dailyNote = dayData.note;
+      }
       
       if (dayData?.meals) {
         const mealsObj = dayData.meals;
@@ -128,6 +136,7 @@ export async function GET(request: NextRequest) {
       date: normalizedDate.toISOString(),
       totalCalories,
       meals: dayMeals,
+      dailyNote, // Dietitian's note for the day
       mealsSource, // For debugging
       isFrozen,
       freezeInfo: freezeInfo ? {
@@ -211,6 +220,24 @@ function calculateMealCalories(meal: any): number {
   }, 0);
 }
 
+// Calculate all macros from a meal
+function calculateMealMacros(meal: any): { calories: number; protein: number; carbs: number; fat: number } {
+  const result = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  if (!meal) return result;
+  
+  const foods = meal.foods || meal.items || meal.foodOptions || [];
+  if (!Array.isArray(foods)) return result;
+  
+  for (const food of foods) {
+    result.calories += Number(food.calories) || Number(food.cal) || 0;
+    result.protein += Number(food.protein) || 0;
+    result.carbs += Number(food.carbs) || 0;
+    result.fat += Number(food.fats) || Number(food.fat) || 0;
+  }
+  
+  return result;
+}
+
 function checkMealCompletion(completions: any[], date: Date, mealType: string): boolean {
   if (!completions?.length) return false;
   
@@ -231,11 +258,16 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
   if (Array.isArray(mealsData)) {
     return mealsData.map((meal: any, index: number) => {
       const mealType = meal.mealType || meal.type || getMealTypeByIndex(index);
+      const macros = calculateMealMacros(meal);
       return {
         id: `${planId}-${dayIndex}-${index}`,
         type: mealType,
         time: meal.time || getDefaultMealTime(mealType),
-        totalCalories: calculateMealCalories(meal),
+        totalCalories: macros.calories || calculateMealCalories(meal),
+        protein: macros.protein,
+        carbs: macros.carbs,
+        fat: macros.fat,
+        notes: meal.notes || meal.note || '',
         items: extractFoodItems(meal, planId, dayIndex, index),
         isCompleted: checkMealCompletion(completions, date, mealType),
         isEmpty: !hasFood(meal)
@@ -252,11 +284,16 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
       .filter(([key]) => validMealTypes.some(t => key.toLowerCase().includes(t.toLowerCase())))
       .map(([mealType, meal]: [string, any], index: number) => {
         const normalizedType = normalizeMealType(mealType);
+        const macros = calculateMealMacros(meal);
         return {
           id: `${planId}-${dayIndex}-${index}`,
           type: normalizedType,
           time: (meal as any)?.time || getDefaultMealTime(mealType),
-          totalCalories: calculateMealCalories(meal),
+          totalCalories: macros.calories || calculateMealCalories(meal),
+          protein: macros.protein,
+          carbs: macros.carbs,
+          fat: macros.fat,
+          notes: (meal as any)?.notes || (meal as any)?.note || '',
           items: extractFoodItems(meal, planId, dayIndex, index),
           isCompleted: checkMealCompletion(completions, date, normalizedType),
           isEmpty: !hasFood(meal)
@@ -303,7 +340,8 @@ function extractFoodItems(meal: any, planId: string, dayIndex: number, mealIndex
       calories: Number(food.calories) || Number(food.cal) || 0,
       alternatives: food.alternatives || [],
       recipe: food.recipe || null,
-      recipeId: food.recipeId || food.recipe?._id || null, // Store recipe ID for lookup
+      recipeId: food.recipeId || food.recipe?._id || null,
+      recipeUuid: food.recipeUuid || null, // UUID for recipe lookup
       tags: food.tags || [],
       // Include extra nutrition info if available
       protein: food.protein || null,
@@ -315,37 +353,56 @@ function extractFoodItems(meal: any, planId: string, dayIndex: number, mealIndex
 
 // Fetch full recipe details from Recipe model
 async function enrichMealsWithRecipeDetails(meals: any[]): Promise<any[]> {
-  // Collect all recipe IDs that need to be fetched
+  // Collect all recipe IDs and UUIDs that need to be fetched
   const recipeIds: string[] = [];
+  const recipeUuids: string[] = [];
   
   meals.forEach(meal => {
     if (meal.items) {
       meal.items.forEach((item: any) => {
-        if (item.recipeId && !item.recipe?.ingredients) {
-          recipeIds.push(item.recipeId.toString());
+        if (!item.recipe?.ingredients) {
+          if (item.recipeUuid) {
+            recipeUuids.push(item.recipeUuid);
+          } else if (item.recipeId) {
+            recipeIds.push(item.recipeId.toString());
+          }
         }
       });
     }
   });
   
-  if (recipeIds.length === 0) return meals;
+  if (recipeIds.length === 0 && recipeUuids.length === 0) return meals;
   
   try {
-    // Fetch all recipes in one query
-    const recipes = await Recipe.find({
-      _id: { $in: recipeIds }
-    }).lean() as any[];
+    // Fetch all recipes in one query (by ID or UUID)
+    const query: any = { $or: [] };
+    if (recipeIds.length > 0) {
+      query.$or.push({ _id: { $in: recipeIds } });
+    }
+    if (recipeUuids.length > 0) {
+      query.$or.push({ uuid: { $in: recipeUuids } });
+    }
     
-    // Create a map for quick lookup
-    const recipeMap = new Map(recipes.map((r: any) => [r._id.toString(), r]));
+    const recipes = await Recipe.find(query).lean() as any[];
+    
+    // Create maps for quick lookup by both ID and UUID
+    const recipeMapById = new Map(recipes.map((r: any) => [r._id.toString(), r]));
+    const recipeMapByUuid = new Map(recipes.filter((r: any) => r.uuid).map((r: any) => [r.uuid, r]));
     
     // Enrich meal items with recipe details
     return meals.map(meal => ({
       ...meal,
       items: meal.items?.map((item: any) => {
-        if (item.recipeId) {
-          const fullRecipe = recipeMap.get(item.recipeId.toString());
-          if (fullRecipe) {
+        // Look up recipe by UUID first, then by ID
+        let fullRecipe = null;
+        if (item.recipeUuid) {
+          fullRecipe = recipeMapByUuid.get(item.recipeUuid);
+        }
+        if (!fullRecipe && item.recipeId) {
+          fullRecipe = recipeMapById.get(item.recipeId.toString());
+        }
+        
+        if (fullRecipe) {
             return {
               ...item,
               recipe: {
@@ -369,7 +426,6 @@ async function enrichMealsWithRecipeDetails(meals: any[]): Promise<any[]> {
                 allergens: fullRecipe.allergens || []
               }
             };
-          }
         }
         return item;
       }) || []

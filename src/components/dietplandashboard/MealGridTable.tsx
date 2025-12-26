@@ -53,13 +53,9 @@ const DAYS_PER_PAGE = 14;
 
 export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
   // Debug logging
-  console.log('MealGridTable render - weekPlan days:', weekPlan.length);
-  console.log('MealGridTable render - first day meals:', weekPlan[0]?.meals ? Object.keys(weekPlan[0].meals) : 'none');
-  console.log('MealGridTable render - holdDays:', holdDays?.length || 0, 'totalHeldDays:', totalHeldDays);
   if (weekPlan[0]?.meals) {
     const firstMealType = Object.keys(weekPlan[0].meals)[0];
     if (firstMealType) {
-      console.log('MealGridTable render - first meal data:', JSON.stringify(weekPlan[0].meals[firstMealType]).slice(0, 200));
     }
   }
   
@@ -119,7 +115,6 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     const meal = weekPlan[dayIndex]?.meals[mealType] || null;
     // Debug logging only for first day
     if (dayIndex === 0) {
-      console.log(`getMealForDay(${dayIndex}, ${mealType}):`, meal ? `found with ${meal.foodOptions?.length || 0} options` : 'null');
     }
     return meal;
   };

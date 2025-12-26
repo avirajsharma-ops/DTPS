@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
             activePurchases: allPurchases.map(p => {
                 const dietitian = p.dietitian as any;
                 // Debug log to check mealPlanCreated value
-                console.log(`Purchase ${p._id}: mealPlanCreated=${p.mealPlanCreated}, dietitian=${!!dietitian}`);
                 return {
                     _id: p._id,
                     planName: p.planName,

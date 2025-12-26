@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
 
     // Handle user denial of permissions
     if (error) {
-      console.log('User denied Google Calendar permissions:', error);
       let baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
       baseUrl = baseUrl.replace(/\/$/, '');
       return NextResponse.redirect(

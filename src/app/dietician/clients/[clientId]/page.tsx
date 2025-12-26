@@ -626,12 +626,6 @@ export default function ClientDetailPage() {
   const handleMediaUpload = async (file: File) => {
     try {
       setUploadingMedia(true);
-      console.log('Starting upload for file:', {
-        name: file.name,
-        size: file.size,
-        type: file.type
-      });
-
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', 'note-attachment');
@@ -641,11 +635,9 @@ export default function ClientDetailPage() {
         body: formData
       });
 
-      console.log('Upload response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Upload response data:', data);
         let mediaType: 'image' | 'video' | 'audio' = 'image';
         if (file.type.startsWith('video/')) mediaType = 'video';
         else if (file.type.startsWith('audio/')) mediaType = 'audio';
@@ -807,7 +799,6 @@ export default function ClientDetailPage() {
         const data = await response.json();
         setClient(data?.user);
         setFormData(data?.user);
-        if (!silent) console.log('Client data:', data.user);
 
         // Load client tags
         if (data?.user?.tags && Array.isArray(data.user.tags)) {
@@ -2152,13 +2143,11 @@ export default function ClientDetailPage() {
                               const chunks: Blob[] = [];
                               
                               recorder.ondataavailable = (e) => {
-                                console.log('Audio data available:', e.data.size);
                                 if (e.data.size > 0) chunks.push(e.data);
                               };
                               
                               recorder.onstop = async () => {
                                 try {
-                                  console.log('Recording stopped. Chunks count:', chunks.length);
                                   
                                   if (chunks.length === 0) {
                                     console.error('No audio chunks recorded');
@@ -2170,7 +2159,6 @@ export default function ClientDetailPage() {
                                   }
                                   
                                   const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-                                  console.log('Audio blob created:', { size: audioBlob.size, type: audioBlob.type });
                                   
                                   if (audioBlob.size === 0) {
                                     console.error('Audio blob is empty');
@@ -2182,12 +2170,10 @@ export default function ClientDetailPage() {
                                   }
                                   
                                   const file = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
-                                  console.log('File object created:', { name: file.name, size: file.size, type: file.type });
                                   
                                   stream.getTracks().forEach(track => track.stop());
                                   
                                   const result = await handleMediaUpload(file);
-                                  console.log('Upload result:', result);
                                   
                                   setRecordingTime(0);
                                   setIsRecording(false);

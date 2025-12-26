@@ -132,7 +132,6 @@ export async function POST(
       // Update existing recall
       recall.meals = mealsWithDefaults;
       await recall.save();
-      console.log('Updated existing recall:', recall._id);
 
       await logHistoryServer({
         userId,
@@ -154,7 +153,6 @@ export async function POST(
         meals: mealsWithDefaults
       });
       await recall.save();
-      console.log('Created new recall:', recall._id);
 
       await logHistoryServer({
         userId,

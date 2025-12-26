@@ -175,7 +175,6 @@ function MessagesContent() {
     onMessage: (evt) => {
       try {
         const data = evt.data; // already parsed in hook
-        console.log('Dietitian received real-time event:', evt.type, data);
 
         // Check connection health for critical call events (do not drop the event)
         // If we're temporarily disconnected, still handle the event and nudge a reconnect
@@ -195,27 +194,13 @@ function MessagesContent() {
           // We are the caller and got the answer
           // Use ref to get the latest peer connection (avoid stale closure)
           const pc = peerConnectionRef.current;
-
-          console.log('Dietitian received call_accepted:', {
-            currentCallId: callId,
-            eventCallId: data.callId,
-            hasPeerConnection: !!pc,
-            hasAnswer: !!data.answer,
-            fullEventData: data
-          });
-
           // Check if this is for our current call (only if we have a callId)
           if (callId && data.callId && data.callId !== callId) {
-            console.log('Ignoring call_accepted for different call ID:', {
-              expected: callId,
-              received: data.callId
-            });
             return; // ignore stale/other calls
           }
 
           // If we don't have a callId but we're in calling state, accept it anyway
           if (!callId && callState === 'calling') {
-            console.log('No callId set but we are in calling state - accepting call_accepted');
             setCallId(data.callId);
           }
 
@@ -229,26 +214,21 @@ function MessagesContent() {
             return;
           }
 
-          console.log('Processing call_accepted - setting remote description');
-          console.log('Setting remote description and updating to connected state');
           pc.setRemoteDescription(data.answer)
             .then(async () => {
               remoteDescriptionSetRef.current = true;
               await flushPendingIce(pc);
               setCallState('connected');
-              console.log('✅ Dietitian call state updated to CONNECTED');
 
               // Force clear any pending timeouts
               if (callTimeoutRef.current) {
                 clearTimeout(callTimeoutRef.current);
                 callTimeoutRef.current = null;
-                console.log('Cleared call timeout after successful connection');
               }
 
               // Also clear timeout based on state change
               setTimeout(() => {
                 if (callTimeoutRef.current) {
-                  console.log('Force clearing timeout after state change');
                   clearTimeout(callTimeoutRef.current);
                   callTimeoutRef.current = null;
                 }
@@ -271,7 +251,6 @@ function MessagesContent() {
           endCall();
         } else if (evt.type === 'webrtc-signal') {
           // 🚀 NEW: Handle Simple WebRTC signals
-          console.log('📥 Simple WebRTC signal received via SSE:', data);
           handleSimpleSignal(data);
         }
       } catch (e) {
@@ -303,7 +282,6 @@ function MessagesContent() {
     handleSignal: handleSimpleSignal
   } = useSimpleWebRTC({
     onIncomingCall: (callData) => {
-      console.log('📞 Simple WebRTC: Incoming call received:', callData);
       // You can integrate this with your existing incoming call UI
       // For now, let's use the existing incomingCall state
       setIncomingCall({
@@ -315,21 +293,17 @@ function MessagesContent() {
       });
     },
     onCallAccepted: () => {
-      console.log('✅ Simple WebRTC: Call accepted!');
       setCallState('connected');
     },
     onCallRejected: () => {
-      console.log('❌ Simple WebRTC: Call rejected');
       setCallState('ended');
       setIncomingCall(null);
     },
     onCallEnded: () => {
-      console.log('📞 Simple WebRTC: Call ended');
       setCallState('ended');
       setIncomingCall(null);
     },
     onRemoteStream: (stream) => {
-      console.log('📺 Simple WebRTC: Remote stream received');
       // Handle remote stream for simple WebRTC
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = stream;
@@ -366,9 +340,7 @@ function MessagesContent() {
   // Auto mark missed call if not answered within 30s (caller side)
   useEffect(() => {
     if (isInitiator && callState === 'calling' && callId && remoteUserId) {
-      console.log('Setting 30-second timeout for call:', callId);
       callTimeoutRef.current = setTimeout(async () => {
-        console.log('Call timeout reached, marking as missed call');
         try {
           // notify receiver of missed call
           await fetch('/api/webrtc/signal', {
@@ -409,13 +381,11 @@ function MessagesContent() {
         setIsVideoCall(false);
       }, 30000);
     } else if (callTimeoutRef.current) {
-      console.log('Clearing call timeout due to state change:', callState);
       clearTimeout(callTimeoutRef.current);
       callTimeoutRef.current = null;
     }
     return () => {
       if (callTimeoutRef.current) {
-        console.log('Cleaning up call timeout');
         clearTimeout(callTimeoutRef.current);
         callTimeoutRef.current = null;
       }
@@ -425,7 +395,6 @@ function MessagesContent() {
   // Additional useEffect to clear timeout when call state changes to connected
   useEffect(() => {
     if (callState === 'connected' && callTimeoutRef.current) {
-      console.log('Call state changed to connected - clearing timeout');
       clearTimeout(callTimeoutRef.current);
       callTimeoutRef.current = null;
     }
@@ -877,31 +846,26 @@ function MessagesContent() {
   const startSimpleVideoCall = async () => {
     if (!selectedConversation || !session?.user?.id) return;
 
-    console.log('🚀 Starting Simple WebRTC video call to:', selectedConversation);
     await startSimpleCall(selectedConversation, 'video');
   };
 
   const startSimpleAudioCall = async () => {
     if (!selectedConversation || !session?.user?.id) return;
 
-    console.log('🚀 Starting Simple WebRTC audio call to:', selectedConversation);
     await startSimpleCall(selectedConversation, 'audio');
   };
 
   const handleSimpleCallAccept = () => {
-    console.log('🚀 Accepting Simple WebRTC call');
     acceptSimpleCall();
     setIncomingCall(null);
   };
 
   const handleSimpleCallReject = () => {
-    console.log('🚀 Rejecting Simple WebRTC call');
     rejectSimpleCall();
     setIncomingCall(null);
   };
 
   const handleSimpleCallEnd = () => {
-    console.log('🚀 Ending Simple WebRTC call');
     endSimpleCall();
   };
 

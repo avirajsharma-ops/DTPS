@@ -81,6 +81,7 @@ interface DayPlan {
   meals: Meal[];
   totalCalories: number;
   hasPlan: boolean;
+  dailyNote?: string;
   isFrozen?: boolean;
   freezeInfo?: {
     date: string;
@@ -106,6 +107,11 @@ interface CompletionModalData {
   isOpen: boolean;
 }
 
+interface FoodItemSelectorModalData {
+  meal: Meal | null;
+  isOpen: boolean;
+}
+
 // Default meal slots with fixed times - 6 meal types
 const DEFAULT_MEAL_SLOTS: { type: Meal['type']; time: string; label: string }[] = [
   { type: 'breakfast', time: '7:00 AM', label: 'Breakfast' },
@@ -126,6 +132,7 @@ export default function UserPlanPage() {
   const [completingMeal, setCompletingMeal] = useState<string | null>(null);
   const [recipeModal, setRecipeModal] = useState<RecipeModalData>({ item: {} as MealItem, isOpen: false });
   const [alternativesModal, setAlternativesModal] = useState<{ item: MealItem; isOpen: boolean }>({ item: {} as MealItem, isOpen: false });
+  const [foodSelectorModal, setFoodSelectorModal] = useState<FoodItemSelectorModalData>({ meal: null, isOpen: false });
   const [refreshing, setRefreshing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerValue, setDatePickerValue] = useState('');
@@ -232,7 +239,7 @@ export default function UserPlanPage() {
 
   // Prevent body scroll when any modal is open
   useEffect(() => {
-    if (recipeModal.isOpen || alternativesModal.isOpen || completionModal.isOpen || showDatePicker) {
+    if (recipeModal.isOpen || alternativesModal.isOpen || completionModal.isOpen || showDatePicker || foodSelectorModal.isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -240,7 +247,7 @@ export default function UserPlanPage() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [recipeModal.isOpen, alternativesModal.isOpen, completionModal.isOpen, showDatePicker]);
+  }, [recipeModal.isOpen, alternativesModal.isOpen, completionModal.isOpen, showDatePicker, foodSelectorModal.isOpen]);
 
   // Handle date picker selection
   const handleDatePickerSelect = () => {
@@ -311,6 +318,7 @@ export default function UserPlanPage() {
               meals: data.meals || [],
               totalCalories: data.totalCalories || 0,
               hasPlan: true,
+              dailyNote: data.dailyNote || '',
               isFrozen: data.isFrozen || false,
               freezeInfo: data.freezeInfo || null,
               planDetails: data.planDetails
@@ -320,6 +328,7 @@ export default function UserPlanPage() {
               meals: [],
               totalCalories: 0,
               hasPlan: false,
+              dailyNote: '',
               isFrozen: false,
               freezeInfo: null
             };
@@ -332,7 +341,8 @@ export default function UserPlanPage() {
           date: date,
           meals: [],
           totalCalories: 0,
-          hasPlan: false
+          hasPlan: false,
+          dailyNote: ''
         };
         mealPlanCache.current.set(dateKey, noplan);
         setDayPlan(noplan);
@@ -343,7 +353,8 @@ export default function UserPlanPage() {
         date: date,
         meals: [],
         totalCalories: 0,
-        hasPlan: false
+        hasPlan: false,
+        dailyNote: ''
       });
     } finally {
       setLoading(false);
@@ -599,7 +610,7 @@ export default function UserPlanPage() {
             <p className="text-2xl font-bold">{format(selectedDate, 'EEEE')}</p>
             <p className="text-sm opacity-90">{format(selectedDate, 'MMMM d, yyyy')}</p>
           </div>
-          <div className="bg-white/20 rounded-2xl p-3 text-center min-w-[70px]">
+          <div className="bg-white/20 rounded-2xl p-3 text-center min-w-17.5">
             <p className="text-xs font-medium opacity-90">{format(selectedDate, 'MMM')}</p>
             <p className="text-3xl font-bold">{format(selectedDate, 'd')}</p>
           </div>
@@ -620,7 +631,7 @@ export default function UserPlanPage() {
               <button
                 key={date.toISOString()}
                 onClick={() => setSelectedDate(date)}
-                className={`flex flex-col items-center py-2 px-4 rounded-2xl min-w-[50px] transition-all ${
+                className={`flex flex-col items-center py-2 px-4 rounded-2xl min-w-12.5 transition-all ${
                   isSelected 
                     ? 'bg-[#3AB1A0] text-white' 
                     : 'bg-transparent text-gray-600 hover:bg-gray-100'
@@ -692,40 +703,46 @@ export default function UserPlanPage() {
           </div>
         ) : dayPlan?.isFrozen ? (
           /* Frozen Day Message */
-          <div className="p-8 text-center bg-white shadow-sm rounded-2xl border-2 border-blue-200">
-            <div className="w-24 h-24 mx-auto mb-4 bg-linear-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center">
-              <span className="text-5xl">❄️</span>
-            </div>
-            <h3 className="mb-2 text-xl font-bold text-blue-800">This Day is Frozen</h3>
-            <p className="mb-2 text-sm text-gray-600 font-medium">
-              {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-            </p>
-            <p className="mb-4 text-sm text-gray-500">
-              Your dietitian has frozen this day. No meals are scheduled.
-            </p>
-            {dayPlan.freezeInfo?.reason && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-left">
-                <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Reason</p>
-                <p className="text-sm text-blue-800">{dayPlan.freezeInfo.reason}</p>
+          <div className="p-8 text-center bg-white shadow-sm rounded-2xl border-2 border-blue-200 relative overflow-hidden">
+            {/* <style>{`@keyframes snowFall { to { transform: translateY(350px) rotateZ(360deg); opacity: 0; } } .snowflake-anim { position: absolute; color: #b3d9ff; font-size: 1.5rem; pointer-events: none; animation: snowFall 5s linear infinite; }`}</style> */}
+            {/* {[...Array(6)].map((_, i) => (<div key={i} className="snowflake-anim" style={{left: `${15 + i * 15}%`, top: `-10px`, animationDelay: `${i * 0.8}s`}}>❄️</div>))} */}
+            <div className="relative z-10">
+              <div className="w-24 h-24 mx-auto mb-4 bg-linear-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center animate-pulse">
+                <span className="text-5xl">❄️</span>
               </div>
-            )}
-            <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => {
-                  const nextDate = addDays(selectedDate, 1);
-                  setSelectedDate(nextDate);
-                }}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-[#3AB1A0] to-[#2D8A7C] text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg"
-              >
-                View Next Day
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <Link 
-                href="/user/messages"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors"
-              >
-                💬 Contact Dietitian
-              </Link>
+              <h3 className="mb-2 text-xl font-bold text-blue-800">This Day is Frozen</h3>
+            </div>
+            <div className="relative z-10">
+              <p className="mb-2 text-sm text-gray-600 font-medium">
+                {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+              </p>
+              <p className="mb-4 text-sm text-gray-500">
+                Your dietitian has frozen this day. No meals are scheduled.
+              </p>
+              {dayPlan.freezeInfo?.reason && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-left">
+                  <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Reason</p>
+                  <p className="text-sm text-blue-800">{dayPlan.freezeInfo.reason}</p>
+                </div>
+              )}
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => {
+                    const nextDate = addDays(selectedDate, 1);
+                    setSelectedDate(nextDate);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-[#3AB1A0] to-[#2D8A7C] text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg"
+                >
+                  View Next Day
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <Link 
+                  href="/user/messages"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors"
+                >
+                  💬 Contact Dietitian
+                </Link>
+              </div>
             </div>
           </div>
         ) : !dayPlan?.hasPlan ? (
@@ -787,6 +804,19 @@ export default function UserPlanPage() {
                   />
                 ))}
               </div>
+              
+              {/* Daily Note from Dietitian */}
+              {dayPlan?.dailyNote && (
+                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg">📝</span>
+                    <div>
+                      <p className="text-xs font-semibold text-yellow-700 mb-1">Note from Dietitian</p>
+                      <p className="text-sm text-yellow-800">{dayPlan.dailyNote}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Meals List - Show all 6 meal slots */}
@@ -898,7 +928,7 @@ export default function UserPlanPage() {
                 {/* Action Buttons */}
                 <div className="flex items-center gap-3 flex-wrap">
                   {meal.isCompleted ? (
-                    <button className="flex-1 min-w-[120px] py-2.5 px-4 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-xl text-sm font-semibold cursor-default">
+                    <button className="flex-1 min-w-30 py-2.5 px-4 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-xl text-sm font-semibold cursor-default">
                       ✓ Completed
                     </button>
                   ) : !isTodaySelected ? (
@@ -913,14 +943,14 @@ export default function UserPlanPage() {
                     </button>
                   ) : meal.items.length === 0 ? (
                     /* Hide complete button when no food is allotted */
-                    <div className="flex-1 min-w-[120px] py-2.5 px-4 bg-gray-100 text-gray-400 rounded-xl text-sm font-medium text-center">
+                    <div className="flex-1 min-w-30 py-2.5 px-4 bg-gray-100 text-gray-400 rounded-xl text-sm font-medium text-center">
                       No food to mark as complete
                     </div>
                   ) : (
                     <button 
                       onClick={() => openCompletionModal(meal)}
                       disabled={completingMeal === meal.id}
-                      className="flex-1 min-w-[120px] py-2.5 px-4 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[#2A9A8B] transition-colors disabled:opacity-50"
+                      className="flex-1 min-w-30 py-2.5 px-4 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[#2A9A8B] transition-colors disabled:opacity-50"
                     >
                       {completingMeal === meal.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -937,15 +967,10 @@ export default function UserPlanPage() {
                   {meal.items.length > 0 && (
                     <button 
                       onClick={() => {
-                        const itemWithRecipe = meal.items.find(item => item.recipe);
-                        if (itemWithRecipe) {
-                          setRecipeModal({ item: itemWithRecipe, isOpen: true });
-                        } else {
-                          // Show first item details even if no full recipe
-                          setRecipeModal({ item: meal.items[0], isOpen: true });
-                        }
+                        // Open food selector modal to show all items
+                        setFoodSelectorModal({ meal, isOpen: true });
                       }}
-                      className="flex-1 min-w-[120px] py-2.5 px-4 bg-[#DB9C6E]/10 text-[#DB9C6E] rounded-xl text-sm font-semibold hover:bg-[#DB9C6E]/20 transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 min-w-30 py-2.5 px-4 bg-[#DB9C6E]/10 text-[#DB9C6E] rounded-xl text-sm font-semibold hover:bg-[#DB9C6E]/20 transition-colors flex items-center justify-center gap-2"
                       title="View recipe details"
                     >
                       <BookOpen className="w-4 h-4" />
@@ -1302,6 +1327,131 @@ export default function UserPlanPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Food Item Selector Modal - Shows all food items in a meal with recipes */}
+      {foodSelectorModal.isOpen && foodSelectorModal.meal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setFoodSelectorModal({ meal: null, isOpen: false });
+            }
+          }}
+        >
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 bg-linear-to-r from-[#DB9C6E] to-[#E06A26]">
+              <div>
+                <h3 className="text-lg font-bold text-white">{getMealLabel(foodSelectorModal.meal.type)}</h3>
+                <p className="text-sm text-white/80">Select a food to view recipe</p>
+              </div>
+              <button 
+                onClick={() => setFoodSelectorModal({ meal: null, isOpen: false })}
+                className="p-2 rounded-full hover:bg-white/20 transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+            
+            {/* Food Items List */}
+            <div className="overflow-y-auto flex-1 p-4 space-y-3">
+              {/* Meal Notes */}
+              {foodSelectorModal.meal.notes && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl mb-4">
+                  <p className="text-xs font-semibold text-yellow-700 mb-1">📝 Notes from Dietitian</p>
+                  <p className="text-sm text-yellow-800">{foodSelectorModal.meal.notes}</p>
+                </div>
+              )}
+
+              <p className="text-sm text-gray-500 mb-2">Tap on a food item to view its recipe:</p>
+              
+              {foodSelectorModal.meal.items.map((item, index) => (
+                <div key={item.id || index} className="space-y-2">
+                  {/* Main Food Item */}
+                  <button
+                    onClick={() => {
+                      setRecipeModal({ item, isOpen: true });
+                      setFoodSelectorModal({ meal: null, isOpen: false });
+                    }}
+                    className="w-full p-4 bg-gray-50 hover:bg-[#3AB1A0]/10 rounded-xl text-left transition-colors border border-gray-100 hover:border-[#3AB1A0]/30"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#3AB1A0]/20 flex items-center justify-center">
+                          <BookOpen className="w-5 h-5 text-[#3AB1A0]" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800">{item.name}</p>
+                          <p className="text-xs text-gray-500">{item.portion}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-[#E06A26]">{item.calories} kcal</p>
+                        {(item.protein || item.carbs || item.fats) && (
+                          <p className="text-xs text-gray-400">
+                            P:{item.protein || 0}g C:{item.carbs || 0}g F:{item.fats || 0}g
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Tags */}
+                    {item.tags && item.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {item.tags.map((tag, i) => (
+                          <span 
+                            key={i}
+                            className="px-2 py-0.5 bg-[#DB9C6E]/20 text-[#DB9C6E] rounded-full text-xs"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Recipe indicator */}
+                    <div className="mt-2 flex items-center gap-1 text-xs text-[#3AB1A0]">
+                      <ChevronRight className="w-3 h-3" />
+                      <span>{item.recipe ? 'View full recipe' : 'View details'}</span>
+                    </div>
+                  </button>
+                  
+                  {/* Alternatives for this item */}
+                  {item.alternatives && item.alternatives.length > 0 && (
+                    <div className="ml-6 p-3 bg-[#3AB1A0]/5 rounded-xl border-l-2 border-[#3AB1A0]">
+                      <p className="text-xs font-semibold text-[#3AB1A0] mb-2">🔄 Alternatives:</p>
+                      <div className="space-y-2">
+                        {item.alternatives.map((alt, altIndex) => (
+                          <div 
+                            key={altIndex}
+                            className="flex items-center justify-between p-2 bg-white rounded-lg"
+                          >
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">{alt.name}</p>
+                              <p className="text-xs text-gray-400">{alt.portion}</p>
+                            </div>
+                            <span className="text-sm font-semibold text-[#E06A26]">{alt.calories} kcal</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="p-4 bg-gray-50 border-t border-gray-200">
+              <button
+                onClick={() => setFoodSelectorModal({ meal: null, isOpen: false })}
+                className="w-full py-3 bg-[#3AB1A0] text-white rounded-xl font-bold hover:bg-[#2A9A8B] transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

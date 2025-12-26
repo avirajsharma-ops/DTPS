@@ -269,7 +269,6 @@ export class WatchService {
       
       // Save the synced data
       const saved = await this.saveWatchHealthData(userId, healthData);
-      console.log('[Watch Sync] Saved health data:', JSON.stringify(saved, null, 2));
 
       // Update last sync time
       await WatchConnection.findByIdAndUpdate(connection._id, {
@@ -350,7 +349,6 @@ export class WatchService {
     });
     
     if (!accessToken) {
-      console.log('No access token for Google Fit - returning default data');
       return createDefaultData();
     }
     

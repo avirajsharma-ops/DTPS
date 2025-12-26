@@ -29,7 +29,6 @@ export class SSEManager {
     // Update online status
     onlineStatusManager.setUserOnline(userId, connectionId);
 
-    console.log(`SSE connection added for user ${userId}: ${connectionId}`);
   }
 
   // Remove SSE connection
@@ -50,7 +49,6 @@ export class SSEManager {
     // Clear typing indicators
     typingManager.clearUserTyping(userId);
 
-    console.log(`SSE connection removed for user ${userId}: ${connectionId}`);
   }
 
   // Send message to specific user
@@ -69,7 +67,6 @@ export class SSEManager {
       if (writer) {
         try {
           writer.write(encoder.encode(message));
-          console.log(`Sent to ${userId}:`, event, data);
         } catch (error: any) {
           const msg = String(error?.message || error || '');
           // Closed/invalid writers are expected during reconnects; clean up quietly
@@ -95,7 +92,6 @@ export class SSEManager {
     this.connections.forEach((writer, connectionId) => {
       try {
         writer.write(encoder.encode(message));
-        console.log(`Broadcasted:`, event, data);
       } catch (error) {
         console.error(`Failed to broadcast to ${connectionId}:`, error);
       }

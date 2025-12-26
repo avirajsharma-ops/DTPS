@@ -227,7 +227,7 @@ export default function MedicalInfoPage() {
       setUploading(true);
       const formData = new FormData();
       formData.append('file', pendingFile);
-      formData.append('type', 'document');
+      formData.append('type', 'medical-report'); // Use medical-report type for ImageKit upload
 
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -654,7 +654,7 @@ export default function MedicalInfoPage() {
                         <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-2.5 px-3 text-gray-500 text-xs">{index + 1}</td>
                           <td className="py-2.5 px-3">
-                            <p className="text-gray-800 font-medium text-xs truncate max-w-[120px]">{getReportName(report)}</p>
+                            <p className="text-gray-800 font-medium text-xs truncate max-w-30">{getReportName(report)}</p>
                           </td>
                           <td className="py-2.5 px-3">
                             <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-medium">

@@ -36,7 +36,6 @@ export async function sendNotificationToUser(
         const user = await User.findById(userId).select('fcmTokens');
 
         if (!user || !user.fcmTokens || user.fcmTokens.length === 0) {
-            console.log(`No FCM tokens found for user: ${userId}`);
             return { successCount: 0, failureCount: 0, invalidTokens: [], responses: [] };
         }
 
@@ -78,7 +77,6 @@ export async function sendNotificationToUsers(
         });
 
         if (allTokens.length === 0) {
-            console.log('No FCM tokens found for any of the specified users');
             return { successCount: 0, failureCount: 0, invalidTokens: [], responses: [] };
         }
 
@@ -185,11 +183,6 @@ async function sendNotificationToTokens(
     if (invalidTokens.length > 0 && userId) {
         await removeInvalidTokens(userId, invalidTokens);
     }
-
-    console.log(
-        `Notification sent: ${successCount} success, ${failureCount} failed, ${invalidTokens.length} invalid tokens removed`
-    );
-
     return { successCount, failureCount, invalidTokens, responses };
 }
 
@@ -202,7 +195,6 @@ async function removeInvalidTokens(userId: string, tokensToRemove: string[]): Pr
         await User.findByIdAndUpdate(userId, {
             $pull: { fcmTokens: { token: { $in: tokensToRemove } } },
         });
-        console.log(`Removed ${tokensToRemove.length} invalid FCM tokens for user ${userId}`);
     } catch (error) {
         console.error('Error removing invalid tokens:', error);
     }

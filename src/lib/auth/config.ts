@@ -192,11 +192,9 @@ export const authOptions: NextAuthOptions = {
   events: {
     async signIn({ user, isNewUser }) {
       if (isNewUser) {
-        console.log(`New user signed up: ${user.email}`);
       }
     },
     async signOut({ token }) {
-      console.log(`User signed out: ${token.email}`);
     }
   },
   debug: process.env.NODE_ENV === 'development' && process.env.NEXT_DEBUG_AUTH === 'true',

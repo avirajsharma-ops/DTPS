@@ -27,7 +27,6 @@ const getFirebaseAdmin = () => {
             }),
         });
 
-        console.log('Firebase Admin SDK initialized successfully');
         return app;
     } catch (error) {
         console.error('Failed to initialize Firebase Admin SDK:', error);

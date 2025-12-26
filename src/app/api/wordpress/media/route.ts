@@ -67,16 +67,6 @@ export async function POST(request: NextRequest) {
     if (title) wpFormData.append('title', title);
     if (alt) wpFormData.append('alt', alt);
     if (caption) wpFormData.append('caption', caption);
-
-    console.log('Uploading to WordPress:', {
-      filename: file.name,
-      type: file.type,
-      size: file.size,
-      title,
-      alt,
-      caption,
-    });
-
     const res = await fetch(`${API_BASE}/media`, {
       method: 'POST',
       headers: {
@@ -97,7 +87,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = JSON.parse(text);
-    console.log('Upload successful:', data);
     
     return NextResponse.json(data);
   } catch (error: any) {

@@ -23,6 +23,27 @@ interface ServicePlan {
   isPopular?: boolean;
 }
 
+// Helper function to strip HTML tags from text
+const stripHtmlTags = (html: string): string => {
+  if (!html) return '';
+  // Replace common HTML entities
+  let text = html
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/p>/gi, ' ')
+    .replace(/<\/div>/gi, ' ')
+    .replace(/<\/li>/gi, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"');
+  // Remove all remaining HTML tags
+  text = text.replace(/<[^>]*>/g, '');
+  // Clean up extra whitespace
+  text = text.replace(/\s+/g, ' ').trim();
+  return text;
+};
+
 const getCategoryIcon = (category: string) => {
   switch (category?.toLowerCase()) {
     case 'weight loss':
@@ -204,8 +225,8 @@ export default function ServicesPage() {
                   <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-[#3AB1A0] transition-colors line-clamp-1">
                     {service.name}
                   </h3>
-                  <p className="text-sm text-gray-500 mb-4 line-clamp-2 leading-relaxed min-h-[40px]">
-                    {service.description || 'Premium nutrition and diet plan customized for your goals.'}
+                  <p className="text-sm text-gray-500 mb-4 line-clamp-2 leading-relaxed min-h-10">
+                    {stripHtmlTags(service.description || '') || 'Premium nutrition and diet plan customized for your goals.'}
                   </p>
                   
                   {/* Pricing Tiers - Horizontal */}
@@ -214,13 +235,13 @@ export default function ServicesPage() {
                       <p className="text-xs text-gray-400 mb-2 font-medium">PRICING OPTIONS</p>
                       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
                         {service.pricingTiers.slice(0, 3).map((tier, idx) => (
-                          <div key={idx} className="shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-[80px] border border-gray-100">
+                          <div key={idx} className="shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-20 border border-gray-100">
                             <p className="text-xs text-gray-500">{tier.durationLabel}</p>
                             <p className="text-sm font-bold text-[#E06A26]">₹{tier.amount.toLocaleString()}</p>
                           </div>
                         ))}
                         {service.pricingTiers.length > 3 && (
-                          <div className="shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-[60px] border border-gray-100 flex items-center justify-center">
+                          <div className="shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-15 border border-gray-100 flex items-center justify-center">
                             <p className="text-xs text-gray-400">+{service.pricingTiers.length - 3}</p>
                           </div>
                         )}

@@ -55,7 +55,6 @@ export async function POST(req: NextRequest) {
     }
     
     // Log the flashlight command (for future implementation with push notifications)
-    console.log(`Flashlight command: ${action} for watch ${watchConnection.watchDeviceName || watchConnection.watchProvider}`);
     
     // For Google Fit / NoiseFit watches connected via Google Fit:
     // The actual flashlight control would need to be done through the watch itself

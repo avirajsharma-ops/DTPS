@@ -3,9 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function ClientAuthPage() {
+function ClientAuthPage() {
   const router = useRouter();
   const [progress, setProgress] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -18,10 +23,21 @@ export default function ClientAuthPage() {
   }, []);
 
   useEffect(() => {
-    if (progress >= 100) {
-      setTimeout(() => router.push('/client-auth/signin'), 600);
+    if (progress >= 100 && mounted) {
+      const timer = setTimeout(() => {
+        try {
+          router.push('/client-auth/signin');
+        } catch (error) {
+          console.error('Navigation error:', error);
+        }
+      }, 600);
+      return () => clearTimeout(timer);
     }
-  }, [progress, router]);
+  }, [progress, router, mounted]);
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen relative flex items-center justify-center bg-linear-to-br from-[#61a035]/10 via-white to-[#3AB1A0]/10 overflow-hidden">
@@ -199,3 +215,5 @@ export default function ClientAuthPage() {
     </div>
   );
 }
+
+export default ClientAuthPage;

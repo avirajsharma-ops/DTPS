@@ -43,7 +43,6 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
 
   // Clean up resources
   const cleanup = useCallback(() => {
-    console.log('🧹 Cleaning up WebRTC resources...');
     
     if (peerRef.current) {
       peerRef.current.destroy();
@@ -73,7 +72,6 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
     if (!session?.user?.id || !callState.remoteUserId) return;
 
     try {
-      console.log(`📡 Sending signal: ${type}`, data);
       
       const response = await fetch('/api/webrtc/simple-signal', {
         method: 'POST',
@@ -98,7 +96,6 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
 
   // Create peer connection
   const createPeer = useCallback((isInitiator: boolean, stream: MediaStream) => {
-    console.log(`🔗 Creating peer connection (initiator: ${isInitiator})`);
     
     const peer = new SimplePeer({
       initiator: isInitiator,
@@ -113,18 +110,15 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
     });
 
     peer.on('signal', (data) => {
-      console.log('📤 Peer signal generated:', data.type);
       sendSignal('webrtc-signal', data);
     });
 
     peer.on('connect', () => {
-      console.log('✅ Peer connected!');
       setCallState(prev => ({ ...prev, status: 'connected' }));
       options.onCallAccepted?.();
     });
 
     peer.on('stream', (remoteStream) => {
-      console.log('📺 Remote stream received');
       setRemoteStream(remoteStream);
       options.onRemoteStream?.(remoteStream);
     });
@@ -136,7 +130,6 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
     });
 
     peer.on('close', () => {
-      console.log('🔌 Peer connection closed');
       cleanup();
       options.onCallEnded?.();
     });
@@ -154,7 +147,6 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
     }
 
     try {
-      console.log(`🚀 Simple WebRTC: Starting ${callType} call to:`, remoteUserId, 'from:', session.user.id);
       setError(null);
       
       const callId = generateCallId();
@@ -177,7 +169,6 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
       localStreamRef.current = stream;
       setLocalStream(stream);
 
-      console.log('📹 Simple WebRTC: Media stream obtained, creating peer...');
 
       // Create peer connection as initiator
       const peer = createPeer(true, stream);
@@ -185,7 +176,6 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
       // Wait for the offer to be generated
       peer.on('signal', async (signal) => {
         if (signal.type === 'offer') {
-          console.log('📡 Simple WebRTC: Offer generated, sending call invitation...');
 
           // Send call invitation with offer
           const response = await fetch('/api/webrtc/simple-signal', {
@@ -205,10 +195,8 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
             throw new Error('Failed to send call invitation');
           }
 
-          console.log('✅ Simple WebRTC: Call invitation sent with offer');
         } else {
           // Handle other signals (ICE candidates, etc.)
-          console.log('📡 Simple WebRTC: Sending signal:', signal.type);
           await sendSignal('webrtc-signal', signal);
         }
       });
@@ -225,7 +213,6 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
     if (!callState.remoteUserId || !callState.callId) return;
 
     try {
-      console.log('✅ Accepting call...');
       setError(null);
 
       // Get user media
@@ -238,14 +225,12 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
       localStreamRef.current = stream;
       setLocalStream(stream);
 
-      console.log('📹 Simple WebRTC: Media stream obtained, creating peer as receiver...');
 
       // Create peer connection as receiver
       const peer = createPeer(false, stream);
 
       // If we have a pending offer, signal it to the peer
       if (pendingOfferRef.current) {
-        console.log('📡 Simple WebRTC: Signaling pending offer to peer...');
         peer.signal(pendingOfferRef.current);
         pendingOfferRef.current = null;
       }
@@ -253,14 +238,11 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
       // Wait for answer to be generated
       peer.on('signal', async (signal) => {
         if (signal.type === 'answer') {
-          console.log('📡 Simple WebRTC: Answer generated, sending call acceptance...');
 
           // Send call acceptance with answer
           await sendSignal('call-accept', { answer: signal });
-          console.log('✅ Simple WebRTC: Call acceptance sent with answer');
         } else {
           // Handle other signals (ICE candidates, etc.)
-          console.log('📡 Simple WebRTC: Sending signal:', signal.type);
           await sendSignal('webrtc-signal', signal);
         }
       });
@@ -279,7 +261,6 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
     if (!callState.remoteUserId || !callState.callId) return;
 
     try {
-      console.log('❌ Rejecting call...');
       await sendSignal('call-reject', {});
       cleanup();
       options.onCallRejected?.();
@@ -291,7 +272,6 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
   // End call
   const endCall = useCallback(async () => {
     try {
-      console.log('📞 Ending call...');
       if (callState.remoteUserId && callState.callId) {
         await sendSignal('call-end', {});
       }
@@ -306,11 +286,9 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
   const handleSignal = useCallback((signalData: any) => {
     const { type, data, fromUserId, callId, callType } = signalData;
     
-    console.log(`📥 Received signal: ${type}`, { fromUserId, callId });
 
     switch (type) {
       case 'call-invite':
-        console.log('📞 Simple WebRTC: Incoming call invitation with offer');
 
         // Store the offer for when the call is accepted
         pendingOfferRef.current = data?.offer;
@@ -328,11 +306,9 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
         break;
 
       case 'call-accept':
-        console.log('✅ Simple WebRTC: Call accepted by remote user');
 
         // Signal the answer to our peer
         if (peerRef.current && data?.answer) {
-          console.log('📡 Simple WebRTC: Signaling answer to peer...');
           peerRef.current.signal(data.answer);
         }
 
@@ -341,19 +317,16 @@ export function useSimpleWebRTC(options: UseSimpleWebRTCOptions = {}) {
         break;
 
       case 'call-reject':
-        console.log('❌ Call rejected by remote user');
         cleanup();
         options.onCallRejected?.();
         break;
 
       case 'call-end':
-        console.log('📞 Call ended by remote user');
         cleanup();
         options.onCallEnded?.();
         break;
 
       case 'webrtc-signal':
-        console.log('📡 WebRTC signal received');
         if (peerRef.current && data) {
           peerRef.current.signal(data);
         }

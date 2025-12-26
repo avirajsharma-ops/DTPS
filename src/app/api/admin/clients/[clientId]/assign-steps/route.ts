@@ -173,7 +173,6 @@ export async function POST(
         }
 
         await journal.save();
-        console.log('Steps assigned successfully:', journal.assignedSteps);
 
         return NextResponse.json({
             success: true,

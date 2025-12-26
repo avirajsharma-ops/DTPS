@@ -64,12 +64,10 @@ export function NativeAppProvider({ children }: NativeAppProviderProps) {
 
                 // Setup push notification listeners
                 onPushNotificationReceived((notification) => {
-                    console.log('Push notification received:', notification);
                     // You can show a toast or in-app notification here
                 });
 
                 onPushNotificationActionPerformed((action) => {
-                    console.log('Push notification action:', action);
                     // Handle notification tap - navigate to relevant screen
                     const data = action.notification.data;
                     if (data?.url) {
@@ -105,7 +103,6 @@ export function NativeAppProvider({ children }: NativeAppProviderProps) {
     // Register for push notifications
     const registerForPush = async () => {
         if (!isNative) {
-            console.log('Push notifications only available on native platforms');
             return;
         }
 

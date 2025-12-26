@@ -81,12 +81,6 @@ export function FoodDatabasePanel({
           const recipes = data.recipes || [];
           
           // Debug: Log client restrictions
-          console.log('🔍 Client Filtering:', {
-            dietary: clientDietaryArr,
-            medical: clientMedicalArr,
-            allergies: clientAllergyArr
-          });
-          
           // Filter recipes based on client restrictions
           const filteredRecipes = recipes.filter((recipe: any) => {
             const recipeAllergens: string[] = (recipe.allergens || []).map((a: string) => a.toLowerCase().trim());
@@ -102,7 +96,6 @@ export function FoodDatabasePanel({
               recipeIngredients.some((ing: string) => ing.includes(allergy))
             );
             if (hasClientAllergen) {
-              console.log(`❌ Recipe "${recipe.name}" excluded - allergen match`);
               return false;
             }
             
@@ -118,32 +111,27 @@ export function FoodDatabasePanel({
             );
             
             if (hasDietaryConflict) {
-              console.log(`❌ Recipe "${recipe.name}" excluded - dietary restriction match. Client: [${clientDietaryArr.join(', ')}], Recipe: [${recipeDietary.join(', ')}]`);
               return false;
             }
             
             // If client is Gluten-Free, exclude recipes with gluten
             if (clientDietaryArr.includes('gluten-free') && 
                 (recipeAllergens.includes('gluten') || recipeDietary.some((d: string) => d.includes('gluten') && !d.includes('gluten-free')))) {
-              console.log(`❌ Recipe "${recipe.name}" excluded - client is gluten-free`);
               return false;
             }
             
             // If client is Dairy-Free, exclude recipes with dairy
             if (clientDietaryArr.includes('dairy-free') && recipeAllergens.includes('dairy')) {
-              console.log(`❌ Recipe "${recipe.name}" excluded - client is dairy-free`);
               return false;
             }
             
             // If client has Lactose Intolerance (from medical), exclude dairy recipes
             if (clientMedicalArr.includes('lactose intolerance') && recipeAllergens.includes('dairy')) {
-              console.log(`❌ Recipe "${recipe.name}" excluded - client has lactose intolerance`);
               return false;
             }
             
             // If client has Celiac Disease (from medical), exclude gluten recipes
             if (clientMedicalArr.includes('celiac disease') && recipeAllergens.includes('gluten')) {
-              console.log(`❌ Recipe "${recipe.name}" excluded - client has celiac disease`);
               return false;
             }
             
@@ -158,7 +146,6 @@ export function FoodDatabasePanel({
             );
             
             if (hasMedicalConflict) {
-              console.log(`❌ Recipe "${recipe.name}" excluded - medical contraindication match. Client: [${clientMedicalArr.join(', ')}], Recipe: [${recipeMedical.join(', ')}]`);
               return false;
             }
             
@@ -167,7 +154,6 @@ export function FoodDatabasePanel({
           });
           
           // Log filtering results
-          console.log(`📊 Recipe Filtering: ${recipes.length} total → ${filteredRecipes.length} suitable (${recipes.length - filteredRecipes.length} filtered out)`);
           
           // Transform filtered recipes to FoodItem format
           const transformedData: FoodItem[] = filteredRecipes.map((recipe: any) => ({

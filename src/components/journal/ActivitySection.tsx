@@ -414,67 +414,9 @@ export default function ActivitySection({ clientId, selectedDate, isClient = fal
               </div>
             ) : (
               <div className="space-y-3">
-                <p className="text-sm text-gray-600">
-                  Add activities to assign to this client. They will see them on their Tasks page.
-                </p>
+               
 
-                {/* Quick Activity Presets */}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActivityList([...activityList, { name: 'Walking', sets: 1, reps: 1, duration: 30, videoLink: '', completed: false }])}
-                    className="text-xs"
-                  >
-                    🚶 Walking 30min
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActivityList([...activityList, { name: 'Push-ups', sets: 3, reps: 15, duration: 10, videoLink: '', completed: false }])}
-                    className="text-xs"
-                  >
-                    💪 Push-ups 3x15
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActivityList([...activityList, { name: 'Squats', sets: 3, reps: 20, duration: 10, videoLink: '', completed: false }])}
-                    className="text-xs"
-                  >
-                    🏋️ Squats 3x20
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActivityList([...activityList, { name: 'Plank', sets: 3, reps: 1, duration: 5, videoLink: '', completed: false }])}
-                    className="text-xs"
-                  >
-                    🧘 Plank 3x1min
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActivityList([...activityList, { name: 'Jogging', sets: 1, reps: 1, duration: 20, videoLink: '', completed: false }])}
-                    className="text-xs"
-                  >
-                    🏃 Jogging 20min
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActivityList([...activityList, { name: 'Yoga', sets: 1, reps: 1, duration: 30, videoLink: '', completed: false }])}
-                    className="text-xs"
-                  >
-                    🧘‍♀️ Yoga 30min
-                  </Button>
-                </div>
+               
 
                 {/* Activity Input Form */}
                 <div className="space-y-3 p-3 bg-white rounded-lg border border-orange-100">

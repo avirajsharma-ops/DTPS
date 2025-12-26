@@ -88,15 +88,6 @@ export async function GET(request: NextRequest) {
       .skip((page - 1) * limit);
 
     const total = await Appointment.countDocuments(query);
-
-    console.log('Appointments API:', {
-      userId: session.user.id,
-      userRole: session.user.role,
-      query,
-      appointmentsFound: appointments.length,
-      total
-    });
-
     return NextResponse.json({
       appointments,
       pagination: {
@@ -217,13 +208,6 @@ export async function POST(request: NextRequest) {
 
       // Also set the legacy meetingLink field for backward compatibility
       appointment.meetingLink = zoomMeeting.join_url;
-
-      console.log('Zoom meeting created successfully:', {
-        meetingId: zoomMeeting.id,
-        topic: meetingTopic,
-        joinUrl: zoomMeeting.join_url
-      });
-
     } catch (zoomError) {
       console.error('Failed to create Zoom meeting:', zoomError);
       // Continue without Zoom meeting - don't fail the appointment creation

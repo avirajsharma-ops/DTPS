@@ -65,7 +65,6 @@ export default function MobileBookAppointmentPage() {
         const userResponse = await fetch(`/api/users/${session.user.id}`);
         if (userResponse.ok) {
           const userData = await userResponse.json();
-          console.log('User data:', userData); // Debug log
 
           // Check if assignedDietitian exists (could be ID or populated object)
           const assignedDietitianId = typeof userData.user?.assignedDietitian === 'string'
@@ -77,7 +76,6 @@ export default function MobileBookAppointmentPage() {
             const dietitianResponse = await fetch(`/api/users/${assignedDietitianId}`);
             if (dietitianResponse.ok) {
               const dietitianData = await dietitianResponse.json();
-              console.log('Dietitian data:', dietitianData); // Debug log
 
               if (dietitianData.user) {
                 setDietitians([dietitianData.user]);
@@ -92,7 +90,6 @@ export default function MobileBookAppointmentPage() {
               setDietitians([]);
             }
           } else {
-            console.log('No assigned dietitian found');
             setDietitians([]);
           }
         } else {

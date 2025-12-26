@@ -105,14 +105,12 @@ export function ChatInterface({ recipient, onBack, className, onUserStatusChange
       }
     },
     onUserOnline: (userId) => {
-      console.log(`User ${userId} came online`);
       // Notify parent component about online status change
       if (onUserStatusChange) {
         onUserStatusChange(userId, true);
       }
     },
     onUserOffline: (userId) => {
-      console.log(`User ${userId} went offline`);
       // Notify parent component about online status change
       if (onUserStatusChange) {
         onUserStatusChange(userId, false);

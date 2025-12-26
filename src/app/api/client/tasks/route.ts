@@ -32,13 +32,7 @@ export async function GET(request: Request) {
             date: { $gte: targetDate, $lt: nextDay }
         });
 
-        console.log('Tasks API - Client ID:', session.user.id);
-        console.log('Tasks API - Date Range:', targetDate, 'to', nextDay);
-        console.log('Tasks API - Journal found:', !!journal);
         if (journal) {
-            console.log('Tasks API - AssignedSteps:', journal.assignedSteps);
-            console.log('Tasks API - AssignedSleep:', journal.assignedSleep);
-            console.log('Tasks API - AssignedActivities:', journal.assignedActivities);
         }
 
         // Calculate current steps

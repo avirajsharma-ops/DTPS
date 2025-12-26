@@ -61,8 +61,16 @@ export default function UserSettingsPage() {
     try {
       setLoggingOut(true);
       
-      // First, call our custom logout API to clear cookies
-      await fetch('/api/auth/logout', { method: 'POST' });
+      // First, try to call our custom logout API to clear cookies (if it exists)
+      try {
+        const logoutRes = await fetch('/api/auth/logout', { method: 'POST' });
+        // Only try to parse JSON if response is ok and has content
+        if (logoutRes.ok && logoutRes.headers.get('content-type')?.includes('application/json')) {
+          await logoutRes.json();
+        }
+      } catch (logoutError) {
+        // Silently fail if logout API doesn't respond with valid JSON
+      }
       
       // Clear any local storage items
       if (typeof window !== 'undefined') {
@@ -74,13 +82,13 @@ export default function UserSettingsPage() {
       
       // Then call NextAuth signOut
       await signOut({ 
-        callbackUrl: '/auth/signin',
+        callbackUrl: '/client-auth/signin',
         redirect: true
       });
     } catch (error) {
       console.error('Error during logout:', error);
       // Fallback to just NextAuth signOut
-      await signOut({ callbackUrl: '/auth/signin' });
+      await signOut({ callbackUrl: '/client-auth/signin' });
     } finally {
       setLoggingOut(false);
     }
@@ -179,7 +187,6 @@ export default function UserSettingsPage() {
         if ('serviceWorker' in navigator) {
           try {
             const registration = await navigator.serviceWorker.ready;
-            console.log('Push notification permission granted');
           } catch (error) {
             console.error('Error registering for push:', error);
           }

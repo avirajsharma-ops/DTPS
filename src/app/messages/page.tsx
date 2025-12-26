@@ -137,7 +137,6 @@ function ClientMessagesUI() {
     // Request notification permissions for call notifications
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission().then(permission => {
-        console.log('Notification permission:', permission);
       });
     }
   }, [session, status, router]);
@@ -190,14 +189,12 @@ function ClientMessagesUI() {
   // Real-time event handling for calls
   const { isConnected } = useRealtime({
     onMessage: (event) => {
-      console.log('Client received real-time event:', event.type, event.data);
 
       if (event.type === 'incoming_call') {
         handleIncomingCall(event.data);
       } else if (event.type === 'call_accepted') {
         // Only handle if we are the caller (initiated the call)
         // For clients, this should not happen as they receive calls
-        console.log('Client received call_accepted - this should not happen for call receivers');
       } else if (event.type === 'call_rejected') {
         handleCallRejected(event.data);
       } else if (event.type === 'call_ended') {
@@ -440,7 +437,6 @@ function ClientMessagesUI() {
 
   // Call handling functions
   const handleIncomingCall = async (callData: any) => {
-    console.log('Incoming call:', callData);
     setIncomingCall(callData);
     setCallState('incoming');
     setCurrentCall({
@@ -499,19 +495,16 @@ function ClientMessagesUI() {
         }
       }, 2000);
     } catch (error) {
-      console.log('Could not play ringtone:', error);
     }
   };
 
   const acceptCall = async () => {
-    console.log('acceptCall function called', { incomingCall });
     if (!incomingCall) {
       console.error('No incoming call to accept');
       return;
     }
 
     try {
-      console.log('Starting call acceptance process');
       setCallState('connecting');
 
       // Set current call info immediately
@@ -531,10 +524,8 @@ function ClientMessagesUI() {
         video: incomingCall.type === 'video'
       };
 
-      console.log('Getting user media with constraints:', constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       setLocalStream(stream);
-      console.log('Got user media stream:', stream);
 
       // Set up local video
       if (localVideoRef.current && incomingCall.type === 'video') {
@@ -543,10 +534,8 @@ function ClientMessagesUI() {
       }
 
       // Create peer connection
-      console.log('Creating peer connection for call:', incomingCall.callId);
       const pc = createPeerConnection(incomingCall.callId, incomingCall.callerId);
       setPeerConnection(pc);
-      console.log('Peer connection created:', pc);
 
       // Add local stream to peer connection
       stream.getTracks().forEach(track => {
@@ -554,27 +543,20 @@ function ClientMessagesUI() {
       });
 
       // Set remote description (offer)
-      console.log('Setting remote description with offer:', incomingCall.offer);
       await pc.setRemoteDescription(incomingCall.offer);
-      console.log('Remote description set successfully');
 
       // Create answer
-      console.log('Creating answer');
       const answer = await pc.createAnswer();
-      console.log('Answer created:', answer);
 
       await pc.setLocalDescription(answer);
-      console.log('Local description set successfully');
 
       // Send answer to caller
-      console.log('Sending call_accepted signal to server');
       const signalPayload = {
         type: 'call_accepted',
         callId: incomingCall.callId,
         callerId: incomingCall.callerId,
         answer
       };
-      console.log('Signal payload:', signalPayload);
 
       const response = await fetch('/api/webrtc/signal', {
         method: 'POST',
@@ -582,20 +564,17 @@ function ClientMessagesUI() {
         body: JSON.stringify(signalPayload)
       });
 
-      console.log('Signal response status:', response.status);
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Signal response error:', errorText);
         throw new Error(`Signal failed: ${response.status} ${errorText}`);
       }
-      console.log('call_accepted signal sent successfully');
 
       // Update state to connected immediately
       setCallState('connected');
       setCallStartTime(Date.now());
       setIncomingCall(null);
 
-      console.log('Call accepted successfully, state updated to connected');
 
     } catch (error) {
       console.error('Error accepting call:', error);
@@ -699,7 +678,6 @@ function ClientMessagesUI() {
       const activeRemoteUserId = remoteUserId || currentCall.caller?.id;
 
       if (event.candidate && activeCallId) {
-        console.log('Sending ICE candidate for call:', activeCallId);
         fetch('/api/webrtc/signal', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -714,10 +692,6 @@ function ClientMessagesUI() {
           console.error('Failed to send ICE candidate:', error);
         });
       } else {
-        console.log('ICE candidate not sent - missing callId or candidate:', {
-          hasCandidate: !!event.candidate,
-          callId: activeCallId
-        });
       }
     };
 
@@ -732,7 +706,6 @@ function ClientMessagesUI() {
 
     // Handle connection state changes
     pc.onconnectionstatechange = () => {
-      console.log('Connection state:', pc.connectionState);
       if (pc.connectionState === 'connected') {
         setCallState('connected');
       } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
@@ -961,7 +934,6 @@ function ClientMessagesUI() {
             {/* Accept button */}
             <button
               onClick={() => {
-                console.log('Accept button clicked!');
                 acceptCall();
               }}
               className="w-16 h-16 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-all animate-pulse"
