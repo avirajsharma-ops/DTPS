@@ -927,6 +927,7 @@ export default function PaymentsSection({
               
               return (
                 <>
+                  
                   {/* Only show payment link options if NOT paid */}
                   {!isPaid && (
                     <>
