@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Heart, Eye, EyeOff, User, Stethoscope } from 'lucide-react';
 import { signUpSchema, SignUpInput } from '@/lib/validations/auth';
 import { UserRole } from '@/types';
+import { COUNTRY_CODES } from '@/lib/constants/countries';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
 
   const {
     register,
@@ -42,12 +44,19 @@ export default function SignUpPage() {
     setSuccess('');
 
     try {
+      // Combine country code with phone number if phone is provided
+      const phoneWithCode = data.phone ? `${countryCode}${data.phone.replace(/\s+/g, '')}` : '';
+      const submitData = {
+        ...data,
+        phone: phoneWithCode || undefined,
+      };
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(submitData),
       });
 
       const result = await response.json();
@@ -178,16 +187,33 @@ export default function SignUpPage() {
                 )}
               </div>
 
-              {/* Phone */}
+              {/* Phone with Country Code */}
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone (Optional)</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+1 (555) 123-4567"
-                  {...register('phone')}
-                  className={errors.phone ? 'border-red-500' : ''}
-                />
+                <Label>Phone</Label>
+                <div className="flex gap-2">
+                  <Select value={countryCode} onValueChange={setCountryCode}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {COUNTRY_CODES.map((country, index) => (
+                        <SelectItem key={`${country.code}-${country.country}`} value={country.code}>
+                          <span className="flex items-center gap-2">
+                            <span>{country.flag}</span>
+                            <span>{country.code}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="555 123 4567"
+                    {...register('phone')}
+                    className={`flex-1 ${errors.phone ? 'border-red-500' : ''}`}
+                  />
+                </div>
                 {errors.phone && (
                   <p className="text-sm text-red-500">{errors.phone.message}</p>
                 )}

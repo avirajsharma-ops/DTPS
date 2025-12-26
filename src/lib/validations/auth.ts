@@ -38,8 +38,8 @@ export const signUpSchema = z.object({
   }),
   phone: z
     .string()
-    .optional()
-    .refine((val) => !val || /^\+?[\d\s\-\(\)]+$/.test(val), {
+    .min(1, 'Phone number is required')
+    .refine((val) => /^[\d\s\-\(\)]+$/.test(val), {
       message: 'Invalid phone number format',
     }),
 }).refine((data) => data.password === data.confirmPassword, {
