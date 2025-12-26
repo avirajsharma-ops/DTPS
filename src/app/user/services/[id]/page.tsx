@@ -322,6 +322,8 @@ export default function ServiceDetailPage() {
           </div>
         )}
 
+        
+
         {/* Purchase Button */}
         <div className="sticky bottom-0 left-0 right-0 bg-linear-to-t from-white via-white to-transparent pt-4 pb-6 -mx-4 px-4">
           <button 

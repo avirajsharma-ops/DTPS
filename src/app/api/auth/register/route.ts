@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     
     await connectDB();
     
-    // Check if user already exists
+    // Check if user already exists by email
     const existingUser = await User.findOne({ 
       email: validatedData.email.toLowerCase() 
     });
@@ -53,6 +53,20 @@ export async function POST(request: NextRequest) {
         { error: 'User with this email already exists' },
         { status: 400 }
       );
+    }
+
+    // Check if phone number already exists (if provided)
+    if (validatedData.phone) {
+      const existingPhone = await User.findOne({ 
+        phone: validatedData.phone.trim() 
+      });
+      
+      if (existingPhone) {
+        return NextResponse.json(
+          { error: 'This phone number is already registered with another account' },
+          { status: 400 }
+        );
+      }
     }
     
     // Create user data

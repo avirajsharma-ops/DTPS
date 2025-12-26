@@ -81,6 +81,7 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
     }, []);
 
     const loadRazorpayScript = () => {
+        
         if (document.getElementById('razorpay-script')) return;
         const script = document.createElement('script');
         script.id = 'razorpay-script';

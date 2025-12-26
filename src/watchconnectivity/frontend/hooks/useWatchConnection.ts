@@ -291,12 +291,15 @@ export function useWatchConnection() {
     }
   }, [fetchWatchConnection]);
 
-  // Initial fetch and auto-refresh every 5 minutes
+  // Initial fetch and auto-refresh every 5 minutes - optimized with parallel fetching
   useEffect(() => {
     const init = async () => {
       setWatchLoading(true);
-      await fetchWatchConnection();
-      await fetchWatchHealthData();
+      // Fetch connection and health data in parallel for faster loading
+      await Promise.all([
+        fetchWatchConnection(),
+        fetchWatchHealthData()
+      ]);
       setWatchLoading(false);
     };
     init();

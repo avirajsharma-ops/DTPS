@@ -88,7 +88,7 @@ export default function CaloriesSection({ clientId, selectedDate }: CaloriesSect
     setLightboxImage(null);
   };
 
-  // Fetch meals for the selected date
+  // Fetch meals for the selected date and goals from progress API
   const fetchMeals = useCallback(async () => {
     try {
       setLoading(true);
@@ -104,6 +104,35 @@ export default function CaloriesSection({ clientId, selectedDate }: CaloriesSect
         setFreezeInfo(data.freezeInfo || null);
         if (data.user) {
           setUserName(`${data.user.firstName} ${data.user.lastName}`);
+        }
+
+        // Calculate total goals from meal plan meals for the selected date
+        let totalGoalsCalories = 0;
+        let totalGoalsProtein = 0;
+        let totalGoalsCarbs = 0;
+        let totalGoalsFats = 0;
+
+        // Sum up calories/macros from all meals for this day
+        if (data.meals && data.meals.length > 0) {
+          data.meals.forEach((meal: any) => {
+            totalGoalsCalories += parseFloat(meal.calories) || 0;
+            totalGoalsProtein += parseFloat(meal.protein) || 0;
+            totalGoalsCarbs += parseFloat(meal.carbs) || 0;
+            totalGoalsFats += parseFloat(meal.fat) || 0;
+          });
+        }
+
+        // Update summary with calculated goals from meal plan
+        if (totalGoalsCalories > 0 || totalGoalsProtein > 0 || totalGoalsCarbs > 0 || totalGoalsFats > 0) {
+          setSummary(prev => ({
+            ...prev,
+            targets: {
+              calories: Math.round(totalGoalsCalories) || prev.targets.calories,
+              protein: Math.round(totalGoalsProtein) || prev.targets.protein,
+              carbs: Math.round(totalGoalsCarbs) || prev.targets.carbs,
+              fat: Math.round(totalGoalsFats) || prev.targets.fat
+            }
+          }));
         }
       }
     } catch (error) {
