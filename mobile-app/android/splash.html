@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DTPS Loading</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, Arial, sans-serif;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    /* ================= SPLASH SCREEN ================= */
+    .loader-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(
+        135deg,
+        rgba(97, 160, 53, 0.1),
+        #ffffff,
+        rgba(58, 177, 160, 0.1)
+      );
+      z-index: 10;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+
+    .loader-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    /* Glow */
+    .glow {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .glow::before {
+      content: "";
+      width: 18rem;
+      height: 18rem;
+      background: rgba(97, 160, 53, 0.2);
+      border-radius: 50%;
+      filter: blur(60px);
+    }
+
+    /* Pill */
+    .pill-container {
+      display: flex;
+      align-items: center;
+      background-color: #3ba796;
+      border-radius: 9999px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    .logo-wrapper {
+      width: 5rem;
+      height: 5rem;
+      border-radius: 9999px;
+      overflow: hidden;
+      opacity: 0;
+      transform: scale(0.5);
+      filter: blur(10px);
+      animation: popIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .logo-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: white;
+    }
+
+    .text-wrapper {
+      height: 5rem;
+      width: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      animation: revealText 0.6s ease-out 0.8s forwards;
+    }
+
+    .text-content {
+      padding: 0 2rem;
+      color: white;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      white-space: nowrap;
+    }
+
+    @keyframes popIn {
+      to {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+      }
+    }
+
+    @keyframes revealText {
+      to {
+        width: 140px;
+      }
+    }
+
+    /* Loader Bar */
+    .loader-container {
+      position: absolute;
+      bottom: 3rem;
+      width: 100%;
+      max-width: 360px;
+      padding: 0 2rem;
+    }
+
+    .loader-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      margin-bottom: 0.4rem;
+      color: #16a34a;
+      letter-spacing: 0.25em;
+    }
+
+    .loader-track {
+      height: 4px;
+      background: #e5e7eb;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .loader-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(
+        90deg,
+        #61a035,
+        #3ab1a0,
+        #e06a26
+      );
+      transition: width 0.1s linear;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ================= SPLASH ================= -->
+  <div class="loader-screen" id="loaderScreen">
+    <div class="glow"></div>
+
+    <div class="pill-container">
+      <div class="logo-wrapper">
+        <img
+          src="/public/images/dtps-logo.png"
+          class="logo-image"
+          alt="DTPS Logo"
+        />
+      </div>
+
+      <div class="text-wrapper">
+        <div class="text-content">DTPS</div>
+      </div>
+    </div>
+
+    <div class="loader-container">
+      <div class="loader-header">
+        <span>LOADING</span>
+        <span id="progressText">0%</span>
+      </div>
+      <div class="loader-track">
+        <div class="loader-bar" id="loaderBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JS ================= -->
+  <script>
+    let progress = 0;
+    const bar = document.getElementById("loaderBar");
+    const text = document.getElementById("progressText");
+    const loader = document.getElementById("loaderScreen");
+
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 5) + 1;
+      if (progress > 100) progress = 100;
+
+      bar.style.width = progress + "%";
+      text.textContent = progress + "%";
+
+      if (progress === 100) {
+        clearInterval(interval);
+
+        setTimeout(() => {
+          loader.classList.add("hidden");
+
+          // Redirect after fade-out
+          setTimeout(() => {
+            window.location.href = "/client-auth/signin";
+          }, 600);
+        }, 400);
+      }
+    }, 50);
+  </script>
+
+</body>
+</html>
