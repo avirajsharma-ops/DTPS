@@ -51,6 +51,34 @@ const mealTimeSuggestions: { [key: string]: string } = {
 
 const DAYS_PER_PAGE = 14;
 
+// Helper function to calculate daily macro totals
+function calculateDayMacros(day: DayPlan): { cal: number; carbs: number; fats: number; protein: number; fiber: number } {
+  const totals = { cal: 0, carbs: 0, fats: 0, protein: 0, fiber: 0 };
+  
+  Object.values(day.meals).forEach(meal => {
+    if (meal && meal.foodOptions) {
+      // Only count the first food option (A option) for totals
+      const primaryOption = meal.foodOptions[0];
+      if (primaryOption) {
+        totals.cal += parseFloat(primaryOption.cal) || 0;
+        totals.carbs += parseFloat(primaryOption.carbs) || 0;
+        totals.fats += parseFloat(primaryOption.fats) || 0;
+        totals.protein += parseFloat(primaryOption.protein) || 0;
+        totals.fiber += parseFloat(primaryOption.fiber) || 0;
+      }
+    }
+  });
+  
+  return totals;
+}
+
+// Helper function to format notes with period as line break
+function formatNotesDisplay(note: string): string[] {
+  if (!note) return [];
+  // Split by period and filter out empty strings
+  return note.split('.').map(s => s.trim()).filter(s => s.length > 0);
+}
+
 export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
   // Debug logging
   if (weekPlan[0]?.meals) {
@@ -760,8 +788,34 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                         value={day.note}
                         onChange={(e) => updateDayInfo(actualDayIndex, 'note', e.target.value)}
                         className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500"
-                        placeholder="Notes"
+                        placeholder="Notes (use . for new line)"
                       />
+                      {/* Display formatted notes */}
+                      {day.note && (
+                        <div className="text-xs text-gray-600 bg-gray-50 rounded p-2 space-y-1">
+                          {formatNotesDisplay(day.note).map((line, idx) => (
+                            <div key={idx}>• {line}</div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Daily Macro Totals */}
+                      {(() => {
+                        const macros = calculateDayMacros(day);
+                        const hasAnyMacros = macros.cal > 0 || macros.carbs > 0 || macros.protein > 0 || macros.fats > 0 || macros.fiber > 0;
+                        if (!hasAnyMacros) return null;
+                        return (
+                          <div className="mt-2 p-2 bg-emerald-50 rounded border border-emerald-200">
+                            <div className="text-[10px] font-semibold text-emerald-700 mb-1 uppercase tracking-wide">Daily Totals</div>
+                            <div className="grid grid-cols-2 gap-1 text-[10px]">
+                              <div className="text-emerald-900"><span className="font-medium">Cal:</span> {macros.cal.toFixed(0)}</div>
+                              <div className="text-emerald-900"><span className="font-medium">Carbs:</span> {macros.carbs.toFixed(1)}g</div>
+                              <div className="text-emerald-900"><span className="font-medium">Protein:</span> {macros.protein.toFixed(1)}g</div>
+                              <div className="text-emerald-900"><span className="font-medium">Fats:</span> {macros.fats.toFixed(1)}g</div>
+                              <div className="text-emerald-900 col-span-2"><span className="font-medium">Fiber:</span> {macros.fiber.toFixed(1)}g</div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </td>
                   {allMealTypesForDay.map((mealType, index) => {

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { MealGridTable } from './MealGridTable';
 import { Save, User, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 
 // ClientInfoPanel component (inline)
 function InfoCard({ label, value, variant = 'default' }: { label: string; value: string; variant?: 'default' | 'dark' | 'bordered' }) {
@@ -104,6 +105,12 @@ const defaultMealTypes: MealTypeConfig[] = [
 ];
 
 export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, duration = 7, startDate, initialMeals, initialMealTypes, clientId, clientName, readOnly = false, clientDietaryRestrictions, clientMedicalConditions, clientAllergies, holdDays = [], totalHeldDays = 0 }: DietPlanDashboardProps) {
+  // Get session for role-based export visibility
+  const { data: session } = useSession();
+  const userRole = session?.user?.role as string | undefined;
+  // Only show export for admin and health_counselor
+  const canExport = userRole === 'admin' || userRole === 'health_counselor';
+  
   // Combine props with clientData for restrictions
   const dietaryRestrictions = clientDietaryRestrictions || clientData?.dietaryRestrictions || '';
   const medicalConditions = clientMedicalConditions || clientData?.medicalConditions || '';
@@ -318,17 +325,19 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
             </div>
             {!readOnly && (
               <div className="flex items-center space-x-3">
-                <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 font-medium">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export PDF
-                </Button>
+                {canExport && (
+                  <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 font-medium">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export PDF
+                  </Button>
+                )}
                 <Button onClick={handleSavePlan} className="bg-green-600 hover:bg-green-700 shadow font-medium">
                   <Save className="w-4 h-4 mr-2" />
                   Save Plan
                 </Button>
               </div>
             )}
-            {readOnly && (
+            {readOnly && canExport && (
               <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 font-medium">
                 <Download className="w-4 h-4 mr-2" />
                 Export PDF

@@ -149,6 +149,7 @@ interface ClientNote {
 const NOTE_TOPIC_TYPES = [
   'General',
   'Diet Plan',
+  'Escalation',
   'Medical',
   'Progress',
   'Consultation',

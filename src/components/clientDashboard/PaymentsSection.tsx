@@ -1206,6 +1206,11 @@ export default function PaymentsSection({
                     value={expireDate} 
                     onChange={(e) => setExpireDate(e.target.value)} 
                     className="w-full border p-2 rounded-lg mt-1" 
+                    min={(() => {
+                      const tomorrow = new Date();
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      return tomorrow.toISOString().split('T')[0];
+                    })()}
                   />
                 </div>
 
@@ -1587,6 +1592,8 @@ export default function PaymentsSection({
                 </div>
               )}
               
+
+
               {/* Show existing dates if set */}
               {(selectedPurchaseForDates.expectedStartDate || selectedPurchaseForDates.expectedEndDate) && (
                 <div className="mt-2 pt-2 border-t border-gray-200">
