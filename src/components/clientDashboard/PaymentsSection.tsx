@@ -85,6 +85,7 @@ export default function PaymentsSection({
     amount: true,
     final: true,
     status: true,
+    expectedDates: true,
     link: true,
     notes: false,
     catalogue: false,
@@ -320,7 +321,20 @@ export default function PaymentsSection({
   };
 
   const getPaymentLink = (payment: PaymentItem): string => {
+    // Always prioritize Razorpay short URL (rzp.io) over manual links
+    if (payment.razorpayPaymentLinkShortUrl && payment.razorpayPaymentLinkShortUrl.includes('rzp.io')) {
+      return payment.razorpayPaymentLinkShortUrl;
+    }
+    if (payment.razorpayPaymentLinkUrl && payment.razorpayPaymentLinkUrl.includes('rzp.io')) {
+      return payment.razorpayPaymentLinkUrl;
+    }
+    // Fallback to stored URLs (these should now use production URL)
     return payment.razorpayPaymentLinkShortUrl || payment.razorpayPaymentLinkUrl || '';
+  };
+
+  const isRazorpayLink = (payment: PaymentItem): boolean => {
+    const link = getPaymentLink(payment);
+    return link.includes('rzp.io') || link.includes('razorpay');
   };
 
   const copyLink = async (payment: PaymentItem) => {
@@ -478,6 +492,19 @@ export default function PaymentsSection({
     fetchClientPurchases();
   }, [fetchClientPurchases]);
 
+  // Helper function to check if a purchase/plan ends within X days
+  const isPlanEndingWithinDays = (purchase: any, days: number): boolean => {
+    if (!purchase?.endDate && !purchase?.expectedEndDate) return false;
+    const endDate = new Date(purchase.expectedEndDate || purchase.endDate);
+    const today = new Date();
+    const daysUntilEnd = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilEnd >= 0 && daysUntilEnd <= days;
+  };
+
+  // NOTE: Auto-show of expected dates modal is DISABLED per user request.
+  // Dietitians should manually click the button to set expected dates.
+  // The modal will NOT auto-open anymore.
+
   // Open expected dates modal
   const openExpectedDatesModal = (purchase: any) => {
     setSelectedPurchaseForDates(purchase);
@@ -542,13 +569,8 @@ export default function PaymentsSection({
     return end.toISOString().split('T')[0];
   };
 
-  // Auto-calculate expected end date when start date changes
-  useEffect(() => {
-    if (expectedStartDateInput && selectedPurchaseForDates?.durationDays) {
-      const calculatedEndDate = calculateExpectedEndDate(expectedStartDateInput, selectedPurchaseForDates.durationDays);
-      setExpectedEndDateInput(calculatedEndDate);
-    }
-  }, [expectedStartDateInput, selectedPurchaseForDates?.durationDays]);
+  // NOTE: Expected end date is NOT auto-calculated anymore.
+  // Dietitian must manually select both start and end dates.
 
   // Save expected dates
   const saveExpectedDates = async () => {
@@ -569,7 +591,7 @@ export default function PaymentsSection({
         body: JSON.stringify({
           purchaseId: selectedPurchaseForDates._id,
           expectedStartDate: expectedStartDateInput,
-          expectedEndDate: expectedEndDateInput || calculateExpectedEndDate(expectedStartDateInput, selectedPurchaseForDates.durationDays),
+          expectedEndDate: expectedEndDateInput || undefined, // Don't auto-calculate, require manual selection
         }),
       });
 
@@ -813,6 +835,7 @@ export default function PaymentsSection({
                   {visibleColumns.amount && <th className="p-3 font-medium text-gray-700 whitespace-nowrap text-right">Amount</th>}
                   {visibleColumns.final && <th className="p-3 font-medium text-gray-700 whitespace-nowrap text-right">Final</th>}
                   {visibleColumns.status && <th className="p-3 font-medium text-gray-700 whitespace-nowrap">Status</th>}
+                  {visibleColumns.expectedDates && <th className="p-3 font-medium text-gray-700 whitespace-nowrap">Expected Dates</th>}
                   {visibleColumns.link && <th className="p-3 font-medium text-gray-700 whitespace-nowrap">Link</th>}
                   <th className="p-3 font-medium text-gray-700 whitespace-nowrap text-center">Actions</th>
                 </tr>
@@ -862,6 +885,35 @@ export default function PaymentsSection({
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${getStatusBadge(p.status)}`}>
                           {p.status || "—"}
                         </span>
+                      </td>
+                    )}
+                    {visibleColumns.expectedDates && (
+                      <td className="p-3 whitespace-nowrap">
+                        {(() => {
+                          // Only show expected dates for PAID payments
+                          if (p.status !== 'paid') {
+                            return "—";
+                          }
+                          
+                          // Find the purchase for this payment - ONLY match by paymentLink ID to avoid confusion
+                          const purchase = clientPurchases.find(pur => 
+                            pur.paymentLink?._id === p._id || 
+                            pur.paymentLink === p._id
+                          );
+                          if (purchase?.expectedStartDate) {
+                            const startDate = new Date(purchase.expectedStartDate);
+                            const endDate = purchase.expectedEndDate ? new Date(purchase.expectedEndDate) : null;
+                            return (
+                              <div className="text-xs">
+                                <div className="text-green-600 font-medium">
+                                  {startDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                  {endDate && ` - ${endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return <span className="text-xs text-orange-500">Not set</span>;
+                        })()}
                       </td>
                     )}
                     {visibleColumns.link && (
@@ -970,11 +1022,10 @@ export default function PaymentsSection({
                   
                   {/* Set Expected Dates - only for paid payments */}
                   {isPaid && (() => {
-                    // Find the purchase for this payment to check if dates are already set
+                    // Find the purchase for this payment - ONLY match by paymentLink ID
                     const purchase = clientPurchases.find(p => 
                       p.paymentLink?._id === payment?._id || 
-                      p.paymentLink === payment?._id ||
-                      (p.planName === payment?.planName && p.durationDays === payment?.durationDays)
+                      p.paymentLink === payment?._id
                     );
                     const hasExpectedDates = purchase?.expectedStartDate && purchase?.expectedEndDate;
                     
@@ -1516,8 +1567,46 @@ export default function PaymentsSection({
             
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <p className="font-medium">{selectedPurchaseForDates.planName}</p>
-              <p className="text-sm text-gray-500">Duration: {selectedPurchaseForDates.durationLabel || `${selectedPurchaseForDates.durationDays} Days`}</p>
+              <p className="text-sm text-gray-500">Total Duration: {selectedPurchaseForDates.durationLabel || `${selectedPurchaseForDates.durationDays} Days`}</p>
               <p className="text-sm text-gray-500">Remaining Days: {selectedPurchaseForDates.remainingDays}</p>
+              
+              {/* Show plan phases if divided */}
+              {selectedPurchaseForDates.daysUsed > 0 && (
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <p className="text-xs font-medium text-blue-600 mb-1">Plan Phases:</p>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Phase 1 (Completed):</span>
+                      <span className="font-medium">{selectedPurchaseForDates.daysUsed} days</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Phase 2 (Remaining):</span>
+                      <span className="font-medium text-green-600">{selectedPurchaseForDates.remainingDays} days</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Show existing dates if set */}
+              {(selectedPurchaseForDates.expectedStartDate || selectedPurchaseForDates.expectedEndDate) && (
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <p className="text-xs font-medium text-amber-600 mb-1">Current Expected Dates:</p>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    {selectedPurchaseForDates.expectedStartDate && (
+                      <div className="flex justify-between">
+                        <span>Start:</span>
+                        <span className="font-medium">{new Date(selectedPurchaseForDates.expectedStartDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      </div>
+                    )}
+                    {selectedPurchaseForDates.expectedEndDate && (
+                      <div className="flex justify-between">
+                        <span>End:</span>
+                        <span className="font-medium">{new Date(selectedPurchaseForDates.expectedEndDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -1526,22 +1615,45 @@ export default function PaymentsSection({
                 <input
                   type="date"
                   value={expectedStartDateInput}
-                  onChange={(e) => setExpectedStartDateInput(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    setExpectedStartDateInput(e.target.value);
+                    // Auto-calculate end date if durationDays is available
+                    if (e.target.value && selectedPurchaseForDates?.durationDays) {
+                      const start = new Date(e.target.value);
+                      const end = new Date(start);
+                      end.setDate(start.getDate() + selectedPurchaseForDates.durationDays - 1);
+                      setExpectedEndDateInput(end.toISOString().split('T')[0]);
+                    } else {
+                      setExpectedEndDateInput('');
+                    }
+                  }}
+                  min={(() => {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    return tomorrow.toISOString().split('T')[0];
+                  })()}
                   className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">When the client is expected to start the meal plan</p>
+                <p className="text-xs text-gray-500 mt-1">When the client is expected to start the meal plan (must be a future date)</p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Expected End Date</label>
+                <label className="text-sm font-medium text-gray-700">Expected End Date (Auto-calculated)</label>
                 <input
                   type="date"
                   value={expectedEndDateInput}
                   onChange={(e) => setExpectedEndDateInput(e.target.value)}
+                  min={expectedStartDateInput || (() => {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    return tomorrow.toISOString().split('T')[0];
+                  })()}
                   className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                  readOnly
                 />
-                <p className="text-xs text-gray-500 mt-1">Auto-calculated based on start date + duration</p>
+                <p className="text-xs text-green-600 mt-1">
+                  ✓ Auto-calculated based on start date + {selectedPurchaseForDates?.durationDays} days duration
+                </p>
               </div>
             </div>
 
@@ -1555,7 +1667,7 @@ export default function PaymentsSection({
               </Button>
               <Button
                 onClick={saveExpectedDates}
-                disabled={savingExpectedDates || !expectedStartDateInput}
+                disabled={savingExpectedDates || !expectedStartDateInput || !expectedEndDateInput}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 {savingExpectedDates ? (

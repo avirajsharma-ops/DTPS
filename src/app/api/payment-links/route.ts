@@ -7,7 +7,7 @@ import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import Razorpay from 'razorpay';
-import { getPaymentCallbackUrl, getBaseUrl } from '@/lib/config';
+import { getPaymentCallbackUrl, getPaymentLinkBaseUrl } from '@/lib/config';
 
 // Initialize Razorpay
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
@@ -84,15 +84,19 @@ export async function GET(request: NextRequest) {
 
     if (status) query.status = status;
 
-    // Auto-expire payment links that have passed their expiry date
-    const now = new Date();
+    // Auto-expire payment links that have passed their expiry date (end of day)
+    // Note: Only mark as 'expired', not 'cancelled'. Cancelled is for rejected payments.
+    // Only expire if the expiry date has fully passed (compare with start of today, not current time)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
     await PaymentLink.updateMany(
       {
-        expireDate: { $lt: now },
+        expireDate: { $lt: todayStart }, // Only expire if expiry date is before today (not including today)
         status: { $in: ['created', 'pending'] }
       },
       {
-        $set: { status: 'cancelled' }
+        $set: { status: 'expired' }
       }
     );
 
@@ -163,7 +167,7 @@ export async function POST(request: NextRequest) {
       catalogue: validatedData.catalogue,
       notes: validatedData.notes,
       showToClient: validatedData.showToClient,
-      status: 'created',
+      status: 'pending', // Default status is pending until approved/paid
     };
 
     if (validatedData.expireDate) {
@@ -235,10 +239,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If no Razorpay link was created, generate a placeholder
+    // If no Razorpay link was created, generate a placeholder using production URL
     if (!paymentLinkData.razorpayPaymentLinkUrl) {
       const linkId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-      paymentLinkData.razorpayPaymentLinkUrl = `${getBaseUrl()}/payment/manual/${linkId}`;
+      paymentLinkData.razorpayPaymentLinkUrl = `${getPaymentLinkBaseUrl()}/payment/manual/${linkId}`;
     }
 
     const paymentLink = await PaymentLink.create(paymentLinkData);

@@ -13,8 +13,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only dietitians and admins can access client list
-    if (session.user.role !== UserRole.DIETITIAN && session.user.role !== UserRole.ADMIN) {
+    // Only dietitians, health counselors, and admins can access client list
+    const userRole = session.user.role?.toLowerCase();
+    if (userRole !== 'dietitian' && userRole !== 'health_counselor' && userRole !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -28,8 +29,8 @@ export async function GET(request: NextRequest) {
     // Build query
     let query: any = { role: UserRole.CLIENT };
 
-    // If dietitian, only show their assigned clients (including from assignedDietitians array)
-    if (session.user.role === UserRole.DIETITIAN) {
+    // If dietitian or health counselor, only show their assigned clients (including from assignedDietitians array)
+    if (userRole === 'dietitian' || userRole === 'health_counselor') {
       query.$or = [
         { assignedDietitian: session.user.id },
         { assignedDietitians: session.user.id }
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     const clients = await User.find(query)
-      .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian status createdAt')
+      .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian status clientStatus createdAt')
       .populate('assignedDietitian', 'firstName lastName email')
       .sort({ firstName: 1, lastName: 1 })
       .limit(limit)

@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IUser, UserRole, UserStatus } from '@/types';
+import { IUser, UserRole, UserStatus, ClientStatus } from '@/types';
 
 const availabilitySchema = new Schema({
   day: {
@@ -100,6 +100,12 @@ const userSchema = new Schema({
     required: true,
     enum: Object.values(UserStatus),
     default: UserStatus.ACTIVE
+  },
+  // Client engagement status (different from account status)
+  clientStatus: {
+    type: String,
+    enum: Object.values(ClientStatus),
+    default: ClientStatus.LEADING
   },
   phone: {
     type: String,

@@ -24,17 +24,20 @@ export function getBaseUrl(): string {
 }
 
 /**
+ * Get URL for payment links - always use production URL
+ * Payment links must be accessible publicly
+ */
+export function getPaymentLinkBaseUrl(): string {
+  // Always use production URL for payment links since they need to be publicly accessible
+  return PRODUCTION_URL;
+}
+
+/**
  * Get URL for payment callbacks
  * Always uses production URL for Razorpay callbacks since
  * these need to be accessible from Razorpay servers
  */
 export function getPaymentCallbackUrl(path: string = '/user?payment_success=true'): string {
-  // For payment callbacks in production, always use production URL
-  const isProduction = process.env.NODE_ENV === 'production';
-  
-  if (isProduction) {
-    return `${PRODUCTION_URL}${path}`;
-  }
-  
-  return `${getBaseUrl()}${path}`;
+  // For payment callbacks, always use production URL
+  return `${PRODUCTION_URL}${path}`;
 }

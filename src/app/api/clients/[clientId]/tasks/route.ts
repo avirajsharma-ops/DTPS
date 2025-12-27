@@ -26,6 +26,12 @@ export async function GET(
 
     let query: any = { client: clientId };
 
+    // Health Counselors can only see tasks they created (ownership-based permission)
+    const userRole = session.user?.role?.toLowerCase();
+    if (userRole === 'health_counselor') {
+      query.dietitian = session.user?.id;
+    }
+
     if (status) {
       query.status = status;
     }

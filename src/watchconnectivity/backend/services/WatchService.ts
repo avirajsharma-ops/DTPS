@@ -359,18 +359,16 @@ export class WatchService {
       const startTime = startOfDay.getTime() * 1000000; // nanoseconds
       const endTime = now * 1000000;
       
-      // Fetch steps data
-      const stepsData = await this.fetchGoogleFitData(accessToken, 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps', startTime, endTime);
-      
-      // Fetch heart rate data
-      const heartRateData = await this.fetchGoogleFitData(accessToken, 'derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm', startTime, endTime);
-      
-      // Fetch calories data
-      const caloriesData = await this.fetchGoogleFitData(accessToken, 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended', startTime, endTime);
-      
       // Fetch sleep data (last 24 hours)
       const sleepStartTime = (now - 24 * 60 * 60 * 1000) * 1000000;
-      const sleepData = await this.fetchGoogleFitSleepData(accessToken, sleepStartTime, endTime);
+      
+      // Fetch all data in PARALLEL for faster response
+      const [stepsData, heartRateData, caloriesData, sleepData] = await Promise.all([
+        this.fetchGoogleFitData(accessToken, 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps', startTime, endTime),
+        this.fetchGoogleFitData(accessToken, 'derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm', startTime, endTime),
+        this.fetchGoogleFitData(accessToken, 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended', startTime, endTime),
+        this.fetchGoogleFitSleepData(accessToken, sleepStartTime, endTime),
+      ]);
       
       // Calculate totals
       let totalSteps = 0;

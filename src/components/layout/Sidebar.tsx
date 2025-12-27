@@ -41,7 +41,6 @@ export default function Sidebar({ className }: SidebarProps) {
   const getNavigationItems = (role: UserRole) => {
     switch (role) {
       case UserRole.DIETITIAN:
-      case UserRole.HEALTH_COUNSELOR:
         return [
           {
             href: '/dashboard/dietitian',
@@ -73,12 +72,6 @@ export default function Sidebar({ className }: SidebarProps) {
             icon: Clock,
             description: 'Book at any time with any dietitian'
           },
-          // {
-          //   href: '/meal-plans',
-          //   label: 'Diet Plans',
-          //   icon: Utensils,
-          //   description: 'Create and manage Diet plans'
-          // },
           {
             href: '/meal-plan-templates',
             label: 'Diet Plan Templates',
@@ -90,6 +83,52 @@ export default function Sidebar({ className }: SidebarProps) {
             label: 'Recipes',
             icon: ChefHat,
             description: 'Recipe database'
+          },
+          {
+            href: '/messages',
+            label: 'Messages',
+            icon: MessageCircle,
+            description: 'Client communications'
+          },
+          {
+            href: '/profile',
+            label: 'Profile',
+            icon: User,
+            description: 'View your profile'
+          },
+          {
+            href: '/settings',
+            label: 'Settings',
+            icon: Settings,
+            description: 'Account settings'
+          },
+        ];
+      case UserRole.HEALTH_COUNSELOR:
+        // Health Counselors have limited access - no meal plan templates, can view but not create
+        return [
+          {
+            href: '/dashboard/dietitian',
+            label: 'Dashboard',
+            icon: BarChart3,
+            description: 'Overview and analytics'
+          },
+          {
+            href: '/dietician/clients',
+            label: 'My Clients',
+            icon: Users,
+            description: 'Manage your assigned clients'
+          },
+          {
+            href: '/appointments',
+            label: 'Appointments',
+            icon: Calendar,
+            description: 'Schedule and manage appointments'
+          },
+          {
+            href: '/appointments/book-flexible',
+            label: 'Flexible Booking',
+            icon: Clock,
+            description: 'Book at any time with any dietitian'
           },
           {
             href: '/messages',

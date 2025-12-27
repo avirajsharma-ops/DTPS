@@ -80,10 +80,14 @@ export async function GET(
 
     // If user is a client, only show notes marked as showToClient
     const isClient = session.user.role === 'client';
+    const isHealthCounselor = session.user.role?.toLowerCase() === 'health_counselor';
     const query: any = { client: clientObjectId };
     
     if (isClient) {
       query.showToClient = true;
+    } else if (isHealthCounselor) {
+      // Health Counselors can only see notes they created (ownership-based permission)
+      query.createdBy = new mongoose.Types.ObjectId(session.user.id);
     }
 
     const notes = await ClientNote.find(query)
@@ -124,10 +128,11 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admins and dietitians can create notes
-    const allowedRoles = ['admin', 'dietitian'];
-    if (!allowedRoles.includes(session.user.role)) {
-      return NextResponse.json({ error: 'Access denied. Only admin and dietitian can create notes.' }, { status: 403 });
+    // Admins, dietitians, and health counselors can create notes
+    const allowedRoles = ['admin', 'dietitian', 'health_counselor'];
+    const userRole = session.user.role?.toLowerCase();
+    if (!allowedRoles.includes(userRole)) {
+      return NextResponse.json({ error: 'Access denied. Only admin, dietitian, and health counselor can create notes.' }, { status: 403 });
     }
 
     const { id } = await params;

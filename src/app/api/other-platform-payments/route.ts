@@ -4,10 +4,10 @@ import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db/connect';
 import OtherPlatformPayment from '@/lib/db/models/OtherPlatformPayment';
 import PaymentLink from '@/lib/db/models/PaymentLink';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 import { UserRole } from '@/types';
 import User from '@/lib/db/models/User';
+import { getImageKit } from '@/lib/imagekit';
+import { compressImageServer } from '@/lib/imageCompressionServer';
 
 // GET - List other platform payments
 export async function GET(request: NextRequest) {
@@ -98,23 +98,38 @@ export async function POST(request: NextRequest) {
     let receiptImagePath = '';
     let receiptImageUrl = '';
 
-    // Handle receipt image upload
+    // Handle receipt image upload - compress and upload to ImageKit
     if (receiptImage && receiptImage.size > 0) {
-      const bytes = await receiptImage.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+      try {
+        const bytes = await receiptImage.arrayBuffer();
+        const buffer = Buffer.from(bytes);
 
-      // Create upload directory
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'payment-receipts');
-      await mkdir(uploadDir, { recursive: true });
+        // Compress image before uploading (server-side compression)
+        const compressedBase64 = await compressImageServer(buffer, {
+          quality: 75,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          format: 'webp'
+        });
 
-      // Generate unique filename
-      const ext = path.extname(receiptImage.name) || '.jpg';
-      const filename = `${crypto.randomUUID()}${ext}`;
-      const filepath = path.join(uploadDir, filename);
+        // Generate unique filename
+        const filename = `receipt_${crypto.randomUUID()}`;
 
-      await writeFile(filepath, buffer);
-      receiptImagePath = `/uploads/payment-receipts/${filename}`;
-      receiptImageUrl = receiptImagePath;
+        // Upload to ImageKit in the otherplatform folder
+        const imageKit = getImageKit();
+        const uploadResponse = await imageKit.upload({
+          file: compressedBase64,
+          fileName: `${filename}.webp`,
+          folder: '/otherplatform',
+          useUniqueFileName: true,
+        });
+
+        receiptImagePath = uploadResponse.filePath;
+        receiptImageUrl = uploadResponse.url;
+      } catch (uploadError) {
+        console.error('Error uploading receipt image to ImageKit:', uploadError);
+        // Continue without image if upload fails
+      }
     }
 
     const otherPlatformPayment = new OtherPlatformPayment({

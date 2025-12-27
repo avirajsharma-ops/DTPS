@@ -45,6 +45,22 @@ interface PaymentDetails {
   mealPlanId?: string;
 }
 
+interface PurchaseNeedingMealPlan {
+  _id: string;
+  planName: string;
+  planCategory: string;
+  durationDays: number;
+  durationLabel: string;
+  daysUsed: number;
+  remainingDays: number;
+  mealPlanCreated: boolean;
+  startDate: string;
+  endDate: string;
+  expectedStartDate?: string;
+  expectedEndDate?: string;
+  parentPurchaseId?: string;
+}
+
 interface PaymentCheckResult {
   hasPaidPlan: boolean;
   canCreateMealPlan: boolean;
@@ -55,6 +71,16 @@ interface PaymentCheckResult {
   totalDaysUsed?: number;
   totalPurchasedDays?: number;
   message: string;
+  // Aggregated data across all active purchases
+  aggregated?: {
+    totalPurchases: number;
+    totalPurchasedDays: number;
+    totalDaysUsed: number;
+    totalRemainingDays: number;
+    purchasesNeedingMealPlan: number;
+  };
+  // All purchases that need meal plans created
+  allPurchasesNeedingMealPlan?: PurchaseNeedingMealPlan[];
 }
 
 interface DietPlan {
@@ -2656,6 +2682,15 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                         {paymentCheck.purchase?.mealPlanCreated ? '✅ Created' : '⏳ Not Created'}
                       </p>
                     </div>
+                    {/* Expected Dates Display */}
+                    {paymentCheck.purchase?.expectedStartDate && (
+                      <div className="bg-white rounded p-2 border border-green-200">
+                        <p className="text-gray-600 text-xs">Expected Start</p>
+                        <p className="font-bold text-green-700">
+                          {format(new Date(paymentCheck.purchase.expectedStartDate), 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="mt-3 bg-green-100 rounded-full h-2 overflow-hidden">
                     <div 
@@ -2663,6 +2698,103 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                       style={{ width: `${((paymentCheck.totalDaysUsed || 0) / (paymentCheck.totalPurchasedDays || 1)) * 100}%` }}
                     />
                   </div>
+                  
+                  {/* Set Expected Dates Prompt - Show when mealPlanCreated is false and no expected dates */}
+                  {!paymentCheck.purchase?.mealPlanCreated && !paymentCheck.purchase?.expectedStartDate && (
+                    <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-orange-600" />
+                        <p className="text-sm text-orange-700 font-medium">
+                          Set Expected Start Date
+                        </p>
+                      </div>
+                      <p className="text-xs text-orange-600 mt-1">
+                        Client has paid. Please set the expected start date in the Payments section to schedule the meal plan.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2 text-orange-700 border-orange-300 hover:bg-orange-100"
+                        onClick={() => {
+                          const paymentsSection = document.querySelector('[data-section="payments"]');
+                          if (paymentsSection) {
+                            paymentsSection.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }}
+                      >
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Go to Payments Section
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Show all pending purchases needing meal plans */}
+                  {paymentCheck.allPurchasesNeedingMealPlan && paymentCheck.allPurchasesNeedingMealPlan.length > 0 && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <p className="text-sm text-blue-700 font-medium">
+                          {paymentCheck.allPurchasesNeedingMealPlan.length} Purchase{paymentCheck.allPurchasesNeedingMealPlan.length > 1 ? 's' : ''} with Remaining Days
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        {paymentCheck.allPurchasesNeedingMealPlan.map((purchase, idx) => {
+                          const isPartiallyUsed = (purchase.daysUsed || 0) > 0;
+                          const isCurrentPurchase = purchase._id === paymentCheck.purchase?._id;
+                          
+                          return (
+                            <div 
+                              key={purchase._id} 
+                              className={`flex items-center justify-between text-xs p-2 rounded border ${
+                                isCurrentPurchase 
+                                  ? 'bg-green-50 border-green-300' 
+                                  : 'bg-white border-blue-100'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {isCurrentPurchase && (
+                                  <span className="text-green-600 text-[10px] font-bold">▶</span>
+                                )}
+                                <div>
+                                  <span className={`font-medium ${isCurrentPurchase ? 'text-green-800' : 'text-blue-800'}`}>
+                                    {purchase.planName}
+                                  </span>
+                                  <span className="text-gray-500 ml-2">
+                                    ({purchase.remainingDays}/{purchase.durationDays} days remaining)
+                                  </span>
+                                  {isPartiallyUsed && (
+                                    <span className="ml-2 text-orange-600 font-medium">
+                                      • {purchase.daysUsed} days used
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {isCurrentPurchase ? (
+                                  <Badge className="bg-green-100 text-green-700 text-xs">
+                                    Current
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-gray-100 text-gray-600 text-xs">
+                                    Waiting
+                                  </Badge>
+                                )}
+                                {purchase.expectedStartDate && (
+                                  <Badge className="bg-blue-100 text-blue-700 text-xs ml-1">
+                                    {format(new Date(purchase.expectedStartDate), 'MMM d')}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-2">
+                        💡 Tip: Complete current purchase first before moving to the next one
+                      </p>
+                    </div>
+                  )}
+                  
                   <p className="text-xs text-green-600 mt-2">
                     {paymentCheck.purchase?.mealPlanCreated 
                       ? '✓ Meal plan has been created. You can create additional plans with remaining days.'

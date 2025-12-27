@@ -46,6 +46,7 @@ interface Client {
   avatar?: string;
   phone?: string;
   status: string;
+  clientStatus?: 'leading' | 'active' | 'inactive' | 'onboarding' | 'paused';
   createdAt: string;
   healthGoals?: string[];
   tags?: string[];
@@ -58,6 +59,15 @@ interface Client {
     lastName: string;
   };
 }
+
+// Client status colors
+const clientStatusColors: Record<string, { bg: string; text: string }> = {
+  leading: { bg: 'bg-purple-100', text: 'text-purple-800' },
+  active: { bg: 'bg-green-100', text: 'text-green-800' },
+  inactive: { bg: 'bg-gray-100', text: 'text-gray-800' },
+  onboarding: { bg: 'bg-blue-100', text: 'text-blue-800' },
+  paused: { bg: 'bg-orange-100', text: 'text-orange-800' },
+};
 
 export default function DieticianClientsPage() {
   const { data: session } = useSession();
@@ -152,13 +162,43 @@ export default function DieticianClientsPage() {
     }
   };
 
+  const handleClientStatusChange = async (clientId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/users/${clientId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientStatus: newStatus }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to update status');
+      }
+
+      // Update local state
+      setClients(prev => prev.map(client => 
+        client._id === clientId 
+          ? { ...client, clientStatus: newStatus as Client['clientStatus'] }
+          : client
+      ));
+
+      toast.success(`Client status updated to ${newStatus}`);
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to update client status');
+    }
+  };
+
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.phone?.includes(searchTerm);
     
-    return matchesSearch;
+    // Filter by client status
+    const matchesStatus = filterType === 'all' || 
+      (client.clientStatus || 'leading') === filterType;
+    
+    return matchesSearch && matchesStatus;
   });
 
   const toggleClientSelection = (clientId: string) => {
@@ -248,12 +288,15 @@ export default function DieticianClientsPage() {
             </Select>
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="w-45 h-9">
-                <SelectValue placeholder="All" />
+                <SelectValue placeholder="Client Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="leading">Leading</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="onboarding">Onboarding</SelectItem>
+                <SelectItem value="paused">Paused</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -343,9 +386,46 @@ export default function DieticianClientsPage() {
                               ) : '-'}
                             </TableCell>
                             <TableCell className="px-3">
-                              <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs px-1.5 py-0">
-                                {client.status || 'Active'}
-                              </Badge>
+                              <Select
+                                value={client.clientStatus || 'leading'}
+                                onValueChange={(value) => handleClientStatusChange(client._id, value)}
+                              >
+                                <SelectTrigger className="h-7 w-[110px] text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="leading">
+                                    <span className="flex items-center gap-1.5">
+                                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                      Leading
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="active">
+                                    <span className="flex items-center gap-1.5">
+                                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                      Active
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="inactive">
+                                    <span className="flex items-center gap-1.5">
+                                      <span className="w-2 h-2 rounded-full bg-gray-500"></span>
+                                      Inactive
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="onboarding">
+                                    <span className="flex items-center gap-1.5">
+                                      <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                      Onboarding
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="paused">
+                                    <span className="flex items-center gap-1.5">
+                                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                                      Paused
+                                    </span>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
                             </TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.programStart ? formatDate(client.programStart) : '-'}</TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.programEnd ? formatDate(client.programEnd) : '-'}</TableCell>

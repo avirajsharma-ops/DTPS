@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 // User Types
 export enum UserRole {
@@ -14,14 +14,24 @@ export enum UserStatus {
   SUSPENDED = 'suspended'
 }
 
+// Client-specific status for tracking engagement (different from account status)
+export enum ClientStatus {
+  LEADING = 'leading',       // New lead/prospect, not yet started
+  ACTIVE = 'active',         // Currently on a plan, engaged
+  INACTIVE = 'inactive',     // Plan ended, not renewed
+  ONBOARDING = 'onboarding', // In onboarding process
+  PAUSED = 'paused'          // Temporarily paused their plan
+}
+
 export interface IUser extends Document {
-  _id: string;
+  _id: Types.ObjectId;
   email: string;
   password: string;
   firstName: string;
   lastName: string;
   role: UserRole;
   status: UserStatus;
+  clientStatus?: ClientStatus; // For tracking client engagement
   phone?: string;
   avatar?: string;
   emailVerified: boolean;
@@ -81,7 +91,6 @@ export interface IZoomMeetingDetails {
 }
 
 export interface IAppointment extends Document {
-  _id: string;
   dietitian: string;
   client: string;
   type: AppointmentType;
@@ -107,7 +116,6 @@ export interface INutrition {
 }
 
 export interface IRecipe extends Document {
-  _id: string;
   name: string;
   description?: string;
   ingredients: {
@@ -129,7 +137,6 @@ export interface IRecipe extends Document {
 }
 
 export interface IMealPlan extends Document {
-  _id: string;
   name: string;
   description?: string;
   dietitian: string;
@@ -195,7 +202,6 @@ export interface IMessageReaction {
 }
 
 export interface IMessage extends Document {
-  _id: string;
   sender: string;
   receiver: string;
   type: MessageType;
@@ -231,7 +237,6 @@ export enum PaymentType {
 }
 
 export interface IPayment extends Document {
-  _id: string;
   client: string;
   dietitian: string;
   type: PaymentType;
@@ -268,7 +273,6 @@ export interface IPayment extends Document {
 
 // Progress Tracking Types
 export interface IProgressEntry extends Document {
-  _id: string;
   user: string;
   type: string;
   value: number;
@@ -281,7 +285,6 @@ export interface IProgressEntry extends Document {
 
 // Food Log Types
 export interface IFoodLog extends Document {
-  _id: string;
   client: string;
   date: Date;
   meals: {

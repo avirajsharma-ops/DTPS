@@ -86,10 +86,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admins and dietitians can delete notes
-    const allowedRoles = ['admin', 'dietitian'];
-    if (!allowedRoles.includes(session.user.role)) {
-      return NextResponse.json({ error: 'Access denied. Only admin and dietitian can delete notes.' }, { status: 403 });
+    // Admins, dietitians, and health counselors can delete notes
+    const allowedRoles = ['admin', 'dietitian', 'health_counselor'];
+    const userRole = session.user.role?.toLowerCase();
+    if (!allowedRoles.includes(userRole)) {
+      return NextResponse.json({ error: 'Access denied. Only admin, dietitian, and health counselor can delete notes.' }, { status: 403 });
     }
 
     const { id, noteId } = await params;
@@ -99,13 +100,20 @@ export async function DELETE(
     const clientObjectId = new mongoose.Types.ObjectId(id);
     const noteObjectId = new mongoose.Types.ObjectId(noteId);
 
-    const result = await ClientNote.findOneAndDelete({
+    // Build query - health counselors can only delete their own notes
+    const deleteQuery: any = {
       _id: noteObjectId,
       client: clientObjectId
-    });
+    };
+    
+    if (userRole === 'health_counselor') {
+      deleteQuery.createdBy = new mongoose.Types.ObjectId(session.user.id);
+    }
+
+    const result = await ClientNote.findOneAndDelete(deleteQuery);
 
     if (!result) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Note not found or you do not have permission to delete it' }, { status: 404 });
     }
 
     // Log history for note deletion
@@ -146,10 +154,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admins and dietitians can update notes
-    const allowedRoles = ['admin', 'dietitian'];
-    if (!allowedRoles.includes(session.user.role)) {
-      return NextResponse.json({ error: 'Access denied. Only admin and dietitian can update notes.' }, { status: 403 });
+    // Admins, dietitians, and health counselors can update notes
+    const allowedRoles = ['admin', 'dietitian', 'health_counselor'];
+    const userRole = session.user.role?.toLowerCase();
+    if (!allowedRoles.includes(userRole)) {
+      return NextResponse.json({ error: 'Access denied. Only admin, dietitian, and health counselor can update notes.' }, { status: 403 });
     }
 
     const { id, noteId } = await params;
@@ -161,6 +170,12 @@ export async function PATCH(
     const clientObjectId = new mongoose.Types.ObjectId(id);
     const noteObjectId = new mongoose.Types.ObjectId(noteId);
 
+    // Build update query - health counselors can only update their own notes
+    const updateQuery: any = { _id: noteObjectId, client: clientObjectId };
+    if (userRole === 'health_counselor') {
+      updateQuery.createdBy = new mongoose.Types.ObjectId(session.user.id);
+    }
+
     // Build update object with only provided fields
     const updateFields: any = {};
     if (body.topicType !== undefined) updateFields.topicType = body.topicType;
@@ -170,13 +185,13 @@ export async function PATCH(
     if (body.attachments !== undefined) updateFields.attachments = body.attachments;
 
     const updatedNote = await ClientNote.findOneAndUpdate(
-      { _id: noteObjectId, client: clientObjectId },
+      updateQuery,
       { $set: updateFields },
       { new: true }
     );
 
     if (!updatedNote) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Note not found or you do not have permission to update it' }, { status: 404 });
     }
 
     // Log history for note update (only visibility toggle is allowed now)

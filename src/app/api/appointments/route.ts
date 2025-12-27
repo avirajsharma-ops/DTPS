@@ -80,6 +80,16 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // By default, only show current and future appointments
+    // If includeAll=true is passed (for specific client panel), show all including past
+    const includeAll = searchParams.get('includeAll') === 'true';
+    if (!includeAll && !date) {
+      // Only show appointments from start of today onwards
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      query.scheduledAt = { ...query.scheduledAt, $gte: todayStart };
+    }
+
     const appointments = await Appointment.find(query)
       .populate('dietitian', 'firstName lastName email avatar')
       .populate('client', 'firstName lastName email avatar')

@@ -5,7 +5,9 @@ import dbConnect from '@/lib/db/connect';
 import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import PaymentLink from '@/lib/db/models/PaymentLink';
 import Payment from '@/lib/db/models/Payment';
-import { PaymentStatus, PaymentType } from '@/types';
+import User from '@/lib/db/models/User';
+import MealPlan from '@/lib/db/models/MealPlan';
+import { PaymentStatus, PaymentType, ClientStatus } from '@/types';
 import Razorpay from 'razorpay';
 
 // Initialize Razorpay for syncing payment status
@@ -15,6 +17,58 @@ const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     })
   : null;
+
+// Helper function to update client status based on their meal plan status
+async function updateClientStatusBasedOnMealPlan(clientId: string): Promise<string> {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Check if client has any active meal plan (current date within plan date range)
+    const activeMealPlan = await MealPlan.findOne({
+      client: clientId,
+      status: 'active',
+      startDate: { $lte: today },
+      endDate: { $gte: today }
+    });
+    
+    // Get current client status
+    const client = await User.findById(clientId).select('clientStatus createdAt');
+    if (!client) return 'leading';
+    
+    let newStatus = client.clientStatus || 'leading';
+    
+    if (activeMealPlan) {
+      // Has active meal plan - set to active
+      newStatus = 'active';
+    } else {
+      // No active meal plan
+      // Check if they ever had a meal plan
+      const anyMealPlan = await MealPlan.findOne({ client: clientId });
+      
+      if (anyMealPlan) {
+        // Had a meal plan before but not active now - set to inactive
+        newStatus = 'inactive';
+      } else {
+        // Never had a meal plan - keep as leading (new client)
+        // Only set to leading if not already set to something else manually
+        if (!client.clientStatus || client.clientStatus === 'leading') {
+          newStatus = 'leading';
+        }
+      }
+    }
+    
+    // Update if status changed
+    if (client.clientStatus !== newStatus) {
+      await User.findByIdAndUpdate(clientId, { clientStatus: newStatus });
+    }
+    
+    return newStatus;
+  } catch (error) {
+    console.error('Error updating client status:', error);
+    return 'leading';
+  }
+}
 
 // Helper function to create Payment record from PaymentLink
 async function createPaymentRecordFromLink(paymentLink: any): Promise<string | null> {
@@ -224,20 +278,47 @@ export async function GET(request: NextRequest) {
       endDate: { $gte: new Date() }
     })
     .populate('servicePlan', 'name category')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: 1 }); // Sort by creation date (oldest first - FIFO)
 
-
-    // Prioritize purchase that needs meal plan (mealPlanCreated: false and has remaining days)
-    let activePurchase = allActivePurchases.find(p => 
-      !p.mealPlanCreated && (p.durationDays - (p.daysUsed || 0)) > 0
+    // PRIORITY ORDER FOR MEAL PLAN CREATION:
+    // 1. FIRST: Complete any partially used purchase (daysUsed > 0 but still has remaining days)
+    // 2. SECOND: Then start new purchases (sorted by expected date, then creation date)
+    
+    // Find partially used purchase (already started but not complete)
+    const partiallyUsedPurchase = allActivePurchases.find(p => 
+      (p.daysUsed || 0) > 0 && (p.durationDays - (p.daysUsed || 0)) > 0
     );
+    
+    // Find purchases that haven't been started yet (daysUsed = 0)
+    const unstartedPurchases = allActivePurchases
+      .filter(p => (p.daysUsed || 0) === 0 && (p.durationDays - (p.daysUsed || 0)) > 0)
+      .sort((a, b) => {
+        // Sort by expected start date first
+        if (a.expectedStartDate && b.expectedStartDate) {
+          return new Date(a.expectedStartDate).getTime() - new Date(b.expectedStartDate).getTime();
+        }
+        if (a.expectedStartDate && !b.expectedStartDate) return -1;
+        if (!a.expectedStartDate && b.expectedStartDate) return 1;
+        // Fall back to creation date (earliest first for FIFO)
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
 
-    // If no purchase needs meal plan, find one with remaining days
+    // Priority: Partially used first, then unstarted purchases
+    let activePurchase = partiallyUsedPurchase || (unstartedPurchases.length > 0 ? unstartedPurchases[0] : null);
+
+    // If no purchase with remaining days, find any purchase
     if (!activePurchase) {
       activePurchase = allActivePurchases.find(p => 
         (p.durationDays - (p.daysUsed || 0)) > 0
       );
     }
+
+    // Build the list of purchases needing meal plans (for display)
+    // Show partially used first, then unstarted
+    const purchasesNeedingPlan = [
+      ...(partiallyUsedPurchase ? [partiallyUsedPurchase] : []),
+      ...unstartedPurchases.filter(p => p._id.toString() !== partiallyUsedPurchase?._id?.toString())
+    ];
 
     // If still no purchase with remaining days, use the most recent one
     if (!activePurchase && allActivePurchases.length > 0) {
@@ -317,10 +398,14 @@ export async function GET(request: NextRequest) {
     }
 
     if (!activePurchase) {
+      // Update client status even when no paid plan
+      const updatedClientStatus = await updateClientStatusBasedOnMealPlan(clientId);
+      
       return NextResponse.json({ 
         success: true,
         hasPaidPlan: false,
         canCreateMealPlan: false,
+        clientStatus: updatedClientStatus,
         message: 'No active paid plan found. Client needs to purchase a plan first.',
         remainingDays: 0,
         maxDays: 0,
@@ -334,10 +419,8 @@ export async function GET(request: NextRequest) {
     const aggregatedTotalDaysUsed = allActivePurchases.reduce((sum, p) => sum + (p.daysUsed || 0), 0);
     const aggregatedRemainingDays = Math.max(0, aggregatedTotalPurchasedDays - aggregatedTotalDaysUsed);
 
-    // Find all purchases that need meal plans
-    const purchasesNeedingMealPlan = allActivePurchases.filter(p => 
-      !p.mealPlanCreated && (p.durationDays - (p.daysUsed || 0)) > 0
-    );
+    // Use the already sorted purchasesNeedingPlan for the response
+    // This ensures consistent ordering by expected date, then creation date
 
 
     // Calculate remaining days based on daysUsed (not date difference)
@@ -396,10 +479,14 @@ export async function GET(request: NextRequest) {
       console.error('❌ Error fetching payment details:', err);
     }
 
+    // Update client status based on meal plan status
+    const updatedClientStatus = await updateClientStatusBasedOnMealPlan(clientId);
+
     return NextResponse.json({ 
       success: true,
       hasPaidPlan: true,
       canCreateMealPlan: canCreate,
+      clientStatus: updatedClientStatus,
       purchase: {
         _id: activePurchase._id,
         planName: activePurchase.planName,
@@ -429,10 +516,10 @@ export async function GET(request: NextRequest) {
         totalPurchasedDays: aggregatedTotalPurchasedDays,
         totalDaysUsed: aggregatedTotalDaysUsed,
         totalRemainingDays: aggregatedRemainingDays,
-        purchasesNeedingMealPlan: purchasesNeedingMealPlan.length
+        purchasesNeedingMealPlan: purchasesNeedingPlan.length
       },
-      // All purchases that need meal plans created
-      allPurchasesNeedingMealPlan: purchasesNeedingMealPlan.map(p => ({
+      // All purchases that need meal plans created (sorted by expected start date, then creation date)
+      allPurchasesNeedingMealPlan: purchasesNeedingPlan.map(p => ({
         _id: p._id,
         planName: p.planName,
         planCategory: p.planCategory,
@@ -445,10 +532,11 @@ export async function GET(request: NextRequest) {
         endDate: p.endDate,
         expectedStartDate: p.expectedStartDate || null,
         expectedEndDate: p.expectedEndDate || null,
-        parentPurchaseId: p.parentPurchaseId || null
+        parentPurchaseId: p.parentPurchaseId || null,
+        createdAt: p.createdAt
       })),
       message: canCreate 
-        ? `Client has ${remainingDays} days remaining (${totalDaysUsed}/${totalPurchasedDays} days used) in their ${activePurchase.planName} plan.${purchasesNeedingMealPlan.length > 1 ? ` (${purchasesNeedingMealPlan.length} purchases need meal plans)` : ''}`
+        ? `Client has ${remainingDays} days remaining (${totalDaysUsed}/${totalPurchasedDays} days used) in their ${activePurchase.planName} plan.${purchasesNeedingPlan.length > 1 ? ` (${purchasesNeedingPlan.length} purchases need meal plans)` : ''}`
         : remainingDays === 0
           ? `All ${totalPurchasedDays} days have been used. Client needs to purchase a new plan.`
           : `Requested ${requestedDays} days but only ${remainingDays} days remaining in plan.`

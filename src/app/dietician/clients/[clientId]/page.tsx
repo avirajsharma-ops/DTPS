@@ -1849,7 +1849,12 @@ export default function ClientDetailPage() {
               <PaymentsSection client={client} formatDate={formatDate} />
             )}
 
-            {activeSection === 'bookings' && <BookingsSection />}
+            {activeSection === 'bookings' && (
+              <BookingsSection 
+                clientId={client._id} 
+                clientName={`${client.firstName} ${client.lastName}`} 
+              />
+            )}
 
             {activeSection === 'documents' && (
               <DocumentsSection client={client} formatDate={formatDate} />
@@ -1983,7 +1988,7 @@ export default function ClientDetailPage() {
                                       <source src={att.url} type={att.mimeType || 'audio/mpeg'} />
                                     </audio>
                                   )}
-                                  <p className="text-[9px] text-gray-400 mt-0.5 truncate max-w-[100px]">{att.filename}</p>
+                                  <p className="text-[9px] text-gray-400 mt-0.5 truncate max-w-25">{att.filename}</p>
                                 </div>
                               ))}
                             </div>
