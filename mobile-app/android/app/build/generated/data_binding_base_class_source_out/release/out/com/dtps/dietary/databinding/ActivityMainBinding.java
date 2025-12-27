@@ -36,16 +36,21 @@ public final class ActivityMainBinding implements ViewBinding {
   public final MaterialButton retryButton;
 
   @NonNull
+  public final WebView splashWebView;
+
+  @NonNull
   public final WebView webView;
 
   private ActivityMainBinding(@NonNull FrameLayout rootView, @NonNull TextView offlineText,
       @NonNull LinearLayout offlineView, @NonNull ProgressBar progressBar,
-      @NonNull MaterialButton retryButton, @NonNull WebView webView) {
+      @NonNull MaterialButton retryButton, @NonNull WebView splashWebView,
+      @NonNull WebView webView) {
     this.rootView = rootView;
     this.offlineText = offlineText;
     this.offlineView = offlineView;
     this.progressBar = progressBar;
     this.retryButton = retryButton;
+    this.splashWebView = splashWebView;
     this.webView = webView;
   }
 
@@ -100,6 +105,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.splashWebView;
+      WebView splashWebView = ViewBindings.findChildViewById(rootView, id);
+      if (splashWebView == null) {
+        break missingId;
+      }
+
       id = R.id.webView;
       WebView webView = ViewBindings.findChildViewById(rootView, id);
       if (webView == null) {
@@ -107,7 +118,7 @@ public final class ActivityMainBinding implements ViewBinding {
       }
 
       return new ActivityMainBinding((FrameLayout) rootView, offlineText, offlineView, progressBar,
-          retryButton, webView);
+          retryButton, splashWebView, webView);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

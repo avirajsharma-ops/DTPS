@@ -2,10 +2,10 @@ Marking layout:mtrl_calendar_day:2131427401 reachable: referenced from base/dex/
 Marking layout:abc_popup_menu_item_layout:2131427347 reachable: referenced from base/dex/classes.dex
 Marking dimen:abc_config_prefDialogWidth:2131099671 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_popup_menu_header_item_layout:2131427346 reachable: referenced from base/dex/classes.dex
+Marking id:save_overlay_view:2131231091 reachable: referenced from base/dex/classes.dex
 Marking attr:actionBarStyle:2130903047 reachable: referenced from base/dex/classes.dex
 Marking string:abc_action_bar_up_description:2131689473 reachable: referenced from base/dex/classes.dex
 Marking attr:ratingBarStyle:2130903952 reachable: referenced from base/dex/classes.dex
-Marking id:fragment_container_view_tag:2131230916 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_action_menu_layout:2131427331 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_action_menu_item_layout:2131427330 reachable: referenced from base/dex/classes.dex
 Marking attr:buttonStyle:2130903190 reachable: referenced from base/dex/classes.dex
@@ -24,25 +24,25 @@ Marking dimen:m3_back_progress_side_container_max_scale_x_distance_shrink:213109
 Marking dimen:m3_back_progress_side_container_max_scale_x_distance_grow:2131099824 reachable: referenced from base/dex/classes.dex
 Marking dimen:m3_back_progress_side_container_max_scale_y_distance:2131099826 reachable: referenced from base/dex/classes.dex
 Marking string:side_sheet_accessibility_pane_title:2131689643 reachable: referenced from base/dex/classes.dex
-Marking id:view_tree_lifecycle_owner:2131231206 reachable: referenced from base/dex/classes.dex
-Marking id:view_tree_view_model_store_owner:2131231209 reachable: referenced from base/dex/classes.dex
-Marking id:view_tree_saved_state_registry_owner:2131231208 reachable: referenced from base/dex/classes.dex
+Marking id:tag_accessibility_actions:2131231154 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_action_clickable_span:2131230735 reachable: referenced from base/dex/classes.dex
+Marking id:tag_accessibility_clickable_spans:2131231155 reachable: referenced from base/dex/classes.dex
+Marking id:view_tree_lifecycle_owner:2131231207 reachable: referenced from base/dex/classes.dex
+Marking id:view_tree_view_model_store_owner:2131231210 reachable: referenced from base/dex/classes.dex
+Marking id:view_tree_saved_state_registry_owner:2131231209 reachable: referenced from base/dex/classes.dex
 Marking layout:design_navigation_menu_item:2131427370 reachable: referenced from base/dex/classes.dex
 Marking dimen:design_navigation_icon_size:2131099767 reachable: referenced from base/dex/classes.dex
 Marking id:design_menu_item_text:2131230867 reachable: referenced from base/dex/classes.dex
 Marking attr:colorControlHighlight:2130903288 reachable: referenced from base/dex/classes.dex
 Marking id:design_menu_item_action_area_stub:2131230866 reachable: referenced from base/dex/classes.dex
 Marking drawable:navigation_empty_icon:2131165398 reachable: referenced from base/dex/classes.dex
-Marking attr:motionEasingLinearInterpolator:2130903858 reachable: referenced from base/dex/classes.dex
-Marking attr:motionEasingEmphasizedInterpolator:2130903856 reachable: referenced from base/dex/classes.dex
-Marking string:clear_text_end_icon_content_description:2131689520 reachable: referenced from base/dex/classes.dex
-Marking drawable:mtrl_ic_cancel:2131165376 reachable: referenced from base/dex/classes.dex
 Marking attr:materialCalendarStyle:2130903782 reachable: referenced from base/dex/classes.dex
 Marking attr:toolbarStyle:2130904217 reachable: referenced from base/dex/classes.dex
 Marking style:Widget_MaterialComponents_Toolbar:2131756130 reachable: referenced from base/dex/classes.dex
-Marking id:split_action_bar:2131231132 reachable: referenced from base/dex/classes.dex
+Marking id:split_action_bar:2131231133 reachable: referenced from base/dex/classes.dex
 Marking id:action_bar:2131230771 reachable: referenced from base/dex/classes.dex
 Marking id:action_context_bar:2131230779 reachable: referenced from base/dex/classes.dex
+Marking id:tag_unhandled_key_listeners:2131231165 reachable: referenced from base/dex/classes.dex
 Marking attr:spinnerStyle:2130904024 reachable: referenced from base/dex/classes.dex
 Marking layout:support_simple_spinner_dropdown_item:2131427436 reachable: referenced from base/dex/classes.dex
 Marking attr:dropDownListViewStyle:2130903445 reachable: referenced from base/dex/classes.dex
@@ -51,33 +51,27 @@ Marking attr:bottomSheetStyle:2130903165 reachable: referenced from base/dex/cla
 Marking style:Widget_Design_BottomSheet_Modal:2131755836 reachable: referenced from base/dex/classes.dex
 Marking string:bottomsheet_action_expand_halfway:2131689505 reachable: referenced from base/dex/classes.dex
 Marking dimen:design_bottom_sheet_peek_height_min:2131099757 reachable: referenced from base/dex/classes.dex
-Marking id:tag_on_apply_window_listener:2131231157 reachable: referenced from base/dex/classes.dex
-Marking id:tag_window_insets_animation_callback:2131231165 reachable: referenced from base/dex/classes.dex
+Marking id:tag_on_apply_window_listener:2131231158 reachable: referenced from base/dex/classes.dex
+Marking id:tag_window_insets_animation_callback:2131231166 reachable: referenced from base/dex/classes.dex
 Marking dimen:m3_back_progress_bottom_container_max_scale_x_distance:2131099820 reachable: referenced from base/dex/classes.dex
 Marking dimen:m3_back_progress_bottom_container_max_scale_y_distance:2131099821 reachable: referenced from base/dex/classes.dex
 Marking attr:seekBarStyle:2130903979 reachable: referenced from base/dex/classes.dex
-Marking drawable:design_password_eye:2131165318 reachable: referenced from base/dex/classes.dex
-Marking string:password_toggle_content_description:2131689633 reachable: referenced from base/dex/classes.dex
+Marking id:tag_screen_reader_focusable:2131231161 reachable: referenced from base/dex/classes.dex
+Marking id:tag_accessibility_heading:2131231156 reachable: referenced from base/dex/classes.dex
+Marking id:tag_state_description:2131231162 reachable: referenced from base/dex/classes.dex
 Marking id:month_title:2131230994 reachable: referenced from base/dex/classes.dex
-Marking id:tag_accessibility_heading:2131231155 reachable: referenced from base/dex/classes.dex
 Marking id:month_grid:2131230989 reachable: referenced from base/dex/classes.dex
-Marking dimen:m3_carousel_debug_keyline_width:2131099885 reachable: referenced from base/dex/classes.dex
 Marking attr:actionBarSize:2130903045 reachable: referenced from base/dex/classes.dex
 Marking id:action_bar_activity_content:2131230772 reachable: referenced from base/dex/classes.dex
 Marking id:action_bar_container:2131230773 reachable: referenced from base/dex/classes.dex
 Marking attr:motionDurationLong2:2130903840 reachable: referenced from base/dex/classes.dex
 Marking attr:motionDurationMedium4:2130903846 reachable: referenced from base/dex/classes.dex
+Marking attr:motionEasingEmphasizedInterpolator:2130903856 reachable: referenced from base/dex/classes.dex
 Marking attr:imageButtonStyle:2130903600 reachable: referenced from base/dex/classes.dex
 Marking id:material_value_index:2131230984 reachable: referenced from base/dex/classes.dex
-Marking attr:colorPrimary:2130903315 reachable: referenced from base/dex/classes.dex
-Marking attr:colorPrimaryVariant:2130903322 reachable: referenced from base/dex/classes.dex
-Marking attr:isMaterialTheme:2130903617 reachable: referenced from base/dex/classes.dex
 Marking attr:editTextStyle:2130903451 reachable: referenced from base/dex/classes.dex
 Marking attr:alpha:2130903086 reachable: referenced from base/dex/classes.dex
 Marking attr:lStar:2130903651 reachable: referenced from base/dex/classes.dex
-Marking id:tag_accessibility_actions:2131231153 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_action_clickable_span:2131230735 reachable: referenced from base/dex/classes.dex
-Marking id:tag_accessibility_clickable_spans:2131231154 reachable: referenced from base/dex/classes.dex
 Marking string:mtrl_picker_navigate_to_current_year_description:2131689600 reachable: referenced from base/dex/classes.dex
 Marking string:mtrl_picker_navigate_to_year_description:2131689601 reachable: referenced from base/dex/classes.dex
 Marking layout:mtrl_calendar_year:2131427410 reachable: referenced from base/dex/classes.dex
@@ -85,10 +79,10 @@ Marking attr:recyclerViewStyle:2130903959 reachable: referenced from base/dex/cl
 Marking dimen:fastscroll_default_thickness:2131099792 reachable: referenced from base/dex/classes.dex
 Marking dimen:fastscroll_minimum_range:2131099794 reachable: referenced from base/dex/classes.dex
 Marking dimen:fastscroll_margin:2131099793 reachable: referenced from base/dex/classes.dex
-Marking attr:coordinatorLayoutStyle:2130903370 reachable: referenced from base/dex/classes.dex
 Marking attr:nestedScrollViewStyle:2130903888 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_cascading_menu_item_layout:2131427339 reachable: referenced from base/dex/classes.dex
-Marking attr:textAppearanceLineHeightEnabled:2130904132 reachable: referenced from base/dex/classes.dex
+Marking attr:theme:2130904173 reachable: referenced from base/dex/classes.dex
+Marking attr:materialThemeOverlay:2130903804 reachable: referenced from base/dex/classes.dex
 Marking id:snackbar_text:2131231124 reachable: referenced from base/dex/classes.dex
 Marking id:snackbar_action:2131231123 reachable: referenced from base/dex/classes.dex
 Marking dimen:design_snackbar_padding_vertical_2lines:2131099783 reachable: referenced from base/dex/classes.dex
@@ -99,17 +93,17 @@ Marking style:Widget_Design_TextInputEditText:2131755843 reachable: referenced f
 Marking attr:dialogTheme:2130903418 reachable: referenced from base/dex/classes.dex
 Marking attr:alertDialogTheme:2130903084 reachable: referenced from base/dex/classes.dex
 Marking id:parentPanel:2131231063 reachable: referenced from base/dex/classes.dex
-Marking id:topPanel:2131231188 reachable: referenced from base/dex/classes.dex
+Marking id:topPanel:2131231189 reachable: referenced from base/dex/classes.dex
 Marking id:contentPanel:2131230846 reachable: referenced from base/dex/classes.dex
 Marking id:buttonPanel:2131230818 reachable: referenced from base/dex/classes.dex
 Marking id:customPanel:2131230855 reachable: referenced from base/dex/classes.dex
 Marking id:scrollView:2131231098 reachable: referenced from base/dex/classes.dex
 Marking attr:alertDialogCenterButtons:2130903082 reachable: referenced from base/dex/classes.dex
-Marking id:title_template:2131231185 reachable: referenced from base/dex/classes.dex
+Marking id:title_template:2131231186 reachable: referenced from base/dex/classes.dex
 Marking id:alertTitle:2131230791 reachable: referenced from base/dex/classes.dex
-Marking id:textSpacerNoButtons:2131231169 reachable: referenced from base/dex/classes.dex
-Marking id:titleDividerNoCustom:2131231184 reachable: referenced from base/dex/classes.dex
-Marking id:textSpacerNoTitle:2131231170 reachable: referenced from base/dex/classes.dex
+Marking id:textSpacerNoButtons:2131231170 reachable: referenced from base/dex/classes.dex
+Marking id:titleDividerNoCustom:2131231185 reachable: referenced from base/dex/classes.dex
+Marking id:textSpacerNoTitle:2131231171 reachable: referenced from base/dex/classes.dex
 Marking id:scrollIndicatorUp:2131231097 reachable: referenced from base/dex/classes.dex
 Marking id:scrollIndicatorDown:2131231096 reachable: referenced from base/dex/classes.dex
 Marking attr:searchViewStyle:2130903978 reachable: referenced from base/dex/classes.dex
@@ -117,7 +111,7 @@ Marking layout:abc_search_view:2131427353 reachable: referenced from base/dex/cl
 Marking id:search_src_text:2131231108 reachable: referenced from base/dex/classes.dex
 Marking id:search_edit_frame:2131231104 reachable: referenced from base/dex/classes.dex
 Marking id:search_plate:2131231107 reachable: referenced from base/dex/classes.dex
-Marking id:submit_area:2131231150 reachable: referenced from base/dex/classes.dex
+Marking id:submit_area:2131231151 reachable: referenced from base/dex/classes.dex
 Marking id:search_button:2131231102 reachable: referenced from base/dex/classes.dex
 Marking id:search_go_btn:2131231105 reachable: referenced from base/dex/classes.dex
 Marking id:search_close_btn:2131231103 reachable: referenced from base/dex/classes.dex
@@ -127,64 +121,83 @@ Marking string:abc_searchview_description_search:2131689493 reachable: reference
 Marking layout:abc_search_dropdown_item_icons_2line:2131427352 reachable: referenced from base/dex/classes.dex
 Marking dimen:abc_search_view_preferred_height:2131099702 reachable: referenced from base/dex/classes.dex
 Marking dimen:abc_search_view_preferred_width:2131099703 reachable: referenced from base/dex/classes.dex
-Marking attr:state_indeterminate:2130904047 reachable: referenced from base/dex/classes.dex
-Marking attr:state_error:2130904046 reachable: referenced from base/dex/classes.dex
-Marking style:Widget_MaterialComponents_CompoundButton_CheckBox:2131756054 reachable: referenced from base/dex/classes.dex
-Marking drawable:mtrl_checkbox_button_checked_unchecked:2131165363 reachable: referenced from base/dex/classes.dex
-Marking attr:isMaterial3Theme:2130903616 reachable: referenced from base/dex/classes.dex
-Marking drawable:mtrl_checkbox_button:2131165362 reachable: referenced from base/dex/classes.dex
-Marking drawable:mtrl_checkbox_button_icon:2131165364 reachable: referenced from base/dex/classes.dex
-Marking id:checked:2131230832 reachable: referenced from base/dex/classes.dex
-Marking id:unchecked:2131231198 reachable: referenced from base/dex/classes.dex
-Marking id:indeterminate:2131230942 reachable: referenced from base/dex/classes.dex
-Marking string:mtrl_checkbox_state_description_checked:2131689578 reachable: referenced from base/dex/classes.dex
-Marking string:mtrl_checkbox_state_description_unchecked:2131689580 reachable: referenced from base/dex/classes.dex
-Marking string:mtrl_checkbox_state_description_indeterminate:2131689579 reachable: referenced from base/dex/classes.dex
-Marking attr:colorControlActivated:2130903287 reachable: referenced from base/dex/classes.dex
-Marking attr:colorError:2130903290 reachable: referenced from base/dex/classes.dex
-Marking attr:colorSurface:2130903328 reachable: referenced from base/dex/classes.dex
-Marking attr:colorOnSurface:2130903306 reachable: referenced from base/dex/classes.dex
+Marking attr:coordinatorLayoutStyle:2130903370 reachable: referenced from base/dex/classes.dex
+Marking id:fragment_container_view_tag:2131230916 reachable: referenced from base/dex/classes.dex
 Marking attr:actionBarWidgetTheme:2130903052 reachable: referenced from base/dex/classes.dex
 Marking bool:abc_action_bar_embed_tabs:2130968576 reachable: referenced from base/dex/classes.dex
 Marking id:decor_content_parent:2131230860 reachable: referenced from base/dex/classes.dex
-Marking id:tag_unhandled_key_event_manager:2131231163 reachable: referenced from base/dex/classes.dex
-Marking id:tag_unhandled_key_listeners:2131231164 reachable: referenced from base/dex/classes.dex
-Marking id:visible_removing_fragment_view_tag:2131231211 reachable: referenced from base/dex/classes.dex
-Marking animator:fragment_close_enter:2130837507 reachable: referenced from base/dex/classes.dex
-Marking animator:fragment_close_exit:2130837508 reachable: referenced from base/dex/classes.dex
-Marking animator:fragment_fade_enter:2130837509 reachable: referenced from base/dex/classes.dex
-Marking animator:fragment_fade_exit:2130837510 reachable: referenced from base/dex/classes.dex
-Marking animator:fragment_open_enter:2130837511 reachable: referenced from base/dex/classes.dex
-Marking animator:fragment_open_exit:2130837512 reachable: referenced from base/dex/classes.dex
-Marking id:view_tree_on_back_pressed_dispatcher_owner:2131231207 reachable: referenced from base/dex/classes.dex
+Marking attr:colorPrimary:2130903315 reachable: referenced from base/dex/classes.dex
+Marking attr:colorPrimaryVariant:2130903322 reachable: referenced from base/dex/classes.dex
+Marking attr:isMaterialTheme:2130903617 reachable: referenced from base/dex/classes.dex
+Marking id:view_tree_on_back_pressed_dispatcher_owner:2131231208 reachable: referenced from base/dex/classes.dex
 Marking id:report_drawn:2131231081 reachable: referenced from base/dex/classes.dex
-Marking id:tag_screen_reader_focusable:2131231160 reachable: referenced from base/dex/classes.dex
-Marking id:tag_state_description:2131231161 reachable: referenced from base/dex/classes.dex
-Marking id:save_overlay_view:2131231091 reachable: referenced from base/dex/classes.dex
+Marking dimen:m3_carousel_debug_keyline_width:2131099885 reachable: referenced from base/dex/classes.dex
 Marking attr:radioButtonStyle:2130903950 reachable: referenced from base/dex/classes.dex
+Marking drawable:design_password_eye:2131165318 reachable: referenced from base/dex/classes.dex
+Marking string:password_toggle_content_description:2131689633 reachable: referenced from base/dex/classes.dex
+Marking id:transition_current_scene:2131231193 reachable: referenced from base/dex/classes.dex
 Marking style:Widget_MaterialComponents_CompoundButton_RadioButton:2131756055 reachable: referenced from base/dex/classes.dex
-Marking attr:windowSplashScreenBackground:2130904282 reachable: referenced from base/dex/classes.dex
-Marking attr:windowSplashScreenAnimatedIcon:2130904280 reachable: referenced from base/dex/classes.dex
-Marking attr:splashScreenIconSize:2130904025 reachable: referenced from base/dex/classes.dex
-Marking attr:postSplashScreenTheme:2130903936 reachable: referenced from base/dex/classes.dex
-Marking id:text_input_error_icon:2131231174 reachable: referenced from base/dex/classes.dex
-Marking id:text_input_end_icon:2131231173 reachable: referenced from base/dex/classes.dex
-Marking string:error_icon_content_description:2131689522 reachable: referenced from base/dex/classes.dex
-Marking id:textinput_suffix_text:2131231181 reachable: referenced from base/dex/classes.dex
-Marking layout:design_text_input_end_icon:2131427371 reachable: referenced from base/dex/classes.dex
-Marking dimen:material_input_text_to_prefix_suffix_padding:2131100218 reachable: referenced from base/dex/classes.dex
+Marking attr:textAppearanceLineHeightEnabled:2130904132 reachable: referenced from base/dex/classes.dex
+Marking attr:elevationOverlayEnabled:2130903455 reachable: referenced from base/dex/classes.dex
+Marking attr:elevationOverlayColor:2130903454 reachable: referenced from base/dex/classes.dex
+Marking attr:elevationOverlayAccentColor:2130903453 reachable: referenced from base/dex/classes.dex
+Marking attr:colorSurface:2130903328 reachable: referenced from base/dex/classes.dex
 Marking attr:toolbarNavigationButtonStyle:2130904216 reachable: referenced from base/dex/classes.dex
+Marking attr:motionEasingLinearInterpolator:2130903858 reachable: referenced from base/dex/classes.dex
+Marking string:clear_text_end_icon_content_description:2131689520 reachable: referenced from base/dex/classes.dex
+Marking drawable:mtrl_ic_cancel:2131165376 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_tooltip:2131427355 reachable: referenced from base/dex/classes.dex
 Marking id:message:2131230986 reachable: referenced from base/dex/classes.dex
 Marking style:Animation_AppCompat_Tooltip:2131755012 reachable: referenced from base/dex/classes.dex
 Marking attr:textColorSearchUrl:2130904152 reachable: referenced from base/dex/classes.dex
 Marking id:edit_query:2131230891 reachable: referenced from base/dex/classes.dex
-Marking dimen:mtrl_snackbar_background_corner_radius:2131100394 reachable: referenced from base/dex/classes.dex
-Marking string:mtrl_chip_close_icon_content_description:2131689581 reachable: referenced from base/dex/classes.dex
+Marking dimen:design_textinput_caption_translate_y:2131099789 reachable: referenced from base/dex/classes.dex
+Marking attr:motionDurationShort4:2130903850 reachable: referenced from base/dex/classes.dex
+Marking attr:motionEasingEmphasizedDecelerateInterpolator:2130903855 reachable: referenced from base/dex/classes.dex
+Marking dimen:material_helper_text_font_1_3_padding_horizontal:2131100216 reachable: referenced from base/dex/classes.dex
+Marking dimen:material_helper_text_default_padding_top:2131100215 reachable: referenced from base/dex/classes.dex
+Marking dimen:material_helper_text_font_1_3_padding_top:2131100217 reachable: referenced from base/dex/classes.dex
 Marking attr:chipStyle:2130903248 reachable: referenced from base/dex/classes.dex
 Marking style:Widget_MaterialComponents_Chip_Action:2131756044 reachable: referenced from base/dex/classes.dex
-Marking id:special_effects_controller_view_tag:2131231129 reachable: referenced from base/dex/classes.dex
-Marking id:transition_current_scene:2131231192 reachable: referenced from base/dex/classes.dex
+Marking attr:colorControlActivated:2130903287 reachable: referenced from base/dex/classes.dex
+Marking attr:colorOnSurface:2130903306 reachable: referenced from base/dex/classes.dex
+Marking string:androidx_startup:2131689499 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_0:2131230736 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_1:2131230737 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_2:2131230748 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_3:2131230759 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_4:2131230762 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_5:2131230763 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_6:2131230764 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_7:2131230765 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_8:2131230766 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_9:2131230767 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_10:2131230738 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_11:2131230739 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_12:2131230740 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_13:2131230741 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_14:2131230742 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_15:2131230743 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_16:2131230744 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_17:2131230745 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_18:2131230746 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_19:2131230747 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_20:2131230749 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_21:2131230750 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_22:2131230751 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_23:2131230752 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_24:2131230753 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_25:2131230754 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_26:2131230755 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_27:2131230756 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_28:2131230757 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_29:2131230758 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_30:2131230760 reachable: referenced from base/dex/classes.dex
+Marking id:accessibility_custom_action_31:2131230761 reachable: referenced from base/dex/classes.dex
+Marking id:tag_unhandled_key_event_manager:2131231164 reachable: referenced from base/dex/classes.dex
+Marking id:tag_accessibility_pane_title:2131231157 reachable: referenced from base/dex/classes.dex
+Marking id:tag_on_receive_content_mime_types:2131231160 reachable: referenced from base/dex/classes.dex
+Marking id:tag_on_receive_content_listener:2131231159 reachable: referenced from base/dex/classes.dex
 Marking style:Widget_MaterialComponents_MaterialCalendar:2131756063 reachable: referenced from base/dex/classes.dex
 Marking dimen:mtrl_calendar_content_padding:2131100271 reachable: referenced from base/dex/classes.dex
 Marking dimen:mtrl_calendar_day_width:2131100277 reachable: referenced from base/dex/classes.dex
@@ -202,15 +215,8 @@ Marking string:mtrl_picker_toggle_to_calendar_input_mode:2131689617 reachable: r
 Marking string:mtrl_picker_toggle_to_text_input_mode:2131689619 reachable: referenced from base/dex/classes.dex
 Marking id:fullscreen_header:2131230918 reachable: referenced from base/dex/classes.dex
 Marking dimen:mtrl_calendar_dialog_background_inset:2131100279 reachable: referenced from base/dex/classes.dex
-Marking dimen:design_textinput_caption_translate_y:2131099789 reachable: referenced from base/dex/classes.dex
-Marking attr:motionDurationShort4:2130903850 reachable: referenced from base/dex/classes.dex
-Marking attr:motionEasingEmphasizedDecelerateInterpolator:2130903855 reachable: referenced from base/dex/classes.dex
-Marking dimen:material_helper_text_font_1_3_padding_horizontal:2131100216 reachable: referenced from base/dex/classes.dex
-Marking dimen:material_helper_text_default_padding_top:2131100215 reachable: referenced from base/dex/classes.dex
-Marking dimen:material_helper_text_font_1_3_padding_top:2131100217 reachable: referenced from base/dex/classes.dex
 Marking attr:materialClockStyle:2130903790 reachable: referenced from base/dex/classes.dex
 Marking layout:material_radial_view_group:2131427387 reachable: referenced from base/dex/classes.dex
-Marking string:androidx_startup:2131689499 reachable: referenced from base/dex/classes.dex
 Marking attr:listMenuViewStyle:2130903744 reachable: referenced from base/dex/classes.dex
 Marking string:abc_prepend_shortcut_label:2131689489 reachable: referenced from base/dex/classes.dex
 Marking string:abc_menu_meta_shortcut_label:2131689485 reachable: referenced from base/dex/classes.dex
@@ -222,31 +228,28 @@ Marking string:abc_menu_function_shortcut_label:2131689484 reachable: referenced
 Marking string:abc_menu_space_shortcut_label:2131689487 reachable: referenced from base/dex/classes.dex
 Marking string:abc_menu_enter_shortcut_label:2131689483 reachable: referenced from base/dex/classes.dex
 Marking string:abc_menu_delete_shortcut_label:2131689482 reachable: referenced from base/dex/classes.dex
-Marking id:title:2131231183 reachable: referenced from base/dex/classes.dex
+Marking id:title:2131231184 reachable: referenced from base/dex/classes.dex
 Marking id:shortcut:2131231115 reachable: referenced from base/dex/classes.dex
-Marking id:submenuarrow:2131231149 reachable: referenced from base/dex/classes.dex
+Marking id:submenuarrow:2131231150 reachable: referenced from base/dex/classes.dex
 Marking id:group_divider:2131230924 reachable: referenced from base/dex/classes.dex
 Marking id:content:2131230845 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_list_menu_item_radio:2131427345 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_list_menu_item_checkbox:2131427342 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_list_menu_item_icon:2131427343 reachable: referenced from base/dex/classes.dex
-Marking attr:autoCompleteTextViewStyle:2130903102 reachable: referenced from base/dex/classes.dex
-Marking style:Widget_AppCompat_AutoCompleteTextView:2131755769 reachable: referenced from base/dex/classes.dex
-Marking layout:mtrl_auto_complete_simple_item:2131427400 reachable: referenced from base/dex/classes.dex
-Marking dimen:mtrl_exposed_dropdown_menu_popup_elevation:2131100317 reachable: referenced from base/dex/classes.dex
-Marking attr:listPopupWindowStyle:2130903745 reachable: referenced from base/dex/classes.dex
 Marking dimen:mtrl_calendar_day_height:2131100273 reachable: referenced from base/dex/classes.dex
 Marking layout:mtrl_calendar_month_labeled:2131427406 reachable: referenced from base/dex/classes.dex
 Marking attr:actionOverflowButtonStyle:2130903073 reachable: referenced from base/dex/classes.dex
+Marking id:text_input_error_icon:2131231175 reachable: referenced from base/dex/classes.dex
+Marking id:text_input_end_icon:2131231174 reachable: referenced from base/dex/classes.dex
+Marking string:error_icon_content_description:2131689522 reachable: referenced from base/dex/classes.dex
+Marking id:textinput_suffix_text:2131231182 reachable: referenced from base/dex/classes.dex
+Marking layout:design_text_input_end_icon:2131427371 reachable: referenced from base/dex/classes.dex
+Marking dimen:material_input_text_to_prefix_suffix_padding:2131100218 reachable: referenced from base/dex/classes.dex
 Marking attr:actionOverflowMenuStyle:2130903074 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_list_menu_item_layout:2131427344 reachable: referenced from base/dex/classes.dex
 Marking attr:materialButtonStyle:2130903768 reachable: referenced from base/dex/classes.dex
 Marking style:Widget_MaterialComponents_Button:2131756030 reachable: referenced from base/dex/classes.dex
-Marking attr:elevationOverlayEnabled:2130903455 reachable: referenced from base/dex/classes.dex
-Marking attr:elevationOverlayColor:2130903454 reachable: referenced from base/dex/classes.dex
-Marking attr:elevationOverlayAccentColor:2130903453 reachable: referenced from base/dex/classes.dex
-Marking layout:design_text_input_start_icon:2131427372 reachable: referenced from base/dex/classes.dex
-Marking id:textinput_prefix_text:2131231180 reachable: referenced from base/dex/classes.dex
+Marking dimen:mtrl_snackbar_background_corner_radius:2131100394 reachable: referenced from base/dex/classes.dex
 Marking attr:actionBarPopupTheme:2130903044 reachable: referenced from base/dex/classes.dex
 Marking attr:panelMenuListTheme:2130903912 reachable: referenced from base/dex/classes.dex
 Marking style:Theme_AppCompat_CompactMenu:2131755539 reachable: referenced from base/dex/classes.dex
@@ -260,6 +263,20 @@ Marking layout:abc_dialog_title_material:2131427340 reachable: referenced from b
 Marking layout:abc_screen_toolbar:2131427351 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_screen_simple_overlay_action_mode:2131427350 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_screen_simple:2131427349 reachable: referenced from base/dex/classes.dex
+Marking attr:state_indeterminate:2130904047 reachable: referenced from base/dex/classes.dex
+Marking attr:state_error:2130904046 reachable: referenced from base/dex/classes.dex
+Marking style:Widget_MaterialComponents_CompoundButton_CheckBox:2131756054 reachable: referenced from base/dex/classes.dex
+Marking drawable:mtrl_checkbox_button_checked_unchecked:2131165363 reachable: referenced from base/dex/classes.dex
+Marking attr:isMaterial3Theme:2130903616 reachable: referenced from base/dex/classes.dex
+Marking drawable:mtrl_checkbox_button:2131165362 reachable: referenced from base/dex/classes.dex
+Marking drawable:mtrl_checkbox_button_icon:2131165364 reachable: referenced from base/dex/classes.dex
+Marking id:checked:2131230832 reachable: referenced from base/dex/classes.dex
+Marking id:unchecked:2131231199 reachable: referenced from base/dex/classes.dex
+Marking id:indeterminate:2131230942 reachable: referenced from base/dex/classes.dex
+Marking string:mtrl_checkbox_state_description_checked:2131689578 reachable: referenced from base/dex/classes.dex
+Marking string:mtrl_checkbox_state_description_unchecked:2131689580 reachable: referenced from base/dex/classes.dex
+Marking string:mtrl_checkbox_state_description_indeterminate:2131689579 reachable: referenced from base/dex/classes.dex
+Marking attr:colorError:2130903290 reachable: referenced from base/dex/classes.dex
 Marking attr:materialButtonToggleGroupStyle:2130903769 reachable: referenced from base/dex/classes.dex
 Marking style:Widget_MaterialComponents_MaterialButtonToggleGroup:2131756062 reachable: referenced from base/dex/classes.dex
 Marking attr:textInputStyle:2130904162 reachable: referenced from base/dex/classes.dex
@@ -285,13 +302,15 @@ Marking color:design_error:2131034188 reachable: referenced from base/dex/classe
 Marking string:character_counter_overflowed_content_description:2131689517 reachable: referenced from base/dex/classes.dex
 Marking string:character_counter_content_description:2131689516 reachable: referenced from base/dex/classes.dex
 Marking string:character_counter_pattern:2131689518 reachable: referenced from base/dex/classes.dex
-Marking id:textinput_counter:2131231176 reachable: referenced from base/dex/classes.dex
+Marking id:textinput_counter:2131231177 reachable: referenced from base/dex/classes.dex
 Marking dimen:mtrl_textinput_counter_margin_start:2131100410 reachable: referenced from base/dex/classes.dex
-Marking id:textinput_error:2131231177 reachable: referenced from base/dex/classes.dex
-Marking id:textinput_helper_text:2131231178 reachable: referenced from base/dex/classes.dex
-Marking id:textinput_placeholder:2131231179 reachable: referenced from base/dex/classes.dex
+Marking id:textinput_error:2131231178 reachable: referenced from base/dex/classes.dex
+Marking id:textinput_helper_text:2131231179 reachable: referenced from base/dex/classes.dex
+Marking id:textinput_placeholder:2131231180 reachable: referenced from base/dex/classes.dex
 Marking string:mtrl_picker_toggle_to_year_selection:2131689620 reachable: referenced from base/dex/classes.dex
 Marking string:mtrl_picker_toggle_to_day_selection:2131689618 reachable: referenced from base/dex/classes.dex
+Marking string:exposed_dropdown_menu_content_description:2131689525 reachable: referenced from base/dex/classes.dex
+Marking drawable:mtrl_dropdown_arrow:2131165373 reachable: referenced from base/dex/classes.dex
 Marking style:Widget_MaterialComponents_TimePicker_Clock:2131756122 reachable: referenced from base/dex/classes.dex
 Marking dimen:material_clock_hand_stroke_width:2131100195 reachable: referenced from base/dex/classes.dex
 Marking dimen:material_clock_hand_center_dot_radius:2131100193 reachable: referenced from base/dex/classes.dex
@@ -350,49 +369,14 @@ Marking id:material_minute_tv:2131230977 reachable: referenced from base/dex/cla
 Marking id:material_hour_tv:2131230974 reachable: referenced from base/dex/classes.dex
 Marking id:material_clock_hand:2131230968 reachable: referenced from base/dex/classes.dex
 Marking id:selection_type:2131231112 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_0:2131230736 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_1:2131230737 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_2:2131230748 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_3:2131230759 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_4:2131230762 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_5:2131230763 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_6:2131230764 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_7:2131230765 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_8:2131230766 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_9:2131230767 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_10:2131230738 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_11:2131230739 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_12:2131230740 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_13:2131230741 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_14:2131230742 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_15:2131230743 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_16:2131230744 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_17:2131230745 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_18:2131230746 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_19:2131230747 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_20:2131230749 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_21:2131230750 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_22:2131230751 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_23:2131230752 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_24:2131230753 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_25:2131230754 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_26:2131230755 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_27:2131230756 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_28:2131230757 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_29:2131230758 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_30:2131230760 reachable: referenced from base/dex/classes.dex
-Marking id:accessibility_custom_action_31:2131230761 reachable: referenced from base/dex/classes.dex
-Marking id:tag_accessibility_pane_title:2131231156 reachable: referenced from base/dex/classes.dex
-Marking id:tag_on_receive_content_mime_types:2131231159 reachable: referenced from base/dex/classes.dex
-Marking id:tag_on_receive_content_listener:2131231158 reachable: referenced from base/dex/classes.dex
 Marking dimen:abc_cascading_menus_min_smallest_width:2131099670 reachable: referenced from base/dex/classes.dex
 Marking layout:material_time_chip:2131427389 reachable: referenced from base/dex/classes.dex
 Marking layout:material_time_input:2131427390 reachable: referenced from base/dex/classes.dex
 Marking id:material_label:2131230975 reachable: referenced from base/dex/classes.dex
 Marking attr:checkedTextViewStyle:2130903229 reachable: referenced from base/dex/classes.dex
 Marking style:Theme_AppCompat_Empty:2131755551 reachable: referenced from base/dex/classes.dex
-Marking string:exposed_dropdown_menu_content_description:2131689525 reachable: referenced from base/dex/classes.dex
-Marking drawable:mtrl_dropdown_arrow:2131165373 reachable: referenced from base/dex/classes.dex
+Marking attr:autoCompleteTextViewStyle:2130903102 reachable: referenced from base/dex/classes.dex
+Marking id:visible_removing_fragment_view_tag:2131231212 reachable: referenced from base/dex/classes.dex
 Marking layout:mtrl_calendar_vertical:2131427409 reachable: referenced from base/dex/classes.dex
 Marking layout:mtrl_calendar_horizontal:2131427404 reachable: referenced from base/dex/classes.dex
 Marking dimen:mtrl_calendar_navigation_height:2131100294 reachable: referenced from base/dex/classes.dex
@@ -410,7 +394,16 @@ Marking id:month_navigation_previous:2131230993 reachable: referenced from base/
 Marking id:month_navigation_next:2131230992 reachable: referenced from base/dex/classes.dex
 Marking id:mtrl_calendar_day_selector_frame:2131230997 reachable: referenced from base/dex/classes.dex
 Marking style:Theme_AppCompat_Light:2131755552 reachable: referenced from base/dex/classes.dex
+Marking animator:fragment_close_enter:2130837507 reachable: referenced from base/dex/classes.dex
+Marking animator:fragment_close_exit:2130837508 reachable: referenced from base/dex/classes.dex
+Marking animator:fragment_fade_enter:2130837509 reachable: referenced from base/dex/classes.dex
+Marking animator:fragment_fade_exit:2130837510 reachable: referenced from base/dex/classes.dex
+Marking animator:fragment_open_enter:2130837511 reachable: referenced from base/dex/classes.dex
+Marking animator:fragment_open_exit:2130837512 reachable: referenced from base/dex/classes.dex
+Marking id:special_effects_controller_view_tag:2131231129 reachable: referenced from base/dex/classes.dex
 Marking attr:alertDialogStyle:2130903083 reachable: referenced from base/dex/classes.dex
+Marking layout:design_text_input_start_icon:2131427372 reachable: referenced from base/dex/classes.dex
+Marking id:textinput_prefix_text:2131231181 reachable: referenced from base/dex/classes.dex
 Marking attr:actionModeStyle:2130903070 reachable: referenced from base/dex/classes.dex
 Marking layout:abc_action_mode_close_item_material:2131427333 reachable: referenced from base/dex/classes.dex
 Marking id:action_mode_close_button:2131230786 reachable: referenced from base/dex/classes.dex
@@ -432,8 +425,6 @@ Marking drawable:abc_vector_test:2131165302 reachable: referenced from base/dex/
 Marking drawable:abc_seekbar_track_material:2131165284 reachable: referenced from base/dex/classes.dex
 Marking drawable:abc_list_divider_mtrl_alpha:2131165261 reachable: referenced from base/dex/classes.dex
 Marking drawable:abc_dialog_material_background:2131165243 reachable: referenced from base/dex/classes.dex
-Marking attr:theme:2130904173 reachable: referenced from base/dex/classes.dex
-Marking attr:materialThemeOverlay:2130903804 reachable: referenced from base/dex/classes.dex
 Marking layout:material_clockface_view:2131427386 reachable: referenced from base/dex/classes.dex
 Marking dimen:material_clock_hand_padding:2131100194 reachable: referenced from base/dex/classes.dex
 Marking color:material_timepicker_clockface:2131034803 reachable: referenced from base/dex/classes.dex
@@ -443,6 +434,11 @@ Marking dimen:material_time_picker_minimum_screen_height:2131100222 reachable: r
 Marking dimen:material_time_picker_minimum_screen_width:2131100223 reachable: referenced from base/dex/classes.dex
 Marking dimen:material_clock_size:2131100201 reachable: referenced from base/dex/classes.dex
 Marking id:circle_center:2131230834 reachable: referenced from base/dex/classes.dex
+Marking style:Widget_AppCompat_AutoCompleteTextView:2131755769 reachable: referenced from base/dex/classes.dex
+Marking layout:mtrl_auto_complete_simple_item:2131427400 reachable: referenced from base/dex/classes.dex
+Marking dimen:mtrl_exposed_dropdown_menu_popup_elevation:2131100317 reachable: referenced from base/dex/classes.dex
+Marking attr:listPopupWindowStyle:2130903745 reachable: referenced from base/dex/classes.dex
+Marking string:mtrl_chip_close_icon_content_description:2131689581 reachable: referenced from base/dex/classes.dex
 android.content.res.Resources#getIdentifier present: true
 Web content present: true
 Referenced Strings:
@@ -458,11 +454,11 @@ android.graphics.drawable.ColorStateL...
 android.speech.extra.RESULTS_PENDINGI...
 bv$annotations
 checkedIconVisible
-SOURCE_AUTOFILL
 androidx.activity.result.contract.act...
 chipIconEnabled
-LEFT
+SOURCE_AUTOFILL
 java.lang.CharSequence
+LEFT
 autoStoreLocales
 MButtonToggleGroup
 0
@@ -476,24 +472,25 @@ setNextSelectedPositionInt
 bottomRight
 emoji2.text.DefaultEmojiConfig
 H
-android.intent.extra.PROCESS_TEXT_REA...
 Chip
+android.intent.extra.PROCESS_TEXT_REA...
 fillColor
 androidx/lifecycle/LegacySavedStateHa...
 savedInstanceState
 TITLE_TEXT_RES_ID_KEY
 W
 addFontWeightStyle
+Z
 constructor.parameterTypes
-EXTRA_BENCHMARK_OPERATION
 EmojiCompat.EmojiCompatInitializer.run
+EXTRA_BENCHMARK_OPERATION
 _
 annotation
 a
 b
-ACTION_CLEAR_ACCESSIBILITY_FOCUS
 user_query
 c
+ACTION_CLEAR_ACCESSIBILITY_FOCUS
 RESULT_PARSE_EXCEPTION
 data2
 g
@@ -541,7 +538,6 @@ guideline
 maxLines
 layoutDescription
 GONE
-child
 strokeWidth
 androidx.view.accessibility.Accessibi...
 setSelectedPositionInt
@@ -589,12 +585,14 @@ androidx.view.accessibility.Accessibi...
 fullPackage
 write
 byte
+t1/e
 android.content.res.ThemedResourceCache
 Variant
 onBackInvoked
 CENTER_Y
-CENTER_X
+onSplashComplete
 RESULT_NOT_WRITABLE
+CENTER_X
 doAfterTextChanged
 .xml
 RESULT_INSTALL_SKIP_FILE_SUCCESS
@@ -606,9 +604,9 @@ URI
 TypefaceCompatApi24Impl
 suggest_text_1
 suggest_text_2
-ACTION_PAGE_UP
 androidx.view.accessibility.Accessibi...
 top
+ACTION_PAGE_UP
 TransitionLayout
 mNextServedView
 kotlin.Long
@@ -626,7 +624,6 @@ DESTROYED
 constraint
 android.intent.action.TIME_TICK
 Theme.MaterialComponents
-u0/k
 mMainThread
 kotlin.collections.Collection
 UTC
@@ -648,8 +645,10 @@ read
 MenuItemWrapper
 mStableInsets
 onResume
+Android
 java.util.List
 chipIconVisible
+showSplash
 kotlin.Int
 _id
 kotlin.Throwable
@@ -666,10 +665,11 @@ Companion
 kotlin.Annotation
 packageName
 androidx.activity.result.contract.ext...
+setupSplashWebView
 onCreate
 android.intent.action.SEARCH
-androidx.core.view.inputmethod.InputC...
 BITMAP
+androidx.core.view.inputmethod.InputC...
 intrface
 0.0
 android:user_visible_hint
@@ -681,14 +681,14 @@ UNKNOWN
 /proc/self/fd/
 android.permission.CAMERA
 initialExtras
-accessibility
 android:visibility:parent
+accessibility
 endColor
 suggest_intent_extra_data
 suggest_flags
 onBackCancelled
-emojiCompat
 centerColor
+emojiCompat
 state
 CompanionObject
 element
@@ -698,8 +698,8 @@ android.view.ViewRootImpl
 singleLine
 input
 SupportMenuInflater
-anim
 TaskStackBuilder
+anim
 succeeded
 onPageFinished
 getHorizontallyScrolling
@@ -750,6 +750,7 @@ ConstraintSet
 DIAGNOSTIC_PROFILE_IS_COMPRESSED
 FragmentManager
 name
+splashComplete
 loadUrl
 NestedScrollView
 bool
@@ -810,6 +811,7 @@ CheckedTextView
 firebaseapp.com
 robolectric
 strokeLineJoin
+SPLASH_URL
 INVISIBLE
 kotlin.Short
 .apk
@@ -818,8 +820,8 @@ java.lang.Throwable
 /data/misc/profiles/cur/0/
 FragmentManager:
 PrivateApi
-ViewConfigCompat
 onPause
+ViewConfigCompat
 unknown
 android.webkit.resource.AUDIO_CAPTURE
 android.permission.ACCESS_FINE_LOCATION
@@ -834,8 +836,8 @@ SETTLING
 java.util.Map$Entry
 ACTION_DRAG_START
 ConstraintHelper
-THEME_RES_ID_KEY
 char
+THEME_RES_ID_KEY
 EmojiCompatInitializer
 kotlin.Any
 KEY_COMPONENT_ACTIVITY_REGISTERED_RCS
@@ -847,10 +849,10 @@ notification
 android.intent.action.GET_CONTENT
 uimode
 KEY_COMPONENT_ACTIVITY_REGISTERED_KEYS
-razorpay.com
-AppLocalesStorageHelper
-android.view.View
 checked
+razorpay.com
+android.view.View
+AppLocalesStorageHelper
 java.lang.Byte
 group
 java.lang.Cloneable
@@ -871,12 +873,13 @@ values
 kotlin.Enum
 backEvent
 fillType
+mainHandler
 kotlin.String.Companion
 CURRENT_MONTH_KEY
 ACTION_PREVIOUS_HTML_ELEMENT
 http://schemas.android.com/apk/res/an...
-ACTION_SHOW_TOOLTIP
 suggest_text_2_url
+ACTION_SHOW_TOOLTIP
 jClass
 addFontFromAssetManager
 doBeforeTextChanged
@@ -892,7 +895,6 @@ mResourcesImpl
 parent
 gradientRadius
 kotlin.Cloneable
-requestNotificationPermission
 path
 filePathCallback
 ViewHolder
@@ -901,11 +903,10 @@ androidx.lifecycle.LifecycleDispatche...
 kotlin.reflect.jvm.internal.Reflectio...
 ACTION_UNKNOWN
 defaultLifecycleObserver
-android:target_req_state
 addObserver
+android:target_req_state
 FLAG_CONVERT_TO_PLAIN_TEXT
 SOURCE_PROCESS_TEXT
-notificationPermissionLauncher
 TwilightManager
 android.intent.extra.ALLOW_MULTIPLE
 ON_ANY
@@ -932,9 +933,10 @@ ImageButton
 bv
 REMOVING
 StateSet
+com/dtps/dietary/MainActivity$setupSp...
 RESULT_DESIRED_FORMAT_UNSUPPORTED
-androidx.view.accessibility.Accessibi...
 ToggleButton
+androidx.view.accessibility.Accessibi...
 set
 ACTION_IME_ENTER
 right
@@ -949,8 +951,8 @@ ACTION_NEXT_AT_MOVEMENT_GRANULARITY
 $this$initializer
 android.support.PARENT_ACTIVITY
 font
-androidx.core.view.inputmethod.InputC...
 ADD
+androidx.core.view.inputmethod.InputC...
 setTouchModal
 missingDelimiterValue
 listener
@@ -976,6 +978,7 @@ ACTION_LONG_CLICK
 CustomAttribute
 ACTION_SET_SELECTION
 android.speech.extra.LANGUAGE
+SplashInterface
 Barrier
 androidx.view.accessibility.Accessibi...
 MaterialButton
@@ -984,8 +987,8 @@ content
 kotlin.collections.Map
 DATE_SELECTOR_KEY
 ListPopupWindow
-alpha
 ProfileInstaller
+alpha
 java.lang.Boolean
 android:menu:actionviewstates:
 selector
@@ -1002,6 +1005,7 @@ strokeMiterLimit
 android.support.text.emoji.emojiCompa...
 viewportHeight
 clipboard
+file:///android_asset/splash.html
 onPermissionRequest
 androidx.activity.result.contract.ext...
 java.lang.Character
@@ -1071,8 +1075,8 @@ offlineView
 NULL
 androidx.fragment.extra.ACTIVITY_OPTI...
 mv
-null
 font_italic
+null
 android:changeBounds:parent
 background
 androidx.lifecycle.internal.SavedStat...
@@ -1087,8 +1091,8 @@ ACTION_SCROLL_RIGHT
 addFontFromBuffer
 ViewUtils
 asyncTraceEnd
-ACTION_SCROLL_LEFT
 inParcel
+ACTION_SCROLL_LEFT
 progressBar
 STARTED
 kotlin.Comparable
@@ -1101,8 +1105,8 @@ Trace
 MenuItemImpl
 ACTVAutoSizeHelper
 android.widget.
-_LifecycleAdapter
 initializers
+_LifecycleAdapter
 callback
 mOnKeyListener
 ACTION_PASTE
@@ -1117,25 +1121,25 @@ onProgressChanged
 android.support.v13.view.inputmethod....
 CustomMethod
 HORIZONTAL_DIMENSION
-CENTER
 .Companion
+CENTER
 observer
 freeze
 Unknown
 java.lang.Long
 java.util.Map
-TRACE_TAG_APP
 /data/misc/profiles/cur/0
+TRACE_TAG_APP
 SuggestionsAdapter
-ACTION_NEXT_HTML_ELEMENT
 drawable
+ACTION_NEXT_HTML_ELEMENT
 invoker
 ACTION_COLLAPSE
 input_method
 POSITIVE_BUTTON_TEXT_RES_ID_KEY
 defaultCreationExtras
-SOURCE_DRAG_AND_DROP
 setCurrentState
+SOURCE_DRAG_AND_DROP
 rm
 androidx.activity.result.contract.ext...
 components
@@ -1161,6 +1165,7 @@ profileinstaller_profileWrittenFor_la...
 android:target_state
 ACTION_EXPAND
 clipBounds
+multiplePermissionsLauncher
 WRITE_SKIP_FILE
 kotlin.Float
 store
@@ -1187,9 +1192,9 @@ ResourcesCompat
 androidx.appcompat.app.AppCompatDeleg...
 java.util.Collection
 query
-androidx.view.accessibility.Accessibi...
 android.resource
 TypefaceCompatApi21Impl
+androidx.view.accessibility.Accessibi...
 collection
 xi$annotations
 minLines
@@ -1215,10 +1220,12 @@ android.intent.action.TIMEZONE_CHANGED
 registry
 MenuPopupWindow
 View
-layout
 boundsOrigin
+layout
 xi
+splashWebView
 topLeft
+hideSplash
 java.lang.Object
 location
 xs
@@ -1291,8 +1298,8 @@ EmojiCompat.FontRequestEmojiCompatCon...
 android.speech.extra.PROMPT
 bottom
 kotlin.jvm.internal.EnumCompanionObject
-ACTION_COPY
 RESULT_UNSUPPORTED_ART_VERSION
+ACTION_COPY
 failed
 ActivityRecreator
 kotlin.collections.Iterable
@@ -1304,6 +1311,7 @@ Both
 $onBackInvoked
 kotlin.collections.Map.Entry
 .font
+requestAllPermissions
 ACTION_CUT
 retryButton
 error
@@ -1318,20 +1326,19 @@ androidx.activity.result.contract.ext...
 value
 factory
 ConstraintOverride
-java.util.Iterator
 android:visibility:visibility
+java.util.Iterator
 0x%08x
 showOfflineView
 ON_STOP
 kotlin.CharSequence
 activity_release
 RESULT_IO_EXCEPTION
-observeForever
 int
+observeForever
 metadataVersion
 fragment
 boolean
-activity.theme
 androidx.activity.result.contract.act...
 trimPathOffset
 BackgroundColor
@@ -1342,8 +1349,8 @@ Marking attr:chipIconEnabled:2130903235 used because it matches string pool cons
 Marking id:left:2131230952 used because it matches string pool constant left
 Marking id:left:2131230952 used because it matches string pool constant left
 Marking id:leftToRight:2131230953 used because it matches string pool constant left
-Marking id:standard:2131231140 used because it matches string pool constant standard
-Marking id:standard:2131231140 used because it matches string pool constant standard
+Marking id:standard:2131231141 used because it matches string pool constant standard
+Marking id:standard:2131231141 used because it matches string pool constant standard
 Marking id:decelerate:2131230858 used because it matches string pool constant decelerate
 Marking id:decelerate:2131230858 used because it matches string pool constant decelerate
 Marking id:decelerateAndComplete:2131230859 used because it matches string pool constant decelerate
@@ -1351,8 +1358,8 @@ Marking attr:drawableLeftCompat:2130903434 used because it matches string pool c
 Marking id:add:2131230790 used because it matches string pool constant add
 Marking attr:addElevationShadow:2130903080 used because it matches string pool constant add
 Marking id:add:2131230790 used because it matches string pool constant add
-Marking id:unchecked:2131231198 used because it matches string pool constant unchecked
-Marking id:unchecked:2131231198 used because it matches string pool constant unchecked
+Marking id:unchecked:2131231199 used because it matches string pool constant unchecked
+Marking id:unchecked:2131231199 used because it matches string pool constant unchecked
 Marking attr:guidelineUseRtl:2130903566 used because it matches string pool constant guideline
 Marking attr:maxLines:2130903814 used because it matches string pool constant maxLines
 Marking attr:maxLines:2130903814 used because it matches string pool constant maxLines
@@ -1360,16 +1367,16 @@ Marking attr:layoutDescription:2130903659 used because it matches string pool co
 Marking attr:layoutDescription:2130903659 used because it matches string pool constant layoutDescription
 Marking attr:strokeWidth:2130904055 used because it matches string pool constant strokeWidth
 Marking attr:strokeWidth:2130904055 used because it matches string pool constant strokeWidth
-Marking id:webView:2131231212 used because it matches string pool constant webView
-Marking id:webView:2131231212 used because it matches string pool constant webView
+Marking id:webView:2131231213 used because it matches string pool constant webView
+Marking id:webView:2131231213 used because it matches string pool constant webView
 Marking id:indeterminate:2131230942 used because it matches string pool constant indeterminate
 Marking attr:indeterminateAnimationType:2130903605 used because it matches string pool constant indeterminate
 Marking attr:indeterminateProgressStyle:2130903606 used because it matches string pool constant indeterminate
 Marking id:indeterminate:2131230942 used because it matches string pool constant indeterminate
-Marking id:top:2131231187 used because it matches string pool constant top
+Marking id:top:2131231188 used because it matches string pool constant top
 Marking attr:topInsetScrimEnabled:2130904223 used because it matches string pool constant top
-Marking id:top:2131231187 used because it matches string pool constant top
-Marking id:topPanel:2131231188 used because it matches string pool constant top
+Marking id:top:2131231188 used because it matches string pool constant top
+Marking id:topPanel:2131231189 used because it matches string pool constant top
 Marking attr:drawableEndCompat:2130903433 used because it matches string pool constant drawableEnd
 Marking id:linear:2131230957 used because it matches string pool constant linear
 Marking anim:linear_indeterminate_line1_head_interpolator:2130771997 used because it matches string pool constant linear
@@ -1452,12 +1459,12 @@ Marking attr:viewTransitionMode:2130904257 used because it matches string pool c
 Marking attr:viewTransitionOnCross:2130904258 used because it matches string pool constant view
 Marking attr:viewTransitionOnNegativeCross:2130904259 used because it matches string pool constant view
 Marking attr:viewTransitionOnPositiveCross:2130904260 used because it matches string pool constant view
-Marking id:view_offset_helper:2131231204 used because it matches string pool constant view
-Marking id:view_transition:2131231205 used because it matches string pool constant view
-Marking id:view_tree_lifecycle_owner:2131231206 used because it matches string pool constant view
-Marking id:view_tree_on_back_pressed_dispatcher_owner:2131231207 used because it matches string pool constant view
-Marking id:view_tree_saved_state_registry_owner:2131231208 used because it matches string pool constant view
-Marking id:view_tree_view_model_store_owner:2131231209 used because it matches string pool constant view
+Marking id:view_offset_helper:2131231205 used because it matches string pool constant view
+Marking id:view_transition:2131231206 used because it matches string pool constant view
+Marking id:view_tree_lifecycle_owner:2131231207 used because it matches string pool constant view
+Marking id:view_tree_on_back_pressed_dispatcher_owner:2131231208 used because it matches string pool constant view
+Marking id:view_tree_saved_state_registry_owner:2131231209 used because it matches string pool constant view
+Marking id:view_tree_view_model_store_owner:2131231210 used because it matches string pool constant view
 Marking color:androidx_core_ripple_material_light:2131034139 used because it matches string pool constant android
 Marking color:androidx_core_secondary_text_default_material_light:2131034140 used because it matches string pool constant android
 Marking string:androidx_startup:2131689499 used because it matches string pool constant android
@@ -1724,9 +1731,9 @@ Marking attr:keyboardIcon:2130903649 used because it matches string pool constan
 Marking attr:keylines:2130903650 used because it matches string pool constant key
 Marking id:ratio:2131231079 used because it matches string pool constant ratio
 Marking id:ratio:2131231079 used because it matches string pool constant ratio
-Marking id:up:2131231201 used because it matches string pool constant up
+Marking id:up:2131231202 used because it matches string pool constant up
 Marking attr:upDuration:2130904249 used because it matches string pool constant up
-Marking id:up:2131231201 used because it matches string pool constant up
+Marking id:up:2131231202 used because it matches string pool constant up
 Marking attr:queryBackground:2130903947 used because it matches string pool constant query
 Marking attr:queryHint:2130903948 used because it matches string pool constant query
 Marking attr:queryPatterns:2130903949 used because it matches string pool constant query
@@ -1926,6 +1933,8 @@ Marking attr:layout_scrollFlags:2130903728 used because it matches string pool c
 Marking attr:layout_scrollInterpolator:2130903729 used because it matches string pool constant layout
 Marking attr:layout_wrapBehaviorInParent:2130903730 used because it matches string pool constant layout
 Marking id:layout:2131230951 used because it matches string pool constant layout
+Marking id:splashWebView:2131231130 used because it matches string pool constant splashWebView
+Marking id:splashWebView:2131231130 used because it matches string pool constant splashWebView
 Marking id:baseline:2131230808 used because it matches string pool constant baseline
 Marking id:baseline:2131230808 used because it matches string pool constant baseline
 Marking attr:floatingActionButtonLargePrimaryStyle:2130903513 used because it matches string pool constant float
@@ -3099,7 +3108,7 @@ Marking id:fragment_container_view_tag:2131230916 used because it matches string
 @com.dtps.dietary:attr/popupMenuStyle : reachable=false
 @com.dtps.dietary:attr/popupTheme : reachable=false
 @com.dtps.dietary:attr/popupWindowStyle : reachable=false
-@com.dtps.dietary:attr/postSplashScreenTheme : reachable=true
+@com.dtps.dietary:attr/postSplashScreenTheme : reachable=false
 @com.dtps.dietary:attr/prefixText : reachable=false
 @com.dtps.dietary:attr/prefixTextAppearance : reachable=false
 @com.dtps.dietary:attr/prefixTextColor : reachable=false
@@ -3188,7 +3197,7 @@ Marking id:fragment_container_view_tag:2131230916 used because it matches string
 @com.dtps.dietary:attr/spinBars : reachable=false
 @com.dtps.dietary:attr/spinnerDropDownItemStyle : reachable=false
 @com.dtps.dietary:attr/spinnerStyle : reachable=true
-@com.dtps.dietary:attr/splashScreenIconSize : reachable=true
+@com.dtps.dietary:attr/splashScreenIconSize : reachable=false
 @com.dtps.dietary:attr/splitTrack : reachable=false
 @com.dtps.dietary:attr/springBoundary : reachable=false
 @com.dtps.dietary:attr/springDamping : reachable=false
@@ -6982,6 +6991,7 @@ Marking id:fragment_container_view_tag:2131230916 used because it matches string
 @com.dtps.dietary:id/south : reachable=false
 @com.dtps.dietary:id/spacer : reachable=true
 @com.dtps.dietary:id/special_effects_controller_view_tag : reachable=true
+@com.dtps.dietary:id/splashWebView : reachable=true
 @com.dtps.dietary:id/splashscreen_icon_view : reachable=false
 @com.dtps.dietary:id/spline : reachable=false
 @com.dtps.dietary:id/split_action_bar : reachable=true
@@ -13746,12 +13756,7 @@ Marking id:fragment_container_view_tag:2131230916 used because it matches string
     @com.dtps.dietary:color/primary_dark
     @com.dtps.dietary:attr/colorPrimaryDark
 @com.dtps.dietary:style/Theme_DTPS_Splash : reachable=true
-    @com.dtps.dietary:style/Theme_SplashScreen
-    @com.dtps.dietary:attr/windowSplashScreenBackground
-    @com.dtps.dietary:mipmap/ic_launcher
-    @com.dtps.dietary:attr/windowSplashScreenAnimatedIcon
     @com.dtps.dietary:style/Theme_DTPS
-    @com.dtps.dietary:attr/postSplashScreenTheme
 @com.dtps.dietary:style/Theme_Design : reachable=false
     @com.dtps.dietary:style/Theme_AppCompat
 @com.dtps.dietary:style/Theme_Design_BottomSheetDialog : reachable=false
@@ -14860,288 +14865,405 @@ Marking id:fragment_container_view_tag:2131230916 used because it matches string
     @com.dtps.dietary:style/Base_Widget_Material3_CardView
     @com.dtps.dietary:dimen/m3_comp_outlined_card_outline_width
     @com.dtps.dietary:attr/strokeWidth
-    @com.dtps.dietary:dim_DynamicColors_Light:2131755586
- style:Theme_Material3_Light_BottomSheetDialog:2131755588
- style:Theme_Material3_Light_Dialog:2131755589
- style:Theme_Material3_Light_Dialog_Alert:2131755590
- style:Theme_Material3_Light_Dialog_MinWidth:2131755591
- style:Theme_Material3_Light_DialogWhenLarge:2131755592
- style:Theme_Material3_Light_SideSheetDialog:2131755594
- style:Theme_MaterialComponents:2131755595
- style:Theme_MaterialComponents_BottomSheetDialog:2131755596
- style:Theme_MaterialComponents_Bridge:2131755597
- style:Theme_MaterialComponents_CompactMenu:2131755598
- style:Theme_MaterialComponents_DayNight:2131755599
- style:Theme_MaterialComponents_DayNight_BottomSheetDialog:2131755600
- style:Theme_MaterialComponents_DayNight_Bridge:2131755601
- style:Theme_MaterialComponents_DayNight_DarkActionBar:2131755602
- style:Theme_MaterialComponents_DayNight_DarkActionBar_Bridge:2131755603
- style:Theme_MaterialComponents_DayNight_Dialog:2131755604
- style:Theme_MaterialComponents_DayNight_Dialog_Alert:2131755605
- style:Theme_MaterialComponents_DayNight_Dialog_Alert_Bridge:2131755606
- style:Theme_MaterialComponents_DayNight_Dialog_Bridge:2131755607
- style:Theme_MaterialComponents_DayNight_Dialog_FixedSize:2131755608
- style:Theme_MaterialComponents_DayNight_Dialog_FixedSize_Bridge:2131755609
- style:Theme_MaterialComponents_DayNight_Dialog_MinWidth:2131755610
- style:Theme_MaterialComponents_DayNight_Dialog_MinWidth_Bridge:2131755611
- style:Theme_MaterialComponents_DayNight_DialogWhenLarge:2131755612
- style:Theme_MaterialComponents_DayNight_NoActionBar:2131755613
- style:Theme_MaterialComponents_DayNight_NoActionBar_Bridge:2131755614
- style:Theme_MaterialComponents_Dialog:2131755615
- style:Theme_MaterialComponents_Dialog_Alert:2131755616
- style:Theme_MaterialComponents_Dialog_Alert_Bridge:2131755617
- style:Theme_MaterialComponents_Dialog_Bridge:2131755618
- style:Theme_MaterialComponents_Dialog_FixedSize:2131755619
- style:Theme_MaterialComponents_Dialog_FixedSize_Bridge:2131755620
- style:Theme_MaterialComponents_Dialog_MinWidth:2131755621
- style:Theme_MaterialComponents_Dialog_MinWidth_Bridge:2131755622
- style:Theme_MaterialComponents_DialogWhenLarge:2131755623
- style:Theme_MaterialComponents_Light_BottomSheetDialog:2131755625
- style:Theme_MaterialComponents_Light_Bridge:2131755626
- style:Theme_MaterialComponents_Light_DarkActionBar:2131755627
- style:Theme_MaterialComponents_Light_DarkActionBar_Bridge:2131755628
- style:Theme_MaterialComponents_Light_Dialog:2131755629
- style:Theme_MaterialComponents_Light_Dialog_Alert:2131755630
- style:Theme_MaterialComponents_Light_Dialog_Alert_Bridge:2131755631
- style:Theme_MaterialComponents_Light_Dialog_Bridge:2131755632
- style:Theme_MaterialComponents_Light_Dialog_FixedSize:2131755633
- style:Theme_MaterialComponents_Light_Dialog_FixedSize_Bridge:2131755634
- style:Theme_MaterialComponents_Light_Dialog_MinWidth:2131755635
- style:Theme_MaterialComponents_Light_Dialog_MinWidth_Bridge:2131755636
- style:Theme_MaterialComponents_Light_DialogWhenLarge:2131755637
- style:Theme_MaterialComponents_Light_NoActionBar:2131755638
- style:Theme_MaterialComponents_Light_NoActionBar_Bridge:2131755639
- style:Theme_MaterialComponents_NoActionBar:2131755640
- style:Theme_MaterialComponents_NoActionBar_Bridge:2131755641
- style:Theme_SplashScreen_IconBackground:2131755644
- style:ThemeOverlay_AppCompat:2131755645
- style:ThemeOverlay_AppCompat_Dark:2131755647
- style:ThemeOverlay_AppCompat_Dark_ActionBar:2131755648
- style:ThemeOverlay_AppCompat_DayNight:2131755649
- style:ThemeOverlay_AppCompat_DayNight_ActionBar:2131755650
- style:ThemeOverlay_Material3:2131755655
- style:ThemeOverlay_Material3_ActionBar:2131755656
- style:ThemeOverlay_Material3_AutoCompleteTextView_FilledBox_Dense:2131755659
- style:ThemeOverlay_Material3_AutoCompleteTextView_OutlinedBox_Dense:2131755661
- style:ThemeOverlay_Material3_BottomAppBar_Legacy:2131755663
- style:ThemeOverlay_Material3_Button_ElevatedButton:2131755667
- style:ThemeOverlay_Material3_Dark:2131755676
- style:ThemeOverlay_Material3_Dark_ActionBar:2131755677
- style:ThemeOverlay_Material3_DayNight_BottomSheetDialog:2131755678
- style:ThemeOverlay_Material3_DayNight_SideSheetDialog:2131755679
- style:ThemeOverlay_Material3_Dialog_Alert_Framework:2131755682
- style:ThemeOverlay_Material3_DynamicColors_Dark:2131755683
- style:ThemeOverlay_Material3_DynamicColors_DayNight:2131755684
- style:ThemeOverlay_Material3_HarmonizedColors:2131755694
- style:ThemeOverlay_Material3_HarmonizedColors_Empty:2131755695
- style:ThemeOverlay_Material3_Light_Dialog_Alert_Framework:2131755697
- style:ThemeOverlay_Material3_MaterialAlertDialog_Centered:2131755699
- style:ThemeOverlay_Material3_PersonalizedColors:2131755707
- style:ThemeOverlay_MaterialComponents:2131755719
- style:ThemeOverlay_MaterialComponents_ActionBar:2131755720
- style:ThemeOverlay_MaterialComponents_ActionBar_Primary:2131755721
- style:ThemeOverlay_MaterialComponents_ActionBar_Surface:2131755722
- style:ThemeOverlay_MaterialComponents_AutoCompleteTextView_FilledBox_Dense:2131755725
- style:ThemeOverlay_MaterialComponents_AutoCompleteTextView_OutlinedBox_Dense:2131755727
- style:ThemeOverlay_MaterialComponents_BottomAppBar_Primary:2131755728
- style:ThemeOverlay_MaterialComponents_BottomAppBar_Surface:2131755729
- style:ThemeOverlay_MaterialComponents_Dark:2131755731
- style:ThemeOverlay_MaterialComponents_Dark_ActionBar:2131755732
- style:ThemeOverlay_MaterialComponents_DayNight_BottomSheetDialog:2131755733
- style:ThemeOverlay_MaterialComponents_Dialog_Alert_Framework:2131755736
- style:ThemeOverlay_MaterialComponents_MaterialAlertDialog_Centered:2131755740
- style:ThemeOverlay_MaterialComponents_MaterialAlertDialog_Picker_Date:2131755741
- style:ThemeOverlay_MaterialComponents_MaterialAlertDialog_Picker_Date_Calendar:2131755742
- style:ThemeOverlay_MaterialComponents_MaterialAlertDialog_Picker_Date_Header_Text:2131755743
- style:ThemeOverlay_MaterialComponents_MaterialAlertDialog_Picker_Date_Header_Text_Day:2131755744
- style:ThemeOverlay_MaterialComponents_MaterialAlertDialog_Picker_Date_Spinner:2131755745
- style:ThemeOverlay_MaterialComponents_Toolbar_Popup_Primary:2131755756
- style:ThemeOverlay_MaterialComponents_Toolbar_Primary:2131755757
- style:ThemeOverlay_MaterialComponents_Toolbar_Surface:2131755758
- style:Widget_AppCompat_ActionBar:2131755759
- style:Widget_AppCompat_ActionBar_Solid:2131755760
- style:Widget_AppCompat_ActionBar_TabBar:2131755761
- style:Widget_AppCompat_ActionBar_TabText:2131755762
- style:Widget_AppCompat_ActionBar_TabView:2131755763
- style:Widget_AppCompat_Button_Colored:2131755774
- style:Widget_AppCompat_Light_ActionBar:2131755785
- style:Widget_AppCompat_Light_ActionBar_Solid_Inverse:2131755787
- style:Widget_AppCompat_Light_ActionBar_TabBar_Inverse:2131755789
- style:Widget_AppCompat_Light_ActionBar_TabText_Inverse:2131755791
- style:Widget_AppCompat_Light_ActionBar_TabView_Inverse:2131755793
- style:Widget_AppCompat_Light_ActionButton_CloseMode:2131755795
- style:Widget_AppCompat_Light_ActionMode_Inverse:2131755797
- style:Widget_AppCompat_Light_ActivityChooserView:2131755798
- style:Widget_AppCompat_Light_AutoCompleteTextView:2131755799
- style:Widget_AppCompat_Light_DropDownItem_Spinner:2131755800
- style:Widget_AppCompat_Light_ListPopupWindow:2131755801
- style:Widget_AppCompat_Light_ListView_DropDown:2131755802
- style:Widget_AppCompat_PopupWindow:2131755814
- style:Widget_AppCompat_ProgressBar:2131755815
- style:Widget_AppCompat_SeekBar_Discrete:2131755823
- style:Widget_AppCompat_Spinner_Underlined:2131755827
- style:Widget_Material3_ActionBar_Solid:2131755845
- style:Widget_Material3_AutoCompleteTextView_FilledBox_Dense:2131755849
- style:Widget_Material3_AutoCompleteTextView_OutlinedBox_Dense:2131755851
- style:Widget_Material3_BottomAppBar_Legacy:2131755856
- style:Widget_Material3_Button_ElevatedButton:2131755864
- style:Widget_Material3_Button_ElevatedButton_Icon:2131755865
- style:Widget_Material3_Button_Icon:2131755866
- style:Widget_Material3_Button_OutlinedButton_Icon:2131755872
- style:Widget_Material3_Button_TextButton_Dialog_Icon:2131755876
- style:Widget_Material3_Button_TextButton_Icon:2131755877
- style:Widget_Material3_Button_TonalButton:2131755879
- style:Widget_Material3_Button_TonalButton_Icon:2131755880
- style:Widget_Material3_Button_UnelevatedButton:2131755881
- style:Widget_Material3_Chip_Assist_Elevated:2131755887
- style:Widget_Material3_Chip_Filter:2131755888
- style:Widget_Material3_Chip_Filter_Elevated:2131755889
- style:Widget_Material3_Chip_Input_Elevated:2131755891
- style:Widget_Material3_Chip_Input_Icon:2131755892
- style:Widget_Material3_Chip_Input_Icon_Elevated:2131755893
- style:Widget_Material3_Chip_Suggestion:2131755894
- style:Widget_Material3_Chip_Suggestion_Elevated:2131755895
- style:Widget_Material3_CircularProgressIndicator_ExtraSmall:2131755898
- style:Widget_Material3_CircularProgressIndicator_Medium:2131755899
- style:Widget_Material3_CircularProgressIndicator_Small:2131755900
- style:Widget_Material3_ExtendedFloatingActionButton_Primary:2131755913
- style:Widget_Material3_ExtendedFloatingActionButton_Secondary:2131755914
- style:Widget_Material3_ExtendedFloatingActionButton_Surface:2131755915
- style:Widget_Material3_ExtendedFloatingActionButton_Tertiary:2131755916
- style:Widget_Material3_SearchBar_Outlined:2131755977
- style:Widget_Material3_SideSheet_Detached:2131755982
- style:Widget_Material3_SideSheet_Modal_Detached:2131755984
- style:Widget_Material3_Snackbar_FullWidth:2131755988
- style:Widget_Material3_TabLayout_OnSurface:2131755991
- style:Widget_Material3_TextInputLayout_FilledBox_Dense_ExposedDropdownMenu:2131755999
- style:Widget_Material3_TextInputLayout_OutlinedBox_Dense_ExposedDropdownMenu:2131756003
- style:Widget_MaterialComponents_ActionBar_Primary:2131756009
- style:Widget_MaterialComponents_ActionBar_PrimarySurface:2131756010
- style:Widget_MaterialComponents_ActionBar_Solid:2131756011
- style:Widget_MaterialComponents_ActionBar_Surface:2131756012
- style:Widget_MaterialComponents_AppBarLayout_PrimarySurface:2131756015
- style:Widget_MaterialComponents_AutoCompleteTextView_FilledBox_Dense:2131756018
- style:Widget_MaterialComponents_AutoCompleteTextView_OutlinedBox_Dense:2131756020
- style:Widget_MaterialComponents_BottomAppBar_Colored:2131756023
- style:Widget_MaterialComponents_BottomAppBar_PrimarySurface:2131756024
- style:Widget_MaterialComponents_BottomNavigationView_Colored:2131756026
- style:Widget_MaterialComponents_BottomNavigationView_PrimarySurface:2131756027
- style:Widget_MaterialComponents_Button_Icon:2131756031
- style:Widget_MaterialComponents_Button_OutlinedButton_Icon:2131756033
- style:Widget_MaterialComponents_Button_TextButton_Dialog_Icon:2131756037
- style:Widget_MaterialComponents_Button_TextButton_Icon:2131756038
- style:Widget_MaterialComponents_Button_UnelevatedButton_Icon:2131756041
- style:Widget_MaterialComponents_Chip_Filter:2131756047
- style:Widget_MaterialComponents_CircularProgressIndicator_ExtraSmall:2131756050
- style:Widget_MaterialComponents_CircularProgressIndicator_Medium:2131756051
- style:Widget_MaterialComponents_CircularProgressIndicator_Small:2131756052
- style:Widget_MaterialComponents_NavigationRailView_Colored:2131756089
- style:Widget_MaterialComponents_NavigationRailView_Colored_Compact:2131756090
- style:Widget_MaterialComponents_NavigationRailView_Compact:2131756091
- style:Widget_MaterialComponents_NavigationRailView_PrimarySurface:2131756092
- style:Widget_MaterialComponents_ShapeableImageView:2131756099
- style:Widget_MaterialComponents_Snackbar_FullWidth:2131756102
- style:Widget_MaterialComponents_TabLayout_Colored:2131756105
- style:Widget_MaterialComponents_TabLayout_PrimarySurface:2131756106
- style:Widget_MaterialComponents_TextInputLayout_FilledBox_Dense_ExposedDropdownMenu:2131756113
- style:Widget_MaterialComponents_TextInputLayout_OutlinedBox_Dense_ExposedDropdownMenu:2131756117
- style:Widget_MaterialComponents_Toolbar_Primary:2131756131
- style:Widget_MaterialComponents_Toolbar_PrimarySurface:2131756132
- style:Widget_MaterialComponents_Toolbar_Surface:2131756133
- style:Widget_Support_CoordinatorLayout:2131756135
-Skipped unused resource res/anim/abc_fade_in.xml: 549 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim/abc_fade_out.xml: 549 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim/abc_slide_in_bottom.xml: 555 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim/abc_slide_in_top.xml: 556 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim/abc_slide_out_bottom.xml: 555 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim/abc_slide_out_top.xml: 556 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim-v21/design_bottom_sheet_slide_in.xml: 752 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim-v21/design_bottom_sheet_slide_out.xml: 748 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim/design_snackbar_in.xml: 238 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim/design_snackbar_out.xml: 238 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim-v21/m3_side_sheet_enter_from_left.xml: 503 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/anim-v21/m3_side_sheet_exit_to_left.xml: 503 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/animator/m3_btn_elevated_btn_state_list_anim.xml: 3200 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/animator/m3_elevated_chip_state_list_anim.xml: 1685 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/animator/mtrl_extended_fab_change_size_collapse_motion_spec.xml: 2139 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/animator/mtrl_extended_fab_change_size_expand_motion_spec.xml: 2140 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/animator/mtrl_extended_fab_hide_motion_spec.xml: 705 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/animator/mtrl_extended_fab_show_motion_spec.xml: 1381 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/animator/mtrl_fab_transformation_sheet_collapse_spec.xml: 2999 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/animator/mtrl_fab_transformation_sheet_expand_spec.xml: 2994 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/abc_background_cache_hint_selector_material_dark.xml: 471 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v23/abc_btn_colored_borderless_text_material.xml: 587 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v23/abc_btn_colored_text_material.xml: 624 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/m3_appbar_overlay_color.xml: 309 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/m3_assist_chip_stroke_color.xml: 1275 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/m3_button_ripple_color.xml: 1426 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/m3_elevated_chip_background_color.xml: 1076 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/m3_popupmenu_overlay_color.xml: 309 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_cursor_color.xml: 213 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_on_background_disabled.xml: 367 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_on_background_emphasis_high_type.xml: 369 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_on_background_emphasis_medium.xml: 363 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_on_primary_disabled.xml: 361 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_on_primary_emphasis_high_type.xml: 363 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_on_primary_emphasis_medium.xml: 357 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_on_surface_stroke.xml: 294 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_personalized__highlighted_text.xml: 400 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_personalized__highlighted_text_inverse.xml: 416 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_personalized_color_primary_text.xml: 679 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_personalized_color_primary_text_inverse.xml: 719 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_personalized_color_secondary_text.xml: 695 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_personalized_color_secondary_text_inverse.xml: 797 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_personalized_hint_foreground.xml: 912 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_personalized_hint_foreground_inverse.xml: 972 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_personalized_primary_inverse_text_disable_only.xml: 768 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/material_personalized_primary_text_disable_only.xml: 688 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/mtrl_navigation_bar_colored_item_tint.xml: 588 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/mtrl_navigation_bar_colored_ripple_color.xml: 1560 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/mtrl_popupmenu_overlay_color.xml: 309 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/mtrl_tabs_colored_ripple_color.xml: 1560 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/mtrl_tabs_icon_color_selector_colored.xml: 514 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color/switch_thumb_material_dark.xml: 519 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral12.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral17.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral22.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral24.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral4.xml: 317 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral6.xml: 317 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral87.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral92.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral94.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral96.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral98.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral_variant12.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral_variant17.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral_variant22.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral_variant24.xml: 318 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral_variant4.xml: 317 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/color-v31/m3_ref_palette_dynamic_neutral_variant6.xml: 317 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/abc_ic_menu_overflow_material.xml: 934 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/abc_item_background_holo_dark.xml: 2036 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/abc_list_selector_background_transition_holo_dark.xml: 422 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/abc_list_selector_holo_dark.xml: 2125 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable-v23/compat_splash_screen.xml: 2528 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/ic_clear_black_24.xml: 826 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/ic_m3_chip_check.xml: 851 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/ic_search_black_24.xml: 819 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/icon_background.xml: 336 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable-v23/m3_tabs_transparent_background.xml: 436 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/material_ic_menu_arrow_up_black_24dp.xml: 725 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/mtrl_bottomsheet_drag_handle.xml: 513 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable-v21/mtrl_navigation_bar_item_background.xml: 193 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable-v23/mtrl_popupmenu_background_overlay.xml: 1338 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/test_level_drawable.xml: 335 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable/tooltip_frame_light.xml: 471 bytes (replaced with small dummy file of size 9 bytes)
-Skipped unused resource res/drawable-ldpi-v4/ic_call_answer.png: 270 bytes (replaced with small dummy file of size 67 bytes)
-Skipped unused resource res/drawable-ldpi-v4/ic_call_answer_low.png: 270 bytes (replaced with small dummy file of size 67 bytes)
-Skipped unused resource res/drawable-ldpi-v4/ic_call_answer_video.png: 199 bytes (replaced with small dummy file of size 67 bytes)
-Skipped unused resource res/drawable-ldpi-v4/ic_call_answer_video_low.png: 199 bytes (replaced with small dummy file of size 67 bytes)
-Skipped unused resource res/drawable-ldpi-v4/ic_call_decline.png: 201 bytes (replaced with small dummy file of size 67 bytes)
-Skipped unused resource res/drawable-ldpi-v4/ic_call_decline_low.png: 201 bytes (replaced with small dummy file of size 67 bytes)
-Skipped unused resource res/drawable-mdpi-v4/abc_list_pressed_holo_dark.9.png: 207 bytes (replaced with small dummy file of size 77 bytes)
-Skipped unused resource res/drawable-mdpi-v4/abc_list_selector_disabled_holo_dark.9.png: 217 bytes (replaced with small dummy file of size 77 bytes)
+    @com.dtps.dietary:dimen/m3_comp_outlined_card_container_elevation
+    @com.dtps.dietary:attr/cardElevation
+    @com.dtps.dietary:attr/colorSurface
+    @com.dtps.dietary:attr/cardBackgroundColor
+    @com.dtps.dietary:dimen/m3_comp_outlined_card_icon_size
+    @com.dtps.dietary:attr/checkedIconSize
+    @com.dtps.dietary:attr/shapeAppearanceCornerMedium
+    @com.dtps.dietary:attr/shapeAppearance
+@com.dtps.dietary:style/Widget_Material3_CheckedTextView : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_CheckedTextView
+    @com.dtps.dietary:attr/textAppearanceBodyLarge
+    @com.dtps.dietary:attr/colorOnSurfaceVariant
+@com.dtps.dietary:style/Widget_Material3_ChipGroup : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_ChipGroup
+    @com.dtps.dietary:attr/chipSpacingVertical
+@com.dtps.dietary:style/Widget_Material3_Chip_Assist : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_Chip
+    @com.dtps.dietary:attr/chipIconVisible
+    @com.dtps.dietary:attr/checkedIconVisible
+    @com.dtps.dietary:attr/closeIconVisible
+    @com.dtps.dietary:color/m3_chip_assist_text_color
+    @com.dtps.dietary:attr/shapeAppearanceCornerSmall
+    @com.dtps.dietary:attr/shapeAppearance
+    @com.dtps.dietary:attr/textAppearanceLabelLarge
+    @com.dtps.dietary:dimen/m3_comp_assist_chip_container_height
+    @com.dtps.dietary:attr/chipMinHeight
+    @com.dtps.dietary:dimen/m3_comp_assist_chip_with_icon_icon_size
+    @com.dtps.dietary:attr/chipIconSize
+    @com.dtps.dietary:dimen/m3_comp_assist_chip_flat_outline_width
+    @com.dtps.dietary:attr/chipStrokeWidth
+    @com.dtps.dietary:attr/chipStartPadding
+    @com.dtps.dietary:attr/iconStartPadding
+    @com.dtps.dietary:attr/iconEndPadding
+    @com.dtps.dietary:attr/textStartPadding
+    @com.dtps.dietary:attr/textEndPadding
+    @com.dtps.dietary:attr/closeIconStartPadding
+    @com.dtps.dietary:attr/closeIconEndPadding
+    @com.dtps.dietary:attr/chipEndPadding
+    @com.dtps.dietary:style/ThemeOverlay_Material3_Chip_Assist
+    @com.dtps.dietary:attr/materialThemeOverlay
+    @com.dtps.dietary:dimen/m3_comp_assist_chip_flat_container_elevation
+@com.dtps.dietary:style/Widget_Material3_Chip_Assist_Elevated : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_Chip_Assist
+    @com.dtps.dietary:attr/chipStrokeColor
+    @com.dtps.dietary:color/m3_elevated_chip_background_color
+    @com.dtps.dietary:attr/chipBackgroundColor
+    @com.dtps.dietary:dimen/m3_comp_assist_chip_elevated_container_elevation
+    @com.dtps.dietary:animator/m3_elevated_chip_state_list_anim
+@com.dtps.dietary:style/Widget_Material3_Chip_Filter : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_Chip
+    @com.dtps.dietary:attr/chipIconVisible
+    @com.dtps.dietary:attr/closeIconVisible
+    @com.dtps.dietary:drawable/ic_m3_chip_check
+    @com.dtps.dietary:attr/checkedIcon
+    @com.dtps.dietary:attr/shapeAppearanceCornerSmall
+    @com.dtps.dietary:attr/shapeAppearance
+    @com.dtps.dietary:attr/textAppearanceLabelLarge
+    @com.dtps.dietary:dimen/m3_comp_filter_chip_container_height
+    @com.dtps.dietary:attr/chipMinHeight
+    @com.dtps.dietary:dimen/m3_comp_filter_chip_with_icon_icon_size
+    @com.dtps.dietary:attr/chipIconSize
+    @com.dtps.dietary:dimen/m3_comp_filter_chip_flat_unselected_outline_width
+    @com.dtps.dietary:attr/chipStrokeWidth
+    @com.dtps.dietary:attr/chipStartPadding
+    @com.dtps.dietary:attr/iconStartPadding
+    @com.dtps.dietary:attr/iconEndPadding
+    @com.dtps.dietary:attr/textStartPadding
+    @com.dtps.dietary:attr/textEndPadding
+    @com.dtps.dietary:attr/closeIconStartPadding
+    @com.dtps.dietary:attr/closeIconEndPadding
+    @com.dtps.dietary:attr/chipEndPadding
+    @com.dtps.dietary:dimen/m3_comp_filter_chip_flat_container_elevation
+@com.dtps.dietary:style/Widget_Material3_Chip_Filter_Elevated : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_Chip_Filter
+    @com.dtps.dietary:attr/chipStrokeColor
+    @com.dtps.dietary:color/m3_elevated_chip_background_color
+    @com.dtps.dietary:attr/chipBackgroundColor
+    @com.dtps.dietary:dimen/m3_comp_filter_chip_elevated_container_elevation
+    @com.dtps.dietary:animator/m3_elevated_chip_state_list_anim
+@com.dtps.dietary:style/Widget_Material3_Chip_Input : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_Chip
+    @com.dtps.dietary:attr/shapeAppearanceCornerSmall
+    @com.dtps.dietary:attr/shapeAppearance
+    @com.dtps.dietary:attr/textAppearanceLabelLarge
+    @com.dtps.dietary:dimen/m3_comp_input_chip_container_height
+    @com.dtps.dietary:attr/chipMinHeight
+    @com.dtps.dietary:dimen/m3_comp_input_chip_with_avatar_avatar_size
+    @com.dtps.dietary:attr/chipIconSize
+    @com.dtps.dietary:dimen/m3_comp_input_chip_unselected_outline_width
+    @com.dtps.dietary:attr/chipStrokeWidth
+    @com.dtps.dietary:attr/chipStartPadding
+    @com.dtps.dietary:attr/iconStartPadding
+    @com.dtps.dietary:attr/iconEndPadding
+    @com.dtps.dietary:attr/textStartPadding
+    @com.dtps.dietary:attr/textEndPadding
+    @com.dtps.dietary:attr/closeIconStartPadding
+    @com.dtps.dietary:attr/closeIconEndPadding
+    @com.dtps.dietary:attr/chipEndPadding
+    @com.dtps.dietary:dimen/m3_comp_input_chip_container_elevation
+@com.dtps.dietary:style/Widget_Material3_Chip_Input_Elevated : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_Chip_Input
+    @com.dtps.dietary:attr/chipStrokeColor
+    @com.dtps.dietary:color/m3_elevated_chip_background_color
+    @com.dtps.dietary:attr/chipBackgroundColor
+    @com.dtps.dietary:dimen/m3_chip_elevated_elevation
+    @com.dtps.dietary:animator/m3_elevated_chip_state_list_anim
+@com.dtps.dietary:style/Widget_Material3_Chip_Input_Icon : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_Chip_Input
+    @com.dtps.dietary:dimen/m3_comp_input_chip_with_leading_icon_leading_icon_size
+    @com.dtps.dietary:attr/chipIconSize
+    @com.dtps.dietary:attr/iconStartPadding
+@com.dtps.dietary:style/Widget_Material3_Chip_Input_Icon_Elevated : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_Chip_Input_Icon
+    @com.dtps.dietary:attr/chipStrokeColor
+    @com.dtps.dietary:color/m3_elevated_chip_background_color
+    @com.dtps.dietary:attr/chipBackgroundColor
+    @com.dtps.dietary:dimen/m3_chip_elevated_elevation
+    @com.dtps.dietary:animator/m3_elevated_chip_state_list_anim
+@com.dtps.dietary:style/Widget_Material3_Chip_Suggestion : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_Chip
+    @com.dtps.dietary:attr/chipIconVisible
+    @com.dtps.dietary:attr/checkedIconVisible
+    @com.dtps.dietary:attr/closeIconVisible
+    @com.dtps.dietary:attr/shapeAppearanceCornerSmall
+    @com.dtps.dietary:attr/shapeAppearance
+    @com.dtps.dietary:attr/textAppearanceLabelLarge
+    @com.dtps.dietary:dimen/m3_comp_suggestion_chip_container_height
+    @com.dtps.dietary:attr/chipMinHeight
+    @com.dtps.dietary:dimen/m3_comp_suggestion_chip_with_leading_icon_leading_icon_size
+    @com.dtps.dietary:attr/chipIconSize
+    @com.dtps.dietary:dimen/m3_comp_suggestion_chip_flat_outline_width
+    @com.dtps.dietary:attr/chipStrokeWidth
+    @com.dtps.dietary:attr/chipStartPadding
+    @com.dtps.dietary:attr/iconStartPadding
+    @com.dtps.dietary:attr/iconEndPadding
+    @com.dtps.dietary:attr/textStartPadding
+    @com.dtps.dietary:attr/textEndPadding
+    @com.dtps.dietary:attr/closeIconStartPadding
+    @com.dtps.dietary:attr/closeIconEndPadding
+    @com.dtps.dietary:attr/chipEndPadding
+    @com.dtps.dietary:dimen/m3_comp_suggestion_chip_flat_container_elevation
+@com.dtps.dietary:style/Widget_Material3_Chip_Suggestion_Elevated : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_Chip_Suggestion
+    @com.dtps.dietary:attr/chipStrokeColor
+    @com.dtps.dietary:color/m3_elevated_chip_background_color
+    @com.dtps.dietary:attr/chipBackgroundColor
+    @com.dtps.dietary:dimen/m3_comp_suggestion_chip_elevated_container_elevation
+    @com.dtps.dietary:animator/m3_elevated_chip_state_list_anim
+@com.dtps.dietary:style/Widget_Material3_CircularProgressIndicator : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_CircularProgressIndicator
+    @com.dtps.dietary:dimen/m3_comp_circular_progress_indicator_active_indicator_width
+    @com.dtps.dietary:attr/trackThickness
+    @com.dtps.dietary:attr/colorPrimary
+    @com.dtps.dietary:attr/indicatorColor
+@com.dtps.dietary:style/Widget_Material3_CircularProgressIndicator_ExtraSmall : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_CircularProgressIndicator_ExtraSmall
+@com.dtps.dietary:style/Widget_Material3_CircularProgressIndicator_Medium : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_CircularProgressIndicator_Medium
+@com.dtps.dietary:style/Widget_Material3_CircularProgressIndicator_Small : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_CircularProgressIndicator_Small
+@com.dtps.dietary:style/Widget_Material3_CollapsingToolbar : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_CollapsingToolbar
+    @com.dtps.dietary:dimen/m3_appbar_scrim_height_trigger
+    @com.dtps.dietary:attr/scrimVisibleHeightTrigger
+    @com.dtps.dietary:attr/textAppearanceHeadlineSmall
+    @com.dtps.dietary:attr/expandedTitleTextAppearance
+@com.dtps.dietary:style/Widget_Material3_CollapsingToolbar_Large : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_CollapsingToolbar
+    @com.dtps.dietary:dimen/m3_appbar_scrim_height_trigger_large
+    @com.dtps.dietary:attr/scrimVisibleHeightTrigger
+    @com.dtps.dietary:attr/colorOnSurface
+    @com.dtps.dietary:attr/collapsedTitleTextColor
+    @com.dtps.dietary:attr/expandedTitleTextColor
+    @com.dtps.dietary:attr/textAppearanceHeadlineMedium
+    @com.dtps.dietary:attr/expandedTitleTextAppearance
+@com.dtps.dietary:style/Widget_Material3_CollapsingToolbar_Medium : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_CollapsingToolbar
+    @com.dtps.dietary:dimen/m3_appbar_scrim_height_trigger_medium
+    @com.dtps.dietary:attr/scrimVisibleHeightTrigger
+    @com.dtps.dietary:attr/colorOnSurface
+    @com.dtps.dietary:attr/collapsedTitleTextColor
+    @com.dtps.dietary:attr/expandedTitleTextColor
+    @com.dtps.dietary:attr/textAppearanceHeadlineSmall
+    @com.dtps.dietary:attr/expandedTitleTextAppearance
+@com.dtps.dietary:style/Widget_Material3_CompoundButton_CheckBox : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_CompoundButton_CheckBox
+    @com.dtps.dietary:drawable/m3_selection_control_ripple
+@com.dtps.dietary:style/Widget_Material3_CompoundButton_MaterialSwitch : reachable=false
+    @com.dtps.dietary:style/Widget_AppCompat_CompoundButton_Switch
+    @com.dtps.dietary:drawable/mtrl_switch_thumb
+    @com.dtps.dietary:drawable/mtrl_switch_track
+    @com.dtps.dietary:attr/track
+    @com.dtps.dietary:drawable/mtrl_switch_track_decoration
+    @com.dtps.dietary:attr/trackDecoration
+    @com.dtps.dietary:color/mtrl_switch_thumb_tint
+    @com.dtps.dietary:attr/thumbTint
+    @com.dtps.dietary:dimen/mtrl_switch_thumb_icon_size
+    @com.dtps.dietary:attr/thumbIconSize
+    @com.dtps.dietary:color/mtrl_switch_thumb_icon_tint
+    @com.dtps.dietary:attr/thumbIconTint
+    @com.dtps.dietary:color/mtrl_switch_track_tint
+    @com.dtps.dietary:attr/trackTint
+    @com.dtps.dietary:color/mtrl_switch_track_decoration_tint
+    @com.dtps.dietary:attr/trackDecorationTint
+    @com.dtps.dietary:dimen/mtrl_switch_text_padding
+    @com.dtps.dietary:attr/switchPadding
+    @com.dtps.dietary:attr/textAppearanceBodyMedium
+    @com.dtps.dietary:attr/minTouchTargetSize
+@com.dtps.dietary:style/Widget_Material3_CompoundButton_RadioButton : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_CompoundButton_RadioButton
+    @com.dtps.dietary:drawable/m3_radiobutton_ripple
+@com.dtps.dietary:style/Widget_Material3_CompoundButton_Switch : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_CompoundButton_Switch
+    @com.dtps.dietary:drawable/m3_selection_control_ripple
+@com.dtps.dietary:style/Widget_Material3_DrawerLayout : reachable=false
+    @com.dtps.dietary:dimen/m3_comp_navigation_drawer_modal_container_elevation
+    @com.dtps.dietary:attr/elevation
+@com.dtps.dietary:style/Widget_Material3_ExtendedFloatingActionButton_Icon_Primary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_ExtendedFloatingActionButton_Icon
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Primary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_ExtendedFloatingActionButton_Icon_Secondary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_ExtendedFloatingActionButton_Icon
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Secondary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_ExtendedFloatingActionButton_Icon_Surface : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_ExtendedFloatingActionButton_Icon
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Surface
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_ExtendedFloatingActionButton_Icon_Tertiary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_ExtendedFloatingActionButton_Icon
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Tertiary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_ExtendedFloatingActionButton_Primary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_ExtendedFloatingActionButton
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Primary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_ExtendedFloatingActionButton_Secondary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_ExtendedFloatingActionButton
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Secondary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_ExtendedFloatingActionButton_Surface : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_ExtendedFloatingActionButton
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Surface
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_ExtendedFloatingActionButton_Tertiary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_ExtendedFloatingActionButton
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Tertiary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Large_Primary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton_Large
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Primary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Large_Secondary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton_Large
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Secondary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Large_Surface : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton_Large
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Surface
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Large_Tertiary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton_Large
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Tertiary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Primary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton
+    @com.dtps.dietary:style/ThemeOverlay_Material3_FloatingActionButton_Primary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Secondary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton
+    @com.dtps.dietary:style/ThemeOverlay_Material3_FloatingActionButton_Secondary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Small_Primary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton_Small
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Primary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Small_Secondary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton_Small
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Secondary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Small_Surface : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton_Small
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Surface
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Small_Tertiary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton_Small
+    @com.dtps.dietary:style/ThemeOverlay_Material3_ExtendedFloatingActionButton_Tertiary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Surface : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton
+    @com.dtps.dietary:style/ThemeOverlay_Material3_FloatingActionButton_Surface
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_FloatingActionButton_Tertiary : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_FloatingActionButton
+    @com.dtps.dietary:style/ThemeOverlay_Material3_FloatingActionButton_Tertiary
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_Light_ActionBar_Solid : reachable=false
+    @com.dtps.dietary:style/Base_Widget_Material3_Light_ActionBar_Solid
+@com.dtps.dietary:style/Widget_Material3_LinearProgressIndicator : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_LinearProgressIndicator
+    @com.dtps.dietary:dimen/m3_comp_linear_progress_indicator_active_indicator_height
+    @com.dtps.dietary:attr/trackThickness
+    @com.dtps.dietary:attr/colorSurfaceContainerHighest
+    @com.dtps.dietary:attr/trackColor
+    @com.dtps.dietary:attr/colorPrimary
+    @com.dtps.dietary:attr/indicatorColor
+@com.dtps.dietary:style/Widget_Material3_MaterialButtonToggleGroup : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_MaterialButtonToggleGroup
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_MaterialCalendar
+    @com.dtps.dietary:attr/colorSurfaceContainerHigh
+    @com.dtps.dietary:attr/backgroundTint
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day
+    @com.dtps.dietary:attr/dayStyle
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day_Invalid
+    @com.dtps.dietary:attr/dayInvalidStyle
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day_Selected
+    @com.dtps.dietary:attr/daySelectedStyle
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day_Today
+    @com.dtps.dietary:attr/dayTodayStyle
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Year
+    @com.dtps.dietary:attr/yearStyle
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Year_Selected
+    @com.dtps.dietary:attr/yearSelectedStyle
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Year_Today
+    @com.dtps.dietary:attr/yearTodayStyle
+    @com.dtps.dietary:attr/colorSecondaryContainer
+    @com.dtps.dietary:attr/rangeFillColor
+    @com.dtps.dietary:attr/shapeAppearanceCornerExtraLarge
+    @com.dtps.dietary:attr/shapeAppearance
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Item
+    @com.dtps.dietary:style/ShapeAppearance_M3_Comp_DatePicker_Modal_Date_Container_Shape
+    @com.dtps.dietary:attr/itemShapeAppearance
+    @com.dtps.dietary:dimen/mtrl_calendar_day_width
+    @com.dtps.dietary:dimen/mtrl_calendar_day_height
+    @com.dtps.dietary:dimen/mtrl_calendar_day_vertical_padding
+    @com.dtps.dietary:dimen/mtrl_calendar_day_horizontal_padding
+    @com.dtps.dietary:attr/colorOnSurface
+    @com.dtps.dietary:attr/itemTextColor
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_DayOfWeekLabel : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_MaterialCalendar_DayOfWeekLabel
+    @com.dtps.dietary:attr/textAppearanceBodyLarge
+    @com.dtps.dietary:attr/colorOnSurface
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_DayTextView : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_MaterialCalendar_DayTextView
+    @com.dtps.dietary:attr/textAppearanceBodyLarge
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day_Invalid : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day
+    @com.dtps.dietary:color/m3_calendar_item_disabled_text
+    @com.dtps.dietary:attr/itemTextColor
+    @com.dtps.dietary:attr/itemStrokeWidth
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day_Selected : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day
+    @com.dtps.dietary:attr/colorPrimary
+    @com.dtps.dietary:attr/itemFillColor
+    @com.dtps.dietary:attr/colorOnPrimary
+    @com.dtps.dietary:attr/itemTextColor
+    @com.dtps.dietary:attr/itemStrokeWidth
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day_Today : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Day
+    @com.dtps.dietary:attr/colorPrimary
+    @com.dtps.dietary:attr/itemTextColor
+    @com.dtps.dietary:attr/itemStrokeColor
+    @com.dtps.dietary:dimen/m3_comp_date_picker_modal_date_today_container_outline_width
+    @com.dtps.dietary:attr/itemStrokeWidth
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_Fullscreen : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar
+    @com.dtps.dietary:style/ShapeAppearance_Material3_Corner_None
+    @com.dtps.dietary:attr/shapeAppearance
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_HeaderCancelButton : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_Button_TextButton
+    @com.dtps.dietary:attr/colorOnSurfaceVariant
+    @com.dtps.dietary:attr/iconTint
+    @com.dtps.dietary:style/ThemeOverlay_Material3_MaterialCalendar_HeaderCancelButton
+    @com.dtps.dietary:attr/materialThemeOverlay
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_HeaderDivider : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_MaterialCalendar_HeaderDivider
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_HeaderLayout : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_MaterialCalendar_HeaderLayout
+    @com.dtps.dietary:dimen/m3_comp_date_picker_modal_header_container_height
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_HeaderLayout_Fullscreen : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_HeaderLayout
+    @com.dtps.dietary:dimen/m3_comp_date_picker_modal_range_selection_header_container_height
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_HeaderSelection : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_MaterialCalendar_HeaderSelection
+    @com.dtps.dietary:attr/textAppearanceHeadlineLarge
+    @com.dtps.dietary:attr/colorOnSurfaceVariant
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_HeaderSelection_Fullscreen : reachable=false
+    @com.dtps.dietary:style/Widget_Material3_MaterialCalendar_HeaderSelection
+    @com.dtps.dietary:attr/textAppearanceTitleLarge
+    @com.dtps.dietary:attr/autoSizeMaxTextSize
+@com.dtps.dietary:style/Widget_Material3_MaterialCalendar_HeaderTitle : reachable=false
+    @com.dtps.dietary:style/Widget_MaterialComponents_MaterialCalendar_HeaderTitle
+    @com.dtps.dietary:attr/colorOnSurfaceVariant
+    @com.dtps.dietary:attr/textAppearanceLabelLarge
+    @com.dtps.dietary:attr/autoSizeMaxTextSize
+@com.dtps.dietary:style/Widget_Material3_Materunused resource res/drawable-mdpi-v4/abc_list_selector_disabled_holo_dark.9.png: 217 bytes (replaced with small dummy file of size 77 bytes)
 Skipped unused resource res/drawable-mdpi-v4/ic_call_answer.png: 317 bytes (replaced with small dummy file of size 67 bytes)
 Skipped unused resource res/drawable-mdpi-v4/ic_call_answer_low.png: 317 bytes (replaced with small dummy file of size 67 bytes)
 Skipped unused resource res/drawable-mdpi-v4/ic_call_answer_video.png: 206 bytes (replaced with small dummy file of size 67 bytes)
@@ -15216,14 +15338,7 @@ Skipped unused resource res/layout/mtrl_search_view.xml: 8398 bytes (replaced wi
 Skipped unused resource res/layout/splash_screen_view.xml: 975 bytes (replaced with small dummy file of size 9 bytes)
 Skipped unused resource res/layout-sw600dp-v13/design_layout_snackbar.xml: 681 bytes (replaced with small dummy file of size 9 bytes)
 Skipped unused resource res/layout-sw600dp-v13/mtrl_layout_snackbar.xml: 517 bytes (replaced with small dummy file of size 9 bytes)
-NavigationRailView_ActiveIndicator : reachable=false
-    @com.dtps.dietary:dimen/m3_navigation_rail_item_active_indicator_width
-    @com.dtps.dietary:dimen/m3_navigation_rail_item_active_indicator_height
-    @com.dtps.dietary:dimen/m3_navigation_rail_item_active_indicator_margin_horizontal
-    @com.dtps.dietary:attr/marginHorizontal
-    @com.dtps.dietary:style/ShapeAppearance_M3_Comp_NavigationRail_ActiveIndicator_Shape
-    @com.dtps.dietary:attr/shapeAppearance
-    @com.dtps.dietary:attr/colorSecondaryContainer
+ps.dietary:attr/colorSecondaryContainer
 @com.dtps.dietary:style/Widget_Material3_NavigationRailView_Badge : reachable=false
     @com.dtps.dietary:style/Widget_Material3_Badge_AdjustToBounds
     @com.dtps.dietary:dimen/m3_large_text_vertical_offset_adjustment
@@ -16713,7 +16828,6 @@ The root reachable resources are:
  attr:panelMenuListTheme:2130903912
  attr:pathMotionArc:2130903919
  attr:path_percent:2130903920
- attr:postSplashScreenTheme:2130903936
  attr:progressBarPadding:2130903942
  attr:progressBarStyle:2130903943
  attr:queryBackground:2130903947
@@ -16730,7 +16844,6 @@ The root reachable resources are:
  attr:shortcutMatchRequired:2130903996
  attr:singleLine:2130904014
  attr:spinnerStyle:2130904024
- attr:splashScreenIconSize:2130904025
  attr:state_above_anchor:2130904042
  attr:state_collapsed:2130904043
  attr:state_collapsible:2130904044
@@ -17104,48 +17217,49 @@ The root reachable resources are:
  id:snackbar_text:2131231124
  id:spacer:2131231128
  id:special_effects_controller_view_tag:2131231129
- id:split_action_bar:2131231132
- id:standard:2131231140
- id:submenuarrow:2131231149
- id:submit_area:2131231150
- id:tag_accessibility_actions:2131231153
- id:tag_accessibility_clickable_spans:2131231154
- id:tag_accessibility_heading:2131231155
- id:tag_accessibility_pane_title:2131231156
- id:tag_on_apply_window_listener:2131231157
- id:tag_on_receive_content_listener:2131231158
- id:tag_on_receive_content_mime_types:2131231159
- id:tag_screen_reader_focusable:2131231160
- id:tag_state_description:2131231161
- id:tag_unhandled_key_event_manager:2131231163
- id:tag_unhandled_key_listeners:2131231164
- id:tag_window_insets_animation_callback:2131231165
- id:textSpacerNoButtons:2131231169
- id:textSpacerNoTitle:2131231170
- id:text_input_end_icon:2131231173
- id:text_input_error_icon:2131231174
- id:textinput_counter:2131231176
- id:textinput_error:2131231177
- id:textinput_helper_text:2131231178
- id:textinput_placeholder:2131231179
- id:textinput_prefix_text:2131231180
- id:textinput_suffix_text:2131231181
- id:title:2131231183
- id:titleDividerNoCustom:2131231184
- id:title_template:2131231185
- id:top:2131231187
- id:topPanel:2131231188
- id:transition_current_scene:2131231192
- id:unchecked:2131231198
- id:up:2131231201
- id:view_offset_helper:2131231204
- id:view_transition:2131231205
- id:view_tree_lifecycle_owner:2131231206
- id:view_tree_on_back_pressed_dispatcher_owner:2131231207
- id:view_tree_saved_state_registry_owner:2131231208
- id:view_tree_view_model_store_owner:2131231209
- id:visible_removing_fragment_view_tag:2131231211
- id:webView:2131231212
+ id:splashWebView:2131231130
+ id:split_action_bar:2131231133
+ id:standard:2131231141
+ id:submenuarrow:2131231150
+ id:submit_area:2131231151
+ id:tag_accessibility_actions:2131231154
+ id:tag_accessibility_clickable_spans:2131231155
+ id:tag_accessibility_heading:2131231156
+ id:tag_accessibility_pane_title:2131231157
+ id:tag_on_apply_window_listener:2131231158
+ id:tag_on_receive_content_listener:2131231159
+ id:tag_on_receive_content_mime_types:2131231160
+ id:tag_screen_reader_focusable:2131231161
+ id:tag_state_description:2131231162
+ id:tag_unhandled_key_event_manager:2131231164
+ id:tag_unhandled_key_listeners:2131231165
+ id:tag_window_insets_animation_callback:2131231166
+ id:textSpacerNoButtons:2131231170
+ id:textSpacerNoTitle:2131231171
+ id:text_input_end_icon:2131231174
+ id:text_input_error_icon:2131231175
+ id:textinput_counter:2131231177
+ id:textinput_error:2131231178
+ id:textinput_helper_text:2131231179
+ id:textinput_placeholder:2131231180
+ id:textinput_prefix_text:2131231181
+ id:textinput_suffix_text:2131231182
+ id:title:2131231184
+ id:titleDividerNoCustom:2131231185
+ id:title_template:2131231186
+ id:top:2131231188
+ id:topPanel:2131231189
+ id:transition_current_scene:2131231193
+ id:unchecked:2131231199
+ id:up:2131231202
+ id:view_offset_helper:2131231205
+ id:view_transition:2131231206
+ id:view_tree_lifecycle_owner:2131231207
+ id:view_tree_on_back_pressed_dispatcher_owner:2131231208
+ id:view_tree_saved_state_registry_owner:2131231209
+ id:view_tree_view_model_store_owner:2131231210
+ id:visible_removing_fragment_view_tag:2131231212
+ id:webView:2131231213
  integer:bottom_sheet_slide_duration:2131296259
  integer:mtrl_calendar_year_selector_span:2131296307
  layout:abc_action_bar_title_item:2131427328
@@ -17967,9 +18081,12 @@ Unused resources are:
  dimen:mtrl_tooltip_arrowSize:2131100415
  dimen:mtrl_tooltip_cornerSize:2131100416
  dimen:mtrl_transition_shared_axis_slide_distance:2131100420
+ dimen:splashscreen_icon_mask_size_no_background:2131100436
  dimen:splashscreen_icon_mask_size_with_background:2131100437
+ dimen:splashscreen_icon_mask_stroke_no_background:2131100438
  dimen:splashscreen_icon_mask_stroke_with_background:2131100439
  dimen:splashscreen_icon_size:2131100440
+ dimen:splashscreen_icon_size_no_background:2131100441
  dimen:splashscreen_icon_size_with_background:2131100442
  drawable:abc_ic_menu_overflow_material:2131165252
  drawable:abc_item_background_holo_dark:2131165258
@@ -17978,6 +18095,7 @@ Unused resources are:
  drawable:abc_list_selector_disabled_holo_dark:2131165268
  drawable:abc_list_selector_holo_dark:2131165270
  drawable:compat_splash_screen:2131165313
+ drawable:compat_splash_screen_no_icon_background:2131165314
  drawable:ic_call_answer:2131165321
  drawable:ic_call_answer_low:2131165322
  drawable:ic_call_answer_video:2131165323
@@ -18252,57 +18370,58 @@ Unused resources are:
  id:snap:2131231125
  id:snapMargins:2131231126
  id:south:2131231127
- id:splashscreen_icon_view:2131231130
- id:spline:2131231131
- id:spread:2131231133
- id:spread_inside:2131231134
- id:spring:2131231135
- id:square:2131231136
- id:src_atop:2131231137
- id:src_in:2131231138
- id:src_over:2131231139
- id:start:2131231141
- id:startHorizontal:2131231142
- id:startToEnd:2131231143
- id:startVertical:2131231144
- id:staticLayout:2131231145
- id:staticPostLayout:2131231146
- id:stop:2131231147
- id:stretch:2131231148
- id:supportScrollUp:2131231151
- id:tabMode:2131231152
- id:tag_transition_group:2131231162
- id:text:2131231166
- id:text2:2131231167
- id:textEnd:2131231168
- id:textStart:2131231171
- id:textTop:2131231172
- id:text_input_start_icon:2131231175
- id:time:2131231182
- id:toggle:2131231186
- id:touch_outside:2131231189
- id:transitionToEnd:2131231190
- id:transitionToStart:2131231191
- id:transition_layout_save:2131231193
- id:transition_position:2131231194
- id:transition_scene_layoutid_cache:2131231195
- id:transition_transform:2131231196
- id:triangle:2131231197
- id:uniform:2131231199
- id:unlabeled:2131231200
- id:useLogo:2131231202
- id:vertical_only:2131231203
- id:visible:2131231210
- id:west:2131231213
- id:withText:2131231214
- id:with_icon:2131231215
- id:withinBounds:2131231216
- id:wrap:2131231217
- id:wrap_content:2131231218
- id:wrap_content_constrained:2131231219
- id:x_left:2131231220
- id:x_right:2131231221
+ id:splashscreen_icon_view:2131231131
+ id:spline:2131231132
+ id:spread:2131231134
+ id:spread_inside:2131231135
+ id:spring:2131231136
+ id:square:2131231137
+ id:src_atop:2131231138
+ id:src_in:2131231139
+ id:src_over:2131231140
+ id:start:2131231142
+ id:startHorizontal:2131231143
+ id:startToEnd:2131231144
+ id:startVertical:2131231145
+ id:staticLayout:2131231146
+ id:staticPostLayout:2131231147
+ id:stop:2131231148
+ id:stretch:2131231149
+ id:supportScrollUp:2131231152
+ id:tabMode:2131231153
+ id:tag_transition_group:2131231163
+ id:text:2131231167
+ id:text2:2131231168
+ id:textEnd:2131231169
+ id:textStart:2131231172
+ id:textTop:2131231173
+ id:text_input_start_icon:2131231176
+ id:time:2131231183
+ id:toggle:2131231187
+ id:touch_outside:2131231190
+ id:transitionToEnd:2131231191
+ id:transitionToStart:2131231192
+ id:transition_layout_save:2131231194
+ id:transition_position:2131231195
+ id:transition_scene_layoutid_cache:2131231196
+ id:transition_transform:2131231197
+ id:triangle:2131231198
+ id:uniform:2131231200
+ id:unlabeled:2131231201
+ id:useLogo:2131231203
+ id:vertical_only:2131231204
+ id:visible:2131231211
+ id:west:2131231214
+ id:withText:2131231215
+ id:with_icon:2131231216
+ id:withinBounds:2131231217
+ id:wrap:2131231218
+ id:wrap_content:2131231219
+ id:wrap_content_constrained:2131231220
+ id:x_left:2131231221
+ id:x_right:2131231222
  integer:cancel_button_image_alpha:2131296260
+ integer:default_icon_animation_duration:2131296262
  integer:m3_card_anim_delay_ms:2131296269
  integer:m3_card_anim_duration_ms:2131296270
  integer:m3_sys_shape_corner_extra_large_corner_family:2131296289
@@ -18472,6 +18591,9 @@ Unused resources are:
  style:Base_Theme_MaterialComponents_Light_Dialog_FixedSize:2131755125
  style:Base_Theme_MaterialComponents_Light_Dialog_MinWidth:2131755126
  style:Base_Theme_MaterialComponents_Light_DialogWhenLarge:2131755127
+ style:Base_Theme_SplashScreen:2131755128
+ style:Base_Theme_SplashScreen_DayNight:2131755129
+ style:Base_Theme_SplashScreen_Light:2131755130
  style:Base_ThemeOverlay_AppCompat_Dark:2131755133
  style:Base_ThemeOverlay_AppCompat_Dark_ActionBar:2131755134
  style:Base_ThemeOverlay_MaterialComponents_Dialog_Alert_Framework:2131755145
@@ -18518,6 +18640,10 @@ Unused resources are:
  style:Base_Widget_AppCompat_Spinner_Underlined:2131755258
  style:Base_Widget_Material3_ActionBar_Solid:2131755264
  style:Base_Widget_Material3_TabLayout_OnSurface:2131755282
+ style:Base_v21_Theme_SplashScreen:2131755298
+ style:Base_v21_Theme_SplashScreen_Light:2131755299
+ style:Base_v27_Theme_SplashScreen:2131755300
+ style:Base_v27_Theme_SplashScreen_Light:2131755301
  style:CardView_Dark:2131755303
  style:CardView_Light:2131755304
  style:MaterialAlertDialog_Material3_Body_Text_CenterStacked:2131755308
@@ -18652,6 +18778,8 @@ Unused resources are:
  style:Theme_MaterialComponents_Light_NoActionBar_Bridge:2131755639
  style:Theme_MaterialComponents_NoActionBar:2131755640
  style:Theme_MaterialComponents_NoActionBar_Bridge:2131755641
+ style:Theme_SplashScreen:2131755642
+ style:Theme_SplashScreen_Common:2131755643
  style:Theme_SplashScreen_IconBackground:2131755644
  style:ThemeOverlay_AppCompat:2131755645
  style:ThemeOverlay_AppCompat_Dark:2131755647
@@ -18862,6 +18990,7 @@ Skipped unused resource base/res/drawable/abc_item_background_holo_dark.xml: 203
 Skipped unused resource base/res/drawable/abc_list_selector_background_transition_holo_dark.xml: 422 bytes (replaced with small dummy file of size 9 bytes)
 Skipped unused resource base/res/drawable/abc_list_selector_holo_dark.xml: 2125 bytes (replaced with small dummy file of size 9 bytes)
 Skipped unused resource base/res/drawable-v23/compat_splash_screen.xml: 2528 bytes (replaced with small dummy file of size 9 bytes)
+Skipped unused resource base/res/drawable-v23/compat_splash_screen_no_icon_background.xml: 1944 bytes (replaced with small dummy file of size 9 bytes)
 Skipped unused resource base/res/drawable/ic_clear_black_24.xml: 826 bytes (replaced with small dummy file of size 9 bytes)
 Skipped unused resource base/res/drawable/ic_m3_chip_check.xml: 851 bytes (replaced with small dummy file of size 9 bytes)
 Skipped unused resource base/res/drawable/ic_search_black_24.xml: 819 bytes (replaced with small dummy file of size 9 bytes)

@@ -50,8 +50,8 @@ export class NotificationService {
     }
 
     try {
-      // Register service worker for push notifications
-      this.registration = await navigator.serviceWorker.register('/sw.js');
+      // Register Firebase messaging service worker for push notifications
+      this.registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
     } catch (error) {
       console.error('Service Worker registration failed:', error);
     }

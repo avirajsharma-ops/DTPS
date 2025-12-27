@@ -8,6 +8,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.webkit.*
 import android.widget.ProgressBar
@@ -16,13 +18,13 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
+    private lateinit var splashWebView: WebView
     private lateinit var progressBar: ProgressBar
     private lateinit var offlineView: View
     private lateinit var offlineText: TextView
@@ -30,9 +32,12 @@ class MainActivity : AppCompatActivity() {
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var permissionCallback: PermissionRequest? = null
+    private var splashComplete = false
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     companion object {
         private const val APP_URL = "https://dtps.tech/user"
+        private const val SPLASH_URL = "file:///android_asset/splash.html"
         private val ALLOWED_HOSTS = listOf("dtps.tech")
     }
 
@@ -43,14 +48,13 @@ class MainActivity : AppCompatActivity() {
         fileUploadCallback = null
     }
 
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        // Notification permission handled
+    private val multiplePermissionsLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ ->
+        // All permissions handled
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
         super.onCreate(savedInstanceState)
         
         // Set up white status bar with dark icons
@@ -65,11 +69,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
+        splashWebView = findViewById(R.id.splashWebView)
         progressBar = findViewById(R.id.progressBar)
         offlineView = findViewById(R.id.offlineView)
         offlineText = findViewById(R.id.offlineText)
         retryButton = findViewById(R.id.retryButton)
 
+        setupSplashWebView()
         setupWebView()
         setupBackHandler()
         
@@ -77,8 +83,88 @@ class MainActivity : AppCompatActivity() {
             loadUrl()
         }
 
-        loadUrl()
-        requestNotificationPermission()
+        // Show splash first
+        showSplash()
+        
+        // Request permissions after a short delay
+        mainHandler.postDelayed({
+            requestAllPermissions()
+        }, 500)
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupSplashWebView() {
+        splashWebView.settings.apply {
+            javaScriptEnabled = true
+            allowFileAccess = true
+            allowContentAccess = true
+            loadWithOverviewMode = true
+            useWideViewPort = true
+        }
+
+        // Add JavaScript interface for communication
+        splashWebView.addJavascriptInterface(SplashInterface(), "Android")
+
+        splashWebView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                // Start loading main content in background
+                webView.loadUrl(APP_URL)
+            }
+        }
+    }
+
+    inner class SplashInterface {
+        @JavascriptInterface
+        fun onSplashComplete() {
+            mainHandler.post {
+                hideSplash()
+            }
+        }
+    }
+
+    private fun showSplash() {
+        splashWebView.visibility = View.VISIBLE
+        webView.visibility = View.GONE
+        splashWebView.loadUrl(SPLASH_URL)
+    }
+
+    private fun hideSplash() {
+        if (!splashComplete) {
+            splashComplete = true
+            splashWebView.visibility = View.GONE
+            webView.visibility = View.VISIBLE
+            progressBar.visibility = View.GONE
+        }
+    }
+
+    private fun requestAllPermissions() {
+        val permissionsToRequest = mutableListOf<String>()
+
+        // Check Camera permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.CAMERA)
+        }
+
+        // Check Microphone permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) 
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
+        }
+
+        // Check Notification permission (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) 
+                != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        // Request all missing permissions at once
+        if (permissionsToRequest.isNotEmpty()) {
+            multiplePermissionsLauncher.launch(permissionsToRequest.toTypedArray())
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -107,7 +193,9 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
-                progressBar.visibility = View.VISIBLE
+                if (splashComplete) {
+                    progressBar.visibility = View.VISIBLE
+                }
                 offlineView.visibility = View.GONE
             }
 
@@ -122,7 +210,7 @@ class MainActivity : AppCompatActivity() {
                 error: WebResourceError?
             ) {
                 super.onReceivedError(view, request, error)
-                if (request?.isForMainFrame == true) {
+                if (request?.isForMainFrame == true && splashComplete) {
                     showOfflineView()
                 }
             }
@@ -153,7 +241,9 @@ class MainActivity : AppCompatActivity() {
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                progressBar.progress = newProgress
+                if (splashComplete) {
+                    progressBar.progress = newProgress
+                }
             }
 
             override fun onPermissionRequest(request: PermissionRequest?) {
@@ -234,18 +324,6 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -276,6 +354,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        splashWebView.destroy()
         webView.destroy()
         super.onDestroy()
     }

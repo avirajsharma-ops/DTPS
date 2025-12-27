@@ -10,6 +10,7 @@ id offlineText
 id offlineView
 id progressBar
 id retryButton
+id splashWebView
 id webView
 layout activity_main
 mipmap ic_launcher

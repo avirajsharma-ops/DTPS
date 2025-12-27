@@ -11,14 +11,8 @@
         <item name="android:windowLightNavigationBar">true</item>
     </style>
 
-    <style name="Theme.DTPS.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@android:color/white</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
-        <item name="postSplashScreenTheme">@style/Theme.DTPS</item>
-        <item name="android:statusBarColor">@android:color/white</item>
-        <item name="android:navigationBarColor">@android:color/white</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
+    <style name="Theme.DTPS.Splash" parent="Theme.DTPS">
+        <item name="android:windowBackground">@android:color/white</item>
     </style>
 
 </resources>

@@ -140,6 +140,7 @@ androidx.activity.result.contract.ActivityResultContracts$RequestMultiplePermiss
     public static final java.lang.String ACTION_REQUEST_PERMISSIONS
     public static final java.lang.String EXTRA_PERMISSIONS
     public static final java.lang.String EXTRA_PERMISSION_GRANT_RESULTS
+androidx.activity.result.contract.ActivityResultContracts$RequestPermission
 androidx.activity.result.contract.ActivityResultContracts$StartActivityForResult:
     public static final java.lang.String EXTRA_ACTIVITY_OPTIONS_BUNDLE
 androidx.activity.result.contract.ActivityResultContracts$StartIntentSenderForResult$Companion
@@ -6461,71 +6462,24 @@ androidx.core.service.quicksettings.TileServiceCompat$Api34Impl
 androidx.core.service.quicksettings.TileServiceCompat$TileServiceWrapper
 androidx.core.service.quicksettings.TileServiceCompat
 androidx.core.splashscreen.MaskedDrawable
-androidx.core.splashscreen.R$attr:
-    public static int windowSplashScreenAnimationDuration
-    public static int windowSplashScreenIconBackgroundColor
-    private void <init>()
-androidx.core.splashscreen.R$dimen:
-    public static int splashscreen_icon_mask_size_no_background
-    public static int splashscreen_icon_mask_size_with_background
-    public static int splashscreen_icon_mask_stroke_no_background
-    public static int splashscreen_icon_mask_stroke_with_background
-    public static int splashscreen_icon_size
-    public static int splashscreen_icon_size_no_background
-    private void <init>()
+androidx.core.splashscreen.R$attr
+androidx.core.splashscreen.R$dimen
 androidx.core.splashscreen.R$drawable
 androidx.core.splashscreen.R$id
 androidx.core.splashscreen.R$integer
 androidx.core.splashscreen.R$layout
 androidx.core.splashscreen.R$style
 androidx.core.splashscreen.R
-androidx.core.splashscreen.SplashScreen$Impl$$InternalSyntheticLambda$2$b06578835e8bfbc9063c69152691f22fc2af2a724b0d90fb84362b93036ea053$0:
-    public final boolean shouldKeepOnScreen()
+androidx.core.splashscreen.SplashScreen$Companion
 androidx.core.splashscreen.SplashScreen$Impl$setKeepOnScreenCondition$1
 androidx.core.splashscreen.SplashScreen$Impl$setOnExitAnimationListener$2
+androidx.core.splashscreen.SplashScreen$Impl31$hierarchyListener$1
 androidx.core.splashscreen.SplashScreen$Impl31$setKeepOnScreenCondition$1
-androidx.core.splashscreen.SplashScreen$Impl31:
-    private android.view.ViewTreeObserver$OnPreDrawListener preDrawListener
-    private final void applyAppSystemUiTheme()
-    public final android.view.ViewGroup$OnHierarchyChangeListener getHierarchyListener()
-    public final boolean getMDecorFitWindowInsets()
-    public final android.view.ViewTreeObserver$OnPreDrawListener getPreDrawListener()
-    public void setKeepOnScreenCondition(androidx.core.splashscreen.SplashScreen$KeepOnScreenCondition)
-    public void setOnExitAnimationListener(androidx.core.splashscreen.SplashScreen$OnExitAnimationListener)
-    private static final void setOnExitAnimationListener$lambda-0(androidx.core.splashscreen.SplashScreen$Impl31,androidx.core.splashscreen.SplashScreen$OnExitAnimationListener,android.window.SplashScreenView)
-    public final void setPreDrawListener(android.view.ViewTreeObserver$OnPreDrawListener)
-androidx.core.splashscreen.SplashScreen$Impl:
-    private androidx.core.splashscreen.SplashScreen$OnExitAnimationListener animationListener
-    private androidx.core.splashscreen.SplashScreenViewProvider mSplashScreenViewProvider
-    public static synthetic boolean $r8$lambda$IC7mPtibeouKwEfVxgBmZ-GTFkw()
-    public static final synthetic androidx.core.splashscreen.SplashScreenViewProvider access$getMSplashScreenViewProvider$p(androidx.core.splashscreen.SplashScreen$Impl)
-    public static final synthetic void access$setMSplashScreenViewProvider$p(androidx.core.splashscreen.SplashScreen$Impl,androidx.core.splashscreen.SplashScreenViewProvider)
-    public final void dispatchOnExitAnimation(androidx.core.splashscreen.SplashScreenViewProvider)
-    private static final void dispatchOnExitAnimation$lambda-3(androidx.core.splashscreen.SplashScreenViewProvider,androidx.core.splashscreen.SplashScreen$OnExitAnimationListener)
-    private final void displaySplashScreenIcon(android.view.View,android.graphics.drawable.Drawable)
-    public final java.lang.Integer getBackgroundColor()
-    public final java.lang.Integer getBackgroundResId()
-    public final int getFinalThemeId()
-    public final boolean getHasBackground()
-    public final android.graphics.drawable.Drawable getIcon()
-    public final androidx.core.splashscreen.SplashScreen$KeepOnScreenCondition getSplashScreenWaitPredicate()
-    public final void setBackgroundColor(java.lang.Integer)
-    public final void setBackgroundResId(java.lang.Integer)
-    public final void setFinalThemeId(int)
-    public final void setHasBackground(boolean)
-    public final void setIcon(android.graphics.drawable.Drawable)
-    public void setKeepOnScreenCondition(androidx.core.splashscreen.SplashScreen$KeepOnScreenCondition)
-    public void setOnExitAnimationListener(androidx.core.splashscreen.SplashScreen$OnExitAnimationListener)
-    public final void setSplashScreenWaitPredicate(androidx.core.splashscreen.SplashScreen$KeepOnScreenCondition)
-    private static final boolean splashScreenWaitPredicate$lambda-0()
-androidx.core.splashscreen.SplashScreen$KeepOnScreenCondition:
-    public abstract boolean shouldKeepOnScreen()
+androidx.core.splashscreen.SplashScreen$Impl31
+androidx.core.splashscreen.SplashScreen$Impl
+androidx.core.splashscreen.SplashScreen$KeepOnScreenCondition
 androidx.core.splashscreen.SplashScreen$OnExitAnimationListener
-androidx.core.splashscreen.SplashScreen:
-    private static final float MASK_FACTOR
-    public static final androidx.core.splashscreen.SplashScreen installSplashScreen(android.app.Activity)
-    public final void setKeepOnScreenCondition(androidx.core.splashscreen.SplashScreen$KeepOnScreenCondition)
-    public final void setOnExitAnimationListener(androidx.core.splashscreen.SplashScreen$OnExitAnimationListener)
+androidx.core.splashscreen.SplashScreen
 androidx.core.splashscreen.SplashScreenViewProvider$ViewImpl$_splashScreenView$2
 androidx.core.splashscreen.SplashScreenViewProvider$ViewImpl31
 androidx.core.splashscreen.SplashScreenViewProvider$ViewImpl
@@ -25062,8 +25016,8 @@ androidx.activity.result.contract.ActivityResultContracts$GetMultipleContents$Co
 androidx.activity.result.contract.ActivityResultContracts$GetMultipleContents:
     public static final com.google.android.material.shape.EdgeTreatment Companion
     static void <clinit>()
-    public final android.content.Intent createIntent()
-    public final androidx.activity.result.contract.ActivityResultContract$SynchronousResult getSynchronousResult()
+    public static android.content.Intent createIntent()
+    public static androidx.activity.result.contract.ActivityResultContract$SynchronousResult getSynchronousResult()
     public static java.util.List parseResult()
 androidx.activity.result.contract.ActivityResultContracts$RequestMultiplePermissions$Companion
 androidx.activity.result.contract.ActivityResultContracts$RequestMultiplePermissions:
@@ -25072,17 +25026,11 @@ androidx.activity.result.contract.ActivityResultContracts$RequestMultiplePermiss
     public static android.content.Intent createIntent$1()
     public static androidx.activity.result.contract.ActivityResultContract$SynchronousResult getSynchronousResult$1()
     public static java.util.Map parseResult()
-androidx.activity.result.contract.ActivityResultContracts$RequestPermission:
-    public final android.content.Intent createIntent()
-    public static android.content.Intent createIntent$2()
-    public final androidx.activity.result.contract.ActivityResultContract$SynchronousResult getSynchronousResult()
-    public final androidx.activity.result.ActivityResult parseResult()
-    public static java.lang.Boolean parseResult()
 androidx.activity.result.contract.ActivityResultContracts$StartActivityForResult$Companion
 androidx.activity.result.contract.ActivityResultContracts$StartActivityForResult:
     public static final com.google.android.material.shape.EdgeTreatment Companion
     static void <clinit>()
-    public static android.content.Intent createIntent$3()
+    public static android.content.Intent createIntent$2()
     public final androidx.activity.result.ActivityResult parseResult()
 androidx.appcompat.R$attr
 androidx.appcompat.R$bool
@@ -28333,25 +28281,6 @@ androidx.core.provider.FontsContractCompat
 androidx.core.provider.RequestExecutor$ReplyRunnable$1
 androidx.core.provider.RequestExecutor$ReplyRunnable
 androidx.core.provider.RequestExecutor
-androidx.core.splashscreen.R$attr
-androidx.core.splashscreen.R$dimen
-androidx.core.splashscreen.SplashScreen$Companion
-androidx.core.splashscreen.SplashScreen$Impl$$InternalSyntheticLambda$2$b06578835e8bfbc9063c69152691f22fc2af2a724b0d90fb84362b93036ea053$0:
-    public final int countLength(android.text.Editable)
-androidx.core.splashscreen.SplashScreen$Impl31:
-    public boolean mDecorFitWindowInsets
-    public static boolean computeDecorFitsWindow()
-    public static void setMDecorFitWindowInsets()
-androidx.core.splashscreen.SplashScreen$Impl:
-    public java.lang.Integer backgroundColor
-    public java.lang.Integer backgroundResId
-    public int finalThemeId
-    public boolean hasBackground
-    public android.graphics.drawable.Drawable icon
-    public androidx.core.splashscreen.SplashScreen$Impl$$InternalSyntheticLambda$2$b06578835e8bfbc9063c69152691f22fc2af2a724b0d90fb84362b93036ea053$0 splashScreenWaitPredicate
-    public static android.app.Activity getActivity()
-androidx.core.splashscreen.SplashScreen$KeepOnScreenCondition
-androidx.core.splashscreen.SplashScreen
 androidx.core.text.BidiFormatter$Builder
 androidx.core.text.BidiFormatter$DirectionalityEstimator:
     public final boolean isHtml
@@ -29440,7 +29369,9 @@ androidx.fragment.app.FragmentManager$7
 androidx.fragment.app.FragmentManager$8:
     public final synthetic androidx.fragment.app.FragmentManager this$0
 androidx.fragment.app.FragmentManager$9
-androidx.fragment.app.FragmentManager$FragmentIntentSenderContract
+androidx.fragment.app.FragmentManager$FragmentIntentSenderContract:
+    public static android.content.Intent createIntent$3()
+    public final androidx.activity.result.ActivityResult parseResult()
 androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks
 androidx.fragment.app.FragmentManager$LaunchedFragmentInfo$1
 androidx.fragment.app.FragmentManager$OnBackStackChangedListener
@@ -30647,7 +30578,15 @@ androidx.recyclerview.widget.ViewInfoStore:
     public static void setSpan()
     public static int sizeForPosition()
 androidx.savedstate.R$id
-androidx.savedstate.Recreator$Companion:
+androidx.savedstate.Recreator$Companion
+androidx.savedstate.Recreator$SavedStateProvider
+androidx.savedstate.Recreator:
+    public static final com.google.android.material.shape.EdgeTreatment Companion
+    static void <clinit>()
+    public static void reflectiveNew()
+androidx.savedstate.SavedStateRegistry$AutoRecreated:
+    public abstract void onRecreated()
+androidx.savedstate.SavedStateRegistry$Companion:
     public static boolean sSetFrameFetched
     public static java.lang.reflect.Method sSetFrameMethod
     public static void checkElementIndex$kotlin_stdlib()
@@ -30663,23 +30602,15 @@ androidx.savedstate.Recreator$Companion:
     public void setTransitionAlpha(android.view.View,float)
     public void transformMatrixToGlobal(android.view.View,android.graphics.Matrix)
     public void transformMatrixToLocal(android.view.View,android.graphics.Matrix)
-androidx.savedstate.Recreator$SavedStateProvider
-androidx.savedstate.Recreator:
-    public static final androidx.savedstate.Recreator$Companion Companion
-    static void <clinit>()
-    public static void reflectiveNew()
-androidx.savedstate.SavedStateRegistry$AutoRecreated:
-    public abstract void onRecreated()
-androidx.savedstate.SavedStateRegistry$Companion
 androidx.savedstate.SavedStateRegistry:
-    public static final androidx.savedstate.Recreator$Companion Companion
+    public static final androidx.savedstate.SavedStateRegistry$Companion Companion
     static void <clinit>()
     public static void performAttach$savedstate_release()
     public static void performRestore$savedstate_release()
     public static void performSave()
 androidx.savedstate.SavedStateRegistryController$Companion
 androidx.savedstate.SavedStateRegistryController:
-    public static final androidx.savedstate.Recreator$Companion Companion
+    public static final androidx.savedstate.SavedStateRegistry$Companion Companion
     static void <clinit>()
     public static androidx.savedstate.SavedStateRegistry getSavedStateRegistry()
 androidx.savedstate.ViewTreeSavedStateRegistryOwner
@@ -30794,7 +30725,7 @@ androidx.transition.Transition:
     public abstract androidx.appcompat.graphics.drawable.AnimatedStateListDrawableCompat$Transition getEpicenterCallback()
     public abstract android.animation.TimeInterpolator getInterpolator()
     public abstract java.lang.String getName()
-    public abstract androidx.savedstate.Recreator$Companion getPathMotion()
+    public abstract androidx.savedstate.SavedStateRegistry$Companion getPathMotion()
     public abstract androidx.core.widget.ImageViewCompat getPropagation()
     public abstract long getStartDelay()
     public abstract java.util.List getTargetIds()
@@ -30991,7 +30922,9 @@ androidx.viewpager2.adapter.FragmentStateAdapter$FragmentMaxLifecycleEnforcer
 androidx.viewpager2.adapter.FragmentStateAdapter
 androidx.viewpager2.adapter.FragmentViewHolder
 com.dtps.dietary.MainActivity$$InternalSyntheticLambda$1$79bac19c92c207774e9ec1f08a8e44a9d903b7dfb15d984d0244454b6e1d9d88$0
-com.dtps.dietary.MainActivity$$InternalSyntheticLambda$1$79bac19c92c207774e9ec1f08a8e44a9d903b7dfb15d984d0244454b6e1d9d88$1
+com.dtps.dietary.MainActivity$$InternalSyntheticLambda$1$79bac19c92c207774e9ec1f08a8e44a9d903b7dfb15d984d0244454b6e1d9d88$1:
+    public final int countLength(android.text.Editable)
+com.dtps.dietary.MainActivity$SplashInterface$$InternalSyntheticLambda$1$cf70f2ef353b5606772224b6aeb0d278bda5b8dde89f8e884dac237f588f66aa$0
 com.google.android.material.R$animator
 com.google.android.material.R$attr
 com.google.android.material.R$color
@@ -32455,7 +32388,7 @@ com.google.android.material.shape.EdgeTreatment$$InternalSyntheticThrowCCEIfNotN
 com.google.android.material.shape.EdgeTreatment:
     public synthetic void <init>(int,int)
     public static android.graphics.Typeface buildTypeface()
-    public static android.content.Intent createIntent$activity_release(java.lang.String[])
+    public static android.content.Intent createIntent$activity_release()
     public static androidx.emoji2.text.TypefaceEmojiSpan createSpan()
     public static androidx.appcompat.app.AlertDialog$Builder fetchFonts()
     public static boolean forceIntersection()
@@ -32471,7 +32404,6 @@ com.google.android.material.shape.EdgeTreatment:
     public android.content.pm.ProviderInfo getProviderInfo(android.content.pm.ResolveInfo)
     public static boolean handleKeyDown()
     public static void init$lifecycle_process_release()
-    public static androidx.core.splashscreen.SplashScreen installSplashScreen()
     public static androidx.lifecycle.Lifecycle$State min$lifecycle_runtime_release(androidx.lifecycle.Lifecycle$State,androidx.lifecycle.Lifecycle$State)
     public static void obtainBounds()
     public static void obtainBounds(java.lang.Object,android.graphics.Rect)
@@ -33141,7 +33073,7 @@ kotlin.collections.ArrayAsCollection:
     public static int getSize()
 kotlin.collections.ArrayDeque$Companion
 kotlin.collections.ArrayDeque:
-    public static final androidx.savedstate.Recreator$Companion Companion
+    public static final androidx.savedstate.SavedStateRegistry$Companion Companion
     public static void addFirst()
     public static void copyElements()
     public final int decremented(int)
@@ -33213,7 +33145,7 @@ kotlin.jvm.internal.CallableReference$NoReceiver
 kotlin.jvm.internal.CallableReference
 kotlin.jvm.internal.ClassReference$Companion
 kotlin.jvm.internal.ClassReference:
-    public static final androidx.savedstate.Recreator$Companion Companion
+    public static final androidx.savedstate.SavedStateRegistry$Companion Companion
     public static final java.util.HashMap classFqNames
     public static final java.util.HashMap primitiveFqNames
     public static final java.util.HashMap primitiveWrapperFqNames
@@ -33256,7 +33188,7 @@ kotlin.random.Random:
     public abstract int nextInt()
 kotlin.ranges.IntProgression$Companion
 kotlin.ranges.IntProgression:
-    public static final androidx.savedstate.Recreator$Companion Companion
+    public static final androidx.savedstate.SavedStateRegistry$Companion Companion
     static void <clinit>()
     public boolean equals(java.lang.Object)
     public static int getFirst()
@@ -33270,7 +33202,7 @@ kotlin.ranges.IntProgressionIterator:
     public static int nextInt()
 kotlin.ranges.IntRange$Companion
 kotlin.ranges.IntRange:
-    public static final androidx.savedstate.Recreator$Companion Companion
+    public static final androidx.savedstate.SavedStateRegistry$Companion Companion
     public static final kotlin.ranges.IntRange EMPTY
 kotlin.ranges.RangesKt
 kotlin.ranges.RangesKt__RangesKt
