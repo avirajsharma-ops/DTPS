@@ -37,8 +37,22 @@ const WATCH_BASE_URL = getWatchBaseUrl();
 
 export const WATCH_PROVIDER_CONFIGS: Record<string, WatchProviderConfig> = {
   google_fit: {
-    clientId: process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_FIT_CLIENT_ID || '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_FIT_CLIENT_SECRET || '',
+    clientId: (
+      process.env.GOOGLE_CLIENT_IDwatch ||
+      process.env.GOOGLE_CLIENT_IDWATCH ||
+      process.env.GOOGLE_CLIENT_ID_WATCH ||
+      process.env.GOOGLE_FIT_CLIENT_ID ||
+      process.env.GOOGLE_CLIENT_ID ||
+      ''
+    ),
+    clientSecret: (
+      process.env.GOOGLE_CLIENT_SECRETwatch ||
+      process.env.GOOGLE_CLIENT_SECRETWATCH ||
+      process.env.GOOGLE_CLIENT_SECRET_WATCH ||
+      process.env.GOOGLE_FIT_CLIENT_SECRET ||
+      process.env.GOOGLE_CLIENT_SECRET ||
+      ''
+    ),
     redirectUri: `${WATCH_BASE_URL}/api/watch/oauth/callback`,
     scopes: [
       'https://www.googleapis.com/auth/fitness.activity.read',

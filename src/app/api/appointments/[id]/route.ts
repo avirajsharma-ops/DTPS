@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Appointment from '@/lib/db/models/Appointment';
+import { removeAppointmentFromCalendars, updateCalendarEvent } from '@/lib/services/googleCalendar';
 import { UserRole, AppointmentStatus } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
 
@@ -118,6 +119,38 @@ export async function PUT(
     await appointment.populate('dietitian', 'firstName lastName email avatar');
     await appointment.populate('client', 'firstName lastName email avatar');
 
+    // Update Google Calendar if schedule changed
+    if (body.scheduledAt || body.duration) {
+      try {
+        const googleCalendarEventId = (appointment as any).googleCalendarEventId;
+        const updateData = {
+          scheduledAt: appointment.scheduledAt,
+          duration: appointment.duration
+        };
+
+        // Update dietitian's calendar
+        if (googleCalendarEventId?.dietitian) {
+          await updateCalendarEvent(
+            appointment.dietitian.toString(),
+            googleCalendarEventId.dietitian,
+            updateData
+          );
+        }
+
+        // Update client's calendar
+        if (googleCalendarEventId?.client) {
+          await updateCalendarEvent(
+            appointment.client.toString(),
+            googleCalendarEventId.client,
+            updateData
+          );
+        }
+      } catch (calendarError) {
+        console.error('Failed to update Google Calendar events:', calendarError);
+        // Don't fail the update if calendar sync fails
+      }
+    }
+
     // Log history for appointment update
     await logHistoryServer({
       userId: (appointment.client as any).toString(),
@@ -175,6 +208,32 @@ export async function DELETE(
 
     if (!canCancel) {
       return NextResponse.json({ error: 'Only dietitian, or health counselor can cancel appointments' }, { status: 403 });
+    }
+
+    // Remove from Google Calendar before cancelling
+    try {
+      const googleCalendarEventId = (appointment as any).googleCalendarEventId;
+      if (googleCalendarEventId?.dietitian || googleCalendarEventId?.client) {
+        const calendarResult = await removeAppointmentFromCalendars(
+          appointment.dietitian.toString(),
+          appointment.client.toString(),
+          googleCalendarEventId?.dietitian,
+          googleCalendarEventId?.client
+        );
+
+        if (calendarResult.errors.length > 0) {
+          console.warn('Google Calendar removal warnings:', calendarResult.errors);
+        }
+
+        // Clear the calendar event IDs
+        (appointment as any).googleCalendarEventId = {
+          dietitian: undefined,
+          client: undefined
+        };
+      }
+    } catch (calendarError) {
+      console.error('Failed to remove appointment from Google Calendar:', calendarError);
+      // Don't fail the cancellation if calendar removal fails
     }
 
     // Update status to cancelled instead of deleting

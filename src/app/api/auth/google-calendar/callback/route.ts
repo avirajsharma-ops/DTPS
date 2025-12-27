@@ -78,51 +78,25 @@ export async function GET(req: NextRequest) {
 
     // Save tokens to database with timeout
     try {
-      const dbPromise = (async () => {
-        await connectDB();
-        const user = await User.findById(session.user.id);
-        
-        if (!user) {
-          throw new Error('User not found');
-        }
+      await connectDB();
+      const user = await User.findById(session.user.id);
+      
+      if (!user) {
+        return NextResponse.redirect(
+          new URL('/settings?calendar=error&message=user-not-found', baseUrl)
+        );
+      }
 
-        user.googleCalendarAccessToken = tokens.tokens.access_token;
-        user.googleCalendarRefreshToken = tokens.tokens.refresh_token || user.googleCalendarRefreshToken;
-        user.googleCalendarTokenExpiry = tokens.tokens.expiry_date ? new Date(tokens.tokens.expiry_date) : undefined;
-        await user.save();
-        
-        return user;
-      })();
+      user.googleCalendarAccessToken = tokens.tokens.access_token;
+      user.googleCalendarRefreshToken = tokens.tokens.refresh_token || user.googleCalendarRefreshToken;
+      user.googleCalendarTokenExpiry = tokens.tokens.expiry_date ? new Date(tokens.tokens.expiry_date) : undefined;
+      await user.save();
       
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database save timeout')), 10000)
-      );
-      
-      await Promise.race([dbPromise, timeoutPromise]);
+      console.log('Google Calendar tokens saved successfully for user:', session.user.id);
     } catch (dbError: any) {
       console.error('Error saving to database:', dbError);
       return NextResponse.redirect(
         new URL('/settings?calendar=error&message=database-error', baseUrl)
-      );
-    }
-    const user = await User.findById(session.user.id);
-    
-    if (!user) {
-      return NextResponse.redirect(
-        new URL('/settings?calendar=error&message=user-not-found', baseUrl)
-      );
-    }
-
-    // Store the tokens with proper error handling
-    try {
-      user.googleCalendarAccessToken = tokens.access_token;
-      user.googleCalendarRefreshToken = tokens.refresh_token || user.googleCalendarRefreshToken;
-      user.googleCalendarTokenExpiry = tokens.expiry_date ? new Date(tokens.expiry_date) : undefined;
-      await user.save();
-    } catch (saveError: any) {
-      console.error('Error saving Google Calendar tokens:', saveError);
-      return NextResponse.redirect(
-        new URL('/settings?calendar=error&message=save-failed', baseUrl)
       );
     }
 

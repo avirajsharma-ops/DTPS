@@ -83,9 +83,11 @@ function DesktopSettingsPage() {
       const response = await fetch(`/api/users/${session?.user?.id}`);
       if (response.ok) {
         const data = await response.json();
-        setProfile(data);
+        // API returns { user: {...} }
+        const userData = data.user || data;
+        setProfile(userData);
         // Check if Google Calendar is connected
-        setGoogleCalendarConnected(!!data.googleCalendarAccessToken);
+        setGoogleCalendarConnected(!!userData.googleCalendarAccessToken);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);

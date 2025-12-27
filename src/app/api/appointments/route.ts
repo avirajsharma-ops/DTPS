@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import Appointment from '@/lib/db/models/Appointment';
 import User from '@/lib/db/models/User';
 import zoomService from '@/lib/services/zoom';
+import { syncAppointmentToCalendars } from '@/lib/services/googleCalendar';
 import { UserRole, AppointmentStatus } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
 import { logActivity, logApiError } from '@/lib/utils/activityLogger';
@@ -229,6 +230,41 @@ export async function POST(request: NextRequest) {
     // Populate the created appointment
     await appointment.populate('dietitian', 'firstName lastName email avatar');
     await appointment.populate('client', 'firstName lastName email avatar');
+
+    // Sync appointment to Google Calendar for both dietitian and client
+    try {
+      const appointmentCalendarData = {
+        title: `${type === 'consultation' ? 'Consultation' : 'Follow-up'}: ${client.firstName} ${client.lastName} & ${dietitian.firstName} ${dietitian.lastName}`,
+        description: notes || `Nutrition ${type} session`,
+        scheduledAt: new Date(scheduledAt),
+        duration: duration || 60,
+        meetingLink: appointment.zoomMeeting?.joinUrl || appointment.meetingLink
+      };
+
+      const calendarResult = await syncAppointmentToCalendars(
+        dietitianId,
+        clientId,
+        appointmentCalendarData,
+        dietitian.email,
+        client.email
+      );
+
+      // Store Google Calendar event IDs
+      if (calendarResult.dietitianEventId || calendarResult.clientEventId) {
+        appointment.googleCalendarEventId = {
+          dietitian: calendarResult.dietitianEventId,
+          client: calendarResult.clientEventId
+        };
+        await appointment.save();
+      }
+
+      if (calendarResult.errors.length > 0) {
+        console.warn('Google Calendar sync warnings:', calendarResult.errors);
+      }
+    } catch (calendarError) {
+      console.error('Failed to sync appointment to Google Calendar:', calendarError);
+      // Don't fail the appointment creation if calendar sync fails
+    }
 
     // Record history for the client
     await logHistoryServer({

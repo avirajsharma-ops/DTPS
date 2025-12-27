@@ -390,7 +390,7 @@ export default function DieticianClientsPage() {
                                 value={client.clientStatus || 'leading'}
                                 onValueChange={(value) => handleClientStatusChange(client._id, value)}
                               >
-                                <SelectTrigger className="h-7 w-[110px] text-xs">
+                                <SelectTrigger className="h-7 w-27.5 text-xs">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

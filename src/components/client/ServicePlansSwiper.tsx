@@ -334,7 +334,7 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                         return (
                             <div
                                 key={plan._id}
-                                className="shrink-0 w-[280px] min-w-[280px] max-w-[280px] snap-center animate-scale-fade-in"
+                                className="shrink-0 w-70 min-w-70 max-w-70 snap-center animate-scale-fade-in"
                                 style={{ animationDelay: `${index * 100}ms` }}
                             >
                                 <div className="rounded-3xl overflow-hidden border-2 border-[#3AB1A0]/30 transition-all duration-300 h-[320px] flex flex-col">

@@ -2128,7 +2128,7 @@ export default function ClientDetailPage() {
                       placeholder="Enter your notes here..."
                       value={newNote.content}
                       onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
-                      className="mt-1 min-h-[80px] text-sm resize-none"
+                      className="mt-1 min-h-20 text-sm resize-none"
                     />
                   </div>
 
@@ -2702,7 +2702,7 @@ export default function ClientDetailPage() {
                         <Textarea
                           value={newTask.description}
                           onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
-                          className="mt-1 text-sm min-h-[60px]"
+                          className="mt-1 text-sm min-h-15"
                           placeholder="Write your message here"
                         />
                         <p className="text-[10px] text-orange-500 mt-1">

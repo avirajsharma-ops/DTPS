@@ -1,150 +1,155 @@
-// API Route: Watch OAuth Callback
+// API Route: Watch OAuth Callback - Simplified and Robust
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
-import { WatchService, WATCH_PROVIDER_CONFIGS } from '@/watchconnectivity/backend/services/WatchService';
+import WatchConnection from '@/watchconnectivity/backend/models/WatchConnection';
+import mongoose from 'mongoose';
 
-// GET /api/watch/oauth/callback - Handle OAuth callback
+// Google Fit OAuth Configuration - prefer watch-specific env vars
+const GOOGLE_FIT_CONFIG = {
+  clientId: (
+    process.env.GOOGLE_CLIENT_IDwatch ||
+    process.env.GOOGLE_CLIENT_IDWATCH ||
+    process.env.GOOGLE_CLIENT_ID_WATCH ||
+    process.env.GOOGLE_FIT_CLIENT_ID ||
+    process.env.GOOGLE_CLIENT_ID ||
+    ''
+  ),
+  clientSecret: (
+    process.env.GOOGLE_CLIENT_SECRETwatch ||
+    process.env.GOOGLE_CLIENT_SECRETWATCH ||
+    process.env.GOOGLE_CLIENT_SECRET_WATCH ||
+    process.env.GOOGLE_FIT_CLIENT_SECRET ||
+    process.env.GOOGLE_CLIENT_SECRET ||
+    ''
+  ),
+  scopes: [
+    'https://www.googleapis.com/auth/fitness.activity.read',
+    'https://www.googleapis.com/auth/fitness.heart_rate.read',
+    'https://www.googleapis.com/auth/fitness.sleep.read',
+    'https://www.googleapis.com/auth/fitness.body.read',
+  ],
+};
+
+/**
+ * GET /api/watch/oauth/callback
+ * Handles the OAuth callback from Google after user grants permission
+ */
 export async function GET(req: NextRequest) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  
   try {
     const { searchParams } = new URL(req.url);
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const error = searchParams.get('error');
     
-    
+    // Handle OAuth errors
     if (error) {
-      console.error('OAuth error from provider:', error);
+      console.error('OAuth error from Google:', error);
       return NextResponse.redirect(
-        new URL(`/user/watch?error=${encodeURIComponent(error)}`, req.url)
+        new URL(`/user/watch?error=${encodeURIComponent(error)}`, baseUrl)
       );
     }
     
+    // Validate required parameters
     if (!code || !state) {
-      console.error('Missing code or state');
+      console.error('Missing code or state in callback');
       return NextResponse.redirect(
-        new URL('/user/watch?error=invalid_callback', req.url)
+        new URL('/user/watch?error=missing_params', baseUrl)
       );
     }
     
     // Parse state (format: userId:provider)
-    const [userId, watchProvider] = state.split(':');
+    const [userId, provider] = state.split(':');
     
-    if (!userId || !watchProvider) {
+    if (!userId || !provider) {
       console.error('Invalid state format:', state);
       return NextResponse.redirect(
-        new URL('/user/watch?error=invalid_state', req.url)
+        new URL('/user/watch?error=invalid_state', baseUrl)
       );
     }
     
     await connectDB();
     
-    // Get the actual redirect URI from the request (to match exactly)
-    const actualRedirectUri = `${req.nextUrl.origin}/api/watch/oauth/callback`;
+    // Exchange authorization code for tokens
+    // Use NEXTAUTH_URL for consistent redirect URI
+    const redirectUri = `${baseUrl}/api/watch/oauth/callback`;
     
-    // Exchange code for tokens based on provider
-    let watchTokens = null;
+    console.log('=== Watch OAuth Callback ===');
+    console.log('User ID:', userId);
+    console.log('Provider:', provider);
+    console.log('Redirect URI:', redirectUri);
     
-    try {
-      if (watchProvider === 'google_fit') {
-        watchTokens = await exchangeWatchGoogleFitCode(code, actualRedirectUri);
-      } else if (watchProvider === 'fitbit') {
-        watchTokens = await exchangeWatchFitbitCode(code, actualRedirectUri);
-      }
-    } catch (tokenError) {
-      console.error('Watch token exchange error:', tokenError);
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: GOOGLE_FIT_CONFIG.clientId,
+        client_secret: GOOGLE_FIT_CONFIG.clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+      }),
+    });
+    
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.text();
+      console.error('Token exchange failed:', tokenResponse.status, errorData);
       return NextResponse.redirect(
-        new URL('/user/watch?error=token_exchange_failed', req.url)
+        new URL('/user/watch?error=token_exchange_failed', baseUrl)
       );
     }
     
-    // Connect the watch with tokens
-    await WatchService.connectWatch(userId, watchProvider, watchTokens || undefined);
+    const tokens = await tokenResponse.json();
+    console.log('Tokens received successfully!');
+    
+    // Save or update watch connection in database
+    await WatchConnection.findOneAndUpdate(
+      { userId: new mongoose.Types.ObjectId(userId) },
+      {
+        userId: new mongoose.Types.ObjectId(userId),
+        watchProvider: provider,
+        watchIsConnected: true,
+        watchAccessToken: tokens.access_token,
+        watchRefreshToken: tokens.refresh_token,
+        watchTokenExpiry: new Date(Date.now() + tokens.expires_in * 1000),
+        watchLastSyncTime: new Date(),
+        watchSyncPreferences: {
+          autoSync: true,
+          syncInterval: 60,
+          dataTypes: ['steps', 'heartRate', 'sleep', 'calories'],
+        },
+      },
+      { upsert: true, new: true }
+    );
+    
+    console.log('Watch connection saved for user:', userId);
     
     return NextResponse.redirect(
-      new URL('/user/watch?success=connected', req.url)
+      new URL('/user/watch?success=connected', baseUrl)
     );
+    
   } catch (error) {
     console.error('Watch OAuth callback error:', error);
     return NextResponse.redirect(
-      new URL('/user/watch?error=callback_failed', req.url)
+      new URL('/user/watch?error=callback_failed', baseUrl)
     );
   }
 }
 
-// Exchange Google Fit authorization code for tokens
-async function exchangeWatchGoogleFitCode(code: string, redirectUri: string) {
-  const config = WATCH_PROVIDER_CONFIGS.google_fit;
-  
-  
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      code,
-      client_id: config.clientId,
-      client_secret: config.clientSecret,
-      redirect_uri: redirectUri,
-      grant_type: 'authorization_code',
-    }),
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Google token exchange failed:', response.status, errorText);
-    throw new Error(`Failed to exchange Google Fit code: ${errorText}`);
-  }
-  
-  const data = await response.json();
-  
-  return {
-    accessToken: data.access_token,
-    refreshToken: data.refresh_token,
-    expiry: new Date(Date.now() + data.expires_in * 1000),
-  };
-}
-
-// Exchange Fitbit authorization code for tokens
-async function exchangeWatchFitbitCode(code: string, redirectUri: string) {
-  const config = WATCH_PROVIDER_CONFIGS.fitbit;
-  
-  const credentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
-  
-  const response = await fetch('https://api.fitbit.com/oauth2/token', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      code,
-      redirect_uri: redirectUri,
-      grant_type: 'authorization_code',
-    }),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to exchange Fitbit code');
-  }
-  
-  const data = await response.json();
-  
-  return {
-    accessToken: data.access_token,
-    refreshToken: data.refresh_token,
-    expiry: new Date(Date.now() + data.expires_in * 1000),
-  };
-}
-
-// POST /api/watch/oauth/callback - Get OAuth URL
+/**
+ * POST /api/watch/oauth/callback
+ * Generate OAuth URL for Google Fit connection
+ */
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Please login first' },
         { status: 401 }
       );
     }
@@ -158,6 +163,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
+    // Handle Apple Watch - requires iOS app
     if (watchProvider === 'apple_watch') {
       return NextResponse.json({
         success: true,
@@ -167,41 +173,62 @@ export async function POST(req: NextRequest) {
       });
     }
     
-    // NoiseFit doesn't have public API - use manual entry or sync via Google Fit
-    if (watchProvider === 'noisefit') {
+    // Handle watches that need manual entry or Google Fit sync
+    if (['noisefit', 'samsung', 'garmin', 'other'].includes(watchProvider)) {
       return NextResponse.json({
         success: true,
-        message: 'NoiseFit watches use manual entry. You can also sync your NoiseFit data to Google Fit app and connect via Google Fit.',
-        watchOAuthUrl: null,
-        watchRequiresManual: true,
-        watchSyncTip: 'Open NoiseFit app → Settings → Sync to Google Fit',
-      });
-    }
-    
-    // Samsung and Garmin also require manual or app-based setup
-    if (['samsung', 'garmin', 'other'].includes(watchProvider)) {
-      return NextResponse.json({
-        success: true,
-        message: 'This watch type uses manual data entry',
+        message: 'This watch uses manual entry. Tip: Sync your watch to Google Fit app, then connect via Google Fit for automatic sync!',
         watchOAuthUrl: null,
         watchRequiresManual: true,
       });
     }
     
-    // Get the actual origin from request for OAuth redirect
-    const origin = req.nextUrl.origin;
-    const redirectUri = `${origin}/api/watch/oauth/callback`;
+    // Only Google Fit supports OAuth
+    if (watchProvider !== 'google_fit') {
+      return NextResponse.json({
+        success: false,
+        error: 'Unsupported provider',
+      });
+    }
     
+    // Validate Google credentials
+    if (!GOOGLE_FIT_CONFIG.clientId || !GOOGLE_FIT_CONFIG.clientSecret) {
+      console.error('Missing Google OAuth credentials in .env');
+      return NextResponse.json({
+        success: false,
+        error: 'Google Fit not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.',
+      }, { status: 500 });
+    }
+    
+    // Build OAuth URL using NEXTAUTH_URL for consistency
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const redirectUri = `${baseUrl}/api/watch/oauth/callback`;
     const state = `${session.user.id}:${watchProvider}`;
-    const watchOAuthUrl = WatchService.getWatchOAuthUrl(watchProvider, state, redirectUri);
+    
+    const params = new URLSearchParams({
+      client_id: GOOGLE_FIT_CONFIG.clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: GOOGLE_FIT_CONFIG.scopes.join(' '),
+      state: state,
+      access_type: 'offline',
+      prompt: 'consent',
+    });
+    
+    const watchOAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    
+    console.log('=== Watch OAuth URL Generated ===');
+    console.log('User ID:', session.user.id);
+    console.log('Redirect URI:', redirectUri);
     
     return NextResponse.json({
       success: true,
       watchOAuthUrl,
       watchRequiresApp: false,
     });
+    
   } catch (error) {
-    console.error('Watch OAuth URL error:', error);
+    console.error('Watch OAuth URL generation error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to generate OAuth URL' },
       { status: 500 }

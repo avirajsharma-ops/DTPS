@@ -1291,7 +1291,7 @@ export default function UserHomePage() {
         <div className="px-">
           <div className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
             {/* Blog Card 1 */}
-            <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="min-w-65 snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className="relative h-32 bg-linear-to-br from-amber-100 to-orange-100">
                 <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   NUTRITION
@@ -1313,7 +1313,7 @@ export default function UserHomePage() {
             </div>
 
             {/* Blog Card 2 */}
-            <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="min-w-65 snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className="h-32 bg-linear-to-br from-[#3AB1A0]/20 to-[#3AB1A0]/10 relative">
                 <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   FITNESS
@@ -1335,7 +1335,7 @@ export default function UserHomePage() {
             </div>
 
             {/* Blog Card 3 */}
-            <div className="min-w-[260px] snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="min-w-65 snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className="h-32 bg-linear-to-br from-[#DB9C6E]/20 to-[#DB9C6E]/10 relative">
                 <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
                   WELLNESS

@@ -76,6 +76,11 @@ const appointmentSchema = new Schema({
     hostEmail: {
       type: String
     }
+  },
+  // Google Calendar event IDs for syncing
+  googleCalendarEventId: {
+    dietitian: { type: String }, // Event ID in dietitian's calendar
+    client: { type: String }     // Event ID in client's calendar
   }
 }, {
   timestamps: true,
