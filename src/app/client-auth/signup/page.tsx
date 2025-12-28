@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Eye,
   EyeOff,
@@ -23,6 +24,7 @@ import {
   Phone
 } from 'lucide-react';
 import { z } from 'zod';
+import { COUNTRY_CODES } from '@/lib/constants/countries';
 
 // Client-specific signup schema with separate first and last name
 const clientSignUpSchema = z.object({
@@ -50,6 +52,7 @@ export default function ClientSignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
 
   const {
     register,
@@ -72,6 +75,9 @@ export default function ClientSignUpPage() {
     setSuccess('');
 
     try {
+      // Combine country code with phone number
+      const phoneWithCode = `${countryCode}${data.phone.replace(/\s+/g, '')}`;
+      
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -81,7 +87,7 @@ export default function ClientSignUpPage() {
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
-          phone: data.phone,
+          phone: phoneWithCode,
           password: data.password,
           confirmPassword: data.confirmPassword,
           referralCode: data.referralCode,
@@ -200,17 +206,33 @@ export default function ClientSignUpPage() {
             <p className="-mt-2 text-sm text-red-400">{errors.email.message}</p>
           )}
 
-          {/* Phone Input */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-              <Phone className="h-5 w-5 text-[#3AB1A0]" />
+          {/* Phone Input with Country Code */}
+          <div className="space-y-1">
+            <div className="flex gap-2">
+              <Select value={countryCode} onValueChange={setCountryCode}>
+                <SelectTrigger className="w-28 h-12 sm:h-14 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {COUNTRY_CODES.map((country) => (
+                    <SelectItem key={`${country.code}-${country.country}`} value={country.code}>
+                      <span className="flex items-center gap-2">
+                        <span>{country.flag}</span>
+                        <span>{country.code}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="relative flex-1">
+                <Input
+                  type="tel"
+                  placeholder="Phone Number"
+                  {...register('phone')}
+                  className={`h-12 sm:h-14 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.phone ? 'border-red-500' : ''}`}
+                />
+              </div>
             </div>
-            <Input
-              type="tel"
-              placeholder="Phone Number"
-              {...register('phone')}
-              className={`h-12 sm:h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.phone ? 'border-red-500' : ''}`}
-            />
           </div>
           {errors.phone && (
             <p className="-mt-2 text-sm text-red-400">{errors.phone.message}</p>

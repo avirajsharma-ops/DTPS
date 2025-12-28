@@ -138,11 +138,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    if (!phone) {
+      return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
+    }
+
     await connectDB();
 
     const existing = await User.findOne({ email: String(email).toLowerCase() });
     if (existing) {
       return NextResponse.json({ error: 'Email already in use' }, { status: 409 });
+    }
+
+    // Normalize phone number - remove spaces and dashes
+    let normalizedPhone = String(phone).replace(/[\s\-\(\)]/g, '');
+    // Ensure it starts with + (country code)
+    if (!normalizedPhone.startsWith('+')) {
+      normalizedPhone = '+91' + normalizedPhone;
+    }
+
+    // Check if phone number is already registered
+    const existingPhone = await User.findOne({ phone: normalizedPhone });
+    if (existingPhone) {
+      return NextResponse.json({ error: 'This phone number is already registered' }, { status: 400 });
     }
 
     const user = new User({
@@ -151,7 +168,7 @@ export async function POST(request: NextRequest) {
       firstName,
       lastName,
       role: role || UserRole.CLIENT,
-      phone,
+      phone: normalizedPhone,
       bio,
       experience,
       consultationFee,

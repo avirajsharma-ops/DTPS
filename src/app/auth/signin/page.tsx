@@ -47,11 +47,14 @@ function SignInForm() {
         // Get the updated session to determine redirect
         const session = await getSession();
         if (session?.user) {
-          const redirectUrl = session.user.role === 'dietitian' || session.user.role === 'health_counselor'
-            ? '/dashboard/dietitian'
-            : session.user.role === 'admin'
-            ? '/dashboard/admin'
-            : '/user';
+          let redirectUrl = '/user';
+          if (session.user.role === 'dietitian') {
+            redirectUrl = '/dashboard/dietitian';
+          } else if (session.user.role === 'health_counselor') {
+            redirectUrl = '/health-counselor/clients';
+          } else if (session.user.role === 'admin') {
+            redirectUrl = '/dashboard/admin';
+          }
 
           router.push(redirectUrl);
         }

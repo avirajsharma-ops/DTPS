@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       notes,
       status: 'scheduled',
       createdBy: session.user.id
-    });
+    }) as any;
 
     await appointment.save();
 

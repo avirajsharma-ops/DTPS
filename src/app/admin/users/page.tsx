@@ -12,6 +12,7 @@ import { UserRole, UserStatus } from "@/types";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import { formatUserId } from "@/lib/utils";
+import { COUNTRY_CODES } from "@/lib/constants/countries";
 
 interface AdminUser {
   _id: string;
@@ -53,11 +54,13 @@ export default function AdminUsersPage() {
   const [form, setForm] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
     firstName: "",
     lastName: "",
     role: UserRole.CLIENT as UserRole,
     status: UserStatus.ACTIVE as UserStatus,
     phone: "",
+    countryCode: "+91",
   });
 
   const filtered = useMemo(() => users, [users]);
@@ -98,22 +101,33 @@ export default function AdminUsersPage() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ email: "", password: "", firstName: "", lastName: "", role: UserRole.CLIENT, status: UserStatus.ACTIVE, phone: "" });
+    setForm({ email: "", password: "", confirmPassword: "", firstName: "", lastName: "", role: UserRole.CLIENT, status: UserStatus.ACTIVE, phone: "", countryCode: "+91" });
     setOpen(true);
   }
 
   function openEdit(u: AdminUser) {
     setEditing(u);
+    // Extract country code from phone if exists
+    let countryCode = "+91";
+    let phoneNumber = u.phone || "";
+    if (phoneNumber.startsWith("+")) {
+      // Try to find matching country code
+      const matchedCountry = COUNTRY_CODES.find(c => phoneNumber.startsWith(c.code));
+      if (matchedCountry) {
+        countryCode = matchedCountry.code;
+        phoneNumber = phoneNumber.substring(matchedCountry.code.length);
+      }
+    }
     setForm({
       email: u.email,
       password: "",
+      confirmPassword: "",
       firstName: u.firstName,
       lastName: u.lastName,
-
-
       role: u.role,
       status: u.status,
-      phone: u.phone || "",
+      phone: phoneNumber,
+      countryCode: countryCode,
     });
     setOpen(true);
   }
@@ -142,10 +156,21 @@ export default function AdminUsersPage() {
       setError("Please fill required fields: email, first name, last name");
       return;
     }
+    if (!form.phone) {
+      setError("Phone number is required");
+      return;
+    }
     if (!editing && !form.password) {
       setError("Password is required when creating a new user");
       return;
     }
+    if (!editing && form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    // Combine country code with phone
+    const fullPhone = `${form.countryCode}${form.phone.replace(/\s+/g, '')}`;
 
     try {
       setSaving(true);
@@ -160,7 +185,7 @@ export default function AdminUsersPage() {
           lastName: form.lastName,
           role: form.role,
           status: form.status,
-          phone: form.phone || undefined,
+          phone: fullPhone,
         };
         res = await fetch(`/api/users/${editing._id}`, {
           method: "PUT",
@@ -171,10 +196,14 @@ export default function AdminUsersPage() {
         res = await fetch(`/api/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify({
+            ...form,
+            phone: fullPhone,
+          }),
         });
       }
-      if (!res.ok) throw new Error((await res.json()).error || "Save failed");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Save failed");
       setOpen(false);
       await fetchUsers();
     } catch (e: any) {
@@ -369,10 +398,16 @@ export default function AdminUsersPage() {
               <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
             </div>
             {!editing && (
+              <>
               <div className="col-span-2">
-                <label className="text-sm text-gray-600">Password</label>
+                <label className="text-sm text-gray-600">Password <span className="text-red-500">*</span></label>
                 <Input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
               </div>
+              <div className="col-span-2">
+                <label className="text-sm text-gray-600">Confirm Password <span className="text-red-500">*</span></label>
+                <Input type="password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} />
+              </div>
+              </>
             )}
             <div>
               <label className="text-sm text-gray-600">First Name</label>
@@ -406,8 +441,28 @@ export default function AdminUsersPage() {
               </Select>
             </div>
             <div className="md:col-span-2">
-              <label className="text-sm text-gray-600">Phone</label>
-              <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+              <label className="text-sm text-gray-600">Phone <span className="text-red-500">*</span></label>
+              <div className="flex gap-2">
+                <Select value={form.countryCode} onValueChange={(v) => setForm(f => ({ ...f, countryCode: v }))}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="Code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRY_CODES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.code} {c.country}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input 
+                  type="tel"
+                  placeholder="Phone number"
+                  value={form.phone} 
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  className="flex-1"
+                />
+              </div>
             </div>
           </div>
 

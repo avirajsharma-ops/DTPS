@@ -107,28 +107,34 @@ export default function Sidebar({ className }: SidebarProps) {
         // Health Counselors have limited access - no meal plan templates, can view but not create
         return [
           {
-            href: '/dashboard/dietitian',
-            label: 'Dashboard',
-            icon: BarChart3,
-            description: 'Overview and analytics'
-          },
-          {
-            href: '/dietician/clients',
+            href: '/health-counselor/clients',
             label: 'My Clients',
             icon: Users,
             description: 'Manage your assigned clients'
+          },
+          {
+            href: '/health-counselor/all-users',
+            label: 'All Users',
+            icon: Users,
+            description: 'View all users'
+          },
+          {
+            href: '/health-counselor/recipes',
+            label: 'Recipes',
+            icon: ChefHat,
+            description: 'View recipe database'
+          },
+          {
+            href: '/health-counselor/pending-plans',
+            label: 'Pending Plans',
+            icon: AlertTriangle,
+            description: 'Clients needing meal plans'
           },
           {
             href: '/appointments',
             label: 'Appointments',
             icon: Calendar,
             description: 'Schedule and manage appointments'
-          },
-          {
-            href: '/appointments/book-flexible',
-            label: 'Flexible Booking',
-            icon: Clock,
-            description: 'Book at any time with any dietitian'
           },
           {
             href: '/messages',

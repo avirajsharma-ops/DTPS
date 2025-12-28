@@ -100,6 +100,10 @@ export interface IAppointment extends Document {
   notes?: string;
   meetingLink?: string; // Legacy field for backward compatibility
   zoomMeeting?: IZoomMeetingDetails;
+  googleCalendarEventId?: {
+    dietitian?: string;
+    client?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }

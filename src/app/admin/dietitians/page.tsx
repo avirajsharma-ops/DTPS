@@ -42,6 +42,7 @@ export default function AdminDietitiansPage() {
     consultationFee: 0,
     specializations: "",
     credentials: "",
+    role: UserRole.DIETITIAN as string,
   });
 
   const filtered = useMemo(() => {
@@ -72,7 +73,7 @@ export default function AdminDietitiansPage() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ email: "", password: "", firstName: "", lastName: "", bio: "", experience: 0, consultationFee: 0, specializations: "", credentials: "" });
+    setForm({ email: "", password: "", firstName: "", lastName: "", bio: "", experience: 0, consultationFee: 0, specializations: "", credentials: "", role: UserRole.DIETITIAN });
     setOpen(true);
   }
 
@@ -88,6 +89,7 @@ export default function AdminDietitiansPage() {
       consultationFee: u.consultationFee || 0,
       specializations: (u.specializations || []).join(", "),
       credentials: (u.credentials || []).join(", "),
+      role: (u as any).role || UserRole.DIETITIAN,
     });
     setOpen(true);
   }
@@ -110,7 +112,7 @@ export default function AdminDietitiansPage() {
         email: form.email,
         firstName: form.firstName,
         lastName: form.lastName,
-        role: UserRole.DIETITIAN,
+        role: form.role || UserRole.DIETITIAN,
         bio: form.bio || undefined,
         experience: Number(form.experience) || 0,
         consultationFee: Number(form.consultationFee) || 0,
@@ -222,6 +224,18 @@ export default function AdminDietitiansPage() {
           </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="text-sm text-gray-600">Role</label>
+              <Select value={form.role} onValueChange={(v) => setForm(f => ({ ...f, role: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UserRole.DIETITIAN}>Dietitian</SelectItem>
+                  <SelectItem value={UserRole.HEALTH_COUNSELOR}>Health Counselor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="col-span-2">
               <label className="text-sm text-gray-600">Email</label>
               <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />

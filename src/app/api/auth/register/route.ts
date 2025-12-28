@@ -5,13 +5,30 @@ import { UserRole } from '@/types';
 import { z } from 'zod';
 
 // Comprehensive registration schema for API
+// Helper function to normalize phone number with country code
+function normalizePhoneNumber(phone: string, defaultCountryCode: string = '+91'): string {
+  if (!phone) return '';
+  // Remove all non-digit characters except +
+  let cleaned = phone.replace(/[^\d+]/g, '');
+  // If doesn't start with +, add default country code
+  if (!cleaned.startsWith('+')) {
+    // If starts with 0, remove it
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+    cleaned = defaultCountryCode + cleaned;
+  }
+  return cleaned;
+}
+
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().optional(),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   role: z.enum([UserRole.CLIENT, UserRole.DIETITIAN]),
-  phone: z.string().optional(),
+  phone: z.string().min(1, 'Phone number is required'),
 
   // Dietitian specific fields
   credentials: z.array(z.string()).optional(),
@@ -55,20 +72,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if phone number already exists (if provided)
-    if (validatedData.phone) {
-      const existingPhone = await User.findOne({ 
-        phone: validatedData.phone.trim() 
-      });
-      
-      if (existingPhone) {
-        return NextResponse.json(
-          { error: 'This phone number is already registered with another account' },
-          { status: 400 }
-        );
-      }
+    // Normalize phone number with country code
+    const normalizedPhone = normalizePhoneNumber(validatedData.phone);
+    
+    if (!normalizedPhone || normalizedPhone.length < 12) {
+      return NextResponse.json(
+        { error: 'Phone number is required. Please include country code (e.g., +91XXXXXXXXXX)' },
+        { status: 400 }
+      );
+    }
+
+    // Check if phone number already exists
+    const existingPhone = await User.findOne({ 
+      phone: normalizedPhone 
+    });
+    
+    if (existingPhone) {
+      return NextResponse.json(
+        { error: 'This phone number is already registered with another account' },
+        { status: 400 }
+      );
     }
     
+    // Verify password confirmation if provided
+    if (validatedData.confirmPassword && validatedData.password !== validatedData.confirmPassword) {
+      return NextResponse.json(
+        { error: 'Passwords do not match' },
+        { status: 400 }
+      );
+    }
+
     // Create user data
     const userData: any = {
       email: validatedData.email.toLowerCase(),
@@ -76,7 +109,7 @@ export async function POST(request: NextRequest) {
       firstName: validatedData.firstName,
       lastName: validatedData.lastName,
       role: validatedData.role,
-      phone: validatedData.phone,
+      phone: normalizedPhone,
     };
     
     // Add role-specific fields

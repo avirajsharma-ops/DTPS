@@ -39,8 +39,12 @@ export const signUpSchema = z.object({
   phone: z
     .string()
     .min(1, 'Phone number is required')
-    .refine((val) => /^[\d\s\-\(\)]+$/.test(val), {
-      message: 'Invalid phone number format',
+    .refine((val) => {
+      // Allow phone with or without country code - will be normalized
+      const cleaned = val.replace(/[\s\-\(\)]/g, '');
+      return /^\+?\d{10,15}$/.test(cleaned);
+    }, {
+      message: 'Invalid phone number format. Please enter 10-15 digits.',
     }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",

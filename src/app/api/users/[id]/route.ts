@@ -293,6 +293,25 @@ export async function PUT(
       allowedFields.push("role");
     }
 
+    // Check phone uniqueness if phone is being updated
+    if (body.phone && body.phone !== targetUser.phone) {
+      // Normalize phone number
+      let normalizedPhone = String(body.phone).replace(/[\s\-\(\)]/g, '');
+      if (!normalizedPhone.startsWith('+')) {
+        normalizedPhone = '+91' + normalizedPhone;
+      }
+      
+      // Check if phone is already used by another user
+      const existingPhone = await User.findOne({ 
+        phone: normalizedPhone,
+        _id: { $ne: id }  // Exclude current user
+      });
+      if (existingPhone) {
+        return NextResponse.json({ error: 'This phone number is already registered' }, { status: 400 });
+      }
+      body.phone = normalizedPhone;
+    }
+
     // FIX: Skip empty values (especially enums)
     const updateData = Object.keys(body)
       .filter((key) => allowedFields.includes(key))

@@ -10,6 +10,7 @@ import { UserRole, AppointmentStatus } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
 import { logActivity, logApiError } from '@/lib/utils/activityLogger';
 import { SSEManager } from '@/lib/realtime/sse-manager';
+import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
 
 // GET /api/appointments - Get appointments for current user
 export async function GET(request: NextRequest) {
@@ -192,7 +193,7 @@ export async function POST(request: NextRequest) {
       type,
       notes,
       status: AppointmentStatus.SCHEDULED
-    });
+    }) as any;
 
     // Try to create Zoom meeting
     try {
@@ -337,6 +338,46 @@ export async function POST(request: NextRequest) {
     } catch (sseError) {
       console.error('Failed to send SSE notification:', sseError);
       // Don't fail the request if SSE notification fails
+    }
+
+    // Send push notifications for the appointment
+    try {
+      const formattedDate = new Date(scheduledAt).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+
+      // Send push notification to dietitian
+      await sendNotificationToUser(dietitianId, {
+        title: '📅 New Appointment Booked',
+        body: `${client.firstName} ${client.lastName} booked a ${type || 'consultation'} on ${formattedDate}`,
+        icon: client.avatar || '/icons/icon-192x192.png',
+        data: {
+          type: 'appointment',
+          appointmentId: appointment._id.toString(),
+          clientId,
+        },
+        clickAction: `/appointments`,
+      });
+
+      // Send push notification to client
+      await sendNotificationToUser(clientId, {
+        title: '📅 Appointment Confirmed',
+        body: `Your ${type || 'consultation'} with ${dietitian.firstName} ${dietitian.lastName} is scheduled for ${formattedDate}`,
+        icon: dietitian.avatar || '/icons/icon-192x192.png',
+        data: {
+          type: 'appointment',
+          appointmentId: appointment._id.toString(),
+          dietitianId,
+        },
+        clickAction: `/appointments`,
+      });
+    } catch (pushError) {
+      console.error('Failed to send appointment push notification:', pushError);
+      // Don't fail the request if push notification fails
     }
 
     return NextResponse.json({ appointment }, { status: 201 });
