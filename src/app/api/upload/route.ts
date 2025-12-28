@@ -116,6 +116,54 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // For progress/transformation photo uploads, use ImageKit with compression
+    if (fileType === 'progress' || fileType === 'progress-photo') {
+      try {
+        const ik = getImageKit();
+        
+        // Compress image before upload
+        const compressedBase64 = await compressImageServer(buffer, {
+          maxWidth: 1600,
+          maxHeight: 1600,
+          quality: 85
+        });
+        
+        const uploadFileName = `${session.user.id}-${timestamp}.webp`;
+        
+        const uploadResponse = await ik.upload({
+          file: compressedBase64,
+          fileName: uploadFileName,
+          folder: '/transformation',
+        });
+
+        // Save file reference to MongoDB (without full base64 data since it's in ImageKit)
+        const savedFile = await File.create({
+          filename: uploadFileName,
+          originalName: file.name,
+          mimeType: 'image/webp',
+          size: file.size,
+          data: '', // Don't store full base64 for ImageKit uploads to save space
+          type: fileType,
+          localPath: uploadResponse.url,
+          imageKitFileId: uploadResponse.fileId,
+          uploadedBy: session.user.id
+        });
+
+        return NextResponse.json({
+          url: uploadResponse.url,
+          dbUrl: `/api/files/${savedFile._id}`,
+          localUrl: uploadResponse.url,
+          filename: uploadFileName,
+          size: file.size,
+          type: 'image/webp',
+          fileId: savedFile._id
+        });
+      } catch (imagekitError) {
+        console.error('Error uploading transformation photo to ImageKit:', imagekitError);
+        // Fall through to local storage if ImageKit fails
+      }
+    }
+
     // For medical-report uploads, use ImageKit with compression (for images)
     if (fileType === 'medical-report') {
       try {

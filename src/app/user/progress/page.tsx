@@ -24,6 +24,7 @@ import {
 import { format, subDays, subMonths, subYears } from 'date-fns';
 import { toast } from 'sonner';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
+import { compressImage } from '@/lib/imageCompression';
 
 type TimeRange = '1W' | '1M' | '3M' | '6M' | '1Y';
 
@@ -364,6 +365,10 @@ export default function UserProgressPage() {
       const response = await fetch(`/api/client/progress?range=${timeRange}`);
       if (response.ok) {
         const data = await response.json();
+        
+        // Set the progress data to state
+        setProgressData(data);
+        
         if (data.measurements) {
           setMeasurements({
             waist: data.measurements.waist?.toString() || '',
@@ -387,28 +392,28 @@ export default function UserProgressPage() {
           }
         }
       }
+      
+      // Fetch user profile data (BMI, weight, height, etc.)
+      try {
+        const profileRes = await fetch('/api/client/profile');
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          setUserProfile({
+            bmi: profileData.bmi || '',
+            bmiCategory: profileData.bmiCategory || '',
+            weightKg: profileData.weightKg || '',
+            heightCm: profileData.heightCm || '',
+            generalGoal: profileData.generalGoal || ''
+          });
+        }
+      } catch (profileError) {
+        console.error('Error fetching profile:', profileError);
+      }
     } catch (error) {
       console.error('Error fetching progress:', error);
     } finally {
       setLoading(false);
     }
-   // Fetch user profile data (BMI, weight, height, etc.)
-        try {
-          const profileRes = await fetch('/api/client/profile');
-          if (profileRes.ok) {
-            const profileData = await profileRes.json();
-            setUserProfile({
-              bmi: profileData.bmi || '',
-              bmiCategory: profileData.bmiCategory || '',
-              weightKg: profileData.weightKg || '',
-              heightCm: profileData.heightCm || '',
-              generalGoal: profileData.generalGoal || ''
-            });
-          }
-        } catch (profileError) {
-          console.error('Error fetching profile:', profileError);
-        }
-
   };
 
   // Handler for Add Measurement button click
@@ -531,11 +536,26 @@ export default function UserProgressPage() {
 
     setUploadingPhoto(true);
     try {
-      // First upload the file
+      // Compress image before upload
+      toast.info('Compressing image...');
+      const compressed = await compressImage(file, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.85,
+        format: 'image/webp'
+      });
+
+      // Convert base64 to blob for upload
+      const base64Response = await fetch(compressed.base64);
+      const blob = await base64Response.blob();
+      const compressedFile = new File([blob], `transformation-${Date.now()}.webp`, { type: 'image/webp' });
+
+      // Upload the compressed file
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressedFile);
       formData.append('type', 'progress');
 
+      toast.info('Uploading to cloud...');
       const uploadRes = await fetch('/api/upload', {
         method: 'POST',
         body: formData
