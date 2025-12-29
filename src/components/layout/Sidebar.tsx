@@ -263,6 +263,12 @@ export default function Sidebar({ className }: SidebarProps) {
             description: 'Book appointments for any user'
           },
           {
+            href: '/admin/recipes',
+            label: 'Recipes',
+            icon: ChefHat,
+            description: 'Manage recipe database'
+          },
+          {
             href: '/analytics',
             label: 'Analytics',
             icon: TrendingUp,

@@ -64,11 +64,19 @@ export default function HealthCounselorPendingPlansPage() {
       if (response.ok) {
         const text = await response.text();
         if (text) {
-          const data = JSON.parse(text);
-          setPendingPlans(data.pendingPlans || []);
-          setCriticalCount(data.criticalCount || 0);
-          setHighCount(data.highCount || 0);
-          setMediumCount(data.mediumCount || 0);
+          try {
+            const data = JSON.parse(text);
+            setPendingPlans(data.pendingPlans || []);
+            setCriticalCount(data.criticalCount || 0);
+            setHighCount(data.highCount || 0);
+            setMediumCount(data.mediumCount || 0);
+          } catch (parseError) {
+            console.error('Error parsing response:', parseError);
+            setPendingPlans([]);
+            setCriticalCount(0);
+            setHighCount(0);
+            setMediumCount(0);
+          }
         } else {
           setPendingPlans([]);
           setCriticalCount(0);
@@ -76,7 +84,7 @@ export default function HealthCounselorPendingPlansPage() {
           setMediumCount(0);
         }
       } else {
-        console.error('Failed to fetch pending plans');
+        console.error('Failed to fetch pending plans:', response.status);
         setPendingPlans([]);
       }
     } catch (error) {

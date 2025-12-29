@@ -229,7 +229,8 @@ export default function EditRecipePage() {
       ? recipe.createdBy._id || recipe.createdBy.id
       : recipe.createdBy;
 
-    return session.user.id === createdById || session.user.role === 'admin';
+    // Allow owner, admin, and health counselors to edit
+    return session.user.id === createdById || session.user.role === 'admin' || session.user.role === 'health-counselor';
   };
 
   // Ingredient management
@@ -415,6 +416,11 @@ export default function EditRecipePage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Edit Recipe</h1>
             <p className="text-gray-600 mt-1">Update your recipe details</p>
+            {recipe && (
+              <p className="text-sm text-gray-500 mt-2">
+                Created by Dr. {recipe.createdBy.firstName} {recipe.createdBy.lastName} on {new Date(recipe.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+              </p>
+            )}
           </div>
           <Button 
             variant="outline" 

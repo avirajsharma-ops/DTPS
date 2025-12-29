@@ -229,7 +229,8 @@ export default function RecipeViewPage() {
       ? recipe.createdBy._id || recipe.createdBy.id
       : recipe.createdBy;
 
-    return session.user.id === createdById || session.user.role === 'admin';
+    // Allow owner, admin, and health counselors to edit
+    return session.user.id === createdById || session.user.role === 'admin' || session.user.role === 'health-counselor';
   };
 
   const handleDeleteRecipe = () => {
@@ -372,6 +373,10 @@ export default function RecipeViewPage() {
                   <div className="flex items-center space-x-1">
                     <Users className="h-4 w-4" />
                     <span>By Dr. {recipe.createdBy.firstName} {recipe.createdBy.lastName}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Clock className="h-4 w-4" />
+                    <span>Created {new Date(recipe.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Star className="h-4 w-4 text-yellow-500" />

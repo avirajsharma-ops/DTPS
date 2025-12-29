@@ -329,6 +329,7 @@ export default function HealthCounselorClientsPage() {
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Name</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Phone</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Email</TableHead>
+                        <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Assigned Dietitian</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Tags</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Status</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Start</TableHead>
@@ -340,7 +341,7 @@ export default function HealthCounselorClientsPage() {
                     <TableBody>
                       {filteredClients.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={11} className="text-center py-12 text-gray-500">
+                          <TableCell colSpan={12} className="text-center py-12 text-gray-500">
                             No clients found
                           </TableCell>
                         </TableRow>
@@ -374,6 +375,17 @@ export default function HealthCounselorClientsPage() {
                             </TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.phone || '-'}</TableCell>
                             <TableCell className="px-3 max-w-37.5 truncate text-sm">{client.email}</TableCell>
+                            <TableCell className="px-3">
+                              {client.assignedDietitian ? (
+                                <div className="flex flex-col gap-1">
+                                  <span className="text-sm font-medium text-gray-900">
+                                    Dr. {client.assignedDietitian.firstName} {client.assignedDietitian.lastName}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-500">Not Assigned</span>
+                              )}
+                            </TableCell>
                             <TableCell className="px-3">
                               {client.tags && client.tags.length > 0 ? (
                                 <div className="flex gap-1">
