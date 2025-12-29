@@ -125,25 +125,31 @@ export default function Sidebar({ className }: SidebarProps) {
             description: 'View recipe database'
           },
           {
+            href: '/health-counselor/plan-templates',
+            label: 'Plan & Diet Templates',
+            icon: FileText,
+            description: 'View plan and diet templates'
+          },
+          {
             href: '/health-counselor/pending-plans',
             label: 'Pending Plans',
             icon: AlertTriangle,
             description: 'Clients needing meal plans'
           },
           {
-            href: '/appointments',
+            href: '/health-counselor/appointments',
             label: 'Appointments',
             icon: Calendar,
             description: 'Schedule and manage appointments'
           },
           {
-            href: '/messages',
+            href: '/health-counselor/messages',
             label: 'Messages',
             icon: MessageCircle,
             description: 'Client communications'
           },
           {
-            href: '/profile',
+            href: '/health-counselor/profile',
             label: 'Profile',
             icon: User,
             description: 'View your profile'

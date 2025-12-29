@@ -27,10 +27,22 @@ export async function POST(request: NextRequest) {
       typingManager.setUserNotTyping(session.user.id);
     }
 
+    // For health counselors, show "Dietitian" instead of their actual role
+    // This hides the health counselor role from clients
+    const displayRole = session.user.role === 'health_counselor' ? 'Dietitian' : session.user.role;
+    const displayName = session.user.role === 'health_counselor' 
+      ? 'Dietitian' // Show generic "Dietitian" to clients
+      : `${session.user.firstName} ${session.user.lastName}`;
+
     // Send typing indicator to the receiver
     sseManager.sendToUser(receiverId, eventType, {
       userId: session.user.id,
-      userName: `${session.user.firstName} ${session.user.lastName}`,
+      userName: displayName,
+      userRole: displayRole,
+      // Also send real info for internal use (dietitian/admin can see who is actually typing)
+      actualUserId: session.user.id,
+      actualUserName: `${session.user.firstName} ${session.user.lastName}`,
+      actualUserRole: session.user.role,
       timestamp: Date.now()
     });
 

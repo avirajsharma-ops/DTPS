@@ -280,26 +280,25 @@ export default function UserSettingsPage() {
       title: 'Privacy & Security',
       icon: Shield,
       links: [
-        { label: 'Privacy Settings', href: '/user/settings/privacy', icon: Lock },
+        { label: 'Privacy Settings', href: '/user/settings/privacy-policy', icon: Lock },
         { label: 'Change Password', href: '/user/settings/password', icon: Lock },
-        { label: 'Two-Factor Authentication', href: '/user/settings/2fa', icon: Shield },
       ],
     },
     {
       title: 'Support',
       icon: HelpCircle,
       links: [
-        { label: 'Help Center', href: '/help', icon: HelpCircle },
-        { label: 'Contact Support', href: '/contact', icon: MessageCircle },
-        { label: 'Report a Problem', href: '/report', icon: MessageCircle },
+        { label: 'Help Center', href: '/user/settings/help-center', icon: HelpCircle },
+        { label: 'Contact Support', href: '/user/settings/contact-support', icon: MessageCircle },
+        { label: 'Report a Problem', href: '/user/settings/report-problem', icon: MessageCircle },
       ],
     },
     {
       title: 'Legal',
       icon: FileText,
       links: [
-        { label: 'Terms of Service', href: '/terms', icon: FileText },
-        { label: 'Privacy Policy', href: '/privacy', icon: FileText },
+        { label: 'Terms of Service', href: '/user/settings/terms-of-service', icon: FileText },
+        { label: 'Privacy Policy', href: '/user/settings/privacy-policy', icon: FileText },
       ],
     },
   ];
@@ -320,8 +319,8 @@ export default function UserSettingsPage() {
         subtitle="Manage your preferences"
         showBack={true}
         showMenu={false}
-        showProfile={true}
-        showNotification={true}
+        showProfile={false}
+        showNotification={false}
         backHref="/user"
       />
 
@@ -502,6 +501,15 @@ export default function UserSettingsPage() {
             </>
           )}
         </Button>
+
+        {/* Support Contact Details */}
+        <Card className="border-0 shadow-sm bg-white">
+          <CardContent className="p-4 text-center">
+            <p className="text-sm font-semibold text-gray-900">For Support:</p>
+            <p className="text-sm text-gray-700">Email: support@dtpoonamsagar.com</p>
+            <p className="text-sm text-gray-700">Phone: +91 98930 27688</p>
+          </CardContent>
+        </Card>
       </div>
 
     </div>

@@ -1,3 +1,10 @@
 {
-    "liveServer.settings.port": 5501
+  "tailwindCSS.lint.cssConflict": "warning",
+  "tailwindCSS.lint.invalidApply": "warning",
+  "tailwindCSS.lint.invalidScreen": "warning",
+  "tailwindCSS.lint.invalidConfigPath": "warning",
+  "tailwindCSS.lint.invalidTailwindDirective": "warning",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  }
 }

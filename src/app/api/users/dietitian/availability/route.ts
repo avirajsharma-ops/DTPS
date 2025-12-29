@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only dietitians can set their own availability
-    if (session.user.role !== UserRole.DIETITIAN) {
+    // Only dietitians and health counselors can set their own availability
+    if (session.user.role !== UserRole.DIETITIAN && session.user.role !== UserRole.HEALTH_COUNSELOR) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

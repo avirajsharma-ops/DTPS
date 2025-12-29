@@ -16,7 +16,23 @@ export default withAuth(
       if (!userRole || !userRole.includes('admin')) {
         console.log('Admin access denied. Role:', token?.role);
         // Redirect non-admins to their appropriate dashboard
-        const redirectPath = userRole === 'dietitian' || userRole === 'health_counselor'
+        
+        const redirectPath = userRole === 'dietitian' 
+          ? '/dashboard/dietitian'
+          : userRole === 'health_counselor'
+          ? '/health-counselor/clients'
+          : userRole === 'client'
+          ? '/user'
+          : '/client-auth/signin';
+        return NextResponse.redirect(new URL(redirectPath, req.url));
+      }
+    }
+    
+    // Health Counselor specific routes
+    if (pathname.startsWith('/health-counselor')) {
+      if (userRole !== 'health_counselor' && !userRole?.includes('admin')) {
+        console.log('Health Counselor access denied. Role:', token?.role);
+        const redirectPath = userRole === 'dietitian'
           ? '/dashboard/dietitian'
           : userRole === 'client'
           ? '/user'
@@ -46,8 +62,10 @@ export default withAuth(
       if (userRole !== 'client') {
         console.log('Client access denied. Role:', token?.role);
         // Redirect to appropriate dashboard
-        const redirectPath = userRole === 'dietitian' || userRole === 'health_counselor'
+        const redirectPath = userRole === 'dietitian' 
           ? '/dashboard/dietitian'
+          : userRole === 'health_counselor'
+          ? '/health-counselor/clients'
           : userRole === 'admin'
           ? '/admin'
           : '/client-auth/signin';

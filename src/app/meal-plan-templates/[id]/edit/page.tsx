@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { ArrowLeft, Save, ChefHat, Target } from 'lucide-react';
+import { ArrowLeft, Save, ChefHat } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { UserRole } from '@/types';
@@ -65,14 +65,6 @@ export default function EditTemplatePage() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [duration, setDuration] = useState(7);
-  const [calMin, setCalMin] = useState(1200);
-  const [calMax, setCalMax] = useState(2500);
-  const [proteinMin, setProteinMin] = useState(50);
-  const [proteinMax, setProteinMax] = useState(150);
-  const [carbMin, setCarbMin] = useState(100);
-  const [carbMax, setCarbMax] = useState(300);
-  const [fatMin, setFatMin] = useState(30);
-  const [fatMax, setFatMax] = useState(100);
   const [difficulty, setDifficulty] = useState('intermediate');
   const [isPublic, setIsPublic] = useState(false);
 
@@ -101,14 +93,6 @@ export default function EditTemplatePage() {
         setDescription(t.description || '');
         setCategory(t.category || '');
         setDuration(t.duration || 7);
-        setCalMin(t.targetCalories?.min || 1200);
-        setCalMax(t.targetCalories?.max || 2500);
-        setProteinMin(t.targetMacros?.protein?.min || 50);
-        setProteinMax(t.targetMacros?.protein?.max || 150);
-        setCarbMin(t.targetMacros?.carbs?.min || 100);
-        setCarbMax(t.targetMacros?.carbs?.max || 300);
-        setFatMin(t.targetMacros?.fat?.min || 30);
-        setFatMax(t.targetMacros?.fat?.max || 100);
         setDifficulty(t.difficulty || 'intermediate');
         setIsPublic(t.isPublic || false);
       } else {
@@ -137,12 +121,6 @@ export default function EditTemplatePage() {
         category,
         duration: Number(duration),
         difficulty,
-        targetCalories: { min: Number(calMin), max: Number(calMax) },
-        targetMacros: {
-          protein: { min: Number(proteinMin), max: Number(proteinMax) },
-          carbs: { min: Number(carbMin), max: Number(carbMax) },
-          fat: { min: Number(fatMin), max: Number(fatMax) }
-        },
         isPublic
       };
 
@@ -277,49 +255,6 @@ export default function EditTemplatePage() {
                 rows={3} 
                 placeholder="Short summary of the template..." 
               />
-            </div>
-
-            {/* Nutrition Targets */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Target className="h-4 w-4" /> Nutrition Targets
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label>Calories Min</Label>
-                  <Input type="number" value={calMin} onChange={e => setCalMin(parseInt(e.target.value || '0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Calories Max</Label>
-                  <Input type="number" value={calMax} onChange={e => setCalMax(parseInt(e.target.value || '0'))} />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <Label>Protein (g) Min</Label>
-                  <Input type="number" value={proteinMin} onChange={e => setProteinMin(parseInt(e.target.value || '0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Carbs (g) Min</Label>
-                  <Input type="number" value={carbMin} onChange={e => setCarbMin(parseInt(e.target.value || '0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Fat (g) Min</Label>
-                  <Input type="number" value={fatMin} onChange={e => setFatMin(parseInt(e.target.value || '0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Protein (g) Max</Label>
-                  <Input type="number" value={proteinMax} onChange={e => setProteinMax(parseInt(e.target.value || '0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Carbs (g) Max</Label>
-                  <Input type="number" value={carbMax} onChange={e => setCarbMax(parseInt(e.target.value || '0'))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Fat (g) Max</Label>
-                  <Input type="number" value={fatMax} onChange={e => setFatMax(parseInt(e.target.value || '0'))} />
-                </div>
-              </div>
             </div>
 
             {/* Public toggle */}

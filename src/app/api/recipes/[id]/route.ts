@@ -7,14 +7,15 @@ import Recipe from '@/lib/db/models/Recipe';
 /* -------- GET SINGLE -------- */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
-    const recipe = await Recipe.findById(params.id).populate(
+    const recipe = await Recipe.findById(id).populate(
       'createdBy',
       'firstName lastName'
     );
@@ -22,7 +23,7 @@ export async function GET(
     if (!recipe)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    await Recipe.findByIdAndUpdate(params.id, { $inc: { views: 1 } });
+    await Recipe.findByIdAndUpdate(id, { $inc: { views: 1 } });
 
     return NextResponse.json({ success: true, recipe });
   } catch {
@@ -33,16 +34,17 @@ export async function GET(
 /* -------- UPDATE -------- */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
     const data = await req.json();
 
-    const recipe = await Recipe.findById(params.id);
+    const recipe = await Recipe.findById(id);
     if (!recipe)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
@@ -53,7 +55,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const updated = await Recipe.findByIdAndUpdate(params.id, data, {
+    const updated = await Recipe.findByIdAndUpdate(id, data, {
       new: true,
     });
 
@@ -66,14 +68,15 @@ export async function PUT(
 /* -------- DELETE -------- */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
-    const recipe = await Recipe.findById(params.id);
+    const recipe = await Recipe.findById(id);
     if (!recipe)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
@@ -84,7 +87,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    await Recipe.findByIdAndDelete(params.id);
+    await Recipe.findByIdAndDelete(id);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Failed to delete recipe' }, { status: 500 });

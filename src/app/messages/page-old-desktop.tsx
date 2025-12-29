@@ -48,7 +48,7 @@ const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 interface Message {
   _id: string;
   content: string;
-  type: 'text' | 'image' | 'file' | 'video' | 'audio';
+  type: 'text' | 'image' | 'file' | 'video' | 'audio' | 'voice';
   isRead: boolean;
   createdAt: string;
   attachments?: {
@@ -1556,6 +1556,17 @@ function MessagesContent() {
                               alt="Shared image"
                               className="rounded-lg max-w-xs h-auto cursor-pointer hover:opacity-90 transition-opacity"
                               onClick={() => setPreviewImage(message.attachments?.[0]?.url || '')}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent && !parent.querySelector('.error-placeholder')) {
+                                  const placeholder = document.createElement('div');
+                                  placeholder.className = 'error-placeholder flex items-center justify-center bg-gray-200 rounded-lg p-4 text-gray-500 text-sm';
+                                  placeholder.innerHTML = '<span>📷 Image could not be loaded</span>';
+                                  parent.appendChild(placeholder);
+                                }
+                              }}
                             />
                           </div>
                         )}
@@ -1567,25 +1578,35 @@ function MessagesContent() {
                               src={message.attachments[0].url}
                               controls
                               className="rounded-lg max-w-xs h-auto"
-                            />
+                              preload="metadata"
+                            >
+                              Your browser does not support video playback.
+                            </video>
                           </div>
                         )}
 
                         {/* Audio Messages */}
-                        {message.type === 'audio' && message.attachments?.[0] && (
+                        {(message.type === 'audio' || message.type === 'voice') && message.attachments?.[0] && (
                           <div className="mb-2 flex items-center space-x-2 p-2 bg-gray-100 rounded-lg">
                             <Volume2 className="h-4 w-4 text-gray-600" />
                             <audio
                               src={message.attachments[0].url}
                               controls
                               className="flex-1"
+                              preload="metadata"
                             />
                           </div>
                         )}
 
                         {/* File Messages */}
                         {message.type === 'file' && message.attachments?.[0] && (
-                          <div className="flex items-center space-x-2 mb-2 p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
+                          <a
+                            href={message.attachments[0].url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={message.attachments[0].filename}
+                            className="flex items-center space-x-2 mb-2 p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
+                          >
                             <FileIcon className="h-4 w-4 text-gray-600" />
                             <div className="flex-1">
                               <span className="text-sm font-medium">{message.attachments[0].filename}</span>
@@ -1594,7 +1615,7 @@ function MessagesContent() {
                               </p>
                             </div>
                             <Download className="h-4 w-4 text-gray-600" />
-                          </div>
+                          </a>
                         )}
                         <p className="text-sm">{message.content}</p>
                         <div className="flex items-center justify-end space-x-1 mt-1">

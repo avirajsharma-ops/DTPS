@@ -5,7 +5,7 @@ import connectDB from '@/lib/db/connection';
 import Recipe from '@/lib/db/models/Recipe';
 import { UserRole } from '@/types';
 import { z } from 'zod';
-import { imagekit } from '@/lib/imagekit';
+import { getImageKit } from '@/lib/imagekit';
 import { v4 as uuidv4 } from 'uuid';
 import { compressImageServer } from '@/lib/imageCompressionServer';
 
@@ -307,7 +307,8 @@ export async function POST(request: NextRequest) {
           compressedBase64 = `data:image/jpeg;base64,${compressed}`;
         }
         
-        const uploadResponse = await imagekit.upload({
+        const imageKit = getImageKit();
+        const uploadResponse = await imageKit.upload({
           file: compressedBase64,
           fileName: `recipe_${uuidv4()}.jpg`,
           folder: '/recipes',

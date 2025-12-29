@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
       'note-attachment': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/aac'],
       'progress': ['image/jpeg', 'image/png', 'image/webp'],
       'progress-photo': ['image/jpeg', 'image/png', 'image/webp'],
-      'medical-report': ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+      'medical-report': ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+      'bug': ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
     };
 
     const maxSizes = {
@@ -45,7 +46,8 @@ export async function POST(request: NextRequest) {
       'note-attachment': 50 * 1024 * 1024, // 50MB for note attachments
       'progress': 10 * 1024 * 1024, // 10MB for progress photos
       'progress-photo': 10 * 1024 * 1024, // 10MB for progress photos
-      'medical-report': 10 * 1024 * 1024 // 10MB for medical reports
+      'medical-report': 10 * 1024 * 1024, // 10MB for medical reports
+      'bug': 10 * 1024 * 1024 // 10MB for bug screenshots
     };
 
     const fileType = type as keyof typeof allowedTypes;
@@ -221,6 +223,117 @@ export async function POST(request: NextRequest) {
         });
       } catch (imagekitError) {
         console.error('Error uploading medical report to ImageKit:', imagekitError);
+        // Fall through to local storage if ImageKit fails
+      }
+    }
+
+    // For message uploads (images, videos, audio), use ImageKit for cloud storage
+    if (fileType === 'message') {
+      try {
+        const ik = getImageKit();
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        const isAudio = file.type.startsWith('audio/');
+        
+        let uploadData: string;
+        let uploadMimeType: string;
+        let uploadFileName: string;
+        
+        if (isImage) {
+          // Compress image before upload
+          const compressedBase64 = await compressImageServer(buffer, {
+            maxWidth: 1600,
+            maxHeight: 1600,
+            quality: 85
+          });
+          uploadData = compressedBase64;
+          uploadMimeType = 'image/webp';
+          uploadFileName = `msg-${session.user.id}-${timestamp}.webp`;
+        } else {
+          // For videos, audio, and other files, upload as-is
+          uploadData = base64Data;
+          uploadMimeType = file.type;
+          uploadFileName = `msg-${session.user.id}-${fileName}`;
+        }
+        
+        const uploadResponse = await ik.upload({
+          file: uploadData,
+          fileName: uploadFileName,
+          folder: '/messages',
+        });
+
+        // Save file reference to MongoDB
+        const savedFile = await File.create({
+          filename: uploadFileName,
+          originalName: file.name,
+          mimeType: uploadMimeType,
+          size: file.size,
+          data: '', // Don't store full base64 for ImageKit uploads to save space
+          type: fileType,
+          localPath: uploadResponse.url,
+          imageKitFileId: uploadResponse.fileId,
+          uploadedBy: session.user.id
+        });
+
+        return NextResponse.json({
+          url: uploadResponse.url,
+          dbUrl: `/api/files/${savedFile._id}`,
+          localUrl: uploadResponse.url,
+          filename: uploadFileName,
+          size: file.size,
+          type: uploadMimeType,
+          fileId: savedFile._id
+        });
+      } catch (imagekitError) {
+        console.error('Error uploading message attachment to ImageKit:', imagekitError);
+        // Fall through to local storage if ImageKit fails
+      }
+    }
+
+    // For bug report screenshots, use ImageKit with /bug folder
+    if (fileType === 'bug') {
+      try {
+        const ik = getImageKit();
+        
+        // Compress image before upload
+        const compressedBase64 = await compressImageServer(buffer, {
+          maxWidth: 1600,
+          maxHeight: 1600,
+          quality: 85
+        });
+        
+        const uploadFileName = `bug-${session.user.id}-${timestamp}.webp`;
+        
+        const uploadResponse = await ik.upload({
+          file: compressedBase64,
+          fileName: uploadFileName,
+          folder: '/bug',
+        });
+
+        // Save file reference to MongoDB
+        const savedFile = await File.create({
+          filename: uploadFileName,
+          originalName: file.name,
+          mimeType: 'image/webp',
+          size: file.size,
+          data: '', // Don't store full base64 for ImageKit uploads to save space
+          type: fileType,
+          localPath: uploadResponse.url,
+          imageKitFileId: uploadResponse.fileId,
+          uploadedBy: session.user.id
+        });
+
+        return NextResponse.json({
+          url: uploadResponse.url,
+          dbUrl: `/api/files/${savedFile._id}`,
+          localUrl: uploadResponse.url,
+          filename: uploadFileName,
+          size: file.size,
+          type: 'image/webp',
+          fileId: savedFile._id
+        });
+      } catch (imagekitError) {
+        console.error('Error uploading bug screenshot to ImageKit:', imagekitError);
         // Fall through to local storage if ImageKit fails
       }
     }

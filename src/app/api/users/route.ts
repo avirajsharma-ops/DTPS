@@ -20,12 +20,13 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const limit = parseInt(searchParams.get('limit') || '50');
     const page = parseInt(searchParams.get('page') || '1');
+    const viewAll = searchParams.get('viewAll') === 'true';
 
     let query: any = {};
 
     // Role-based access control
-    if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
-      // Dietitians and Health Counselors can see only their assigned clients (including from array)
+    if (session.user.role === UserRole.DIETITIAN) {
+      // Dietitians can see only their assigned clients (including from array)
       query = {
         role: UserRole.CLIENT,
         $or: [
@@ -33,6 +34,20 @@ export async function GET(request: NextRequest) {
           { assignedDietitians: session.user.id }
         ]
       };
+    } else if (session.user.role === UserRole.HEALTH_COUNSELOR) {
+      // Health Counselors can see all clients when role=client is passed
+      if (role === 'client') {
+        query = { role: UserRole.CLIENT };
+      } else {
+        // Default: show only assigned clients
+        query = {
+          role: UserRole.CLIENT,
+          $or: [
+            { assignedDietitian: session.user.id },
+            { assignedDietitians: session.user.id }
+          ]
+        };
+      }
     } else if (session.user.role === UserRole.CLIENT) {
       // Clients can see only their assigned dietitian
       const currentUser = await User.findById(session.user.id).select('assignedDietitian');

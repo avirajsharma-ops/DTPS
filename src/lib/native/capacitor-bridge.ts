@@ -50,7 +50,7 @@ export async function initializeApp() {
 
         // Set up back button handler for Android
         if (isAndroid) {
-            App.addListener('backButton', ({ canGoBack }) => {
+            App.addListener('backButton', ({ canGoBack }: { canGoBack: boolean }) => {
                 if (canGoBack) {
                     window.history.back();
                 } else {
@@ -60,7 +60,7 @@ export async function initializeApp() {
         }
 
         // Listen for app state changes
-        App.addListener('appStateChange', ({ isActive }) => {
+        App.addListener('appStateChange', ({ isActive }: { isActive: boolean }) => {
             // Trigger custom event for the web app
             window.dispatchEvent(
                 new CustomEvent('appStateChange', { detail: { isActive } })
@@ -68,7 +68,7 @@ export async function initializeApp() {
         });
 
         // Listen for app URL open (deep links)
-        App.addListener('appUrlOpen', (data) => {
+        App.addListener('appUrlOpen', (data: { url: string }) => {
             window.dispatchEvent(
                 new CustomEvent('appUrlOpen', { detail: { url: data.url } })
             );
@@ -86,7 +86,7 @@ export async function initializeApp() {
 export function setupBackButtonHandler(customHandler?: () => boolean) {
     if (!isAndroid) return;
 
-    App.addListener('backButton', ({ canGoBack }) => {
+    App.addListener('backButton', ({ canGoBack }: { canGoBack: boolean }) => {
         // If custom handler returns true, it handled the back action
         if (customHandler && customHandler()) {
             return;
@@ -135,44 +135,84 @@ export async function closeBrowser() {
 // ═══════════════════════════════════════════════════════════
 
 export async function getNetworkStatus() {
-    const status = await Network.getStatus();
+    if (isNative) {
+        const status = await Network.getStatus();
+        return {
+            connected: status.connected,
+            connectionType: status.connectionType,
+        };
+    }
+    // Web fallback
     return {
-        connected: status.connected,
-        connectionType: status.connectionType,
+        connected: navigator.onLine,
+        connectionType: navigator.onLine ? 'wifi' : 'none',
     };
 }
 
 export function onNetworkChange(
     callback: (connected: boolean, type: string) => void
 ) {
-    const listener = Network.addListener('networkStatusChange', (status) => {
-        callback(status.connected, status.connectionType);
-    });
+    if (isNative) {
+        let listener: any = null;
+        Network.addListener('networkStatusChange', (status: { connected: boolean; connectionType: string }) => {
+            callback(status.connected, status.connectionType);
+        }).then((handle) => {
+            listener = handle;
+        });
+
+        return () => {
+            if (listener) {
+                listener.remove();
+            }
+        };
+    }
+    // Web fallback
+    const onlineHandler = () => callback(true, 'wifi');
+    const offlineHandler = () => callback(false, 'none');
+    
+    window.addEventListener('online', onlineHandler);
+    window.addEventListener('offline', offlineHandler);
 
     return () => {
-        listener.remove();
+        window.removeEventListener('online', onlineHandler);
+        window.removeEventListener('offline', offlineHandler);
     };
 }
 
 // ═══════════════════════════════════════════════════════════
-// Storage (Preferences)
+// Storage (Preferences/localStorage)
 // ═══════════════════════════════════════════════════════════
 
 export async function setStorageItem(key: string, value: string) {
-    await Preferences.set({ key, value });
+    if (isNative) {
+        await Preferences.set({ key, value });
+    } else {
+        localStorage.setItem(key, value);
+    }
 }
 
 export async function getStorageItem(key: string): Promise<string | null> {
-    const { value } = await Preferences.get({ key });
-    return value;
+    if (isNative) {
+        const { value } = await Preferences.get({ key });
+        return value || null;
+    }
+    return localStorage.getItem(key);
 }
 
 export async function removeStorageItem(key: string) {
-    await Preferences.remove({ key });
+    if (isNative) {
+        await Preferences.remove({ key });
+    } else {
+        localStorage.removeItem(key);
+    }
 }
 
 export async function clearStorage() {
-    await Preferences.clear();
+    if (isNative) {
+        await Preferences.clear();
+    } else {
+        localStorage.clear();
+    }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -197,11 +237,11 @@ export async function registerPushNotifications() {
 
         // Get token
         return new Promise<string>((resolve) => {
-            PushNotifications.addListener('registration', (token) => {
+            PushNotifications.addListener('registration', (token: { value: string }) => {
                 resolve(token.value);
             });
 
-            PushNotifications.addListener('registrationError', (error) => {
+            PushNotifications.addListener('registrationError', (error: any) => {
                 console.error('Push registration error:', error);
                 resolve('');
             });
@@ -217,13 +257,18 @@ export function onPushNotificationReceived(
 ) {
     if (!isNative) return () => { };
 
-    const listener = PushNotifications.addListener(
+    let listener: any = null;
+    PushNotifications.addListener(
         'pushNotificationReceived',
         callback
-    );
+    ).then((handle) => {
+        listener = handle;
+    });
 
     return () => {
-        listener.remove();
+        if (listener) {
+            listener.remove();
+        }
     };
 }
 
@@ -232,13 +277,18 @@ export function onPushNotificationActionPerformed(
 ) {
     if (!isNative) return () => { };
 
-    const listener = PushNotifications.addListener(
+    let listener: any = null;
+    PushNotifications.addListener(
         'pushNotificationActionPerformed',
         callback
-    );
+    ).then((handle) => {
+        listener = handle;
+    });
 
     return () => {
-        listener.remove();
+        if (listener) {
+            listener.remove();
+        }
     };
 }
 
@@ -267,43 +317,76 @@ export async function takePicture() {
 }
 
 export async function pickImage() {
-    try {
-        const image = await Camera.getPhoto({
-            quality: 90,
-            allowEditing: false,
-            resultType: CameraResultType.Base64,
-            source: CameraSource.Photos,
-        });
+    if (isNative) {
+        try {
+            const image = await Camera.getPhoto({
+                quality: 90,
+                allowEditing: false,
+                resultType: CameraResultType.Base64,
+                source: CameraSource.Photos,
+            });
 
-        return {
-            base64: image.base64String,
-            format: image.format,
-            dataUrl: `data:image/${image.format};base64,${image.base64String}`,
-        };
-    } catch (error) {
-        console.error('Error picking image:', error);
-        return null;
+            return {
+                base64: image.base64String,
+                format: image.format,
+                dataUrl: `data:image/${image.format};base64,${image.base64String}`,
+            };
+        } catch (error) {
+            console.error('Error picking image:', error);
+            return null;
+        }
     }
+    // Web fallback
+    return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) {
+                resolve(null);
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                const base64 = dataUrl.split(',')[1];
+                const format = file.type.split('/')[1] || 'jpeg';
+                resolve({ base64, format, dataUrl });
+            };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(file);
+        };
+        
+        input.oncancel = () => resolve(null);
+        input.click();
+    });
 }
 
 export async function pickImageOrCamera() {
-    try {
-        const image = await Camera.getPhoto({
-            quality: 90,
-            allowEditing: false,
-            resultType: CameraResultType.Base64,
-            source: CameraSource.Prompt,
-        });
+    if (isNative) {
+        try {
+            const image = await Camera.getPhoto({
+                quality: 90,
+                allowEditing: false,
+                resultType: CameraResultType.Base64,
+                source: CameraSource.Prompt,
+            });
 
-        return {
-            base64: image.base64String,
-            format: image.format,
-            dataUrl: `data:image/${image.format};base64,${image.base64String}`,
-        };
-    } catch (error) {
-        console.error('Error picking image:', error);
-        return null;
+            return {
+                base64: image.base64String,
+                format: image.format,
+                dataUrl: `data:image/${image.format};base64,${image.base64String}`,
+            };
+        } catch (error) {
+            console.error('Error picking image:', error);
+            return null;
+        }
     }
+    // Web fallback - use pickImage
+    return pickImage();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -311,32 +394,73 @@ export async function pickImageOrCamera() {
 // ═══════════════════════════════════════════════════════════
 
 export async function getCurrentPosition() {
-    try {
-        const position = await Geolocation.getCurrentPosition({
-            enableHighAccuracy: true,
-            timeout: 10000,
-        });
+    if (isNative) {
+        try {
+            const position = await Geolocation.getCurrentPosition({
+                enableHighAccuracy: true,
+                timeout: 10000,
+            });
 
-        return {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-            timestamp: position.timestamp,
-        };
-    } catch (error) {
-        console.error('Error getting location:', error);
-        return null;
+            return {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                timestamp: position.timestamp,
+            };
+        } catch (error) {
+            console.error('Error getting location:', error);
+            return null;
+        }
     }
+    // Web fallback
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+            resolve(null);
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                resolve({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: position.timestamp,
+                });
+            },
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    });
 }
 
 export async function checkLocationPermission() {
-    const status = await Geolocation.checkPermissions();
-    return status.location;
+    if (isNative) {
+        const status = await Geolocation.checkPermissions();
+        return status.location;
+    }
+    // Web fallback
+    if (!navigator.permissions) return 'prompt';
+    try {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
+        return result.state;
+    } catch {
+        return 'prompt';
+    }
 }
 
 export async function requestLocationPermission() {
-    const status = await Geolocation.requestPermissions();
-    return status.location;
+    if (isNative) {
+        const status = await Geolocation.requestPermissions();
+        return status.location;
+    }
+    // Web fallback
+    return new Promise<string>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+            () => resolve('granted'),
+            () => resolve('denied')
+        );
+    });
 }
 
 // ═══════════════════════════════════════════════════════════

@@ -35,16 +35,30 @@ import {
   MicOff,
   VideoOff,
   Volume2,
-  VolumeX
+  VolumeX,
+  Download,
+  File as FileIcon,
+  Loader2,
+  X,
+  Image as ImageIcon,
+  Play
 } from 'lucide-react';
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 
 interface Message {
   _id: string;
   content: string;
-  type: 'text' | 'image' | 'file';
+  type: 'text' | 'image' | 'file' | 'video' | 'audio' | 'voice';
   isRead: boolean;
   createdAt: string;
+  attachments?: {
+    url: string;
+    filename: string;
+    size: number;
+    mimeType: string;
+    thumbnail?: string;
+    duration?: number;
+  }[];
   sender: {
     _id: string;
     firstName: string;
@@ -105,6 +119,8 @@ function ClientMessagesUI() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [selectedChatUser, setSelectedChatUser] = useState<any>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Call state management
   const [incomingCall, setIncomingCall] = useState<any>(null);
@@ -760,18 +776,55 @@ function ClientMessagesUI() {
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !selectedChat) return;
 
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File size must be less than 10MB');
+    // Check file size (max 25MB for messages)
+    if (file.size > 25 * 1024 * 1024) {
+      alert('File size must be less than 25MB');
+      e.target.value = '';
       return;
     }
 
-    alert(`📎 File attachment feature coming soon!\n\nSelected: ${file.name}\nSize: ${(file.size / 1024).toFixed(2)} KB\n\nWill upload to cloud storage and send link.`);
+    setUploadingFile(true);
+    try {
+      // Upload file to server
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'message');
 
-    // Reset input
-    e.target.value = '';
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Failed to upload file');
+      }
+
+      const uploadData = await uploadResponse.json();
+
+      // Determine message type based on file MIME type
+      const type = file.type.startsWith('image/') ? 'image' :
+                   file.type.startsWith('video/') ? 'video' :
+                   file.type.startsWith('audio/') ? 'audio' : 'file';
+
+      const attachment = {
+        url: uploadData.url,
+        filename: uploadData.filename || file.name,
+        size: uploadData.size || file.size,
+        mimeType: uploadData.type || file.type
+      };
+
+      // Send message with attachment
+      await sendMessageWithAttachment(type, [attachment], file.name);
+    } catch (error) {
+      console.error('File upload error:', error);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setUploadingFile(false);
+      e.target.value = '';
+    }
   };
 
   const handleCameraClick = () => {
@@ -780,12 +833,68 @@ function ClientMessagesUI() {
 
   const handleCameraCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !selectedChat) return;
 
-    alert(`📷 Photo capture feature coming soon!\n\nCaptured: ${file.name}\nSize: ${(file.size / 1024).toFixed(2)} KB\n\nWill upload and send as image message.`);
+    setUploadingFile(true);
+    try {
+      // Upload image to server
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'message');
 
-    // Reset input
-    e.target.value = '';
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const uploadData = await uploadResponse.json();
+
+      const attachment = {
+        url: uploadData.url,
+        filename: uploadData.filename || file.name,
+        size: uploadData.size || file.size,
+        mimeType: uploadData.type || file.type
+      };
+
+      // Send image message
+      await sendMessageWithAttachment('image', [attachment], '📷 Photo');
+    } catch (error) {
+      console.error('Camera upload error:', error);
+      alert('Failed to upload photo. Please try again.');
+    } finally {
+      setUploadingFile(false);
+      e.target.value = '';
+    }
+  };
+
+  const sendMessageWithAttachment = async (type: string, attachments: any[], content: string) => {
+    if (!selectedChat) return;
+
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipientId: selectedChat,
+          content: content || '',
+          type,
+          attachments
+        }),
+      });
+
+      if (response.ok) {
+        fetchMessages(selectedChat);
+        fetchConversations();
+      }
+    } catch (error) {
+      console.error('Error sending attachment message:', error);
+    }
   };
 
   const startRecording = async () => {
@@ -1217,7 +1326,84 @@ function ClientMessagesUI() {
                             : 'bg-white text-gray-900 rounded-tl-none'
                         }`}
                       >
-                        <p className="text-[14px] sm:text-[15px] leading-relaxed break-words whitespace-pre-wrap">{message.content}</p>
+                        {/* Image Messages */}
+                        {message.type === 'image' && message.attachments?.[0] && (
+                          <div className="mb-2">
+                            <img
+                              src={message.attachments[0].url}
+                              alt="Shared image"
+                              className="rounded-lg max-w-full max-h-64 h-auto cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => setPreviewImage(message.attachments?.[0]?.url || null)}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent && !parent.querySelector('.error-placeholder')) {
+                                  const placeholder = document.createElement('div');
+                                  placeholder.className = 'error-placeholder flex items-center justify-center bg-gray-200 rounded-lg p-4 text-gray-500 text-sm';
+                                  placeholder.innerHTML = '<span>📷 Image could not be loaded</span>';
+                                  parent.appendChild(placeholder);
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Video Messages */}
+                        {message.type === 'video' && message.attachments?.[0] && (
+                          <div className="mb-2">
+                            <video
+                              src={message.attachments[0].url}
+                              controls
+                              className="rounded-lg max-w-full max-h-64 h-auto"
+                              preload="metadata"
+                            >
+                              Your browser does not support video playback.
+                            </video>
+                          </div>
+                        )}
+
+                        {/* Audio/Voice Messages */}
+                        {(message.type === 'audio' || message.type === 'voice') && message.attachments?.[0] && (
+                          <div className="mb-2 flex items-center space-x-2 p-2 bg-gray-100 rounded-lg min-w-[200px]">
+                            <Volume2 className="h-5 w-5 text-gray-600 flex-shrink-0" />
+                            <audio
+                              src={message.attachments[0].url}
+                              controls
+                              className="flex-1 h-8"
+                              preload="metadata"
+                            />
+                          </div>
+                        )}
+
+                        {/* File/Document Messages */}
+                        {message.type === 'file' && message.attachments?.[0] && (
+                          <a
+                            href={message.attachments[0].url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={message.attachments[0].filename}
+                            className="flex items-center space-x-3 mb-2 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                          >
+                            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <FileIcon className="h-5 w-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {message.attachments[0].filename}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {(message.attachments[0].size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                            <Download className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                          </a>
+                        )}
+
+                        {/* Text Content */}
+                        {message.content && (
+                          <p className="text-[14px] sm:text-[15px] leading-relaxed break-words whitespace-pre-wrap">{message.content}</p>
+                        )}
                         <div className={`flex items-center justify-end space-x-1 mt-1`}>
                           <span className="text-[10px] sm:text-[11px] text-gray-500">
                             {format(new Date(message.createdAt), 'HH:mm')}
@@ -1262,6 +1448,38 @@ function ClientMessagesUI() {
                   {emoji}
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Image Preview Modal */}
+        {previewImage && (
+          <div 
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+            onClick={() => setPreviewImage(null)}
+          >
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              <X className="h-6 w-6 text-white" />
+            </button>
+            <img
+              src={previewImage}
+              alt="Preview"
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
+
+        {/* Uploading Indicator */}
+        {uploadingFile && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-40">
+            <div className="bg-white rounded-2xl p-6 shadow-xl flex flex-col items-center">
+              <Loader2 className="h-10 w-10 text-green-500 animate-spin mb-3" />
+              <p className="text-gray-700 font-medium">Uploading file...</p>
+              <p className="text-gray-500 text-sm mt-1">Please wait</p>
             </div>
           </div>
         )}
