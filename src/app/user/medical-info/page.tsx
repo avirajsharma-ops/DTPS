@@ -570,6 +570,7 @@ export default function MedicalInfoPage() {
               ref={fileInputRef}
               onChange={handleFileChange}
               accept="image/jpeg,image/png,image/webp,application/pdf"
+              capture="environment"
               className="hidden"
             />
 

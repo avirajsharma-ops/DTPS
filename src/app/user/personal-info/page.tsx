@@ -289,6 +289,7 @@ export default function PersonalInfoPage() {
               ref={fileInputRef}
               onChange={handleImageUpload}
               accept="image/jpeg,image/png,image/webp"
+              capture="environment"
               className="hidden"
             />
             {data.profileImage ? (

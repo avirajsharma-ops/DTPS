@@ -1434,6 +1434,7 @@ export default function PaymentsSection({
                     <input
                       type="file"
                       accept="image/*"
+                      capture="environment"
                       onChange={(e) => setOtherPaymentReceipt(e.target.files?.[0] || null)}
                       className="hidden"
                     />

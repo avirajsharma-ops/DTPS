@@ -2274,6 +2274,7 @@ export default function ClientDetailPage() {
                         <input
                           type="file"
                           accept="image/*,video/*,audio/*"
+                          capture="environment"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];

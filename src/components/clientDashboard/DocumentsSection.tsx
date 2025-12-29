@@ -224,6 +224,7 @@ export default function DocumentsSection({
                       <input
                         type="file"
                         accept="image/*,application/pdf"
+                        capture="environment"
                         onChange={handleFileChange}
                       />
                       {file && (

@@ -402,6 +402,7 @@ export default function CreateRecipePage() {
                       id="image"
                       type="file"
                       accept="image/*"
+                      capture="environment"
                       onChange={handleImageUpload}
                       disabled={uploading}
                       className="cursor-pointer"

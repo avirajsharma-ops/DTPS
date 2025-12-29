@@ -275,6 +275,7 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          capture="environment"
           onChange={handleFileInputChange}
           className="hidden"
         />

@@ -98,7 +98,7 @@ export default function WordPressMediaPage() {
 
       {/* Upload Form */}
       <form onSubmit={handleUpload} style={{ display: 'grid', gap: 8, alignItems: 'start', maxWidth: 520 }}>
-        <input name="file" type="file" accept="image/*" required />
+        <input name="file" type="file" accept="image/*" capture="environment" required />
         <input name="title" placeholder="Title (optional)" style={inp} />
         <input name="alt" placeholder="Alt text (SEO)" style={inp} />
         <input name="caption" placeholder="Caption (optional)" style={inp} />

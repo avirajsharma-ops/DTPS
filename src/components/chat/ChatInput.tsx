@@ -363,6 +363,7 @@ export function ChatInput({
         ref={fileInputRef}
         type="file"
         accept="image/*,.pdf,.doc,.docx,.txt"
+        capture="environment"
         onChange={handleFileSelect}
         className="hidden"
       />

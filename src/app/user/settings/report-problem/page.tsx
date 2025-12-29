@@ -338,6 +338,7 @@ export default function ReportProblemPage() {
                   ref={fileInputRef}
                   onChange={handleFileSelect}
                   accept="image/*"
+                  capture="environment"
                   multiple
                   className="hidden"
                 />

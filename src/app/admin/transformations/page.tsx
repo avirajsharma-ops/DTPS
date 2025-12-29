@@ -437,6 +437,7 @@ export default function TransformationsManagement() {
                   <input
                     type="file"
                     accept="image/*"
+                    capture="environment"
                     onChange={(e) => handleImageChange(e, 'before')}
                     className="absolute inset-0 opacity-0 cursor-pointer"
                   />
@@ -463,6 +464,7 @@ export default function TransformationsManagement() {
                   <input
                     type="file"
                     accept="image/*"
+                    capture="environment"
                     onChange={(e) => handleImageChange(e, 'after')}
                     className="absolute inset-0 opacity-0 cursor-pointer"
                   />
