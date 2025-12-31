@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { UserRole, UserStatus } from "@/types";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { getClientId, getDietitianId } from "@/lib/utils";
+import { getClientId, getDietitianId, getHealthCounselorId } from "@/lib/utils";
 
 interface Client {
   _id: string;
@@ -20,6 +20,12 @@ interface Client {
   gender?: string;
   dateOfBirth?: string;
   assignedDietitian?: string | {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  assignedHealthCounselor?: string | {
     _id: string;
     firstName: string;
     lastName: string;
@@ -37,9 +43,12 @@ export default function AdminClientsPage() {
   const [editing, setEditing] = useState<Client | null>(null);
   const [saving, setSaving] = useState(false);
   const [dietitians, setDietitians] = useState<{_id: string; firstName: string; lastName: string;}[]>([]);
+  const [healthCounselors, setHealthCounselors] = useState<{_id: string; firstName: string; lastName: string;}[]>([]);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assigningClient, setAssigningClient] = useState<Client | null>(null);
   const [selectedDietitianId, setSelectedDietitianId] = useState("");
+  const [selectedHealthCounselorId, setSelectedHealthCounselorId] = useState("");
+  const [assignType, setAssignType] = useState<'dietitian' | 'healthCounselor'>('dietitian');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalClients, setTotalClients] = useState(0);
@@ -86,7 +95,16 @@ export default function AdminClientsPage() {
     } catch {}
   }
 
-  useEffect(() => { fetchClients(); fetchDietitians(); }, []);
+  async function fetchHealthCounselors() {
+    try {
+      const res = await fetch(`/api/users?role=health-counselor`);
+      if (!res.ok) return;
+      const body = await res.json();
+      setHealthCounselors((body.users || []).map((u: any) => ({ _id: u._id, firstName: u.firstName, lastName: u.lastName })));
+    } catch {}
+  }
+
+  useEffect(() => { fetchClients(); fetchDietitians(); fetchHealthCounselors(); }, []);
 
   // Debounced search effect
   useEffect(() => {
@@ -183,12 +201,21 @@ export default function AdminClientsPage() {
     }
   }
 
-  function openAssignDialog(client: Client) {
+  function openAssignDialog(client: Client, type: 'dietitian' | 'healthCounselor' = 'dietitian') {
     setAssigningClient(client);
-    const dietitianId = typeof client.assignedDietitian === 'string'
-      ? client.assignedDietitian
-      : client.assignedDietitian?._id || "none";
-    setSelectedDietitianId(dietitianId || "none");
+    setAssignType(type);
+    
+    if (type === 'dietitian') {
+      const dietitianId = typeof client.assignedDietitian === 'string'
+        ? client.assignedDietitian
+        : client.assignedDietitian?._id || "none";
+      setSelectedDietitianId(dietitianId || "none");
+    } else {
+      const hcId = typeof client.assignedHealthCounselor === 'string'
+        ? client.assignedHealthCounselor
+        : client.assignedHealthCounselor?._id || "none";
+      setSelectedHealthCounselorId(hcId || "none");
+    }
     setAssignDialogOpen(true);
   }
 
@@ -198,12 +225,14 @@ export default function AdminClientsPage() {
     try {
       setSaving(true);
       setError(null);
+      const payload = assignType === 'dietitian'
+        ? { assignedDietitian: selectedDietitianId === "none" ? null : selectedDietitianId }
+        : { assignedHealthCounselor: selectedHealthCounselorId === "none" ? null : selectedHealthCounselorId };
+
       const res = await fetch(`/api/users/${assigningClient._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          assignedDietitian: selectedDietitianId === "none" ? null : selectedDietitianId
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error((await res.json()).error || "Assignment failed");
@@ -246,6 +275,7 @@ export default function AdminClientsPage() {
                     <th className="text-left p-3">Phone</th>
                     <th className="text-left p-3">Gender</th>
                     <th className="text-left p-3">Assigned Dietitian</th>
+                    <th className="text-left p-3">Assigned Health Counselor</th>
                     <th className="text-left p-3">Actions</th>
                   </tr>
                 </thead>
@@ -275,13 +305,35 @@ export default function AdminClientsPage() {
                             <span className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-medium">
                               {getDietitianId(typeof u.assignedDietitian === 'string' ? u.assignedDietitian : u.assignedDietitian._id)}
                             </span>
-                            <Button variant="ghost" size="sm" onClick={() => openAssignDialog(u)} className="h-6 px-2 text-xs">
+                            <Button variant="ghost" size="sm" onClick={() => openAssignDialog(u, 'dietitian')} className="h-6 px-2 text-xs">
                               Change
                             </Button>
                           </div>
                         ) : (
-                          <Button variant="outline" size="sm" onClick={() => openAssignDialog(u)} className="h-7 px-3 text-xs">
+                          <Button variant="outline" size="sm" onClick={() => openAssignDialog(u, 'dietitian')} className="h-7 px-3 text-xs">
                             Assign Dietitian
+                          </Button>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {u.assignedHealthCounselor ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900">
+                              {typeof u.assignedHealthCounselor === 'string'
+                                ? (healthCounselors.find(hc => hc._id === u.assignedHealthCounselor)?.firstName + ' ' + (healthCounselors.find(hc => hc._id === u.assignedHealthCounselor)?.lastName || ''))
+                                : `${u.assignedHealthCounselor.firstName} ${u.assignedHealthCounselor.lastName}`
+                              }
+                            </span>
+                            <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-medium">
+                              {getHealthCounselorId(typeof u.assignedHealthCounselor === 'string' ? u.assignedHealthCounselor : u.assignedHealthCounselor._id)}
+                            </span>
+                            <Button variant="ghost" size="sm" onClick={() => openAssignDialog(u, 'healthCounselor')} className="h-6 px-2 text-xs">
+                              Change
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button variant="outline" size="sm" onClick={() => openAssignDialog(u, 'healthCounselor')} className="h-7 px-3 text-xs">
+                            Assign HC
                           </Button>
                         )}
                       </td>
@@ -426,32 +478,52 @@ export default function AdminClientsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Quick Assign Dietitian Dialog */}
+      {/* Quick Assign Dietitian/Health Counselor Dialog */}
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Dietitian to {assigningClient?.firstName} {assigningClient?.lastName}</DialogTitle>
+            <DialogTitle>
+              Assign {assignType === 'dietitian' ? 'Dietitian' : 'Health Counselor'} to {assigningClient?.firstName} {assigningClient?.lastName}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Select Dietitian</label>
-              <Select value={selectedDietitianId} onValueChange={setSelectedDietitianId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a dietitian" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None (Unassign)</SelectItem>
-                  {dietitians.map(d => (
-                    <SelectItem key={d._id} value={d._id}>
-                      {d.firstName} {d.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Select {assignType === 'dietitian' ? 'Dietitian' : 'Health Counselor'}
+              </label>
+              {assignType === 'dietitian' ? (
+                <Select value={selectedDietitianId} onValueChange={setSelectedDietitianId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a dietitian" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (Unassign)</SelectItem>
+                    {dietitians.map(d => (
+                      <SelectItem key={d._id} value={d._id}>
+                        {d.firstName} {d.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Select value={selectedHealthCounselorId} onValueChange={setSelectedHealthCounselorId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a health counselor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (Unassign)</SelectItem>
+                    {healthCounselors.map(hc => (
+                      <SelectItem key={hc._id} value={hc._id}>
+                        {hc.firstName} {hc.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
-            {selectedDietitianId && selectedDietitianId !== "none" && (
+            {assignType === 'dietitian' && selectedDietitianId && selectedDietitianId !== "none" && (
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                 <p className="text-sm text-slate-700">
                   <strong>{assigningClient?.firstName}</strong> will be assigned to{' '}
@@ -460,10 +532,20 @@ export default function AdminClientsPage() {
               </div>
             )}
 
-            {selectedDietitianId === "none" && assigningClient?.assignedDietitian && (
+            {assignType === 'healthCounselor' && selectedHealthCounselorId && selectedHealthCounselorId !== "none" && (
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <p className="text-sm text-slate-700">
+                  <strong>{assigningClient?.firstName}</strong> will be assigned to{' '}
+                  <strong>{healthCounselors.find(hc => hc._id === selectedHealthCounselorId)?.firstName} {healthCounselors.find(hc => hc._id === selectedHealthCounselorId)?.lastName}</strong>
+                </p>
+              </div>
+            )}
+
+            {((assignType === 'dietitian' && selectedDietitianId === "none" && assigningClient?.assignedDietitian) ||
+              (assignType === 'healthCounselor' && selectedHealthCounselorId === "none" && assigningClient?.assignedHealthCounselor)) && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                 <p className="text-sm text-orange-700">
-                  This will unassign the current dietitian from <strong>{assigningClient?.firstName}</strong>
+                  This will unassign the current {assignType === 'dietitian' ? 'dietitian' : 'health counselor'} from <strong>{assigningClient?.firstName}</strong>
                 </p>
               </div>
             )}

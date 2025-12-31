@@ -302,7 +302,7 @@ export default function SleepSection({ clientId, selectedDate }: SleepSectionPro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {assignedSleep ? (
+          {assignedSleep && assignedSleep.targetHours > 0 ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-indigo-100">
                 <div>

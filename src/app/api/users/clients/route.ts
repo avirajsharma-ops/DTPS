@@ -29,12 +29,16 @@ export async function GET(request: NextRequest) {
     // Build query
     let query: any = { role: UserRole.CLIENT };
 
-    // If dietitian or health counselor, only show their assigned clients (including from assignedDietitians array)
-    if (userRole === 'dietitian' || userRole === 'health_counselor') {
+    // If dietitian, only show their assigned clients (including from assignedDietitians array)
+    if (userRole === 'dietitian') {
       query.$or = [
         { assignedDietitian: session.user.id },
         { assignedDietitians: session.user.id }
       ];
+    }
+    // If health counselor, show their assigned clients
+    else if (userRole === 'health_counselor') {
+      query.assignedHealthCounselor = session.user.id;
     }
     // Admin can see all clients (no additional filter needed)
 

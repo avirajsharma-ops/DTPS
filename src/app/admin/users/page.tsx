@@ -287,6 +287,8 @@ export default function AdminUsersPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
+              <th className="text-left p-3">ID</th>
+
                     <th className="text-left p-3">Name</th>
                     <th className="text-left p-3">Email</th>
                     
@@ -311,9 +313,7 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="p-3">{u.firstName} {u.lastName}</td>
                       <td className="p-3">{u.email}</td>
-                      <td className="p-3">
-                        {u.role.charAt(0).toUpperCase() + u.role.slice(1).replace('_', ' ')}
-                      </td>
+                     
                       <td className="p-3 capitalize">{u.role}</td>
                       <td className="p-3 capitalize">{u.status}</td>
                       <td className="p-3">{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>

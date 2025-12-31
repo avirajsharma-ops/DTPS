@@ -77,6 +77,22 @@ export async function GET(request: NextRequest) {
       ];
       if (clientId) query.client = clientId;
     }
+    // Health counselors can see payment links for their assigned clients
+    else if (session.user.role === UserRole.HEALTH_COUNSELOR) {
+      // Get all clients assigned to this health counselor
+      const assignedClients = await User.find({
+        role: UserRole.CLIENT,
+        assignedHealthCounselor: session.user.id
+      }).select('_id');
+      const assignedClientIds = assignedClients.map(c => c._id);
+      
+      // Health counselor can see payment links they created OR for their assigned clients
+      query.$or = [
+        { dietitian: session.user.id },
+        { client: { $in: assignedClientIds } }
+      ];
+      if (clientId) query.client = clientId;
+    }
     // Admins can see all
     else if (session.user.role === UserRole.ADMIN) {
       if (clientId) query.client = clientId;
@@ -134,8 +150,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only dietitians and admins can create payment links
-    if (session.user.role !== UserRole.DIETITIAN && session.user.role !== UserRole.ADMIN) {
+    // Only dietitians, health counselors, and admins can create payment links
+    if (session.user.role !== UserRole.DIETITIAN && 
+        session.user.role !== UserRole.HEALTH_COUNSELOR && 
+        session.user.role !== UserRole.ADMIN) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -298,9 +316,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Payment link not found' }, { status: 404 });
     }
 
-    // Check permissions
-    if (session.user.role === UserRole.DIETITIAN && paymentLink.dietitian.toString() !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    // Check permissions - dietitians and health counselors can only cancel their own payment links
+    if ((session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) && 
+        paymentLink.dietitian.toString() !== session.user.id) {
+      return NextResponse.json({ error: 'You can only cancel payment links you created' }, { status: 403 });
     }
 
     // Cannot delete paid payment links

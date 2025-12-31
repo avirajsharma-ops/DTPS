@@ -95,6 +95,7 @@ export default function HealthCounselorAppointmentsPage() {
   const fetchAppointments = async () => {
     try {
       setLoading(true);
+      // Fetch appointments for assigned clients only
       const response = await fetch('/api/appointments?limit=100');
       if (response.ok) {
         const data = await response.json();

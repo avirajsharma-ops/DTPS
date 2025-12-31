@@ -127,6 +127,40 @@ export async function GET(request: NextRequest) {
       if (clientId) {
         query.clientId = clientId;
       }
+    } else if ((session.user.role as string) === UserRole.HEALTH_COUNSELOR || (session.user.role as string) === 'health_counselor') {
+      // Health counselors can see meal plans for their assigned clients
+      if (clientId) {
+        // Check if HC has access to this client
+        const client = await User.findById(clientId).select('assignedHealthCounselor');
+        if (!client) {
+          return NextResponse.json({ 
+            success: true,
+            mealPlans: [],
+            pagination: { page: 1, limit: 20, total: 0, pages: 0 }
+          });
+        }
+        
+        const isAssigned = client.assignedHealthCounselor?.toString() === session.user.id;
+        
+        if (!isAssigned) {
+          return NextResponse.json({ 
+            success: true,
+            mealPlans: [],
+            pagination: { page: 1, limit: 20, total: 0, pages: 0 }
+          });
+        }
+        
+        query.clientId = clientId;
+      } else {
+        // No clientId specified - get all clients assigned to this HC
+        const assignedClients = await User.find({
+          role: UserRole.CLIENT,
+          assignedHealthCounselor: session.user.id
+        }).select('_id');
+        const assignedClientIds = assignedClients.map(c => c._id);
+        
+        query.clientId = { $in: assignedClientIds };
+      }
     } else {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

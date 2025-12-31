@@ -17,7 +17,7 @@ const getDateOnly = (date: Date | string): Date => {
 // Helper to check if user can access client data
 const canAccessClientData = (session: { user: { id: string; role: string } }, clientId: string): boolean => {
   if (session.user.id === clientId) return true;
-  if ([UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR].includes(session.user.role as UserRole)) return true;
+  const allowedRoles = [UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR, 'health_counselor', 'admin', 'dietitian']; if (allowedRoles.includes(session.user.role as any)) return true;
   return false;
 };
 
@@ -34,7 +34,7 @@ const unitToMl: Record<string, number> = {
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

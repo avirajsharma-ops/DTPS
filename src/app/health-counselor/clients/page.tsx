@@ -129,7 +129,7 @@ export default function HealthCounselorClientsPage() {
         dateOfBirth: createForm.dateOfBirth ? new Date(createForm.dateOfBirth) : undefined,
         role: 'client',
         // Auto-assign to the current health counselor
-        assignedDietitian: (session?.user as any)?._id || undefined,
+        assignedHealthCounselor: (session?.user as any)?.id || (session?.user as any)?._id || undefined,
       };
 
       const res = await fetch('/api/users', {

@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Format user ID for display
- * Dietitian: DTPS-XXXX (first 4 chars of MongoDB ObjectId)
+ * Dietitian: Dt-XXXX (first 4 chars of MongoDB ObjectId)
  * Client: C-XXXX (first 4 chars of MongoDB ObjectId)
  * Admin: A-XXXX
  * Health Counselor: HC-XXXX
@@ -18,7 +18,7 @@ export function formatUserId(id: string, role?: string): string {
   
   switch (role?.toLowerCase()) {
     case 'dietitian':
-      return `DTPS-${shortId}`;
+      return `Dt-${shortId}`;
     case 'client':
       return `C-${shortId}`;
     case 'admin':
@@ -31,11 +31,11 @@ export function formatUserId(id: string, role?: string): string {
 }
 
 /**
- * Get dietitian display ID (DTPS-XXXX format)
+ * Get dietitian display ID (Dt-XXXX format)
  */
 export function getDietitianId(id: string): string {
   if (!id) return '';
-  return `DTPS-${id.slice(0, 4).toUpperCase()}`;
+  return `Dt-${id.slice(0, 4).toUpperCase()}`;
 }
 
 /**
@@ -44,4 +44,12 @@ export function getDietitianId(id: string): string {
 export function getClientId(id: string): string {
   if (!id) return '';
   return `C-${id.slice(0, 4).toUpperCase()}`;
+}
+
+/**
+ * Get health counselor display ID (HC-XXXX format)
+ */
+export function getHealthCounselorId(id: string): string {
+  if (!id) return '';
+  return `HC-${id.slice(0, 4).toUpperCase()}`;
 }

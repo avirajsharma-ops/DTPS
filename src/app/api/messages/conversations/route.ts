@@ -93,11 +93,13 @@ export async function GET(request: NextRequest) {
         // For dietitians, only show conversations with their assigned clients
         if (session.user.role === 'dietitian' || session.user.role === 'health_counselor') {
           if (user.role === 'client') {
-            const clientUser = await User.findById(user._id).select('assignedDietitian assignedDietitians');
-            const isAssigned = 
+            const clientUser = await User.findById(user._id).select('assignedDietitian assignedDietitians assignedHealthCounselor');
+            const isAssignedAsDietitian = 
               clientUser?.assignedDietitian?.toString() === session.user.id ||
               clientUser?.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
-            if (!isAssigned) {
+            const isAssignedAsHealthCounselor = clientUser?.assignedHealthCounselor?.toString() === session.user.id;
+            
+            if (!isAssignedAsDietitian && !isAssignedAsHealthCounselor) {
               return null; // Skip conversations with non-assigned clients
             }
           }

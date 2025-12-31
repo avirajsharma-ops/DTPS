@@ -244,6 +244,11 @@ const userSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User'
   }],
+  // Assigned Health Counselor for client
+  assignedHealthCounselor: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
 
   // Tags for categorizing/organizing clients
   tags: [{

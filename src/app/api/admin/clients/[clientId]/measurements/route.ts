@@ -18,7 +18,7 @@ export async function GET(
     }
 
     // Check if user is admin or dietitian
-    if (!['admin', 'dietitian'].includes(session.user.role || '')) {
+    if (!['admin', 'dietitian', 'health_counselor'].includes(session.user.role || '')) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -116,7 +116,7 @@ export async function POST(
     }
 
     // Check if user is admin or dietitian
-    if (!['admin', 'dietitian'].includes(session.user.role || '')) {
+    if (!['admin', 'dietitian', 'health_counselor'].includes(session.user.role || '')) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -228,8 +228,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin or dietitian
-    if (!['admin', 'dietitian'].includes(session.user.role || '')) {
+    // Check if user is admin, dietitian or health_counselor
+    if (!['admin', 'dietitian', 'health_counselor'].includes(session.user.role || '')) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -57,6 +57,8 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    console.log('Query:', JSON.stringify(query));
+
     const clients = await User.find(query)
       .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians status createdAt updatedAt')
       .populate('assignedDietitian', 'firstName lastName email avatar')
@@ -99,8 +101,9 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching clients:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to fetch clients' },
+      { error: 'Failed to fetch clients', details: errorMessage },
       { status: 500 }
     );
   }

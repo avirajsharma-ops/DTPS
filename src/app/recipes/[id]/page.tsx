@@ -134,6 +134,7 @@ export default function RecipeViewPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [backUrl, setBackUrl] = useState('/recipes');
 
   // Detect mobile device and PWA
   useEffect(() => {
@@ -156,6 +157,15 @@ export default function RecipeViewPage() {
 
   // Confirmation dialog hook
   const { showConfirmation, setLoading: setDialogLoading, ConfirmationDialog } = useConfirmationDialog();
+
+  // Set back URL based on user role
+  useEffect(() => {
+    if (session?.user?.role === 'admin') {
+      setBackUrl('/admin/recipes');
+    } else {
+      setBackUrl('/recipes');
+    }
+  }, [session?.user?.role]);
 
   useEffect(() => {
     if (recipeId) {
@@ -310,7 +320,7 @@ export default function RecipeViewPage() {
                 Try Again
               </Button>
               <Button
-                onClick={() => router.push('/recipes')}
+                onClick={() => router.push(backUrl)}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Recipes
@@ -334,7 +344,7 @@ export default function RecipeViewPage() {
         <div className="flex items-center justify-between">
           <Button
             variant="outline"
-            onClick={() => router.push('/recipes')}
+            onClick={() => router.push(backUrl)}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Recipes

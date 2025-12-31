@@ -52,6 +52,21 @@ export async function GET(request: NextRequest) {
         { dietitian: session.user.id },
         { client: { $in: assignedClientIds } }
       ];
+    } else if (session.user.role === 'health_counselor') {
+      // Get all clients assigned to this health counselor
+      const assignedClients = await User.find({
+        role: UserRole.CLIENT,
+        assignedHealthCounselor: session.user.id
+      }).select('_id');
+      const assignedClientIds = assignedClients.map(c => c._id);
+      
+      // Health counselor can see appointments for their assigned clients
+      if (assignedClientIds.length > 0) {
+        query.client = { $in: assignedClientIds };
+      } else {
+        // No assigned clients, show empty result
+        query.client = null;
+      }
     } else if (session.user.role === UserRole.CLIENT) {
       query.client = session.user.id;
     } else {
@@ -132,6 +147,39 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
+    // For health counselors, validate they can only book appointments with their assigned clients
+    if (
+      (session.user.role as string) === 'health_counselor' ||
+      (session.user.role as string) === UserRole.HEALTH_COUNSELOR
+    ) {
+      const client = await User.findById(clientId);
+      if (!client) {
+        return NextResponse.json(
+          { error: 'Client not found' },
+          { status: 404 }
+        );
+      }
+
+      // Check if this client is assigned to this health counselor
+      const assignedHCId = client.assignedHealthCounselor?.toString();
+      const currentUserId = session.user.id?.toString();
+      
+      // Allow booking if HC is assigned to this client
+      // If no HC is assigned yet, auto-assign this HC to the client
+      if (!assignedHCId) {
+        // Auto-assign this HC to the client
+        client.assignedHealthCounselor = session.user.id;
+        await client.save();
+        console.log('Auto-assigned HC to client:', currentUserId);
+      } else if (assignedHCId !== currentUserId) {
+        console.log('HC booking denied - assignedHC:', assignedHCId, 'currentUser:', currentUserId);
+        return NextResponse.json(
+          { error: 'You can only book appointments with clients assigned to you' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Validate required fields
     if (!dietitianId || !clientId || !scheduledAt) {
       return NextResponse.json(
@@ -192,7 +240,8 @@ export async function POST(request: NextRequest) {
       duration: duration || 60,
       type,
       notes,
-      status: AppointmentStatus.SCHEDULED
+      status: AppointmentStatus.SCHEDULED,
+      createdBy: session.user.id // Track who created this appointment
     }) as any;
 
     // Try to create Zoom meeting

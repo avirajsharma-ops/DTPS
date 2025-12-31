@@ -41,9 +41,9 @@ export async function GET(
 
         await dbConnect();
 
-        // Verify the user is a dietitian/admin
+        // Verify the user is a dietitian/admin/health_counselor
         const currentUser = await User.findById(session.user.id);
-        if (!currentUser || !['admin', 'dietitian'].includes(currentUser.role)) {
+        if (!currentUser || !['admin', 'dietitian', 'health_counselor'].includes(currentUser.role)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }
 
@@ -106,9 +106,9 @@ export async function POST(
         await dbConnect();
         const data = await request.json();
 
-        // Verify the user is a dietitian/admin
+        // Verify the user is a dietitian/admin/health_counselor
         const currentUser = await User.findById(session.user.id);
-        if (!currentUser || !['admin', 'dietitian'].includes(currentUser.role)) {
+        if (!currentUser || !['admin', 'dietitian', 'health_counselor'].includes(currentUser.role)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }
 
@@ -214,9 +214,9 @@ export async function DELETE(
 
         await dbConnect();
 
-        // Verify the user is a dietitian/admin
+        // Verify the user is a dietitian/admin/health_counselor
         const currentUser = await User.findById(session.user.id);
-        if (!currentUser || !['admin', 'dietitian'].includes(currentUser.role)) {
+        if (!currentUser || !['admin', 'dietitian', 'health_counselor'].includes(currentUser.role)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }
 

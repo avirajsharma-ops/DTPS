@@ -284,7 +284,7 @@ export default function StepsSection({ clientId, selectedDate }: StepsSectionPro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {assignedSteps ? (
+          {assignedSteps && assignedSteps.target > 0 ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-green-100">
                 <div>

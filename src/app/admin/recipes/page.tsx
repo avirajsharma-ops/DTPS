@@ -47,14 +47,20 @@ export default function AdminRecipesPage() {
       setError(null);
       const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
       const res = await fetch(`/api/recipes?limit=${itemsPerPage}&page=${page}${searchParam}`);
-      if (!res.ok) throw new Error(await res.text());
       const body = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(body.error || "Failed to load recipes");
+      }
+      
       setRecipes(body.recipes || []);
       setTotalRecipes(body.pagination?.total || 0);
       setTotalPages(body.pagination?.pages || 1);
       setCurrentPage(page);
     } catch (e: any) {
+      console.error('Error fetching recipes:', e);
       setError(e?.message || "Failed to load recipes");
+      setRecipes([]);
     } finally {
       setLoading(false);
     }
@@ -115,9 +121,9 @@ export default function AdminRecipesPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 space-y-6">
+      <div className="flex-1 p-6 space-y-6 ">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-6 py-6 ">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Recipe Management</h1>
             <p className="text-gray-600 mt-1">Manage all recipes in the system</p>
@@ -138,7 +144,7 @@ export default function AdminRecipesPage() {
           </CardHeader>
           <CardContent>
             <Input
-              placeholder="Search by recipe name, dietitian, or ingredients..."
+              placeholder="Search by UUID, recipe name, dietitian, or ingredients..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full"
@@ -148,11 +154,7 @@ export default function AdminRecipesPage() {
 
         {/* Recipes Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>
-              Recipes ({totalRecipes})
-            </CardTitle>
-          </CardHeader>
+        
           <CardContent>
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -168,7 +170,7 @@ export default function AdminRecipesPage() {
                   <thead>
                     <tr className="border-b bg-gray-50">
                       <th className="p-3 text-left font-semibold text-gray-900">S/No</th>
-                      <th className="p-3 text-left font-semibold text-gray-900">Recipe ID</th>
+                      <th className="p-3 text-left font-semibold text-gray-900">UUID</th>
                       <th className="p-3 text-left font-semibold text-gray-900">Recipe Name</th>
                       <th className="p-3 text-left font-semibold text-gray-900">Created By (Dietitian)</th>
                       <th className="p-3 text-left font-semibold text-gray-900">Created Date</th>
@@ -187,8 +189,8 @@ export default function AdminRecipesPage() {
                           {((currentPage - 1) * itemsPerPage) + index + 1}
                         </td>
                         <td className="p-3">
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
-                            {recipe._id.slice(-8)}
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium break-all">
+                            {recipe._id}
                           </span>
                         </td>
                         <td className="p-3">
@@ -332,3 +334,11 @@ export default function AdminRecipesPage() {
     </DashboardLayout>
   );
 }
+
+
+
+
+
+
+
+

@@ -104,7 +104,7 @@ export default function Sidebar({ className }: SidebarProps) {
           },
         ];
       case UserRole.HEALTH_COUNSELOR:
-        // Health Counselors have limited access - no meal plan templates, can view but not create
+        // Health Counselors manage assigned clients only
         return [
           {
             href: '/health-counselor/clients',
@@ -113,28 +113,10 @@ export default function Sidebar({ className }: SidebarProps) {
             description: 'Manage your assigned clients'
           },
           {
-            href: '/health-counselor/all-users',
-            label: 'All Users',
-            icon: Users,
-            description: 'View all users'
-          },
-          {
             href: '/health-counselor/recipes',
             label: 'Recipes',
             icon: ChefHat,
             description: 'View recipe database'
-          },
-          {
-            href: '/health-counselor/plan-templates',
-            label: 'Plan & Diet Templates',
-            icon: FileText,
-            description: 'View plan and diet templates'
-          },
-          {
-            href: '/health-counselor/pending-plans',
-            label: 'Pending Plans',
-            icon: AlertTriangle,
-            description: 'Clients needing meal plans'
           },
           {
             href: '/health-counselor/appointments',

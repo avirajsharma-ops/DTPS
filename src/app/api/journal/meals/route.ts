@@ -53,11 +53,12 @@ const normalizeMealTypeKey = (mealType: string): string => {
 const checkPermission = (session: any, clientId?: string): boolean => {
   const userRole = session?.user?.role;
   // Admins, dietitians, and health counselors can access any client
-  if ([UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR].includes(userRole)) {
+  const allowedRoles = [UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR, 'health_counselor', 'admin', 'dietitian'];
+  if (allowedRoles.includes(userRole)) {
     return true;
   }
   // Clients can only access their own data
-  if (userRole === UserRole.CLIENT) {
+  if (userRole === UserRole.CLIENT || userRole === 'client') {
     return !clientId || clientId === session?.user?.id;
   }
   return false;
@@ -67,7 +68,7 @@ const checkPermission = (session: any, clientId?: string): boolean => {
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -413,7 +414,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -509,7 +510,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -655,7 +656,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

@@ -208,7 +208,12 @@ export async function PUT(
       (targetUser.assignedDietitian?.toString() === session.user.id ||
        targetUser.assignedDietitians?.some((d: any) => d.toString() === session.user.id));
 
-    if (!isAdmin && !isSelf && !isDietitianEditingClient) {
+    // Health Counselor can update ONLY their assigned clients
+    const isHealthCounselorEditingClient =
+      session.user.role === UserRole.HEALTH_COUNSELOR &&
+      targetUser.assignedHealthCounselor?.toString() === session.user.id;
+
+    if (!isAdmin && !isSelf && !isDietitianEditingClient && !isHealthCounselorEditingClient) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

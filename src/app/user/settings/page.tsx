@@ -11,7 +11,6 @@ import {
   Bell, 
   Moon, 
   Globe, 
-  Lock, 
   HelpCircle, 
   FileText, 
   MessageCircle,
@@ -21,7 +20,6 @@ import {
   Mail,
   Volume2,
   Eye,
-  Shield,
   Loader2
 } from 'lucide-react';
 import Link from 'next/link';
@@ -276,14 +274,6 @@ export default function UserSettingsPage() {
   ];
 
   const linkSections = [
-    {
-      title: 'Privacy & Security',
-      icon: Shield,
-      links: [
-        { label: 'Privacy Settings', href: '/user/settings/privacy-policy', icon: Lock },
-        { label: 'Change Password', href: '/user/settings/password', icon: Lock },
-      ],
-    },
     {
       title: 'Support',
       icon: HelpCircle,

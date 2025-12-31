@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { getImageKit } from '@/lib/imagekit';
 import { v4 as uuidv4 } from 'uuid';
 import { compressImageServer } from '@/lib/imageCompressionServer';
+import mongoose from 'mongoose';
 
 // Recipe validation schema - flexible to handle both old and new formats
 const recipeSchema = z.object({
@@ -84,13 +85,29 @@ export async function GET(request: NextRequest) {
     // Build query
     let query: any = {};
 
-    // Search by name or description
+    // Search by name, description, ingredients, or recipe ID
     if (search) {
-      query.$or = [
+      const searchConditions: any[] = [
         { name: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { 'ingredients.name': { $regex: search, $options: 'i' } }
       ];
+      
+      // Check if search term looks like a MongoDB ObjectId (hex characters)
+      const cleanSearch = search.trim().toLowerCase();
+      if (/^[a-f0-9]+$/.test(cleanSearch)) {
+        // If it's a valid hex string, try to match by ID
+        if (cleanSearch.length === 24 && mongoose.Types.ObjectId.isValid(cleanSearch)) {
+          // Full ObjectId (24 hex chars) - exact match
+          try {
+            searchConditions.push({ _id: new mongoose.Types.ObjectId(cleanSearch) });
+          } catch (e) {
+            // Invalid ObjectId, skip
+          }
+        }
+      }
+      
+      query.$or = searchConditions;
     }
 
     // Filter by cuisine
@@ -164,11 +181,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       recipes,
-      total,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      },
       cuisines,
-      tags,
-      page,
-      totalPages: Math.ceil(total / limit)
+      tags
     });
 
   } catch (error) {

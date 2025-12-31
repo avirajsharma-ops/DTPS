@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,19 +36,28 @@ interface Task {
   tags?: Tag[];
   googleCalendarEventId?: string;
   createdAt: string;
+  dietitian?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+  };
 }
 
 interface TasksSectionProps {
   clientId: string;
   clientName: string;
   dietitianEmail?: string;
+  userRole?: 'dietitian' | 'health_counselor' | 'admin';
 }
 
 export default function TasksSection({
   clientId,
   clientName,
-  dietitianEmail
+  dietitianEmail,
+  userRole = 'dietitian'
 }: TasksSectionProps) {
+  const { data: session } = useSession();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,6 +72,15 @@ export default function TasksSection({
     description: '',
     color: '#3B82F6',
   });
+
+  // Helper function to check if current user can delete a task
+  const canDeleteTask = (task: Task) => {
+    // Admins and dietitians can delete any task
+    if (userRole !== 'health_counselor') return true;
+    // Health counselors can only delete tasks they created
+    const currentUserId = (session?.user as any)?.id || (session?.user as any)?._id;
+    return task.dietitian?._id === currentUserId;
+  };
 
   useEffect(() => {
     fetchTasks();
@@ -321,17 +340,19 @@ export default function TasksSection({
                       <p className="text-sm text-gray-500 mt-2">{task.description}</p>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteTask(task._id);
-                    }}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {canDeleteTask(task) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTask(task._id);
+                      }}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
 
                 {/* Task Details */}

@@ -11,10 +11,11 @@ import { logHistoryServer } from '@/lib/server/history';
 // Helper to check if user has permission to access client data
 const checkPermission = (session: any, clientId?: string): boolean => {
   const userRole = session?.user?.role;
-  if ([UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR].includes(userRole)) {
+  const allowedRoles = [UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR, 'health_counselor', 'admin', 'dietitian'];
+  if (allowedRoles.includes(userRole)) {
     return true;
   }
-  if (userRole === UserRole.CLIENT) {
+  if (userRole === UserRole.CLIENT || userRole === 'client') {
     return !clientId || clientId === session?.user?.id;
   }
   return false;
@@ -24,9 +25,12 @@ const checkPermission = (session: any, clientId?: string): boolean => {
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    // Get user ID - handle different possible locations
+    const userId = session.user.id || (session.user as any).sub || (session as any).sub;
 
     const { searchParams } = new URL(request.url);
     const clientId = searchParams.get('clientId') || session.user.id;
@@ -120,7 +124,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -216,7 +220,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

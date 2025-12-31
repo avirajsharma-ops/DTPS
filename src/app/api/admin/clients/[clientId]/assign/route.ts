@@ -31,7 +31,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { dietitianId, action, mode, dietitianIds } = body;
+    const { dietitianId, healthCounselorId, action, mode, dietitianIds } = body;
     // Support both 'action' and 'mode' for backwards compatibility
     const assignAction = action || mode || 'replace';
     // action/mode: 'replace' (default) - replace primary dietitian
@@ -53,6 +53,21 @@ export async function PATCH(
     // Initialize assignedDietitians array if it doesn't exist
     if (!client.assignedDietitians) {
       client.assignedDietitians = [];
+    }
+
+    // Handle health counselor assignment
+    if (healthCounselorId && healthCounselorId.trim() !== '') {
+      const healthCounselor = await User.findById(healthCounselorId);
+      if (!healthCounselor) {
+        return NextResponse.json({ error: 'Health counselor not found' }, { status: 404 });
+      }
+      if (healthCounselor.role !== UserRole.HEALTH_COUNSELOR) {
+        return NextResponse.json({ error: 'User is not a health counselor' }, { status: 400 });
+      }
+      client.assignedHealthCounselor = healthCounselorId;
+    } else {
+      // Unassign health counselor if empty string or null
+      client.assignedHealthCounselor = null;
     }
 
     // Handle different actions
@@ -158,9 +173,10 @@ export async function PATCH(
       );
     }
 
-    // Populate the assigned dietitian info
+    // Populate the assigned dietitian and health counselor info
     await client.populate('assignedDietitian', 'firstName lastName email avatar');
     await client.populate('assignedDietitians', 'firstName lastName email avatar');
+    await client.populate('assignedHealthCounselor', 'firstName lastName email avatar');
 
     const actionMessages: Record<string, string> = {
       'add': 'Dietitian(s) added successfully',
@@ -168,6 +184,15 @@ export async function PATCH(
       'transfer': 'Client transferred successfully',
       'replace': dietitianId ? 'Dietitian assigned successfully' : 'Dietitian unassigned successfully'
     };
+
+    // Build success message including HC if assigned
+    let successMessage = actionMessages[assignAction] || 'Dietitian updated successfully';
+    if (healthCounselorId && healthCounselorId.trim() !== '') {
+      successMessage += ' and Health Counselor assigned successfully';
+    }
+    if (!healthCounselorId || healthCounselorId === '') {
+      successMessage += ' (Health Counselor removed)';
+    }
 
     // Log activity
     const dietitianInfo = await User.findById(dietitianId || client.assignedDietitian);
@@ -186,7 +211,7 @@ export async function PATCH(
     });
 
     return NextResponse.json({
-      message: actionMessages[assignAction] || 'Dietitian updated successfully',
+      message: successMessage,
       client
     });
 

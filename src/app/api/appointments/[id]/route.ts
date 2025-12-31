@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Appointment from '@/lib/db/models/Appointment';
+import User from '@/lib/db/models/User';
 import { removeAppointmentFromCalendars, updateCalendarEvent } from '@/lib/services/googleCalendar';
 import { UserRole, AppointmentStatus } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
@@ -36,10 +37,20 @@ export async function GET(
     const dietitianId = (appointment.dietitian as any)._id?.toString() || (appointment.dietitian as any).toString();
     const clientId = (appointment.client as any)._id?.toString() || (appointment.client as any).toString();
     const userId = session.user.id;
-    const hasAccess =
-      session.user.role === UserRole.ADMIN ||
-      dietitianId === userId ||
-      clientId === userId;
+    
+    let hasAccess = false;
+    
+    if (session.user.role === UserRole.ADMIN) {
+      hasAccess = true;
+    } else if (dietitianId === userId || clientId === userId) {
+      hasAccess = true;
+    } else if ((session.user.role as string) === UserRole.HEALTH_COUNSELOR || (session.user.role as string) === 'health_counselor') {
+      // HC can access appointments for their assigned clients
+      const client = await User.findById(clientId);
+      if (client?.assignedHealthCounselor?.toString() === userId) {
+        hasAccess = true;
+      }
+    }
 
     if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -79,16 +90,24 @@ export async function PUT(
       );
     }
 
+    
     // Check if user can update this appointment
-    // Only admin, dietitian (who owns the appointment), or health_counselor can update
-    const canUpdate = 
-      session.user.role === UserRole.ADMIN ||
-      session.user.role === UserRole.HEALTH_COUNSELOR ||
-      (session.user.role === UserRole.DIETITIAN && 
-       appointment.dietitian.toString() === session.user.id);
+    // Admin can update any, dietitian can update their own, HC can only update appointments they created
+    let canUpdate = false;
+    
+    if (session.user.role === UserRole.ADMIN) {
+      canUpdate = true;
+    } else if (session.user.role === UserRole.DIETITIAN && appointment.dietitian.toString() === session.user.id) {
+      canUpdate = true;
+    } else if ((session.user.role as string) === UserRole.HEALTH_COUNSELOR || (session.user.role as string) === 'health_counselor') {
+      // Health counselor can only update appointments they created
+      if ((appointment as any).createdBy?.toString() === session.user.id) {
+        canUpdate = true;
+      }
+    }
 
     if (!canUpdate) {
-      return NextResponse.json({ error: 'Only  dietitian, or health counselor can edit appointments' }, { status: 403 });
+      return NextResponse.json({ error: 'You can only edit appointments you created' }, { status: 403 });
     }
 
     // If updating schedule, check for conflicts
@@ -199,15 +218,22 @@ export async function DELETE(
     }
 
     // Check if user can cancel this appointment
-    // Only admin, dietitian (who owns the appointment), or health_counselor can cancel
-    const canCancel = 
-      session.user.role === UserRole.ADMIN ||
-      session.user.role === UserRole.HEALTH_COUNSELOR ||
-      (session.user.role === UserRole.DIETITIAN && 
-       appointment.dietitian.toString() === session.user.id);
+    // Admin can cancel any, dietitian can cancel their own, HC can only cancel appointments they created
+    let canCancel = false;
+    
+    if (session.user.role === UserRole.ADMIN) {
+      canCancel = true;
+    } else if (session.user.role === UserRole.DIETITIAN && appointment.dietitian.toString() === session.user.id) {
+      canCancel = true;
+    } else if ((session.user.role as string) === UserRole.HEALTH_COUNSELOR || (session.user.role as string) === 'health_counselor') {
+      // Health counselor can only cancel appointments they created
+      if ((appointment as any).createdBy?.toString() === session.user.id) {
+        canCancel = true;
+      }
+    }
 
     if (!canCancel) {
-      return NextResponse.json({ error: 'Only dietitian, or health counselor can cancel appointments' }, { status: 403 });
+      return NextResponse.json({ error: 'You can only cancel appointments you created' }, { status: 403 });
     }
 
     // Remove from Google Calendar before cancelling

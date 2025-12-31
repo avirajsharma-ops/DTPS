@@ -138,16 +138,22 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/users - Create new user (admin only)
+// POST /api/users - Create new user (admin, dietitian, or health counselor can create clients)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== UserRole.ADMIN) {
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Allow admin, dietitian, and health counselor to create users
+    const allowedRoles = [UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR, 'health_counselor'];
+    if (!allowedRoles.includes(session.user.role as any)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const body = await request.json();
-    const { email, password, firstName, lastName, role, phone, bio, experience, consultationFee, specializations, credentials, gender, dateOfBirth, assignedDietitian } = body || {};
+    const { email, password, firstName, lastName, role, phone, bio, experience, consultationFee, specializations, credentials, gender, dateOfBirth, assignedDietitian, assignedHealthCounselor } = body || {};
 
     if (!email || !password || !firstName || !lastName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -177,6 +183,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This phone number is already registered' }, { status: 400 });
     }
 
+    // Determine assignment based on who is creating the client
+    let finalAssignedDietitian = assignedDietitian;
+    let finalAssignedHealthCounselor = assignedHealthCounselor;
+    
+    // If health counselor is creating a client, auto-assign to themselves
+    if (session.user.role === UserRole.HEALTH_COUNSELOR || session.user.role === 'health_counselor') {
+      finalAssignedHealthCounselor = session.user.id;
+    }
+    // If dietitian is creating a client, auto-assign to themselves
+    else if (session.user.role === UserRole.DIETITIAN) {
+      finalAssignedDietitian = finalAssignedDietitian || session.user.id;
+    }
+
     const user = new User({
       email: String(email).toLowerCase(),
       password, // NOTE: comparePassword supports plain text in this codebase; replace with hashing in production
@@ -191,7 +210,8 @@ export async function POST(request: NextRequest) {
       credentials,
       gender,
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-      assignedDietitian,
+      assignedDietitian: finalAssignedDietitian,
+      assignedHealthCounselor: finalAssignedHealthCounselor,
       status: 'active'
     });
 

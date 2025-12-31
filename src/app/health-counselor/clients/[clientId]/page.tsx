@@ -33,6 +33,8 @@ import {
   Plus,
   Eye,
   EyeOff,
+  History,
+  CheckSquare,
   ChevronLeft
 } from 'lucide-react';
 import Link from 'next/link';
@@ -414,17 +416,130 @@ export default function HealthCounselorClientDetailPage() {
     }
   };
 
-  // Health counselors cannot save changes - view only
+  // Health counselors CAN edit client form data (basic info, medical, lifestyle)
   const handleSave = async () => {
-    toast.error('Health counselors do not have permission to edit client data');
+    try {
+      // Prepare the data to save
+      const updateData = {
+        // Basic Info
+        firstName: basicInfo.firstName,
+        lastName: basicInfo.lastName,
+        email: basicInfo.email,
+        phone: basicInfo.phone,
+        dateOfBirth: basicInfo.dateOfBirth,
+        gender: basicInfo.gender,
+        parentAccount: basicInfo.parentAccount,
+        alternativePhone: basicInfo.altPhone,
+        alternativeEmail: basicInfo.altEmails,
+        anniversary: basicInfo.anniversary,
+        source: basicInfo.source,
+        referralSource: basicInfo.referralSource,
+        generalGoal: basicInfo.generalGoal,
+        maritalStatus: basicInfo.maritalStatus,
+        occupation: basicInfo.occupation,
+        healthGoals: basicInfo.goalsList,
+        targetWeightBucket: basicInfo.targetWeightBucket,
+        sharePhotoConsent: basicInfo.sharePhotoConsent,
+        heightFeet: basicInfo.heightFeet,
+        heightInch: basicInfo.heightInch,
+        heightCm: basicInfo.heightCm,
+        height: basicInfo.heightCm,
+        weightKg: basicInfo.weightKg,
+        weight: basicInfo.weightKg,
+        targetWeightKg: basicInfo.targetWeightKg,
+        idealWeightKg: basicInfo.idealWeightKg,
+        bmi: basicInfo.bmi,
+        activityLevel: basicInfo.activityLevel,
+        // Medical Data
+        medicalConditions: medicalData.medicalConditions,
+        allergies: medicalData.allergies,
+        dietaryRestrictions: medicalData.dietaryRestrictions,
+        medicalNotes: medicalData.notes,
+        diseaseHistory: medicalData.diseaseHistory,
+        medicalHistory: medicalData.medicalHistory,
+        familyHistory: medicalData.familyHistory,
+        medication: medicalData.medication,
+        bloodGroup: medicalData.bloodGroup,
+        gutIssues: medicalData.gutIssues,
+        isPregnant: medicalData.isPregnant,
+        isLactating: medicalData.isLactating,
+        menstrualCycle: medicalData.menstrualCycle,
+        bloodFlow: medicalData.bloodFlow,
+        // Lifestyle Data
+        foodPreference: lifestyleData.foodPreference,
+        preferredCuisine: lifestyleData.preferredCuisine,
+        allergiesFood: lifestyleData.allergiesFood,
+        fastDays: lifestyleData.fastDays,
+        nonVegExemptDays: lifestyleData.nonVegExemptDays,
+        foodLikes: lifestyleData.foodLikes,
+        foodDislikes: lifestyleData.foodDislikes,
+        eatOutFrequency: lifestyleData.eatOutFrequency,
+        smokingFrequency: lifestyleData.smokingFrequency,
+        alcoholFrequency: lifestyleData.alcoholFrequency,
+        activityRate: lifestyleData.activityRate,
+        cookingOil: lifestyleData.cookingOil,
+        monthlyOilConsumption: lifestyleData.monthlyOilConsumption,
+        cookingSalt: lifestyleData.cookingSalt,
+        carbonatedBeverageFrequency: lifestyleData.carbonatedBeverageFrequency,
+        cravingType: lifestyleData.cravingType,
+      };
+
+      const response = await fetch(`/api/users/${params.clientId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+
+      if (response.ok) {
+        toast.success('Client data saved successfully');
+        fetchClientDetails();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to save client data');
+      }
+    } catch (error) {
+      console.error('Error saving client data:', error);
+      toast.error('Error saving client data');
+    }
   };
 
-  const handleSaveRecallEntry = async () => {
-    toast.error('Health counselors do not have permission to edit dietary recall');
+  // Health counselors CAN edit dietary recall entries
+  const handleSaveRecallEntry = async (entry: RecallEntry) => {
+    try {
+      const response = await fetch(`/api/users/${params.clientId}/recall`, {
+        method: entry._id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+
+      if (response.ok) {
+        toast.success('Recall entry saved');
+        fetchClientDetails();
+      } else {
+        toast.error('Failed to save recall entry');
+      }
+    } catch (error) {
+      console.error('Error saving recall entry:', error);
+      toast.error('Error saving recall entry');
+    }
   };
 
-  const handleDeleteRecallEntry = async () => {
-    toast.error('Health counselors do not have permission to delete dietary recall');
+  const handleDeleteRecallEntry = async (entryId: string) => {
+    try {
+      const response = await fetch(`/api/users/${params.clientId}/recall/${entryId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        toast.success('Recall entry deleted');
+        fetchClientDetails();
+      } else {
+        toast.error('Failed to delete recall entry');
+      }
+    } catch (error) {
+      console.error('Error deleting recall entry:', error);
+      toast.error('Error deleting recall entry');
+    }
   };
 
   const calculateAge = (dateString: string | undefined) => {
@@ -587,8 +702,20 @@ export default function HealthCounselorClientDetailPage() {
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
-                <Calendar className="h-4 w-4" />
+                <CheckSquare className="h-4 w-4" />
                 Tasks
+              </button>
+
+              <button
+                onClick={() => setActiveSection('history')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
+                  activeSection === 'history'
+                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <History className="h-4 w-4" />
+                History
               </button>
             </div>
           </div>
@@ -729,7 +856,9 @@ export default function HealthCounselorClientDetailPage() {
             {activeSection === 'bookings' && (
               <BookingsSection 
                 clientId={client._id} 
-                clientName={`${client.firstName} ${client.lastName}`} 
+                clientName={`${client.firstName} ${client.lastName}`}
+                userRole="health_counselor"
+                dietitianId={client.assignedDietitian?._id}
               />
             )}
 
@@ -742,7 +871,12 @@ export default function HealthCounselorClientDetailPage() {
                 clientId={params.clientId as string}
                 clientName={`${client?.firstName} ${client?.lastName}`}
                 dietitianEmail={session?.user?.email}
+                userRole="health_counselor"
               />
+            )}
+
+            {activeSection === 'history' && (
+              <HistorySection clientId={params.clientId as string} />
             )}
           </div>
         </div>

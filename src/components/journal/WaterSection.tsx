@@ -290,7 +290,7 @@ export default function WaterSection({ clientId, selectedDate }: WaterSectionPro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {assignedWater ? (
+          {assignedWater && assignedWater.amount > 0 ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">
                 <div>

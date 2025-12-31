@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,7 @@ interface Appointment {
   duration: number;
   notes?: string;
   meetingLink?: string;
+  createdBy?: string;
   dietitian?: {
     _id: string;
     firstName: string;
@@ -68,9 +70,12 @@ interface Appointment {
 interface BookingsSectionProps {
   clientId: string;
   clientName?: string;
+  userRole?: 'dietitian' | 'health_counselor' | 'admin';
+  dietitianId?: string; // Required for booking - the dietitian to book with
 }
 
-export default function BookingsSection({ clientId, clientName }: BookingsSectionProps) {
+export default function BookingsSection({ clientId, clientName, userRole = 'dietitian', dietitianId }: BookingsSectionProps) {
+  const { data: session } = useSession();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -81,6 +86,13 @@ export default function BookingsSection({ clientId, clientName }: BookingsSectio
   const [bookingDuration, setBookingDuration] = useState(30);
   const [bookingNotes, setBookingNotes] = useState('');
   const [isBooking, setIsBooking] = useState(false);
+
+  // Helper to check if user can cancel an appointment
+  const canCancelAppointment = (apt: Appointment) => {
+    if (userRole !== 'health_counselor') return true; // Admin/Dietitian can cancel any
+    const currentUserId = (session?.user as any)?.id || (session?.user as any)?._id;
+    return apt.createdBy === currentUserId; // HC can only cancel their own
+  };
 
   const fetchAppointments = useCallback(async (silent = false) => {
     if (!clientId) return;
@@ -160,6 +172,14 @@ export default function BookingsSection({ clientId, clientName }: BookingsSectio
       return;
     }
 
+    // Get dietitian ID - use prop if provided, otherwise use session user id (for dietitians booking themselves)
+    const bookingDietitianId = dietitianId || (session?.user as any)?.id;
+    
+    if (!bookingDietitianId) {
+      toast.error('No dietitian assigned to this client');
+      return;
+    }
+
     setIsBooking(true);
     try {
       const scheduledAt = new Date(`${bookingDate}T${bookingTime}`);
@@ -168,6 +188,7 @@ export default function BookingsSection({ clientId, clientName }: BookingsSectio
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          dietitianId: bookingDietitianId,
           clientId,
           type: bookingType,
           scheduledAt: scheduledAt.toISOString(),
@@ -333,13 +354,15 @@ export default function BookingsSection({ clientId, clientName }: BookingsSectio
                           <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
                           Mark Complete
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleCancelAppointment(apt._id)}
-                          className="text-red-600"
-                        >
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Cancel
-                        </DropdownMenuItem>
+                        {canCancelAppointment(apt) && (
+                          <DropdownMenuItem 
+                            onClick={() => handleCancelAppointment(apt._id)}
+                            className="text-red-600"
+                          >
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Cancel
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>

@@ -100,11 +100,25 @@ export async function DELETE(
 
     const { taskId } = await params;
 
-    const task = await Task.findByIdAndDelete(taskId);
-
+    // Find the task first to check ownership
+    const task = await Task.findById(taskId);
+    
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
+
+    // Health counselors can only delete tasks they created
+    const userRole = session.user?.role?.toLowerCase();
+    if (userRole === 'health_counselor') {
+      if (task.dietitian?.toString() !== session.user?.id) {
+        return NextResponse.json(
+          { error: 'Health counselors can only delete tasks they created' },
+          { status: 403 }
+        );
+      }
+    }
+
+    await Task.findByIdAndDelete(taskId);
 
     return NextResponse.json({
       success: true,

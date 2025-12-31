@@ -158,7 +158,8 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!;
+        // Ensure user.id is set from either sub or from the token directly
+        session.user.id = token.sub || (token as any).id || '';
         session.user.role = token.role as UserRole;
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;

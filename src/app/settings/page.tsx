@@ -7,18 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import FileUpload from '@/components/ui/file-upload';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   User,
-  Camera,
   Save,
-  Shield,
   Bell,
   CreditCard,
   CheckCircle,
@@ -222,182 +217,11 @@ function DesktopSettingsPage() {
           </Alert>
         )}
 
-        <Tabs defaultValue="profile" className="space-y-4">
+        <Tabs defaultValue="notifications" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="health">Health Info</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="integrations">Integrations</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="profile" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>Update your personal information</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Avatar */}
-                <div className="flex items-center space-x-6">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={profile?.avatar} />
-                    <AvatarFallback className="text-lg">{profile?.user?.firstName?.[0] || 'U'}{profile?.user?.lastName?.[0] || 'N'}
-                      {/* {profile?.firstName[0]}{profile?.lastName[0]} */}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-2">Profile Picture</h3>
-                    <FileUpload
-                      type="avatar"
-                      onUpload={handleAvatarUpload}
-                      className="w-40"
-                    >
-                      <Button variant="outline" size="sm">
-                        <Camera className="h-4 w-4 mr-2" />
-                        Change Photo
-                      </Button>
-                    </FileUpload>
-                  </div>
-                </div>
-
-                {/* Basic Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      value={profile?.user?.firstName}
-                      onChange={(e) => updateField('firstName', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      value={profile?.user?.lastName}
-                      onChange={(e) => updateField('lastName', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={profile?.user?.email}
-                      onChange={(e) => updateField('email', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      value={profile?.user?.phone || ''}
-                      onChange={(e) => updateField('phone', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={profile?.user?.bio || ''}
-                    onChange={(e) => updateField('bio', e.target.value)}
-                    rows={3}
-                    placeholder="Tell us about yourself..."
-                  />
-                </div>
-
-               
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="health" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Health Information</CardTitle>
-                <CardDescription>Manage your health profile and goals</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                    <Input
-                      id="dateOfBirth"
-                      type="date"
-                      value={profile?.user?.dateOfBirth || ''}
-                      onChange={(e) => updateField('dateOfBirth', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="gender">Gender</Label>
-                    <Select
-                      value={profile?.user?.gender || ''}
-                      onValueChange={(value) => updateField('gender', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                        <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="activityLevel">Activity Level</Label>
-                    <Select
-                      value={profile?.user?.activityLevel || ''}
-                      onValueChange={(value) => updateField('activityLevel', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select activity level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sedentary">Sedentary</SelectItem>
-                        <SelectItem value="lightly_active">Lightly Active</SelectItem>
-                        <SelectItem value="moderately_active">Moderately Active</SelectItem>
-                        <SelectItem value="very_active">Very Active</SelectItem>
-                        <SelectItem value="extremely_active">Extremely Active</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="height">Height (cm)</Label>
-                    <Input
-                      id="height"
-                      type="number"
-                      value={profile?.user?.height || ''}
-                      onChange={(e) => updateField('height', parseFloat(e.target.value))}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="weight">Weight (kg)</Label>
-                    <Input
-                      id="weight"
-                      type="number"
-                      value={profile?.user?.weight || ''}
-                      onChange={(e) => updateField('weight', parseFloat(e.target.value))}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="notifications" className="space-y-4">
             <Card>
@@ -469,27 +293,6 @@ function DesktopSettingsPage() {
                   Connect your Google Calendar to automatically sync tasks and receive calendar notifications.
                   Your calendar will be updated with new tasks and their deadlines.
                 </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="security" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5" />
-                  <span>Security Settings</span>
-                </CardTitle>
-                <CardDescription>Manage your account security</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Coming Soon</h3>
-                  <p className="text-gray-600">
-                    Security settings including password change will be available soon.
-                  </p>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>

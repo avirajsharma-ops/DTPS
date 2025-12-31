@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Message from '@/lib/db/models/Message';
+import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { SSEManager } from '@/lib/realtime/sse-manager';
 import { createMessageWebhook } from '@/lib/webhooks/webhook-manager';
@@ -41,6 +42,21 @@ export async function GET(request: NextRequest) {
     const conversationWith = searchParams.get('conversationWith');
     const limit = parseInt(searchParams.get('limit') || '50');
     const page = parseInt(searchParams.get('page') || '1');
+
+    // For health counselors, validate they can message this client
+    if (conversationWith && session.user.role === 'health_counselor') {
+      const otherUser = await User.findById(conversationWith);
+      if (!otherUser) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      // Check if this is a client and if they're assigned to this health counselor
+      if (otherUser.role === 'client') {
+        if (otherUser.assignedHealthCounselor?.toString() !== session.user.id) {
+          return NextResponse.json({ error: 'You can only message clients assigned to you' }, { status: 403 });
+        }
+      }
+    }
 
     let query: any = {};
 
@@ -116,6 +132,21 @@ export async function POST(request: NextRequest) {
     const validatedData = messageSchema.parse(body);
 
     await connectDB();
+
+    // For health counselors, validate they can message this client
+    if (session.user.role === 'health_counselor') {
+      const recipientUser = await User.findById(validatedData.recipientId);
+      if (!recipientUser) {
+        return NextResponse.json({ error: 'Recipient not found' }, { status: 404 });
+      }
+
+      // Check if this is a client and if they're assigned to this health counselor
+      if (recipientUser.role === 'client') {
+        if (recipientUser.assignedHealthCounselor?.toString() !== session.user.id) {
+          return NextResponse.json({ error: 'You can only message clients assigned to you' }, { status: 403 });
+        }
+      }
+    }
 
     // Create message
     const message = new Message({

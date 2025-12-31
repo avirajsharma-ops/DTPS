@@ -81,6 +81,11 @@ const appointmentSchema = new Schema({
   googleCalendarEventId: {
     dietitian: { type: String }, // Event ID in dietitian's calendar
     client: { type: String }     // Event ID in client's calendar
+  },
+  // Track who created this appointment (for HC permission checks)
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
   }
 }, {
   timestamps: true,
