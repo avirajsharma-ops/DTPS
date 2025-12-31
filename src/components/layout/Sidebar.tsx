@@ -25,7 +25,8 @@ import {
   DollarSign,
   Package,
   Wallet,
-  AlertTriangle
+  AlertTriangle,
+  Bell
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -91,6 +92,12 @@ export default function Sidebar({ className }: SidebarProps) {
             description: 'Client communications'
           },
           {
+            href: '/settings/notifications',
+            label: 'Send Notifications',
+            icon: Bell,
+            description: 'Send push notifications to clients'
+          },
+          {
             href: '/profile',
             label: 'Profile',
             icon: User,
@@ -129,6 +136,12 @@ export default function Sidebar({ className }: SidebarProps) {
             label: 'Messages',
             icon: MessageCircle,
             description: 'Client communications'
+          },
+          {
+            href: '/settings/notifications',
+            label: 'Send Notifications',
+            icon: Bell,
+            description: 'Send push notifications to clients'
           },
           {
             href: '/health-counselor/profile',
@@ -274,7 +287,12 @@ export default function Sidebar({ className }: SidebarProps) {
             icon: Wallet,
             description: 'Review external payments'
           },
-
+          {
+            href: '/settings/notifications',
+            label: 'Send Notifications',
+            icon: Bell,
+            description: 'Send push notifications to clients'
+          },
           {
             href: '/profile',
             label: 'Profile',

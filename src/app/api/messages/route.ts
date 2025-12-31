@@ -9,6 +9,7 @@ import { SSEManager } from '@/lib/realtime/sse-manager';
 import { createMessageWebhook } from '@/lib/webhooks/webhook-manager';
 import { z } from 'zod';
 import { logHistoryServer } from '@/lib/server/history';
+import { sendNewMessageNotification } from '@/lib/notifications/notificationService';
 
 // Message validation schema
 const messageSchema = z.object({
@@ -174,6 +175,20 @@ export async function POST(request: NextRequest) {
 
     // Trigger webhook for message sent
     await createMessageWebhook(message.toJSON(), 'sent');
+
+    // Send push notification to recipient
+    const senderName = `${(message.sender as any).firstName} ${(message.sender as any).lastName}`;
+    try {
+      await sendNewMessageNotification(
+        validatedData.recipientId,
+        senderName,
+        validatedData.content,
+        message._id.toString()
+      );
+    } catch (notifError) {
+      console.error('Failed to send push notification:', notifError);
+      // Don't fail the message send if notification fails
+    }
 
     // Log history for message sent (for both sender and recipient)
     await logHistoryServer({

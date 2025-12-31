@@ -5,6 +5,7 @@ import dbConnect from "@/lib/db/connection";
 import JournalTracking from "@/lib/db/models/JournalTracking";
 import User from "@/lib/db/models/User";
 import ClientMealPlan from "@/lib/db/models/ClientMealPlan";
+import { sendTaskAssignedNotification } from "@/lib/notifications/notificationService";
 
 // Helper to check if client has active meal plan for a given date
 async function hasActiveMealPlan(clientId: string, targetDate: Date): Promise<boolean> {
@@ -180,6 +181,18 @@ export async function POST(
         }
 
         await journal.save();
+
+        // Send push notification to client about assigned task
+        try {
+            const dateStr = targetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            await sendTaskAssignedNotification(clientId, {
+                taskType: 'activity',
+                target: `${activities.length} exercise${activities.length > 1 ? 's' : ''}`,
+                date: dateStr
+            });
+        } catch (notifError) {
+            console.error('Failed to send task notification:', notifError);
+        }
 
         return NextResponse.json({
             success: true,

@@ -3,13 +3,17 @@ package com.dtps.dietary
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.view.View
 import android.webkit.*
 import android.widget.ProgressBar
@@ -18,8 +22,12 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,6 +42,9 @@ class MainActivity : AppCompatActivity() {
     private var permissionCallback: PermissionRequest? = null
     private var splashComplete = false
     private val mainHandler = Handler(Looper.getMainLooper())
+    
+    // Camera photo URI
+    private var cameraPhotoUri: Uri? = null
 
     companion object {
         private const val APP_URL = "https://dtps.tech/user"
@@ -41,11 +52,68 @@ class MainActivity : AppCompatActivity() {
         private val ALLOWED_HOSTS = listOf("dtps.tech")
     }
 
-    private val filePickerLauncher = registerForActivityResult(
+    // File picker launcher for gallery
+    private val galleryPickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         fileUploadCallback?.onReceiveValue(uris.toTypedArray())
         fileUploadCallback = null
+    }
+
+    // Camera launcher
+    private val cameraLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && cameraPhotoUri != null) {
+            fileUploadCallback?.onReceiveValue(arrayOf(cameraPhotoUri!!))
+        } else {
+            fileUploadCallback?.onReceiveValue(null)
+        }
+        fileUploadCallback = null
+        cameraPhotoUri = null
+    }
+
+    // Combined picker (camera + gallery)
+    private val combinedPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val data = result.data
+            val uris = mutableListOf<Uri>()
+            
+            // Check if camera photo was taken
+            if (cameraPhotoUri != null) {
+                val file = File(cameraPhotoUri!!.path ?: "")
+                if (file.exists() && file.length() > 0) {
+                    uris.add(cameraPhotoUri!!)
+                }
+            }
+            
+            // Check for gallery selection
+            data?.data?.let { uri -> 
+                if (!uris.contains(uri)) {
+                    uris.add(uri) 
+                }
+            }
+            data?.clipData?.let { clipData ->
+                for (i in 0 until clipData.itemCount) {
+                    val uri = clipData.getItemAt(i).uri
+                    if (!uris.contains(uri)) {
+                        uris.add(uri)
+                    }
+                }
+            }
+            
+            if (uris.isNotEmpty()) {
+                fileUploadCallback?.onReceiveValue(uris.toTypedArray())
+            } else {
+                fileUploadCallback?.onReceiveValue(null)
+            }
+        } else {
+            fileUploadCallback?.onReceiveValue(null)
+        }
+        fileUploadCallback = null
+        cameraPhotoUri = null
     }
 
     private val multiplePermissionsLauncher = registerForActivityResult(
@@ -122,6 +190,37 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    
+    // JavaScript interface for native features
+    inner class NativeInterface {
+        @JavascriptInterface
+        fun getFCMToken(): String {
+            val prefs = getSharedPreferences("dtps_prefs", Context.MODE_PRIVATE)
+            return prefs.getString("fcm_token", "") ?: ""
+        }
+        
+        @JavascriptInterface
+        fun isNativeApp(): Boolean {
+            return true
+        }
+        
+        @JavascriptInterface
+        fun getDeviceType(): String {
+            return "android"
+        }
+        
+        @JavascriptInterface
+        fun requestNotificationPermission() {
+            mainHandler.post {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) 
+                        != PackageManager.PERMISSION_GRANTED) {
+                        multiplePermissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
+                    }
+                }
+            }
+        }
+    }
 
     private fun showSplash() {
         splashWebView.visibility = View.VISIBLE
@@ -189,6 +288,9 @@ class MainActivity : AppCompatActivity() {
                 safeBrowsingEnabled = true
             }
         }
+        
+        // Add JavaScript interface for native features (FCM token, etc.)
+        webView.addJavascriptInterface(NativeInterface(), "NativeApp")
 
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -285,11 +387,82 @@ class MainActivity : AppCompatActivity() {
                 fileUploadCallback?.onReceiveValue(null)
                 fileUploadCallback = filePathCallback
                 
-                val mimeTypes = fileChooserParams?.acceptTypes?.joinToString(",") ?: "image/*"
-                filePickerLauncher.launch(mimeTypes)
+                val acceptTypes = fileChooserParams?.acceptTypes ?: arrayOf("*/*")
+                val isImageRequest = acceptTypes.any { 
+                    it.contains("image") || it == "*/*" 
+                }
+                
+                if (isImageRequest) {
+                    // Show dialog with Camera and Gallery options
+                    showImagePickerDialog()
+                } else {
+                    // For non-image files, use regular file picker
+                    val mimeTypes = acceptTypes.joinToString(",").ifEmpty { "*/*" }
+                    galleryPickerLauncher.launch(mimeTypes)
+                }
                 return true
             }
         }
+    }
+    
+    private fun showImagePickerDialog() {
+        val options = arrayOf("📷 Take Photo", "🖼️ Choose from Gallery", "Cancel")
+        
+        AlertDialog.Builder(this)
+            .setTitle("Select Image")
+            .setItems(options) { dialog, which ->
+                when (which) {
+                    0 -> openCamera()
+                    1 -> openGallery()
+                    else -> {
+                        fileUploadCallback?.onReceiveValue(null)
+                        fileUploadCallback = null
+                    }
+                }
+                dialog.dismiss()
+            }
+            .setOnCancelListener {
+                fileUploadCallback?.onReceiveValue(null)
+                fileUploadCallback = null
+            }
+            .show()
+    }
+    
+    private fun openCamera() {
+        // Check camera permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
+            != PackageManager.PERMISSION_GRANTED) {
+            // Request permission then try again
+            multiplePermissionsLauncher.launch(arrayOf(Manifest.permission.CAMERA))
+            fileUploadCallback?.onReceiveValue(null)
+            fileUploadCallback = null
+            return
+        }
+        
+        try {
+            val photoFile = createImageFile()
+            cameraPhotoUri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                photoFile
+            )
+            cameraLauncher.launch(cameraPhotoUri)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            fileUploadCallback?.onReceiveValue(null)
+            fileUploadCallback = null
+        }
+    }
+    
+    private fun openGallery() {
+        galleryPickerLauncher.launch("image/*")
+    }
+    
+    private fun createImageFile(): File {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val imageFileName = "DTPS_${timeStamp}_"
+        val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(imageFileName, ".jpg", storageDir)
     }
 
     private fun setupBackHandler() {

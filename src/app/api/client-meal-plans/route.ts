@@ -9,6 +9,7 @@ import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import { logHistoryServer } from '@/lib/server/history';
+import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
 
 // Validation schema for client meal plan assignment
 const clientMealPlanSchema = z.object({
@@ -388,6 +389,21 @@ export async function POST(request: NextRequest) {
         status: clientMealPlan.status
       }
     });
+
+    // Send push notification to client about new meal plan
+    try {
+      await sendNotificationToUser(validatedData.clientId, {
+        title: '📋 New Meal Plan Assigned',
+        body: `You have a new meal plan: "${validatedData.name}". Check your plan now!`,
+        data: {
+          type: 'meal_plan',
+          mealPlanId: clientMealPlan._id?.toString(),
+          url: '/my-plan'
+        }
+      });
+    } catch (notificationError) {
+      console.error('Failed to send meal plan notification:', notificationError);
+    }
 
     return NextResponse.json({
       success: true,
