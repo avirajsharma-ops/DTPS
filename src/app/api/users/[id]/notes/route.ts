@@ -80,17 +80,15 @@ export async function GET(
 
     // If user is a client, only show notes marked as showToClient
     const isClient = session.user.role === 'client';
-    const isHealthCounselor = session.user.role?.toLowerCase() === 'health_counselor';
     const query: any = { client: clientObjectId };
     
     if (isClient) {
       query.showToClient = true;
-    } else if (isHealthCounselor) {
-      // Health Counselors can only see notes they created (ownership-based permission)
-      query.createdBy = new mongoose.Types.ObjectId(session.user.id);
     }
+    // HC and Dietitian can see ALL notes but can only delete their own (handled in DELETE)
 
     const notes = await ClientNote.find(query)
+      .populate('createdBy', 'firstName lastName')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -103,7 +101,12 @@ export async function GET(
         content: note.content,
         showToClient: note.showToClient,
         attachments: note.attachments || [],
-        createdAt: note.createdAt
+        createdAt: note.createdAt,
+        createdBy: note.createdBy ? {
+          _id: note.createdBy._id?.toString(),
+          firstName: note.createdBy.firstName,
+          lastName: note.createdBy.lastName
+        } : null
       })),
       topicTypes: NOTE_TOPIC_TYPES
     });

@@ -444,7 +444,7 @@ export default function AdminUsersPage() {
               <label className="text-sm text-gray-600">Phone <span className="text-red-500">*</span></label>
               <div className="flex gap-2">
                 <Select value={form.countryCode} onValueChange={(v) => setForm(f => ({ ...f, countryCode: v }))}>
-                  <SelectTrigger className="w-[100px]">
+                  <SelectTrigger className="w-25">
                     <SelectValue placeholder="Code" />
                   </SelectTrigger>
                   <SelectContent>

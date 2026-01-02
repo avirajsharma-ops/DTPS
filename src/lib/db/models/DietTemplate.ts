@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import Counter from './Counter';
 
 // Food option interface (from DietPlanDashboard)
 interface IFoodOption {
@@ -124,15 +125,18 @@ const MealTypeConfigSchema = new Schema({
 
 // Main diet template schema
 const DietTemplateSchema = new Schema({
+  uuid: {
+    type: String,
+    unique: true,
+    index: true
+  },
   name: { 
     type: String, 
     required: true, 
-    trim: true,
-    maxlength: 200
+    trim: true
   },
   description: { 
-    type: String, 
-    maxlength: 2000 
+    type: String
   },
   category: {
     type: String,
@@ -268,6 +272,28 @@ DietTemplateSchema.virtual('totalRecipes').get(function() {
     }
   });
   return count;
+});
+
+// Pre-save middleware to generate auto-incrementing uuid
+DietTemplateSchema.pre('save', async function(next) {
+  try {
+    // Generate auto-incrementing uuid for new documents only if uuid is not already set
+    if (this.isNew && !this.uuid) {
+      const counter = await Counter.findByIdAndUpdate(
+        'dietTemplateId',
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      if (counter) {
+        this.uuid = String(counter.seq);
+      }
+    }
+  } catch (error) {
+    console.error('Error in DietTemplate pre-save hook:', error);
+    next(error as any);
+    return;
+  }
+  next();
 });
 
 // Delete cached model if it exists to pick up schema changes

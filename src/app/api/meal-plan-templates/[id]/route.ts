@@ -80,7 +80,8 @@ export async function PUT(
 
   } catch (error) {
     console.error('Error updating meal plan template:', error);
-    return NextResponse.json({ success: false, error: 'Failed to update template' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update template';
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
 
@@ -131,8 +132,9 @@ export async function PATCH(
     });
 
   } catch (error) {
-    console.error('Error updating meal plan template:', error);
-    return NextResponse.json({ success: false, error: 'Failed to update template' }, { status: 500 });
+    console.error('Error updating meal plan template (PATCH):', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update template';
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
 
@@ -175,6 +177,7 @@ export async function DELETE(
 
   } catch (error) {
     console.error('Error deleting meal plan template:', error);
-    return NextResponse.json({ success: false, error: 'Failed to delete template' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Failed to delete template';
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }

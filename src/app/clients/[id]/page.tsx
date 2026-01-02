@@ -185,7 +185,7 @@ export default function ClientDetailsPage() {
 
               <div className="border-t p-4 space-y-3">
                 <h4 className="font-medium text-gray-800">Notes</h4>
-                <Textarea placeholder="Add notes..." className="min-h-[100px]" />
+                <Textarea placeholder="Add notes..." className="min-h-25" />
               </div>
             </Card>
 

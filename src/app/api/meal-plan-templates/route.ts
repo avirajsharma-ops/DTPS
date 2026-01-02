@@ -7,10 +7,10 @@ import Recipe from '@/lib/db/models/Recipe';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 
-// Validation schema for meal plan template
+// Validation schema for meal plan template (no word limits)
 const mealPlanTemplateSchema = z.object({
   templateType: z.enum(['plan','diet']).default('plan'),
-  name: z.string().min(1, 'Name is required').max(200, 'Name too long'),
+  name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   category: z.enum(['weight-loss', 'weight-gain', 'maintenance', 'muscle-gain', 'diabetes', 'heart-healthy', 'keto', 'vegan', 'custom']),
   duration: z.number().min(1).max(365),
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
   const templateType = searchParams.get('templateType');
   const createdBy = searchParams.get('createdBy');
   const sortBy = searchParams.get('sortBy') || 'newest';
-  const limit = parseInt(searchParams.get('limit') || '12');
+  const limit = parseInt(searchParams.get('limit') || '1000');
   const skip = parseInt(searchParams.get('skip') || '0');
   const days = searchParams.get('days'); // filter by duration
 

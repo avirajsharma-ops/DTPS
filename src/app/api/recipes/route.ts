@@ -6,14 +6,13 @@ import Recipe from '@/lib/db/models/Recipe';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import { getImageKit } from '@/lib/imagekit';
-import { v4 as uuidv4 } from 'uuid';
 import { compressImageServer } from '@/lib/imageCompressionServer';
 import mongoose from 'mongoose';
 
-// Recipe validation schema - flexible to handle both old and new formats
+// Recipe validation schema - flexible to handle both old and new formats (no word limits)
 const recipeSchema = z.object({
-  name: z.string().min(1, 'Recipe name is required').max(200, 'Name too long'),
-  description: z.string().max(1000, 'Description too long').optional(),
+  name: z.string().min(1, 'Recipe name is required'),
+  description: z.string().optional(),
   ingredients: z.array(z.object({
     name: z.string().min(1, 'Ingredient name is required'),
     quantity: z.number().min(0, 'Quantity must be positive'),
@@ -79,7 +78,8 @@ export async function GET(request: NextRequest) {
     const minProtein = searchParams.get('minProtein');
     const maxPrepTime = searchParams.get('maxPrepTime');
     const sortBy = searchParams.get('sortBy') || 'newest';
-    const limit = parseInt(searchParams.get('limit') || '12');
+    const limitParam = searchParams.get('limit');
+    const limit = limitParam ? parseInt(limitParam) : 0; // 0 means no limit
     const page = parseInt(searchParams.get('page') || '1');
 
     // Build query
@@ -166,11 +166,16 @@ export async function GET(request: NextRequest) {
         sortOptions = { createdAt: -1 };
     }
 
-    const recipes = await Recipe.find(query)
+    let recipesQuery = Recipe.find(query)
       .populate('createdBy', 'firstName lastName')
-      .sort(sortOptions)
-      .limit(limit)
-      .skip((page - 1) * limit);
+      .sort(sortOptions);
+
+    // Only apply limit and skip if limit is set (greater than 0)
+    if (limit > 0) {
+      recipesQuery = recipesQuery.limit(limit).skip((page - 1) * limit);
+    }
+
+    const recipes = await recipesQuery;
 
     const total = await Recipe.countDocuments(query);
 
@@ -330,7 +335,7 @@ export async function POST(request: NextRequest) {
         const imageKit = getImageKit();
         const uploadResponse = await imageKit.upload({
           file: compressedBase64,
-          fileName: `recipe_${uuidv4()}.jpg`,
+          fileName: `recipe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`,
           folder: '/recipes',
         });
         recipeData.image = uploadResponse.url;

@@ -138,12 +138,6 @@ export default function Sidebar({ className }: SidebarProps) {
             description: 'Client communications'
           },
           {
-            href: '/settings/notifications',
-            label: 'Send Notifications',
-            icon: Bell,
-            description: 'Send push notifications to clients'
-          },
-          {
             href: '/health-counselor/profile',
             label: 'Profile',
             icon: User,
@@ -287,12 +281,7 @@ export default function Sidebar({ className }: SidebarProps) {
             icon: Wallet,
             description: 'Review external payments'
           },
-          {
-            href: '/settings/notifications',
-            label: 'Send Notifications',
-            icon: Bell,
-            description: 'Send push notifications to clients'
-          },
+
           {
             href: '/profile',
             label: 'Profile',
@@ -329,7 +318,7 @@ export default function Sidebar({ className }: SidebarProps) {
   return (
     <div className={cn(
       "flex flex-col bg-white border-r border-gray-200 transition-all duration-300 h-screen",
-      isCollapsed ? "w-[5.5rem]" : "w-[15.9rem]",
+      isCollapsed ? "w-22" : "w-[15.9rem]",
       className
     )}>
       {/* Header - Always shows Dashboard button */}

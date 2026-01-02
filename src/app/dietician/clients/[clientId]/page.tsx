@@ -144,6 +144,11 @@ interface ClientNote {
     size?: number;
   }>;
   createdAt?: string;
+  createdBy?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 const NOTE_TOPIC_TYPES = [
@@ -1999,6 +2004,11 @@ export default function ClientDetailPage() {
                         {selectedNote.createdAt && (
                           <p className="text-[10px] text-gray-400 pt-2">
                             Created: {format(new Date(selectedNote.createdAt), 'MMM d, yyyy h:mm a')}
+                            {selectedNote.createdBy && (
+                              <span className="ml-1">
+                                by {selectedNote.createdBy.firstName} {selectedNote.createdBy.lastName}
+                              </span>
+                            )}
                           </p>
                         )}
 
@@ -2022,17 +2032,20 @@ export default function ClientDetailPage() {
                               </>
                             )}
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                            onClick={() => {
-                              handleDeleteNote(selectedNote._id!);
-                              handleCloseNoteDetail();
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          {/* Only show delete button if current user created the note */}
+                          {selectedNote.createdBy?._id === session?.user?.id && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                              onClick={() => {
+                                handleDeleteNote(selectedNote._id!);
+                                handleCloseNoteDetail();
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                   </CardContent>
@@ -2358,7 +2371,7 @@ export default function ClientDetailPage() {
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1">
+                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                             <Badge variant="outline" className="text-[8px] px-1 py-0 text-gray-500">
                               {note.topicType || 'General'}
                             </Badge>
@@ -2372,6 +2385,11 @@ export default function ClientDetailPage() {
                                 <EyeOff className="h-2.5 w-2.5 mr-0.5" />
                                 Hidden
                               </Badge>
+                            )}
+                            {note.createdBy && (
+                              <span className="text-[9px] text-gray-400">
+                                by {note.createdBy.firstName} {note.createdBy.lastName}
+                              </span>
                             )}
                           </div>
                           <p className="text-[10px] text-gray-500 mb-1">
@@ -2394,14 +2412,17 @@ export default function ClientDetailPage() {
                               <Eye className="h-3.5 w-3.5 text-gray-500" />
                             )}
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleDeleteNote(note._id!)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          {/* Only show delete button if current user created the note */}
+                          {note.createdBy?._id === session?.user?.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteNote(note._id!)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardContent>

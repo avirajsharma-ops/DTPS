@@ -75,9 +75,9 @@ export default function TasksSection({
 
   // Helper function to check if current user can delete a task
   const canDeleteTask = (task: Task) => {
-    // Admins and dietitians can delete any task
-    if (userRole !== 'health_counselor') return true;
-    // Health counselors can only delete tasks they created
+    // Admins can delete any task
+    if (userRole === 'admin') return true;
+    // Both dietitians and health counselors can only delete tasks they created
     const currentUserId = (session?.user as any)?.id || (session?.user as any)?._id;
     return task.dietitian?._id === currentUserId;
   };

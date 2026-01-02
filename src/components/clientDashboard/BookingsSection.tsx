@@ -89,9 +89,9 @@ export default function BookingsSection({ clientId, clientName, userRole = 'diet
 
   // Helper to check if user can cancel an appointment
   const canCancelAppointment = (apt: Appointment) => {
-    if (userRole !== 'health_counselor') return true; // Admin/Dietitian can cancel any
+    if (userRole === 'admin') return true; // Admin can cancel any
     const currentUserId = (session?.user as any)?.id || (session?.user as any)?._id;
-    return apt.createdBy === currentUserId; // HC can only cancel their own
+    return apt.createdBy === currentUserId; // Both dietitian and HC can only cancel their own
   };
 
   const fetchAppointments = useCallback(async (silent = false) => {
@@ -400,7 +400,7 @@ export default function BookingsSection({ clientId, clientName, userRole = 'diet
                     {getStatusBadge(apt.status)}
                   </div>
                   {apt.notes && (
-                    <span className="text-sm text-gray-500 truncate max-w-[200px]">
+                    <span className="text-sm text-gray-500 truncate max-w-50">
                       {apt.notes}
                     </span>
                   )}

@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import { IRecipe, INutrition } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
+import Counter from './Counter';
 
 const nutritionSchema = new Schema<INutrition>({
   calories: {
@@ -63,7 +63,6 @@ const recipeSchema = new Schema({
   uuid: {
     type: String,
     unique: true,
-    default: () => uuidv4(),
     index: true
   },
   isActive: {
@@ -74,12 +73,10 @@ const recipeSchema = new Schema({
   name: {
     type: String,
     required: true,
-    trim: true,
-    maxlength: 200
+    trim: true
   },
   description: {
-    type: String,
-    maxlength: 1000
+    type: String
   },
   ingredients: {
     type: [ingredientSchema],
@@ -182,7 +179,7 @@ const recipeSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     userName: String,
     rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String, maxlength: 500 },
+    comment: { type: String },
     images: [String],
     helpful: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now }
@@ -231,6 +228,19 @@ recipeSchema.index({ 'rating.average': -1 });
 recipeSchema.index({ usageCount: -1 });
 recipeSchema.index({ createdAt: -1 });
 recipeSchema.index({ isPublic: 1, isPremium: 1 });
+
+// Pre-save hook to generate auto-incrementing uuid
+recipeSchema.pre('save', async function(next) {
+  if (this.isNew && !this.uuid) {
+    const counter = await Counter.findByIdAndUpdate(
+      'recipeId',
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    this.uuid = String(counter.seq);
+  }
+  next();
+});
 
 // Virtual for total time
 recipeSchema.virtual('totalTime').get(function() {

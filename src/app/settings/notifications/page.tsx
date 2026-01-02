@@ -1,13 +1,26 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SendNotificationForm from '@/components/notifications/SendNotificationForm';
 import { UserRole } from '@/types';
 
+// Define allowed roles outside component to prevent recreation
+const ALLOWED_ROLES = [UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR];
+
 export default function SendNotificationPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+    } else if (status === 'authenticated' && session?.user && !ALLOWED_ROLES.includes(session.user.role as UserRole)) {
+      router.push('/dashboard');
+    }
+  }, [status, session?.user?.role, router]);
 
   if (status === 'loading') {
     return (
@@ -19,14 +32,14 @@ export default function SendNotificationPage() {
     );
   }
 
-  if (!session?.user) {
-    redirect('/auth/login');
-  }
-
-  // Only allow ADMIN, DIETITIAN, and HEALTH_COUNSELOR
-  const allowedRoles = [UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR];
-  if (!allowedRoles.includes(session.user.role as UserRole)) {
-    redirect('/dashboard');
+  if (!session?.user || !ALLOWED_ROLES.includes(session.user.role as UserRole)) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (

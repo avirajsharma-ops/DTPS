@@ -1257,7 +1257,7 @@ function ClientMessagesUI() {
                       className="fixed inset-0 z-40"
                       onClick={() => setShowChatMenu(false)}
                     />
-                    <div className="absolute right-0 top-12 bg-white rounded-lg shadow-2xl py-2 z-50 min-w-[200px]">
+                    <div className="absolute right-0 top-12 bg-white rounded-lg shadow-2xl py-2 z-50 min-w-50">
                       <button className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center space-x-3">
                         <UserIcon className="h-4 w-4" />
                         <span>View Profile</span>
@@ -1365,8 +1365,8 @@ function ClientMessagesUI() {
 
                         {/* Audio/Voice Messages */}
                         {(message.type === 'audio' || message.type === 'voice') && message.attachments?.[0] && (
-                          <div className="mb-2 flex items-center space-x-2 p-2 bg-gray-100 rounded-lg min-w-[200px]">
-                            <Volume2 className="h-5 w-5 text-gray-600 flex-shrink-0" />
+                          <div className="mb-2 flex items-center space-x-2 p-2 bg-gray-100 rounded-lg min-w-50">
+                            <Volume2 className="h-5 w-5 text-gray-600 shrink-0" />
                             <audio
                               src={message.attachments[0].url}
                               controls
@@ -1385,7 +1385,7 @@ function ClientMessagesUI() {
                             download={message.attachments[0].filename}
                             className="flex items-center space-x-3 mb-2 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                           >
-                            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center shrink-0">
                               <FileIcon className="h-5 w-5 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -1396,13 +1396,13 @@ function ClientMessagesUI() {
                                 {(message.attachments[0].size / 1024 / 1024).toFixed(2)} MB
                               </p>
                             </div>
-                            <Download className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                            <Download className="h-5 w-5 text-gray-500 shrink-0" />
                           </a>
                         )}
 
                         {/* Text Content */}
                         {message.content && (
-                          <p className="text-[14px] sm:text-[15px] leading-relaxed break-words whitespace-pre-wrap">{message.content}</p>
+                          <p className="text-[14px] sm:text-[15px] leading-relaxed wrap-break-word whitespace-pre-wrap">{message.content}</p>
                         )}
                         <div className={`flex items-center justify-end space-x-1 mt-1`}>
                           <span className="text-[10px] sm:text-[11px] text-gray-500">
@@ -1581,7 +1581,7 @@ function ClientMessagesUI() {
   return (
     <div className="fixed inset-0 bg-white flex flex-col">
       {/* Header - WhatsApp Style */}
-      <div className="bg-[#075E54] text-white safe-area-top md:mt-0 mt-[75px] shadow-md">
+      <div className="bg-[#075E54] text-white safe-area-top md:mt-0 mt-18.75 shadow-md">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-semibold">Messages</h1>
@@ -1670,7 +1670,7 @@ function ClientMessagesUI() {
                     {conv.lastMessage.content}
                   </p>
                   {conv.unreadCount > 0 && (
-                    <div className="shrink-0 h-5 min-w-[20px] px-1.5 rounded-full bg-[#25D366] flex items-center justify-center">
+                    <div className="shrink-0 h-5 min-w-5 px-1.5 rounded-full bg-[#25D366] flex items-center justify-center">
                       <span className="text-xs font-semibold text-white">{conv.unreadCount}</span>
                     </div>
                   )}

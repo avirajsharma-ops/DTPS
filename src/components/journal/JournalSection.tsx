@@ -491,7 +491,7 @@ function ProgressTab({ showAddProgress, setShowAddProgress, clientId, selectedDa
       {/* Progress Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
         {/* Started With */}
-        <Card className="border-l-4 border-l-blue-500 min-h-[200px]">
+        <Card className="border-l-4 border-l-blue-500 min-h-50">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-4 w-4 text-blue-500" />
@@ -519,7 +519,7 @@ function ProgressTab({ showAddProgress, setShowAddProgress, clientId, selectedDa
         </Card>
 
         {/* Currently At */}
-        <Card className="border-l-4 border-l-purple-500 min-h-[200px]">
+        <Card className="border-l-4 border-l-purple-500 min-h-50">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-4 w-4 text-purple-500" />
@@ -547,7 +547,7 @@ function ProgressTab({ showAddProgress, setShowAddProgress, clientId, selectedDa
         </Card>
 
         {/* Difference */}
-        <Card className="border-l-4 border-l-orange-500 min-h-[200px]">
+        <Card className="border-l-4 border-l-orange-500 min-h-50">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-4 w-4 text-orange-500" />
@@ -588,7 +588,7 @@ function ProgressTab({ showAddProgress, setShowAddProgress, clientId, selectedDa
           <Badge variant="outline">{progressHistory.length} {progressHistory.length === 1 ? 'entry' : 'entries'}</Badge>
         </div>
         <div className="border rounded-lg overflow-x-auto">
-          <table className="w-full min-w-[700px]">
+          <table className="w-full min-w-175">
             <thead className="bg-gray-50">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Date</th>
@@ -963,7 +963,7 @@ function BCATab({ clientId, selectedDate }: { clientId: string; selectedDate: Da
         <div className="mt-6">
           <h3 className="font-medium mb-3">BCA History ({bcaHistory.length} entries)</h3>
           <div className="border rounded-lg overflow-x-auto">
-            <table className="w-full min-w-[600px]">
+            <table className="w-full min-w-150">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="text-left px-4 py-2 text-sm font-medium text-gray-600">Date</th>
@@ -1214,7 +1214,7 @@ function MeasurementsTab({ showAddMeasurement, setShowAddMeasurement, clientId, 
       {/* Measurement Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
         {/* Started With */}
-        <Card className="border-l-4 border-l-blue-500 min-h-[260px]">
+        <Card className="border-l-4 border-l-blue-500 min-h-65">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-4 w-4 text-blue-500" />
@@ -1250,7 +1250,7 @@ function MeasurementsTab({ showAddMeasurement, setShowAddMeasurement, clientId, 
         </Card>
 
         {/* Currently At */}
-        <Card className="border-l-4 border-l-purple-500 min-h-[260px]">
+        <Card className="border-l-4 border-l-purple-500 min-h-65">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-4 w-4 text-purple-500" />
@@ -1286,7 +1286,7 @@ function MeasurementsTab({ showAddMeasurement, setShowAddMeasurement, clientId, 
         </Card>
 
         {/* Difference */}
-        <Card className="border-l-4 border-l-orange-500 min-h-[260px]">
+        <Card className="border-l-4 border-l-orange-500 min-h-65">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-4 w-4 text-orange-500" />
@@ -1341,7 +1341,7 @@ function MeasurementsTab({ showAddMeasurement, setShowAddMeasurement, clientId, 
           <Badge variant="outline">{measurementHistory.length} {measurementHistory.length === 1 ? 'entry' : 'entries'}</Badge>
         </div>
         <div className="border rounded-lg overflow-x-auto">
-          <table className="w-full min-w-[700px]">
+          <table className="w-full min-w-175">
             <thead className="bg-gray-50">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Date</th>
@@ -1534,7 +1534,7 @@ function FoodCompliance({ clientId, selectedDate }: { clientId: string; selected
             {/* Charts Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               {/* Compliance Report - Bar Chart */}
-              <Card className="min-h-[320px]">
+              <Card className="min-h-80">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base text-center">Compliance Report</CardTitle>
                 </CardHeader>
@@ -1546,7 +1546,7 @@ function FoodCompliance({ clientId, selectedDate }: { clientId: string; selected
                       </div>
                     ) : (
                       weeklyData.map((day, index) => (
-                        <div key={index} className="flex-1 min-w-[30px] flex flex-col items-center">
+                        <div key={index} className="flex-1 min-w-7.5 flex flex-col items-center">
                           <div className="w-full flex flex-col gap-0.5" style={{ height: '160px', justifyContent: 'flex-end' }}>
                             {day.taken > 0 && (
                               <div 
@@ -1597,7 +1597,7 @@ function FoodCompliance({ clientId, selectedDate }: { clientId: string; selected
               </Card>
 
               {/* Compliance Summary - Donut Chart */}
-              <Card className="min-h-[320px]">
+              <Card className="min-h-80">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base text-center">Compliance Summary</CardTitle>
                 </CardHeader>

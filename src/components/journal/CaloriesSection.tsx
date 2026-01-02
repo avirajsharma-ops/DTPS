@@ -666,13 +666,13 @@ export default function CaloriesSection({ clientId, selectedDate }: CaloriesSect
       {/* Lightbox Modal for Full Screen Image View */}
       {lightboxOpen && lightboxImage && (
         <div 
-          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-100 bg-black/90 flex items-center justify-center p-4"
           onClick={closeLightbox}
         >
           {/* Close Button */}
           <button
             onClick={closeLightbox}
-            className="absolute top-4 right-4 z-[101] p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            className="absolute top-4 right-4 z-101 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
           >
             <X className="h-8 w-8 text-white" />
           </button>

@@ -126,13 +126,22 @@ export async function DELETE(
     const { id, taskId } = await params;
     await connectDB();
 
-    const task = await Task.findOneAndDelete({
+    // Build delete query - HC and dietitian can only delete their own tasks (admin can delete any)
+    const deleteQuery: any = {
       _id: new mongoose.Types.ObjectId(taskId),
       client: new mongoose.Types.ObjectId(id)
-    });
+    };
+
+    const userRole = session.user.role?.toLowerCase();
+    // Both health_counselor and dietitian can only delete tasks they created
+    if (userRole === 'health_counselor' || userRole === 'dietitian') {
+      deleteQuery.dietitian = new mongoose.Types.ObjectId(session.user.id);
+    }
+
+    const task = await Task.findOneAndDelete(deleteQuery);
 
     if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Task not found or you do not have permission to delete it' }, { status: 404 });
     }
 
     // Log history

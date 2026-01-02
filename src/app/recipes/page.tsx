@@ -71,14 +71,11 @@ function RecipesPageContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
-  const recipesPerPage = 12;
 
   useEffect(() => {
     fetchRecipes();
-  }, [searchTerm, selectedCategory, selectedCuisine, selectedDifficulty, selectedDietaryRestrictions, maxCalories, minProtein, maxPrepTime, sortBy, currentPage]);
+  }, [searchTerm, selectedCategory, selectedCuisine, selectedDifficulty, selectedDietaryRestrictions, maxCalories, minProtein, maxPrepTime, sortBy]);
 
   useEffect(() => {
     // Check for success message
@@ -104,15 +101,12 @@ function RecipesPageContent() {
       if (minProtein) params.append('minProtein', minProtein);
       if (maxPrepTime) params.append('maxPrepTime', maxPrepTime);
       if (sortBy) params.append('sortBy', sortBy);
-      params.append('page', currentPage.toString());
-      params.append('limit', recipesPerPage.toString());
 
       const response = await fetch(`/api/recipes?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setRecipes(data.recipes || []);
         setCategories(data.categories || []);
-        setTotalPages(Math.ceil((data.total || 0) / recipesPerPage));
       } else {
         console.error('Failed to fetch recipes:', response.status, response.statusText);
         setRecipes([]);

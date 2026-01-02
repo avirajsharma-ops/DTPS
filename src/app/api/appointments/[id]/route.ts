@@ -90,23 +90,25 @@ export async function PUT(
       );
     }
 
+
     
     // Check if user can update this appointment
-    // Admin can update any, dietitian can update their own, HC can only update appointments they created
+    // Admin can update any, dietitian and HC can only update appointments they created
     let canUpdate = false;
     
     if (session.user.role === UserRole.ADMIN) {
       canUpdate = true;
-    } else if (session.user.role === UserRole.DIETITIAN && appointment.dietitian.toString() === session.user.id) {
-      canUpdate = true;
+    } else if (session.user.role === UserRole.DIETITIAN) {
+      // Dietitian can only update appointments they created
+      if ((appointment as any).createdBy?.toString() === session.user.id) {
+        canUpdate = true;
+      }
     } else if ((session.user.role as string) === UserRole.HEALTH_COUNSELOR || (session.user.role as string) === 'health_counselor') {
       // Health counselor can only update appointments they created
       if ((appointment as any).createdBy?.toString() === session.user.id) {
         canUpdate = true;
       }
-    }
-
-    if (!canUpdate) {
+    }    if (!canUpdate) {
       return NextResponse.json({ error: 'You can only edit appointments you created' }, { status: 403 });
     }
 
@@ -218,13 +220,16 @@ export async function DELETE(
     }
 
     // Check if user can cancel this appointment
-    // Admin can cancel any, dietitian can cancel their own, HC can only cancel appointments they created
+    // Admin can cancel any, dietitian and HC can only cancel appointments they created
     let canCancel = false;
     
     if (session.user.role === UserRole.ADMIN) {
       canCancel = true;
-    } else if (session.user.role === UserRole.DIETITIAN && appointment.dietitian.toString() === session.user.id) {
-      canCancel = true;
+    } else if (session.user.role === UserRole.DIETITIAN) {
+      // Dietitian can only cancel appointments they created
+      if ((appointment as any).createdBy?.toString() === session.user.id) {
+        canCancel = true;
+      }
     } else if ((session.user.role as string) === UserRole.HEALTH_COUNSELOR || (session.user.role as string) === 'health_counselor') {
       // Health counselor can only cancel appointments they created
       if ((appointment as any).createdBy?.toString() === session.user.id) {

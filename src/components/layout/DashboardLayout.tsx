@@ -1,8 +1,8 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,13 @@ export default function DashboardLayout({
   showSidebar = true 
 }: DashboardLayoutProps) {
   const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    }
+  }, [status, router]);
 
   if (status === 'loading') {
     return (
@@ -32,7 +39,14 @@ export default function DashboardLayout({
   }
 
   if (status === 'unauthenticated') {
-    redirect('/auth/signin');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center">
+          <div className="h-12 w-12 border-4 border-[#E06A26] border-t-transparent rounded-full animate-spin" />
+          <p className="mt-4 text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -107,12 +107,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    // Health counselors can only delete tasks they created
+    // Health counselors and dietitians can only delete tasks they created
     const userRole = session.user?.role?.toLowerCase();
-    if (userRole === 'health_counselor') {
+    if (userRole === 'health_counselor' || userRole === 'dietitian') {
       if (task.dietitian?.toString() !== session.user?.id) {
         return NextResponse.json(
-          { error: 'Health counselors can only delete tasks they created' },
+          { error: 'You can only delete tasks you created' },
           { status: 403 }
         );
       }

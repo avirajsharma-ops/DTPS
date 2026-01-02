@@ -100,13 +100,14 @@ export async function DELETE(
     const clientObjectId = new mongoose.Types.ObjectId(id);
     const noteObjectId = new mongoose.Types.ObjectId(noteId);
 
-    // Build query - health counselors can only delete their own notes
+    // Build query - HC and dietitian can only delete their own notes (admin can delete any)
     const deleteQuery: any = {
       _id: noteObjectId,
       client: clientObjectId
     };
     
-    if (userRole === 'health_counselor') {
+    // Both health_counselor and dietitian can only delete notes they created
+    if (userRole === 'health_counselor' || userRole === 'dietitian') {
       deleteQuery.createdBy = new mongoose.Types.ObjectId(session.user.id);
     }
 

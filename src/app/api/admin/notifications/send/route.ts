@@ -58,15 +58,18 @@ export async function POST(request: NextRequest) {
       }
       targetClientIds = validatedData.clientIds;
     } else if (validatedData.targetType === 'all') {
-      // Get all active clients
+      // Get all clients
       // For DIETITIAN/HEALTH_COUNSELOR, only send to their assigned clients
       let clientQuery: any = { 
-        role: UserRole.CLIENT, 
-        isActive: true 
+        role: UserRole.CLIENT,
+        isActive: { $ne: false }
       };
 
       if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
-        clientQuery.dietitianId = session.user.id;
+        clientQuery.$or = [
+          { assignedDietitian: session.user.id },
+          { assignedDietitians: session.user.id }
+        ];
       }
 
       const clients = await User.find(clientQuery).select('_id');
@@ -169,13 +172,16 @@ export async function GET(request: NextRequest) {
 
     // Build query based on role
     let clientQuery: any = { 
-      role: UserRole.CLIENT, 
-      isActive: true 
+      role: UserRole.CLIENT,
+      isActive: { $ne: false }
     };
 
     // For DIETITIAN/HEALTH_COUNSELOR, only show their assigned clients
     if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
-      clientQuery.dietitianId = session.user.id;
+      clientQuery.$or = [
+        { assignedDietitian: session.user.id },
+        { assignedDietitians: session.user.id }
+      ];
     }
 
     const clients = await User.find(clientQuery)

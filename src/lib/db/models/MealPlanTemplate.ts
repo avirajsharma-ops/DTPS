@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import Counter from './Counter';
 
 // Meal item interface
 interface IMealItem {
@@ -134,6 +135,11 @@ const DailyMealSchema = new Schema({
 
 // Main meal plan template schema
 const MealPlanTemplateSchema = new Schema({
+  uuid: {
+    type: String,
+    unique: true,
+    index: true
+  },
   templateType: {
     type: String,
     enum: ['plan', 'diet'],
@@ -142,12 +148,10 @@ const MealPlanTemplateSchema = new Schema({
   name: { 
     type: String, 
     required: true, 
-    trim: true,
-    maxlength: 200
+    trim: true
   },
   description: { 
-    type: String, 
-    maxlength: 1000 
+    type: String
   },
   category: {
     type: String,
@@ -215,7 +219,7 @@ const MealPlanTemplateSchema = new Schema({
   reviews: [{
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String, maxlength: 500 },
+    comment: { type: String },
     createdAt: { type: Date, default: Date.now }
   }]
 }, {
@@ -253,9 +257,22 @@ MealPlanTemplateSchema.virtual('totalRecipes').get(function() {
   return count;
 });
 
-// Pre-save middleware to calculate total nutrition
-MealPlanTemplateSchema.pre('save', function(next) {
-  if (this.isModified('meals')) {
+// Pre-save middleware to generate auto-incrementing uuid and calculate total nutrition
+MealPlanTemplateSchema.pre('save', async function(next) {
+  try {
+    // Generate auto-incrementing uuid for new documents only if uuid is not already set
+    if (this.isNew && !this.uuid) {
+      const counter = await Counter.findByIdAndUpdate(
+        'mealPlanTemplateId',
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      if (counter) {
+        this.uuid = String(counter.seq);
+      }
+    }
+
+    if (this.isModified('meals')) {
     this.meals.forEach(day => {
       const nutrition = {
         calories: 0,
@@ -294,6 +311,11 @@ MealPlanTemplateSchema.pre('save', function(next) {
         sodium: Math.round(nutrition.sodium * 10) / 10
       };
     });
+  }
+  } catch (error) {
+    console.error('Error in MealPlanTemplate pre-save hook:', error);
+    next(error as any);
+    return;
   }
   next();
 });
