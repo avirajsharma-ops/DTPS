@@ -122,6 +122,13 @@ const DEFAULT_MEAL_SLOTS: { type: Meal['type']; time: string; label: string }[] 
   { type: 'eveningSnack', time: '9:00 PM', label: 'Bedtime' },
 ];
 
+// Helper function to format notes with period as line break
+function formatNotesWithLineBreaks(note: string): string[] {
+  if (!note) return [];
+  // Split by period and filter out empty strings
+  return note.split('.').map(s => s.trim()).filter(s => s.length > 0);
+}
+
 export default function UserPlanPage() {
   const { data: session, status } = useSession();
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -812,7 +819,11 @@ export default function UserPlanPage() {
                     <span className="text-lg">📝</span>
                     <div>
                       <p className="text-xs font-semibold text-yellow-700 mb-1">Note from Dietitian</p>
-                      <p className="text-sm text-yellow-800">{dayPlan.dailyNote}</p>
+                      <div className="text-sm text-yellow-800 space-y-1">
+                        {formatNotesWithLineBreaks(dayPlan.dailyNote).map((line, idx) => (
+                          <p key={idx}>• {line}</p>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -860,7 +871,11 @@ export default function UserPlanPage() {
                 {meal.notes && (
                   <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
                     <p className="text-xs font-semibold text-yellow-700 mb-1">📝 Notes from Dietitian</p>
-                    <p className="text-sm text-yellow-800">{meal.notes}</p>
+                    <div className="text-sm text-yellow-800 space-y-1">
+                      {formatNotesWithLineBreaks(meal.notes).map((line, idx) => (
+                        <p key={idx}>• {line}</p>
+                      ))}
+                    </div>
                   </div>
                 )}
 

@@ -54,13 +54,11 @@ export default function HealthCounselorRecipesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const recipesPerPage = 12;
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     fetchRecipes();
-  }, [searchTerm, selectedCategory, sortBy, currentPage]);
+  }, [searchTerm, selectedCategory, sortBy]);
 
   const fetchRecipes = async () => {
     try {
@@ -70,15 +68,12 @@ export default function HealthCounselorRecipesPage() {
       if (searchTerm) params.append('search', searchTerm);
       if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory);
       if (sortBy) params.append('sortBy', sortBy);
-      params.append('page', currentPage.toString());
-      params.append('limit', recipesPerPage.toString());
 
       const response = await fetch(`/api/recipes?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setRecipes(data.recipes || []);
         setCategories(data.categories || []);
-        setTotalPages(Math.ceil((data.total || 0) / recipesPerPage));
       } else {
         console.error('Failed to fetch recipes:', response.status);
         setRecipes([]);
@@ -167,7 +162,7 @@ export default function HealthCounselorRecipesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recipes.map((recipe) => (
               <Card key={recipe._id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 {recipe.image && (
@@ -244,29 +239,6 @@ export default function HealthCounselorRecipesPage() {
                 </CardContent>
               </Card>
             ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-gray-600">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </Button>
           </div>
         )}
       </div>

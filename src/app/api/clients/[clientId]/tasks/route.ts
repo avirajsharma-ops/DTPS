@@ -26,11 +26,8 @@ export async function GET(
 
     let query: any = { client: clientId };
 
-    // Health Counselors can only see tasks they created (ownership-based permission)
-    const userRole = session.user?.role?.toLowerCase();
-    if (userRole === 'health_counselor') {
-      query.dietitian = session.user?.id;
-    }
+    // Health counselors can now see all tasks for the client
+    // Edit/delete permissions are handled on the frontend based on who created the task
 
     if (status) {
       query.status = status;
@@ -88,12 +85,22 @@ export async function POST(
     // Ensure title is always set - use taskType as fallback if title is not provided
     const taskTitle = body.title && body.title.trim() ? body.title.trim() : body.taskType;
 
+    // Determine creator role
+    const userRole = session.user?.role?.toLowerCase();
+    let creatorRole = 'dietitian';
+    if (userRole === 'health_counselor') {
+      creatorRole = 'health_counselor';
+    } else if (userRole === 'admin') {
+      creatorRole = 'admin';
+    }
+
     // Create new task
     const task = new Task({
       ...body,
       title: taskTitle,
       client: clientId,
       dietitian: session.user?.id,
+      creatorRole: creatorRole,
       startDate: new Date(body.startDate),
       endDate: new Date(body.endDate)
     });

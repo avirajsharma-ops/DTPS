@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -22,7 +23,7 @@ type FoodItem = {
   recipeUuid?: string; // UUID of the recipe
 };
 import { DatePicker } from './DatePicker';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import React from 'react';
 
 type MealGridTableProps = {
@@ -113,11 +114,39 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  // Notes dialog state
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const [notesDialogDayIndex, setNotesDialogDayIndex] = useState<number | null>(null);
+  const [notesDialogValue, setNotesDialogValue] = useState('');
+  // Recipe search state for Find & Replace
+  const [recipes, setRecipes] = useState<{ _id: string; name: string }[]>([]);
+  const [findRecipeSearch, setFindRecipeSearch] = useState('');
+  const [replaceRecipeSearch, setReplaceRecipeSearch] = useState('');
+  const [replaceAction, setReplaceAction] = useState<'replace' | 'delete'>('replace');
+  // Search filter for dropdowns
+  const [findSearchFilter, setFindSearchFilter] = useState('');
+  const [replaceSearchFilter, setReplaceSearchFilter] = useState('');
+  const [showFindDropdown, setShowFindDropdown] = useState(false);
+  const [showReplaceDropdown, setShowReplaceDropdown] = useState(false);
 
   const totalPages = Math.ceil(weekPlan.length / DAYS_PER_PAGE);
   const startIndex = currentPage * DAYS_PER_PAGE;
   const endIndex = Math.min(startIndex + DAYS_PER_PAGE, weekPlan.length);
   const paginatedDays = weekPlan.slice(startIndex, endIndex);
+
+  // Fetch recipes when Find & Replace dialog opens
+  useEffect(() => {
+    if (findReplaceDialogOpen && recipes.length === 0) {
+      fetch('/api/recipes?limit=500')
+        .then(res => res.json())
+        .then(data => {
+          if (data.recipes) {
+            setRecipes(data.recipes.map((r: any) => ({ _id: r._id, name: r.name })));
+          }
+        })
+        .catch(err => console.error('Failed to fetch recipes:', err));
+    }
+  }, [findReplaceDialogOpen, recipes.length]);
 
   const createNewMeal = (mealType: string): Meal => ({
     id: Math.random().toString(36).substr(2, 9),
@@ -440,30 +469,59 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
 
   const handleFindReplace = () => {
     if (readOnly || !onUpdate) return;
-  const findValue = (findFoodTarget || manualFindFoodName).trim();
-    const replaceValue = replaceFoodValue.trim();
-    if (!findValue || !replaceValue || selectedDaysForReplace.length === 0 || selectedMealTypesForReplace.length === 0) return;
+    const findValue = (findFoodTarget || manualFindFoodName || findRecipeSearch).trim();
+    const replaceValue = (replaceFoodValue || replaceRecipeSearch).trim();
+    
+    if (!findValue || selectedDaysForReplace.length === 0 || selectedMealTypesForReplace.length === 0) return;
+    
+    // For replace action, require a replace value
+    if (replaceAction === 'replace' && !replaceValue) return;
+    
     const newWeekPlan = weekPlan.map((d, idx) => {
       if (!selectedDaysForReplace.includes(idx)) return d;
       const day = { ...d, meals: { ...d.meals } };
       Object.keys(day.meals).forEach(mt => {
         if (!selectedMealTypesForReplace.includes(mt)) return;
         const meal = day.meals[mt];
-        meal.foodOptions = meal.foodOptions.map(opt =>
-          opt.food.trim().toLowerCase() === findValue.toLowerCase()
-            ? { ...opt, food: replaceValue }
-            : opt
-        );
+        
+        if (replaceAction === 'delete') {
+          // Delete matching food options
+          meal.foodOptions = meal.foodOptions.filter(opt =>
+            opt.food.trim().toLowerCase() !== findValue.toLowerCase()
+          );
+          // Relabel remaining options
+          meal.foodOptions.forEach((opt, i) => {
+            opt.label = `${String.fromCharCode(65 + i)} Food`;
+          });
+        } else {
+          // Replace matching food options
+          meal.foodOptions = meal.foodOptions.map(opt =>
+            opt.food.trim().toLowerCase() === findValue.toLowerCase()
+              ? { ...opt, food: replaceValue }
+              : opt
+          );
+        }
       });
       return day;
     });
     onUpdate(newWeekPlan);
+    resetFindReplaceDialog();
+  };
+
+  const resetFindReplaceDialog = () => {
     setFindReplaceDialogOpen(false);
     setFindFoodTarget('');
     setReplaceFoodValue('');
     setSelectedDaysForReplace([]);
     setSelectedMealTypesForReplace([]);
-  setManualFindFoodName('');
+    setManualFindFoodName('');
+    setFindRecipeSearch('');
+    setReplaceRecipeSearch('');
+    setReplaceAction('replace');
+    setFindSearchFilter('');
+    setReplaceSearchFilter('');
+    setShowFindDropdown(false);
+    setShowReplaceDropdown(false);
   };
 
   // Helper to relabel options sequentially A, B, C ...
@@ -784,20 +842,22 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                         value={day.date}
                         onChange={(date) => updateDayInfo(actualDayIndex, 'date', date)}
                       />
-                      <Input
-                        value={day.note}
-                        onChange={(e) => updateDayInfo(actualDayIndex, 'note', e.target.value)}
-                        className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500"
-                        placeholder="Notes (use . for new line)"
-                      />
-                      {/* Display formatted notes */}
-                      {day.note && (
-                        <div className="text-xs text-gray-600 bg-gray-50 rounded p-2 space-y-1">
-                          {formatNotesDisplay(day.note).map((line, idx) => (
-                            <div key={idx}>• {line}</div>
-                          ))}
-                        </div>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 text-xs bg-white border-gray-300 hover:border-slate-500 justify-start font-normal text-left"
+                        onClick={() => {
+                          setNotesDialogDayIndex(actualDayIndex);
+                          setNotesDialogValue(day.note || '');
+                          setNotesDialogOpen(true);
+                        }}
+                      >
+                        {day.note ? (
+                          <span className="truncate">{day.note.substring(0, 20)}{day.note.length > 20 ? '...' : ''}</span>
+                        ) : (
+                          <span className="text-gray-400">Add notes...</span>
+                        )}
+                      </Button>
                       {/* Daily Macro Totals */}
                       {(() => {
                         const macros = calculateDayMacros(day);
@@ -1229,50 +1289,276 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       </Dialog>
 
       {/* Find & Replace Dialog */}
-      <Dialog open={findReplaceDialogOpen} onOpenChange={setFindReplaceDialogOpen}>
-        <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl" style={{ zIndex: 210 }}>
+      <Dialog open={findReplaceDialogOpen} onOpenChange={(open) => { if (!open) resetFindReplaceDialog(); else setFindReplaceDialogOpen(true); }}>
+        <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl max-h-[90vh] overflow-y-auto" style={{ zIndex: 210 }}>
           <DialogHeader>
-            <DialogTitle className="text-slate-900 font-semibold">Find & Replace Foods</DialogTitle>
+            <DialogTitle className="text-slate-900 font-semibold">Find & Replace/Delete Foods</DialogTitle>
             <DialogDescription className="text-slate-600">
-              Replace a food across selected days. Matches are case-insensitive exact name matches.
+              Find a food by name or recipe and replace or delete it across selected days and meal types.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-5 py-4">
-            <div className="space-y-2">
-              <Label className="text-slate-900 font-semibold text-sm">Find Food</Label>
-              <Select value={findFoodTarget} onValueChange={setFindFoodTarget}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Select existing food" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableFoods.length === 0 && <SelectItem value="" disabled>No foods present</SelectItem>}
-                  {availableFoods.map(f => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="mt-3 space-y-1">
-                <Label className="text-[11px] font-semibold text-slate-600">Or enter food name</Label>
+          <div className="space-y-4 py-4">
+            {/* Find Section */}
+            <div className="space-y-3 p-3 border rounded-lg bg-slate-50">
+              <Label className="text-slate-900 font-semibold text-sm">🔍 Find Food / Recipe</Label>
+              
+              {/* Searchable input with dropdown */}
+              <div className="relative">
                 <Input
-                  value={manualFindFoodName}
-                  onChange={e => setManualFindFoodName(e.target.value)}
-                  placeholder="Type food to find"
-                  className="h-8 text-xs bg-white border-gray-300"
+                  value={findSearchFilter}
+                  onChange={e => {
+                    setFindSearchFilter(e.target.value);
+                    setShowFindDropdown(true);
+                    // Clear selected value when typing
+                    if (findFoodTarget || findRecipeSearch) {
+                      setFindFoodTarget('');
+                      setFindRecipeSearch('');
+                    }
+                  }}
+                  onFocus={() => setShowFindDropdown(true)}
+                  placeholder="Search recipe or food name..."
+                  className="h-10 text-sm bg-white border-gray-300"
                 />
+                
+                {/* Dropdown with filtered results */}
+                {showFindDropdown && findSearchFilter && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {/* Existing foods in plan */}
+                    {availableFoods.filter(f => f.toLowerCase().includes(findSearchFilter.toLowerCase())).length > 0 && (
+                      <div className="p-2 bg-gray-50 border-b">
+                        <span className="text-[10px] font-semibold text-gray-500 uppercase">Foods in Current Plan</span>
+                      </div>
+                    )}
+                    {availableFoods
+                      .filter(f => f.toLowerCase().includes(findSearchFilter.toLowerCase()))
+                      .slice(0, 5)
+                      .map(f => (
+                        <div
+                          key={`find-food-${f}`}
+                          className="px-3 py-2 hover:bg-emerald-50 cursor-pointer text-sm border-b border-gray-100"
+                          onClick={() => {
+                            setFindFoodTarget(f);
+                            setFindSearchFilter(f);
+                            setFindRecipeSearch('');
+                            setManualFindFoodName('');
+                            setShowFindDropdown(false);
+                          }}
+                        >
+                          <span className="text-emerald-700">📋</span> {f}
+                        </div>
+                      ))
+                    }
+                    
+                    {/* Recipes from database */}
+                    {recipes.filter(r => r.name.toLowerCase().includes(findSearchFilter.toLowerCase())).length > 0 && (
+                      <div className="p-2 bg-gray-50 border-b">
+                        <span className="text-[10px] font-semibold text-gray-500 uppercase">Recipes Database</span>
+                      </div>
+                    )}
+                    {recipes
+                      .filter(r => r.name.toLowerCase().includes(findSearchFilter.toLowerCase()))
+                      .slice(0, 10)
+                      .map(r => (
+                        <div
+                          key={`find-recipe-${r._id}`}
+                          className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100"
+                          onClick={() => {
+                            setFindRecipeSearch(r.name);
+                            setFindSearchFilter(r.name);
+                            setFindFoodTarget('');
+                            setManualFindFoodName('');
+                            setShowFindDropdown(false);
+                          }}
+                        >
+                          <span className="text-blue-600">🍽️</span> {r.name}
+                        </div>
+                      ))
+                    }
+                    
+                    {/* No results */}
+                    {availableFoods.filter(f => f.toLowerCase().includes(findSearchFilter.toLowerCase())).length === 0 &&
+                     recipes.filter(r => r.name.toLowerCase().includes(findSearchFilter.toLowerCase())).length === 0 && (
+                      <div className="px-3 py-3 text-sm text-gray-500 text-center">
+                        No matching foods or recipes found
+                      </div>
+                    )}
+                    
+                    {/* Use as manual entry option */}
+                    <div
+                      className="px-3 py-2 hover:bg-yellow-50 cursor-pointer text-sm bg-yellow-25 border-t"
+                      onClick={() => {
+                        setManualFindFoodName(findSearchFilter);
+                        setFindFoodTarget('');
+                        setFindRecipeSearch('');
+                        setShowFindDropdown(false);
+                      }}
+                    >
+                      <span className="text-yellow-600">✏️</span> Use "{findSearchFilter}" as search term
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Show selected find value */}
+              {(findFoodTarget || findRecipeSearch || manualFindFoodName) && (
+                <div className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-200 flex items-center justify-between">
+                  <span><strong>Finding:</strong> {findFoodTarget || findRecipeSearch || manualFindFoodName}</span>
+                  <button
+                    onClick={() => {
+                      setFindFoodTarget('');
+                      setFindRecipeSearch('');
+                      setManualFindFoodName('');
+                      setFindSearchFilter('');
+                    }}
+                    className="text-red-500 hover:text-red-700 ml-2"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Action Selection */}
+            <div className="space-y-2">
+              <Label className="text-slate-900 font-semibold text-sm">Action</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="replaceAction"
+                    checked={replaceAction === 'replace'}
+                    onChange={() => setReplaceAction('replace')}
+                    className="w-4 h-4 text-emerald-600"
+                  />
+                  <span className="text-sm font-medium">Replace with another food</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="replaceAction"
+                    checked={replaceAction === 'delete'}
+                    onChange={() => setReplaceAction('delete')}
+                    className="w-4 h-4 text-red-600"
+                  />
+                  <span className="text-sm font-medium text-red-600">Delete found items</span>
+                </label>
               </div>
             </div>
+
+            {/* Replace Section - Only show if action is replace */}
+            {replaceAction === 'replace' && (
+              <div className="space-y-3 p-3 border rounded-lg bg-blue-50">
+                <Label className="text-slate-900 font-semibold text-sm">🔄 Replace With</Label>
+                
+                {/* Searchable input with dropdown */}
+                <div className="relative">
+                  <Input
+                    value={replaceSearchFilter}
+                    onChange={e => {
+                      setReplaceSearchFilter(e.target.value);
+                      setShowReplaceDropdown(true);
+                      // Clear selected value when typing
+                      if (replaceRecipeSearch || replaceFoodValue) {
+                        setReplaceRecipeSearch('');
+                        setReplaceFoodValue('');
+                      }
+                    }}
+                    onFocus={() => setShowReplaceDropdown(true)}
+                    placeholder="Search recipe to replace with..."
+                    className="h-10 text-sm bg-white border-gray-300"
+                  />
+                  
+                  {/* Dropdown with filtered results */}
+                  {showReplaceDropdown && replaceSearchFilter && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {/* Recipes from database */}
+                      {recipes.filter(r => r.name.toLowerCase().includes(replaceSearchFilter.toLowerCase())).length > 0 && (
+                        <div className="p-2 bg-gray-50 border-b">
+                          <span className="text-[10px] font-semibold text-gray-500 uppercase">Recipes Database</span>
+                        </div>
+                      )}
+                      {recipes
+                        .filter(r => r.name.toLowerCase().includes(replaceSearchFilter.toLowerCase()))
+                        .slice(0, 15)
+                        .map(r => (
+                          <div
+                            key={`replace-recipe-${r._id}`}
+                            className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100"
+                            onClick={() => {
+                              setReplaceRecipeSearch(r.name);
+                              setReplaceSearchFilter(r.name);
+                              setReplaceFoodValue('');
+                              setShowReplaceDropdown(false);
+                            }}
+                          >
+                            <span className="text-blue-600">🍽️</span> {r.name}
+                          </div>
+                        ))
+                      }
+                      
+                      {/* No results */}
+                      {recipes.filter(r => r.name.toLowerCase().includes(replaceSearchFilter.toLowerCase())).length === 0 && (
+                        <div className="px-3 py-3 text-sm text-gray-500 text-center">
+                          No matching recipes found
+                        </div>
+                      )}
+                      
+                      {/* Use as manual entry option */}
+                      <div
+                        className="px-3 py-2 hover:bg-yellow-50 cursor-pointer text-sm bg-yellow-25 border-t"
+                        onClick={() => {
+                          setReplaceFoodValue(replaceSearchFilter);
+                          setReplaceRecipeSearch('');
+                          setShowReplaceDropdown(false);
+                        }}
+                      >
+                        <span className="text-yellow-600">✏️</span> Use "{replaceSearchFilter}" as replacement
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Show selected replace value */}
+                {(replaceRecipeSearch || replaceFoodValue) && (
+                  <div className="text-xs text-blue-700 bg-blue-100 p-2 rounded border border-blue-200 flex items-center justify-between">
+                    <span><strong>Replacing with:</strong> {replaceRecipeSearch || replaceFoodValue}</span>
+                    <button
+                      onClick={() => {
+                        setReplaceRecipeSearch('');
+                        setReplaceFoodValue('');
+                        setReplaceSearchFilter('');
+                      }}
+                      className="text-red-500 hover:text-red-700 ml-2"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Delete Warning */}
+            {replaceAction === 'delete' && (
+              <div className="p-3 border border-red-300 rounded-lg bg-red-50">
+                <p className="text-sm text-red-700 font-medium">⚠️ Delete Mode</p>
+                <p className="text-xs text-red-600">Found items will be permanently removed from the selected days and meal types.</p>
+              </div>
+            )}
+
+            {/* Meal Types Selection */}
             <div className="space-y-2">
-              <Label className="text-slate-900 font-semibold text-sm">Replace With</Label>
-              <Input
-                value={replaceFoodValue}
-                onChange={e => setReplaceFoodValue(e.target.value)}
-                placeholder="Enter new food name"
-                className="h-9 text-xs bg-white border-gray-300"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-slate-900 font-semibold text-sm">Meal Types</Label>
-              <div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-slate-50">
+              <div className="flex items-center justify-between">
+                <Label className="text-slate-900 font-semibold text-sm">Meal Types</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedMealTypesForReplace(selectedMealTypesForReplace.length === displayMealTypes.length ? [] : [...displayMealTypes])}
+                  className="h-6 text-xs"
+                >
+                  {selectedMealTypesForReplace.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-2 p-3 border rounded-md bg-slate-50">
                 {displayMealTypes.map(mt => (
                   <div key={`fr-mt-${mt}`} className="flex items-center space-x-2">
                     <Checkbox
@@ -1285,9 +1571,21 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                 ))}
               </div>
             </div>
+
+            {/* Days Selection */}
             <div className="space-y-2">
-              <Label className="text-slate-900 font-semibold text-sm">Select Days</Label>
-              <div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-slate-50 max-h-48 overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <Label className="text-slate-900 font-semibold text-sm">Select Days</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedDaysForReplace(selectedDaysForReplace.length === weekPlan.length ? [] : weekPlan.map((_, i) => i))}
+                  className="h-6 text-xs"
+                >
+                  {selectedDaysForReplace.length === weekPlan.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-2 p-3 border rounded-md bg-slate-50 max-h-40 overflow-y-auto">
                 {weekPlan.map((day, idx) => (
                   <div key={day.id} className="flex items-center space-x-2">
                     <Checkbox
@@ -1300,16 +1598,37 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                 ))}
               </div>
             </div>
+
+            {/* Summary */}
+            {selectedDaysForReplace.length > 0 && selectedMealTypesForReplace.length > 0 && (findFoodTarget || findRecipeSearch || manualFindFoodName) && (
+              <div className="p-3 bg-slate-100 border rounded-md">
+                <p className="text-sm text-slate-800">
+                  Will {replaceAction === 'delete' ? <span className="text-red-600 font-semibold">DELETE</span> : <span className="text-emerald-600 font-semibold">REPLACE</span>}{' '}
+                  "<strong>{findFoodTarget || findRecipeSearch || manualFindFoodName}</strong>" 
+                  {replaceAction === 'replace' && (replaceRecipeSearch || replaceFoodValue) && (
+                    <> with "<strong>{replaceRecipeSearch || replaceFoodValue}</strong>"</>
+                  )}
+                  {' '}in <strong>{selectedDaysForReplace.length}</strong> day(s) × <strong>{selectedMealTypesForReplace.length}</strong> meal type(s)
+                </p>
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setFindReplaceDialogOpen(false); setFindFoodTarget(''); setReplaceFoodValue(''); setSelectedDaysForReplace([]); }} className="border-gray-300 hover:bg-slate-50 font-medium">Cancel</Button>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={resetFindReplaceDialog} className="border-gray-300 hover:bg-slate-50 font-medium">
+              Cancel
+            </Button>
             <Button
               onClick={handleFindReplace}
-              disabled={!(findFoodTarget || manualFindFoodName.trim()) || !replaceFoodValue.trim() || selectedDaysForReplace.length === 0 || selectedMealTypesForReplace.length === 0}
-              style={{ backgroundColor: '#00A63E', color: 'white' }}
+              disabled={
+                !(findFoodTarget || manualFindFoodName.trim() || findRecipeSearch) || 
+                (replaceAction === 'replace' && !(replaceFoodValue.trim() || replaceRecipeSearch)) || 
+                selectedDaysForReplace.length === 0 || 
+                selectedMealTypesForReplace.length === 0
+              }
+              style={{ backgroundColor: replaceAction === 'delete' ? '#dc2626' : '#00A63E', color: 'white' }}
               className="hover:opacity-90 shadow font-medium"
             >
-              Replace
+              {replaceAction === 'delete' ? '🗑️ Delete' : '🔄 Replace'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1374,6 +1693,45 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
           }
         }}
       />
+
+      {/* Notes Dialog */}
+      <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Day Notes</DialogTitle>
+            <DialogDescription>
+              Add notes for this day. Press Enter to go to the next line.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              value={notesDialogValue}
+              onChange={(e) => setNotesDialogValue(e.target.value)}
+              placeholder="Enter notes here..."
+              className="min-h-[150px] resize-y"
+              autoFocus
+            />
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setNotesDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (notesDialogDayIndex !== null) {
+                  updateDayInfo(notesDialogDayIndex, 'note', notesDialogValue);
+                }
+                setNotesDialogOpen(false);
+              }}
+            >
+              Save Notes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );

@@ -55,6 +55,24 @@ export async function PUT(
     const { taskId } = await params;
     const body = await req.json();
 
+    // Find the task first to check ownership
+    const existingTask = await Task.findById(taskId);
+    
+    if (!existingTask) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    // Health counselors and dietitians can only edit tasks they created
+    const userRole = session.user?.role?.toLowerCase();
+    if (userRole === 'health_counselor' || userRole === 'dietitian') {
+      if (existingTask.dietitian?.toString() !== session.user?.id) {
+        return NextResponse.json(
+          { error: 'You can only edit tasks you created' },
+          { status: 403 }
+        );
+      }
+    }
+
     const task = await Task.findByIdAndUpdate(
       taskId,
       {

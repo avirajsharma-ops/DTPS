@@ -4,6 +4,7 @@ export interface ITask extends Document {
   _id: string;
   client: mongoose.Schema.Types.ObjectId;
   dietitian: mongoose.Schema.Types.ObjectId;
+  creatorRole?: 'dietitian' | 'health_counselor' | 'admin';
   taskType: 'General Followup' | 'Habit Update' | 'Session Booking' | 'Sign Document' | 'Form Allotment' | 'Report Upload' | 'Diary Update' | 'Measurement Update' | 'BCA Update' | 'Progress Update';
   title: string;
   description?: string;
@@ -31,6 +32,11 @@ const taskSchema = new Schema<ITask>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true
+    },
+    creatorRole: {
+      type: String,
+      enum: ['dietitian', 'health_counselor', 'admin'],
+      default: 'dietitian'
     },
     taskType: {
       type: String,

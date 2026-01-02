@@ -36,6 +36,7 @@ interface Task {
   tags?: Tag[];
   googleCalendarEventId?: string;
   createdAt: string;
+  creatorRole?: 'dietitian' | 'health_counselor' | 'admin';
   dietitian?: {
     _id: string;
     firstName: string;
@@ -73,13 +74,22 @@ export default function TasksSection({
     color: '#3B82F6',
   });
 
-  // Helper function to check if current user can delete a task
-  const canDeleteTask = (task: Task) => {
-    // Admins can delete any task
+  // Helper function to check if current user can edit/delete a task
+  const canEditTask = (task: Task) => {
+    // Admins can edit any task
     if (userRole === 'admin') return true;
-    // Both dietitians and health counselors can only delete tasks they created
+    // Both dietitians and health counselors can only edit/delete tasks they created
     const currentUserId = (session?.user as any)?.id || (session?.user as any)?._id;
     return task.dietitian?._id === currentUserId;
+  };
+
+  // Helper function to get creator display info
+  const getCreatorInfo = (task: Task) => {
+    const creatorName = task.dietitian ? `${task.dietitian.firstName} ${task.dietitian.lastName}` : 'Unknown';
+    const creatorRole = task.creatorRole || 'dietitian';
+    const roleLabel = creatorRole === 'health_counselor' ? 'Health Counselor' : creatorRole === 'admin' ? 'Admin' : 'Dietitian';
+    const roleColor = creatorRole === 'health_counselor' ? 'bg-purple-100 text-purple-800' : creatorRole === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
+    return { creatorName, roleLabel, roleColor };
   };
 
   useEffect(() => {
@@ -315,7 +325,9 @@ export default function TasksSection({
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredTasks.map((task) => (
+          {filteredTasks.map((task) => {
+            const creatorInfo = getCreatorInfo(task);
+            return (
             <Card
               key={task._id}
               className="hover:shadow-lg transition-shadow cursor-pointer"
@@ -327,11 +339,14 @@ export default function TasksSection({
               <CardContent className="pt-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <Badge className={getStatusColor(task.status)}>
                         {task.status}
                       </Badge>
                       <h3 className="text-lg font-semibold">{task.taskType}</h3>
+                      <Badge className={creatorInfo.roleColor}>
+                        Created by {creatorInfo.roleLabel}: {creatorInfo.creatorName}
+                      </Badge>
                     </div>
                     {task.title && (
                       <p className="text-sm text-gray-600 mt-1">{task.title}</p>
@@ -340,7 +355,7 @@ export default function TasksSection({
                       <p className="text-sm text-gray-500 mt-2">{task.description}</p>
                     )}
                   </div>
-                  {canDeleteTask(task) && (
+                  {canEditTask(task) && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -396,21 +411,23 @@ export default function TasksSection({
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedTask(task);
-                      setIsDetailModalOpen(true);
-                    }}
-                    className="gap-1"
-                  >
-                    <Tag className="h-4 w-4" />
-                    Manage Tags
-                  </Button>
+                  {canEditTask(task) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedTask(task);
+                        setIsDetailModalOpen(true);
+                      }}
+                      className="gap-1"
+                    >
+                      <Tag className="h-4 w-4" />
+                      Manage Tags
+                    </Button>
+                  )}
 
-                  {task.status !== 'completed' && (
+                  {canEditTask(task) && task.status !== 'completed' && task.status !== 'cancelled' && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -421,6 +438,21 @@ export default function TasksSection({
                     >
                       <CheckCircle2 className="h-4 w-4 mr-1" />
                       Mark Complete
+                    </Button>
+                  )}
+
+                  {canEditTask(task) && task.status !== 'completed' && task.status !== 'cancelled' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUpdateStatus(task._id, 'cancelled');
+                      }}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      Cancel Task
                     </Button>
                   )}
 
@@ -467,7 +499,8 @@ export default function TasksSection({
                 </div>
               </CardContent>
             </Card>
-          ))}
+          );
+          })}
         </div>
       )}
 
