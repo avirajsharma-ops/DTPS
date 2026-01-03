@@ -48,10 +48,9 @@ export async function PUT(
     if (!recipe)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    if (
-      recipe.createdBy.toString() !== session.user.id &&
-      session.user.role !== 'admin'
-    ) {
+    // Allow any dietitian, health_counselor, or admin to edit any recipe
+    const allowedRoles = ['dietitian', 'health_counselor', 'admin'];
+    if (!allowedRoles.includes(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -80,10 +79,9 @@ export async function DELETE(
     if (!recipe)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    if (
-      recipe.createdBy.toString() !== session.user.id &&
-      session.user.role !== 'admin'
-    ) {
+    // Allow any dietitian, health_counselor, or admin to delete any recipe
+    const allowedRoles = ['dietitian', 'health_counselor', 'admin'];
+    if (!allowedRoles.includes(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

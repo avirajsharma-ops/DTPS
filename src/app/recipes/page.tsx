@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import RecipesListMobile from './page-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,12 +19,17 @@ import {
   ChefHat,
   Clock,
   Filter,
-  CheckCircle
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import Link from 'next/link';
 
 interface Recipe {
   _id: string;
+  uuid?: string;
   name: string;
   description: string;
   nutrition: {
@@ -59,6 +65,9 @@ function RecipesPageContent() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecipes, setTotalRecipes] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedCuisine, setSelectedCuisine] = useState('all');
@@ -67,27 +76,27 @@ function RecipesPageContent() {
   const [maxCalories, setMaxCalories] = useState('');
   const [minProtein, setMinProtein] = useState('');
   const [maxPrepTime, setMaxPrepTime] = useState('');
-  const [sortBy, setSortBy] = useState('newest');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showFilters, setShowFilters] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState('name');
   const [showSuccess, setShowSuccess] = useState(false);
 
+  const RECIPES_PER_PAGE = 50;
+
   useEffect(() => {
-    fetchRecipes();
+    // Reset to first page when filters change
+    setCurrentPage(1);
+    fetchRecipes(1);
   }, [searchTerm, selectedCategory, selectedCuisine, selectedDifficulty, selectedDietaryRestrictions, maxCalories, minProtein, maxPrepTime, sortBy]);
 
   useEffect(() => {
     // Check for success message
     if (searchParams?.get('success') === 'created') {
       setShowSuccess(true);
-      // Hide success message after 5 seconds
       const timer = setTimeout(() => setShowSuccess(false), 5000);
       return () => clearTimeout(timer);
     }
   }, [searchParams]);
 
-  const fetchRecipes = async () => {
+  const fetchRecipes = async (pageNum: number) => {
     try {
       setLoading(true);
 
@@ -101,24 +110,98 @@ function RecipesPageContent() {
       if (minProtein) params.append('minProtein', minProtein);
       if (maxPrepTime) params.append('maxPrepTime', maxPrepTime);
       if (sortBy) params.append('sortBy', sortBy);
+      params.append('limit', String(RECIPES_PER_PAGE));
+      params.append('page', String(pageNum));
 
       const response = await fetch(`/api/recipes?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setRecipes(data.recipes || []);
-        setCategories(data.categories || []);
+        const fetchedRecipes: Recipe[] = data.recipes || [];
+        const total = data.pagination?.total || 0;
+        
+        // Remove duplicates based on _id
+        const seenIds = new Set<string>();
+        const uniqueRecipes = fetchedRecipes.filter(recipe => {
+          if (seenIds.has(recipe._id)) {
+            return false;
+          }
+          seenIds.add(recipe._id);
+          return true;
+        });
+        
+        setRecipes(uniqueRecipes);
+        setCategories(data.categories || data.tags || []);
+        setTotalRecipes(total);
+        setTotalPages(Math.ceil(total / RECIPES_PER_PAGE));
       } else {
         console.error('Failed to fetch recipes:', response.status, response.statusText);
         setRecipes([]);
         setCategories([]);
+        setTotalRecipes(0);
+        setTotalPages(1);
       }
     } catch (error) {
       console.error('Error fetching recipes:', error);
       setRecipes([]);
       setCategories([]);
+      setTotalRecipes(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
+  };
+
+  const goToPage = (pageNum: number) => {
+    if (pageNum >= 1 && pageNum <= totalPages && pageNum !== currentPage) {
+      setCurrentPage(pageNum);
+      fetchRecipes(pageNum);
+      // Scroll to top of the page
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Generate page numbers to display
+  const getPageNumbers = (): (number | string)[] => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible + 2) {
+      // Show all pages if total is small
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+      
+      if (currentPage <= 3) {
+        // Near start
+        for (let i = 2; i <= Math.min(4, totalPages - 1); i++) {
+          pages.push(i);
+        }
+        if (totalPages > 5) pages.push('...');
+      } else if (currentPage >= totalPages - 2) {
+        // Near end
+        if (totalPages > 5) pages.push('...');
+        for (let i = Math.max(totalPages - 3, 2); i <= totalPages - 1; i++) {
+          pages.push(i);
+        }
+      } else {
+        // In middle
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+      }
+      
+      // Always show last page
+      if (!pages.includes(totalPages)) {
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
   };
 
   return (
@@ -188,11 +271,86 @@ function RecipesPageContent() {
               
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <ChefHat className="h-4 w-4" />
-                <span>{recipes.length} recipes</span>
+                <span>
+                  {totalRecipes > 0 
+                    ? `Showing ${((currentPage - 1) * RECIPES_PER_PAGE) + 1}-${Math.min(currentPage * RECIPES_PER_PAGE, totalRecipes)} of ${totalRecipes} recipes`
+                    : '0 recipes'
+                  }
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Top Pagination Controls */}
+        {!loading && totalPages > 1 && (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <div className="flex items-center gap-2">
+              {/* First Page */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(1)}
+                disabled={currentPage === 1}
+                className="hidden sm:flex"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              
+              {/* Previous Page */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">Previous</span>
+              </Button>
+              
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {getPageNumbers().map((pageNum, index) => (
+                  pageNum === '...' ? (
+                    <span key={`top-ellipsis-${index}`} className="px-2 text-gray-400">...</span>
+                  ) : (
+                    <Button
+                      key={`top-page-${pageNum}`}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNum as number)}
+                      className="min-w-10"
+                    >
+                      {pageNum}
+                    </Button>
+                  )
+                ))}
+              </div>
+              
+              {/* Next Page */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <span className="hidden sm:inline mr-1">Next</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              
+              {/* Last Page */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="hidden sm:flex"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Recipes Grid */}
         {loading ? (
@@ -222,50 +380,58 @@ function RecipesPageContent() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recipes && recipes.map((recipe) => (
-              <Card key={recipe._id} className="hover:shadow-md transition-shadow border border-gray-200">
-                {/* Recipe Image */}
-                {recipe.image ? (
-                  <div className="relative h-48 w-full overflow-hidden bg-gray-100">
-                    <img
+              <Card key={recipe._id} className="hover:shadow-md transition-shadow border border-gray-200 flex flex-col h-full">
+                {/* Recipe Image - Fixed size */}
+                <div className="relative w-full h-48 bg-gray-100 overflow-hidden shrink-0">
+                  {recipe.image ? (
+                    <Image
                       src={recipe.image}
                       alt={recipe.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover w-full h-full"
+                      loading="lazy"
                       onError={(e) => {
-                        // Fallback to gradient background if image fails to load
-                        e.currentTarget.style.display = 'none';
+                        // Fallback to placeholder if image fails
+                        (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
-                  </div>
-                ) : (
-                  <div className="relative h-48 w-full flex items-center justify-center bg-linear-to-br from-green-50 to-emerald-100">
-                    <ChefHat className="h-16 w-16 text-green-300" />
-                  </div>
-                )}
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-green-50 to-emerald-100">
+                      <ChefHat className="h-14 w-14 text-green-300" />
+                    </div>
+                  )}
+                </div>
 
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-lg line-clamp-2 font-semibold text-gray-900">{recipe.name}</CardTitle>
-                      <CardDescription className="line-clamp-2 mt-1 text-gray-500">
-                        {recipe.description || 'No description available'}
-                      </CardDescription>
+                      <div className="flex items-center gap-2 mb-1">
+                        <CardTitle className="text-base line-clamp-2 font-semibold text-gray-900">{recipe.name}</CardTitle>
+                      </div>
+                      {recipe.uuid && (
+                        <Badge variant="secondary" className="mb-2 text-xs font-mono">
+                          ID: {recipe.uuid}
+                        </Badge>
+                      )}
+                      
                     </div>
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 grow flex flex-col">
                   {/* Nutrition Info */}
                   <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
                     <div className="text-center">
-                      <p className="text-lg font-bold text-gray-900">{recipe.nutrition.calories}</p>
+                      <p className="text-lg font-bold text-gray-900">{recipe.nutrition?.calories || 0}</p>
                       <p className="text-xs text-gray-500">Calories</p>
                     </div>
                     <div className="text-center border-x border-gray-200">
-                      <p className="text-lg font-bold text-gray-900">{recipe.nutrition.protein}g</p>
+                      <p className="text-lg font-bold text-gray-900">{recipe.nutrition?.protein || 0}g</p>
                       <p className="text-xs text-gray-500">Protein</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-lg font-bold text-gray-900">{recipe.servings}</p>
+                      <p className="text-lg font-bold text-gray-900">{recipe.servings || 1}</p>
                       <p className="text-xs text-gray-500">Servings</p>
                     </div>
                   </div>
@@ -274,11 +440,11 @@ function RecipesPageContent() {
                   <div className="flex items-center justify-between text-sm text-gray-600">
                     <div className="flex items-center">
                       <Clock className="h-4 w-4 mr-1 text-gray-400" />
-                      <span>{recipe.prepTime + recipe.cookTime} min</span>
+                      <span>{(recipe.prepTime || 0) + (recipe.cookTime || 0)} min</span>
                     </div>
                     <div className="flex gap-2 text-xs">
-                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded">C: {recipe.nutrition.carbs}g</span>
-                      <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded">F: {recipe.nutrition.fat}g</span>
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded">C: {recipe.nutrition?.carbs || 0}g</span>
+                      <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded">F: {recipe.nutrition?.fat || 0}g</span>
                     </div>
                   </div>
 
@@ -304,7 +470,7 @@ function RecipesPageContent() {
 
                   {/* Action Button */}
                   <Button
-                    className="w-full"
+                    className="w-full mt-auto"
                     asChild
                   >
                     <Link href={`/recipes/${recipe._id}`}>
@@ -314,6 +480,80 @@ function RecipesPageContent() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {!loading && totalPages > 1 && (
+          <div className="flex flex-col items-center gap-4 py-8">
+            <div className="flex items-center gap-2">
+              {/* First Page */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(1)}
+                disabled={currentPage === 1}
+                className="hidden sm:flex"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              
+              {/* Previous Page */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">Previous</span>
+              </Button>
+              
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {getPageNumbers().map((pageNum, index) => (
+                  pageNum === '...' ? (
+                    <span key={`ellipsis-${index}`} className="px-2 text-gray-400">...</span>
+                  ) : (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNum as number)}
+                      className="min-w-10"
+                    >
+                      {pageNum}
+                    </Button>
+                  )
+                ))}
+              </div>
+              
+              {/* Next Page */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <span className="hidden sm:inline mr-1">Next</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              
+              {/* Last Page */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="hidden sm:flex"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <p className="text-sm text-gray-500">
+              Page {currentPage} of {totalPages} ({totalRecipes} total recipes)
+            </p>
           </div>
         )}
       </div>

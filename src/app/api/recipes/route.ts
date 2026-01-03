@@ -71,13 +71,14 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
+    const category = searchParams.get('category');
     const cuisine = searchParams.get('cuisine');
     const difficulty = searchParams.get('difficulty');
     const dietaryRestrictions = searchParams.get('dietaryRestrictions');
     const maxCalories = searchParams.get('maxCalories');
     const minProtein = searchParams.get('minProtein');
     const maxPrepTime = searchParams.get('maxPrepTime');
-    const sortBy = searchParams.get('sortBy') || 'newest';
+    const sortBy = searchParams.get('sortBy') || 'name';
     const limitParam = searchParams.get('limit');
     const limit = limitParam ? parseInt(limitParam) : 0; // 0 means no limit
     const page = parseInt(searchParams.get('page') || '1');
@@ -85,13 +86,18 @@ export async function GET(request: NextRequest) {
     // Build query
     let query: any = {};
 
-    // Search by name, description, ingredients, or recipe ID
+    // Search by name, description, ingredients, recipe ID, or UUID
     if (search) {
       const searchConditions: any[] = [
         { name: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { 'ingredients.name': { $regex: search, $options: 'i' } }
       ];
+      
+      // Only add uuid search if it looks like it could be a uuid (numeric or alphanumeric)
+      if (/^[a-zA-Z0-9]+$/.test(search.trim())) {
+        searchConditions.push({ uuid: search.trim() });
+      }
       
       // Check if search term looks like a MongoDB ObjectId (hex characters)
       const cleanSearch = search.trim().toLowerCase();
@@ -108,6 +114,11 @@ export async function GET(request: NextRequest) {
       }
       
       query.$or = searchConditions;
+    }
+
+    // Filter by category (tags)
+    if (category && category !== 'all') {
+      query.tags = category;
     }
 
     // Filter by cuisine
@@ -141,33 +152,37 @@ export async function GET(request: NextRequest) {
       query.prepTime = { $lte: parseInt(maxPrepTime) };
     }
 
-    // Sort options
+    // Sort options - always include _id as secondary sort for stable pagination
     let sortOptions: any = {};
     switch (sortBy) {
       case 'rating':
-        sortOptions = { 'rating.average': -1 };
+        sortOptions = { 'rating.average': -1, _id: -1 };
         break;
       case 'popular':
-        sortOptions = { views: -1 };
+        sortOptions = { views: -1, _id: -1 };
         break;
       case 'newest':
-        sortOptions = { createdAt: -1 };
+        sortOptions = { createdAt: -1, _id: -1 };
         break;
       case 'name':
-        sortOptions = { name: 1 };
+        sortOptions = { name: 1, _id: 1 };
         break;
       case 'prep-time':
-        sortOptions = { prepTime: 1 };
+        sortOptions = { prepTime: 1, _id: 1 };
         break;
       case 'calories':
-        sortOptions = { 'nutrition.calories': 1 };
+        sortOptions = { 'nutrition.calories': 1, _id: 1 };
         break;
       default:
-        sortOptions = { createdAt: -1 };
+        sortOptions = { name: 1, _id: 1 };
     }
 
     let recipesQuery = Recipe.find(query)
-      .populate('createdBy', 'firstName lastName')
+      .populate({
+        path: 'createdBy',
+        select: 'firstName lastName',
+        options: { strictPopulate: false }
+      })
       .sort(sortOptions);
 
     // Only apply limit and skip if limit is set (greater than 0)
@@ -175,7 +190,21 @@ export async function GET(request: NextRequest) {
       recipesQuery = recipesQuery.limit(limit).skip((page - 1) * limit);
     }
 
-    const recipes = await recipesQuery;
+    const recipesRaw = await recipesQuery.lean(); // Use lean() for better performance
+
+    // Sanitize recipes to ensure nutrition object exists with default values
+    const recipes = recipesRaw.map((recipe: any) => {
+      return {
+        ...recipe,
+        nutrition: recipe.nutrition || {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0
+        },
+        createdBy: recipe.createdBy || { firstName: 'Unknown', lastName: 'User' }
+      };
+    });
 
     const total = await Recipe.countDocuments(query);
 
@@ -190,16 +219,17 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
+        pages: limit > 0 ? Math.ceil(total / limit) : 1
       },
       cuisines,
-      tags
+      tags,
+      categories: tags
     });
 
-  } catch (error) {
-    console.error('Error fetching recipes:', error);
+  } catch (error: any) {
+    console.error('Error fetching recipes:', error?.message || error);
     return NextResponse.json(
-      { error: 'Failed to fetch recipes' },
+      { error: 'Failed to fetch recipes', details: error?.message },
       { status: 500 }
     );
   }

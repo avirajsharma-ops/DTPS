@@ -1708,7 +1708,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               value={notesDialogValue}
               onChange={(e) => setNotesDialogValue(e.target.value)}
               placeholder="Enter notes here..."
-              className="min-h-[150px] resize-y"
+              className="min-h-37.5 resize-y"
               autoFocus
             />
           </div>

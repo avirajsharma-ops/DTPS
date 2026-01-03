@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
 
   // Optimize images
   images: {
+    domains: ['ik.imagekit.io'],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,

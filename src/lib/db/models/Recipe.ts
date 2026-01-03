@@ -129,10 +129,7 @@ const recipeSchema = new Schema({
     trim: true,
     lowercase: true
   }],
-  cuisine: {
-    type: String,
-    enum: ['indian', 'chinese', 'italian', 'mexican', 'american', 'mediterranean', 'thai', 'japanese', 'french', 'other']
-  },
+
   dietaryRestrictions: [{
     type: String,
     trim: true
@@ -184,25 +181,7 @@ const recipeSchema = new Schema({
     helpful: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now }
   }],
-  nutritionNotes: String,
-  tips: [String],
-  variations: [{
-    name: String,
-    description: String,
-    ingredientChanges: [String],
-    nutritionImpact: String
-  }],
-  equipment: [String],
-  storage: {
-    refrigerator: String, // e.g., "3-4 days"
-    freezer: String, // e.g., "2-3 months"
-    instructions: String
-  },
-  source: {
-    type: String,
-    url: String,
-    author: String
-  },
+
   usageCount: { type: Number, default: 0 },
   favorites: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   createdBy: {
@@ -229,7 +208,7 @@ recipeSchema.index({ usageCount: -1 });
 recipeSchema.index({ createdAt: -1 });
 recipeSchema.index({ isPublic: 1, isPremium: 1 });
 
-// Pre-save hook to generate auto-incrementing uuid
+// Pre-save hook to generate auto-incrementing uuid starting from 10
 recipeSchema.pre('save', async function(next) {
   if (this.isNew && !this.uuid) {
     const counter = await Counter.findByIdAndUpdate(
@@ -237,7 +216,9 @@ recipeSchema.pre('save', async function(next) {
       { $inc: { seq: 1 } },
       { new: true, upsert: true }
     );
-    this.uuid = String(counter.seq);
+    // Ensure uuid starts from 10 (add 9 offset if counter is below 10)
+    const uuidNumber = counter.seq < 10 ? counter.seq + 9 : counter.seq;
+    this.uuid = String(uuidNumber);
   }
   next();
 });
