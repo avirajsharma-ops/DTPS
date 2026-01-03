@@ -194,6 +194,7 @@ const recipeSchema = new Schema({
   autoIndex: false
 });
 
+
 // Indexes for better search performance
 recipeSchema.index({ name: 'text', description: 'text', tags: 'text', 'ingredients.name': 'text' });
 recipeSchema.index({ tags: 1 });

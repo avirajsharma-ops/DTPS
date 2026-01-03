@@ -232,15 +232,11 @@ export default function RecipeViewPage() {
   };
 
   const canEditRecipe = () => {
-    if (!session?.user || !recipe) return false;
+    if (!session?.user) return false;
 
-    // Handle both populated and non-populated createdBy
-    const createdById = typeof recipe.createdBy === 'object'
-      ? recipe.createdBy._id || recipe.createdBy.id
-      : recipe.createdBy;
-
-    // Allow owner, admin, and health counselors to edit
-    return session.user.id === createdById || session.user.role === 'admin' || session.user.role === 'health-counselor';
+    // Allow any dietitian, health counselor, or admin to edit any recipe
+    const allowedRoles = ['dietitian', 'health_counselor', 'admin'];
+    return allowedRoles.includes(session.user.role?.toLowerCase());
   };
 
   const handleDeleteRecipe = () => {
@@ -392,10 +388,10 @@ export default function RecipeViewPage() {
                     <Star className="h-4 w-4 text-yellow-500" />
                     <span>{(recipe.rating?.average || 0).toFixed(1)} ({recipe.rating?.count || 0} reviews)</span>
                   </div>
-                  <div className="flex items-center space-x-1">
+                  {/* <div className="flex items-center space-x-1">
                     <BookOpen className="h-4 w-4" />
                     <span>{recipe.usageCount} uses</span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
               

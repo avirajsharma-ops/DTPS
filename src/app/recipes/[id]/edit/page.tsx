@@ -1,5 +1,5 @@
 'use client';
-
+  import { UserRole } from '@/types';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -60,6 +60,7 @@ interface Recipe {
     lastName: string;
     email: string;
   };
+  createdAt: string;
 }
 
 export default function EditRecipePage() {
@@ -222,15 +223,14 @@ export default function EditRecipePage() {
     }
   };
 
+  
+
   const canEditRecipe = () => {
     if (!session?.user || !recipe) return false;
 
-    const createdById = typeof recipe.createdBy === 'object'
-      ? recipe.createdBy._id || recipe.createdBy.id
-      : recipe.createdBy;
-
-    // Allow owner, admin, and health counselors to edit
-    return session.user.id === createdById || session.user.role === 'admin' || session.user.role === 'health-counselor';
+    // Allow any dietitian, health counselor, or admin to edit any recipe
+    const allowedRoles = [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR, UserRole.ADMIN];
+    return allowedRoles.includes(session.user.role);
   };
 
   // Ingredient management

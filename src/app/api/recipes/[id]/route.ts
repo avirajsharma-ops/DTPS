@@ -15,19 +15,37 @@ export async function GET(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
-    const recipe = await Recipe.findById(id).populate(
-      'createdBy',
-      'firstName lastName'
-    );
+    let recipe = await Recipe.findById(id).populate({
+      path: 'createdBy',
+      select: 'firstName lastName',
+      options: { strictPopulate: false }
+    }).lean();
 
     if (!recipe)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+    // Sanitize nutrition data - ensure it's a proper object
+    if (recipe && !Array.isArray(recipe) && !recipe.nutrition) {
+      recipe.nutrition = {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0
+      };
+    }
+    
+    // Ensure createdBy has default values
+    const singleRecipe = recipe as { createdBy?: { firstName?: string; lastName?: string } };
+    if (!singleRecipe.createdBy) {
+      singleRecipe.createdBy = { firstName: 'Unknown', lastName: 'User' };
+    }
+
     await Recipe.findByIdAndUpdate(id, { $inc: { views: 1 } });
 
     return NextResponse.json({ success: true, recipe });
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch recipe' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Error fetching recipe:', error?.message || error);
+    return NextResponse.json({ error: 'Failed to fetch recipe', details: error?.message }, { status: 500 });
   }
 }
 
