@@ -33,7 +33,7 @@ export const signUpSchema = z.object({
     .string()
     .min(1, 'Last name is required')
     .max(50, 'Last name must be less than 50 characters'),
-  role: z.enum([UserRole.CLIENT, UserRole.DIETITIAN], {
+  role: z.enum([UserRole.HEALTH_COUNSELOR, UserRole.DIETITIAN], {
     message: 'Please select a role',
   }),
   phone: z

@@ -13,11 +13,14 @@ import Link from "next/link";
 interface Recipe {
   _id: string;
   name: string;
+  uuid?: string;
   createdBy?: {
-    firstName: string;
-    lastName: string;
-  };
+    _id?: string;
+    firstName?: string;
+    lastName?: string;
+  } | null;
   createdAt?: string;
+  updatedAt?: string;
   nutrition?: {
     calories: number;
     protein: number;
@@ -53,10 +56,19 @@ export default function AdminRecipesPage() {
         throw new Error(body.error || "Failed to load recipes");
       }
       
-      setRecipes(body.recipes || []);
+      // Ensure recipes are properly displayed even if createdBy is missing
+      const recipesData = (body.recipes || []).map((recipe: any) => ({
+        ...recipe,
+        createdBy: recipe.createdBy || null,
+        createdAt: recipe.createdAt || recipe.updatedAt || new Date().toISOString()
+      }));
+      
+      setRecipes(recipesData);
       setTotalRecipes(body.pagination?.total || 0);
       setTotalPages(body.pagination?.pages || 1);
       setCurrentPage(page);
+      
+      console.log(`Fetched ${recipesData.length} recipes from total ${body.pagination?.total}`);
     } catch (e: any) {
       console.error('Error fetching recipes:', e);
       setError(e?.message || "Failed to load recipes");
@@ -102,21 +114,25 @@ export default function AdminRecipesPage() {
   }
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return '-';
+    if (!dateString) return 'No Date';
     try {
-      return new Date(dateString).toLocaleDateString('en-IN', {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleDateString('en-IN', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       });
     } catch {
-      return '-';
+      return 'Invalid Date';
     }
   };
 
   const getDietitianName = (recipe: Recipe) => {
-    if (!recipe.createdBy) return '-';
-    return `Dr. ${recipe.createdBy.firstName} ${recipe.createdBy.lastName}`;
+    if (!recipe.createdBy) return 'Not Assigned';
+    const firstName = recipe.createdBy.firstName || 'Unknown';
+    const lastName = recipe.createdBy.lastName || '';
+    return `Dr. ${firstName} ${lastName}`.trim();
   };
 
   return (
@@ -127,6 +143,11 @@ export default function AdminRecipesPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Recipe Management</h1>
             <p className="text-gray-600 mt-1">Manage all recipes in the system</p>
+            {!loading && (
+              <p className="text-sm text-gray-500 mt-2">
+                Total Recipes: <span className="font-semibold text-gray-900">{totalRecipes}</span>
+              </p>
+            )}
           </div>
         </div>
 

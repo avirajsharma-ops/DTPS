@@ -27,17 +27,17 @@ const registerSchema = z.object({
   confirmPassword: z.string().optional(),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum([UserRole.CLIENT, UserRole.DIETITIAN]),
+  role: z.enum([UserRole.HEALTH_COUNSELOR, UserRole.DIETITIAN]),
   phone: z.string().min(1, 'Phone number is required'),
 
-  // Dietitian specific fields
+  // Dietitian/Health Counselor specific fields
   credentials: z.array(z.string()).optional(),
   specializations: z.array(z.string()).optional(),
   experience: z.number().min(0).optional(),
   bio: z.string().max(1000).optional(),
   consultationFee: z.number().min(0).optional(),
 
-  // Client specific fields
+  // Client specific fields (kept for compatibility)
   dateOfBirth: z.string().optional(),
   gender: z.enum(['male', 'female', 'other']).optional(),
   height: z.number().min(30, 'Height must be at least 30 cm').max(250, 'Height cannot exceed 250 cm').optional(),

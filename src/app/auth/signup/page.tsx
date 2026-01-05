@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Heart, Eye, EyeOff, User, Stethoscope } from 'lucide-react';
+import { Heart, Eye, EyeOff, HeartPulse, Stethoscope } from 'lucide-react';
 import { signUpSchema, SignUpInput } from '@/lib/validations/auth';
 import { UserRole } from '@/types';
 import { COUNTRY_CODES } from '@/lib/constants/countries';
@@ -119,15 +119,15 @@ export default function SignUpPage() {
               {/* Role Selection */}
               <div className="space-y-2">
                 <Label>I am a</Label>
-                <Select onValueChange={(value) => setValue('role', value as UserRole.CLIENT | UserRole.DIETITIAN)}>
+                <Select onValueChange={(value) => setValue('role', value as UserRole.HEALTH_COUNSELOR | UserRole.DIETITIAN)}>
                   <SelectTrigger className={errors.role ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={UserRole.CLIENT}>
+                    <SelectItem value={UserRole.HEALTH_COUNSELOR}>
                       <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4" />
-                        <span>Client - Looking for nutrition guidance</span>
+                        <HeartPulse className="h-4 w-4" />
+                        <span>Health Counselor - Wellness & lifestyle guidance</span>
                       </div>
                     </SelectItem>
                     <SelectItem value={UserRole.DIETITIAN}>
