@@ -49,7 +49,7 @@ export default function AdminRecipesPage() {
       setLoading(true);
       setError(null);
       const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
-      const res = await fetch(`/api/recipes?limit=${itemsPerPage}&page=${page}${searchParam}`);
+      const res = await fetch(`/api/recipes?limit=${itemsPerPage}&page=${page}&sortBy=uuid${searchParam}`);
       const body = await res.json();
       
       if (!res.ok) {
@@ -210,8 +210,8 @@ export default function AdminRecipesPage() {
                           {((currentPage - 1) * itemsPerPage) + index + 1}
                         </td>
                         <td className="p-3">
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium break-all">
-                            {recipe._id}
+                          <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded font-semibold text-sm">
+                            {recipe?.uuid || '-'}
                           </span>
                         </td>
                         <td className="p-3">

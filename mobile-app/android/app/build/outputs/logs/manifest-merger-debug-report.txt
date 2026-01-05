@@ -1,0 +1,864 @@
+-- Merging decision tree log ---
+provider#androidx.core.content.FileProvider
+INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:64:9-72:20
+	android:grantUriPermissions
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:68:13-47
+	android:authorities
+		INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:66:13-64
+	android:exported
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:67:13-37
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:65:13-62
+manifest
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:2:1-98:12
+INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:2:1-98:12
+INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:2:1-98:12
+INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:2:1-98:12
+MERGED from [androidx.databinding:viewbinding:8.2.2] /Users/lokeshdhote/.gradle/caches/transforms-3/55841d182704393934bc9c2077f3da94/transformed/viewbinding-8.2.2/AndroidManifest.xml:2:1-7:12
+MERGED from [com.google.android.material:material:1.11.0] /Users/lokeshdhote/.gradle/caches/transforms-3/f4f0a3d0e0128a3fac2256c5355c795a/transformed/material-1.11.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /Users/lokeshdhote/.gradle/caches/transforms-3/5aa9584782ac9f2782b2840c4498a8ee/transformed/constraintlayout-2.1.4/AndroidManifest.xml:2:1-11:12
+MERGED from [androidx.appcompat:appcompat-resources:1.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/743f48a0ead76907e33705fa33271f13/transformed/appcompat-resources-1.6.1/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.appcompat:appcompat:1.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/e8b7fa243aa043d8941c2baf1b8bd6b9/transformed/appcompat-1.6.1/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.webkit:webkit:1.10.0] /Users/lokeshdhote/.gradle/caches/transforms-3/1d5d857a7eb5834f80544da913e2bf89/transformed/webkit-1.10.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/b9ffdc9fbe3f63f3979d57784e90e949/transformed/emoji2-views-helper-1.2.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.viewpager2:viewpager2:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/6c0fe986bf2f876802fbd2f475e80668/transformed/viewpager2-1.0.0/AndroidManifest.xml:17:1-24:12
+MERGED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:2:1-17:12
+MERGED from [com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:17:1-32:12
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:17:1-66:12
+MERGED from [com.google.firebase:firebase-analytics:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8da4202e1dc8286f29c37ac38fe4cf19/transformed/firebase-analytics-21.5.0/AndroidManifest.xml:2:1-9:12
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:17:1-43:12
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:2:1-24:12
+MERGED from [com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:2:1-18:12
+MERGED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:15:1-41:12
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:17:1-46:12
+MERGED from [com.google.android.gms:play-services-measurement-sdk:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/4c43a2370155a64a2f67e4f719d8ee11/transformed/play-services-measurement-sdk-21.5.0/AndroidManifest.xml:17:1-25:12
+MERGED from [com.google.firebase:firebase-iid-interop:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/970ba0408e6d816b64db01fcc8d1af3a/transformed/firebase-iid-interop-17.1.0/AndroidManifest.xml:2:1-10:12
+MERGED from [com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:16:1-24:12
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:2:1-13:12
+MERGED from [com.google.firebase:firebase-installations-interop:17.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/4322fd7c8dbaea5f7db3a3d32adf368a/transformed/firebase-installations-interop-17.1.1/AndroidManifest.xml:15:1-19:12
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:17:1-32:12
+MERGED from [androidx.privacysandbox.ads:ads-adservices-java:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/9b03623bc10a93c856961d86a2435f58/transformed/ads-adservices-java-1.0.0-beta05/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:17:1-28:12
+MERGED from [androidx.activity:activity:1.8.0] /Users/lokeshdhote/.gradle/caches/transforms-3/ce97ce419851c0a41ad7b2ae6942b749/transformed/activity-1.8.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/4fea95cbfc1b876bc3121f8805b14eca/transformed/dynamicanimation-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.google.android.gms:play-services-stats:17.0.2] /Users/lokeshdhote/.gradle/caches/transforms-3/2188a49fd2d41513854187809bbd2233/transformed/play-services-stats-17.0.2/AndroidManifest.xml:2:1-9:12
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/ac79065aeeb7308a93ef559181f0a80a/transformed/legacy-support-core-utils-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.loader:loader:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3376a666edf00345d114fac7dcaf9fde/transformed/loader-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.savedstate:savedstate:1.2.1] /Users/lokeshdhote/.gradle/caches/transforms-3/8e40480e215341ed9a4308fb4ffda421/transformed/savedstate-1.2.1/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/91909704d1e3a868454e1a6d41e72aae/transformed/lifecycle-livedata-core-2.6.1/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/2927ef9bba59bdb1794159346a93e7b6/transformed/lifecycle-livedata-2.6.1/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/e9a8a493832375fd7c61d7749dc4a468/transformed/lifecycle-viewmodel-2.6.1/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/f82a0e3d1ab9b778d4313fed915fb650/transformed/lifecycle-runtime-2.6.1/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d1c7acca3dea7b472de879287da57c96/transformed/lifecycle-viewmodel-savedstate-2.6.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.google.android.gms:play-services-tasks:18.0.2] /Users/lokeshdhote/.gradle/caches/transforms-3/ee8752ccbe98b939381005f474545253/transformed/play-services-tasks-18.0.2/AndroidManifest.xml:2:1-6:12
+MERGED from [com.google.firebase:firebase-measurement-connector:19.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d861dd60e04d13e456b4f6fb8bbcf3fa/transformed/firebase-measurement-connector-19.0.0/AndroidManifest.xml:17:1-25:12
+MERGED from [com.google.android.gms:play-services-ads-identifier:18.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/07e342e029c2ccf7d76220db5ad9d88b/transformed/play-services-ads-identifier-18.0.0/AndroidManifest.xml:17:1-27:12
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:17:1-30:12
+MERGED from [com.google.android.gms:play-services-measurement-base:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/7c3adc0866dec905f765cc1c58fb0bcb/transformed/play-services-measurement-base-21.5.0/AndroidManifest.xml:2:1-9:12
+MERGED from [com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:16:1-26:12
+MERGED from [androidx.fragment:fragment:1.3.6] /Users/lokeshdhote/.gradle/caches/transforms-3/3b78c4047d1629d2b3d250246fb183d2/transformed/fragment-1.3.6/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/51537c5e3c07a517b83b1a632c96f1f4/transformed/drawerlayout-1.1.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/ae05db51d2dd8995466cf04058a5f1a8/transformed/coordinatorlayout-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.transition:transition:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5a2e34955d2429ccc6f93a86c98b5e6e/transformed/transition-1.2.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/571364c48b3ae07cc9d10b6cd77931ea/transformed/vectordrawable-animated-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/0197445c5f754dbd6a10cf094516ce63/transformed/vectordrawable-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.viewpager:viewpager:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/f4cfedbbbcdef6850e814c76d8b27afd/transformed/viewpager-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.recyclerview:recyclerview:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e9c813dc2a6a3bce6ee5a76b3df47625/transformed/recyclerview-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.customview:customview:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/0e47e1d97d0084122545bf3543b384e4/transformed/customview-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:17:1-30:12
+MERGED from [androidx.core:core-ktx:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c677984e88e4e51b345cdd9468159464/transformed/core-ktx-1.12.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.core:core-splashscreen:1.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/644a3a61045498317058251af6f040e4/transformed/core-splashscreen-1.0.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.annotation:annotation-experimental:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c0503d56a70d9a922aa0a61c005a7861/transformed/annotation-experimental-1.3.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/0784272250aea289acf94572da80ae6b/transformed/cursoradapter-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.cardview:cardview:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/6dd3928698ed48983e4f5945e1c79a42/transformed/cardview-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.google.firebase:firebase-components:17.1.5] /Users/lokeshdhote/.gradle/caches/transforms-3/c2dbed1bc97bb411eb97e42987185c19/transformed/firebase-components-17.1.5/AndroidManifest.xml:15:1-20:12
+MERGED from [androidx.interpolator:interpolator:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/a76a90e1b16034928882100f7f49dff8/transformed/interpolator-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/fd3c3a27123143f6e7978a9fc4bceb5d/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:17:1-27:12
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:17:1-55:12
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/12a9e3f92527caa393b5890e5ba2f19c/transformed/startup-runtime-1.1.1/AndroidManifest.xml:17:1-33:12
+MERGED from [androidx.tracing:tracing:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9436b4652c2c44a43fbbef3a879c483f/transformed/tracing-1.0.0/AndroidManifest.xml:17:1-24:12
+MERGED from [com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:15:1-33:12
+MERGED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:15:1-37:12
+MERGED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:15:1-41:12
+MERGED from [com.google.android.datatransport:transport-api:3.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/77332281ce78cc6fe7bfb5aea44282e2/transformed/transport-api-3.1.0/AndroidManifest.xml:15:1-20:12
+MERGED from [com.google.firebase:firebase-encoders-json:18.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/fcc36bc7f6909671fe65674f41bec570/transformed/firebase-encoders-json-18.0.0/AndroidManifest.xml:15:1-23:12
+MERGED from [androidx.arch.core:core-runtime:2.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/238b8ac576563f92377c20c7cfb184af/transformed/core-runtime-2.2.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.documentfile:documentfile:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e2386ead4493726b0ec43e2722b8f74c/transformed/documentfile-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/265755946393b6f890786358cc953a15/transformed/localbroadcastmanager-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.print:print:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/33dcc9d1cd3e75156643bc17c16fd598/transformed/print-1.0.0/AndroidManifest.xml:17:1-22:12
+	package
+		INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml
+	xmlns:tools
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:3:5-51
+	android:versionCode
+		INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:2:11-69
+uses-permission#android.permission.INTERNET
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:6:5-67
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:22:5-67
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:22:5-67
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:8:5-67
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:8:5-67
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:8:5-67
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:8:5-67
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:25:5-67
+MERGED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:25:5-67
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:6:22-64
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:7:5-79
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:22:5-79
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:22:5-79
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:23:5-79
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:23:5-79
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:7:5-79
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:7:5-79
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:7:5-79
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:7:5-79
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:22:5-79
+MERGED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:22:5-79
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:7:22-76
+uses-permission#android.permission.CAMERA
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:8:5-65
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:8:22-62
+uses-permission#android.permission.RECORD_AUDIO
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:9:5-71
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:9:22-68
+uses-permission#android.permission.MODIFY_AUDIO_SETTINGS
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:10:5-80
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:10:22-77
+uses-permission#android.permission.VIBRATE
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:11:5-66
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:11:22-63
+uses-permission#android.permission.POST_NOTIFICATIONS
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:12:5-77
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:23:5-77
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:23:5-77
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:12:22-74
+uses-permission#android.permission.READ_MEDIA_IMAGES
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:13:5-76
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:13:22-73
+uses-permission#android.permission.WAKE_LOCK
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:14:5-68
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:24:5-68
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:24:5-68
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:24:5-68
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:24:5-68
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:25:5-68
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:25:5-68
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:9:5-68
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:9:5-68
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:25:5-68
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:25:5-68
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:25:5-68
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:25:5-68
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:14:22-65
+uses-permission#android.permission.RECEIVE_BOOT_COMPLETED
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:15:5-81
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:15:22-78
+uses-feature#android.hardware.camera
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:18:5-85
+	android:required
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:18:58-82
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:18:19-57
+uses-feature#android.hardware.camera.autofocus
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:19:5-95
+	android:required
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:19:68-92
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:19:19-67
+uses-feature#android.hardware.microphone
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:20:5-89
+	android:required
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:20:62-86
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:20:19-61
+application
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:22:5-97:19
+INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:22:5-97:19
+MERGED from [com.google.android.material:material:1.11.0] /Users/lokeshdhote/.gradle/caches/transforms-3/f4f0a3d0e0128a3fac2256c5355c795a/transformed/material-1.11.0/AndroidManifest.xml:22:5-20
+MERGED from [com.google.android.material:material:1.11.0] /Users/lokeshdhote/.gradle/caches/transforms-3/f4f0a3d0e0128a3fac2256c5355c795a/transformed/material-1.11.0/AndroidManifest.xml:22:5-20
+MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /Users/lokeshdhote/.gradle/caches/transforms-3/5aa9584782ac9f2782b2840c4498a8ee/transformed/constraintlayout-2.1.4/AndroidManifest.xml:9:5-20
+MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /Users/lokeshdhote/.gradle/caches/transforms-3/5aa9584782ac9f2782b2840c4498a8ee/transformed/constraintlayout-2.1.4/AndroidManifest.xml:9:5-20
+MERGED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:23:5-33:19
+MERGED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:7:5-15:19
+MERGED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:7:5-15:19
+MERGED from [com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:22:5-30:19
+MERGED from [com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:22:5-30:19
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:28:5-64:19
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:28:5-64:19
+MERGED from [com.google.firebase:firebase-analytics:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8da4202e1dc8286f29c37ac38fe4cf19/transformed/firebase-analytics-21.5.0/AndroidManifest.xml:7:5-20
+MERGED from [com.google.firebase:firebase-analytics:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8da4202e1dc8286f29c37ac38fe4cf19/transformed/firebase-analytics-21.5.0/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:29:5-41:19
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:29:5-41:19
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:11:5-22:19
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:11:5-22:19
+MERGED from [com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:8:5-16:19
+MERGED from [com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:8:5-16:19
+MERGED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:22:5-39:19
+MERGED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:22:5-39:19
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:28:5-44:19
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:28:5-44:19
+MERGED from [com.google.android.gms:play-services-measurement-sdk:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/4c43a2370155a64a2f67e4f719d8ee11/transformed/play-services-measurement-sdk-21.5.0/AndroidManifest.xml:22:5-23:19
+MERGED from [com.google.android.gms:play-services-measurement-sdk:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/4c43a2370155a64a2f67e4f719d8ee11/transformed/play-services-measurement-sdk-21.5.0/AndroidManifest.xml:22:5-23:19
+MERGED from [com.google.firebase:firebase-iid-interop:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/970ba0408e6d816b64db01fcc8d1af3a/transformed/firebase-iid-interop-17.1.0/AndroidManifest.xml:7:5-8:19
+MERGED from [com.google.firebase:firebase-iid-interop:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/970ba0408e6d816b64db01fcc8d1af3a/transformed/firebase-iid-interop-17.1.0/AndroidManifest.xml:7:5-8:19
+MERGED from [com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:19:5-23:19
+MERGED from [com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:19:5-23:19
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:29:5-30:19
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:29:5-30:19
+MERGED from [androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:22:5-26:19
+MERGED from [androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:22:5-26:19
+MERGED from [com.google.android.gms:play-services-stats:17.0.2] /Users/lokeshdhote/.gradle/caches/transforms-3/2188a49fd2d41513854187809bbd2233/transformed/play-services-stats-17.0.2/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-stats:17.0.2] /Users/lokeshdhote/.gradle/caches/transforms-3/2188a49fd2d41513854187809bbd2233/transformed/play-services-stats-17.0.2/AndroidManifest.xml:7:5-20
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:23:5-33:19
+MERGED from [com.google.android.gms:play-services-tasks:18.0.2] /Users/lokeshdhote/.gradle/caches/transforms-3/ee8752ccbe98b939381005f474545253/transformed/play-services-tasks-18.0.2/AndroidManifest.xml:5:5-20
+MERGED from [com.google.android.gms:play-services-tasks:18.0.2] /Users/lokeshdhote/.gradle/caches/transforms-3/ee8752ccbe98b939381005f474545253/transformed/play-services-tasks-18.0.2/AndroidManifest.xml:5:5-20
+MERGED from [com.google.firebase:firebase-measurement-connector:19.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d861dd60e04d13e456b4f6fb8bbcf3fa/transformed/firebase-measurement-connector-19.0.0/AndroidManifest.xml:22:5-23:19
+MERGED from [com.google.firebase:firebase-measurement-connector:19.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d861dd60e04d13e456b4f6fb8bbcf3fa/transformed/firebase-measurement-connector-19.0.0/AndroidManifest.xml:22:5-23:19
+MERGED from [com.google.android.gms:play-services-ads-identifier:18.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/07e342e029c2ccf7d76220db5ad9d88b/transformed/play-services-ads-identifier-18.0.0/AndroidManifest.xml:25:5-20
+MERGED from [com.google.android.gms:play-services-ads-identifier:18.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/07e342e029c2ccf7d76220db5ad9d88b/transformed/play-services-ads-identifier-18.0.0/AndroidManifest.xml:25:5-20
+MERGED from [com.google.android.gms:play-services-measurement-base:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/7c3adc0866dec905f765cc1c58fb0bcb/transformed/play-services-measurement-base-21.5.0/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-measurement-base:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/7c3adc0866dec905f765cc1c58fb0bcb/transformed/play-services-measurement-base-21.5.0/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:20:5-24:19
+MERGED from [com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:20:5-24:19
+MERGED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:28:5-89
+MERGED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:28:5-89
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/fd3c3a27123143f6e7978a9fc4bceb5d/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/fd3c3a27123143f6e7978a9fc4bceb5d/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/12a9e3f92527caa393b5890e5ba2f19c/transformed/startup-runtime-1.1.1/AndroidManifest.xml:25:5-31:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/12a9e3f92527caa393b5890e5ba2f19c/transformed/startup-runtime-1.1.1/AndroidManifest.xml:25:5-31:19
+MERGED from [com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:23:5-31:19
+MERGED from [com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:23:5-31:19
+MERGED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:27:5-35:19
+MERGED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:27:5-35:19
+MERGED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:25:5-39:19
+MERGED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:25:5-39:19
+	android:extractNativeLibs
+		INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml
+	android:appComponentFactory
+		ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:28:18-86
+	android:supportsRtl
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:28:9-35
+	android:label
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:27:9-41
+	android:roundIcon
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:26:9-54
+	tools:targetApi
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:32:9-29
+	android:icon
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:25:9-43
+	android:allowBackup
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:24:9-35
+	android:theme
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:29:9-42
+	android:networkSecurityConfig
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:30:9-69
+	android:usesCleartextTraffic
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:31:9-45
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:23:9-40
+activity#first.dtps.com.MainActivity
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:34:9-61:20
+	android:launchMode
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:38:13-44
+	android:windowSoftInputMode
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:39:13-55
+	android:exported
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:36:13-36
+	android:configChanges
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:37:13-87
+	android:theme
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:40:13-53
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:35:13-41
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:42:13-45:29
+action#android.intent.action.MAIN
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:43:17-69
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:43:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:44:17-77
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:44:27-74
+intent-filter#action:name:android.intent.action.VIEW+category:name:android.intent.category.BROWSABLE+category:name:android.intent.category.DEFAULT+data:host:dtps.tech+data:pathPrefix:/user+data:scheme:https
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:48:13-53:29
+	android:autoVerify
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:48:28-53
+action#android.intent.action.VIEW
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:49:17-69
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:49:25-66
+category#android.intent.category.DEFAULT
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:50:17-76
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:50:27-73
+category#android.intent.category.BROWSABLE
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:51:17-78
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:51:27-75
+data
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:17-100
+	android:host
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:46-70
+	android:scheme
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:23-45
+	android:pathPrefix
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:71-97
+intent-filter#action:name:android.intent.action.VIEW+category:name:android.intent.category.BROWSABLE+category:name:android.intent.category.DEFAULT+data:host:user+data:scheme:dtps
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:55:13-60:29
+service#first.dtps.com.DTPSFirebaseMessagingService
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:75:9-81:19
+	android:exported
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:77:13-37
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:76:13-57
+intent-filter#action:name:com.google.firebase.MESSAGING_EVENT
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:78:13-80:29
+action#com.google.firebase.MESSAGING_EVENT
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:79:17-78
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:79:25-75
+meta-data#com.google.firebase.messaging.default_notification_channel_id
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:84:9-86:50
+	android:value
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:86:13-47
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:85:13-89
+meta-data#com.google.firebase.messaging.default_notification_icon
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:89:9-91:60
+	android:resource
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:91:13-57
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:90:13-83
+meta-data#com.google.firebase.messaging.default_notification_color
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:94:9-96:60
+	android:resource
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:96:13-57
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:95:13-84
+meta-data#android.support.FILE_PROVIDER_PATHS
+ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:69:13-71:54
+	android:resource
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:71:17-51
+	android:name
+		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:70:17-67
+uses-sdk
+INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml
+INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml
+MERGED from [androidx.databinding:viewbinding:8.2.2] /Users/lokeshdhote/.gradle/caches/transforms-3/55841d182704393934bc9c2077f3da94/transformed/viewbinding-8.2.2/AndroidManifest.xml:5:5-44
+MERGED from [androidx.databinding:viewbinding:8.2.2] /Users/lokeshdhote/.gradle/caches/transforms-3/55841d182704393934bc9c2077f3da94/transformed/viewbinding-8.2.2/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.material:material:1.11.0] /Users/lokeshdhote/.gradle/caches/transforms-3/f4f0a3d0e0128a3fac2256c5355c795a/transformed/material-1.11.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.material:material:1.11.0] /Users/lokeshdhote/.gradle/caches/transforms-3/f4f0a3d0e0128a3fac2256c5355c795a/transformed/material-1.11.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /Users/lokeshdhote/.gradle/caches/transforms-3/5aa9584782ac9f2782b2840c4498a8ee/transformed/constraintlayout-2.1.4/AndroidManifest.xml:5:5-7:41
+MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /Users/lokeshdhote/.gradle/caches/transforms-3/5aa9584782ac9f2782b2840c4498a8ee/transformed/constraintlayout-2.1.4/AndroidManifest.xml:5:5-7:41
+MERGED from [androidx.appcompat:appcompat-resources:1.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/743f48a0ead76907e33705fa33271f13/transformed/appcompat-resources-1.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.appcompat:appcompat-resources:1.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/743f48a0ead76907e33705fa33271f13/transformed/appcompat-resources-1.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.appcompat:appcompat:1.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/e8b7fa243aa043d8941c2baf1b8bd6b9/transformed/appcompat-1.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.appcompat:appcompat:1.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/e8b7fa243aa043d8941c2baf1b8bd6b9/transformed/appcompat-1.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.webkit:webkit:1.10.0] /Users/lokeshdhote/.gradle/caches/transforms-3/1d5d857a7eb5834f80544da913e2bf89/transformed/webkit-1.10.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.webkit:webkit:1.10.0] /Users/lokeshdhote/.gradle/caches/transforms-3/1d5d857a7eb5834f80544da913e2bf89/transformed/webkit-1.10.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/b9ffdc9fbe3f63f3979d57784e90e949/transformed/emoji2-views-helper-1.2.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/b9ffdc9fbe3f63f3979d57784e90e949/transformed/emoji2-views-helper-1.2.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.viewpager2:viewpager2:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/6c0fe986bf2f876802fbd2f475e80668/transformed/viewpager2-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.viewpager2:viewpager2:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/6c0fe986bf2f876802fbd2f475e80668/transformed/viewpager2-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.firebase:firebase-analytics:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8da4202e1dc8286f29c37ac38fe4cf19/transformed/firebase-analytics-21.5.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-analytics:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8da4202e1dc8286f29c37ac38fe4cf19/transformed/firebase-analytics-21.5.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:19:5-44
+MERGED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:19:5-44
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-sdk:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/4c43a2370155a64a2f67e4f719d8ee11/transformed/play-services-measurement-sdk-21.5.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-sdk:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/4c43a2370155a64a2f67e4f719d8ee11/transformed/play-services-measurement-sdk-21.5.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.firebase:firebase-iid-interop:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/970ba0408e6d816b64db01fcc8d1af3a/transformed/firebase-iid-interop-17.1.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-iid-interop:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/970ba0408e6d816b64db01fcc8d1af3a/transformed/firebase-iid-interop-17.1.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:18:5-43
+MERGED from [com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:18:5-43
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-installations-interop:17.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/4322fd7c8dbaea5f7db3a3d32adf368a/transformed/firebase-installations-interop-17.1.1/AndroidManifest.xml:17:5-44
+MERGED from [com.google.firebase:firebase-installations-interop:17.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/4322fd7c8dbaea5f7db3a3d32adf368a/transformed/firebase-installations-interop-17.1.1/AndroidManifest.xml:17:5-44
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.privacysandbox.ads:ads-adservices-java:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/9b03623bc10a93c856961d86a2435f58/transformed/ads-adservices-java-1.0.0-beta05/AndroidManifest.xml:5:5-44
+MERGED from [androidx.privacysandbox.ads:ads-adservices-java:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/9b03623bc10a93c856961d86a2435f58/transformed/ads-adservices-java-1.0.0-beta05/AndroidManifest.xml:5:5-44
+MERGED from [androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:20:5-44
+MERGED from [androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity:1.8.0] /Users/lokeshdhote/.gradle/caches/transforms-3/ce97ce419851c0a41ad7b2ae6942b749/transformed/activity-1.8.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity:1.8.0] /Users/lokeshdhote/.gradle/caches/transforms-3/ce97ce419851c0a41ad7b2ae6942b749/transformed/activity-1.8.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/4fea95cbfc1b876bc3121f8805b14eca/transformed/dynamicanimation-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/4fea95cbfc1b876bc3121f8805b14eca/transformed/dynamicanimation-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-stats:17.0.2] /Users/lokeshdhote/.gradle/caches/transforms-3/2188a49fd2d41513854187809bbd2233/transformed/play-services-stats-17.0.2/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-stats:17.0.2] /Users/lokeshdhote/.gradle/caches/transforms-3/2188a49fd2d41513854187809bbd2233/transformed/play-services-stats-17.0.2/AndroidManifest.xml:5:5-44
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/ac79065aeeb7308a93ef559181f0a80a/transformed/legacy-support-core-utils-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/ac79065aeeb7308a93ef559181f0a80a/transformed/legacy-support-core-utils-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3376a666edf00345d114fac7dcaf9fde/transformed/loader-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3376a666edf00345d114fac7dcaf9fde/transformed/loader-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate:1.2.1] /Users/lokeshdhote/.gradle/caches/transforms-3/8e40480e215341ed9a4308fb4ffda421/transformed/savedstate-1.2.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate:1.2.1] /Users/lokeshdhote/.gradle/caches/transforms-3/8e40480e215341ed9a4308fb4ffda421/transformed/savedstate-1.2.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/91909704d1e3a868454e1a6d41e72aae/transformed/lifecycle-livedata-core-2.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/91909704d1e3a868454e1a6d41e72aae/transformed/lifecycle-livedata-core-2.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/2927ef9bba59bdb1794159346a93e7b6/transformed/lifecycle-livedata-2.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/2927ef9bba59bdb1794159346a93e7b6/transformed/lifecycle-livedata-2.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/e9a8a493832375fd7c61d7749dc4a468/transformed/lifecycle-viewmodel-2.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/e9a8a493832375fd7c61d7749dc4a468/transformed/lifecycle-viewmodel-2.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/f82a0e3d1ab9b778d4313fed915fb650/transformed/lifecycle-runtime-2.6.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/f82a0e3d1ab9b778d4313fed915fb650/transformed/lifecycle-runtime-2.6.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d1c7acca3dea7b472de879287da57c96/transformed/lifecycle-viewmodel-savedstate-2.6.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d1c7acca3dea7b472de879287da57c96/transformed/lifecycle-viewmodel-savedstate-2.6.1/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-tasks:18.0.2] /Users/lokeshdhote/.gradle/caches/transforms-3/ee8752ccbe98b939381005f474545253/transformed/play-services-tasks-18.0.2/AndroidManifest.xml:4:5-43
+MERGED from [com.google.android.gms:play-services-tasks:18.0.2] /Users/lokeshdhote/.gradle/caches/transforms-3/ee8752ccbe98b939381005f474545253/transformed/play-services-tasks-18.0.2/AndroidManifest.xml:4:5-43
+MERGED from [com.google.firebase:firebase-measurement-connector:19.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d861dd60e04d13e456b4f6fb8bbcf3fa/transformed/firebase-measurement-connector-19.0.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.firebase:firebase-measurement-connector:19.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d861dd60e04d13e456b4f6fb8bbcf3fa/transformed/firebase-measurement-connector-19.0.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-ads-identifier:18.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/07e342e029c2ccf7d76220db5ad9d88b/transformed/play-services-ads-identifier-18.0.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-ads-identifier:18.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/07e342e029c2ccf7d76220db5ad9d88b/transformed/play-services-ads-identifier-18.0.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-base:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/7c3adc0866dec905f765cc1c58fb0bcb/transformed/play-services-measurement-base-21.5.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-measurement-base:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/7c3adc0866dec905f765cc1c58fb0bcb/transformed/play-services-measurement-base-21.5.0/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:18:5-43
+MERGED from [com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:18:5-43
+MERGED from [androidx.fragment:fragment:1.3.6] /Users/lokeshdhote/.gradle/caches/transforms-3/3b78c4047d1629d2b3d250246fb183d2/transformed/fragment-1.3.6/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.fragment:fragment:1.3.6] /Users/lokeshdhote/.gradle/caches/transforms-3/3b78c4047d1629d2b3d250246fb183d2/transformed/fragment-1.3.6/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/51537c5e3c07a517b83b1a632c96f1f4/transformed/drawerlayout-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/51537c5e3c07a517b83b1a632c96f1f4/transformed/drawerlayout-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/ae05db51d2dd8995466cf04058a5f1a8/transformed/coordinatorlayout-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/ae05db51d2dd8995466cf04058a5f1a8/transformed/coordinatorlayout-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.transition:transition:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5a2e34955d2429ccc6f93a86c98b5e6e/transformed/transition-1.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.transition:transition:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5a2e34955d2429ccc6f93a86c98b5e6e/transformed/transition-1.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/571364c48b3ae07cc9d10b6cd77931ea/transformed/vectordrawable-animated-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/571364c48b3ae07cc9d10b6cd77931ea/transformed/vectordrawable-animated-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/0197445c5f754dbd6a10cf094516ce63/transformed/vectordrawable-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/0197445c5f754dbd6a10cf094516ce63/transformed/vectordrawable-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.viewpager:viewpager:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/f4cfedbbbcdef6850e814c76d8b27afd/transformed/viewpager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.viewpager:viewpager:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/f4cfedbbbcdef6850e814c76d8b27afd/transformed/viewpager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.recyclerview:recyclerview:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e9c813dc2a6a3bce6ee5a76b3df47625/transformed/recyclerview-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.recyclerview:recyclerview:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e9c813dc2a6a3bce6ee5a76b3df47625/transformed/recyclerview-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.customview:customview:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/0e47e1d97d0084122545bf3543b384e4/transformed/customview-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.customview:customview:1.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/0e47e1d97d0084122545bf3543b384e4/transformed/customview-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core-ktx:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c677984e88e4e51b345cdd9468159464/transformed/core-ktx-1.12.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-ktx:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c677984e88e4e51b345cdd9468159464/transformed/core-ktx-1.12.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-splashscreen:1.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/644a3a61045498317058251af6f040e4/transformed/core-splashscreen-1.0.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.core:core-splashscreen:1.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/644a3a61045498317058251af6f040e4/transformed/core-splashscreen-1.0.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.annotation:annotation-experimental:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c0503d56a70d9a922aa0a61c005a7861/transformed/annotation-experimental-1.3.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c0503d56a70d9a922aa0a61c005a7861/transformed/annotation-experimental-1.3.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/0784272250aea289acf94572da80ae6b/transformed/cursoradapter-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/0784272250aea289acf94572da80ae6b/transformed/cursoradapter-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.cardview:cardview:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/6dd3928698ed48983e4f5945e1c79a42/transformed/cardview-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.cardview:cardview:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/6dd3928698ed48983e4f5945e1c79a42/transformed/cardview-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [com.google.firebase:firebase-components:17.1.5] /Users/lokeshdhote/.gradle/caches/transforms-3/c2dbed1bc97bb411eb97e42987185c19/transformed/firebase-components-17.1.5/AndroidManifest.xml:18:5-44
+MERGED from [com.google.firebase:firebase-components:17.1.5] /Users/lokeshdhote/.gradle/caches/transforms-3/c2dbed1bc97bb411eb97e42987185c19/transformed/firebase-components-17.1.5/AndroidManifest.xml:18:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/a76a90e1b16034928882100f7f49dff8/transformed/interpolator-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/a76a90e1b16034928882100f7f49dff8/transformed/interpolator-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/fd3c3a27123143f6e7978a9fc4bceb5d/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/fd3c3a27123143f6e7978a9fc4bceb5d/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/12a9e3f92527caa393b5890e5ba2f19c/transformed/startup-runtime-1.1.1/AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/12a9e3f92527caa393b5890e5ba2f19c/transformed/startup-runtime-1.1.1/AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.tracing:tracing:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9436b4652c2c44a43fbbef3a879c483f/transformed/tracing-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.tracing:tracing:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9436b4652c2c44a43fbbef3a879c483f/transformed/tracing-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:18:5-20:41
+MERGED from [com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:18:5-20:41
+MERGED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:18:5-20:41
+MERGED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:18:5-20:41
+MERGED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:18:5-20:41
+MERGED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:18:5-20:41
+MERGED from [com.google.android.datatransport:transport-api:3.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/77332281ce78cc6fe7bfb5aea44282e2/transformed/transport-api-3.1.0/AndroidManifest.xml:18:5-44
+MERGED from [com.google.android.datatransport:transport-api:3.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/77332281ce78cc6fe7bfb5aea44282e2/transformed/transport-api-3.1.0/AndroidManifest.xml:18:5-44
+MERGED from [com.google.firebase:firebase-encoders-json:18.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/fcc36bc7f6909671fe65674f41bec570/transformed/firebase-encoders-json-18.0.0/AndroidManifest.xml:19:5-21:41
+MERGED from [com.google.firebase:firebase-encoders-json:18.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/fcc36bc7f6909671fe65674f41bec570/transformed/firebase-encoders-json-18.0.0/AndroidManifest.xml:19:5-21:41
+MERGED from [androidx.arch.core:core-runtime:2.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/238b8ac576563f92377c20c7cfb184af/transformed/core-runtime-2.2.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.arch.core:core-runtime:2.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/238b8ac576563f92377c20c7cfb184af/transformed/core-runtime-2.2.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.documentfile:documentfile:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e2386ead4493726b0ec43e2722b8f74c/transformed/documentfile-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.documentfile:documentfile:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e2386ead4493726b0ec43e2722b8f74c/transformed/documentfile-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/265755946393b6f890786358cc953a15/transformed/localbroadcastmanager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/265755946393b6f890786358cc953a15/transformed/localbroadcastmanager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.print:print:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/33dcc9d1cd3e75156643bc17c16fd598/transformed/print-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.print:print:1.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/33dcc9d1cd3e75156643bc17c16fd598/transformed/print-1.0.0/AndroidManifest.xml:20:5-44
+	android:targetSdkVersion
+		INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml
+provider#androidx.startup.InitializationProvider
+ADDED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/12a9e3f92527caa393b5890e5ba2f19c/transformed/startup-runtime-1.1.1/AndroidManifest.xml:26:9-30:34
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/lokeshdhote/.gradle/caches/transforms-3/12a9e3f92527caa393b5890e5ba2f19c/transformed/startup-runtime-1.1.1/AndroidManifest.xml:26:9-30:34
+	tools:node
+		ADDED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:28:13-31
+	android:authorities
+		ADDED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:26:13-68
+	android:exported
+		ADDED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:27:13-37
+	android:name
+		ADDED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:25:13-67
+meta-data#androidx.emoji2.text.EmojiCompatInitializer
+ADDED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:30:17-75
+service#com.google.firebase.components.ComponentDiscoveryService
+ADDED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:8:9-14:19
+MERGED from [com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:23:9-29:19
+MERGED from [com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:23:9-29:19
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:54:9-63:19
+MERGED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:54:9-63:19
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:34:9-40:19
+MERGED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:34:9-40:19
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:12:9-21:19
+MERGED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:12:9-21:19
+MERGED from [com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:9:9-15:19
+MERGED from [com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:9:9-15:19
+MERGED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:30:9-38:19
+MERGED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:30:9-38:19
+MERGED from [com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:24:9-30:19
+MERGED from [com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:24:9-30:19
+	android:exported
+		ADDED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:10:13-37
+	tools:targetApi
+		ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:34:13-32
+	android:directBootAware
+		ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:32:13-43
+	android:name
+		ADDED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:9:13-84
+meta-data#com.google.firebase.components:com.google.firebase.analytics.ktx.FirebaseAnalyticsLegacyRegistrar
+ADDED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:11:13-13:85
+	android:value
+		ADDED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:13:17-82
+	android:name
+		ADDED from [com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:12:17-129
+meta-data#com.google.firebase.components:com.google.firebase.messaging.ktx.FirebaseMessagingLegacyRegistrar
+ADDED from [com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:26:13-28:85
+	android:value
+		ADDED from [com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:28:17-82
+	android:name
+		ADDED from [com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:27:17-129
+uses-permission#com.google.android.c2dm.permission.RECEIVE
+ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:26:5-82
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:11:5-82
+MERGED from [com.google.android.gms:play-services-cloud-messaging:17.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/281efc4ffe1a25010766a70facae9036/transformed/play-services-cloud-messaging-17.1.0/AndroidManifest.xml:11:5-82
+	android:name
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:26:22-79
+receiver#com.google.firebase.iid.FirebaseInstanceIdReceiver
+ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:29:9-40:20
+	android:exported
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:31:13-36
+	android:permission
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:32:13-73
+	android:name
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:30:13-78
+intent-filter#action:name:com.google.android.c2dm.intent.RECEIVE
+ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:33:13-35:29
+action#com.google.android.c2dm.intent.RECEIVE
+ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:34:17-81
+	android:name
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:34:25-78
+meta-data#com.google.android.gms.cloudmessaging.FINISHED_AFTER_HANDLED
+ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:37:13-39:40
+	android:value
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:39:17-37
+	android:name
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:38:17-92
+service#com.google.firebase.messaging.FirebaseMessagingService
+ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:46:9-53:19
+	android:exported
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:49:13-37
+	android:directBootAware
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:48:13-43
+	android:name
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:47:13-82
+meta-data#com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingKtxRegistrar
+ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:57:13-59:85
+	android:value
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:59:17-82
+	android:name
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:58:17-122
+meta-data#com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingRegistrar
+ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:60:13-62:85
+	android:value
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:62:17-82
+	android:name
+		ADDED from [com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:61:17-119
+uses-permission#com.google.android.gms.permission.AD_ID
+ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:25:5-79
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:27:5-79
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:27:5-79
+MERGED from [com.google.android.gms:play-services-ads-identifier:18.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/07e342e029c2ccf7d76220db5ad9d88b/transformed/play-services-ads-identifier-18.0.0/AndroidManifest.xml:23:5-79
+MERGED from [com.google.android.gms:play-services-ads-identifier:18.0.0] /Users/lokeshdhote/.gradle/caches/transforms-3/07e342e029c2ccf7d76220db5ad9d88b/transformed/play-services-ads-identifier-18.0.0/AndroidManifest.xml:23:5-79
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:26:5-79
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:26:5-79
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:25:22-76
+uses-permission#android.permission.ACCESS_ADSERVICES_ATTRIBUTION
+ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:26:5-88
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:27:5-88
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:27:5-88
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:26:22-85
+uses-permission#android.permission.ACCESS_ADSERVICES_AD_ID
+ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:27:5-82
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:28:5-82
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d05fb5c71160695caf935bccbccf8906/transformed/play-services-measurement-sdk-api-21.5.0/AndroidManifest.xml:28:5-82
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:27:22-79
+property
+ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:30:9-32:61
+	android:resource
+		ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:32:13-58
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:31:13-65
+meta-data#com.google.firebase.components:com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar
+ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:37:13-39:85
+	android:value
+		ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:39:17-82
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:38:17-139
+meta-data#com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsKtxRegistrar
+ADDED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:15:13-17:85
+	android:value
+		ADDED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:17:17-82
+	android:name
+		ADDED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:16:17-130
+meta-data#com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar
+ADDED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:18:13-20:85
+	android:value
+		ADDED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:20:17-82
+	android:name
+		ADDED from [com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:19:17-127
+meta-data#com.google.firebase.components:com.google.firebase.ktx.FirebaseCommonLegacyRegistrar
+ADDED from [com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:12:13-14:85
+	android:value
+		ADDED from [com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:14:17-82
+	android:name
+		ADDED from [com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:13:17-116
+provider#com.google.firebase.provider.FirebaseInitProvider
+ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:23:9-28:39
+	android:authorities
+		ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:25:13-72
+	android:exported
+		ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:27:13-37
+	android:directBootAware
+		ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:26:13-43
+	android:initOrder
+		ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:28:13-36
+	android:name
+		ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:24:13-77
+meta-data#com.google.firebase.components:com.google.firebase.FirebaseCommonKtxRegistrar
+ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:35:13-37:85
+	android:value
+		ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:37:17-82
+	android:name
+		ADDED from [com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:36:17-109
+uses-permission#com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE
+ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:26:5-110
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:26:5-110
+MERGED from [com.google.android.gms:play-services-measurement-impl:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/9989d39bcbfcb5d02a1d1c368e72fb49/transformed/play-services-measurement-impl-21.5.0/AndroidManifest.xml:26:5-110
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:26:22-107
+receiver#com.google.android.gms.measurement.AppMeasurementReceiver
+ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:29:9-33:20
+	android:enabled
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:31:13-35
+	android:exported
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:32:13-37
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:30:13-85
+service#com.google.android.gms.measurement.AppMeasurementService
+ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:35:9-38:40
+	android:enabled
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:37:13-35
+	android:exported
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:38:13-37
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:36:13-84
+service#com.google.android.gms.measurement.AppMeasurementJobService
+ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:39:9-43:72
+	android:enabled
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:41:13-35
+	android:exported
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:42:13-37
+	android:permission
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:43:13-69
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:40:13-87
+activity#com.google.android.gms.common.api.GoogleApiActivity
+ADDED from [com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:20:9-22:45
+	android:exported
+		ADDED from [com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:22:19-43
+	android:theme
+		ADDED from [com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:21:19-78
+	android:name
+		ADDED from [com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:20:19-85
+uses-library#android.ext.adservices
+ADDED from [androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:23:9-25:40
+	android:required
+		ADDED from [androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:25:13-37
+	android:name
+		ADDED from [androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:24:13-50
+meta-data#androidx.lifecycle.ProcessLifecycleInitializer
+ADDED from [androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:30:17-78
+meta-data#com.google.android.gms.version
+ADDED from [com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:21:9-23:69
+	android:value
+		ADDED from [com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:23:13-66
+	android:name
+		ADDED from [com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:22:13-58
+permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:23:9-81
+permission#first.dtps.com.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:23:9-81
+uses-permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
+uses-permission#first.dtps.com.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
+meta-data#androidx.profileinstaller.ProfileInstallerInitializer
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:30:17-85
+receiver#androidx.profileinstaller.ProfileInstallReceiver
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:34:9-52:20
+	android:enabled
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:37:13-35
+	android:exported
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:38:13-36
+	android:permission
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:39:13-57
+	android:directBootAware
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:36:13-44
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:35:13-76
+intent-filter#action:name:androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:40:13-42:29
+action#androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:17-91
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:25-88
+intent-filter#action:name:androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:43:13-45:29
+action#androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:17-85
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:25-82
+intent-filter#action:name:androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:46:13-48:29
+action#androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:17-88
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:25-85
+intent-filter#action:name:androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:49:13-51:29
+action#androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:17-95
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:25-92
+meta-data#com.google.firebase.components:com.google.firebase.datatransport.TransportRegistrar
+ADDED from [com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:27:13-29:85
+	android:value
+		ADDED from [com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:29:17-82
+	android:name
+		ADDED from [com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:28:17-115
+service#com.google.android.datatransport.runtime.backends.TransportBackendDiscovery
+ADDED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:28:9-34:19
+MERGED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:36:9-38:40
+MERGED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:36:9-38:40
+	android:exported
+		ADDED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:30:13-37
+	android:name
+		ADDED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:29:13-103
+meta-data#backend:com.google.android.datatransport.cct.CctBackendFactory
+ADDED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:31:13-33:39
+	android:value
+		ADDED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:33:17-36
+	android:name
+		ADDED from [com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:32:17-94
+service#com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService
+ADDED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:26:9-30:19
+	android:exported
+		ADDED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:28:13-37
+	android:permission
+		ADDED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:29:13-69
+	android:name
+		ADDED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:27:13-117
+receiver#com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver
+ADDED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:32:9-34:40
+	android:exported
+		ADDED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:34:13-37
+	android:name
+		ADDED from [com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:33:13-132

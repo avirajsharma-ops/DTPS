@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "172599174204",
+    "project_id": "dtps-11fb1",
+    "storage_bucket": "dtps-11fb1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:172599174204:android:aa46c5e78595739e530f39",
+        "android_client_info": {
+          "package_name": "first.dtps.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDefvbnFNbVWVXWEsLWZ3gncMEAhXEDzWk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

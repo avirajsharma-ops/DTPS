@@ -154,6 +154,8 @@ export async function GET(request: NextRequest) {
 
     // Sort options - always include _id as secondary sort for stable pagination
     let sortOptions: any = {};
+    let isNumericUuidSort = false;
+    
     switch (sortBy) {
       case 'rating':
         sortOptions = { 'rating.average': -1, _id: -1 };
@@ -173,6 +175,14 @@ export async function GET(request: NextRequest) {
       case 'calories':
         sortOptions = { 'nutrition.calories': 1, _id: 1 };
         break;
+      case 'uuid':
+        sortOptions = { _id: 1 }; // Use _id for DB sort, we'll sort by UUID numerically after fetch
+        isNumericUuidSort = true;
+        break;
+      case 'uuid-desc':
+        sortOptions = { _id: 1 }; // Use _id for DB sort, we'll sort by UUID numerically after fetch
+        isNumericUuidSort = true;
+        break;
       default:
         sortOptions = { name: 1, _id: 1 };
     }
@@ -185,15 +195,15 @@ export async function GET(request: NextRequest) {
       })
       .sort(sortOptions);
 
-    // Only apply limit and skip if limit is set (greater than 0)
-    if (limit > 0) {
+    // For numeric UUID sorting, don't use limit/skip yet - we'll do it after sorting
+    if (!isNumericUuidSort && limit > 0) {
       recipesQuery = recipesQuery.limit(limit).skip((page - 1) * limit);
     }
 
     const recipesRaw = await recipesQuery.lean(); // Use lean() for better performance
 
     // Sanitize recipes to ensure nutrition object exists with default values
-    const recipes = recipesRaw.map((recipe: any) => {
+    let recipes = recipesRaw.map((recipe: any) => {
       return {
         ...recipe,
         nutrition: recipe.nutrition || {
@@ -205,6 +215,27 @@ export async function GET(request: NextRequest) {
         createdBy: recipe.createdBy || { firstName: 'Unknown', lastName: 'User' }
       };
     });
+
+    // Post-process sorting for UUID (numeric sort for string numbers)
+    // This handles all records before pagination
+    if (isNumericUuidSort) {
+      recipes.sort((a, b) => {
+        const aUuid = parseInt(a.uuid || '0') || 0;
+        const bUuid = parseInt(b.uuid || '0') || 0;
+        if (sortBy === 'uuid') {
+          return aUuid - bUuid;
+        } else {
+          return bUuid - aUuid;
+        }
+      });
+      
+      // Apply pagination after sorting
+      if (limit > 0) {
+        const startIdx = (page - 1) * limit;
+        const endIdx = startIdx + limit;
+        recipes = recipes.slice(startIdx, endIdx);
+      }
+    }
 
     const total = await Recipe.countDocuments(query);
 
