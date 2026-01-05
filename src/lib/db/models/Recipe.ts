@@ -23,18 +23,18 @@ const nutritionSchema = new Schema<INutrition>({
     required: true,
     min: 0
   },
-  fiber: {
-    type: Number,
-    min: 0
-  },
-  sugar: {
-    type: Number,
-    min: 0
-  },
-  sodium: {
-    type: Number,
-    min: 0
-  }
+  // fiber: {
+  //   type: Number,
+  //   min: 0
+  // },
+  // sugar: {
+  //   type: Number,
+  //   min: 0
+  // },
+  // sodium: {
+  //   type: Number,
+  //   min: 0
+  // }
 });
 
 const ingredientSchema = new Schema({

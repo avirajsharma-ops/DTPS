@@ -375,14 +375,14 @@ function RecipesPageContent() {
                   <Link href="/recipes/create">Add Your First Recipe</Link>
                 </Button>
               )}
-            </CardContent>
+            </CardContent> 
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4  ">
             {recipes && recipes.map((recipe) => (
-              <Card key={recipe._id} className="hover:shadow-md transition-shadow border border-gray-200 flex flex-col h-full">
+              <Card key={recipe._id} className="hover:shadow-md transition-shadow border border-gray-200 flex flex-col h-full  ">
                 {/* Recipe Image - Fixed size */}
-                <div className="relative w-full h-48 bg-gray-100 overflow-hidden shrink-0">
+                <div className="relative w-full h-38 bg-gray-100 overflow-hidden shrink-0">
                   {recipe.image ? (
                     <Image
                       src={recipe.image}
@@ -403,14 +403,14 @@ function RecipesPageContent() {
                   )}
                 </div>
 
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-1">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-1 mb-1">
                         <CardTitle className="text-base line-clamp-2 font-semibold text-gray-900">{recipe.name}</CardTitle>
                       </div>
                       {recipe.uuid && (
-                        <Badge variant="secondary" className="mb-2 text-xs font-mono">
+                        <Badge variant="secondary" className="mb-1 text-xs font-mono">
                           ID: {recipe.uuid}
                         </Badge>
                       )}
@@ -419,19 +419,19 @@ function RecipesPageContent() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-4 grow flex flex-col">
+                <CardContent className="space-y-2 grow flex flex-col">
                   {/* Nutrition Info */}
                   <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
                     <div className="text-center">
-                      <p className="text-lg font-bold text-gray-900">{recipe.nutrition?.calories || 0}</p>
+                      <p className="text-sm font-bold text-gray-900">{recipe.nutrition?.calories || 0}</p>
                       <p className="text-xs text-gray-500">Calories</p>
                     </div>
                     <div className="text-center border-x border-gray-200">
-                      <p className="text-lg font-bold text-gray-900">{recipe.nutrition?.protein || 0}g</p>
+                      <p className="text-sm font-bold text-gray-900">{recipe.nutrition?.protein || 0}g</p>
                       <p className="text-xs text-gray-500">Protein</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-lg font-bold text-gray-900">{recipe.servings || 1}</p>
+                      <p className="text-sm font-bold text-gray-900">{recipe.servings || 1}</p>
                       <p className="text-xs text-gray-500">Servings</p>
                     </div>
                   </div>
