@@ -102,6 +102,43 @@ interface RecipeModalData {
   isOpen: boolean;
 }
 
+interface FullRecipeData {
+  _id: string;
+  name: string;
+  description?: string;
+  ingredients: { name: string; quantity: number; unit: string; remarks?: string }[];
+  instructions: string[];
+  prepTime?: number;
+  cookTime?: number;
+  servings?: string | number;
+  nutrition?: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber?: number;
+    sugar?: number;
+    sodium?: number;
+  };
+  tags?: string[];
+  dietaryRestrictions?: string[];
+  medicalContraindications?: string[];
+  image?: string;
+  difficulty?: string;
+  cuisine?: string;
+  tips?: string[];
+  equipment?: string[];
+  storage?: {
+    refrigerator?: string;
+    freezer?: string;
+    instructions?: string;
+  };
+  createdBy?: {
+    firstName: string;
+    lastName: string;
+  };
+}
+
 interface CompletionModalData {
   meal: Meal | null;
   isOpen: boolean;
@@ -138,6 +175,8 @@ export default function UserPlanPage() {
   const [isChangingDate, setIsChangingDate] = useState(false); // For skeleton loader on date change
   const [completingMeal, setCompletingMeal] = useState<string | null>(null);
   const [recipeModal, setRecipeModal] = useState<RecipeModalData>({ item: {} as MealItem, isOpen: false });
+  const [fullRecipeData, setFullRecipeData] = useState<FullRecipeData | null>(null);
+  const [loadingRecipe, setLoadingRecipe] = useState(false);
   const [alternativesModal, setAlternativesModal] = useState<{ item: MealItem; isOpen: boolean }>({ item: {} as MealItem, isOpen: false });
   const [foodSelectorModal, setFoodSelectorModal] = useState<FoodItemSelectorModalData>({ meal: null, isOpen: false });
   const [refreshing, setRefreshing] = useState(false);
@@ -255,6 +294,70 @@ export default function UserPlanPage() {
       document.body.style.overflow = '';
     };
   }, [recipeModal.isOpen, alternativesModal.isOpen, completionModal.isOpen, showDatePicker, foodSelectorModal.isOpen]);
+
+  // Fetch full recipe details when recipe modal opens
+  useEffect(() => {
+    const fetchFullRecipe = async () => {
+      if (!recipeModal.isOpen || !recipeModal.item.name) {
+        setFullRecipeData(null);
+        return;
+      }
+      
+      setLoadingRecipe(true);
+      try {
+        let recipeData = null;
+        
+        // First try to fetch by recipeId if available
+        if (recipeModal.item.recipeId) {
+          const response = await fetch(`/api/recipes/${recipeModal.item.recipeId}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.recipe) {
+              recipeData = data.recipe;
+            }
+          }
+        }
+        
+        // If no recipeId or fetch failed, search by food name
+        if (!recipeData && recipeModal.item.name) {
+          const searchName = encodeURIComponent(recipeModal.item.name.trim());
+          const searchResponse = await fetch(`/api/recipes?search=${searchName}&limit=1`);
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            if (searchData.success && searchData.recipes && searchData.recipes.length > 0) {
+              // Find exact match or closest match
+              const exactMatch = searchData.recipes.find(
+                (r: any) => r.name.toLowerCase() === recipeModal.item.name.toLowerCase()
+              );
+              recipeData = exactMatch || searchData.recipes[0];
+            }
+          }
+        }
+        
+        if (recipeData) {
+          setFullRecipeData(recipeData);
+        }
+      } catch (error) {
+        console.error('Error fetching recipe:', error);
+      } finally {
+        setLoadingRecipe(false);
+      }
+    };
+
+    fetchFullRecipe();
+  }, [recipeModal.isOpen, recipeModal.item.recipeId, recipeModal.item.name]);
+
+  // Function to open recipe modal with item
+  const openRecipeModal = (item: MealItem) => {
+    setFullRecipeData(null);
+    setRecipeModal({ item, isOpen: true });
+  };
+
+  // Function to close recipe modal
+  const closeRecipeModal = () => {
+    setRecipeModal({ item: {} as MealItem, isOpen: false });
+    setFullRecipeData(null);
+  };
 
   // Handle date picker selection
   const handleDatePickerSelect = () => {
@@ -1016,16 +1119,23 @@ export default function UserPlanPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-hidden"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              setRecipeModal({ item: {} as MealItem, isOpen: false });
+              closeRecipeModal();
             }
           }}
         >
-          <div className="bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <div className="bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Modal Header - Sticky */}
             <div className="flex items-center justify-between p-5 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B]">
-              <h3 className="text-lg font-bold text-white">{recipeModal.item.name}</h3>
+              <div className="flex-1 pr-4">
+                <h3 className="text-lg font-bold text-white">{fullRecipeData?.name || recipeModal.item.name}</h3>
+                {fullRecipeData?.createdBy && (
+                  <p className="text-xs text-white/70 mt-0.5">
+                    By Dr. {fullRecipeData.createdBy.firstName} {fullRecipeData.createdBy.lastName}
+                  </p>
+                )}
+              </div>
               <button 
-                onClick={() => setRecipeModal({ item: {} as MealItem, isOpen: false })}
+                onClick={closeRecipeModal}
                 className="p-2 rounded-full hover:bg-white/20 transition-colors"
               >
                 <X className="w-5 h-5 text-white" />
@@ -1034,277 +1144,241 @@ export default function UserPlanPage() {
             
             {/* Modal Content - Scrollable */}
             <div className="overflow-y-auto flex-1 overscroll-contain">
-              <div className="p-5 space-y-5">
-                {/* Food Info */}
-                <div className="flex items-center justify-between p-4 bg-[#E06A26]/10 rounded-xl">
-                  <div>
-                    <p className="text-sm text-gray-500">Portion</p>
-                    <p className="font-semibold text-gray-800">{recipeModal.item.portion}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">Calories</p>
-                    <p className="font-bold text-[#E06A26]">{recipeModal.item.calories} kcal</p>
-                  </div>
+              {loadingRecipe ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="w-10 h-10 text-[#3AB1A0] animate-spin mb-3" />
+                  <p className="text-sm text-gray-500">Loading recipe details...</p>
                 </div>
+              ) : (
+                <div className="p-5 space-y-5">
+                  {/* Recipe Image */}
+                  {(fullRecipeData?.image || recipeModal.item.recipe?.image) && (
+                    <div className="rounded-xl overflow-hidden -mx-5 -mt-5">
+                      <img 
+                        src={fullRecipeData?.image || recipeModal.item.recipe?.image} 
+                        alt={fullRecipeData?.name || recipeModal.item.name}
+                        loading="lazy"
+                        className="w-full h-52 object-cover"
+                      />
+                    </div>
+                  )}
 
-                {/* Tags */}
-                {recipeModal.item.tags && recipeModal.item.tags.length > 0 && (
-                  <div>
-                    <h4 className="mb-2 text-sm font-bold text-gray-900">🏷️ Tags</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {recipeModal.item.tags.map((tag, i) => (
-                        <span 
-                          key={i}
-                          className="inline-flex items-center gap-1 px-3 py-1 bg-[#DB9C6E]/20 text-[#DB9C6E] rounded-full text-sm"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                  {/* Description */}
+                  {fullRecipeData?.description && (
+                    <p className="text-gray-600 text-sm leading-relaxed">{fullRecipeData.description}</p>
+                  )}
+
+                  {/* Food Info */}
+                  <div className="flex items-center justify-between p-4 bg-[#E06A26]/10 rounded-xl">
+                    <div>
+                      <p className="text-sm text-gray-500">Portion</p>
+                      <p className="font-semibold text-gray-800">{fullRecipeData?.servings || recipeModal.item.portion}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Calories</p>
+                      <p className="font-bold text-[#E06A26]">{fullRecipeData?.nutrition?.calories || recipeModal.item.calories} kcal</p>
                     </div>
                   </div>
-                )}
 
-                {/* Alternatives */}
-                {recipeModal.item.alternatives && recipeModal.item.alternatives.length > 0 && (
-                  <div className="p-4 bg-[#3AB1A0]/10 rounded-xl">
-                    <h4 className="mb-2 text-sm font-bold text-gray-900">🔄 Alternative Options</h4>
-                    <div className="space-y-2">
-                      {recipeModal.item.alternatives.map((alt, i) => (
-                        <div key={i} className="flex items-center justify-between p-2 bg-white rounded-lg">
-                          <div>
-                            <p className="font-medium text-gray-800 text-sm">{alt.name}</p>
-                            <p className="text-xs text-gray-500">{alt.portion}</p>
-                          </div>
-                          <span className="text-sm font-semibold text-[#3AB1A0]">{alt.calories} kcal</span>
+                  {/* Prep & Cook Time */}
+                  {(fullRecipeData?.prepTime || fullRecipeData?.cookTime || recipeModal.item.recipe?.prepTime || recipeModal.item.recipe?.cookTime) && (
+                    <div className="flex gap-6 p-4 bg-gray-50 rounded-xl">
+                      {(fullRecipeData?.prepTime || recipeModal.item.recipe?.prepTime) && (
+                        <div className="text-center flex-1">
+                          <Clock className="w-5 h-5 text-[#3AB1A0] mx-auto mb-1" />
+                          <p className="text-xs text-gray-500">Prep Time</p>
+                          <p className="font-bold text-gray-800">{fullRecipeData?.prepTime || recipeModal.item.recipe?.prepTime} min</p>
                         </div>
-                      ))}
+                      )}
+                      {(fullRecipeData?.cookTime || recipeModal.item.recipe?.cookTime) && (
+                        <div className="text-center flex-1">
+                          <Clock className="w-5 h-5 text-[#E06A26] mx-auto mb-1" />
+                          <p className="text-xs text-gray-500">Cook Time</p>
+                          <p className="font-bold text-gray-800">{fullRecipeData?.cookTime || recipeModal.item.recipe?.cookTime} min</p>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {recipeModal.item.recipe ? (
-                  (() => {
-                    const recipe = recipeModal.item.recipe;
-                    return (
-                      <>
-                        {/* Recipe Image */}
-                        {recipe.image && (
-                          <div className="rounded-xl overflow-hidden">
-                            <img 
-                              src={recipe.image} 
-                              alt={recipeModal.item.name}
-                              loading="lazy"
-                              className="w-full h-48 object-cover"
-                            />
-                          </div>
-                        )}
-
-                        {/* Quick Info Row */}
-                        <div className="flex flex-wrap gap-2">
-                          {recipe.servings && (
-                            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                              🍽️ {recipe.servings} servings
-                            </span>
-                          )}
-                          {recipe.difficulty && (
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              recipe.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
-                              recipe.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {recipe.difficulty === 'easy' ? '🟢' : recipe.difficulty === 'medium' ? '🟡' : '🔴'} {recipe.difficulty}
-                            </span>
-                          )}
-                          {recipe.cuisine && (
-                            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                              🌍 {recipe.cuisine}
-                            </span>
-                          )}
+                  {/* Nutrition Info */}
+                  {(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition) && (
+                    <div>
+                      <h4 className="mb-3 text-base font-bold text-gray-900">📊 Nutrition (per serving)</h4>
+                      <div className="grid grid-cols-4 gap-2">
+                        <div className="text-center p-2 bg-red-50 rounded-lg">
+                          <p className="text-lg font-bold text-red-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.calories || 0}</p>
+                          <p className="text-xs text-gray-500">kcal</p>
                         </div>
+                        <div className="text-center p-2 bg-blue-50 rounded-lg">
+                          <p className="text-lg font-bold text-blue-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.protein || 0}g</p>
+                          <p className="text-xs text-gray-500">Protein</p>
+                        </div>
+                        <div className="text-center p-2 bg-yellow-50 rounded-lg">
+                          <p className="text-lg font-bold text-yellow-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.carbs || 0}g</p>
+                          <p className="text-xs text-gray-500">Carbs</p>
+                        </div>
+                        <div className="text-center p-2 bg-orange-50 rounded-lg">
+                          <p className="text-lg font-bold text-orange-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.fat || 0}g</p>
+                          <p className="text-xs text-gray-500">Fat</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                        {/* Prep & Cook Time */}
-                        {(recipe.prepTime || recipe.cookTime) && (
-                          <div className="flex gap-6 pb-4 border-b border-gray-100">
-                            {recipe.prepTime && (
-                              <div className="text-center">
-                                <Clock className="w-5 h-5 text-[#3AB1A0] mx-auto mb-1" />
-                                <p className="text-xs text-gray-500">Prep Time</p>
-                                <p className="font-bold text-gray-800">{recipe.prepTime}</p>
+                  {/* Dietary Restrictions */}
+                  {((fullRecipeData?.dietaryRestrictions && fullRecipeData.dietaryRestrictions.length > 0) || 
+                    (recipeModal.item.recipe?.dietaryRestrictions && recipeModal.item.recipe.dietaryRestrictions.length > 0)) && (
+                    <div>
+                      <h4 className="mb-2 text-sm font-bold text-gray-900">🥗 Dietary Info</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {(fullRecipeData?.dietaryRestrictions || recipeModal.item.recipe?.dietaryRestrictions)?.map((restriction, i) => (
+                          <span key={i} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">{restriction}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Medical Contraindications */}
+                  {fullRecipeData?.medicalContraindications && fullRecipeData.medicalContraindications.length > 0 && (
+                    <div className="p-3 bg-red-50 rounded-xl">
+                      <p className="text-xs font-bold text-red-800 mb-2">⚠️ Not recommended for:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {fullRecipeData.medicalContraindications.map((condition, i) => (
+                          <span key={i} className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">{condition}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ingredients */}
+                  {((fullRecipeData?.ingredients && fullRecipeData.ingredients.length > 0) || 
+                    (recipeModal.item.recipe?.ingredients && recipeModal.item.recipe.ingredients.length > 0)) && (
+                    <div>
+                      <h4 className="mb-3 text-base font-bold text-gray-900">🥗 Ingredients</h4>
+                      <ul className="space-y-2">
+                        {fullRecipeData?.ingredients ? (
+                          fullRecipeData.ingredients.map((ing, i) => (
+                            <li key={i} className="flex items-start gap-3 p-3 bg-[#3AB1A0]/5 rounded-lg">
+                              <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 shrink-0" />
+                              <div className="flex-1">
+                                <span className="text-gray-800 font-medium text-sm">{ing.name}</span>
+                                <span className="text-gray-500 text-sm"> - {ing.quantity} {ing.unit}</span>
+                                {ing.remarks && <span className="text-gray-400 text-xs ml-1">({ing.remarks})</span>}
                               </div>
-                            )}
-                            {recipe.cookTime && (
-                              <div className="text-center">
-                                <Clock className="w-5 h-5 text-[#E06A26] mx-auto mb-1" />
-                                <p className="text-xs text-gray-500">Cook Time</p>
-                                <p className="font-bold text-gray-800">{recipe.cookTime}</p>
-                              </div>
-                            )}
-                          </div>
+                            </li>
+                          ))
+                        ) : (
+                          recipeModal.item.recipe?.ingredients?.map((ing, i) => (
+                            <li key={i} className="flex items-start gap-3 p-3 bg-[#3AB1A0]/5 rounded-lg">
+                              <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 shrink-0" />
+                              <span className="text-gray-700 text-sm">{ing}</span>
+                            </li>
+                          ))
                         )}
+                      </ul>
+                    </div>
+                  )}
 
-                        {/* Nutrition Info */}
-                        {recipe.nutrition && (
-                          <div>
-                            <h4 className="mb-3 text-base font-bold text-gray-900">📊 Nutrition (per serving)</h4>
-                            <div className="grid grid-cols-4 gap-2">
-                              <div className="text-center p-2 bg-red-50 rounded-lg">
-                                <p className="text-lg font-bold text-red-600">{recipe.nutrition.calories}</p>
-                                <p className="text-xs text-gray-500">kcal</p>
-                              </div>
-                              <div className="text-center p-2 bg-blue-50 rounded-lg">
-                                <p className="text-lg font-bold text-blue-600">{recipe.nutrition.protein}g</p>
-                                <p className="text-xs text-gray-500">Protein</p>
-                              </div>
-                              <div className="text-center p-2 bg-yellow-50 rounded-lg">
-                                <p className="text-lg font-bold text-yellow-600">{recipe.nutrition.carbs}g</p>
-                                <p className="text-xs text-gray-500">Carbs</p>
-                              </div>
-                              <div className="text-center p-2 bg-orange-50 rounded-lg">
-                                <p className="text-lg font-bold text-orange-600">{recipe.nutrition.fat}g</p>
-                                <p className="text-xs text-gray-500">Fat</p>
-                              </div>
+                  {/* Instructions */}
+                  {((fullRecipeData?.instructions && fullRecipeData.instructions.length > 0) || 
+                    (recipeModal.item.recipe?.instructions && recipeModal.item.recipe.instructions.length > 0)) && (
+                    <div>
+                      <h4 className="mb-3 text-base font-bold text-gray-900">👨‍🍳 Instructions</h4>
+                      <ol className="space-y-3">
+                        {(fullRecipeData?.instructions || recipeModal.item.recipe?.instructions)?.map((step, i) => (
+                          <li key={i} className="flex gap-3">
+                            <span className="shrink-0 w-7 h-7 rounded-full bg-[#E06A26] text-white flex items-center justify-center text-xs font-bold">
+                              {i + 1}
+                            </span>
+                            <span className="text-gray-700 text-sm pt-0.5">{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* Tips */}
+                  {((fullRecipeData?.tips && fullRecipeData.tips.length > 0) || 
+                    (recipeModal.item.recipe?.tips && recipeModal.item.recipe.tips.length > 0)) && (
+                    <div className="p-4 bg-blue-50 rounded-xl">
+                      <h4 className="mb-2 text-sm font-bold text-blue-900">💡 Pro Tips</h4>
+                      <ul className="space-y-1">
+                        {(fullRecipeData?.tips || recipeModal.item.recipe?.tips)?.map((tip, i) => (
+                          <li key={i} className="text-sm text-blue-800 flex items-start gap-2">
+                            <span>•</span>
+                            <span>{tip}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Equipment */}
+                  {((fullRecipeData?.equipment && fullRecipeData.equipment.length > 0) || 
+                    (recipeModal.item.recipe?.equipment && recipeModal.item.recipe.equipment.length > 0)) && (
+                    <div>
+                      <h4 className="mb-2 text-sm font-bold text-gray-900">🔧 Equipment Needed</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {(fullRecipeData?.equipment || recipeModal.item.recipe?.equipment)?.map((eq, i) => (
+                          <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">{eq}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Storage Info */}
+                  {((fullRecipeData?.storage && (fullRecipeData.storage.refrigerator || fullRecipeData.storage.freezer)) || 
+                    (recipeModal.item.recipe?.storage && (recipeModal.item.recipe.storage.refrigerator || recipeModal.item.recipe.storage.freezer))) && (
+                    <div className="p-4 bg-gray-50 rounded-xl">
+                      <h4 className="mb-2 text-sm font-bold text-gray-900">🧊 Storage</h4>
+                      <div className="space-y-1 text-sm text-gray-700">
+                        {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.refrigerator && (
+                          <p>🥶 Refrigerator: {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.refrigerator}</p>
+                        )}
+                        {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.freezer && (
+                          <p>❄️ Freezer: {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.freezer}</p>
+                        )}
+                        {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.instructions && (
+                          <p className="text-xs text-gray-500 mt-1">{(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.instructions}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Alternatives */}
+                  {recipeModal.item.alternatives && recipeModal.item.alternatives.length > 0 && (
+                    <div className="p-4 bg-[#3AB1A0]/10 rounded-xl">
+                      <h4 className="mb-2 text-sm font-bold text-gray-900">🔄 Alternative Options</h4>
+                      <div className="space-y-2">
+                        {recipeModal.item.alternatives.map((alt, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 bg-white rounded-lg">
+                            <div>
+                              <p className="font-medium text-gray-800 text-sm">{alt.name}</p>
+                              <p className="text-xs text-gray-500">{alt.portion}</p>
                             </div>
-                            {(recipe.nutrition.fiber || recipe.nutrition.sugar || recipe.nutrition.sodium) && (
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {recipe.nutrition.fiber && (
-                                  <span className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs">
-                                    Fiber: {recipe.nutrition.fiber}g
-                                  </span>
-                                )}
-                                {recipe.nutrition.sugar && (
-                                  <span className="px-2 py-1 bg-pink-50 text-pink-700 rounded text-xs">
-                                    Sugar: {recipe.nutrition.sugar}g
-                                  </span>
-                                )}
-                                {recipe.nutrition.sodium && (
-                                  <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                                    Sodium: {recipe.nutrition.sodium}mg
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                            <span className="text-sm font-semibold text-[#3AB1A0]">{alt.calories} kcal</span>
                           </div>
-                        )}
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                        {/* Dietary Info */}
-                        {((Array.isArray(recipe.dietaryRestrictions) && recipe.dietaryRestrictions.length > 0) || (Array.isArray(recipe.allergens) && recipe.allergens.length > 0)) && (
-                          <div className="p-3 bg-amber-50 rounded-xl">
-                            {Array.isArray(recipe.dietaryRestrictions) && recipe.dietaryRestrictions.length > 0 && (
-                              <div className="mb-2">
-                                <p className="text-xs font-bold text-amber-800 mb-1">✅ Suitable for:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {recipe.dietaryRestrictions.map((d, i) => (
-                                    <span key={i} className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">{d}</span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {Array.isArray(recipe.allergens) && recipe.allergens.length > 0 && (
-                              <div>
-                                <p className="text-xs font-bold text-amber-800 mb-1">⚠️ Contains allergens:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {recipe.allergens.map((a, i) => (
-                                    <span key={i} className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">{a}</span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Equipment */}
-                        {recipe.equipment && recipe.equipment.length > 0 && (
-                          <div>
-                            <h4 className="mb-2 text-sm font-bold text-gray-900">🔧 Equipment Needed</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {recipe.equipment.map((eq, i) => (
-                                <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">{eq}</span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Ingredients */}
-                        {recipe.ingredients && recipe.ingredients.length > 0 && (
-                          <div>
-                            <h4 className="mb-3 text-base font-bold text-gray-900">🥗 Ingredients</h4>
-                            <ul className="space-y-2">
-                              {recipe.ingredients.map((ing, i) => (
-                                <li key={i} className="flex items-start gap-3 p-3 bg-[#3AB1A0]/5 rounded-lg">
-                                  <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 shrink-0" />
-                                  <span className="text-gray-700 text-sm">{ing}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        
-                        {/* Instructions */}
-                        {recipe.instructions && recipe.instructions.length > 0 && (
-                          <div>
-                            <h4 className="mb-3 text-base font-bold text-gray-900">👨‍🍳 Instructions</h4>
-                            <ol className="space-y-3">
-                              {recipe.instructions.map((step, i) => (
-                                <li key={i} className="flex gap-3">
-                                  <span className="shrink-0 w-7 h-7 rounded-full bg-[#E06A26] text-white flex items-center justify-center text-xs font-bold">
-                                    {i + 1}
-                                  </span>
-                                  <span className="text-gray-700 text-sm pt-0.5">{step}</span>
-                                </li>
-                              ))}
-                            </ol>
-                          </div>
-                        )}
-
-                        {/* Tips */}
-                        {recipe.tips && recipe.tips.length > 0 && (
-                          <div className="p-4 bg-blue-50 rounded-xl">
-                            <h4 className="mb-2 text-sm font-bold text-blue-900">💡 Pro Tips</h4>
-                            <ul className="space-y-1">
-                              {recipe.tips.map((tip, i) => (
-                                <li key={i} className="text-sm text-blue-800 flex items-start gap-2">
-                                  <span>•</span>
-                                  <span>{tip}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Storage Info */}
-                        {recipe.storage && (recipe.storage.refrigerator || recipe.storage.freezer) && (
-                          <div className="p-4 bg-gray-50 rounded-xl">
-                            <h4 className="mb-2 text-sm font-bold text-gray-900">🧊 Storage</h4>
-                            <div className="space-y-1 text-sm text-gray-700">
-                              {recipe.storage.refrigerator && (
-                                <p>🥶 Refrigerator: {recipe.storage.refrigerator}</p>
-                              )}
-                              {recipe.storage.freezer && (
-                                <p>❄️ Freezer: {recipe.storage.freezer}</p>
-                              )}
-                              {recipe.storage.instructions && (
-                                <p className="text-xs text-gray-500 mt-1">{recipe.storage.instructions}</p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()
-                ) : (
-                  <div className="py-8 text-center text-gray-500">
-                    <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p className="text-sm">No recipe details available for this food item</p>
-                    <p className="text-xs text-gray-400 mt-1">The dietitian will add recipe soon</p>
-                  </div>
-                )}
-              </div>
+                  {/* No Recipe Data Message */}
+                  {!fullRecipeData && !recipeModal.item.recipe && !loadingRecipe && (
+                    <div className="py-8 text-center text-gray-500">
+                      <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p className="text-sm">No recipe details available for this food item</p>
+                      <p className="text-xs text-gray-400 mt-1">The dietitian will add recipe soon</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
             {/* Modal Footer - Close Button */}
             <div className="p-4 bg-gray-50 border-t border-gray-200">
               <button
-                onClick={() => setRecipeModal({ item: {} as MealItem, isOpen: false })}
+                onClick={closeRecipeModal}
                 className="w-full py-3 bg-[#3AB1A0] text-white rounded-xl font-bold hover:bg-[#2A9A8B] transition-colors"
               >
                 Close
@@ -1389,7 +1463,7 @@ export default function UserPlanPage() {
                   {/* Main Food Item */}
                   <button
                     onClick={() => {
-                      setRecipeModal({ item, isOpen: true });
+                      openRecipeModal(item);
                       setFoodSelectorModal({ meal: null, isOpen: false });
                     }}
                     className="w-full p-4 bg-gray-50 hover:bg-[#3AB1A0]/10 rounded-xl text-left transition-colors border border-gray-100 hover:border-[#3AB1A0]/30"
