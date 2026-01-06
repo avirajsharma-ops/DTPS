@@ -8,6 +8,7 @@ import { UserRole } from '@/types';
 import { z } from 'zod';
 import Razorpay from 'razorpay';
 import { getPaymentCallbackUrl, getPaymentLinkBaseUrl } from '@/lib/config';
+import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
 
 // Initialize Razorpay
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
@@ -269,6 +270,33 @@ export async function POST(request: NextRequest) {
     const populatedPaymentLink = await PaymentLink.findById(paymentLink._id)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName email');
+
+    // Send push notification to client about new payment link
+    try {
+      const amountFormatted = new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        minimumFractionDigits: 0
+      }).format(validatedData.finalAmount);
+
+      await sendNotificationToUser(validatedData.clientId, {
+        title: '💳 New Payment Request',
+        body: validatedData.planName 
+          ? `Payment of ${amountFormatted} requested for "${validatedData.planName}". Tap to pay now.`
+          : `A payment of ${amountFormatted} has been requested. Tap to pay now.`,
+        icon: '/icons/icon-192x192.png',
+        data: {
+          type: 'payment_link',
+          paymentLinkId: paymentLink._id.toString(),
+          amount: validatedData.finalAmount.toString(),
+          url: '/user/payments'
+        },
+        clickAction: '/user/payments'
+      });
+    } catch (notificationError) {
+      console.error('Failed to send payment link notification:', notificationError);
+      // Don't fail the request if notification fails
+    }
 
     return NextResponse.json({
       success: true,

@@ -139,6 +139,7 @@
 -keep class androidx.core.content.FileProvider { <init>(); }
 -keep class androidx.profileinstaller.ProfileInstallReceiver { <init>(); }
 -keep class androidx.startup.InitializationProvider { <init>(); }
+-keep class com.dtps.dietary.BootCompletedReceiver { <init>(); }
 -keep class com.dtps.dietary.DTPSApplication { <init>(); }
 -keep class com.dtps.dietary.DTPSFirebaseMessagingService { <init>(); }
 -keep class com.dtps.dietary.MainActivity { <init>(); }

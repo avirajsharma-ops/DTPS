@@ -11,6 +11,7 @@ export type NotificationType =
   | 'task_assigned'
   | 'meal_plan_created'
   | 'meal_plan_updated'
+  | 'payment_link_created'
   | 'custom';
 
 interface NotificationOptions {
@@ -203,6 +204,40 @@ export async function sendCustomNotification(
       type: 'custom',
     },
     clickAction: notification.clickAction || '/user',
+  });
+}
+
+/**
+ * Send a notification for payment link creation
+ */
+export async function sendPaymentLinkCreatedNotification(
+  userId: string,
+  paymentDetails: {
+    amount: number;
+    planName?: string;
+    paymentLinkId: string;
+  }
+) {
+  const amountFormatted = new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0
+  }).format(paymentDetails.amount);
+
+  const body = paymentDetails.planName
+    ? `Payment of ${amountFormatted} requested for "${paymentDetails.planName}". Tap to pay now.`
+    : `A payment of ${amountFormatted} has been requested. Tap to pay now.`;
+
+  return sendNotificationToUser(userId, {
+    title: '💳 New Payment Request',
+    body,
+    icon: '/icons/icon-192x192.png',
+    data: {
+      type: 'payment_link_created',
+      paymentLinkId: paymentDetails.paymentLinkId,
+      amount: paymentDetails.amount.toString(),
+    },
+    clickAction: '/user/payments',
   });
 }
 

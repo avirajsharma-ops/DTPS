@@ -27,7 +27,7 @@ export default function UserNavBar({
   showBack = false,
   showMenu = true,
   showProfile = true,
-  showNotification = false,
+  showNotification = true,
   showDate = true,
   showGreeting = true,
   backHref = '/user',

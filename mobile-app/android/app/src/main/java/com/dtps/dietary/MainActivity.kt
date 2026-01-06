@@ -14,6 +14,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import android.webkit.*
 import android.widget.ProgressBar
@@ -25,6 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.firebase.messaging.FirebaseMessaging
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -45,8 +47,12 @@ class MainActivity : AppCompatActivity() {
     
     // Camera photo URI
     private var cameraPhotoUri: Uri? = null
+    
+    // FCM token - proactively fetched
+    private var cachedFCMToken: String? = null
 
     companion object {
+        private const val TAG = "MainActivity"
         private const val APP_URL = "https://dtps.tech/user"
         private const val SPLASH_URL = "file:///android_asset/splash.html"
         private val ALLOWED_HOSTS = listOf("dtps.tech")
@@ -154,10 +160,39 @@ class MainActivity : AppCompatActivity() {
         // Show splash first
         showSplash()
         
+        // Proactively fetch FCM token
+        fetchFCMToken()
+        
         // Request permissions after a short delay
         mainHandler.postDelayed({
             requestAllPermissions()
         }, 500)
+    }
+    
+    private fun fetchFCMToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d(TAG, "FCM Token fetched: ${token?.take(30)}...")
+                cachedFCMToken = token
+                
+                // Store in shared preferences
+                val prefs = getSharedPreferences("dtps_prefs", Context.MODE_PRIVATE)
+                prefs.edit().putString("fcm_token", token).apply()
+                
+                // Notify WebView that token is ready
+                mainHandler.post {
+                    if (splashComplete && ::webView.isInitialized) {
+                        webView.evaluateJavascript(
+                            "window.dispatchEvent(new CustomEvent('fcmTokenReady', { detail: { token: '$token' } }));",
+                            null
+                        )
+                    }
+                }
+            } else {
+                Log.e(TAG, "Failed to fetch FCM token", task.exception)
+            }
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -195,8 +230,20 @@ class MainActivity : AppCompatActivity() {
     inner class NativeInterface {
         @JavascriptInterface
         fun getFCMToken(): String {
+            // Return cached token first if available
+            if (!cachedFCMToken.isNullOrEmpty()) {
+                return cachedFCMToken!!
+            }
+            // Fallback to shared preferences
             val prefs = getSharedPreferences("dtps_prefs", Context.MODE_PRIVATE)
             return prefs.getString("fcm_token", "") ?: ""
+        }
+        
+        @JavascriptInterface
+        fun refreshFCMToken() {
+            mainHandler.post {
+                fetchFCMToken()
+            }
         }
         
         @JavascriptInterface
@@ -219,6 +266,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+        
+        @JavascriptInterface
+        fun log(message: String) {
+            Log.d(TAG, "WebView: $message")
         }
     }
 

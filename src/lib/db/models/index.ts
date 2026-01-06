@@ -24,6 +24,7 @@ export { default as PaymentLink } from './PaymentLink';
 export { default as Transformation } from './Transformation';
 export { default as ActivityLog } from './ActivityLog';
 export { default as Counter } from './Counter';
+export { default as Notification } from './Notification';
 
 // Re-export types for convenience
 export * from '@/types';

@@ -5690,7 +5690,6 @@ androidx.core.app.NotificationCompat$Builder:
     public androidx.core.app.NotificationCompat$Builder setAllowSystemGeneratedContextualActions(boolean)
     public androidx.core.app.NotificationCompat$Builder setBadgeIconType(int)
     public androidx.core.app.NotificationCompat$Builder setBubbleMetadata(androidx.core.app.NotificationCompat$BubbleMetadata)
-    public androidx.core.app.NotificationCompat$Builder setCategory(java.lang.String)
     public androidx.core.app.NotificationCompat$Builder setChronometerCountDown(boolean)
     public androidx.core.app.NotificationCompat$Builder setColorized(boolean)
     public androidx.core.app.NotificationCompat$Builder setContent(android.widget.RemoteViews)
@@ -5707,7 +5706,6 @@ androidx.core.app.NotificationCompat$Builder:
     public androidx.core.app.NotificationCompat$Builder setLargeIcon(android.graphics.drawable.Icon)
     public androidx.core.app.NotificationCompat$Builder setLocusId(androidx.core.content.LocusIdCompat)
     public androidx.core.app.NotificationCompat$Builder setNotificationSilent()
-    public androidx.core.app.NotificationCompat$Builder setOngoing(boolean)
     public androidx.core.app.NotificationCompat$Builder setOnlyAlertOnce(boolean)
     public androidx.core.app.NotificationCompat$Builder setProgress(int,int,boolean)
     public androidx.core.app.NotificationCompat$Builder setPublicVersion(android.app.Notification)
@@ -30458,7 +30456,6 @@ kotlin.text.StringsKt___StringsKt:
     private static final int sumOfUInt(java.lang.CharSequence,kotlin.jvm.functions.Function1)
     private static final long sumOfULong(java.lang.CharSequence,kotlin.jvm.functions.Function1)
     public static final java.lang.CharSequence take(java.lang.CharSequence,int)
-    public static final java.lang.String take(java.lang.String,int)
     public static final java.lang.CharSequence takeLast(java.lang.CharSequence,int)
     public static final java.lang.String takeLast(java.lang.String,int)
     public static final java.lang.CharSequence takeLastWhile(java.lang.CharSequence,kotlin.jvm.functions.Function1)
@@ -35378,7 +35375,6 @@ androidx.core.app.NotificationCompat$Builder:
     public int mBadgeIcon
     public android.widget.RemoteViews mBigContentView
     public androidx.core.app.NotificationCompat$BubbleMetadata mBubbleMetadata
-    public java.lang.String mCategory
     public boolean mColorized
     public boolean mColorizedSet
     public java.lang.CharSequence mContentInfo
@@ -35406,17 +35402,19 @@ androidx.core.app.NotificationCompat$Builder:
     public boolean mUseChronometer
     public static androidx.core.app.NotificationCompat$Builder addAction()
     public final android.os.Bundle getExtras()
+    public final void setAutoCancel(boolean)
+    public static androidx.core.app.NotificationCompat$Builder setCategory()
     public static androidx.core.app.NotificationCompat$Builder setChannelId()
     public static androidx.core.app.NotificationCompat$Builder setColor()
     public static androidx.core.app.NotificationCompat$Builder setContentIntent()
     public final void setContentText(java.lang.String)
     public final void setContentTitle(java.lang.String)
-    public static androidx.core.app.NotificationCompat$Builder setDefaults()
+    public final void setDefaults(int)
     public static androidx.core.app.NotificationCompat$Builder setDeleteIntent()
-    public static void setFlag()
     public static androidx.core.app.NotificationCompat$Builder setLights()
     public static androidx.core.app.NotificationCompat$Builder setLocalOnly()
     public static androidx.core.app.NotificationCompat$Builder setNumber()
+    public static androidx.core.app.NotificationCompat$Builder setOngoing()
     public static androidx.core.app.NotificationCompat$Builder setPriority()
     public static androidx.core.app.NotificationCompat$Builder setShowWhen()
     public static androidx.core.app.NotificationCompat$Builder setSmallIcon()
@@ -38469,6 +38467,7 @@ androidx.viewpager2.adapter.FragmentStateAdapter$FragmentMaxLifecycleEnforcer$3:
 androidx.viewpager2.adapter.FragmentStateAdapter$FragmentMaxLifecycleEnforcer
 androidx.viewpager2.adapter.FragmentStateAdapter
 androidx.viewpager2.adapter.FragmentViewHolder
+com.dtps.dietary.BootCompletedReceiver$$InternalSyntheticLambda$1$8513a35b66d3983aebbe36b60312e9ba893351f0b1d3cf6afb81d8e0ad0373c6$0
 com.dtps.dietary.DTPSApplication$$InternalSyntheticLambda$1$5680e14962bb00bbfe93cd4ba8166675d11fbf65f585c66210d3ea6df66de532$0
 com.dtps.dietary.MainActivity$$InternalSyntheticLambda$1$79bac19c92c207774e9ec1f08a8e44a9d903b7dfb15d984d0244454b6e1d9d88$1
 com.dtps.dietary.MainActivity$$InternalSyntheticLambda$1$79bac19c92c207774e9ec1f08a8e44a9d903b7dfb15d984d0244454b6e1d9d88$2
@@ -38478,7 +38477,10 @@ com.dtps.dietary.MainActivity$$InternalSyntheticLambda$1$79bac19c92c207774e9ec1f
     public static void handle()
     public static void onSchedule()
     public static java.lang.Object shouldRetry()
+com.dtps.dietary.MainActivity$$InternalSyntheticLambda$1$9475ef3454d6852ae9cae438ba332c65167253ddb22f8ca5f0af9b5674a8960d$0
+com.dtps.dietary.MainActivity$$InternalSyntheticLambda$1$c2e98d709f4cfe5190428c78fe4afa3656e9f2775388c4586c0fc09b530339b0$0
 com.dtps.dietary.MainActivity$$InternalSyntheticLambda$1$ff1861825cf2346ef620be4633d560e20ae2e08f6dc46ce1db4db0ebe2832ead$0
+com.dtps.dietary.MainActivity$NativeInterface$$InternalSyntheticLambda$1$402534ed54bd8c94690646ddd6ee009bbca578292ed252a4ba1c65b118f2bb8a$0
 com.dtps.dietary.MainActivity$NativeInterface$$InternalSyntheticLambda$1$d1d4b73696e513e6bb18e89154378ef36dda36adf9a5391627923cee101cc091$0
 com.dtps.dietary.MainActivity$SplashInterface$$InternalSyntheticLambda$1$cf70f2ef353b5606772224b6aeb0d278bda5b8dde89f8e884dac237f588f66aa$0
 com.google.android.datatransport.AutoValue_Event:
@@ -42214,7 +42216,6 @@ com.google.android.gms.tasks.zzt
 com.google.android.gms.tasks.zzu
 com.google.android.gms.tasks.zzw:
     public final com.google.android.gms.tasks.zzw addOnCanceledListener(androidx.appcompat.app.AppLocalesStorageHelper$ThreadPerTaskExecutor,com.google.android.gms.tasks.OnCanceledListener)
-    public final com.google.android.gms.tasks.zzw addOnCompleteListener(com.google.android.gms.tasks.OnCompleteListener)
     public final com.google.android.gms.tasks.zzw addOnFailureListener(androidx.appcompat.app.AppLocalesStorageHelper$ThreadPerTaskExecutor,com.google.android.gms.tasks.OnFailureListener)
     public final java.lang.Object getResult$1()
     public final boolean isCanceled()
@@ -45002,7 +45003,6 @@ com.google.firebase.messaging.FirebaseMessaging:
     public final com.google.android.gms.tasks.zzw topicsSubscriberTask
     public static android.content.Context getApplicationContext()
     public final java.lang.String getSubtype()
-    public static com.google.android.gms.tasks.Task getToken()
     public static void invokeOnTokenRefresh()
     public static boolean isAutoInitEnabled()
     public static boolean isGmsCorePresent()
@@ -45622,7 +45622,6 @@ kotlin.text.StringsKt__StringsKt:
     public static boolean startsWith$default(java.lang.String,java.lang.String)
     public static java.lang.String substringAfter$default(java.lang.String,java.lang.String)
 kotlin.text.StringsKt___StringsJvmKt
-kotlin.text.StringsKt___StringsKt
 kotlinx.coroutines.AbstractCoroutine:
     public abstract void afterResume()
     public final kotlin.coroutines.CoroutineContext getCoroutineContext()

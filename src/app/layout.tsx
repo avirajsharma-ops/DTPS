@@ -4,6 +4,7 @@ import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import { ClientAppLayout } from "@/components/layout/ClientAppLayout";
 import { Toaster } from "@/components/ui/sonner";
+import PushNotificationProvider from "@/components/providers/PushNotificationProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,9 +70,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>
-          <ClientAppLayout>
-            {children}
-          </ClientAppLayout>
+          <PushNotificationProvider autoRegister={true}>
+            <ClientAppLayout>
+              {children}
+            </ClientAppLayout>
+          </PushNotificationProvider>
           <Toaster />
         </SessionProvider>
       </body>

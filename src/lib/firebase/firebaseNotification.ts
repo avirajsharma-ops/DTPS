@@ -1,5 +1,6 @@
 import { messaging } from './firebaseAdmin';
 import User from '@/lib/db/models/User';
+import Notification from '@/lib/db/models/Notification';
 import connectDB from '@/lib/db/connection';
 
 export interface FCMNotificationPayload {
@@ -10,6 +11,7 @@ export interface FCMNotificationPayload {
     badge?: string;
     data?: Record<string, string>;
     clickAction?: string;
+    saveToDb?: boolean; // Whether to save notification to database (default: true)
 }
 
 export interface SendNotificationResult {
@@ -20,19 +22,57 @@ export interface SendNotificationResult {
 }
 
 /**
+ * Map notification data type to database notification type
+ */
+function mapNotificationType(dataType?: string): string {
+    const typeMap: Record<string, string> = {
+        'new_message': 'message',
+        'appointment_booked': 'appointment',
+        'appointment_cancelled': 'appointment',
+        'appointment_reminder': 'appointment',
+        'task_assigned': 'task',
+        'meal_plan_created': 'meal',
+        'meal_plan_updated': 'meal',
+        'payment_link_created': 'payment',
+        'custom': 'custom',
+    };
+    return typeMap[dataType || ''] || 'system';
+}
+
+/**
  * Send a push notification to a specific user across all their registered devices
+ * Also stores the notification in the database for viewing in the app
  */
 export async function sendNotificationToUser(
     userId: string,
     notification: FCMNotificationPayload
 ): Promise<SendNotificationResult> {
-    if (!messaging) {
-        console.warn('Firebase messaging not initialized');
-        return { successCount: 0, failureCount: 0, invalidTokens: [], responses: [] };
-    }
-
     try {
         await connectDB();
+        
+        // Save notification to database (unless explicitly disabled)
+        if (notification.saveToDb !== false) {
+            try {
+                await Notification.create({
+                    userId,
+                    title: notification.title,
+                    message: notification.body,
+                    type: mapNotificationType(notification.data?.type),
+                    data: notification.data,
+                    actionUrl: notification.clickAction,
+                    read: false
+                });
+            } catch (dbError) {
+                console.error('Error saving notification to database:', dbError);
+                // Continue with push notification even if DB save fails
+            }
+        }
+
+        if (!messaging) {
+            console.warn('Firebase messaging not initialized');
+            return { successCount: 0, failureCount: 0, invalidTokens: [], responses: [] };
+        }
+
         const user = await User.findById(userId).select('fcmTokens');
 
         if (!user || !user.fcmTokens || user.fcmTokens.length === 0) {
@@ -50,18 +90,39 @@ export async function sendNotificationToUser(
 
 /**
  * Send a push notification to multiple users
+ * Also stores the notification in the database for each user
  */
 export async function sendNotificationToUsers(
     userIds: string[],
     notification: FCMNotificationPayload
 ): Promise<SendNotificationResult> {
-    if (!messaging) {
-        console.warn('Firebase messaging not initialized');
-        return { successCount: 0, failureCount: 0, invalidTokens: [], responses: [] };
-    }
-
     try {
         await connectDB();
+        
+        // Save notifications to database for all users (unless explicitly disabled)
+        if (notification.saveToDb !== false && userIds.length > 0) {
+            try {
+                const notificationsToInsert = userIds.map(userId => ({
+                    userId,
+                    title: notification.title,
+                    message: notification.body,
+                    type: mapNotificationType(notification.data?.type),
+                    data: notification.data,
+                    actionUrl: notification.clickAction,
+                    read: false
+                }));
+                await Notification.insertMany(notificationsToInsert);
+            } catch (dbError) {
+                console.error('Error saving notifications to database:', dbError);
+                // Continue with push notifications even if DB save fails
+            }
+        }
+
+        if (!messaging) {
+            console.warn('Firebase messaging not initialized');
+            return { successCount: 0, failureCount: 0, invalidTokens: [], responses: [] };
+        }
+
         const users = await User.find({ _id: { $in: userIds } }).select('fcmTokens');
 
         const allTokens: string[] = [];
