@@ -744,7 +744,7 @@ export default function UserProgressPage() {
             <Link href="/user" className="p-2 -ml-2 transition-colors rounded-xl hover:bg-gray-100">
               <ArrowLeft className="w-5 h-5 text-gray-600" />
             </Link>
-            <h1 className="text-lg font-bold text-gray-900">My Progress</h1>
+            <h1 className="text-lg font-bold text-black">My Progress</h1>
           </div>
         </div>
         

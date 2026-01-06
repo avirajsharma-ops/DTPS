@@ -261,18 +261,16 @@ export default function PersonalInfoPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-[#3AB1A0]/10 via-white to-[#3AB1A0]/10">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link href="/user/profile" className="p-2 -ml-2 rounded-xl hover:bg-[#3AB1A0]/10 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </Link>
-            <h1 className="text-lg font-bold text-gray-900">Personal Information</h1>
-          </div>
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
+        <div className="relative flex items-center justify-center px-4 py-4">
+          <Link href="/user/profile" className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
+          </Link>
+          <h1 className="text-lg font-bold text-black">Personal Information</h1>
           <button 
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2a9989] transition-colors disabled:opacity-50 shadow-lg shadow-[#3AB1A0]/25"
+            className="absolute right-4 flex items-center gap-2 px-4 py-2 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2a9989] transition-colors disabled:opacity-50 shadow-lg shadow-[#3AB1A0]/25"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save

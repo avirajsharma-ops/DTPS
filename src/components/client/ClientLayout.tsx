@@ -173,7 +173,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         </div>
 
         {/* Scrollable Content Area */}
-        <main className="flex-1 pt-[78px] pb-20">
+        <main className="flex-1 pt-19.5 pb-20">
           <div className="p-4">
             {children}
           </div>

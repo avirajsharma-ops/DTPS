@@ -259,15 +259,15 @@ export default function StepsPage() {
     return (
         <div className="min-h-screen bg-gray-50 pb-24">
             {/* Header */}
-            <div className="bg-white px-4 py-4 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                    <Link href="/user" className="p-2 -ml-2">
-                        <ArrowLeft className="w-6 h-6 text-gray-700" />
+            <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
+                <div className="relative flex items-center justify-center px-4 py-4">
+                    <Link href="/user" className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors">
+                        <ArrowLeft className="w-5 h-5 text-gray-700" />
                     </Link>
-                    <h1 className="text-lg font-bold text-gray-900">Steps</h1>
+                    <h1 className="text-lg font-bold text-black">Steps</h1>
                     <button
                         onClick={() => setShowDatePicker(!showDatePicker)}
-                        className="flex items-center gap-1 p-2 -mr-2 bg-[#3AB1A0]/10 rounded-lg"
+                        className="absolute right-4 flex items-center gap-1 p-2 bg-[#3AB1A0]/10 rounded-lg"
                     >
                         <Calendar className="w-5 h-5 text-[#3AB1A0]" />
                         <span className="text-sm font-medium text-[#3AB1A0]">
@@ -278,7 +278,7 @@ export default function StepsPage() {
 
                 {/* Date Picker */}
                 {showDatePicker && (
-                    <div className="mt-3 p-3 bg-gray-50 rounded-xl">
+                    <div className="px-4 pb-3">
                         <input
                             type="date"
                             value={format(selectedDate, 'yyyy-MM-dd')}

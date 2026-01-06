@@ -3,7 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Message from '@/lib/db/models/Message';
+import { Notification } from '@/lib/db/models';
 import { SSEManager } from '@/lib/realtime/sse-manager';
+import { broadcastUnreadCounts } from '../../client/unread-counts/stream/route';
 
 // PUT /api/messages/status - Update message status
 export async function PUT(request: NextRequest) {
@@ -67,6 +69,17 @@ export async function PUT(request: NextRequest) {
         readBy: session.user.id,
         timestamp: Date.now(),
         messagesCount: result.modifiedCount
+      });
+
+      // Broadcast unread count update via SSE
+      const [notificationCount, messageCount] = await Promise.all([
+        Notification.countDocuments({ userId: session.user.id, read: false }),
+        Message.countDocuments({ receiver: session.user.id, isRead: false })
+      ]);
+      
+      broadcastUnreadCounts(session.user.id, {
+        notifications: notificationCount,
+        messages: messageCount
       });
 
       return NextResponse.json({ 

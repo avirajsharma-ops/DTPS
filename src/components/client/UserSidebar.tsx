@@ -5,7 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { X, LayoutDashboard, Heart, Utensils, TrendingUp, Calendar, MessageCircle, CreditCard, User, Settings, HelpCircle, LogOut, ShoppingBag, BookOpen, Package, ChevronRight } from 'lucide-react';
+import { X, LayoutDashboard, Heart, Utensils, TrendingUp, Calendar, MessageCircle, CreditCard, User, Settings, HelpCircle, LogOut, ShoppingBag, BookOpen, Package, ChevronRight, Bell } from 'lucide-react';
+import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
 
 interface ServicePlan {
   _id: string;
@@ -28,6 +29,7 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [services, setServices] = useState<ServicePlan[]>([]);
+  const { counts } = useUnreadCountsSafe();
 
   // Fetch services when sidebar opens
   useEffect(() => {
@@ -71,8 +73,9 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
     { href: '/user/services', label: 'Services', icon: Package },
     { href: '/user/recipes', label: 'Recipes', icon: BookOpen },
     { href: '/user/progress', label: 'Progress', icon: TrendingUp },
-    { href: '/user/appointments', label: 'Appointments', icon: Calendar ,badge: (session as any)?.user?.upcomingAppointmentsCount || ""},
-    { href: '/user/messages', label: 'Messages', icon: MessageCircle, badge: (session as any)?.user?.unreadMessagesCount || ""},
+    { href: '/user/appointments', label: 'Appointments', icon: Calendar, badge: (session as any)?.user?.upcomingAppointmentsCount || "" },
+    { href: '/user/notifications', label: 'Notifications', icon: Bell, badge: counts.notifications > 0 ? counts.notifications : "" },
+    { href: '/user/messages', label: 'Messages', icon: MessageCircle, badge: counts.messages > 0 ? counts.messages : "" },
     { href: '/user/subscriptions', label: 'My Subscriptions', icon: ShoppingBag },
     { href: '/user/billing', label: 'Billing', icon: CreditCard },
     { href: '/user/profile', label: 'Profile', icon: User },
@@ -102,14 +105,14 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 z-40 transition-opacity bg-black/50"
+        className="fixed inset-0 z-40 transition-opacity duration-700 ease-in-out bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
       
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 flex flex-col transition-transform duration-300 ease-out transform bg-white shadow-2xl w-72">
+      <div className="fixed inset-y-0 left-0 z-50 flex flex-col transform bg-white shadow-2xl w-72 transition-all duration-700 ease-in-out motion-reduce:duration-300 motion-reduce:ease-out">
         {/* Header with Logo */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 animate-in fade-in slide-in-from-top-2 duration-500 delay-75">
           <div className="flex items-center gap-2">
             <div className="h-10 w-10 rounded-xl overflow-hidden bg-[#3AB1A0]/10 flex items-center justify-center">
               <Image
@@ -131,7 +134,7 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
         </div>
 
         {/* User Info */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 animate-in fade-in slide-in-from-top-2 duration-500 delay-100">
           <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center">
             {session?.user?.avatar ? (
               <img 
@@ -153,7 +156,7 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
      
 
         {/* Menu Items */}
-        <nav className="flex-1 py-2 overflow-y-auto">
+        <nav className="flex-1 py-2 overflow-y-auto animate-in fade-in duration-500 delay-150">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -184,7 +187,7 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
         </nav>
 
         {/* Sign Out */}
-        <div className="p-4 border-t border-gray-100">
+        <div className="p-4 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
           <button
             onClick={handleSignOut}
             className="flex items-center gap-3 w-full px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 active:scale-[0.98]"

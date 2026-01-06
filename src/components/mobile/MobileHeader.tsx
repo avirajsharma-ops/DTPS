@@ -3,6 +3,8 @@
 import { ArrowLeft, Bell, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
 
 interface MobileHeaderProps {
   title: string;
@@ -25,6 +27,7 @@ export function MobileHeader({
 }: MobileHeaderProps) {
   const router = useRouter();
   const { data: session } = useSession();
+  const { counts } = useUnreadCountsSafe();
 
   // Get user's first name or initials for avatar
   const firstName = session?.user?.firstName || session?.user?.name || 'User';
@@ -60,9 +63,14 @@ export function MobileHeader({
           {/* Right side - Notification */}
           <div className="flex items-center space-x-2">
             {showNotification && (
-              <button className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors active:scale-95 border border-gray-200">
+              <Link href="/user/notifications" className="relative h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors active:scale-95 border border-gray-200">
                 <Bell className="h-5 w-5 text-gray-700" />
-              </button>
+                {counts.notifications > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                    {counts.notifications > 9 ? '9+' : counts.notifications}
+                  </span>
+                )}
+              </Link>
             )}
             {showSettings && (
               <button className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors active:scale-95 border border-gray-200">

@@ -118,44 +118,36 @@ export default function ServicesPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <div className="px-4 py-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-[#3AB1A0]" />
-            </button>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900">Our Services</h1>
-              <p className="text-xs text-gray-500">Choose the perfect plan for you</p>
-            </div>
-            <div className="p-2 bg-linear-to-br from-[#E06A26] to-[#DB9C6E] rounded-xl shadow-md">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-          </div>
-
-          {/* Category Filter - Horizontal Scroll */}
-          {categories.length > 1 && (
-            <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                    selectedCategory === category
-                      ? 'bg-linear-to-r from-[#3AB1A0] to-[#2D8A7C] text-white shadow-md'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                >
-                  {category !== 'All' && <span className="mr-1">{getCategoryIcon(category)}</span>}
-                  {category}
-                </button>
-              ))}
-            </div>
-          )}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
+        <div className="relative flex items-center justify-center px-4 py-4">
+          <button
+            onClick={() => router.back()}
+            className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
+          </button>
+          <h1 className="text-lg font-bold text-black">Our Services</h1>
         </div>
+
+        {/* Category Filter - Horizontal Scroll */}
+        {categories.length > 1 && (
+          <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                  selectedCategory === category
+                    ? 'bg-[#3AB1A0] text-white shadow-md'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                {category !== 'All' && <span className="mr-1">{getCategoryIcon(category)}</span>}
+                {category}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Hero Banner */}

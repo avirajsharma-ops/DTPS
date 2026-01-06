@@ -175,15 +175,12 @@ export default function UserBillingPage() {
   return (
     <div className="min-h-screen pb-24 bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <Link href="/user" className="p-2 -ml-2 transition-colors rounded-xl hover:bg-gray-100">
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
+        <div className="relative flex items-center justify-center px-4 py-4">
+          <Link href="/user" className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
           </Link>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Billing</h1>
-            <p className="text-xs text-gray-500">Manage your subscription</p>
-          </div>
+          <h1 className="text-lg font-bold text-black">Billing</h1>
         </div>
       </div>
 

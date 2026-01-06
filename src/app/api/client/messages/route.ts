@@ -4,7 +4,9 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import Message from '@/lib/db/models/Message';
 import User from '@/lib/db/models/User';
+import { Notification } from '@/lib/db/models';
 import mongoose from 'mongoose';
+import { broadcastUnreadCounts } from '../unread-counts/stream/route';
 
 // GET /api/client/messages - Get messages for current client
 export async function GET(request: NextRequest) {
@@ -60,6 +62,17 @@ export async function GET(request: NextRequest) {
         },
         { isRead: true, readAt: new Date() }
       );
+      
+      // Broadcast SSE update for unread counts
+      const [notificationCount, messageCount] = await Promise.all([
+        Notification.countDocuments({ userId: session.user.id, read: false }),
+        Message.countDocuments({ receiver: session.user.id, isRead: false })
+      ]);
+      
+      broadcastUnreadCounts(session.user.id, {
+        notifications: notificationCount,
+        messages: messageCount
+      });
     }
 
     return NextResponse.json({

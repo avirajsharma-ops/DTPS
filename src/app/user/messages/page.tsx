@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
 import { ResponsiveLayout } from '@/components/client/layouts';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,7 @@ interface Conversation {
 export default function UserMessagesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { refreshCounts } = useUnreadCountsSafe();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -146,6 +148,8 @@ export default function UserMessagesPage() {
       if (response.ok) {
         const data = await response.json();
         setMessages(data.messages || []);
+        // Refresh unread counts after fetching messages (which auto-marks as read)
+        await refreshCounts();
       }
     } catch (error) {
       console.error('Error fetching messages:', error);

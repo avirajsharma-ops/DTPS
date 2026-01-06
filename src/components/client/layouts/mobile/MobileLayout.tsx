@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -55,12 +55,15 @@ const menuItems = [
   { href: '/user/food-log', label: 'Food Log', icon: Utensils },
   { href: '/user/progress', label: 'Progress', icon: TrendingUp },
   { href: '/user/appointments', label: 'Appointments', icon: Calendar },
+  { href: '/user/notifications', label: 'Notifications', icon: Bell },
   { href: '/user/messages', label: 'Messages', icon: MessageCircle },
   { href: '/user/billing', label: 'Billing', icon: CreditCard },
   { href: '/user/profile', label: 'Profile', icon: User },
   { href: '/user/settings', label: 'Settings', icon: Settings },
   { href: '/user/help', label: 'Help & Support', icon: HelpCircle },
 ];
+
+import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
 
 /**
  * MobileLayout - Mobile-first layout for client pages
@@ -86,7 +89,7 @@ export function MobileLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [notificationCount, setNotificationCount] = useState(3);
+  const { counts } = useUnreadCountsSafe();
 
   const user = session?.user;
   const initials = user?.firstName && user?.lastName
@@ -158,9 +161,9 @@ export function MobileLayout({
                 onClick={() => router.push('/user/notifications')}
               >
                 <Bell className="h-5 w-5 text-gray-600" />
-                {notificationCount > 0 && (
+                {counts.notifications > 0 && (
                   <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
-                    {notificationCount > 9 ? '9+' : notificationCount}
+                    {counts.notifications > 9 ? '9+' : counts.notifications}
                   </span>
                 )}
               </Button>
@@ -194,7 +197,7 @@ export function MobileLayout({
 
       {/* Slide-out Menu */}
       <div className={cn(
-        "fixed top-0 left-0 h-full w-[280px] bg-white z-50 transform transition-transform duration-300 ease-out safe-area-left",
+        "fixed top-0 left-0 h-full w-70 bg-white z-50 transform transition-transform duration-300 ease-out safe-area-left",
         isMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Menu Header */}

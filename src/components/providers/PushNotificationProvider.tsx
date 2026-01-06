@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNativeApp } from '@/hooks/useNativeApp';
+import { toast } from 'sonner';
 
 interface PushNotificationProviderProps {
     children: React.ReactNode;
@@ -25,9 +26,45 @@ export function PushNotificationProvider({
     onNotification,
 }: PushNotificationProviderProps) {
     const { status } = useSession();
+
+    // Handle foreground notification display with toast
+    const handleForegroundNotification = useCallback((payload: any) => {
+        console.log('[PushNotificationProvider] Foreground notification received:', payload);
+        
+        // Extract notification data
+        const title = payload.notification?.title || payload.data?.title || 'New Notification';
+        const body = payload.notification?.body || payload.data?.body || payload.data?.message || '';
+        const type = payload.data?.type || 'general';
+        const clickAction = payload.data?.clickAction || payload.data?.url;
+        
+        // Show toast notification for foreground messages
+        toast(title, {
+            description: body,
+            duration: 5000,
+            action: clickAction ? {
+                label: 'View',
+                onClick: () => {
+                    if (clickAction) {
+                        window.location.href = clickAction;
+                    }
+                }
+            } : undefined,
+            icon: type === 'message' ? '💬' : 
+                  type === 'appointment' || type === 'appointment_booked' ? '📅' :
+                  type === 'meal' || type === 'meal_plan_created' ? '🍽️' :
+                  type === 'payment' || type === 'payment_link_created' ? '💳' :
+                  type === 'task_assigned' ? '✅' : '🔔',
+        });
+
+        // Call user's custom handler if provided
+        if (onNotification) {
+            onNotification(payload);
+        }
+    }, [onNotification]);
+
     const { isSupported, permission, registerToken } = usePushNotifications({
         autoRegister: false, // We'll handle it manually
-        onNotification,
+        onNotification: handleForegroundNotification,
     });
     
     // Native app hook - handles FCM token registration for Android WebView

@@ -682,7 +682,7 @@ export default function UserPlanPage() {
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </Link>
           <div className="text-center">
-            <h1 className="text-lg font-bold text-[#E06A26]">My Meal Plan</h1>
+            <h1 className="text-lg font-bold text-black">My Meal Plan</h1>
             <p className="text-xs text-gray-500 uppercase">{format(selectedDate, 'EEEE, MMMM d')}</p>
           </div>
           <div className="flex items-center gap-2">

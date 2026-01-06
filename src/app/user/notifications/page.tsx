@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import UserNavBar from '@/components/client/UserNavBar';
-import { Bell, Check, CheckCheck, Trash2, Calendar, MessageSquare, Utensils, TrendingUp, Clock, CreditCard, Settings, RefreshCw } from 'lucide-react';
+import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
+import { Bell, Check, CheckCheck, Trash2, Calendar, MessageSquare, Utensils, TrendingUp, Clock, CreditCard, Settings, RefreshCw, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Notification {
@@ -30,7 +32,9 @@ interface NotificationResponse {
 }
 
 export default function NotificationsPage() {
+    const router = useRouter();
   const { data: session, status } = useSession();
+  const { refreshCounts } = useUnreadCountsSafe();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -57,6 +61,19 @@ export default function NotificationsPage() {
         const data: NotificationResponse = await response.json();
         setNotifications(data.notifications);
         setUnreadCount(data.unreadCount);
+        
+        // Auto-mark all unread notifications as read when viewing the page
+        if (data.unreadCount > 0 && activeFilter !== 'unread') {
+          // Mark all as read in background
+          fetch('/api/client/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ markAll: true })
+          }).then(() => {
+            setUnreadCount(0);
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+          }).catch(err => console.error('Error auto-marking as read:', err));
+        }
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -88,6 +105,8 @@ export default function NotificationsPage() {
             notificationIds.includes(n._id) ? { ...n, read: true } : n
           )
         );
+        // Refresh unread counts in context after marking as read
+        await refreshCounts();
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -105,6 +124,8 @@ export default function NotificationsPage() {
       if (response.ok) {
         setUnreadCount(0);
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        // Refresh unread counts in context after marking all as read
+        await refreshCounts();
       }
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -184,25 +205,31 @@ export default function NotificationsPage() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E06A26]"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3AB1A0]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <UserNavBar 
-        title="Notifications" 
-        showBack={true}
-        showNotification={false}
-        showMenu={false}
-      />
-      
+    <div className="min-h-screen bg-gray-50 pb-20 overflow-x-hidden">
+      {/* Header with centered title */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
+        <div className="relative flex items-center justify-center px-4 py-4">
+          <button
+            onClick={() => router.back()}
+            className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
+          </button>
+          <h1 className="text-lg font-bold text-black">Notifications</h1>
+        </div>
+      </div>
+
       {/* Header Actions */}
       <div className="bg-white border-b border-gray-100 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-[#E06A26]" />
+            <Bell className="h-5 w-5 text-[#3AB1A0]" />
             <span className="text-sm font-medium text-gray-700">
               {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
             </span>
@@ -211,14 +238,14 @@ export default function NotificationsPage() {
             <button
               onClick={() => fetchNotifications(true)}
               disabled={refreshing}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 text-gray-500 hover:text-[#3AB1A0] hover:bg-[#3AB1A0]/10 rounded-full transition-colors"
             >
               <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-[#E06A26] hover:bg-[#E06A26]/10 rounded-lg transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-[#3AB1A0] hover:bg-[#3AB1A0]/10 rounded-lg transition-colors"
               >
                 <CheckCheck className="h-4 w-4" />
                 Mark all read
@@ -229,15 +256,15 @@ export default function NotificationsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-b border-gray-100 px-4 py-2 overflow-x-auto">
+      <div className="bg-white border-b border-gray-100 px-4 py-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <div className="flex gap-2 min-w-max">
           {filters.map(filter => (
             <button
               key={filter.id}
               onClick={() => setActiveFilter(filter.id)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
+              className={`px-5 py-2 text-base font-semibold rounded-full transition-colors ${
                 activeFilter === filter.id
-                  ? 'bg-[#E06A26] text-white'
+                  ? 'bg-[#3AB1A0] text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -251,7 +278,7 @@ export default function NotificationsPage() {
       <div className="p-4">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E06A26]"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3AB1A0]"></div>
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -271,11 +298,11 @@ export default function NotificationsPage() {
               <div
                 key={notification._id}
                 className={`bg-white rounded-xl shadow-sm overflow-hidden transition-all ${
-                  !notification.read ? 'border-l-4 border-[#E06A26]' : ''
+                  !notification.read ? 'border-l-4 border-[#3AB1A0]' : ''
                 }`}
               >
                 <div 
-                  className="p-4 flex gap-3"
+                  className="p-4 flex gap-3 cursor-pointer"
                   onClick={() => {
                     if (!notification.read) {
                       markAsRead([notification._id]);
@@ -286,18 +313,18 @@ export default function NotificationsPage() {
                   }}
                 >
                   {/* Icon */}
-                  <div className={`shrink-0 w-10 h-10 rounded-full ${getNotificationBgColor(notification.type)} flex items-center justify-center`}>
-                    {getNotificationIcon(notification.type)}
+                  <div className="shrink-0 w-10 h-10 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
+                    <Bell className="h-5 w-5 text-[#3AB1A0]" />
                   </div>
                   
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className={`text-sm ${!notification.read ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                      <h3 className={`text-sm ${!notification.read ? 'font-bold text-gray-900' : 'font-semibold text-gray-700'}`}>
                         {notification.title}
                       </h3>
                       {!notification.read && (
-                        <span className="shrink-0 w-2 h-2 rounded-full bg-[#E06A26]"></span>
+                        <span className="shrink-0 w-2 h-2 rounded-full bg-[#3AB1A0]"></span>
                       )}
                     </div>
                     <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
@@ -309,13 +336,8 @@ export default function NotificationsPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="px-4 py-2 bg-gray-50 flex items-center justify-between border-t border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 capitalize px-2 py-0.5 bg-gray-100 rounded-full">
-                      {notification.type}
-                    </span>
-                  </div>
+                {/* Actions - only delete button, no type tag */}
+                <div className="px-4 py-2 bg-gray-50 flex items-center justify-end border-t border-gray-100">
                   <div className="flex items-center gap-1">
                     {!notification.read && (
                       <button
@@ -323,7 +345,7 @@ export default function NotificationsPage() {
                           e.stopPropagation();
                           markAsRead([notification._id]);
                         }}
-                        className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                        className="p-1.5 text-gray-400 hover:text-[#3AB1A0] hover:bg-[#3AB1A0]/10 rounded-full transition-colors"
                         title="Mark as read"
                       >
                         <Check className="h-4 w-4" />

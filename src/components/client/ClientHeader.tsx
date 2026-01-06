@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
 
 interface ClientHeaderProps {
   title?: string;
@@ -35,6 +36,7 @@ interface ClientHeaderProps {
 export default function ClientHeader({ title, showBack, onBack }: ClientHeaderProps) {
   const { data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { counts } = useUnreadCountsSafe();
 
   const user = session?.user;
   const initials = user?.name 
@@ -94,15 +96,19 @@ export default function ClientHeader({ title, showBack, onBack }: ClientHeaderPr
             )}
           </div>
 
-          {/* Right - Actions */}
+            {/* Right - Actions */}
           <div className="flex items-center gap-2">
             {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative h-9 w-9">
-              <Bell className="h-5 w-5 text-gray-600" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
-            </Button>
-
-            {/* Profile Menu */}
+            <Link href="/user/notifications">
+              <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                <Bell className="h-5 w-5 text-gray-600" />
+                {counts.notifications > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 bg-red-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center">
+                    {counts.notifications > 9 ? '9+' : counts.notifications}
+                  </span>
+                )}
+              </Button>
+            </Link>            {/* Profile Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">

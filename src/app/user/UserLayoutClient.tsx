@@ -4,10 +4,12 @@ import { ReactNode, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import BottomNavBar from '@/components/client/BottomNavBar';
 import UserSidebar from '@/components/client/UserSidebar';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
-import { Menu } from 'lucide-react';
+import { Menu, Bell } from 'lucide-react';
+import { UnreadCountProvider, useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
 
 interface UserLayoutClientProps {
   children: ReactNode;
@@ -96,20 +98,51 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   }
 
   return (
+    <UnreadCountProvider>
+      <UserLayoutContent 
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        showLoader={showLoader}
+        isNavigating={isNavigating}
+      >
+        {children}
+      </UserLayoutContent>
+    </UnreadCountProvider>
+  );
+}
+
+// Inner component that uses the UnreadCount context
+function UserLayoutContent({ 
+  children, 
+  sidebarOpen, 
+  setSidebarOpen, 
+  showLoader, 
+  isNavigating 
+}: { 
+  children: ReactNode;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  showLoader: boolean;
+  isNavigating: boolean;
+}) {
+  const { counts } = useUnreadCountsSafe();
+
+  return (
     <div className="relative flex flex-col min-h-screen bg-gray-50">
-      {/* Sidebar overlay for mobile - slow fade */}
+      {/* Sidebar overlay for mobile - smooth fade */}
       <div 
-        className={`fixed inset-0 bg-black z-40 lg:hidden transition-opacity duration-700 ease-out ${
+        className={`fixed inset-0 bg-black z-40 lg:hidden transition-opacity duration-900 ease-in-out ${
           sidebarOpen ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar for desktop - always mounted with slower animation */}
+      {/* Sidebar for desktop - always mounted with smooth graceful animation */}
       <div className={`
         fixed inset-y-0 left-0 z-50 lg:z-30
-        transform transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]
+        transform transition-all duration-900 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        motion-reduce:duration-300 motion-reduce:ease-out
       `}>
         <UserSidebar 
           isOpen={sidebarOpen} 
@@ -137,7 +170,18 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
             />
             <span className="text-lg font-bold text-[#E06A26]">DTPS</span>
           </div>
-          <div className="w-10" /> {/* Spacer for centering */}
+          {/* Bell Notification Icon */}
+          <Link 
+            href="/user/notifications"
+            className="relative p-2 transition-all duration-150 rounded-lg hover:bg-gray-100 active:scale-95"
+          >
+            <Bell className="w-6 h-6 text-gray-600" />
+            {counts.notifications > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+                {counts.notifications > 99 ? '99+' : counts.notifications}
+              </span>
+            )}
+          </Link>
         </div>
 
         {/* Page Content with delayed loader */}
