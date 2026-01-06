@@ -1,6 +1,6 @@
 1<?xml version="1.0" encoding="utf-8"?>
 2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-3    package="first.dtps.com.debug"
+3    package="first.dtps.com"
 4    android:versionCode="1"
 5    android:versionName="1.0.0" >
 6
@@ -78,18 +78,18 @@
 39
 40    <permission
 40-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:22:5-24:47
-41        android:name="first.dtps.com.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+41        android:name="first.dtps.com.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
 41-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:23:9-81
 42        android:protectionLevel="signature" />
 42-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:24:9-44
 43
-44    <uses-permission android:name="first.dtps.com.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+44    <uses-permission android:name="first.dtps.com.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 44-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:26:5-97
 44-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
 45
 46    <application
 46-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:22:5-97:19
-47        android:name="first.dtps.com.DTPSApplication"
+47        android:name="com.dtps.dietary.DTPSApplication"
 47-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:23:9-40
 48        android:allowBackup="true"
 48-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:24:9-35
@@ -113,7 +113,7 @@
 58-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:31:9-45
 59        <activity
 59-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:34:9-61:20
-60            android:name="first.dtps.com.MainActivity"
+60            android:name="com.dtps.dietary.MainActivity"
 60-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:35:13-41
 61            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
 61-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:37:13-87
@@ -186,7 +186,7 @@
 97        <provider
 98            android:name="androidx.core.content.FileProvider"
 98-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:65:13-62
-99            android:authorities="first.dtps.com.debug.fileprovider"
+99            android:authorities="first.dtps.com.fileprovider"
 99-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:66:13-64
 100            android:exported="false"
 100-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:67:13-37
@@ -203,7 +203,7 @@
 107        <!-- Firebase Messaging Service -->
 108        <service
 108-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:75:9-81:19
-109            android:name="first.dtps.com.DTPSFirebaseMessagingService"
+109            android:name="com.dtps.dietary.DTPSFirebaseMessagingService"
 109-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:76:13-57
 110            android:exported="false" >
 110-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:77:13-37
@@ -243,7 +243,7 @@
 131-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
 132            android:name="androidx.startup.InitializationProvider"
 132-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:25:13-67
-133            android:authorities="first.dtps.com.debug.androidx-startup"
+133            android:authorities="first.dtps.com.androidx-startup"
 133-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:26:13-68
 134            android:exported="false" >
 134-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:27:13-37
@@ -390,7 +390,7 @@
 211-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:23:9-28:39
 212            android:name="com.google.firebase.provider.FirebaseInitProvider"
 212-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:24:13-77
-213            android:authorities="first.dtps.com.debug.firebaseinitprovider"
+213            android:authorities="first.dtps.com.firebaseinitprovider"
 213-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:25:13-72
 214            android:directBootAware="true"
 214-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:26:13-43

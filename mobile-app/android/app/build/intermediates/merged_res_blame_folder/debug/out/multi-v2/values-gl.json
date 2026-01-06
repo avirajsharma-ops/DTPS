@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "first.dtps.com.app-mergeDebugResources-39:/values-gl/values-gl.xml",
+            "outputFile": "com.dtps.dietary.app-mergeDebugResources-39:/values-gl/values-gl.xml",
             "map": [
                 {
                     "source": "/Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/res/values-gl/values.xml",

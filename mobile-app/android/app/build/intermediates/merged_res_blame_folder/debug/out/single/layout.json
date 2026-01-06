@@ -1,6 +1,6 @@
 [
     {
-        "merged": "first.dtps.com.app-mergeDebugResources-40:/layout/activity_main.xml",
-        "source": "first.dtps.com.app-main-43:/layout/activity_main.xml"
+        "merged": "com.dtps.dietary.app-mergeDebugResources-40:/layout/activity_main.xml",
+        "source": "com.dtps.dietary.app-main-43:/layout/activity_main.xml"
     }
 ]

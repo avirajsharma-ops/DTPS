@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "first.dtps.com.app-mergeDebugResources-39:/values-nb/values-nb.xml",
+            "outputFile": "com.dtps.dietary.app-mergeDebugResources-39:/values-nb/values-nb.xml",
             "map": [
                 {
                     "source": "/Users/lokeshdhote/.gradle/caches/transforms-3/f4f0a3d0e0128a3fac2256c5355c795a/transformed/material-1.11.0/res/values-nb/values-nb.xml",

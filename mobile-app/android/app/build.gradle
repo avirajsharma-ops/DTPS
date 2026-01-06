@@ -9,7 +9,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.dtps.dietary"
+        applicationId "first.dtps.com"
         minSdk 24
         targetSdk 34
         versionCode 1
@@ -37,7 +37,6 @@ android {
             }
         }
         debug {
-            applicationIdSuffix ".debug"
             debuggable true
         }
     }

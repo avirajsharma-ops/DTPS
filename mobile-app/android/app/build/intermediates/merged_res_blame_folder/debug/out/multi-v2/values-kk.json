@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "first.dtps.com.app-mergeDebugResources-39:/values-kk/values-kk.xml",
+            "outputFile": "com.dtps.dietary.app-mergeDebugResources-39:/values-kk/values-kk.xml",
             "map": [
                 {
                     "source": "/Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/res/values-kk/values-kk.xml",

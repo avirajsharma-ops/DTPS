@@ -1,0 +1,522 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="first.dtps.com"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="34" />
+10
+11    <!-- Permissions -->
+12    <uses-permission android:name="android.permission.INTERNET" />
+12-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:6:5-67
+12-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:6:22-64
+13    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+13-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:7:5-79
+13-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:7:22-76
+14    <uses-permission android:name="android.permission.CAMERA" />
+14-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:8:5-65
+14-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:8:22-62
+15    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+15-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:9:5-71
+15-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:9:22-68
+16    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+16-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:10:5-80
+16-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:10:22-77
+17    <uses-permission android:name="android.permission.VIBRATE" />
+17-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:11:5-66
+17-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:11:22-63
+18    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+18-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:12:5-77
+18-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:12:22-74
+19    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+19-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:13:5-76
+19-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:13:22-73
+20    <uses-permission android:name="android.permission.WAKE_LOCK" />
+20-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:14:5-68
+20-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:14:22-65
+21    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+21-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:15:5-81
+21-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:15:22-78
+22
+23    <!-- Features -->
+24    <uses-feature
+24-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:18:5-85
+25        android:name="android.hardware.camera"
+25-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:18:19-57
+26        android:required="false" />
+26-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:18:58-82
+27    <uses-feature
+27-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:19:5-95
+28        android:name="android.hardware.camera.autofocus"
+28-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:19:19-67
+29        android:required="false" />
+29-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:19:68-92
+30    <uses-feature
+30-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:20:5-89
+31        android:name="android.hardware.microphone"
+31-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:20:19-61
+32        android:required="false" />
+32-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:20:62-86
+33    <!-- Required by older versions of Google Play services to create IID tokens -->
+34    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+34-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:26:5-82
+34-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:26:22-79
+35    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+35-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:25:5-79
+35-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:25:22-76
+36    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" />
+36-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:26:5-88
+36-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:26:22-85
+37    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" />
+37-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:27:5-82
+37-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:27:22-79
+38    <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" />
+38-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:26:5-110
+38-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:26:22-107
+39
+40    <permission
+40-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:22:5-24:47
+41        android:name="first.dtps.com.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+41-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:23:9-81
+42        android:protectionLevel="signature" />
+42-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:24:9-44
+43
+44    <uses-permission android:name="first.dtps.com.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+44-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:26:5-97
+44-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
+45
+46    <application
+46-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:22:5-97:19
+47        android:name="com.dtps.dietary.DTPSApplication"
+47-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:23:9-40
+48        android:allowBackup="true"
+48-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:24:9-35
+49        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+49-->[androidx.core:core:1.12.0] /Users/lokeshdhote/.gradle/caches/transforms-3/5e4ab193fa9e110b29f55a904a95b567/transformed/core-1.12.0/AndroidManifest.xml:28:18-86
+50        android:extractNativeLibs="false"
+51        android:icon="@mipmap/ic_launcher"
+51-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:25:9-43
+52        android:label="@string/app_name"
+52-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:27:9-41
+53        android:networkSecurityConfig="@xml/network_security_config"
+53-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:30:9-69
+54        android:roundIcon="@mipmap/ic_launcher_round"
+54-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:26:9-54
+55        android:supportsRtl="true"
+55-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:28:9-35
+56        android:theme="@style/Theme.DTPS"
+56-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:29:9-42
+57        android:usesCleartextTraffic="false" >
+57-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:31:9-45
+58        <activity
+58-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:34:9-61:20
+59            android:name="com.dtps.dietary.MainActivity"
+59-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:35:13-41
+60            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+60-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:37:13-87
+61            android:exported="true"
+61-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:36:13-36
+62            android:launchMode="singleTask"
+62-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:38:13-44
+63            android:theme="@style/Theme.DTPS.Splash"
+63-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:40:13-53
+64            android:windowSoftInputMode="adjustResize" >
+64-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:39:13-55
+65            <intent-filter>
+65-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:42:13-45:29
+66                <action android:name="android.intent.action.MAIN" />
+66-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:43:17-69
+66-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:43:25-66
+67
+68                <category android:name="android.intent.category.LAUNCHER" />
+68-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:44:17-77
+68-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:44:27-74
+69            </intent-filter>
+70
+71            <!-- Deep linking -->
+72            <intent-filter android:autoVerify="true" >
+72-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:48:13-53:29
+72-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:48:28-53
+73                <action android:name="android.intent.action.VIEW" />
+73-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:49:17-69
+73-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:49:25-66
+74
+75                <category android:name="android.intent.category.DEFAULT" />
+75-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:50:17-76
+75-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:50:27-73
+76                <category android:name="android.intent.category.BROWSABLE" />
+76-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:51:17-78
+76-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:51:27-75
+77
+78                <data
+78-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:17-100
+79                    android:host="dtps.tech"
+79-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:46-70
+80                    android:pathPrefix="/user"
+80-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:71-97
+81                    android:scheme="https" />
+81-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:23-45
+82            </intent-filter>
+83            <intent-filter>
+83-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:55:13-60:29
+84                <action android:name="android.intent.action.VIEW" />
+84-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:49:17-69
+84-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:49:25-66
+85
+86                <category android:name="android.intent.category.DEFAULT" />
+86-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:50:17-76
+86-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:50:27-73
+87                <category android:name="android.intent.category.BROWSABLE" />
+87-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:51:17-78
+87-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:51:27-75
+88
+89                <data
+89-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:17-100
+90                    android:host="user"
+90-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:46-70
+91                    android:scheme="dtps" />
+91-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:52:23-45
+92            </intent-filter>
+93        </activity>
+94
+95        <!-- FileProvider for camera photos -->
+96        <provider
+97            android:name="androidx.core.content.FileProvider"
+97-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:65:13-62
+98            android:authorities="first.dtps.com.fileprovider"
+98-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:66:13-64
+99            android:exported="false"
+99-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:67:13-37
+100            android:grantUriPermissions="true" >
+100-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:68:13-47
+101            <meta-data
+101-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:69:13-71:54
+102                android:name="android.support.FILE_PROVIDER_PATHS"
+102-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:70:17-67
+103                android:resource="@xml/file_paths" />
+103-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:71:17-51
+104        </provider>
+105
+106        <!-- Firebase Messaging Service -->
+107        <service
+107-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:75:9-81:19
+108            android:name="com.dtps.dietary.DTPSFirebaseMessagingService"
+108-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:76:13-57
+109            android:exported="false" >
+109-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:77:13-37
+110            <intent-filter>
+110-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:78:13-80:29
+111                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+111-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:79:17-78
+111-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:79:25-75
+112            </intent-filter>
+113        </service>
+114
+115        <!-- Default notification channel -->
+116        <meta-data
+116-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:84:9-86:50
+117            android:name="com.google.firebase.messaging.default_notification_channel_id"
+117-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:85:13-89
+118            android:value="dtps_notifications" />
+118-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:86:13-47
+119
+120        <!-- Default notification icon -->
+121        <meta-data
+121-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:89:9-91:60
+122            android:name="com.google.firebase.messaging.default_notification_icon"
+122-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:90:13-83
+123            android:resource="@drawable/ic_notification" />
+123-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:91:13-57
+124
+125        <!-- Default notification color -->
+126        <meta-data
+126-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:94:9-96:60
+127            android:name="com.google.firebase.messaging.default_notification_color"
+127-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:95:13-84
+128            android:resource="@color/notification_color" />
+128-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:96:13-57
+129
+130        <provider
+130-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
+131            android:name="androidx.startup.InitializationProvider"
+131-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:25:13-67
+132            android:authorities="first.dtps.com.androidx-startup"
+132-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:26:13-68
+133            android:exported="false" >
+133-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:27:13-37
+134            <meta-data
+134-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
+135                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+135-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:30:17-75
+136                android:value="androidx.startup" />
+136-->[androidx.emoji2:emoji2:1.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/3b773a6be9f0d5578395f878a2fe9947/transformed/emoji2-1.2.0/AndroidManifest.xml:31:17-49
+137            <meta-data
+137-->[androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:29:13-31:52
+138                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+138-->[androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:30:17-78
+139                android:value="androidx.startup" />
+139-->[androidx.lifecycle:lifecycle-process:2.6.1] /Users/lokeshdhote/.gradle/caches/transforms-3/afb1170ee4ca0522a10e2945107974fe/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:31:17-49
+140            <meta-data
+140-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:29:13-31:52
+141                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+141-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:30:17-85
+142                android:value="androidx.startup" />
+142-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:31:17-49
+143        </provider>
+144
+145        <service
+145-->[com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:8:9-14:19
+146            android:name="com.google.firebase.components.ComponentDiscoveryService"
+146-->[com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:9:13-84
+147            android:directBootAware="true"
+147-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:32:13-43
+148            android:exported="false" >
+148-->[com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:10:13-37
+149            <meta-data
+149-->[com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:11:13-13:85
+150                android:name="com.google.firebase.components:com.google.firebase.analytics.ktx.FirebaseAnalyticsLegacyRegistrar"
+150-->[com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:12:17-129
+151                android:value="com.google.firebase.components.ComponentRegistrar" />
+151-->[com.google.firebase:firebase-analytics-ktx:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/e185b4ac209d7acee203e586a3ea40b0/transformed/firebase-analytics-ktx-21.5.0/AndroidManifest.xml:13:17-82
+152            <meta-data
+152-->[com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:26:13-28:85
+153                android:name="com.google.firebase.components:com.google.firebase.messaging.ktx.FirebaseMessagingLegacyRegistrar"
+153-->[com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:27:17-129
+154                android:value="com.google.firebase.components.ComponentRegistrar" />
+154-->[com.google.firebase:firebase-messaging-ktx:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/afb39bde40fb8abf578f643a52d208b9/transformed/firebase-messaging-ktx-23.4.0/AndroidManifest.xml:28:17-82
+155            <meta-data
+155-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:57:13-59:85
+156                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingKtxRegistrar"
+156-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:58:17-122
+157                android:value="com.google.firebase.components.ComponentRegistrar" />
+157-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:59:17-82
+158            <meta-data
+158-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:60:13-62:85
+159                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingRegistrar"
+159-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:61:17-119
+160                android:value="com.google.firebase.components.ComponentRegistrar" />
+160-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:62:17-82
+161            <meta-data
+161-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:37:13-39:85
+162                android:name="com.google.firebase.components:com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar"
+162-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:38:17-139
+163                android:value="com.google.firebase.components.ComponentRegistrar" />
+163-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:39:17-82
+164            <meta-data
+164-->[com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:15:13-17:85
+165                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsKtxRegistrar"
+165-->[com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:16:17-130
+166                android:value="com.google.firebase.components.ComponentRegistrar" />
+166-->[com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:17:17-82
+167            <meta-data
+167-->[com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:18:13-20:85
+168                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
+168-->[com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:19:17-127
+169                android:value="com.google.firebase.components.ComponentRegistrar" />
+169-->[com.google.firebase:firebase-installations:17.2.0] /Users/lokeshdhote/.gradle/caches/transforms-3/c939663e4d3188a409dffbbf503cd4bc/transformed/firebase-installations-17.2.0/AndroidManifest.xml:20:17-82
+170            <meta-data
+170-->[com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:12:13-14:85
+171                android:name="com.google.firebase.components:com.google.firebase.ktx.FirebaseCommonLegacyRegistrar"
+171-->[com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:13:17-116
+172                android:value="com.google.firebase.components.ComponentRegistrar" />
+172-->[com.google.firebase:firebase-common-ktx:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/3d0d4c137fd43914a72a88b950c1bfee/transformed/firebase-common-ktx-20.4.2/AndroidManifest.xml:14:17-82
+173            <meta-data
+173-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:35:13-37:85
+174                android:name="com.google.firebase.components:com.google.firebase.FirebaseCommonKtxRegistrar"
+174-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:36:17-109
+175                android:value="com.google.firebase.components.ComponentRegistrar" />
+175-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:37:17-82
+176            <meta-data
+176-->[com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:27:13-29:85
+177                android:name="com.google.firebase.components:com.google.firebase.datatransport.TransportRegistrar"
+177-->[com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:28:17-115
+178                android:value="com.google.firebase.components.ComponentRegistrar" />
+178-->[com.google.firebase:firebase-datatransport:18.1.7] /Users/lokeshdhote/.gradle/caches/transforms-3/46f8522f4479de981ad61b72c6f28f39/transformed/firebase-datatransport-18.1.7/AndroidManifest.xml:29:17-82
+179        </service>
+180
+181        <receiver
+181-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:29:9-40:20
+182            android:name="com.google.firebase.iid.FirebaseInstanceIdReceiver"
+182-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:30:13-78
+183            android:exported="true"
+183-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:31:13-36
+184            android:permission="com.google.android.c2dm.permission.SEND" >
+184-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:32:13-73
+185            <intent-filter>
+185-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:33:13-35:29
+186                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+186-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:34:17-81
+186-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:34:25-78
+187            </intent-filter>
+188
+189            <meta-data
+189-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:37:13-39:40
+190                android:name="com.google.android.gms.cloudmessaging.FINISHED_AFTER_HANDLED"
+190-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:38:17-92
+191                android:value="true" />
+191-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:39:17-37
+192        </receiver>
+193        <!--
+194             FirebaseMessagingService performs security checks at runtime,
+195             but set to not exported to explicitly avoid allowing another app to call it.
+196        -->
+197        <service
+197-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:46:9-53:19
+198            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+198-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:47:13-82
+199            android:directBootAware="true"
+199-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:48:13-43
+200            android:exported="false" >
+200-->[com.google.firebase:firebase-messaging:23.4.0] /Users/lokeshdhote/.gradle/caches/transforms-3/924339ec58e3b4f106e90c3891a63147/transformed/firebase-messaging-23.4.0/AndroidManifest.xml:49:13-37
+201            <intent-filter android:priority="-500" >
+201-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:78:13-80:29
+202                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+202-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:79:17-78
+202-->/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:79:25-75
+203            </intent-filter>
+204        </service>
+205
+206        <property
+206-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:30:9-32:61
+207            android:name="android.adservices.AD_SERVICES_CONFIG"
+207-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:31:13-65
+208            android:resource="@xml/ga_ad_services_config" />
+208-->[com.google.android.gms:play-services-measurement-api:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/12bf288b0ad245601b593dd07685cee4/transformed/play-services-measurement-api-21.5.0/AndroidManifest.xml:32:13-58
+209
+210        <provider
+210-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:23:9-28:39
+211            android:name="com.google.firebase.provider.FirebaseInitProvider"
+211-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:24:13-77
+212            android:authorities="first.dtps.com.firebaseinitprovider"
+212-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:25:13-72
+213            android:directBootAware="true"
+213-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:26:13-43
+214            android:exported="false"
+214-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:27:13-37
+215            android:initOrder="100" />
+215-->[com.google.firebase:firebase-common:20.4.2] /Users/lokeshdhote/.gradle/caches/transforms-3/b03b680c31a80bd979112c9533e03264/transformed/firebase-common-20.4.2/AndroidManifest.xml:28:13-36
+216
+217        <receiver
+217-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:29:9-33:20
+218            android:name="com.google.android.gms.measurement.AppMeasurementReceiver"
+218-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:30:13-85
+219            android:enabled="true"
+219-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:31:13-35
+220            android:exported="false" >
+220-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:32:13-37
+221        </receiver>
+222
+223        <service
+223-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:35:9-38:40
+224            android:name="com.google.android.gms.measurement.AppMeasurementService"
+224-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:36:13-84
+225            android:enabled="true"
+225-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:37:13-35
+226            android:exported="false" />
+226-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:38:13-37
+227        <service
+227-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:39:9-43:72
+228            android:name="com.google.android.gms.measurement.AppMeasurementJobService"
+228-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:40:13-87
+229            android:enabled="true"
+229-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:41:13-35
+230            android:exported="false"
+230-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:42:13-37
+231            android:permission="android.permission.BIND_JOB_SERVICE" />
+231-->[com.google.android.gms:play-services-measurement:21.5.0] /Users/lokeshdhote/.gradle/caches/transforms-3/d50a54e44fff573545a1d25f59639ce4/transformed/play-services-measurement-21.5.0/AndroidManifest.xml:43:13-69
+232
+233        <activity
+233-->[com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:20:9-22:45
+234            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+234-->[com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:20:19-85
+235            android:exported="false"
+235-->[com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:22:19-43
+236            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+236-->[com.google.android.gms:play-services-base:18.0.1] /Users/lokeshdhote/.gradle/caches/transforms-3/d00e45206a589c5c66582e4ac2b71979/transformed/play-services-base-18.0.1/AndroidManifest.xml:21:19-78
+237
+238        <uses-library
+238-->[androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:23:9-25:40
+239            android:name="android.ext.adservices"
+239-->[androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:24:13-50
+240            android:required="false" />
+240-->[androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] /Users/lokeshdhote/.gradle/caches/transforms-3/26aecd24b1b01fed9fd91ecd125df620/transformed/ads-adservices-1.0.0-beta05/AndroidManifest.xml:25:13-37
+241
+242        <meta-data
+242-->[com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:21:9-23:69
+243            android:name="com.google.android.gms.version"
+243-->[com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:22:13-58
+244            android:value="@integer/google_play_services_version" />
+244-->[com.google.android.gms:play-services-basement:18.1.0] /Users/lokeshdhote/.gradle/caches/transforms-3/64eacc659e4cdfd79d4693dc68c1acad/transformed/play-services-basement-18.1.0/AndroidManifest.xml:23:13-66
+245
+246        <receiver
+246-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:34:9-52:20
+247            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+247-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:35:13-76
+248            android:directBootAware="false"
+248-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:36:13-44
+249            android:enabled="true"
+249-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:37:13-35
+250            android:exported="true"
+250-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:38:13-36
+251            android:permission="android.permission.DUMP" >
+251-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:39:13-57
+252            <intent-filter>
+252-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:40:13-42:29
+253                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+253-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:17-91
+253-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:25-88
+254            </intent-filter>
+255            <intent-filter>
+255-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:43:13-45:29
+256                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+256-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:17-85
+256-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:25-82
+257            </intent-filter>
+258            <intent-filter>
+258-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:46:13-48:29
+259                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+259-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:17-88
+259-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:25-85
+260            </intent-filter>
+261            <intent-filter>
+261-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:49:13-51:29
+262                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+262-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:17-95
+262-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/lokeshdhote/.gradle/caches/transforms-3/8500e5b0935e859bc83a2b1eddb1cf14/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:25-92
+263            </intent-filter>
+264        </receiver>
+265
+266        <service
+266-->[com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:28:9-34:19
+267            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+267-->[com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:29:13-103
+268            android:exported="false" >
+268-->[com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:30:13-37
+269            <meta-data
+269-->[com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:31:13-33:39
+270                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+270-->[com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:32:17-94
+271                android:value="cct" />
+271-->[com.google.android.datatransport:transport-backend-cct:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/76115c3da2396a061b1fb5c30d37d1f6/transformed/transport-backend-cct-3.1.8/AndroidManifest.xml:33:17-36
+272        </service>
+273        <service
+273-->[com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:26:9-30:19
+274            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+274-->[com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:27:13-117
+275            android:exported="false"
+275-->[com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:28:13-37
+276            android:permission="android.permission.BIND_JOB_SERVICE" >
+276-->[com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:29:13-69
+277        </service>
+278
+279        <receiver
+279-->[com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:32:9-34:40
+280            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+280-->[com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:33:13-132
+281            android:exported="false" />
+281-->[com.google.android.datatransport:transport-runtime:3.1.8] /Users/lokeshdhote/.gradle/caches/transforms-3/a679edd53c87f70f5c3af1e84d8b8a81/transformed/transport-runtime-3.1.8/AndroidManifest.xml:34:13-37
+282    </application>
+283
+284</manifest>
