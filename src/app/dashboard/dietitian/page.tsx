@@ -329,12 +329,12 @@ export default function DietitianDashboard() {
             <CardContent className="space-y-3">
             
               
-              <Button asChild className="w-full bg-green-600 hover:bg-green-700">
+              {/* <Button asChild className="w-full bg-green-600 hover:bg-green-700">
                 <Link href="/dietician/clients/new">
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Client
                 </Link>
-              </Button>
+              </Button> */}
               <Button asChild variant="outline" className="w-full">
                 <Link href="/dietician/clients">
                   <Users className="h-4 w-4 mr-2" />

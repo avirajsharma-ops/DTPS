@@ -55,21 +55,19 @@ export default function Navbar() {
     }
   };
 
-  const getNavigationItems = (role: UserRole) => {
-    const baseItems = [
+  type NavigationItem = {
+    href: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  };
+
+  const getNavigationItems = (role: UserRole): NavigationItem[] => {
+    const baseItems: NavigationItem[] = [
       { href: getDashboardLink(role), label: 'Dashboard', icon: BarChart3 },
     ];
 
     switch (role) {
-      case UserRole.DIETITIAN:
-      case UserRole.HEALTH_COUNSELOR:
-        return [
-          ...baseItems,
-          { href: '/dietician/clients', label: 'My Clients', icon: Users },
-          { href: '/appointments', label: 'Appointments', icon: Calendar },
-          { href: '/meal-plan-templates', label: 'Diet Plans', icon: Heart },
-          { href: '/messages', label: 'Messages', icon: MessageCircle },
-        ];
+     
       case UserRole.CLIENT:
         return [
           ...baseItems,

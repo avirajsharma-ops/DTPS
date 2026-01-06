@@ -244,11 +244,16 @@ const userSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User'
   }],
-  // Assigned Health Counselor for client
+  // Assigned Health Counselor for client (single - legacy)
   assignedHealthCounselor: {
     type: Schema.Types.ObjectId,
     ref: 'User'
   },
+  // Support for multiple health counselors per client
+  assignedHealthCounselors: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
 
   // Tags for categorizing/organizing clients
   tags: [{
@@ -361,6 +366,19 @@ const userSchema = new Schema({
   passwordResetTokenExpiry: {
     type: Date,
     default: null
+  },
+
+  // Track who created this user (for clients created by dietitian or health counselor)
+  createdBy: {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    role: {
+      type: String,
+      enum: ['self', 'dietitian', 'health_counselor', 'admin', ''],
+      default: ''
+    }
   }
 }, {
   timestamps: true,

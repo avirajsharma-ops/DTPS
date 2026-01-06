@@ -60,9 +60,16 @@ export async function GET(request: NextRequest) {
     console.log('Query:', JSON.stringify(query));
 
     const clients = await User.find(query)
-      .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians status createdAt updatedAt')
+      .select('-password')
       .populate('assignedDietitian', 'firstName lastName email avatar')
       .populate('assignedDietitians', 'firstName lastName email avatar')
+      .populate('assignedHealthCounselor', 'firstName lastName email avatar')
+      .populate('assignedHealthCounselors', 'firstName lastName email avatar')
+      .populate({
+        path: 'createdBy.userId',
+        select: 'firstName lastName role',
+        strictPopulate: false
+      })
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit);

@@ -29,16 +29,21 @@ export async function GET(request: NextRequest) {
     // Build query
     let query: any = { role: UserRole.CLIENT };
 
-    // If dietitian, only show their assigned clients (including from assignedDietitians array)
+    // If dietitian, show their assigned clients AND clients they created
     if (userRole === 'dietitian') {
       query.$or = [
         { assignedDietitian: session.user.id },
-        { assignedDietitians: session.user.id }
+        { assignedDietitians: session.user.id },
+        { 'createdBy.userId': session.user.id, 'createdBy.role': 'dietitian' }
       ];
     }
-    // If health counselor, show their assigned clients
+    // If health counselor, show their assigned clients AND clients they created
     else if (userRole === 'health_counselor') {
-      query.assignedHealthCounselor = session.user.id;
+      query.$or = [
+        { assignedHealthCounselor: session.user.id },
+        { assignedHealthCounselors: session.user.id },
+        { 'createdBy.userId': session.user.id, 'createdBy.role': 'health_counselor' }
+      ];
     }
     // Admin can see all clients (no additional filter needed)
 
@@ -55,8 +60,16 @@ export async function GET(request: NextRequest) {
     }
 
     const clients = await User.find(query)
-      .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian status clientStatus createdAt')
-      .populate('assignedDietitian', 'firstName lastName email')
+      .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors status clientStatus createdAt createdBy')
+      .populate('assignedDietitian', 'firstName lastName email avatar')
+      .populate('assignedDietitians', 'firstName lastName email avatar')
+      .populate('assignedHealthCounselor', 'firstName lastName email avatar')
+      .populate('assignedHealthCounselors', 'firstName lastName email avatar')
+      .populate({
+        path: 'createdBy.userId',
+        select: 'firstName lastName role',
+        strictPopulate: false
+      })
       .sort({ firstName: 1, lastName: 1 })
       .limit(limit)
       .skip((page - 1) * limit);

@@ -6,6 +6,7 @@ import User from '@/lib/db/models/User';
 import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import { UserRole } from '@/types';
 import { logActivity } from '@/lib/utils/activityLogger';
+import { adminSSEManager } from '@/lib/realtime/admin-sse-manager';
 
 // PATCH /api/admin/clients/[clientId]/assign - Assign/Add dietitian to client
 export async function PATCH(
@@ -31,7 +32,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { dietitianId, healthCounselorId, action, mode, dietitianIds } = body;
+    const { dietitianId, healthCounselorId, healthCounselorIds, action, mode, dietitianIds } = body;
     // Support both 'action' and 'mode' for backwards compatibility
     const assignAction = action || mode || 'replace';
     // action/mode: 'replace' (default) - replace primary dietitian
@@ -54,20 +55,53 @@ export async function PATCH(
     if (!client.assignedDietitians) {
       client.assignedDietitians = [];
     }
+    
+    // Initialize assignedHealthCounselors array if it doesn't exist
+    if (!client.assignedHealthCounselors) {
+      client.assignedHealthCounselors = [];
+    }
 
-    // Handle health counselor assignment
-    if (healthCounselorId && healthCounselorId.trim() !== '') {
-      const healthCounselor = await User.findById(healthCounselorId);
-      if (!healthCounselor) {
-        return NextResponse.json({ error: 'Health counselor not found' }, { status: 404 });
+    // Handle multiple health counselors assignment
+    if (healthCounselorIds && Array.isArray(healthCounselorIds)) {
+      // Validate all health counselors
+      for (const hcId of healthCounselorIds) {
+        if (hcId && hcId.trim() !== '') {
+          const hc = await User.findById(hcId);
+          if (!hc) {
+            return NextResponse.json({ error: `Health counselor ${hcId} not found` }, { status: 404 });
+          }
+          if (hc.role !== UserRole.HEALTH_COUNSELOR) {
+            return NextResponse.json({ error: `User ${hcId} is not a health counselor` }, { status: 400 });
+          }
+          // Add to array if not already present
+          if (!client.assignedHealthCounselors.includes(hcId)) {
+            client.assignedHealthCounselors.push(hcId);
+          }
+        }
       }
-      if (healthCounselor.role !== UserRole.HEALTH_COUNSELOR) {
-        return NextResponse.json({ error: 'User is not a health counselor' }, { status: 400 });
+      // Set primary if not set
+      if (!client.assignedHealthCounselor && healthCounselorIds.length > 0) {
+        client.assignedHealthCounselor = healthCounselorIds[0];
       }
-      client.assignedHealthCounselor = healthCounselorId;
-    } else {
-      // Unassign health counselor if empty string or null
-      client.assignedHealthCounselor = null;
+    } else if (healthCounselorId !== undefined) {
+      // Handle single health counselor assignment (legacy)
+      if (healthCounselorId && healthCounselorId.trim() !== '') {
+        const healthCounselor = await User.findById(healthCounselorId);
+        if (!healthCounselor) {
+          return NextResponse.json({ error: 'Health counselor not found' }, { status: 404 });
+        }
+        if (healthCounselor.role !== UserRole.HEALTH_COUNSELOR) {
+          return NextResponse.json({ error: 'User is not a health counselor' }, { status: 400 });
+        }
+        client.assignedHealthCounselor = healthCounselorId;
+        // Also add to array if not already present
+        if (!client.assignedHealthCounselors.includes(healthCounselorId)) {
+          client.assignedHealthCounselors.push(healthCounselorId);
+        }
+      } else {
+        // Unassign health counselor if empty string or null
+        client.assignedHealthCounselor = null;
+      }
     }
 
     // Handle different actions
@@ -177,6 +211,7 @@ export async function PATCH(
     await client.populate('assignedDietitian', 'firstName lastName email avatar');
     await client.populate('assignedDietitians', 'firstName lastName email avatar');
     await client.populate('assignedHealthCounselor', 'firstName lastName email avatar');
+    await client.populate('assignedHealthCounselors', 'firstName lastName email avatar');
 
     const actionMessages: Record<string, string> = {
       'add': 'Dietitian(s) added successfully',
@@ -208,6 +243,36 @@ export async function PATCH(
       targetUserId: clientId,
       targetUserName: `${client.firstName} ${client.lastName}`,
       details: { dietitianId, action: assignAction }
+    });
+
+    // Broadcast real-time update to all admin connections
+    // Recalculate stats for the broadcast
+    const total = await User.countDocuments({ role: UserRole.CLIENT });
+    const assignedCount = await User.countDocuments({ 
+      role: UserRole.CLIENT, 
+      $or: [
+        { assignedDietitian: { $ne: null } },
+        { assignedDietitians: { $exists: true, $not: { $size: 0 } } }
+      ]
+    });
+    const unassignedCount = await User.countDocuments({ 
+      role: UserRole.CLIENT, 
+      assignedDietitian: null,
+      $or: [
+        { assignedDietitians: { $exists: false } },
+        { assignedDietitians: { $size: 0 } }
+      ]
+    });
+
+    adminSSEManager.broadcastClientUpdate('client_updated', {
+      client: client.toObject(),
+      action: assignAction,
+      stats: {
+        total,
+        assigned: assignedCount,
+        unassigned: unassignedCount
+      },
+      timestamp: Date.now()
     });
 
     return NextResponse.json({

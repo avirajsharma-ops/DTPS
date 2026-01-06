@@ -58,6 +58,14 @@ interface Client {
     firstName: string;
     lastName: string;
   };
+  createdBy?: {
+    userId?: {
+      _id: string;
+      firstName?: string;
+      lastName?: string;
+    };
+    role?: 'self' | 'dietitian' | 'health_counselor' | 'admin' | '';
+  };
 }
 
 // Client status colors
@@ -329,6 +337,7 @@ export default function HealthCounselorClientsPage() {
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Name</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Phone</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Email</TableHead>
+                        <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Created By</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Assigned Dietitian</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Tags</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Status</TableHead>
@@ -341,7 +350,7 @@ export default function HealthCounselorClientsPage() {
                     <TableBody>
                       {filteredClients.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={12} className="text-center py-12 text-gray-500">
+                          <TableCell colSpan={13} className="text-center py-12 text-gray-500">
                             No clients found
                           </TableCell>
                         </TableRow>
@@ -375,6 +384,54 @@ export default function HealthCounselorClientsPage() {
                             </TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.phone || '-'}</TableCell>
                             <TableCell className="px-3 max-w-37.5 truncate text-sm">{client.email}</TableCell>
+                            <TableCell className="px-3">
+                              {client.createdBy?.role ? (
+                                <div className="flex flex-col gap-0.5">
+                                  {client.createdBy.role === 'self' ? (
+                                    <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">
+                                      Self Registered
+                                    </Badge>
+                                  ) : client.createdBy.role === 'dietitian' ? (
+                                    <>
+                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                        By Dietitian
+                                      </Badge>
+                                      {client.createdBy.userId && (
+                                        <span className="text-xs text-gray-500">
+                                          {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : client.createdBy.role === 'health_counselor' ? (
+                                    <>
+                                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                                        By Health Counselor
+                                      </Badge>
+                                      {client.createdBy.userId && (
+                                        <span className="text-xs text-gray-500">
+                                          {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : client.createdBy.role === 'admin' ? (
+                                    <>
+                                      <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                                        By Admin
+                                      </Badge>
+                                      {client.createdBy.userId && (
+                                        <span className="text-xs text-gray-500">
+                                          {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">-</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">-</span>
+                              )}
+                            </TableCell>
                             <TableCell className="px-3">
                               {client.assignedDietitian ? (
                                 <div className="flex flex-col gap-1">

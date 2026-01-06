@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -30,18 +30,17 @@ import {
   Eye,
   UserPlus,
   UserMinus,
-  Filter,
   CheckCircle,
   XCircle,
   Calendar,
   ArrowRightLeft,
-  Check
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import Link from 'next/link';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { getClientId, getDietitianId } from '@/lib/utils';
+import { getClientId } from '@/lib/utils';
 
 interface Client {
   _id: string;
@@ -82,6 +81,23 @@ interface Client {
     email: string;
     avatar?: string;
   };
+  assignedHealthCounselors?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+  }[];
+  createdBy?: {
+    userId?: {
+      _id: string;
+      firstName?: string;
+      lastName?: string;
+      role?: string;
+    };
+    role?: 'self' | 'dietitian' | 'health_counselor' | 'admin' | '';
+    createdAt?: string;
+  };
 }
 
 interface Dietitian {
@@ -108,7 +124,7 @@ interface HealthCounselor {
 }
 
 export default function AdminAllClientsPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [clients, setClients] = useState<Client[]>([]);
   const [dietitians, setDietitians] = useState<Dietitian[]>([]);
   const [healthCounselors, setHealthCounselors] = useState<HealthCounselor[]>([]);
@@ -117,6 +133,10 @@ export default function AdminAllClientsPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterAssigned, setFilterAssigned] = useState('all');
   const [stats, setStats] = useState({ total: 0, assigned: 0, unassigned: 0 });
+  const [isSSEConnected, setIsSSEConnected] = useState(false);
+  
+  // SSE connection ref
+  const eventSourceRef = useRef<EventSource | null>(null);
   
   // Assignment dialog state
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -138,14 +158,127 @@ export default function AdminAllClientsPage() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailClient, setDetailClient] = useState<Client | null>(null);
 
+  // SSE connection for real-time updates
+  const connectSSE = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
+    const eventSource = new EventSource('/api/admin/clients/sse');
+    eventSourceRef.current = eventSource;
+
+    eventSource.onopen = () => {
+      console.log('Admin SSE connected');
+      setIsSSEConnected(true);
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('Admin SSE error:', error);
+      setIsSSEConnected(false);
+      // EventSource will auto-reconnect
+    };
+
+    // Handle initial data
+    eventSource.addEventListener('initial_data', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setClients(data.clients || []);
+        setStats(data.stats || { total: 0, assigned: 0, unassigned: 0 });
+        setLoading(false);
+      } catch (error) {
+        console.error('Error parsing initial data:', error);
+      }
+    });
+
+    // Handle client updates
+    eventSource.addEventListener('client_updated', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        const updatedClient = data.client;
+        
+        // Update the client in the list
+        setClients(prevClients =>
+          prevClients.map(c =>
+            c._id === updatedClient._id ? updatedClient : c
+          )
+        );
+        
+        // Update stats
+        if (data.stats) {
+          setStats(data.stats);
+        }
+        
+        // Show toast notification for the update
+        toast.success(`Client ${updatedClient.firstName} ${updatedClient.lastName} updated`);
+      } catch (error) {
+        console.error('Error parsing client update:', error);
+      }
+    });
+
+    // Handle new client added
+    eventSource.addEventListener('client_added', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        const newClient = data.client;
+        
+        // Add new client to the top of the list
+        setClients(prevClients => [newClient, ...prevClients]);
+        
+        // Update stats
+        if (data.stats) {
+          setStats(data.stats);
+        }
+        
+        toast.success(`New client ${newClient.firstName} ${newClient.lastName} added`);
+      } catch (error) {
+        console.error('Error parsing new client:', error);
+      }
+    });
+
+    // Handle client deleted
+    eventSource.addEventListener('client_deleted', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        const clientId = data.clientId;
+        
+        // Remove client from the list
+        setClients(prevClients => prevClients.filter(c => c._id !== clientId));
+        
+        // Update stats
+        if (data.stats) {
+          setStats(data.stats);
+        }
+      } catch (error) {
+        console.error('Error parsing client deletion:', error);
+      }
+    });
+
+    // Handle heartbeat (just to keep connection alive)
+    eventSource.addEventListener('heartbeat', () => {
+      // Connection is alive
+    });
+
+    return eventSource;
+  }, []);
+
   useEffect(() => {
     if (status === 'authenticated') {
-      fetchClients();
+      // Connect to SSE for real-time updates
+      const eventSource = connectSSE();
+      
+      // Also fetch dietitians and health counselors (these don't need real-time)
       fetchDietitians();
       fetchHealthCounselors();
-    }
-  }, [filterStatus, filterAssigned, status]);
 
+      return () => {
+        if (eventSource) {
+          eventSource.close();
+        }
+      };
+    }
+  }, [status, connectSSE]);
+
+  // Fetch clients with filters (for when filters change)
   const fetchClients = async () => {
     try {
       setLoading(true);
@@ -166,6 +299,14 @@ export default function AdminAllClientsPage() {
       setLoading(false);
     }
   };
+
+  // Re-fetch when filters change
+  useEffect(() => {
+    if (status === 'authenticated' && (filterStatus !== 'all' || filterAssigned !== 'all')) {
+      fetchClients();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus, filterAssigned, status]);
 
   const fetchDietitians = async () => {
     try {
@@ -230,7 +371,7 @@ export default function AdminAllClientsPage() {
         console.log('Assignment response:', data);
         toast.success(data.message);
         
-        // Update the client in the list
+        // Update the client in the list immediately (SSE will also update, but this is faster for UX)
         setClients(prevClients =>
           prevClients.map(c =>
             c._id === selectedClient._id ? data.client : c
@@ -238,7 +379,7 @@ export default function AdminAllClientsPage() {
         );
         
         setAssignDialogOpen(false);
-        fetchClients(); // Refresh to update stats
+        // No need to call fetchClients - SSE will broadcast the update with stats
       } else {
         const error = await response.json();
         console.error('Assignment error:', error);
@@ -388,7 +529,7 @@ export default function AdminAllClientsPage() {
       setTransferDialogOpen(false);
       setSelectedClients([]);
       setTransferDietitianId('');
-      fetchClients();
+      // No need to call fetchClients - SSE will broadcast the updates
     } catch (error) {
       console.error('Error transferring clients:', error);
       toast.error('Failed to transfer clients');
@@ -423,7 +564,7 @@ export default function AdminAllClientsPage() {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return 'N/A';
       return format(date, 'MMM d, yyyy');
-    } catch (error) {
+    } catch {
       return 'N/A';
     }
   };
@@ -439,7 +580,7 @@ export default function AdminAllClientsPage() {
         age--;
       }
       return age;
-    } catch (error) {
+    } catch {
       return null;
     }
   };
@@ -450,7 +591,27 @@ export default function AdminAllClientsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Clients</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Clients</h1>
+              {/* Real-time connection indicator */}
+              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
+                isSSEConnected 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-red-100 text-red-700'
+              }`}>
+                {isSSEConnected ? (
+                  <>
+                    <Wifi className="h-3 w-3" />
+                    <span className="hidden sm:inline">Live</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="h-3 w-3" />
+                    <span className="hidden sm:inline">Reconnecting...</span>
+                  </>
+                )}
+              </div>
+            </div>
             <p className="text-gray-600 mt-1">
               Manage and assign clients to dietitians
             </p>
@@ -600,6 +761,9 @@ export default function AdminAllClientsPage() {
                       <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
+                      <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created By
+                      </th>
                       <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Joined
                       </th>
@@ -666,59 +830,151 @@ export default function AdminAllClientsPage() {
                           )}
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          {(client.assignedDietitians && client.assignedDietitians.length > 0) ? (
-                            <div className="space-y-2">
-                              {client.assignedDietitians.map((dietitian) => (
-                                <div key={dietitian._id} className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
-                                  <Avatar className="h-6 w-6">
-                                    <AvatarImage src={dietitian.avatar} />
-                                    <AvatarFallback className="bg-green-100 text-green-800 text-xs">
-                                      {dietitian.firstName?.[0]}{dietitian.lastName?.[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="hidden sm:block">
-                                    <div className="text-xs font-medium text-gray-900">
-                                      {dietitian.firstName} {dietitian.lastName}
+                          {(() => {
+                            // Combine assignedDietitian (singular) and assignedDietitians (array)
+                            const allDietitians: { _id: string; firstName: string; lastName: string; email: string; avatar?: string }[] = [];
+                            if (client.assignedDietitian) {
+                              allDietitians.push(client.assignedDietitian);
+                            }
+                            if (client.assignedDietitians && client.assignedDietitians.length > 0) {
+                              client.assignedDietitians.forEach(d => {
+                                // Avoid duplicates
+                                if (!allDietitians.find(existing => existing._id === d._id)) {
+                                  allDietitians.push(d);
+                                }
+                              });
+                            }
+                            
+                            if (allDietitians.length > 0) {
+                              return (
+                                <div className="space-y-1">
+                                  {allDietitians.map((dietitian) => (
+                                    <div key={dietitian._id} className="flex items-center gap-2 p-1.5 bg-green-50 rounded border border-green-200">
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarImage src={dietitian.avatar} />
+                                        <AvatarFallback className="bg-green-100 text-green-800 text-xs">
+                                          {dietitian.firstName?.[0]}{dietitian.lastName?.[0]}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="hidden sm:block min-w-0">
+                                        <div className="text-xs font-medium text-gray-900 truncate">
+                                          {dietitian.firstName} {dietitian.lastName}
+                                        </div>
+                                        <div className="text-xs text-gray-500 truncate">{dietitian.email}</div>
+                                      </div>
                                     </div>
-                                    <div className="text-xs text-gray-500">{dietitian.email}</div>
-                                  </div>
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
-                              <UserMinus className="h-3 w-3 mr-1" />
-                              <span className="hidden sm:inline">Unassigned</span>
-                            </Badge>
-                          )}
+                              );
+                            } else {
+                              return (
+                                <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
+                                  <UserMinus className="h-3 w-3 mr-1" />
+                                  <span className="hidden sm:inline">Unassigned</span>
+                                </Badge>
+                              );
+                            }
+                          })()}
                         </td>
                         <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
-                          {client.assignedHealthCounselor ? (
-                            <div className="flex items-center gap-2 p-2 bg-purple-50 rounded border border-purple-200">
-                              <Avatar className="h-6 w-6">
-                                <AvatarImage src={client.assignedHealthCounselor.avatar} />
-                                <AvatarFallback className="bg-purple-100 text-purple-800 text-xs">
-                                  {client.assignedHealthCounselor.firstName?.[0]}{client.assignedHealthCounselor.lastName?.[0]}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="text-xs font-medium text-gray-900">
-                                  {client.assignedHealthCounselor.firstName} {client.assignedHealthCounselor.lastName}
+                          {(() => {
+                            // Combine assignedHealthCounselor (singular) and assignedHealthCounselors (array)
+                            const allHealthCounselors: { _id: string; firstName: string; lastName: string; email: string; avatar?: string }[] = [];
+                            if (client.assignedHealthCounselor) {
+                              allHealthCounselors.push(client.assignedHealthCounselor);
+                            }
+                            if (client.assignedHealthCounselors && client.assignedHealthCounselors.length > 0) {
+                              client.assignedHealthCounselors.forEach(hc => {
+                                // Avoid duplicates
+                                if (!allHealthCounselors.find(existing => existing._id === hc._id)) {
+                                  allHealthCounselors.push(hc);
+                                }
+                              });
+                            }
+                            
+                            if (allHealthCounselors.length > 0) {
+                              return (
+                                <div className="space-y-1">
+                                  {allHealthCounselors.map((hc) => (
+                                    <div key={hc._id} className="flex items-center gap-2 p-1.5 bg-purple-50 rounded border border-purple-200">
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarImage src={hc.avatar} />
+                                        <AvatarFallback className="bg-purple-100 text-purple-800 text-xs">
+                                          {hc.firstName?.[0]}{hc.lastName?.[0]}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-medium text-gray-900 truncate">
+                                          {hc.firstName} {hc.lastName}
+                                        </div>
+                                        <div className="text-xs text-gray-500 truncate">{hc.email}</div>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                                <div className="text-xs text-gray-500">{client.assignedHealthCounselor.email}</div>
-                              </div>
-                            </div>
-                          ) : (
-                            <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">
-                              <UserMinus className="h-3 w-3 mr-1" />
-                              <span>Not Assigned</span>
-                            </Badge>
-                          )}
+                              );
+                            } else {
+                              return (
+                                <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">
+                                  <UserMinus className="h-3 w-3 mr-1" />
+                                  <span>Not Assigned</span>
+                                </Badge>
+                              );
+                            }
+                          })()}
                         </td>
                         <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                           <Badge className={getStatusColor(client.status)}>
                             {client.status}
                           </Badge>
+                        </td>
+                        <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
+                          {client.createdBy?.role ? (
+                            <div className="flex flex-col gap-0.5">
+                              {client.createdBy.role === 'self' ? (
+                                <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">
+                                  Self Registered
+                                </Badge>
+                              ) : client.createdBy.role === 'dietitian' ? (
+                                <>
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                    By Dietitian
+                                  </Badge>
+                                  {client.createdBy.userId && (
+                                    <span className="text-xs text-gray-500">
+                                      {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                    </span>
+                                  )}
+                                </>
+                              ) : client.createdBy.role === 'health_counselor' ? (
+                                <>
+                                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                                    By Health Counselor
+                                  </Badge>
+                                  {client.createdBy.userId && (
+                                    <span className="text-xs text-gray-500">
+                                      {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                    </span>
+                                  )}
+                                </>
+                              ) : client.createdBy.role === 'admin' ? (
+                                <>
+                                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                                    By Admin
+                                  </Badge>
+                                  {client.createdBy.userId && (
+                                    <span className="text-xs text-gray-500">
+                                      {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-xs text-gray-400">-</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <div className="flex items-center">
@@ -1267,50 +1523,86 @@ export default function AdminAllClientsPage() {
                   <h3 className="font-semibold text-gray-900 border-b pb-2">Assigned Professionals</h3>
                   <div className="space-y-3">
                     {/* Dietitians */}
-                    {detailClient.assignedDietitians && detailClient.assignedDietitians.length > 0 ? (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Dietitians</p>
-                        <div className="space-y-2">
-                          {detailClient.assignedDietitians.map((dietitian) => (
-                            <div key={dietitian._id} className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={dietitian.avatar} />
-                                <AvatarFallback className="bg-green-200 text-green-800 text-xs">
-                                  {dietitian.firstName?.[0]}{dietitian.lastName?.[0]}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{dietitian.firstName} {dietitian.lastName}</p>
-                                <p className="text-xs text-gray-500">{dietitian.email}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">No dietitian assigned</p>
-                    )}
-
-                    {/* Health Counselor */}
-                    {detailClient.assignedHealthCounselor ? (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Health Counselor</p>
-                        <div className="flex items-center gap-2 p-2 bg-purple-50 rounded border border-purple-200">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={detailClient.assignedHealthCounselor.avatar} />
-                            <AvatarFallback className="bg-purple-200 text-purple-800 text-xs">
-                              {detailClient.assignedHealthCounselor.firstName?.[0]}{detailClient.assignedHealthCounselor.lastName?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
+                    {(() => {
+                      const allDietitians: { _id: string; firstName: string; lastName: string; email: string; avatar?: string }[] = [];
+                      if (detailClient.assignedDietitian) {
+                        allDietitians.push(detailClient.assignedDietitian);
+                      }
+                      if (detailClient.assignedDietitians && detailClient.assignedDietitians.length > 0) {
+                        detailClient.assignedDietitians.forEach(d => {
+                          if (!allDietitians.find(existing => existing._id === d._id)) {
+                            allDietitians.push(d);
+                          }
+                        });
+                      }
+                      
+                      if (allDietitians.length > 0) {
+                        return (
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{detailClient.assignedHealthCounselor.firstName} {detailClient.assignedHealthCounselor.lastName}</p>
-                            <p className="text-xs text-gray-500">{detailClient.assignedHealthCounselor.email}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Dietitians ({allDietitians.length})</p>
+                            <div className="space-y-2">
+                              {allDietitians.map((dietitian) => (
+                                <div key={dietitian._id} className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={dietitian.avatar} />
+                                    <AvatarFallback className="bg-green-200 text-green-800 text-xs">
+                                      {dietitian.firstName?.[0]}{dietitian.lastName?.[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">{dietitian.firstName} {dietitian.lastName}</p>
+                                    <p className="text-xs text-gray-500">{dietitian.email}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">No health counselor assigned</p>
-                    )}
+                        );
+                      } else {
+                        return <p className="text-sm text-gray-500">No dietitian assigned</p>;
+                      }
+                    })()}
+
+                    {/* Health Counselors */}
+                    {(() => {
+                      const allHealthCounselors: { _id: string; firstName: string; lastName: string; email: string; avatar?: string }[] = [];
+                      if (detailClient.assignedHealthCounselor) {
+                        allHealthCounselors.push(detailClient.assignedHealthCounselor);
+                      }
+                      if (detailClient.assignedHealthCounselors && detailClient.assignedHealthCounselors.length > 0) {
+                        detailClient.assignedHealthCounselors.forEach(hc => {
+                          if (!allHealthCounselors.find(existing => existing._id === hc._id)) {
+                            allHealthCounselors.push(hc);
+                          }
+                        });
+                      }
+                      
+                      if (allHealthCounselors.length > 0) {
+                        return (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Health Counselors ({allHealthCounselors.length})</p>
+                            <div className="space-y-2">
+                              {allHealthCounselors.map((hc) => (
+                                <div key={hc._id} className="flex items-center gap-2 p-2 bg-purple-50 rounded border border-purple-200">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={hc.avatar} />
+                                    <AvatarFallback className="bg-purple-200 text-purple-800 text-xs">
+                                      {hc.firstName?.[0]}{hc.lastName?.[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">{hc.firstName} {hc.lastName}</p>
+                                    <p className="text-xs text-gray-500">{hc.email}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        return <p className="text-sm text-gray-500">No health counselor assigned</p>;
+                      }
+                    })()}
                   </div>
                 </div>
 

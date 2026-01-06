@@ -58,6 +58,15 @@ interface Client {
     firstName: string;
     lastName: string;
   };
+  createdBy?: {
+    userId?: {
+      _id: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+    };
+    role: string;
+  };
 }
 
 // Client status colors
@@ -334,6 +343,7 @@ export default function DieticianClientsPage() {
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Start</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">End</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Last Diet</TableHead>
+                        <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Created By</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Joined</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -430,6 +440,54 @@ export default function DieticianClientsPage() {
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.programStart ? formatDate(client.programStart) : '-'}</TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.programEnd ? formatDate(client.programEnd) : '-'}</TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.lastDiet || '-'}</TableCell>
+                            <TableCell className="px-3 text-sm">
+                              {client.createdBy?.role ? (
+                                <div className="space-y-0.5">
+                                  {client.createdBy.role === 'self' ? (
+                                    <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">
+                                      Self Registered
+                                    </Badge>
+                                  ) : client.createdBy.role === 'dietitian' ? (
+                                    <>
+                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                        By Dietitian
+                                      </Badge>
+                                      {client.createdBy.userId && (
+                                        <span className="text-xs text-gray-500 block">
+                                          {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : client.createdBy.role === 'health_counselor' ? (
+                                    <>
+                                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                                        By HC
+                                      </Badge>
+                                      {client.createdBy.userId && (
+                                        <span className="text-xs text-gray-500 block">
+                                          {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : client.createdBy.role === 'admin' ? (
+                                    <>
+                                      <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                                        By Admin
+                                      </Badge>
+                                      {client.createdBy.userId && (
+                                        <span className="text-xs text-gray-500 block">
+                                          {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">-</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">-</span>
+                              )}
+                            </TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{formatDate(client.createdAt)}</TableCell>
                           </TableRow>
                         ))

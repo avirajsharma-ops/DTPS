@@ -110,6 +110,8 @@ export async function POST(request: NextRequest) {
       lastName: validatedData.lastName,
       role: validatedData.role,
       phone: normalizedPhone,
+      // Self-registered users have createdBy.role = 'self'
+      createdBy: { role: 'self' }
     };
     
     // Add role-specific fields

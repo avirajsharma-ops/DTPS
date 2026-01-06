@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { adminSSEManager } from '@/lib/realtime/admin-sse-manager';
 
 // GET /api/users - Get users (for dietitians to see clients, admins to see all)
 export async function GET(request: NextRequest) {
@@ -147,8 +148,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Allow admin, dietitian, and health counselor to create users
-    const allowedRoles = [UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR, 'health_counselor'];
-    if (!allowedRoles.includes(session.user.role as any)) {
+    const allowedRoles = [UserRole.ADMIN, UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR];
+    if (!allowedRoles.includes(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -188,7 +189,7 @@ export async function POST(request: NextRequest) {
     let finalAssignedHealthCounselor = assignedHealthCounselor;
     
     // If health counselor is creating a client, auto-assign to themselves
-    if (session.user.role === UserRole.HEALTH_COUNSELOR || session.user.role === 'health_counselor') {
+    if (session.user.role === UserRole.HEALTH_COUNSELOR) {
       finalAssignedHealthCounselor = session.user.id;
     }
     // If dietitian is creating a client, auto-assign to themselves
@@ -196,6 +197,16 @@ export async function POST(request: NextRequest) {
       finalAssignedDietitian = finalAssignedDietitian || session.user.id;
     }
 
+    // Determine createdBy info based on who is creating the user
+    let createdByInfo: { userId?: string; role: string } = { role: '' };
+    if (session.user.role === UserRole.ADMIN) {
+      createdByInfo = { userId: session.user.id, role: 'admin' };
+    } else if (session.user.role === UserRole.DIETITIAN) {
+      createdByInfo = { userId: session.user.id, role: 'dietitian' };
+    } else if (session.user.role === UserRole.HEALTH_COUNSELOR) {
+      createdByInfo = { userId: session.user.id, role: 'health_counselor' };
+    }
+    
     const user = new User({
       email: String(email).toLowerCase(),
       password, // NOTE: comparePassword supports plain text in this codebase; replace with hashing in production
@@ -212,10 +223,52 @@ export async function POST(request: NextRequest) {
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
       assignedDietitian: finalAssignedDietitian,
       assignedHealthCounselor: finalAssignedHealthCounselor,
+      createdBy: createdByInfo,
       status: 'active'
     });
 
     await user.save();
+
+    // If a client was created, broadcast SSE update to admin connections
+    if ((role || UserRole.CLIENT) === UserRole.CLIENT) {
+      // Populate references for the broadcast
+      await user.populate('assignedDietitian', 'firstName lastName email avatar');
+      await user.populate('assignedDietitians', 'firstName lastName email avatar');
+      await user.populate('assignedHealthCounselor', 'firstName lastName email avatar');
+      await user.populate({
+        path: 'createdBy.userId',
+        select: 'firstName lastName role',
+        strictPopulate: false
+      });
+
+      // Recalculate stats
+      const total = await User.countDocuments({ role: UserRole.CLIENT });
+      const assignedCount = await User.countDocuments({ 
+        role: UserRole.CLIENT, 
+        $or: [
+          { assignedDietitian: { $ne: null } },
+          { assignedDietitians: { $exists: true, $not: { $size: 0 } } }
+        ]
+      });
+      const unassignedCount = await User.countDocuments({ 
+        role: UserRole.CLIENT, 
+        assignedDietitian: null,
+        $or: [
+          { assignedDietitians: { $exists: false } },
+          { assignedDietitians: { $size: 0 } }
+        ]
+      });
+
+      adminSSEManager.broadcastClientUpdate('client_added', {
+        client: user.toObject(),
+        stats: {
+          total,
+          assigned: assignedCount,
+          unassigned: unassignedCount
+        },
+        timestamp: Date.now()
+      });
+    }
 
     const created = user.toJSON();
     delete (created as any).password;
