@@ -74,6 +74,12 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .skip((page - 1) * limit);
 
+    // Debug log for assigned dietitian
+    const clientsWithDebug = JSON.parse(JSON.stringify(clients));
+    if (clientsWithDebug.length > 0) {
+      console.log('First client assignedDietitian:', clientsWithDebug[0].assignedDietitian);
+    }
+
     const total = await User.countDocuments(query);
     const assignedCount = await User.countDocuments({ 
       role: UserRole.CLIENT, 
@@ -93,6 +99,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       clients,
+      debug: {
+        firstClientRaw: clients[0],
+        firstClientAssignedDietitian: clients[0]?.assignedDietitian,
+        firstClientAllKeys: clients[0] ? Object.keys(clients[0]) : []
+      },
       stats: {
         total,
         assigned: assignedCount,

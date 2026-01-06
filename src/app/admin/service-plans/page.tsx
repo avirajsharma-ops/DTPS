@@ -299,79 +299,109 @@ export default function AdminServicePlansPage() {
                 Create Service Plan
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingPlan ? 'Edit Service Plan' : 'Create Service Plan'}</DialogTitle>
-                <DialogDescription>
+<DialogContent
+  className="
+    w-[70vw]
+    sm:max-w-xl
+    md:max-w-4xl
+    lg:max-w-6xl
+    xl:max-w-7xl
+    max-h-[95vh]
+    overflow-y-auto
+  "
+>
+
+              <DialogHeader className="pb-4">
+                <DialogTitle className="text-2xl font-bold">{editingPlan ? 'Edit Service Plan' : 'Create Service Plan'}</DialogTitle>
+                <DialogDescription className="text-base">
                   {editingPlan ? 'Update the service plan details' : 'Create a new service plan with pricing tiers'}
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-6 mt-4 pb-4">
+              <div className="space-y-8 mt-4 pb-6">
                 {/* Basic Info */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Plan Name *</Label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g., Weight Loss Program"
-                    />
-                  </div>
-                  <div>
-                    <Label>Category *</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORIES.map(cat => (
-                          <SelectItem key={cat.value} value={cat.value}>
-                            {cat.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div className="bg-linear-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Package className="h-5 w-5 text-blue-600" />
+                    Basic Information
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <Label className="font-semibold text-gray-700">Plan Name *</Label>
+                      <Input
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="e.g., Weight Loss Program"
+                        className="mt-2 h-10 text-base"
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-semibold text-gray-700">Category *</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      >
+                        <SelectTrigger className="mt-2 h-10 text-base">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map(cat => (
+                            <SelectItem key={cat.value} value={cat.value}>
+                              {cat.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <Label>Description</Label>
+                  <Label className="font-semibold text-gray-700 block mb-2">Description</Label>
                   <RichTextEditor
                     value={formData.description}
                     onChange={(value) => setFormData({ ...formData, description: value })}
                     placeholder="Describe the service plan..."
-                    minHeight="100px"
+                    minHeight="120px"
                   />
                 </div>
 
                 {/* Pricing Tiers */}
-                <div className="border rounded-lg p-4 bg-gray-50">
-                  <Label className="text-base font-semibold">Pricing Tiers *</Label>
-                  <p className="text-sm text-gray-500 mb-4">Add different pricing options based on duration</p>
+                <div className="bg-linear-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6">
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="h-5 w-5 text-amber-600" />
+                      <Label className="text-lg font-bold text-gray-900">Pricing Tiers *</Label>
+                    </div>
+                    <p className="text-sm text-gray-600 ml-7">Add different pricing options based on duration</p>
+                  </div>
 
                   {/* Existing Tiers */}
                   {formData.pricingTiers.length > 0 && (
-                    <div className="space-y-3 mb-4">
+                    <div className="space-y-3 mb-8">
+                      <div className="hidden sm:grid grid-cols-4 gap-4 mb-3 px-4 py-3 bg-amber-100 rounded-lg text-xs font-bold text-amber-900">
+                        <div>Duration (Days)</div>
+                        <div>Amount (₹)</div>
+                        <div>Max Discount %</div>
+                        <div>Status</div>
+                      </div>
                       {formData.pricingTiers.map((tier, index) => (
-                        <div key={index} className="bg-white p-3 rounded-lg border">
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div key={index} className="bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-amber-300 hover:shadow-md transition">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 items-center">
                             <div>
-                              <Label className="text-xs text-gray-500">Duration (Days)</Label>
+                              <Label className="text-xs text-gray-500 sm:hidden">Duration (Days)</Label>
                               <Input
                                 type="number"
                                 min="1"
                                 value={tier.durationDays}
                                 onChange={(e) => updatePricingTier(index, 'durationDays', parseInt(e.target.value) || 1)}
+                                className="mt-1 sm:mt-0"
                               />
                               <p className="text-xs text-gray-400 mt-1">{getDurationLabel(tier.durationDays)}</p>
                             </div>
                             <div>
-                              <Label className="text-xs text-gray-500">Amount (₹)</Label>
-                              <div className="relative">
+                              <Label className="text-xs text-gray-500 sm:hidden">Amount (₹)</Label>
+                              <div className="relative mt-1 sm:mt-0">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
                                 <Input
                                   type="number"
@@ -383,29 +413,36 @@ export default function AdminServicePlansPage() {
                               </div>
                             </div>
                             <div>
-                              <Label className="text-xs text-gray-500">Max Discount %</Label>
+                              <Label className="text-xs text-gray-500 sm:hidden">Max Discount %</Label>
                               <Input
                                 type="number"
                                 min="0"
                                 max="100"
                                 value={tier.maxDiscount || 0}
                                 onChange={(e) => updatePricingTier(index, 'maxDiscount', Math.min(100, parseInt(e.target.value) || 0))}
+                                className="mt-1 sm:mt-0"
                               />
                             </div>
-                            <div className="flex flex-col justify-between">
+                            <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
                                 <Switch
                                   checked={tier.isActive}
                                   onCheckedChange={(checked) => updatePricingTier(index, 'isActive', checked)}
                                 />
-                                <span className="text-xs text-gray-500">{tier.isActive ? 'Active' : 'Inactive'}</span>
+                                <span className="text-xs text-gray-600 whitespace-nowrap">
+                                  {tier.isActive ? (
+                                    <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded">Active</span>
+                                  ) : (
+                                    <span className="inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded">Inactive</span>
+                                  )}
+                                </span>
                               </div>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removePricingTier(index)}
-                                className="text-red-500 hover:text-red-700 p-1 h-8 w-8 self-end"
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -417,15 +454,19 @@ export default function AdminServicePlansPage() {
                   )}
 
                   {/* Add New Tier */}
-                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+                  <div className="p-4   bg-green-50 rounded-xl border-2 border-green-300 shadow-sm">
+                    <p className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <Plus className="h-4 w-4 text-green-600" />
+                      Add New Pricing Tier
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 items-end">
                       <div>
-                        <Label className="text-xs">Duration</Label>
+                        <Label className="text-xs font-semibold text-gray-700 mb-2 block">Duration</Label>
                         <Select
                           value={newTier.durationDays.toString()}
                           onValueChange={(value) => setNewTier({ ...newTier, durationDays: parseInt(value) })}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white h-10 text-base">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -438,71 +479,94 @@ export default function AdminServicePlansPage() {
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs">Amount (₹)</Label>
+                        <Label className="text-xs font-semibold text-gray-700 mb-2 block">Amount (₹)</Label>
                         <Input
                           type="number"
                           min="0"
                           value={newTier.amount}
                           onChange={(e) => setNewTier({ ...newTier, amount: parseInt(e.target.value) || 0 })}
-                          placeholder="Amount"
+                          placeholder="0"
+                          className="bg-white h-10 text-base"
                         />
                       </div>
                       <div>
-                        <Label className="text-xs">Max Discount %</Label>
+                        <Label className="text-xs font-semibold text-gray-700 mb-2 block">Max Discount %</Label>
                         <Input
                           type="number"
                           min="0"
                           max="100"
                           value={newTier.maxDiscount}
                           onChange={(e) => setNewTier({ ...newTier, maxDiscount: Math.min(100, parseInt(e.target.value) || 0) })}
-                          placeholder="0-100"
+                          placeholder="0"
+                          className="bg-white h-10 text-base"
                         />
                       </div>
-                      <Button type="button" onClick={addPricingTier} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
-                        <Plus className="h-4 w-4 mr-1" /> Add
+                      <Button 
+                        type="button" 
+                        onClick={addPricingTier} 
+                        className="bg-green-600 hover:bg-green-700 text-white font-medium w-full sm:w-auto h-10 flex items-center justify-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" /> Add
                       </Button>
                     </div>
                   </div>
                 </div>
 
                 {/* Settings */}
-                <div className="border rounded-lg p-4 space-y-4">
-                  <Label className="text-base font-semibold">Settings</Label>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Show to Clients</p>
-                      <p className="text-sm text-gray-500">Display this plan on client dashboard</p>
-                    </div>
-                    <Switch
-                      checked={formData.showToClients}
-                      onCheckedChange={(checked) => setFormData({ ...formData, showToClients: checked })}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Plan Status</p>
-                      <p className="text-sm text-gray-500">Enable or disable this plan</p>
-                    </div>
+                <div className="bg-linear-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-6">
+                  <div className="mb-6">
                     <div className="flex items-center gap-2">
+                      <Eye className="h-5 w-5 text-purple-600" />
+                      <Label className="text-lg font-bold text-gray-900">Settings</Label>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-white border border-purple-100 hover:border-purple-300 hover:shadow-sm transition">
+                      <div>
+                        <p className="font-semibold text-gray-900">Show to Clients</p>
+                        <p className="text-sm text-gray-600">Display this plan on client dashboard</p>
+                      </div>
                       <Switch
-                        checked={formData.isActive}
-                        onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                        checked={formData.showToClients}
+                        onCheckedChange={(checked) => setFormData({ ...formData, showToClients: checked })}
                       />
-                      <Badge variant={formData.isActive ? "default" : "secondary"} className={formData.isActive ? "bg-green-500" : ""}>
-                        {formData.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+                    </div>
+
+                    <div className="border-t-2 border-purple-100"></div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-white border border-purple-100 hover:border-purple-300 hover:shadow-sm transition">
+                      <div>
+                        <p className="font-semibold text-gray-900">Plan Status</p>
+                        <p className="text-sm text-gray-600">Enable or disable this plan</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={formData.isActive}
+                          onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                        />
+                        <Badge className={formData.isActive ? "bg-linear-to-r from-green-500 to-green-600 text-white" : "bg-gray-300 text-gray-700"}>
+                          {formData.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
+                <div className="flex justify-end gap-4 pt-8 border-t-2 border-gray-200">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => { setDialogOpen(false); resetForm(); }}
+                    className="px-8 h-11 font-semibold text-base"
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={handleSubmit} disabled={saving} className="bg-green-600 hover:bg-green-700">
+                  <Button 
+                    onClick={handleSubmit} 
+                    disabled={saving} 
+                    className="bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold px-8 h-11 text-base"
+                  >
                     {saving ? (
                       <>
                         <LoadingSpinner className="h-4 w-4 mr-2" />
