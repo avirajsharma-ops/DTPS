@@ -241,16 +241,17 @@ export default function ServiceDetailPage() {
             </span>
           </div>
           <h2 className="text-4xl font-bold mb-3">{service.name}</h2>
-          <p className="text-lg text-white/90 mb-6 max-w-2xl">{stripHtmlTags(service.description || '')}</p>
-
-          {/* Ratings */}
-          <div className="flex items-center gap-3">
-            <div className="flex gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-5 h-5 fill-[#FFB800] text-[#FFB800]" />
-              ))}
-            </div>
-            <span className="text-sm text-white/90">(4.8/5 from 1,200+ clients)</span>
+          <div className="text-lg text-white/90 mb-6 max-w-3xl leading-relaxed">
+            {service.description ? (
+              <div 
+                className="prose prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ 
+                  __html: service.description.replace(/<strong>/g, '<strong class="text-black font-bold">').replace(/<b>/g, '<b class="text-black font-bold">') 
+                }} 
+              />
+            ) : (
+              <p>No description available</p>
+            )}
           </div>
         </div>
 
@@ -294,9 +295,18 @@ export default function ServiceDetailPage() {
             <h3 className="text-2xl font-bold text-gray-900 mb-6">What's Included</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {service.features.map((feature, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <Check className="w-6 h-6 text-[#3AB1A0] mt-0.5 shrink-0" />
-                  <span className="text-gray-700 font-medium">{feature}</span>
+                <div key={index} className="flex items-start gap-3 p-4 bg-linear-to-br from-green-50 to-emerald-50 rounded-lg hover:shadow-sm transition-all">
+                  <Check className="w-6 h-6 text-[#3AB1A0] mt-0.5 shrink-0 font-bold" />
+                  <div className="prose prose-sm max-w-none">
+                    <span 
+                      className="text-gray-700 font-medium leading-relaxed"
+                      dangerouslySetInnerHTML={{ 
+                        __html: feature
+                          .replace(/<strong>/g, '<strong class="text-black font-bold">')
+                          .replace(/<b>/g, '<b class="text-black font-bold">') 
+                      }}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -309,12 +319,21 @@ export default function ServiceDetailPage() {
             <h3 className="text-2xl font-bold text-gray-900 mb-5">Key Benefits</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {service.benefits.map((benefit, index) => (
-                <div key={index} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                  <div className="flex items-start gap-3">
-                    <div className="shrink-0 w-10 h-10 rounded-lg bg-[#DB9C6E]/10 flex items-center justify-center">
-                      <Star className="w-5 h-5 text-[#DB9C6E]" />
+                <div key={index} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all bg-linear-to-br from-white to-blue-50/50">
+                  <div className="flex items-start gap-4">
+                    <div className="shrink-0 w-12 h-12 rounded-xl bg-[#3AB1A0]/10 flex items-center justify-center">
+                      <Star className="w-6 h-6 text-[#3AB1A0]" />
                     </div>
-                    <span className="text-gray-700 font-medium">{benefit}</span>
+                    <div className="flex-1">
+                      <div 
+                        className="text-gray-700 font-medium leading-relaxed prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ 
+                          __html: benefit
+                            .replace(/<strong>/g, '<strong class="text-black font-bold">')
+                            .replace(/<b>/g, '<b class="text-black font-bold">') 
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
