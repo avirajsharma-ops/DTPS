@@ -354,22 +354,22 @@ export default function UserSettingsPage() {
                     <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
                       settings[item.key as keyof UserSettings] 
                         ? 'bg-[#3AB1A0]/20' 
-                        : settings.darkMode ? 'bg-gray-700' : 'bg-gray-100'
+                        : isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
                     }`}>
                       <item.icon className={`h-5 w-5 ${
                         settings[item.key as keyof UserSettings] 
                           ? 'text-[#3AB1A0]' 
-                          : settings.darkMode ? 'text-gray-400' : 'text-gray-500'
+                          : isDarkMode ? 'text-gray-400' : 'text-gray-500'
                       }`} />
                     </div>
                     <div>
                       <Label className={`font-medium ${
-                        settings.darkMode ? 'text-white' : 'text-gray-900'
+                        isDarkMode ? 'text-white' : 'text-gray-900'
                       }`}>
                         {item.label}
                       </Label>
                       <p className={`text-xs ${
-                        settings.darkMode ? 'text-gray-400' : 'text-gray-500'
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
                       }`}>
                         {item.description}
                       </p>
@@ -396,7 +396,7 @@ export default function UserSettingsPage() {
           <Card 
             key={section.title} 
             className={`border-0 shadow-sm hover:shadow-md transition-shadow ${
-              settings.darkMode ? 'bg-gray-800' : 'bg-white'
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
             }`}
           >
             <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
@@ -405,7 +405,7 @@ export default function UserSettingsPage() {
                   <section.icon className="h-5 w-5 text-[#DB9C6E]" />
                 </div>
                 <CardTitle className={`text-base font-semibold ${
-                  settings.darkMode ? 'text-white' : 'text-[#3AB1A0]'
+                  isDarkMode ? 'text-white' : 'text-[#3AB1A0]'
                 }`}>
                   {section.title}
                 </CardTitle>
@@ -417,7 +417,7 @@ export default function UserSettingsPage() {
                   key={link.label}
                   href={link.href}
                   className={`flex items-center justify-between p-3 rounded-xl transition-colors ${
-                    settings.darkMode 
+                    isDarkMode 
                       ? 'hover:bg-gray-700' 
                       : 'hover:bg-[#3AB1A0]/10'
                   }`}
@@ -425,7 +425,7 @@ export default function UserSettingsPage() {
                   <div className="flex items-center gap-3">
                     <link.icon className="h-5 w-5 text-[#E06A26]" />
                     <span className={`text-sm font-medium ${
-                      settings.darkMode ? 'text-white' : 'text-gray-700'
+                      isDarkMode ? 'text-white' : 'text-gray-700'
                     }`}>
                       {link.label}
                     </span>
@@ -439,7 +439,7 @@ export default function UserSettingsPage() {
 
         {/* Language Selection */}
         <Card className={`border-0 shadow-sm hover:shadow-md transition-shadow ${
-          settings.darkMode ? 'bg-gray-800' : 'bg-white'
+          isDarkMode ? 'bg-gray-800' : 'bg-white'
         }`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -449,12 +449,12 @@ export default function UserSettingsPage() {
                 </div>
                 <div>
                   <Label className={`font-medium ${
-                    settings.darkMode ? 'text-white' : 'text-gray-900'
+                    isDarkMode ? 'text-white' : 'text-gray-900'
                   }`}>
                     Language
                   </Label>
                   <p className={`text-xs ${
-                    settings.darkMode ? 'text-gray-400' : 'text-gray-500'
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     English (US)
                   </p>
