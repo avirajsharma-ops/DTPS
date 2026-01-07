@@ -185,7 +185,7 @@ export async function GET(request: NextRequest) {
     }
 
     const clients = await User.find(clientQuery)
-      .select('_id firstName lastName email profilePhoto')
+      .select('_id firstName lastName email profilePhoto fcmToken')
       .sort({ firstName: 1, lastName: 1 });
 
     return NextResponse.json({
@@ -194,7 +194,8 @@ export async function GET(request: NextRequest) {
         id: c._id.toString(),
         name: `${c.firstName} ${c.lastName}`,
         email: c.email,
-        avatar: c.profilePhoto
+        avatar: c.profilePhoto,
+        hasFcmToken: !!c.fcmToken
       }))
     });
 

@@ -35,7 +35,6 @@ export function PushNotificationProvider({
         const title = payload.notification?.title || payload.data?.title || 'New Notification';
         const body = payload.notification?.body || payload.data?.body || payload.data?.message || '';
         const type = payload.data?.type || 'general';
-        const clickAction = payload.data?.clickAction || payload.data?.url;
         
         // Determine the icon/emoji based on notification type
         const getIcon = (notificationType: string) => {
@@ -63,19 +62,13 @@ export function PushNotificationProvider({
             }
         };
 
-        console.log('[PushNotificationProvider] Showing notification banner:', { title, body, type, clickAction });
+        const icon = getIcon(type);
+        console.log('[PushNotificationProvider] Showing notification banner:', { title, body, type, icon });
         
-        // Show toast notification with prominent styling
-        toast.success(title, {
+        // Show toast notification with icon - NO View button
+        toast.success(`${icon} ${title}`, {
             description: body && body.length > 0 ? body : undefined,
-            duration: 6000, // Slightly longer duration for better visibility
-            action: clickAction ? {
-                label: 'View',
-                onClick: () => {
-                    console.log('[PushNotificationProvider] Navigating to:', clickAction);
-                    window.location.href = clickAction;
-                }
-            } : undefined,
+            duration: 5000,
         });
 
         // Also call custom handler if provided
@@ -106,21 +99,40 @@ export function PushNotificationProvider({
         const title = notification.title || 'New Notification';
         const body = notification.body || '';
         const type = notification.data?.type || 'general';
-        const clickAction = notification.data?.clickAction || notification.data?.url;
         
-        console.log('[PushNotificationProvider] Showing native notification banner:', { title, body, type, clickAction });
+        // Determine the icon/emoji based on notification type
+        const getNativeIcon = (notificationType: string) => {
+            switch (notificationType) {
+                case 'new_message':
+                case 'message':
+                    return '💬';
+                case 'appointment':
+                case 'appointment_booked':
+                case 'appointment_cancelled':
+                    return '📅';
+                case 'meal':
+                case 'meal_plan_created':
+                case 'meal_plan_updated':
+                    return '🍽️';
+                case 'payment':
+                case 'payment_link_created':
+                    return '💳';
+                case 'task_assigned':
+                    return '✅';
+                case 'call':
+                    return '📞';
+                default:
+                    return '🔔';
+            }
+        };
+
+        const icon = getNativeIcon(type);
+        console.log('[PushNotificationProvider] Showing native notification banner:', { title, body, type, icon });
         
-        // Show prominent toast notification
-        toast.success(title, {
+        // Show toast notification with icon - NO View button
+        toast.success(`${icon} ${title}`, {
             description: body && body.length > 0 ? body : undefined,
-            duration: 6000,
-            action: clickAction ? {
-                label: 'View',
-                onClick: () => {
-                    console.log('[PushNotificationProvider] Navigating to:', clickAction);
-                    window.location.href = clickAction;
-                }
-            } : undefined,
+            duration: 5000,
         });
 
         // Call user's custom handler if provided

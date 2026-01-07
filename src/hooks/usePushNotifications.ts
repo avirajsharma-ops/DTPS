@@ -9,7 +9,6 @@ import {
     isPushNotificationSupported,
     getNotificationPermission,
     requestNotificationPermission,
-    showNotification,
 } from '@/lib/firebase/fcmHelper';
 
 interface UsePushNotificationsOptions {
@@ -66,20 +65,11 @@ export function usePushNotifications(
         unsubscribeRef.current = onForegroundMessage((payload) => {
             console.log('[usePushNotifications] Foreground message received:', payload);
 
-            // Call custom handler first (which will show toast in PushNotificationProvider)
+            // Call custom handler (which will show toast in PushNotificationProvider)
+            // Do NOT show browser notification here to avoid duplicate notifications
             if (onNotification) {
                 console.log('[usePushNotifications] Calling custom notification handler');
                 onNotification(payload);
-            }
-
-            // Also show browser notification as fallback
-            if (payload.notification) {
-                console.log('[usePushNotifications] Showing browser notification:', payload.notification.title);
-                showNotification(payload.notification.title || 'Notification', {
-                    body: payload.notification.body,
-                    icon: payload.notification.icon || '/icons/icon-192x192.png',
-                    data: payload.data,
-                });
             }
         });
 
