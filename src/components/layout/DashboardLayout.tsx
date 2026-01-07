@@ -64,9 +64,9 @@ export default function DashboardLayout({
         {/* Main Content Area */}
         <div className="flex flex-col flex-1 overflow-hidden">
           <Navbar />
-          {/* Notification Permission Banner for Staff */}
+          {/* Notification Permission Banner for Admin only */}
           <NotificationPermissionBanner 
-            allowedRoles={['dietitian', 'health_counselor', 'admin']}
+            allowedRoles={['admin']}
             className="mx-4 mt-2"
           />
           <main className={cn(
