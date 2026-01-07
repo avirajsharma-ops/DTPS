@@ -210,7 +210,7 @@ export default function TermsOfServicePage() {
             
             <div className="bg-gray-50 rounded-lg p-6">
               <div className="flex items-start">
-                <Globe className="h-5 w-5 text-[#075E54] mr-3 mt-1 flex-shrink-0" />
+                <Globe className="h-5 w-5 text-[#075E54] mr-3 mt-1 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-gray-700">Website</p>
                   <a href="https://dtpoonamsagar.com" className="text-[#075E54] hover:underline">
@@ -225,7 +225,7 @@ export default function TermsOfServicePage() {
         {/* Important Notice */}
         <div className="mt-12 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-8">
           <div className="flex items-start">
-            <AlertCircle className="h-6 w-6 text-yellow-700 mr-4 flex-shrink-0 mt-1" />
+            <AlertCircle className="h-6 w-6 text-yellow-700 mr-4 shrink-0 mt-1" />
             <div>
               <h3 className="text-xl font-bold text-yellow-900 mb-3">Important Notice</h3>
               <p className="text-yellow-800 mb-2">

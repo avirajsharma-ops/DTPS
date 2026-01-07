@@ -132,7 +132,7 @@ export default function SendNotificationPage() {
                 </div>
                 
                 {/* Client List */}
-                <div className="h-[400px] overflow-y-auto space-y-2">
+                <div className="h-100 overflow-y-auto space-y-2">
                   {loading ? (
                     <div className="flex items-center justify-center h-32">
                       <Loader2 className="h-6 w-6 animate-spin" />

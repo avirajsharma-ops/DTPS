@@ -225,7 +225,7 @@ export default function SettingsPrivacyPolicyPage() {
             
             <div className="space-y-4 bg-gray-50 rounded-lg p-6">
               <div className="flex items-start">
-                <Mail className="h-5 w-5 text-[#075E54] mr-3 mt-1 flex-shrink-0" />
+                <Mail className="h-5 w-5 text-[#075E54] mr-3 mt-1 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-gray-700">Email</p>
                   <a href="mailto:support@dtpoonamsagar.com" className="text-[#075E54] hover:underline">
@@ -235,7 +235,7 @@ export default function SettingsPrivacyPolicyPage() {
               </div>
               
               <div className="flex items-start">
-                <Globe className="h-5 w-5 text-[#075E54] mr-3 mt-1 flex-shrink-0" />
+                <Globe className="h-5 w-5 text-[#075E54] mr-3 mt-1 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-gray-700">Website</p>
                   <a href="https://dtpoonamsagar.com" className="text-[#075E54] hover:underline">
