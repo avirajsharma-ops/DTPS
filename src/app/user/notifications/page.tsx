@@ -302,13 +302,11 @@ export default function NotificationsPage() {
                 }`}
               >
                 <div 
-                  className="p-4 flex gap-3 cursor-pointer"
+                  className="p-4 flex gap-3"
                   onClick={() => {
+                    // Only mark as read when clicking, don't navigate anywhere
                     if (!notification.read) {
                       markAsRead([notification._id]);
-                    }
-                    if (notification.actionUrl) {
-                      window.location.href = notification.actionUrl;
                     }
                   }}
                 >

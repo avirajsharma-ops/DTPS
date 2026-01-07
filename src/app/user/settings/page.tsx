@@ -54,6 +54,9 @@ export default function UserSettingsPage() {
     soundEnabled: true,
   });
 
+  // Derive isDarkMode from settings for UI rendering
+  const isDarkMode = settings.darkMode;
+
   // Handle logout with proper cookie clearing
   const handleLogout = useCallback(async () => {
     try {
