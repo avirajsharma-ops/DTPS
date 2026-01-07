@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNativeApp, ForegroundNotification } from '@/hooks/useNativeApp';
@@ -26,6 +26,28 @@ export function PushNotificationProvider({
     onNotification,
 }: PushNotificationProviderProps) {
     const { status } = useSession();
+    
+    // Track last notification to prevent duplicates
+    const lastNotificationRef = useRef<{ id: string; timestamp: number } | null>(null);
+    
+    // Helper to check if notification is duplicate
+    const isDuplicateNotification = useCallback((title: string, body: string, data?: any): boolean => {
+        const now = Date.now();
+        const notificationId = `${title}-${body}-${JSON.stringify(data || {})}`;
+        
+        // Check if same notification was received within last 2 seconds
+        if (lastNotificationRef.current) {
+            const timeDiff = now - lastNotificationRef.current.timestamp;
+            if (lastNotificationRef.current.id === notificationId && timeDiff < 2000) {
+                console.log('[PushNotificationProvider] Duplicate notification detected, skipping');
+                return true;
+            }
+        }
+        
+        // Update last notification
+        lastNotificationRef.current = { id: notificationId, timestamp: now };
+        return false;
+    }, []);
 
     // Handle foreground notification display with toast
     const handleForegroundNotification = useCallback((payload: any) => {
@@ -35,6 +57,11 @@ export function PushNotificationProvider({
         const title = payload.notification?.title || payload.data?.title || 'New Notification';
         const body = payload.notification?.body || payload.data?.body || payload.data?.message || '';
         const type = payload.data?.type || 'general';
+        
+        // Check for duplicate notification
+        if (isDuplicateNotification(title, body, payload.data)) {
+            return;
+        }
         
         // Determine the icon/emoji based on notification type
         const getIcon = (notificationType: string) => {
@@ -75,7 +102,7 @@ export function PushNotificationProvider({
         if (onNotification) {
             onNotification(payload);
         }
-    }, [onNotification]);
+    }, [onNotification, isDuplicateNotification]);
 
     const { isSupported, permission, registerToken } = usePushNotifications({
         autoRegister: false, // We'll handle it manually
@@ -99,6 +126,11 @@ export function PushNotificationProvider({
         const title = notification.title || 'New Notification';
         const body = notification.body || '';
         const type = notification.data?.type || 'general';
+        
+        // Check for duplicate notification (uses the same deduplication logic)
+        if (isDuplicateNotification(title, body, notification.data)) {
+            return;
+        }
         
         // Determine the icon/emoji based on notification type
         const getNativeIcon = (notificationType: string) => {
@@ -142,7 +174,7 @@ export function PushNotificationProvider({
                 data: notification.data
             });
         }
-    }, [onNotification]);
+    }, [onNotification, isDuplicateNotification]);
 
     // Set up native foreground notification handler
     useEffect(() => {

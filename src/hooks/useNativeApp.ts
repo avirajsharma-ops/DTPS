@@ -72,11 +72,33 @@ export function useNativeApp(): UseNativeAppReturn {
   const tokenRegistrationAttempted = useRef(false);
   const tokenCheckInterval = useRef<NodeJS.Timeout | null>(null);
   const notificationHandlerRef = useRef<((notification: ForegroundNotification) => void) | null>(null);
+  
+  // Track last notification to prevent duplicates
+  const lastNotificationRef = useRef<{ id: string; timestamp: number } | null>(null);
 
   // Set up foreground notification handler that native app can call
   const onForegroundNotification = useCallback((handler: (notification: ForegroundNotification) => void) => {
     console.log('[useNativeApp] Setting foreground notification handler');
     notificationHandlerRef.current = handler;
+  }, []);
+  
+  // Helper to check if notification is duplicate
+  const isDuplicateNotification = useCallback((notification: ForegroundNotification): boolean => {
+    const now = Date.now();
+    const notificationId = `${notification.title}-${notification.body}-${JSON.stringify(notification.data || {})}`;
+    
+    // Check if same notification was received within last 2 seconds
+    if (lastNotificationRef.current) {
+      const timeDiff = now - lastNotificationRef.current.timestamp;
+      if (lastNotificationRef.current.id === notificationId && timeDiff < 2000) {
+        console.log('[useNativeApp] Duplicate notification detected, skipping');
+        return true;
+      }
+    }
+    
+    // Update last notification
+    lastNotificationRef.current = { id: notificationId, timestamp: now };
+    return false;
   }, []);
 
   // Listen for foreground notifications from native app
@@ -88,6 +110,12 @@ export function useNativeApp(): UseNativeAppReturn {
     // Set up global handler that native app will call
     window.onForegroundNotification = (notification: ForegroundNotification) => {
       console.log('[useNativeApp] window.onForegroundNotification called with:', JSON.stringify(notification));
+      
+      // Check for duplicate
+      if (isDuplicateNotification(notification)) {
+        return;
+      }
+      
       if (notificationHandlerRef.current) {
         console.log('[useNativeApp] Calling registered handler');
         notificationHandlerRef.current(notification);
@@ -99,6 +127,12 @@ export function useNativeApp(): UseNativeAppReturn {
     // Also listen for custom event (alternative approach)
     const handleForegroundNotification = (event: CustomEvent<ForegroundNotification>) => {
       console.log('[useNativeApp] nativeForegroundNotification event received:', JSON.stringify(event.detail));
+      
+      // Check for duplicate
+      if (isDuplicateNotification(event.detail)) {
+        return;
+      }
+      
       if (notificationHandlerRef.current) {
         console.log('[useNativeApp] Calling registered handler from event');
         notificationHandlerRef.current(event.detail);
@@ -113,7 +147,7 @@ export function useNativeApp(): UseNativeAppReturn {
       window.onForegroundNotification = undefined;
       window.removeEventListener('nativeForegroundNotification', handleForegroundNotification as EventListener);
     };
-  }, []);
+  }, [isDuplicateNotification]);
 
   useEffect(() => {
     // Check if running in native app
