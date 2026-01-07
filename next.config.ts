@@ -21,7 +21,13 @@ const nextConfig: NextConfig = {
 
   // Optimize images
   images: {
-    domains: ['ik.imagekit.io'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'ik.imagekit.io',
+        pathname: '/**',
+      },
+    ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
