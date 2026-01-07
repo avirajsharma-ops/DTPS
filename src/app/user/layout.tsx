@@ -18,23 +18,26 @@ interface UserLayoutProps {
  * Password reset pages are excluded from auth check
  */
 export default async function UserLayout({ children }: UserLayoutProps) {
-  // Try to get the referer or other headers to determine the path
+  // Get pathname from middleware header or check referer as fallback
   const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '';
   const referer = headersList.get('referer') || '';
-  const xUrl = headersList.get('x-url') || '';
   
   // Check if accessing password reset pages (these don't require auth)
+  // Check both the pathname from middleware and referer as fallback
   const isPasswordResetPage = 
-    referer.includes('/forget-password') || 
-    referer.includes('/reset-password') ||
-    xUrl.includes('/forget-password') ||
-    xUrl.includes('/reset-password');
+    pathname === '/user/forget-password' || 
+    pathname === '/user/reset-password' ||
+    pathname.startsWith('/user/forget-password') ||
+    pathname.startsWith('/user/reset-password') ||
+    referer.includes('/user/forget-password') ||
+    referer.includes('/user/reset-password');
 
   const session = await getServerSession(authOptions);
 
   // For password reset pages, allow access without session
+  // These pages have their own nested layout that bypasses auth
   if (!session) {
-    // Only allow password reset pages without auth
     if (isPasswordResetPage) {
       return <>{children}</>;
     }

@@ -73,8 +73,10 @@ export default withAuth(
       }
     }
 
-    // Allow access to the route
-    return NextResponse.next();
+    // Allow access to the route - add pathname header for layout detection
+    const response = NextResponse.next();
+    response.headers.set('x-pathname', pathname);
+    return response;
   },
   {
     callbacks: {
@@ -95,6 +97,8 @@ export default withAuth(
           '/client-auth/signin',
           '/client-auth/signup',
           '/client-auth/onboarding',
+          '/client-auth/forget-password',
+          '/client-auth/reset-password',
         ];
         
         // Exact match for home page

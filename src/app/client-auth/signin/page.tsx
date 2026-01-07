@@ -149,7 +149,7 @@ export default function ClientSignInPage() {
           {/* Forgot Password */}
           <div className="text-right">
             <Link
-              href="/user/forget-password"
+              href="/client-auth/forget-password"
               className="text-[#E06A26] text-sm hover:underline"
             >
               Forgot Password?
