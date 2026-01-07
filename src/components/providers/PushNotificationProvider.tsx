@@ -17,15 +17,26 @@ interface PushNotificationProviderProps {
  * Add this to your layout or a high-level component
  * 
  * Handles both:
- * 1. Web push notifications (via Firebase Messaging)
- * 2. Native Android app FCM token registration (via WebView bridge)
+ * 1. Web push notifications (via Firebase Messaging) - ONLY for admin panel
+ * 2. Native Android app FCM token registration (via WebView bridge) - for clients in native app
+ * 
+ * Note: 
+ * - User/Client panel: No toast messages, only native app FCM registration
+ * - Dietitian/Health Counselor panel: No web push notifications at all
+ * - Admin panel: Full web push with toast notifications
  */
 export function PushNotificationProvider({
     children,
     autoRegister = true,
     onNotification,
 }: PushNotificationProviderProps) {
-    const { status } = useSession();
+    const { data: session, status } = useSession();
+    
+    // Get user role
+    const userRole = session?.user?.role?.toLowerCase() || '';
+    const isClient = userRole === 'client';
+    const isDietitianOrCounselor = userRole === 'dietitian' || userRole === 'health_counselor';
+    const isAdmin = userRole.includes('admin');
     
     // Track last notification to prevent duplicates
     const lastNotificationRef = useRef<{ id: string; timestamp: number } | null>(null);
@@ -49,9 +60,19 @@ export function PushNotificationProvider({
         return false;
     }, []);
 
-    // Handle foreground notification display with toast
+    // Handle foreground notification display with toast - ONLY for admin
     const handleForegroundNotification = useCallback((payload: any) => {
         console.log('[PushNotificationProvider] Foreground notification received:', payload);
+        
+        // Skip toast for clients and dietitian/health counselor
+        if (isClient || isDietitianOrCounselor) {
+            console.log('[PushNotificationProvider] Skipping toast for non-admin user');
+            // Still call custom handler if provided
+            if (onNotification) {
+                onNotification(payload);
+            }
+            return;
+        }
         
         // Extract notification data
         const title = payload.notification?.title || payload.data?.title || 'New Notification';
@@ -92,7 +113,7 @@ export function PushNotificationProvider({
         const icon = getIcon(type);
         console.log('[PushNotificationProvider] Showing notification banner:', { title, body, type, icon });
         
-        // Show toast notification with icon - NO View button
+        // Show toast notification with icon - ONLY for admin
         toast.success(`${icon} ${title}`, {
             description: body && body.length > 0 ? body : undefined,
             duration: 5000,
@@ -102,8 +123,9 @@ export function PushNotificationProvider({
         if (onNotification) {
             onNotification(payload);
         }
-    }, [onNotification, isDuplicateNotification]);
+    }, [onNotification, isDuplicateNotification, isClient, isDietitianOrCounselor]);
 
+    // Only use web push notifications for admin (not for dietitian/health counselor)
     const { isSupported, permission, registerToken } = usePushNotifications({
         autoRegister: false, // We'll handle it manually
         onNotification: handleForegroundNotification,
@@ -119,9 +141,22 @@ export function PushNotificationProvider({
         onForegroundNotification: setNativeForegroundHandler
     } = useNativeApp();
 
-    // Handle native app foreground notifications with toast
+    // Handle native app foreground notifications - NO toast for clients (user panel)
     const handleNativeForegroundNotification = useCallback((notification: ForegroundNotification) => {
         console.log('[PushNotificationProvider] Native foreground notification received:', JSON.stringify(notification));
+        
+        // Skip toast for clients - they use native app notifications directly
+        // Only log and call custom handler
+        if (isClient) {
+            console.log('[PushNotificationProvider] Skipping toast for client in native app');
+            if (onNotification) {
+                onNotification({
+                    notification: { title: notification.title, body: notification.body },
+                    data: notification.data
+                });
+            }
+            return;
+        }
         
         const title = notification.title || 'New Notification';
         const body = notification.body || '';
@@ -161,7 +196,7 @@ export function PushNotificationProvider({
         const icon = getNativeIcon(type);
         console.log('[PushNotificationProvider] Showing native notification banner:', { title, body, type, icon });
         
-        // Show toast notification with icon - NO View button
+        // Show toast notification with icon - only for non-clients
         toast.success(`${icon} ${title}`, {
             description: body && body.length > 0 ? body : undefined,
             duration: 5000,
@@ -174,7 +209,7 @@ export function PushNotificationProvider({
                 data: notification.data
             });
         }
-    }, [onNotification, isDuplicateNotification]);
+    }, [onNotification, isDuplicateNotification, isClient]);
 
     // Set up native foreground notification handler
     useEffect(() => {
@@ -183,10 +218,16 @@ export function PushNotificationProvider({
         }
     }, [isNativeApp, setNativeForegroundHandler, handleNativeForegroundNotification]);
 
-    // Web push notification registration
+    // Web push notification registration - ONLY for admin (not for dietitian/health counselor/client)
     useEffect(() => {
         // Only register for web if not in native app
         if (isNativeApp) {
+            return;
+        }
+        
+        // Skip web push for dietitian and health counselor
+        if (isDietitianOrCounselor) {
+            console.log('[PushNotificationProvider] Skipping web push for dietitian/health counselor');
             return;
         }
         
@@ -195,15 +236,17 @@ export function PushNotificationProvider({
         // 2. User is authenticated
         // 3. Notifications are supported
         // 4. Permission is already granted (don't prompt automatically)
+        // 5. User is admin (not client or dietitian/health counselor)
         if (
             autoRegister &&
             status === 'authenticated' &&
             isSupported &&
-            permission === 'granted'
+            permission === 'granted' &&
+            isAdmin
         ) {
             registerToken();
         }
-    }, [autoRegister, status, isSupported, permission, registerToken, isNativeApp]);
+    }, [autoRegister, status, isSupported, permission, registerToken, isNativeApp, isDietitianOrCounselor, isAdmin]);
     
     // Native app - log token registration status
     useEffect(() => {
