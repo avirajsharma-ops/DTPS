@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import {
   Calendar,
   Clock,
@@ -59,6 +60,7 @@ interface Appointment {
 function DesktopAppointmentsPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { registerToken } = usePushNotifications({ autoRegister: false });
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -82,7 +84,18 @@ function DesktopAppointmentsPage() {
     if (tab) {
       setActiveTab(tab);
     }
-  }, []);
+
+    // Register for push notifications
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          registerToken().catch(error => console.error('Failed to register push notifications:', error));
+        }
+      });
+    } else if (Notification.permission === 'granted') {
+      registerToken().catch(error => console.error('Failed to register push notifications:', error));
+    }
+  }, [registerToken]);
 
   // Add effect to refresh appointments when returning from booking
   useEffect(() => {

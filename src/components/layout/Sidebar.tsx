@@ -357,7 +357,7 @@ export default function Sidebar({ className }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center justify-between space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative",
                 isActive
                   ? "bg-green-100 text-green-700 border border-green-200"
                   : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
@@ -365,13 +365,15 @@ export default function Sidebar({ className }: SidebarProps) {
               )}
               title={isCollapsed ? item.label : undefined}
             >
-              <Icon className={cn("h-5 w-5", isActive && "text-green-600")} />
-              {!isCollapsed && (
-                <div className="flex flex-col">
-                  <span>{item.label}</span>
-                  <span className="text-xs text-gray-500">{item.description}</span>
-                </div>
-              )}
+              <div className="flex items-center space-x-3">
+                <Icon className={cn("h-5 w-5", isActive && "text-green-600")} />
+                {!isCollapsed && (
+                  <div className="flex flex-col">
+                    <span>{item.label}</span>
+                    <span className="text-xs text-gray-500">{item.description}</span>
+                  </div>
+                )}
+              </div>
             </Link>
           );
         })}

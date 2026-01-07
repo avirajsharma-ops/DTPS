@@ -54,13 +54,17 @@ export class SSEManager {
   // Send message to specific user
   sendToUser(userId: string, event: string, data: any) {
     const userConns = this.userConnections.get(userId);
-    if (!userConns) return;
+    if (!userConns) {
+      console.log(`[SSE] No connections for user ${userId} - user not online`);
+      return;
+    }
 
     const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
     const encoder = new TextEncoder();
 
     // Create a copy of the connections to avoid modification during iteration
     const connectionIds = Array.from(userConns);
+    console.log(`[SSE] Sending '${event}' to user ${userId} (${connectionIds.length} connections)`);
 
     connectionIds.forEach(connectionId => {
       const writer = this.connections.get(connectionId);

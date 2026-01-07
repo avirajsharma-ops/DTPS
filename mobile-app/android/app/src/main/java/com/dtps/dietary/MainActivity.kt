@@ -62,26 +62,41 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "Received foreground notification broadcast: $notificationData")
                 // Forward to WebView via JavaScript
                 mainHandler.post {
-                    val escapedData = notificationData.replace("'", "\\'").replace("\n", "\\n")
-                    webView.evaluateJavascript(
-                        """
+                    // Properly escape the JSON string for JavaScript
+                    val escapedData = notificationData
+                        .replace("\\", "\\\\")    // Escape backslashes first
+                        .replace("\"", "\\\"")    // Escape double quotes
+                        .replace("'", "\\'")      // Escape single quotes
+                        .replace("\n", "\\n")     // Escape newlines
+                        .replace("\r", "\\r")     // Escape carriage returns
+                        .replace("\t", "\\t")     // Escape tabs
+                    
+                    val jsCode = """
                         (function() {
                             try {
-                                var notification = JSON.parse('$escapedData');
+                                console.log('[Native] Processing foreground notification...');
+                                var notification = JSON.parse("$escapedData");
+                                console.log('[Native] Parsed notification:', JSON.stringify(notification));
+                                
                                 // Try global handler first
                                 if (typeof window.onForegroundNotification === 'function') {
+                                    console.log('[Native] Calling onForegroundNotification handler');
                                     window.onForegroundNotification(notification);
+                                } else {
+                                    console.log('[Native] No onForegroundNotification handler found');
                                 }
+                                
                                 // Also dispatch custom event
                                 window.dispatchEvent(new CustomEvent('nativeForegroundNotification', { detail: notification }));
                                 console.log('[Native] Foreground notification forwarded to WebView');
                             } catch (e) {
                                 console.error('[Native] Error handling foreground notification:', e);
+                                console.error('[Native] Raw data:', "$escapedData");
                             }
                         })();
-                        """.trimIndent(),
-                        null
-                    )
+                    """.trimIndent()
+                    
+                    webView.evaluateJavascript(jsCode, null)
                 }
             }
         }

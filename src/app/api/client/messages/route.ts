@@ -7,6 +7,8 @@ import User from '@/lib/db/models/User';
 import { Notification } from '@/lib/db/models';
 import mongoose from 'mongoose';
 import { broadcastUnreadCounts } from '../unread-counts/stream/route';
+import { SSEManager } from '@/lib/realtime/sse-manager';
+import { sendNewMessageNotification } from '@/lib/notifications/notificationService';
 
 // GET /api/client/messages - Get messages for current client
 export async function GET(request: NextRequest) {
@@ -138,6 +140,41 @@ export async function POST(request: NextRequest) {
     // Populate sender and receiver info
     await message.populate('sender', 'firstName lastName avatar role');
     await message.populate('receiver', 'firstName lastName avatar role');
+
+    // Send real-time notification to BOTH sender and recipient via SSE
+    const sseManager = SSEManager.getInstance();
+    const messagePayload = {
+      message: message.toJSON(),
+      timestamp: Date.now()
+    };
+    
+    // Send to recipient
+    sseManager.sendToUser(recipientId, 'new_message', messagePayload);
+    
+    // Also send to sender (for multi-device sync)
+    sseManager.sendToUser(session.user.id, 'new_message', messagePayload);
+
+    // Send push notification to recipient (dietitian/health counselor)
+    const sender = await User.findById(session.user.id).select('firstName lastName');
+    const senderName = sender ? `${sender.firstName} ${sender.lastName}` : 'A user';
+    try {
+      await sendNewMessageNotification(
+        recipientId,
+        senderName,
+        content,
+        message._id.toString()
+      );
+    } catch (notifError) {
+      console.error('Failed to send push notification:', notifError);
+    }
+
+    // Broadcast SSE update for recipient's unread counts
+    const recipientMessageCount = await Message.countDocuments({ receiver: recipientId, isRead: false });
+    const recipientNotificationCount = await Notification.countDocuments({ userId: recipientId, read: false });
+    broadcastUnreadCounts(recipientId, {
+      notifications: recipientNotificationCount,
+      messages: recipientMessageCount
+    });
 
     return NextResponse.json({
       success: true,

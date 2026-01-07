@@ -1,38 +1,89 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Bell, BellOff, X } from 'lucide-react';
-import { useNotifications } from '@/hooks/useNotifications';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface NotificationPermissionBannerProps {
   className?: string;
   onDismiss?: () => void;
+  /**
+   * Roles that should see the banner. If not specified, shows for all authenticated users.
+   */
+  allowedRoles?: string[];
 }
 
 export function NotificationPermissionBanner({ 
   className, 
-  onDismiss 
+  onDismiss,
+  allowedRoles
 }: NotificationPermissionBannerProps) {
-  const { notificationState, requestPermission } = useNotifications();
+  const { data: session, status } = useSession();
+  const { 
+    isSupported, 
+    permission, 
+    isLoading,
+    requestPermission, 
+    registerToken 
+  } = usePushNotifications({ autoRegister: false });
   const [isRequesting, setIsRequesting] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [shouldShow, setShouldShow] = useState(false);
+
+  // Check if banner should be shown
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setShouldShow(false);
+      return;
+    }
+
+    // Check role if allowedRoles is specified
+    if (allowedRoles && allowedRoles.length > 0) {
+      const userRole = session?.user?.role;
+      if (!userRole || !allowedRoles.includes(userRole)) {
+        setShouldShow(false);
+        return;
+      }
+    }
+
+    // Check local storage for dismissal
+    if (session?.user?.id) {
+      const dismissedKey = `notification_banner_dismissed_${session.user.id}`;
+      const wasDismissed = localStorage.getItem(dismissedKey) === 'true';
+      if (wasDismissed) {
+        setIsDismissed(true);
+        setShouldShow(false);
+        return;
+      }
+    }
+
+    setShouldShow(true);
+  }, [status, session, allowedRoles]);
 
   // Don't show if notifications are already granted, not supported, or dismissed
-  if (notificationState.permission === 'granted' || 
-      !notificationState.isSupported || 
-      isDismissed) {
+  if (!shouldShow || permission === 'granted' || !isSupported || isDismissed) {
     return null;
   }
 
   const handleRequestPermission = async () => {
     setIsRequesting(true);
     try {
-      await requestPermission();
+      const granted = await requestPermission();
+      if (granted) {
+        // Also register the FCM token
+        const registered = await registerToken();
+        if (registered) {
+          toast.success('Push notifications enabled! You will receive alerts for new appointments and messages.');
+        }
+      }
     } catch (error) {
       console.error('Failed to request notification permission:', error);
+      toast.error('Failed to enable notifications. Please try again.');
     } finally {
       setIsRequesting(false);
     }
@@ -40,11 +91,18 @@ export function NotificationPermissionBanner({
 
   const handleDismiss = () => {
     setIsDismissed(true);
+    
+    // Remember dismissal in local storage
+    if (session?.user?.id) {
+      const dismissedKey = `notification_banner_dismissed_${session.user.id}`;
+      localStorage.setItem(dismissedKey, 'true');
+    }
+    
     onDismiss?.();
   };
 
   const getAlertVariant = () => {
-    switch (notificationState.permission) {
+    switch (permission) {
       case 'denied':
         return 'destructive';
       default:
@@ -53,7 +111,7 @@ export function NotificationPermissionBanner({
   };
 
   const getIcon = () => {
-    switch (notificationState.permission) {
+    switch (permission) {
       case 'denied':
         return <BellOff className="h-4 w-4" />;
       default:
@@ -62,16 +120,16 @@ export function NotificationPermissionBanner({
   };
 
   const getMessage = () => {
-    switch (notificationState.permission) {
+    switch (permission) {
       case 'denied':
-        return 'Notifications are blocked. To receive message and call notifications, please enable them in your browser settings.';
+        return 'Notifications are blocked. To receive alerts for new appointments and messages, please enable them in your browser settings.';
       default:
-        return 'Enable notifications to receive alerts for new messages and incoming calls even when the app is in the background.';
+        return 'Enable push notifications to receive instant alerts for new appointments, messages, and important updates.';
     }
   };
 
   const getActionButton = () => {
-    switch (notificationState.permission) {
+    switch (permission) {
       case 'denied':
         return (
           <Button

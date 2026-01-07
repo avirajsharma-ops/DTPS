@@ -270,16 +270,36 @@ export default function MobileSettingsPage() {
               <ChevronRight className="h-5 w-5 text-gray-400" />
             </button>
 
-            <button className="w-full flex items-center gap-3 px-4 py-4 active:bg-gray-50 transition-colors">
-              <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-slate-600" />
+            {/* Legal Section */}
+            <div className="border-b border-gray-100">
+              <div className="px-4 py-3 bg-gray-50">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-slate-600" />
+                  <p className="text-sm font-semibold text-gray-900">Legal Documents</p>
+                </div>
               </div>
-              <div className="flex-1 text-left">
-                <p className="font-medium text-gray-900">Terms & Privacy</p>
-                <p className="text-sm text-gray-500">Legal information</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </button>
+              
+              <Link href="/settings/privacy-policy" className="w-full flex items-center gap-3 px-4 py-3 active:bg-gray-50 transition-colors border-b border-gray-100 text-left hover:bg-gray-50">
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900 text-sm">Privacy Policy</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </Link>
+
+              <Link href="/settings/terms-of-service" className="w-full flex items-center gap-3 px-4 py-3 active:bg-gray-50 transition-colors border-b border-gray-100 text-left hover:bg-gray-50">
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900 text-sm">Terms & Conditions</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </Link>
+
+              <Link href="/settings/refund" className="w-full flex items-center gap-3 px-4 py-3 active:bg-gray-50 transition-colors text-left hover:bg-gray-50">
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900 text-sm">Refund Policy</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </Link>
+            </div>
           </div>
         </div>
 

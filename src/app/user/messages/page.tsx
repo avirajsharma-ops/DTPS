@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
+import { useRealtime } from '@/hooks/useRealtime';
 import { ResponsiveLayout } from '@/components/client/layouts';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,31 @@ export default function UserMessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Handle incoming SSE messages for real-time updates
+  const handleRealtimeMessage = useCallback((event: any) => {
+    if (event.type === 'new_message') {
+      const newMsg = event.data?.message;
+      if (newMsg) {
+        // Update messages if this is the active conversation
+        if (selectedConversation && 
+            (newMsg.sender._id === selectedConversation._id || newMsg.receiver._id === selectedConversation._id)) {
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.some(m => m._id === newMsg._id)) return prev;
+            return [...prev, newMsg];
+          });
+        }
+        // Update conversations list
+        fetchConversationsQuiet();
+      }
+    }
+  }, [selectedConversation]);
+
+  // Use SSE for real-time message updates
+  const { isConnected } = useRealtime({
+    onMessage: handleRealtimeMessage
+  });
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
@@ -93,26 +119,6 @@ export default function UserMessagesPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Poll for new messages when in a conversation
-  useEffect(() => {
-    if (selectedConversation) {
-      const interval = setInterval(() => {
-        fetchMessages(selectedConversation._id, false);
-      }, 3000); // Poll every 3 seconds for faster updates
-      return () => clearInterval(interval);
-    }
-  }, [selectedConversation]);
-
-  // Poll for conversation updates (new messages indicator)
-  useEffect(() => {
-    if (session?.user) {
-      const interval = setInterval(() => {
-        fetchConversationsQuiet();
-      }, 10000); // Poll every 10 seconds for conversation list
-      return () => clearInterval(interval);
-    }
-  }, [session]);
 
   const fetchConversationsQuiet = async () => {
     try {

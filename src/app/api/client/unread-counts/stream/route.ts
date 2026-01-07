@@ -12,18 +12,14 @@ const connections = new Map<string, Set<ReadableStreamDefaultController>>();
 export function broadcastUnreadCounts(userId: string, counts: { notifications: number; messages: number }) {
   const userConnections = connections.get(userId);
   if (userConnections) {
-    console.log(`[SSE Broadcast] Sending to ${userConnections.size} connection(s) for user ${userId}:`, counts);
     const data = `data: ${JSON.stringify(counts)}\n\n`;
     userConnections.forEach((controller) => {
       try {
         controller.enqueue(new TextEncoder().encode(data));
       } catch (error) {
-        // Connection might be closed
-        console.error('Error sending SSE update:', error);
+        // Connection might be closed - silently ignore
       }
     });
-  } else {
-    console.log(`[SSE Broadcast] No active connections for user ${userId}, counts not broadcast:`, counts);
   }
 }
 
@@ -62,7 +58,7 @@ export async function GET(request: NextRequest) {
         
         controller.enqueue(new TextEncoder().encode(initialData));
       } catch (error) {
-        console.error('Error fetching initial counts:', error);
+        // Silently handle initial count errors - client will use polling fallback
       }
 
       // Keep connection alive with heartbeat every 30 seconds

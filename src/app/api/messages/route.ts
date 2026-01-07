@@ -98,6 +98,18 @@ export async function GET(request: NextRequest) {
         },
         { isRead: true, readAt: new Date() }
       );
+
+      // Broadcast SSE update for staff unread counts
+      try {
+        const { broadcastStaffUnreadCounts } = await import('@/app/api/staff/unread-counts/stream/route');
+        const messageCount = await Message.countDocuments({
+          receiver: session.user.id,
+          isRead: false
+        });
+        broadcastStaffUnreadCounts(session.user.id, { messages: messageCount });
+      } catch (error) {
+        // Silently handle broadcast errors
+      }
     }
 
     return NextResponse.json({
@@ -166,12 +178,18 @@ export async function POST(request: NextRequest) {
     await message.populate('sender', 'firstName lastName avatar');
     await message.populate('receiver', 'firstName lastName avatar');
 
-    // Send real-time notification to recipient
+    // Send real-time notification to BOTH sender and recipient
     const sseManager = SSEManager.getInstance();
-    sseManager.sendToUser(validatedData.recipientId, 'new_message', {
+    const messagePayload = {
       message: message.toJSON(),
       timestamp: Date.now()
-    });
+    };
+    
+    // Send to recipient
+    sseManager.sendToUser(validatedData.recipientId, 'new_message', messagePayload);
+    
+    // Also send to sender (for multi-device sync)
+    sseManager.sendToUser(session.user.id, 'new_message', messagePayload);
 
     // Trigger webhook for message sent
     await createMessageWebhook(message.toJSON(), 'sent');

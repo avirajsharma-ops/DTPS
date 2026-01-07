@@ -61,6 +61,8 @@
     "recharts": "^3.1.2",
     "simple-peer": "^9.11.1",
     "slugify": "^1.6.6",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "sonner": "^2.0.7",
     "stripe": "^18.4.0",
     "tailwind-merge": "^3.3.1",

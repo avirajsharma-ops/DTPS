@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useRealtime } from '@/hooks/useRealtime';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 // Import the desktop version for non-clients
 const DesktopMessagesPage = dynamic(() => import('./page-old-desktop'), { ssr: false });
@@ -102,6 +103,7 @@ function ClientMessagesUI() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { registerToken } = usePushNotifications({ autoRegister: false });
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedChat, setSelectedChat] = useState<string | null>(searchParams?.get('userId'));
@@ -150,12 +152,19 @@ function ClientMessagesUI() {
       return;
     }
 
-    // Request notification permissions for call notifications
+    // Request notification permissions and register FCM token
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          // Register FCM token for push notifications
+          registerToken().catch(error => console.error('Failed to register push notifications:', error));
+        }
       });
+    } else if (Notification.permission === 'granted') {
+      // Already granted, register the token
+      registerToken().catch(error => console.error('Failed to register push notifications:', error));
     }
-  }, [session, status, router]);
+  }, [session, status, router, registerToken]);
 
   useEffect(() => {
     if (session) {
@@ -182,43 +191,49 @@ function ClientMessagesUI() {
     scrollToBottom();
   }, [messages]);
 
-  // Auto-refresh conversations every 5 seconds
-  useEffect(() => {
-    if (!selectedChat) {
-      const interval = setInterval(() => {
-        fetchConversations();
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [selectedChat]);
-
-  // Auto-refresh messages every 3 seconds when in chat
-  useEffect(() => {
-    if (selectedChat) {
-      const interval = setInterval(() => {
-        fetchMessages(selectedChat);
-      }, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [selectedChat]);
-
-  // Real-time event handling for calls
-  const { isConnected } = useRealtime({
-    onMessage: (event) => {
-
-      if (event.type === 'incoming_call') {
-        handleIncomingCall(event.data);
-      } else if (event.type === 'call_accepted') {
-        // Only handle if we are the caller (initiated the call)
-        // For clients, this should not happen as they receive calls
-      } else if (event.type === 'call_rejected') {
-        handleCallRejected(event.data);
-      } else if (event.type === 'call_ended') {
-        handleCallEnded(event.data);
-      } else if (event.type === 'ice_candidate') {
-        handleIceCandidate(event.data);
+  // Handle incoming SSE messages for real-time updates
+  const handleRealtimeMessage = useCallback((event: any) => {
+    console.log('[Messages Page] SSE event received:', event.type, event.data);
+    
+    if (event.type === 'new_message') {
+      const newMsg = event.data?.message;
+      console.log('[Messages Page] New message received:', newMsg);
+      
+      if (newMsg) {
+        // Update messages if this is the active conversation
+        if (selectedChat && 
+            (newMsg.sender._id === selectedChat || newMsg.receiver._id === selectedChat)) {
+          console.log('[Messages Page] Adding message to current conversation');
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.some(m => m._id === newMsg._id)) {
+              console.log('[Messages Page] Message already exists, skipping');
+              return prev;
+            }
+            return [...prev, newMsg];
+          });
+          // Scroll to bottom after adding new message
+          setTimeout(() => scrollToBottom(), 100);
+        }
+        // Update conversations list quietly (without loading state)
+        fetchConversationsQuiet();
       }
+    } else if (event.type === 'incoming_call') {
+      handleIncomingCall(event.data);
+    } else if (event.type === 'call_accepted') {
+      // Only handle if we are the caller (initiated the call)
+    } else if (event.type === 'call_rejected') {
+      handleCallRejected(event.data);
+    } else if (event.type === 'call_ended') {
+      handleCallEnded(event.data);
+    } else if (event.type === 'ice_candidate') {
+      handleIceCandidate(event.data);
     }
+  }, [selectedChat]);
+
+  // Real-time event handling for calls and messages via SSE
+  const { isConnected } = useRealtime({
+    onMessage: handleRealtimeMessage
   });
 
   // Call duration timer
@@ -240,6 +255,19 @@ function ClientMessagesUI() {
       }
     };
   }, [callState, callStartTime]);
+
+  // Quiet fetch for real-time updates (no loading state change)
+  const fetchConversationsQuiet = async () => {
+    try {
+      const response = await fetch('/api/messages/conversations');
+      if (response.ok) {
+        const data = await response.json();
+        setConversations(data.conversations || []);
+      }
+    } catch (error) {
+      // Silent fail for background updates
+    }
+  };
 
   const fetchConversations = async () => {
     try {
@@ -330,12 +358,14 @@ function ClientMessagesUI() {
         })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setMessages([...messages, data]);
-        fetchConversations(); // Update conversation list
-        scrollToBottom();
+      if (!response.ok) {
+        throw new Error('Failed to send message');
       }
+
+      // Don't add to messages here - wait for SSE event to update
+      // This ensures the message appears through the real-time SSE handler
+      console.log('[SendMessage] Message sent, waiting for SSE update');
+      
     } catch (error) {
       console.error('Error sending message:', error);
       setNewMessage(messageText); // Restore message on error
@@ -888,10 +918,12 @@ function ClientMessagesUI() {
         }),
       });
 
-      if (response.ok) {
-        fetchMessages(selectedChat);
-        fetchConversations();
+      if (!response.ok) {
+        throw new Error('Failed to send message');
       }
+
+      // Don't fetch messages here - wait for SSE event to update
+      console.log('[SendAttachment] Message sent, waiting for SSE update');
     } catch (error) {
       console.error('Error sending attachment message:', error);
     }

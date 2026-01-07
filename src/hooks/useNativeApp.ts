@@ -75,6 +75,7 @@ export function useNativeApp(): UseNativeAppReturn {
 
   // Set up foreground notification handler that native app can call
   const onForegroundNotification = useCallback((handler: (notification: ForegroundNotification) => void) => {
+    console.log('[useNativeApp] Setting foreground notification handler');
     notificationHandlerRef.current = handler;
   }, []);
 
@@ -82,19 +83,27 @@ export function useNativeApp(): UseNativeAppReturn {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    console.log('[useNativeApp] Setting up global foreground notification handlers');
+
     // Set up global handler that native app will call
     window.onForegroundNotification = (notification: ForegroundNotification) => {
-      console.log('[useNativeApp] Foreground notification received from native:', notification);
+      console.log('[useNativeApp] window.onForegroundNotification called with:', JSON.stringify(notification));
       if (notificationHandlerRef.current) {
+        console.log('[useNativeApp] Calling registered handler');
         notificationHandlerRef.current(notification);
+      } else {
+        console.warn('[useNativeApp] No handler registered for foreground notifications');
       }
     };
 
     // Also listen for custom event (alternative approach)
     const handleForegroundNotification = (event: CustomEvent<ForegroundNotification>) => {
-      console.log('[useNativeApp] Foreground notification event received:', event.detail);
+      console.log('[useNativeApp] nativeForegroundNotification event received:', JSON.stringify(event.detail));
       if (notificationHandlerRef.current) {
+        console.log('[useNativeApp] Calling registered handler from event');
         notificationHandlerRef.current(event.detail);
+      } else {
+        console.warn('[useNativeApp] No handler registered for foreground notification event');
       }
     };
 

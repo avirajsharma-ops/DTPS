@@ -37,26 +37,48 @@ export function PushNotificationProvider({
         const type = payload.data?.type || 'general';
         const clickAction = payload.data?.clickAction || payload.data?.url;
         
-        // Show toast notification for foreground messages
-        toast(title, {
-            description: body,
-            duration: 5000,
+        // Determine the icon/emoji based on notification type
+        const getIcon = (notificationType: string) => {
+            switch (notificationType) {
+                case 'new_message':
+                case 'message':
+                    return '💬';
+                case 'appointment':
+                case 'appointment_booked':
+                case 'appointment_cancelled':
+                    return '📅';
+                case 'meal':
+                case 'meal_plan_created':
+                case 'meal_plan_updated':
+                    return '🍽️';
+                case 'payment':
+                case 'payment_link_created':
+                    return '💳';
+                case 'task_assigned':
+                    return '✅';
+                case 'call':
+                    return '📞';
+                default:
+                    return '🔔';
+            }
+        };
+
+        console.log('[PushNotificationProvider] Showing notification banner:', { title, body, type, clickAction });
+        
+        // Show toast notification with prominent styling
+        toast.success(title, {
+            description: body && body.length > 0 ? body : undefined,
+            duration: 6000, // Slightly longer duration for better visibility
             action: clickAction ? {
                 label: 'View',
                 onClick: () => {
-                    if (clickAction) {
-                        window.location.href = clickAction;
-                    }
+                    console.log('[PushNotificationProvider] Navigating to:', clickAction);
+                    window.location.href = clickAction;
                 }
             } : undefined,
-            icon: type === 'message' ? '💬' : 
-                  type === 'appointment' || type === 'appointment_booked' ? '📅' :
-                  type === 'meal' || type === 'meal_plan_created' ? '🍽️' :
-                  type === 'payment' || type === 'payment_link_created' ? '💳' :
-                  type === 'task_assigned' ? '✅' : '🔔',
         });
 
-        // Call user's custom handler if provided
+        // Also call custom handler if provided
         if (onNotification) {
             onNotification(payload);
         }
@@ -79,30 +101,26 @@ export function PushNotificationProvider({
 
     // Handle native app foreground notifications with toast
     const handleNativeForegroundNotification = useCallback((notification: ForegroundNotification) => {
-        console.log('[PushNotificationProvider] Native foreground notification:', notification);
+        console.log('[PushNotificationProvider] Native foreground notification received:', JSON.stringify(notification));
         
         const title = notification.title || 'New Notification';
         const body = notification.body || '';
         const type = notification.data?.type || 'general';
         const clickAction = notification.data?.clickAction || notification.data?.url;
         
-        // Show toast notification
-        toast(title, {
-            description: body,
-            duration: 5000,
+        console.log('[PushNotificationProvider] Showing native notification banner:', { title, body, type, clickAction });
+        
+        // Show prominent toast notification
+        toast.success(title, {
+            description: body && body.length > 0 ? body : undefined,
+            duration: 6000,
             action: clickAction ? {
                 label: 'View',
                 onClick: () => {
-                    if (clickAction) {
-                        window.location.href = clickAction;
-                    }
+                    console.log('[PushNotificationProvider] Navigating to:', clickAction);
+                    window.location.href = clickAction;
                 }
             } : undefined,
-            icon: type === 'message' ? '💬' : 
-                  type === 'appointment' || type === 'appointment_booked' ? '📅' :
-                  type === 'meal' || type === 'meal_plan_created' ? '🍽️' :
-                  type === 'payment' || type === 'payment_link_created' ? '💳' :
-                  type === 'task_assigned' ? '✅' : '🔔',
         });
 
         // Call user's custom handler if provided

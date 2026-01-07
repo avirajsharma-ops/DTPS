@@ -232,10 +232,18 @@ export async function unregisterFCMToken(): Promise<boolean> {
 export function onForegroundMessage(callback: (payload: any) => void): (() => void) | null {
     const messagingInstance = getFirebaseMessaging();
     if (!messagingInstance) {
+        console.warn('Firebase Messaging not available for foreground listener');
         return null;
     }
 
+    console.log('[fcmHelper] Setting up foreground message listener');
+
     const unsubscribe = onMessage(messagingInstance, (payload) => {
+        console.log('[fcmHelper] Foreground message received:', {
+            title: payload.notification?.title,
+            body: payload.notification?.body,
+            type: payload.data?.type,
+        });
         callback(payload);
     });
 

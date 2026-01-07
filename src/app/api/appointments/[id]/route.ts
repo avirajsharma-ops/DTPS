@@ -7,6 +7,8 @@ import User from '@/lib/db/models/User';
 import { removeAppointmentFromCalendars, updateCalendarEvent } from '@/lib/services/googleCalendar';
 import { UserRole, AppointmentStatus } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
+import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
+import { SSEManager } from '@/lib/realtime/sse-manager';
 
 // GET /api/appointments/[id] - Get specific appointment
 export async function GET(
@@ -93,24 +95,41 @@ export async function PUT(
 
     
     // Check if user can update this appointment
-    // Admin can update any, dietitian and HC can only update appointments they created
+    // Admin can update any, dietitian and HC can update appointments they created
+    // Clients can only cancel their own appointments (change status to cancelled)
     let canUpdate = false;
+    let isClientCancelling = false;
     
-    if (session.user.role === UserRole.ADMIN) {
+    const clientId = appointment.client?.toString();
+    const dietitianId = appointment.dietitian?.toString();
+    const userRole = session.user.role as string;
+    
+    if (userRole === UserRole.ADMIN || userRole === 'admin') {
       canUpdate = true;
-    } else if (session.user.role === UserRole.DIETITIAN) {
+    } else if (userRole === UserRole.DIETITIAN || userRole === 'dietitian') {
       // Dietitian can only update appointments they created
       if ((appointment as any).createdBy?.toString() === session.user.id) {
         canUpdate = true;
       }
-    } else if ((session.user.role as string) === UserRole.HEALTH_COUNSELOR || (session.user.role as string) === 'health_counselor') {
+    } else if (userRole === UserRole.HEALTH_COUNSELOR || userRole === 'health_counselor') {
       // Health counselor can only update appointments they created
       if ((appointment as any).createdBy?.toString() === session.user.id) {
         canUpdate = true;
       }
-    }    if (!canUpdate) {
+    } else if (userRole === UserRole.CLIENT || userRole === 'client') {
+      // Client can only cancel their own appointments
+      if (clientId === session.user.id && body.status === 'cancelled') {
+        canUpdate = true;
+        isClientCancelling = true;
+      }
+    }
+    
+    if (!canUpdate) {
       return NextResponse.json({ error: 'You can only edit appointments you created' }, { status: 403 });
     }
+
+    // Track if status is changing to cancelled
+    const isBeingCancelled = body.status === 'cancelled' && appointment.status !== 'cancelled';
 
     // If updating schedule, check for conflicts
     if (body.scheduledAt || body.duration) {
@@ -174,7 +193,7 @@ export async function PUT(
 
     // Log history for appointment update
     await logHistoryServer({
-      userId: (appointment.client as any).toString(),
+      userId: (appointment.client as any)._id?.toString() || (appointment.client as any).toString(),
       action: 'update',
       category: 'appointment',
       description: `Appointment updated${body.status ? ': status changed to ' + body.status : ''}`,
@@ -185,6 +204,95 @@ export async function PUT(
         status: appointment.status
       }
     });
+
+    // Send notifications if appointment was cancelled
+    if (isBeingCancelled) {
+      try {
+        const dietitianData = appointment.dietitian as any;
+        const clientData = appointment.client as any;
+        
+        // Get IDs from populated objects or original IDs
+        const dietitianIdStr = dietitianData?._id?.toString() || dietitianId;
+        const clientIdStr = clientData?._id?.toString() || clientId;
+        
+        const formattedDate = new Date(appointment.scheduledAt).toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        });
+
+        const sseManager = SSEManager.getInstance();
+
+        if (isClientCancelling) {
+          // Client cancelled - notify dietitian/health counselor
+          const clientName = `${clientData?.firstName || ''} ${clientData?.lastName || ''}`.trim() || 'Client';
+          
+          // Send push notification to dietitian
+          if (dietitianIdStr) {
+            await sendNotificationToUser(dietitianIdStr, {
+              title: '❌ Appointment Cancelled',
+              body: `${clientName} has cancelled the ${appointment.type || 'consultation'} scheduled for ${formattedDate}`,
+              icon: clientData?.avatar || '/icons/icon-192x192.png',
+              data: {
+                type: 'appointment_cancelled',
+                appointmentId: appointment._id.toString(),
+                clientId: clientIdStr || '',
+              },
+              clickAction: `/appointments`,
+            });
+
+            // Send SSE notification
+            sseManager.sendToUser(dietitianIdStr, 'appointment_cancelled', {
+              appointmentId: appointment._id,
+              cancelledBy: 'client',
+              client: {
+                _id: clientIdStr,
+                firstName: clientData?.firstName,
+                lastName: clientData?.lastName,
+              },
+              scheduledAt: appointment.scheduledAt,
+              timestamp: Date.now()
+            });
+          }
+        } else {
+          // Staff cancelled - notify client
+          const staffName = `${dietitianData?.firstName || ''} ${dietitianData?.lastName || ''}`.trim() || 'Your dietitian';
+          
+          // Send push notification to client
+          if (clientIdStr) {
+            await sendNotificationToUser(clientIdStr, {
+              title: '❌ Appointment Cancelled',
+              body: `Your ${appointment.type || 'consultation'} with ${staffName} on ${formattedDate} has been cancelled`,
+              icon: dietitianData?.avatar || '/icons/icon-192x192.png',
+              data: {
+                type: 'appointment_cancelled',
+                appointmentId: appointment._id.toString(),
+                dietitianId: dietitianIdStr || '',
+              },
+              clickAction: `/user/appointments`,
+            });
+
+            // Send SSE notification
+            sseManager.sendToUser(clientIdStr, 'appointment_cancelled', {
+              appointmentId: appointment._id,
+              cancelledBy: 'staff',
+              dietitian: {
+                _id: dietitianIdStr,
+                firstName: dietitianData?.firstName,
+                lastName: dietitianData?.lastName,
+              },
+              scheduledAt: appointment.scheduledAt,
+              timestamp: Date.now()
+            });
+          }
+        }
+      } catch (notificationError) {
+        console.error('Failed to send cancellation notification:', notificationError);
+        // Don't fail the request if notification fails
+      }
+    }
 
     return NextResponse.json(appointment);
 
@@ -220,20 +328,31 @@ export async function DELETE(
     }
 
     // Check if user can cancel this appointment
-    // Admin can cancel any, dietitian and HC can only cancel appointments they created
+    // Admin can cancel any, dietitian and HC can cancel appointments they created
+    // Clients can cancel their own appointments
     let canCancel = false;
+    let isClientCancellingDelete = false;
     
-    if (session.user.role === UserRole.ADMIN) {
+    const clientIdDelete = appointment.client?.toString();
+    const userRoleDelete = session.user.role as string;
+    
+    if (userRoleDelete === UserRole.ADMIN || userRoleDelete === 'admin') {
       canCancel = true;
-    } else if (session.user.role === UserRole.DIETITIAN) {
+    } else if (userRoleDelete === UserRole.DIETITIAN || userRoleDelete === 'dietitian') {
       // Dietitian can only cancel appointments they created
       if ((appointment as any).createdBy?.toString() === session.user.id) {
         canCancel = true;
       }
-    } else if ((session.user.role as string) === UserRole.HEALTH_COUNSELOR || (session.user.role as string) === 'health_counselor') {
+    } else if (userRoleDelete === UserRole.HEALTH_COUNSELOR || userRoleDelete === 'health_counselor') {
       // Health counselor can only cancel appointments they created
       if ((appointment as any).createdBy?.toString() === session.user.id) {
         canCancel = true;
+      }
+    } else if (userRoleDelete === UserRole.CLIENT || userRoleDelete === 'client') {
+      // Client can cancel their own appointments
+      if (clientIdDelete === session.user.id) {
+        canCancel = true;
+        isClientCancellingDelete = true;
       }
     }
 
@@ -271,6 +390,10 @@ export async function DELETE(
     appointment.status = AppointmentStatus.CANCELLED;
     await appointment.save();
 
+    // Get user details for notifications
+    const dietitian = await User.findById(appointment.dietitian).select('firstName lastName avatar');
+    const client = await User.findById(appointment.client).select('firstName lastName avatar');
+
     // Log history for appointment cancellation
     await logHistoryServer({
       userId: appointment.client.toString(),
@@ -284,6 +407,107 @@ export async function DELETE(
         type: appointment.type
       }
     });
+
+    // Send cancellation notifications
+    try {
+      const formattedDate = new Date(appointment.scheduledAt).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+
+      const sseManager = SSEManager.getInstance();
+      const dietitianName = dietitian ? `${dietitian.firstName || ''} ${dietitian.lastName || ''}`.trim() : 'Your dietitian';
+      const clientName = client ? `${client.firstName || ''} ${client.lastName || ''}`.trim() : 'Client';
+
+      if (isClientCancellingDelete) {
+        // Client cancelled - notify dietitian
+        if (dietitian) {
+          await sendNotificationToUser(appointment.dietitian.toString(), {
+            title: '❌ Appointment Cancelled',
+            body: `${clientName} has cancelled the ${appointment.type || 'consultation'} scheduled for ${formattedDate}`,
+            icon: client?.avatar || '/icons/icon-192x192.png',
+            data: {
+              type: 'appointment_cancelled',
+              appointmentId: appointment._id.toString(),
+              clientId: appointment.client.toString(),
+            },
+            clickAction: `/appointments`,
+          });
+
+          sseManager.sendToUser(appointment.dietitian.toString(), 'appointment_cancelled', {
+            appointmentId: appointment._id,
+            cancelledBy: 'client',
+            client: client ? {
+              _id: client._id,
+              firstName: client.firstName,
+              lastName: client.lastName,
+            } : null,
+            scheduledAt: appointment.scheduledAt,
+            timestamp: Date.now()
+          });
+        }
+      } else {
+        // Staff cancelled - notify client
+        if (client) {
+          await sendNotificationToUser(appointment.client.toString(), {
+            title: '❌ Appointment Cancelled',
+            body: `Your ${appointment.type || 'consultation'} with ${dietitianName} on ${formattedDate} has been cancelled`,
+            icon: dietitian?.avatar || '/icons/icon-192x192.png',
+            data: {
+              type: 'appointment_cancelled',
+              appointmentId: appointment._id.toString(),
+              dietitianId: appointment.dietitian.toString(),
+            },
+            clickAction: `/user/appointments`,
+          });
+
+          sseManager.sendToUser(appointment.client.toString(), 'appointment_cancelled', {
+            appointmentId: appointment._id,
+            cancelledBy: 'staff',
+            dietitian: dietitian ? {
+              _id: dietitian._id,
+              firstName: dietitian.firstName,
+              lastName: dietitian.lastName,
+            } : null,
+            scheduledAt: appointment.scheduledAt,
+            timestamp: Date.now()
+          });
+        }
+
+        // Also notify dietitian if someone else cancelled
+        if (session.user.id !== appointment.dietitian.toString() && dietitian) {
+          await sendNotificationToUser(appointment.dietitian.toString(), {
+            title: '❌ Appointment Cancelled',
+            body: `Appointment with ${clientName} on ${formattedDate} has been cancelled`,
+            icon: client?.avatar || '/icons/icon-192x192.png',
+            data: {
+              type: 'appointment_cancelled',
+              appointmentId: appointment._id.toString(),
+              clientId: appointment.client.toString(),
+            },
+            clickAction: `/appointments`,
+          });
+
+          sseManager.sendToUser(appointment.dietitian.toString(), 'appointment_cancelled', {
+            appointmentId: appointment._id,
+            cancelledBy: 'admin',
+            client: client ? {
+              _id: client._id,
+              firstName: client.firstName,
+              lastName: client.lastName,
+            } : null,
+            scheduledAt: appointment.scheduledAt,
+            timestamp: Date.now()
+          });
+        }
+      }
+    } catch (notificationError) {
+      console.error('Failed to send cancellation notification:', notificationError);
+      // Don't fail the request if notification fails
+    }
 
     return NextResponse.json({ message: 'Appointment cancelled successfully' });
 

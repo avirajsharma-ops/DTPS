@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { cn } from '@/lib/utils';
+import { NotificationPermissionBanner } from '@/components/notifications/NotificationPermissionBanner';
+import { StaffUnreadCountProvider } from '@/contexts/StaffUnreadCountContext';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -50,24 +52,31 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex overflow-hidden">
-      {/* Sidebar - Full Height on Dashboard */}
-      {showSidebar && (
-        <div className="hidden lg:block h-screen shrink-0">
-          <Sidebar />
+    <StaffUnreadCountProvider>
+      <div className="h-screen bg-gray-50 flex overflow-hidden">
+        {/* Sidebar - Full Height on Dashboard */}
+        {showSidebar && (
+          <div className="hidden lg:block h-screen shrink-0">
+            <Sidebar />
+          </div>
+        )}
+        
+        {/* Main Content Area */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <Navbar />
+          {/* Notification Permission Banner for Staff */}
+          <NotificationPermissionBanner 
+            allowedRoles={['dietitian', 'health_counselor', 'admin']}
+            className="mx-4 mt-2"
+          />
+          <main className={cn(
+            "flex-1 overflow-y-auto",
+            className
+          )}>
+            {children}
+          </main>
         </div>
-      )}
-      
-      {/* Main Content Area */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Navbar />
-        <main className={cn(
-          "flex-1 overflow-y-auto",
-          className
-        )}>
-          {children}
-        </main>
       </div>
-    </div>
+    </StaffUnreadCountProvider>
   );
 }

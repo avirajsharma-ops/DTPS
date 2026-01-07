@@ -64,8 +64,9 @@ export function UnreadCountProvider({ children }: UnreadCountProviderProps) {
         }
       };
 
-      es.onerror = (error) => {
-        console.error('[UnreadCountProvider] SSE error:', error);
+      es.onerror = () => {
+        // SSE errors are common during development/reconnects - don't log as error
+        // Just silently attempt reconnection
         setIsConnected(false);
         es?.close();
 
@@ -74,9 +75,10 @@ export function UnreadCountProvider({ children }: UnreadCountProviderProps) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
           reconnectTimeout = setTimeout(() => {
             reconnectAttempts++;
-            console.log(`[UnreadCountProvider] Reconnecting... attempt ${reconnectAttempts}`);
             connect();
           }, delay);
+        } else {
+          console.log('[UnreadCountProvider] Max reconnect attempts reached, using polling fallback');
         }
       };
     };
@@ -113,35 +115,13 @@ export function UnreadCountProvider({ children }: UnreadCountProviderProps) {
     }
   }, []);
 
-  // Fallback polling if SSE fails
+  // Initial fetch when SSE is not connected yet
   useEffect(() => {
-    if (status !== 'authenticated' || isConnected) {
-      return;
+    if (status === 'authenticated' && !isConnected) {
+      // Fetch initial counts
+      refreshCounts();
     }
-
-    // Poll every 30 seconds as fallback
-    const pollInterval = setInterval(async () => {
-      try {
-        const [notifRes, msgRes] = await Promise.all([
-          fetch('/api/client/notifications/unread-count'),
-          fetch('/api/client/messages/unread-count')
-        ]);
-
-        if (notifRes.ok && msgRes.ok) {
-          const notifData = await notifRes.json();
-          const msgData = await msgRes.json();
-          setCounts({
-            notifications: notifData.count || 0,
-            messages: msgData.count || 0
-          });
-        }
-      } catch (error) {
-        console.error('[UnreadCountProvider] Polling error:', error);
-      }
-    }, 30000);
-
-    return () => clearInterval(pollInterval);
-  }, [status, isConnected]);
+  }, [status, isConnected, refreshCounts]);
 
   return (
     <UnreadCountContext.Provider value={{ counts, refreshCounts, isConnected }}>

@@ -249,6 +249,7 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
         } else if (event.type === 'new_message' && onMessage) {
           try {
             const data = JSON.parse(event.data);
+            console.log('[useRealtime] Received new_message event:', data);
             onMessage({
               type: 'new_message',
               data,

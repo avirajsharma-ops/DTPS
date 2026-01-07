@@ -405,7 +405,7 @@ export async function POST(request: NextRequest) {
         body: `${client.firstName} ${client.lastName} booked a ${type || 'consultation'} on ${formattedDate}`,
         icon: client.avatar || '/icons/icon-192x192.png',
         data: {
-          type: 'appointment',
+          type: 'appointment_booked',
           appointmentId: appointment._id.toString(),
           clientId,
         },
@@ -418,11 +418,11 @@ export async function POST(request: NextRequest) {
         body: `Your ${type || 'consultation'} with ${dietitian.firstName} ${dietitian.lastName} is scheduled for ${formattedDate}`,
         icon: dietitian.avatar || '/icons/icon-192x192.png',
         data: {
-          type: 'appointment',
+          type: 'appointment_booked',
           appointmentId: appointment._id.toString(),
           dietitianId,
         },
-        clickAction: `/appointments`,
+        clickAction: `/user/appointments`,
       });
     } catch (pushError) {
       console.error('Failed to send appointment push notification:', pushError);
