@@ -1,5 +1,6 @@
 package com.dtps.dietary
 
+import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -11,13 +12,19 @@ import android.media.RingtoneManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import org.json.JSONObject
 
 class DTPSFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
         private const val TAG = "DTPSFirebaseMsgService"
+        
+        // Broadcast action for foreground notifications
+        const val ACTION_FOREGROUND_NOTIFICATION = "com.dtps.dietary.FOREGROUND_NOTIFICATION"
+        const val EXTRA_NOTIFICATION_DATA = "notification_data"
         
         // Notification channels
         const val CHANNEL_ID_DEFAULT = "dtps_notifications"
@@ -59,6 +66,45 @@ class DTPSFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
+    /**
+     * Check if the app is in foreground
+     */
+    private fun isAppInForeground(): Boolean {
+        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val appProcesses = activityManager.runningAppProcesses ?: return false
+        val packageName = packageName
+        for (appProcess in appProcesses) {
+            if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND &&
+                appProcess.processName == packageName) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * Send foreground notification to WebView via broadcast
+     */
+    private fun sendForegroundNotificationToWebView(title: String, body: String, data: Map<String, String>) {
+        try {
+            val jsonData = JSONObject()
+            jsonData.put("title", title)
+            jsonData.put("body", body)
+            
+            val dataObj = JSONObject()
+            data.forEach { (key, value) -> dataObj.put(key, value) }
+            jsonData.put("data", dataObj)
+            
+            val intent = Intent(ACTION_FOREGROUND_NOTIFICATION).apply {
+                putExtra(EXTRA_NOTIFICATION_DATA, jsonData.toString())
+            }
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+            Log.d(TAG, "Foreground notification broadcast sent: $title")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending foreground notification broadcast", e)
+        }
+    }
+
     override fun onNewToken(token: String) {
         Log.d(TAG, "Refreshed token: $token")
         sendTokenToWebView(token)
@@ -68,6 +114,12 @@ class DTPSFirebaseMessagingService : FirebaseMessagingService() {
         val title = data["title"] ?: "DTPS"
         val body = data["body"] ?: data["message"] ?: ""
         
+        // If app is in foreground, send to WebView for toast display
+        if (isAppInForeground()) {
+            sendForegroundNotificationToWebView(title, body, data)
+        }
+        
+        // Always show system notification (for background and to persist in notification tray)
         showNotification(title, body, data)
     }
 

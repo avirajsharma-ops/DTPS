@@ -3,8 +3,10 @@ package com.dtps.dietary
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
@@ -26,6 +28,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.messaging.FirebaseMessaging
 import java.io.File
 import java.text.SimpleDateFormat
@@ -50,6 +53,39 @@ class MainActivity : AppCompatActivity() {
     
     // FCM token - proactively fetched
     private var cachedFCMToken: String? = null
+    
+    // Broadcast receiver for foreground notifications
+    private val foregroundNotificationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val notificationData = intent?.getStringExtra(DTPSFirebaseMessagingService.EXTRA_NOTIFICATION_DATA)
+            if (!notificationData.isNullOrEmpty() && splashComplete && ::webView.isInitialized) {
+                Log.d(TAG, "Received foreground notification broadcast: $notificationData")
+                // Forward to WebView via JavaScript
+                mainHandler.post {
+                    val escapedData = notificationData.replace("'", "\\'").replace("\n", "\\n")
+                    webView.evaluateJavascript(
+                        """
+                        (function() {
+                            try {
+                                var notification = JSON.parse('$escapedData');
+                                // Try global handler first
+                                if (typeof window.onForegroundNotification === 'function') {
+                                    window.onForegroundNotification(notification);
+                                }
+                                // Also dispatch custom event
+                                window.dispatchEvent(new CustomEvent('nativeForegroundNotification', { detail: notification }));
+                                console.log('[Native] Foreground notification forwarded to WebView');
+                            } catch (e) {
+                                console.error('[Native] Error handling foreground notification:', e);
+                            }
+                        })();
+                        """.trimIndent(),
+                        null
+                    )
+                }
+            }
+        }
+    }
 
     companion object {
         private const val TAG = "MainActivity"
@@ -571,11 +607,24 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         webView.onResume()
+        
+        // Register for foreground notification broadcasts
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            foregroundNotificationReceiver,
+            IntentFilter(DTPSFirebaseMessagingService.ACTION_FOREGROUND_NOTIFICATION)
+        )
     }
 
     override fun onPause() {
         super.onPause()
         webView.onPause()
+        
+        // Unregister foreground notification receiver
+        try {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(foregroundNotificationReceiver)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error unregistering receiver", e)
+        }
     }
 
     override fun onDestroy() {

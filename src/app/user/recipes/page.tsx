@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Users, Flame, Search } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Flame, Search, ChevronDown } from 'lucide-react';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { useRouter } from 'next/navigation';
 
@@ -27,37 +27,104 @@ export default function RecipesPage() {
   const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalRecipes, setTotalRecipes] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [categories, setCategories] = useState<string[]>([]);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const ITEMS_PER_PAGE = 12;
 
+  // Fetch categories on mount
   useEffect(() => {
-    fetchRecipes();
+    fetchCategories();
   }, []);
 
-  const fetchRecipes = async () => {
-    try {
+  // Fetch recipes when page, search, or category changes
+  useEffect(() => {
+    setPage(1);
+    setRecipes([]);
+    if (searchTerm || selectedCategory) {
+      fetchRecipes(1, true);
+    } else {
       setLoading(true);
-      // Fetch from your recipes API
-      const response = await fetch('/api/recipes');
+      fetchRecipes(1, false);
+    }
+  }, [searchTerm, selectedCategory]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/recipes?limit=1');
       if (response.ok) {
         const data = await response.json();
-        setRecipes(data.recipes || []);
+        setCategories(data.categories || []);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchRecipes = async (pageNum: number, isSearch: boolean) => {
+    try {
+      if (!isSearch) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const params = new URLSearchParams();
+      params.append('page', pageNum.toString());
+      params.append('limit', ITEMS_PER_PAGE.toString());
+      
+      if (searchTerm) {
+        params.append('search', searchTerm);
+      }
+      if (selectedCategory) {
+        params.append('category', selectedCategory);
+      }
+
+      const response = await fetch(`/api/recipes?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        const newRecipes = data.recipes || [];
+        
+        if (pageNum === 1) {
+          setRecipes(newRecipes);
+        } else {
+          setRecipes(prev => [...prev, ...newRecipes]);
+        }
+        
+        setTotalRecipes(data.total || 0);
+        setHasMore(newRecipes.length === ITEMS_PER_PAGE);
+        setPage(pageNum);
       }
     } catch (error) {
       console.error('Error fetching recipes:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
-  const filteredRecipes = recipes.filter(recipe => {
-    const matchesSearch = recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipe.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || recipe.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          fetchRecipes(page + 1, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
 
-  const categories = [...new Set(recipes.map(r => r.category).filter(Boolean))];
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [page, hasMore, loadingMore, loading]);
 
   if (loading) {
     return (
@@ -111,7 +178,7 @@ export default function RecipesPage() {
             {categories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => setSelectedCategory(cat!)}
+                onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
                   selectedCategory === cat
                     ? 'bg-[#3AB1A0] text-white shadow-md'
@@ -126,7 +193,7 @@ export default function RecipesPage() {
 
         {/* Recipes Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredRecipes.map((recipe) => (
+          {recipes.map((recipe) => (
             <Link
               key={recipe._id}
               href={`/user/recipes/${recipe._id}`}
@@ -185,10 +252,39 @@ export default function RecipesPage() {
           ))}
         </div>
 
-        {filteredRecipes.length === 0 && (
+        {recipes.length === 0 && !loading && (
           <div className="py-20 text-center">
             <Flame className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 font-medium">No recipes found</p>
+          </div>
+        )}
+
+        {/* Loading More Indicator */}
+        {loadingMore && (
+          <div className="py-8 flex justify-center">
+            <SpoonGifLoader size="md" />
+          </div>
+        )}
+
+        {/* Infinite Scroll Trigger */}
+        <div ref={observerTarget} className="h-10" />
+
+        {/* Load More Button (fallback) */}
+        {hasMore && !loadingMore && recipes.length > 0 && (
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => fetchRecipes(page + 1, true)}
+              className="flex items-center gap-2 px-6 py-3 bg-[#3AB1A0] text-white rounded-lg hover:bg-[#3AB1A0]/90 transition-colors font-semibold"
+            >
+              Load More <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Showing Results Info */}
+        {recipes.length > 0 && (
+          <div className="mt-6 text-center text-sm text-gray-600">
+            Showing {recipes.length} of {totalRecipes} recipes
           </div>
         )}
       </div>

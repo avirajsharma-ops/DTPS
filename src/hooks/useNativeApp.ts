@@ -14,7 +14,20 @@ declare global {
       refreshFCMToken: () => void;
       log: (message: string) => void;
     };
+    // Handler that native app calls when foreground notification is received
+    onForegroundNotification?: (notification: ForegroundNotification) => void;
   }
+}
+
+export interface ForegroundNotification {
+  title: string;
+  body: string;
+  data?: {
+    type?: string;
+    clickAction?: string;
+    url?: string;
+    [key: string]: any;
+  };
 }
 
 interface UseNativeAppReturn {
@@ -25,6 +38,7 @@ interface UseNativeAppReturn {
   refreshFCMToken: () => void;
   isLoading: boolean;
   tokenRegistered: boolean;
+  onForegroundNotification: (handler: (notification: ForegroundNotification) => void) => void;
 }
 
 async function registerTokenWithBackend(token: string, deviceType: 'android' | 'ios' | 'web'): Promise<boolean> {
@@ -57,6 +71,40 @@ export function useNativeApp(): UseNativeAppReturn {
   const [tokenRegistered, setTokenRegistered] = useState(false);
   const tokenRegistrationAttempted = useRef(false);
   const tokenCheckInterval = useRef<NodeJS.Timeout | null>(null);
+  const notificationHandlerRef = useRef<((notification: ForegroundNotification) => void) | null>(null);
+
+  // Set up foreground notification handler that native app can call
+  const onForegroundNotification = useCallback((handler: (notification: ForegroundNotification) => void) => {
+    notificationHandlerRef.current = handler;
+  }, []);
+
+  // Listen for foreground notifications from native app
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Set up global handler that native app will call
+    window.onForegroundNotification = (notification: ForegroundNotification) => {
+      console.log('[useNativeApp] Foreground notification received from native:', notification);
+      if (notificationHandlerRef.current) {
+        notificationHandlerRef.current(notification);
+      }
+    };
+
+    // Also listen for custom event (alternative approach)
+    const handleForegroundNotification = (event: CustomEvent<ForegroundNotification>) => {
+      console.log('[useNativeApp] Foreground notification event received:', event.detail);
+      if (notificationHandlerRef.current) {
+        notificationHandlerRef.current(event.detail);
+      }
+    };
+
+    window.addEventListener('nativeForegroundNotification', handleForegroundNotification as EventListener);
+
+    return () => {
+      window.onForegroundNotification = undefined;
+      window.removeEventListener('nativeForegroundNotification', handleForegroundNotification as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     // Check if running in native app
@@ -204,6 +252,7 @@ export function useNativeApp(): UseNativeAppReturn {
     refreshFCMToken,
     isLoading,
     tokenRegistered,
+    onForegroundNotification,
   };
 }
 

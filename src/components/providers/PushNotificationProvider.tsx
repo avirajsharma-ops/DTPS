@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useNativeApp } from '@/hooks/useNativeApp';
+import { useNativeApp, ForegroundNotification } from '@/hooks/useNativeApp';
 import { toast } from 'sonner';
 
 interface PushNotificationProviderProps {
@@ -73,8 +73,53 @@ export function PushNotificationProvider({
         fcmToken, 
         tokenRegistered, 
         requestNotificationPermission: requestNativePermission,
-        isLoading: nativeLoading 
+        isLoading: nativeLoading,
+        onForegroundNotification: setNativeForegroundHandler
     } = useNativeApp();
+
+    // Handle native app foreground notifications with toast
+    const handleNativeForegroundNotification = useCallback((notification: ForegroundNotification) => {
+        console.log('[PushNotificationProvider] Native foreground notification:', notification);
+        
+        const title = notification.title || 'New Notification';
+        const body = notification.body || '';
+        const type = notification.data?.type || 'general';
+        const clickAction = notification.data?.clickAction || notification.data?.url;
+        
+        // Show toast notification
+        toast(title, {
+            description: body,
+            duration: 5000,
+            action: clickAction ? {
+                label: 'View',
+                onClick: () => {
+                    if (clickAction) {
+                        window.location.href = clickAction;
+                    }
+                }
+            } : undefined,
+            icon: type === 'message' ? '💬' : 
+                  type === 'appointment' || type === 'appointment_booked' ? '📅' :
+                  type === 'meal' || type === 'meal_plan_created' ? '🍽️' :
+                  type === 'payment' || type === 'payment_link_created' ? '💳' :
+                  type === 'task_assigned' ? '✅' : '🔔',
+        });
+
+        // Call user's custom handler if provided
+        if (onNotification) {
+            onNotification({
+                notification: { title, body },
+                data: notification.data
+            });
+        }
+    }, [onNotification]);
+
+    // Set up native foreground notification handler
+    useEffect(() => {
+        if (isNativeApp) {
+            setNativeForegroundHandler(handleNativeForegroundNotification);
+        }
+    }, [isNativeApp, setNativeForegroundHandler, handleNativeForegroundNotification]);
 
     // Web push notification registration
     useEffect(() => {
