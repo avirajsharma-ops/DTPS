@@ -82,7 +82,7 @@ export default function ChangePasswordPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <div className="bg-white px-5 pt-6 pb-4 border-b border-gray-100">
+        <div className="bg-white px-4 pt-6 pb-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -131,7 +131,7 @@ export default function ChangePasswordPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white px-5 pt-6 pb-4 border-b border-gray-100">
+      <div className="bg-white px-4 pt-6 pb-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -147,7 +147,7 @@ export default function ChangePasswordPage() {
         </div>
       </div>
 
-      <div className="px-4 md:px-6 py-6">
+      <div className="px-4 py-6">
         {/* Info Card */}
         <Card className="border border-gray-100 shadow-sm mb-6">
           <CardContent className="p-4">

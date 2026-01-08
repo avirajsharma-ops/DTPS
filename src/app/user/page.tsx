@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   Droplet,
   Moon,
@@ -26,7 +27,9 @@ import {
   Phone,
   Mail
 } from 'lucide-react';
-import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
+import SpoonGifLoader, { FullPageLoader } from '@/components/ui/SpoonGifLoader';
+import SmoothComponent from '@/components/animations/SmoothComponent';
+import StaggerList from '@/components/animations/StaggerList';
 
 // Lazy load heavy components for better performance
 const ServicePlansSwiper = lazy(() => import('@/components/client/ServicePlansSwiper'));
@@ -102,6 +105,7 @@ export default function UserHomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isDarkMode } = useTheme();
   const [activeCard, setActiveCard] = useState(0);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
   const [hasActivePlan, setHasActivePlan] = useState<boolean | null>(null);
@@ -475,57 +479,72 @@ export default function UserHomePage() {
   // Show loading while checking onboarding or verifying payment
   if (checkingOnboarding || paymentVerifying) {
     return (
-      <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
-        <SpoonGifLoader size="lg" />
-        {paymentVerifying && (
-          <p className="mt-4 text-gray-600 font-medium">Verifying your payment...</p>
-        )}
-      </div>
+      <FullPageLoader 
+        size="lg" 
+        isDarkMode={isDarkMode} 
+        text={paymentVerifying ? 'Verifying your payment...' : undefined} 
+      />
     );
   }
 
   return (
-    <div className="bg-gray-50">
-      {/* Header */}
-      <div className="px-5 pt-6 pb-4 bg-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium tracking-wider text-gray-500">
-              {dayName}, {dateStr}
-            </p>
-            <h1 className="mt-1 text-2xl font-bold text-gray-900">
-              Hi, {userName}
-            </h1>
-          </div>
-          <Link href="/user/profile">
-            <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center overflow-hidden border-2 border-[#E06A26]/30">
-              {session?.user?.avatar ? (
-                <img
-                  src={session.user.avatar}
-                  alt="Profile"
-                  loading="lazy"
-                  className="w-full h-full rounded-full "
-                />
-              ) : (
-                <User className="h-6 w-6 text-[#E06A26]" />
-              )}
+      <div className={isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'}>
+        {/* Header */}
+        <SmoothComponent animation="fade-in">
+          <div className={`px-4 pt-6 pb-4 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-xs font-medium tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {dayName}, {dateStr}
+                </p>
+                <h1 className={`mt-1 text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                  Hi, {userName}
+                </h1>
+              </div>
+              <Link href="/user/profile">
+                <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center overflow-hidden border-2 border-[#E06A26]/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                  {session?.user?.avatar ? (
+                    <img
+                      src={session.user.avatar}
+                      alt="Profile"
+                      loading="lazy"
+                      className="w-full h-full rounded-full "
+                    />
+                  ) : (
+                    <User className="h-6 w-6 text-[#E06A26]" />
+                  )}
+                </div>
+              </Link>
             </div>
-          </Link>
-        </div>
-      </div>
+          </div>
+        </SmoothComponent>
 
-      {/* Main Content */}
-      <div className="px-6 py-4 space-y-4 ">
+        {/* Main Content */}
+      <div className="px-4 py-4 space-y-4">
         {/* Calories Card */}
-        <div className="bg-linear-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/20 rounded-3xl p-5 shadow-sm border border-[#3AB1A0]/10">
+        <div
+          className={`rounded-3xl p-5 shadow-sm border ${
+            isDarkMode
+              ? 'bg-gray-900/60 border-gray-800'
+              : 'bg-linear-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/20 border-[#3AB1A0]/10'
+          }`}
+        >
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Calories Left</p>
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                Calories Left
+              </p>
               <div className="flex items-baseline mt-1">
-                <span className="text-5xl font-bold text-gray-900">{data.caloriesLeft}</span>
-                <span className="ml-1 text-lg text-gray-500">kcal</span>
+                <span className={`text-5xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                  {data.caloriesLeft}
+                </span>
+                <span className={`ml-1 text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>kcal</span>
               </div>
-              <div className="flex items-center px-3 py-1 mt-2 rounded-full bg-white/60 w-fit">
+              <div
+                className={`flex items-center px-3 py-1 mt-2 rounded-full w-fit ${
+                  isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'
+                }`}
+              >
                 <span className="text-[#3AB1A0] text-sm">🏁 Goal: {data.caloriesGoal.toLocaleString()}</span>
               </div>
             </div>
@@ -537,7 +556,7 @@ export default function UserHomePage() {
                   cx="48"
                   cy="48"
                   r="40"
-                  stroke="#e5e7eb"
+                  stroke={isDarkMode ? '#374151' : '#e5e7eb'}
                   strokeWidth="8"
                   fill="none"
                 />
@@ -570,11 +589,13 @@ export default function UserHomePage() {
           <div className="grid grid-cols-3 gap-4 mt-6">
             <div>
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Protein</p>
-                <p className="text-xs text-gray-400">/{data.proteinGoal}g</p>
+                <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Protein
+                </p>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>/{data.proteinGoal}g</p>
               </div>
-              <p className="mt-1 text-xl font-bold text-gray-900">{data.protein}g</p>
-              <div className="h-1.5 bg-white rounded-full mt-2 overflow-hidden">
+              <p className={`mt-1 text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{data.protein}g</p>
+              <div className={`h-1.5 rounded-full mt-2 overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <div 
                   className="h-full bg-[#3AB1A0] rounded-full transition-all duration-300" 
                   style={{ width: `${Math.min((data.protein / data.proteinGoal) * 100, 100)}%` }} 
@@ -583,11 +604,13 @@ export default function UserHomePage() {
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Carbs</p>
-                <p className="text-xs text-gray-400">/{data.carbsGoal}g</p>
+                <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Carbs
+                </p>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>/{data.carbsGoal}g</p>
               </div>
-              <p className="mt-1 text-xl font-bold text-gray-900">{data.carbs}g</p>
-              <div className="h-1.5 bg-white rounded-full mt-2 overflow-hidden">
+              <p className={`mt-1 text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{data.carbs}g</p>
+              <div className={`h-1.5 rounded-full mt-2 overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <div 
                   className="h-full bg-[#E06A26] rounded-full transition-all duration-300" 
                   style={{ width: `${Math.min((data.carbs / data.carbsGoal) * 100, 100)}%` }} 
@@ -596,11 +619,13 @@ export default function UserHomePage() {
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Fat</p>
-                <p className="text-xs text-gray-400">/{data.fatGoal}g</p>
+                <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Fat
+                </p>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>/{data.fatGoal}g</p>
               </div>
-              <p className="mt-1 text-xl font-bold text-gray-900">{data.fat}g</p>
-              <div className="h-1.5 bg-white rounded-full mt-2 overflow-hidden">
+              <p className={`mt-1 text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{data.fat}g</p>
+              <div className={`h-1.5 rounded-full mt-2 overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <div 
                   className="h-full bg-[#DB9C6E] rounded-full transition-all duration-300" 
                   style={{ width: `${Math.min((data.fat / data.fatGoal) * 100, 100)}%` }} 
@@ -611,10 +636,10 @@ export default function UserHomePage() {
         </div>
 
     
-{/* Service Plans Swiper - Only shown when user has no purchases at all */}
+    {/* Service Plans Swiper - Only shown when user has no purchases at all */}
 {!hasAnyPurchase && (
   <div className="pt-6 pb-4">
-    <Suspense fallback={<div className="flex justify-center py-8"><SpoonGifLoader size="md" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><SpoonGifLoader size="md" /></div>}>
       <ServicePlansSwiper />
     </Suspense>
   </div>
@@ -628,7 +653,13 @@ export default function UserHomePage() {
           <div key={currentPurchase._id}>
             {currentPurchase.mealPlanCreated ? (
               /* STATE 3: Meal Plan Created - Full Details with actions */
-              <div className="rounded-3xl bg-linear-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20">
+              <div
+                className={
+                  isDarkMode
+                    ? 'rounded-3xl bg-gray-900/60 p-6 shadow-sm border border-gray-800'
+                    : 'rounded-3xl bg-linear-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20'
+                }
+              >
                 <div className="flex items-start gap-4">
                   <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
                     {currentPurchase.dietitian?.avatar ? (
@@ -644,7 +675,7 @@ export default function UserHomePage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-gray-900">
+                      <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                         {currentPurchase.hasDietitian ? 'Your Dietitian' : 'Your Plan'}
                       </h3>
                       <span className="px-2 py-0.5 bg-[#3AB1A0] text-white text-xs font-semibold rounded-full">
@@ -657,13 +688,13 @@ export default function UserHomePage() {
                           {currentPurchase.dietitian?.name || 'Dietitian'}
                         </p>
                         {currentPurchase.dietitian?.email && (
-                          <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                          <div className={`flex items-center gap-1 mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             <Mail className="w-3 h-3" />
                             <span>{currentPurchase.dietitian.email}</span>
                           </div>
                         )}
                         {currentPurchase.dietitian?.phone && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                          <div className={`flex items-center gap-1 text-xs mt-0.5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             <Phone className="w-3 h-3" />
                             <span>{currentPurchase.dietitian.phone}</span>
                           </div>
@@ -681,33 +712,33 @@ export default function UserHomePage() {
                 {/* Plan Info - Full Details */}
                 <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">Active Plan</span>
+                    <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Active Plan</span>
                     <span className="px-3 py-1 bg-[#61a035]/15 text-[#61a035] text-xs font-semibold rounded-full">
                       🟢 Active
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-white/60 rounded-xl">
-                      <p className="text-xs tracking-wide text-gray-500 uppercase">Plan</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.planName}</p>
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</p>
+                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.planName}</p>
                     </div>
-                    <div className="p-3 bg-white/60 rounded-xl">
-                      <p className="text-xs tracking-wide text-gray-500 uppercase">Duration</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.durationDays} Days</p>
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Duration</p>
+                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.durationDays} Days</p>
                     </div>
                     {/* Show dates when meal plan is created */}
                     {currentPurchase.startDate && (
-                      <div className="p-3 bg-white/60 rounded-xl">
-                        <p className="text-xs tracking-wide text-gray-500 uppercase">Start Date</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-800">
+                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                        <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Start Date</p>
+                        <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                           {format(new Date(currentPurchase.startDate), 'dd MMM yyyy')}
                         </p>
                       </div>
                     )}
                     {currentPurchase.endDate && (
-                      <div className="p-3 bg-white/60 rounded-xl">
-                        <p className="text-xs tracking-wide text-gray-500 uppercase">End Date</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-800">
+                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                        <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>End Date</p>
+                        <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                           {format(new Date(currentPurchase.endDate), 'dd MMM yyyy')}
                         </p>
                       </div>
@@ -727,7 +758,9 @@ export default function UserHomePage() {
                     </Link>
                     <Link 
                       href="/user/messages"
-                      className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-[#3AB1A0] text-[#3AB1A0] rounded-xl text-sm font-semibold hover:bg-[#3AB1A0]/10 transition-colors"
+                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors border border-[#3AB1A0] text-[#3AB1A0] ${
+                        isDarkMode ? 'bg-gray-950/40 hover:bg-gray-900/60' : 'bg-white hover:bg-[#3AB1A0]/10'
+                      }`}
                     >
                       <Mail className="w-4 h-4" />
                       <span>Message</span>
@@ -746,7 +779,13 @@ export default function UserHomePage() {
               </div>
             ) : currentPurchase.hasDietitian ? (
               /* STATE 2: Dietitian Assigned but Meal Plan NOT Created Yet */
-              <div className="rounded-3xl bg-linear-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20">
+              <div
+                className={
+                  isDarkMode
+                    ? 'rounded-3xl bg-gray-900/60 p-6 shadow-sm border border-gray-800'
+                    : 'rounded-3xl bg-linear-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20'
+                }
+              >
                 <div className="flex items-start gap-4">
                   <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
                     {currentPurchase.dietitian?.avatar ? (
@@ -762,7 +801,7 @@ export default function UserHomePage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-gray-900">Your Dietitian</h3>
+                      <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Your Dietitian</h3>
                       <span className="px-2 py-0.5 bg-[#3AB1A0] text-white text-xs font-semibold rounded-full">
                         Assigned ✓
                       </span>
@@ -771,13 +810,13 @@ export default function UserHomePage() {
                       {currentPurchase.dietitian?.name || 'Dietitian'}
                     </p>
                     {currentPurchase.dietitian?.email && (
-                      <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                      <div className={`flex items-center gap-1 mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         <Mail className="w-3 h-3" />
                         <span>{currentPurchase.dietitian.email}</span>
                       </div>
                     )}
                     {currentPurchase.dietitian?.phone && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                      <div className={`flex items-center gap-1 text-xs mt-0.5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         <Phone className="w-3 h-3" />
                         <span>{currentPurchase.dietitian.phone}</span>
                       </div>
@@ -788,31 +827,40 @@ export default function UserHomePage() {
                 {/* Plan Info - No meal plan yet */}
                 <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">Your Plan</span>
-                    <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full flex items-center gap-1">
+                    <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Your Plan</span>
+                    <span
+                      className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 ${
+                        isDarkMode ? 'bg-amber-900/30 text-amber-200' : 'bg-amber-100 text-amber-700'
+                      }`}
+                    >
                       <Clock className="w-3 h-3" />
                       Plan Soon
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-white/60 rounded-xl">
-                      <p className="text-xs tracking-wide text-gray-500 uppercase">Plan</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.planName}</p>
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</p>
+                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.planName}</p>
                     </div>
-                    <div className="p-3 bg-white/60 rounded-xl">
-                      <p className="text-xs tracking-wide text-gray-500 uppercase">Duration</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.durationDays} Days</p>
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Duration</p>
+                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.durationDays} Days</p>
                     </div>
                   </div>
                   {/* Notice - Meal plan being prepared */}
-                  <div className="p-4 mt-3 border bg-blue-50 rounded-xl border-blue-200">
+                  <div
+                    className={`p-4 mt-3 border rounded-xl ${
+                      isDarkMode ? 'bg-blue-950/30 border-blue-900' : 'bg-blue-50 border-blue-200'
+                    }`}
+                  >
                     <div className="flex items-start gap-3">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${isDarkMode ? 'bg-blue-900/40' : 'bg-blue-100'}`}>
                         <Utensils className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-blue-800">Meal Plan Coming Soon!</p>
-                        <p className="text-xs text-blue-600 mt-1">
+                        <p className={`text-sm font-semibold ${isDarkMode ? 'text-blue-200' : 'text-blue-800'}`}>Meal Plan Coming Soon!</p>
+                        <p className={`text-xs mt-1 ${isDarkMode ? 'text-blue-200/80' : 'text-blue-600'}`}
+                        >
                           Your dietitian is preparing a personalized meal plan for you. You'll be notified once it's ready.
                         </p>
                       </div>
@@ -840,7 +888,13 @@ export default function UserHomePage() {
               </div>
             ) : (
               /* STATE 1: Plan Purchased, Waiting for Dietitian Assignment */
-              <div className="rounded-3xl bg-linear-to-br from-[#E06A26]/10 to-[#DB9C6E]/10 p-6 shadow-sm border border-[#E06A26]/20">
+              <div
+                className={
+                  isDarkMode
+                    ? 'rounded-3xl bg-gray-900/60 p-6 shadow-sm border border-gray-800'
+                    : 'rounded-3xl bg-linear-to-br from-[#E06A26]/10 to-[#DB9C6E]/10 p-6 shadow-sm border border-[#E06A26]/20'
+                }
+              >
                 <div className="flex items-start gap-4">
                   <div className="h-14 w-14 rounded-2xl flex items-center justify-center">
                      <img
@@ -851,15 +905,15 @@ export default function UserHomePage() {
                      />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900">Plan Purchased! 🎉</h3>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Plan Purchased! 🎉</h3>
+                    <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       You've successfully purchased <span className="font-semibold text-[#E06A26]">{currentPurchase.planName}</span>
                     </p>
                     <div className="mt-3 flex items-center gap-2 text-sm text-[#DB9C6E]">
                       <Clock className="w-4 h-4" />
                       <span>Dietitian will be assigned shortly...</span>
                     </div>
-                    <p className="mt-2 text-xs text-gray-500">
+                    <p className={`mt-2 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       Our team is reviewing your profile and will assign the best dietitian for your goals.
                     </p>
                   </div>
@@ -868,13 +922,13 @@ export default function UserHomePage() {
                 {/* Plan Details - Only show duration, no dates until dietitian assigned */}
                 <div className="mt-4 pt-4 border-t border-[#E06A26]/10">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-white/60 rounded-xl">
-                      <p className="text-xs tracking-wide text-gray-500 uppercase">Plan</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.planName}</p>
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</p>
+                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.planName}</p>
                     </div>
-                    <div className="p-3 bg-white/60 rounded-xl">
-                      <p className="text-xs tracking-wide text-gray-500 uppercase">Duration</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-800">{currentPurchase.durationDays} Days</p>
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Duration</p>
+                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.durationDays} Days</p>
                     </div>
                   </div>
                 </div>
@@ -887,19 +941,19 @@ export default function UserHomePage() {
     {/* BMI Card - Show if BMI is available */}
     {/* BMI Card */}
 {userProfile?.bmi && (
-  <div className="rounded-3xl bg-white p-6 shadow-sm border border-[#E06A26]/15">
+  <div className={`rounded-3xl p-6 shadow-sm border ${isDarkMode ? 'bg-gray-900/60 border-gray-800' : 'bg-white border-[#E06A26]/15'}`}>
     
     {/* Header */}
     <div className="flex items-center justify-between mb-5">
       <div>
-        <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">
+        <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           Body Mass Index
         </p>
         <div className="flex items-end gap-2 mt-1">
-          <span className="text-4xl font-bold text-gray-900">
+          <span className={`text-4xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
             {userProfile.bmi}
           </span>
-          <span className="mb-1 text-sm text-gray-500">kg/m²</span>
+          <span className={`mb-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>kg/m²</span>
         </div>
       </div>
 
@@ -943,12 +997,12 @@ export default function UserHomePage() {
           )}%, 97.5%)`,
         }}
       >
-        <div className="w-5 h-5 bg-white border-2 border-gray-900 rounded-full shadow-md" />
+        <div className={`w-5 h-5 rounded-full shadow-md border-2 ${isDarkMode ? 'bg-gray-950 border-gray-200' : 'bg-white border-gray-900'}`} />
       </div>
     </div>
 
     {/* Scale */}
-    <div className="flex justify-between mt-2 text-xs text-gray-400">
+    <div className={`flex justify-between mt-2 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
       <span>15</span>
       <span>18.5</span>
       <span>25</span>
@@ -964,14 +1018,14 @@ export default function UserHomePage() {
     </div>
 
     {/* Weight & Height */}
-    <div className="grid grid-cols-2 gap-4 pt-4 mt-6 border-t border-gray-100">
+    <div className={`grid grid-cols-2 gap-4 pt-4 mt-6 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/15 flex items-center justify-center">
           <Activity className="h-5 w-5 text-[#3AB1A0]" />
         </div>
         <div>
-          <p className="text-xs text-gray-500">Weight</p>
-          <p className="font-semibold text-gray-900">
+          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Weight</p>
+          <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
             {userProfile.weightKg} kg
           </p>
         </div>
@@ -982,8 +1036,8 @@ export default function UserHomePage() {
           <User className="h-5 w-5 text-[#E06A26]" />
         </div>
         <div>
-          <p className="text-xs text-gray-500">Height</p>
-          <p className="font-semibold text-gray-900">
+          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Height</p>
+          <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
             {userProfile.heightCm} cm
           </p>
         </div>
@@ -1069,8 +1123,9 @@ export default function UserHomePage() {
               {[0, 1, 2].map((index) => (
                 <span
                   key={index}
-                  className={`w-2 h-2 rounded-full transition-colors ${activeCard === index ? 'bg-[#E06A26]' : 'bg-gray-300'
-                    }`}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    activeCard === index ? 'bg-[#E06A26]' : isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
+                  }`}
                 />
               ))}
             </div>
@@ -1078,11 +1133,11 @@ export default function UserHomePage() {
         )}
 
         {/* Motivational Quote */}
-        <div className="p-5 bg-white shadow-sm rounded-2xl">
+        <div className={`p-5 rounded-2xl shadow-sm ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white'}`}>
           <div className="flex items-start gap-3">
             <span className="text-3xl text-[#3AB1A0]/30">"</span>
             <div className="flex-1">
-              <p className="italic text-gray-700">
+              <p className={`italic ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                 "The only bad workout is the one that didn't happen."
               </p>
               <p className="text-[#E06A26] text-xs font-semibold mt-2 tracking-wider uppercase">
@@ -1096,9 +1151,14 @@ export default function UserHomePage() {
         {/* Water & Sleep Row */}
         <div className="grid grid-cols-2 gap-4">
           {/* Water Card */}
-          <Link href="/user/hydration" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#3AB1A0]/10">
+          <Link
+            href="/user/hydration"
+            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#3AB1A0]/10 ${
+              isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
+            }`}
+          >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Water</p>
+              <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Water</p>
               <span className="text-[#3AB1A0] text-sm font-semibold">{Math.round(waterPercent)}%</span>
             </div>
             <div className="flex items-center justify-center mb-3">
@@ -1123,15 +1183,20 @@ export default function UserHomePage() {
               </div>
             </div>
             <p className="text-center">
-              <span className="text-2xl font-bold text-gray-900">{data.water.current}</span>
-              <span className="text-sm text-gray-500"> / {data.water.goal}L</span>
+              <span className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{data.water.current}</span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}> / {data.water.goal}L</span>
             </p>
           </Link>
 
           {/* Sleep Card */}
-          <Link href="/user/sleep" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#DB9C6E]/10">
+          <Link
+            href="/user/sleep"
+            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#DB9C6E]/10 ${
+              isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
+            }`}
+          >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Sleep</p>
+              <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sleep</p>
               <span className="text-[#DB9C6E] text-sm font-semibold">{data.sleep.hours}h {data.sleep.minutes}m</span>
             </div>
             <div className="flex items-center justify-center mb-3">
@@ -1140,8 +1205,8 @@ export default function UserHomePage() {
               </div>
             </div>
             <p className="text-center">
-              <span className="text-2xl font-bold text-gray-900">{data.sleep.quality}</span>
-              <span className="text-sm text-gray-500"> %</span>
+              <span className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{data.sleep.quality}</span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}> %</span>
             </p>
           </Link>
         </div>
@@ -1149,9 +1214,14 @@ export default function UserHomePage() {
         {/* Activity & Steps Row */}
         <div className="grid grid-cols-2 gap-4">
           {/* Activity Card */}
-          <Link href="/user/activity" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#E06A26]/10">
+          <Link
+            href="/user/activity"
+            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#E06A26]/10 ${
+              isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
+            }`}
+          >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Activity</p>
+              <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Activity</p>
               <span className={`text-sm font-semibold ${data.activity.active ? 'text-[#E06A26]' : 'text-gray-400'}`}>
                 {data.activity.active ? 'Active' : 'Inactive'}
               </span>
@@ -1175,15 +1245,20 @@ export default function UserHomePage() {
               </div>
             </div>
             <p className="text-center">
-              <span className="text-2xl font-bold text-gray-900">{data.activity.minutes}</span>
-              <span className="text-sm text-gray-500"> min</span>
+              <span className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{data.activity.minutes}</span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}> min</span>
             </p>
           </Link>
 
           {/* Steps Card */}
-          <Link href="/user/steps" className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#3AB1A0]/10">
+          <Link
+            href="/user/steps"
+            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#3AB1A0]/10 ${
+              isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
+            }`}
+          >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">Steps</p>
+              <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Steps</p>
               <span className="text-[#3AB1A0] text-sm font-semibold">{data.steps.current} / {data.steps.goal}</span>
             </div>
             <div className="flex items-center justify-center mb-3">
@@ -1205,8 +1280,8 @@ export default function UserHomePage() {
               </div>
             </div>
             <p className="text-center">
-              <span className="text-2xl font-bold text-gray-900">{data.steps.current.toLocaleString()}</span>
-              <span className="text-sm text-gray-500"> Steps</span>
+              <span className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{data.steps.current.toLocaleString()}</span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}> Steps</span>
             </p>
           </Link>
         </div>
@@ -1224,49 +1299,65 @@ export default function UserHomePage() {
     {/* Water */}
     <Link
       href="/user/hydration"
-      className="flex flex-col items-center gap-4 p-6 transition-all bg-white shadow-md rounded-3xl hover:shadow-lg hover:bg-gray-50"
+      className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${
+        isDarkMode
+          ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+          : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+      }`}
     >
       <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
         <Droplet className="h-8 w-8 text-[#3AB1A0]" fill="#3AB1A0" fillOpacity="0.3" />
       </div>
-      <span className="text-base font-semibold text-gray-900">Water</span>
-      <span className="text-sm text-gray-400">+250 ml</span>
+      <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Water</span>
+      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>+250 ml</span>
     </Link>
 
     {/* Exercise */}
     <Link
       href="/user/activity"
-      className="flex flex-col items-center gap-4 p-6 transition-all bg-white shadow-md rounded-3xl hover:shadow-lg hover:bg-gray-50"
+      className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${
+        isDarkMode
+          ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+          : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+      }`}
     >
       <div className="h-16 w-16 rounded-full bg-[#E06A26]/10 flex items-center justify-center">
         <Activity className="h-8 w-8 text-[#E06A26]" />
       </div>
-      <span className="text-base font-semibold text-gray-900">Exercise</span>
-      <span className="text-sm text-gray-400">Log Activity</span>
+      <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Exercise</span>
+      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Log Activity</span>
     </Link>
 
     {/* Sleep */}
     <Link
       href="/user/sleep"
-      className="flex flex-col items-center gap-4 p-6 transition-all bg-white shadow-md rounded-3xl hover:shadow-lg hover:bg-gray-50"
+      className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${
+        isDarkMode
+          ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+          : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+      }`}
     >
       <div className="h-16 w-16 rounded-full bg-[#DB9C6E]/20 flex items-center justify-center">
         <Moon className="h-8 w-8 text-[#DB9C6E]" />
       </div>
-      <span className="text-base font-semibold text-gray-900">Sleep</span>
-      <span className="text-sm text-gray-400">Duration</span>
+      <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Sleep</span>
+      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Duration</span>
     </Link>
 
     {/* Steps */}
     <Link
       href="/user/steps"
-      className="flex flex-col items-center gap-4 p-6 transition-all bg-white shadow-md rounded-3xl hover:shadow-lg hover:bg-gray-50"
+      className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${
+        isDarkMode
+          ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+          : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+      }`}
     >
       <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
         <Footprints className="h-8 w-8 text-[#3AB1A0]" />
       </div>
-      <span className="text-base font-semibold text-gray-900">Steps</span>
-      <span className="text-sm text-gray-400">
+      <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Steps</span>
+      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>
         {data.steps.current.toLocaleString()}
       </span>
     </Link>
@@ -1275,7 +1366,7 @@ export default function UserHomePage() {
 </div>
 
         {/* Transformation Success Stories */}
-        <Suspense fallback={<div className="flex justify-center py-8"><SpoonGifLoader size="md" /></div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><SpoonGifLoader size="md" /></div>}>
           <TransformationSwiper />
         </Suspense>
 
@@ -1291,9 +1382,9 @@ export default function UserHomePage() {
         <div className="px-">
           <div className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
             {/* Blog Card 1 */}
-            <div className="min-w-65 snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className={`min-w-65 snap-start rounded-2xl shadow-sm overflow-hidden ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white'}`}>
               <div className="relative h-32 bg-linear-to-br from-amber-100 to-orange-100">
-                <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
+                <span className={`absolute px-2 py-1 text-xs font-semibold rounded-full top-3 left-3 ${isDarkMode ? 'bg-gray-950/60 text-gray-200' : 'bg-white/90 text-gray-700'}`}>
                   NUTRITION
                 </span>
                 <div className="absolute flex items-center gap-1 px-2 py-1 text-xs text-white rounded-full bottom-3 right-3 bg-black/50">
@@ -1302,8 +1393,8 @@ export default function UserHomePage() {
                 </div>
               </div>
               <div className="p-4">
-                <h3 className="font-bold text-gray-900">Meal Prep 101: A Guide</h3>
-                <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                <h3 className={`font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Meal Prep 101: A Guide</h3>
+                <p className={`mt-1 text-sm line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                   Master the art of preparing healthy meals for the entire week in under two hours.
                 </p>
                 <Link href="/user/blogs/1" className="text-[#E06A26] text-sm font-semibold mt-3 inline-flex items-center">
@@ -1313,9 +1404,9 @@ export default function UserHomePage() {
             </div>
 
             {/* Blog Card 2 */}
-            <div className="min-w-65 snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className={`min-w-65 snap-start rounded-2xl shadow-sm overflow-hidden ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white'}`}>
               <div className="h-32 bg-linear-to-br from-[#3AB1A0]/20 to-[#3AB1A0]/10 relative">
-                <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
+                <span className={`absolute px-2 py-1 text-xs font-semibold rounded-full top-3 left-3 ${isDarkMode ? 'bg-gray-950/60 text-gray-200' : 'bg-white/90 text-gray-700'}`}>
                   FITNESS
                 </span>
                 <div className="absolute flex items-center gap-1 px-2 py-1 text-xs text-white rounded-full bottom-3 right-3 bg-black/50">
@@ -1324,8 +1415,8 @@ export default function UserHomePage() {
                 </div>
               </div>
               <div className="p-4">
-                <h3 className="font-bold text-gray-900">5 Moves for Core Strength</h3>
-                <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                <h3 className={`font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>5 Moves for Core Strength</h3>
+                <p className={`mt-1 text-sm line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                   Strengthen your core with these simple yet effective exercises you can do anywhere.
                 </p>
                 <Link href="/user/blogs/2" className="text-[#3AB1A0] text-sm font-semibold mt-3 inline-flex items-center">
@@ -1335,9 +1426,9 @@ export default function UserHomePage() {
             </div>
 
             {/* Blog Card 3 */}
-            <div className="min-w-65 snap-start bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className={`min-w-65 snap-start rounded-2xl shadow-sm overflow-hidden ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white'}`}>
               <div className="h-32 bg-linear-to-br from-[#DB9C6E]/20 to-[#DB9C6E]/10 relative">
-                <span className="absolute px-2 py-1 text-xs font-semibold text-gray-700 rounded-full top-3 left-3 bg-white/90">
+                <span className={`absolute px-2 py-1 text-xs font-semibold rounded-full top-3 left-3 ${isDarkMode ? 'bg-gray-950/60 text-gray-200' : 'bg-white/90 text-gray-700'}`}>
                   WELLNESS
                 </span>
                 <div className="absolute flex items-center gap-1 px-2 py-1 text-xs text-white rounded-full bottom-3 right-3 bg-black/50">
@@ -1346,8 +1437,8 @@ export default function UserHomePage() {
                 </div>
               </div>
               <div className="p-4">
-                <h3 className="font-bold text-gray-900">Mindful Eating Habits</h3>
-                <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                <h3 className={`font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Mindful Eating Habits</h3>
+                <p className={`mt-1 text-sm line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                   Learn how to develop a healthier relationship with food through mindfulness.
                 </p>
                 <Link href="/user/blogs/3" className="text-[#DB9C6E] text-sm font-semibold mt-3 inline-flex items-center">
@@ -1358,6 +1449,6 @@ export default function UserHomePage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
   );
 }

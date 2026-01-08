@@ -4,10 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Target, Utensils, Plus, TrendingUp, User, Droplet, Scale, Calendar, Camera, Activity, Heart } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [showQuickActions, setShowQuickActions] = useState(false);
 
   const isActive = (path: string) => pathname === path;
@@ -76,17 +78,17 @@ export function MobileBottomNav() {
       {/* Quick Actions Overlay */}
       {showQuickActions && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-[8px] z-40"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
           onClick={() => setShowQuickActions(false)}
         >
           <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-full max-w-sm px-4">
             {/* Quick Actions Grid */}
-            <div className="bg-white rounded-3xl shadow-2xl p-6 max-h-[60vh] overflow-y-auto">
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-3xl shadow-2xl p-6 max-h-[60vh] overflow-y-auto`}>
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-1 bg-gray-300 rounded-full" />
+                <div className={`w-12 h-1 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-300'} rounded-full`} />
               </div>
 
-              <h3 className="text-lg font-bold text-gray-900 text-center mb-6">Quick Actions</h3>
+              <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} text-center mb-6`}>Quick Actions</h3>
 
               {/* Responsive Grid Layout */}
               <div className="quick-actions-grid grid grid-cols-2 gap-3 mb-4">
@@ -106,7 +108,7 @@ export function MobileBottomNav() {
               {/* Close Button */}
               <button
                 onClick={() => setShowQuickActions(false)}
-                className="w-full py-3 bg-gray-100 text-gray-700 rounded-2xl font-semibold active:scale-98 transition-all"
+                className={`w-full py-3 ${isDarkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'} rounded-2xl font-semibold active:scale-98 transition-all`}
               >
                 Close
               </button>
@@ -116,12 +118,12 @@ export function MobileBottomNav() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-bottom z-50 md:hidden">
+      <div className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-t safe-area-bottom z-50 md:hidden transition-colors duration-300`}>
         <div className="grid grid-cols-5 h-16">
           <Link
             href="/client-dashboard"
-            className={`flex flex-col items-center justify-center transition-colors ${
-              isActive('/client-dashboard') ? 'text-purple-600' : 'text-gray-400 hover:text-gray-600'
+            className={`flex flex-col items-center justify-center transition-colors duration-300 ${
+              isActive('/client-dashboard') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             <Target className="h-6 w-6 mb-1" />
@@ -130,8 +132,8 @@ export function MobileBottomNav() {
 
           <Link
             href="/food-log"
-            className={`flex flex-col items-center justify-center transition-colors ${
-              isActive('/food-log') ? 'text-purple-600' : 'text-gray-400 hover:text-gray-600'
+            className={`flex flex-col items-center justify-center transition-colors duration-300 ${
+              isActive('/food-log') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             <Utensils className="h-6 w-6 mb-1" />
@@ -142,7 +144,7 @@ export function MobileBottomNav() {
             onClick={() => setShowQuickActions(!showQuickActions)}
             className="flex flex-col items-center justify-center -mt-6"
           >
-            <div className="h-14 w-14 rounded-full bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+            <div className="h-14 w-14 rounded-full bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
               <Plus
                 className={`h-7 w-7 text-white transition-transform duration-300 ${
                   showQuickActions ? 'rotate-45' : 'rotate-0'
@@ -153,8 +155,8 @@ export function MobileBottomNav() {
 
           <Link
             href="/progress"
-            className={`flex flex-col items-center justify-center transition-colors ${
-              isActive('/progress') ? 'text-purple-600' : 'text-gray-400 hover:text-gray-600'
+            className={`flex flex-col items-center justify-center transition-colors duration-300 ${
+              isActive('/progress') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             <TrendingUp className="h-6 w-6 mb-1" />
@@ -163,8 +165,8 @@ export function MobileBottomNav() {
 
           <Link
             href="/profile"
-            className={`flex flex-col items-center justify-center transition-colors ${
-              isActive('/profile') ? 'text-purple-600' : 'text-gray-400 hover:text-gray-600'
+            className={`flex flex-col items-center justify-center transition-colors duration-300 ${
+              isActive('/profile') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             <User className="h-6 w-6 mb-1" />

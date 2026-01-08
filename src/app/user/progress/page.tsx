@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   ArrowLeft,
   TrendingUp, 
@@ -323,6 +324,7 @@ export default function UserProgressPage() {
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [progressData, setProgressData] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showWeightModal, setShowWeightModal] = useState(false);
@@ -730,21 +732,24 @@ export default function UserProgressPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
   }
   return (
-    <div className="min-h-screen pb-24 bg-gray-50">
+    <div className={`min-h-screen pb-24 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
+      <div className={`border-b transition-colors duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Link href="/user" className="p-2 -ml-2 transition-colors rounded-xl hover:bg-gray-100">
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <Link
+              href="/user"
+              className={`p-2 -ml-2 transition-colors rounded-xl ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+            >
+              <ArrowLeft className={`w-5 h-5 ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`} />
             </Link>
-            <h1 className="text-lg font-bold text-black">My Progress</h1>
+            <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>My Progress</h1>
           </div>
         </div>
         
@@ -761,7 +766,9 @@ export default function UserProgressPage() {
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 activeTab === tab.id
                   ? 'bg-[#E06A26] text-white shadow-lg shadow-[#E06A26]/25'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : isDarkMode
+                    ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -774,7 +781,7 @@ export default function UserProgressPage() {
       <div className="px-4 py-4 space-y-4">
         {/* Time Range Filter - shown for weight and nutrition tabs only */}
         {activeTab !== 'body' && (
-          <div className="p-3 bg-white shadow-sm rounded-2xl">
+          <div className={`p-3 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <TimeRangeFilter value={timeRange} onChange={setTimeRange} />
           </div>
         )}
@@ -827,10 +834,10 @@ export default function UserProgressPage() {
             </div>
 
             {/* Weight Chart */}
-            <div className="p-4 bg-white shadow-sm rounded-2xl">
+            <div className={`p-4 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900">Weight Trend</h3>
-                <span className="text-sm text-gray-500">
+                <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Weight Trend</h3>
+                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                   {timeRange === '1W' ? 'Last 7 days' : 
                    timeRange === '1M' ? 'Last month' :
                    timeRange === '3M' ? 'Last 3 months' :
@@ -850,39 +857,39 @@ export default function UserProgressPage() {
 
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-4 text-center bg-white shadow-sm rounded-2xl">
+              <div className={`p-4 text-center shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <Scale className="w-6 h-6 text-[#3AB1A0] mx-auto mb-2" />
-                <p className="text-xl font-bold text-gray-900">{bmiValue}</p>
-                <p className="text-xs text-gray-500">BMI</p>
+                <p className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{bmiValue}</p>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>BMI</p>
               </div>
-              <div className="p-4 text-center bg-white shadow-sm rounded-2xl">
+              <div className={`p-4 text-center shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <Target className="w-6 h-6 text-[#E06A26] mx-auto mb-2" />
-                <p className="text-xl font-bold text-gray-900">{weightToGo.toFixed(1)}</p>
-                <p className="text-xs text-gray-500">kg to go</p>
+                <p className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{weightToGo.toFixed(1)}</p>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>kg to go</p>
               </div>
-              <div className="p-4 text-center bg-white shadow-sm rounded-2xl">
+              <div className={`p-4 text-center shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <Calendar className="w-6 h-6 text-[#DB9C6E] mx-auto mb-2" />
-                <p className="text-xl font-bold text-gray-900">{data.weightHistory.length}</p>
-                <p className="text-xs text-gray-500">entries</p>
+                <p className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{data.weightHistory.length}</p>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>entries</p>
               </div>
             </div>
 
               {/* BMI Card - Show if BMI is available */}
     {/* BMI Card */}
 {userProfile?.bmi && (
-  <div className="rounded-3xl bg-white p-6 shadow-sm border border-[#E06A26]/15">
+  <div className={`rounded-3xl p-6 shadow-sm border border-[#E06A26]/15 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
     
     {/* Header */}
     <div className="flex items-center justify-between mb-5">
       <div>
-        <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">
+        <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
           Body Mass Index
         </p>
         <div className="flex items-end gap-2 mt-1">
-          <span className="text-4xl font-bold text-gray-900">
+          <span className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {userProfile.bmi}
           </span>
-          <span className="mb-1 text-sm text-gray-500">kg/m²</span>
+          <span className={`mb-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>kg/m²</span>
         </div>
       </div>
 
@@ -922,7 +929,7 @@ export default function UserProgressPage() {
           )}%, 97.5%)`,
         }}
       >
-        <div className="w-5 h-5 bg-white border-2 border-gray-900 rounded-full shadow-md" />
+        <div className={`w-5 h-5 border-2 rounded-full shadow-md ${isDarkMode ? 'bg-gray-950 border-gray-200' : 'bg-white border-gray-900'}`} />
       </div>
     </div>
 
@@ -943,14 +950,14 @@ export default function UserProgressPage() {
     </div>
 
     {/* Weight & Height */}
-    <div className="grid grid-cols-2 gap-4 pt-4 mt-6 border-t border-gray-100">
+    <div className={`grid grid-cols-2 gap-4 pt-4 mt-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/15 flex items-center justify-center">
           <Activity className="h-5 w-5 text-[#3AB1A0]" />
         </div>
         <div>
-          <p className="text-xs text-gray-500">Weight</p>
-          <p className="font-semibold text-gray-900">
+          <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Weight</p>
+          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {userProfile.weightKg} kg
           </p>
         </div>
@@ -961,8 +968,8 @@ export default function UserProgressPage() {
           <User className="h-5 w-5 text-[#E06A26]" />
         </div>
         <div>
-          <p className="text-xs text-gray-500">Height</p>
-          <p className="font-semibold text-gray-900">
+          <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Height</p>
+          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {userProfile.heightCm} cm
           </p>
         </div>
@@ -973,26 +980,26 @@ export default function UserProgressPage() {
 
 
             {/* Recent Entries */}
-            <div className="p-4 bg-white shadow-sm rounded-2xl">
-              <h3 className="mb-3 font-bold text-gray-900">Recent Entries</h3>
+            <div className={`p-4 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`mb-3 font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recent Entries</h3>
               {filteredWeightHistory.length > 0 ? (
                 <div className="space-y-2">
                   {filteredWeightHistory.slice(0, 5).map((entry, index) => (
                     <div 
                       key={index}
-                      className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
+                      className={`flex items-center justify-between py-2 border-b last:border-0 ${isDarkMode ? 'border-gray-700' : 'border-gray-50'}`}
                     >
-                      <span className="text-sm text-gray-600">
+                      <span className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>
                         {format(new Date(entry.date), 'MMM d, yyyy')}
                       </span>
-                      <span className="font-bold text-gray-900">{entry.weight} kg</span>
+                      <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{entry.weight} kg</span>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="py-6 text-center">
-                  <Scale className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm text-gray-500">No weight entries yet</p>
+                  <Scale className={`w-10 h-10 mx-auto mb-2 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>No weight entries yet</p>
                   <button 
                     onClick={() => setShowWeightModal(true)}
                     className="mt-2 text-[#E06A26] font-medium text-sm"
@@ -1009,10 +1016,10 @@ export default function UserProgressPage() {
         {activeTab === 'nutrition' && (
           <>
             {/* Calorie History Chart - Moved to Top */}
-            <div className="p-4 bg-white shadow-sm rounded-2xl">
+            <div className={`p-4 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900">Calorie Trend</h3>
-                <span className="text-sm text-gray-500">
+                <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Calorie Trend</h3>
+                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                   {timeRange === '1W' ? 'Last 7 days' : 
                    timeRange === '1M' ? 'Last month' :
                    timeRange === '3M' ? 'Last 3 months' :
@@ -1031,9 +1038,9 @@ export default function UserProgressPage() {
             </div>
 
             {/* Daily Calories */}
-            <div className="p-5 bg-white shadow-sm rounded-2xl">
+            <div className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900">Today's Calories</h3>
+                <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Today's Calories</h3>
                 <span className="text-sm text-[#3AB1A0] font-medium">
                   {data.todayIntake?.calories || 0} / {data.goals?.calories || 2000}
                 </span>
@@ -1054,17 +1061,17 @@ export default function UserProgressPage() {
 
               {/* Remaining Calories */}
               <div className="bg-[#3AB1A0]/10 rounded-xl p-4 text-center">
-                <p className="text-sm text-gray-600">Remaining</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Remaining</p>
                 <p className="text-2xl font-bold text-[#3AB1A0]">
                   {Math.max(0, (data.goals?.calories || 2000) - (data.todayIntake?.calories || 0))}
                 </p>
-                <p className="text-xs text-gray-500">calories</p>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>calories</p>
               </div>
             </div>
 
             {/* Macros */}
-            <div className="p-5 bg-white shadow-sm rounded-2xl">
-              <h3 className="mb-4 font-bold text-gray-900">Macronutrients</h3>
+            <div className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`mb-4 font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Macronutrients</h3>
               
               <div className="flex justify-around mb-6">
                 <CircularProgress
@@ -1123,14 +1130,16 @@ export default function UserProgressPage() {
             </div>
 
             {/* Macros Trend Charts */}
-            <div className="p-5 bg-white shadow-sm rounded-2xl">
-              <h3 className="mb-4 font-bold text-gray-900">Macros Trend</h3>
+            <div className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`mb-4 font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Macros Trend</h3>
               <div className="space-y-8">
                 {/* Protein Chart */}
-                <div className="pb-6 border-b border-gray-100">
+                <div className={`pb-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-semibold text-[#3AB1A0]">Protein (g)</span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Goal: {data.goals?.protein || 120}g</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${isDarkMode ? 'text-gray-200 bg-gray-900' : 'text-gray-500 bg-gray-100'}`}>
+                      Goal: {data.goals?.protein || 120}g
+                    </span>
                   </div>
 
                   
@@ -1146,10 +1155,12 @@ export default function UserProgressPage() {
                 </div>
 
                 {/* Carbs Chart */}
-                <div className="pb-6 border-b border-gray-100">
+                <div className={`pb-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-semibold text-[#E06A26]">Carbs (g)</span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Goal: {data.goals?.carbs || 250}g</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${isDarkMode ? 'text-gray-200 bg-gray-900' : 'text-gray-500 bg-gray-100'}`}>
+                      Goal: {data.goals?.carbs || 250}g
+                    </span>
                   </div>
                   <div className="h-38">
                     {carbsChartData.length > 1 ? (
@@ -1166,7 +1177,9 @@ export default function UserProgressPage() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-semibold text-[#DB9C6E]">Fat (g)</span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Goal: {data.goals?.fat || 65}g</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${isDarkMode ? 'text-gray-200 bg-gray-900' : 'text-gray-500 bg-gray-100'}`}>
+                      Goal: {data.goals?.fat || 65}g
+                    </span>
                   </div>
                   <div className="h-38">
                     {fatChartData.length > 1 ? (
@@ -1182,28 +1195,28 @@ export default function UserProgressPage() {
             </div>
 
             {/* Daily Goals */}
-            <div className="p-5 bg-white shadow-sm rounded-2xl">
-              <h3 className="mb-4 font-bold text-gray-900">Daily Goals</h3>
+            <div className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`mb-4 font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Daily Goals</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-[#E06A26]/10 rounded-xl p-4">
                   <Flame className="w-6 h-6 text-[#E06A26] mb-2" />
-                  <p className="text-xl font-bold text-gray-900">{data.goals?.calories || 2000}</p>
-                  <p className="text-xs text-gray-500">Calories/day</p>
+                  <p className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{data.goals?.calories || 2000}</p>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Calories/day</p>
                 </div>
                 <div className="bg-[#3AB1A0]/10 rounded-xl p-4">
                   <Activity className="w-6 h-6 text-[#3AB1A0] mb-2" />
-                  <p className="text-xl font-bold text-gray-900">{data.goals?.protein || 120}g</p>
-                  <p className="text-xs text-gray-500">Protein/day</p>
+                  <p className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{data.goals?.protein || 120}g</p>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Protein/day</p>
                 </div>
                 <div className="bg-[#3AB1A0]/10 rounded-xl p-4">
                   <Droplets className="w-6 h-6 text-[#3AB1A0] mb-2" />
-                  <p className="text-xl font-bold text-gray-900">{data.goals?.water || 8}</p>
-                  <p className="text-xs text-gray-500">Glasses water</p>
+                  <p className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{data.goals?.water || 8}</p>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Glasses water</p>
                 </div>
                 <div className="bg-[#DB9C6E]/10 rounded-xl p-4">
                   <Target className="w-6 h-6 text-[#DB9C6E] mb-2" />
-                  <p className="text-xl font-bold text-gray-900">{(data.goals?.steps || 10000).toLocaleString()}</p>
-                  <p className="text-xs text-gray-500">Steps/day</p>
+                  <p className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{(data.goals?.steps || 10000).toLocaleString()}</p>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Steps/day</p>
                 </div>
               </div>
             </div>
@@ -1214,9 +1227,9 @@ export default function UserProgressPage() {
         {activeTab === 'body' && (
           <>
             {/* Body Measurements */}
-            <div className="p-4 bg-white shadow-sm rounded-2xl">
+            <div className={`p-4 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-gray-900">Body Measurements</h3>
+                <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Body Measurements</h3>
                 <button 
                   onClick={handleAddMeasurementClick}
                   className="text-[#E06A26] text-sm font-medium flex items-center gap-1 bg-[#E06A26]/10 px-3 py-1.5 rounded-lg hover:bg-[#E06A26]/20 transition-colors"
@@ -1226,7 +1239,7 @@ export default function UserProgressPage() {
               </div>
               
               {/* Show date indicator */}
-              <p className="mb-3 text-xs text-gray-500">
+              <p className={`mb-3 text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                 {data.todayMeasurements && (data.todayMeasurements.waist || data.todayMeasurements.hips) 
                   ? `Today's measurements (${format(new Date(), 'MMM d, yyyy')})` 
                   : 'Latest measurements'}
@@ -1245,33 +1258,33 @@ export default function UserProgressPage() {
                     <div className={`h-14 sm:h-16 rounded-xl ${item.color} flex items-center justify-center mb-1`}>
                       <span className="text-base font-bold sm:text-lg">{item.value || '--'}</span>
                     </div>
-                    <p className="text-xs text-gray-600 truncate">{item.label}</p>
-                    <p className="text-[10px] text-gray-400">cm</p>
+                    <p className={`text-xs truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>{item.label}</p>
+                    <p className={`text-[10px] ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>cm</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Measurement History */}
-            <div className="p-4 bg-white shadow-sm rounded-2xl">
-              <h3 className="mb-3 font-bold text-gray-900">Measurement History</h3>
+            <div className={`p-4 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`mb-3 font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Measurement History</h3>
               {filteredMeasurementHistory.length > 0 ? (
                 <div className="px-4 -mx-4 overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className={`w-full text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                     <thead>
-                      <tr className="border-b border-gray-100">
-                        <th className="px-1 py-2 text-xs font-medium text-left text-gray-500">Date</th>
-                        <th className="px-1 py-2 text-xs font-medium text-center text-gray-500">Waist</th>
-                        <th className="px-1 py-2 text-xs font-medium text-center text-gray-500">Hips</th>
-                        <th className="px-1 py-2 text-xs font-medium text-center text-gray-500">Chest</th>
-                        <th className="px-1 py-2 text-xs font-medium text-center text-gray-500">Arms</th>
-                        <th className="px-1 py-2 text-xs font-medium text-center text-gray-500">Thighs</th>
+                      <tr className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                        <th className={`px-1 py-2 text-xs font-medium text-left ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Date</th>
+                        <th className={`px-1 py-2 text-xs font-medium text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Waist</th>
+                        <th className={`px-1 py-2 text-xs font-medium text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Hips</th>
+                        <th className={`px-1 py-2 text-xs font-medium text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Chest</th>
+                        <th className={`px-1 py-2 text-xs font-medium text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Arms</th>
+                        <th className={`px-1 py-2 text-xs font-medium text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Thighs</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredMeasurementHistory.slice(0, 10).map((entry, index) => (
-                        <tr key={index} className="border-b border-gray-50 last:border-0">
-                          <td className="px-1 py-2 text-xs text-gray-600">
+                        <tr key={index} className={`border-b last:border-0 ${isDarkMode ? 'border-gray-700' : 'border-gray-50'}`}>
+                          <td className={`px-1 py-2 text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>
                             {format(new Date(entry.date), 'MMM d')}
                           </td>
                           <td className="px-1 py-2 text-xs font-medium text-center">{entry.waist || '-'}</td>
@@ -1286,8 +1299,8 @@ export default function UserProgressPage() {
                 </div>
               ) : (
                 <div className="py-6 text-center">
-                  <Ruler className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm text-gray-500">No measurement history yet</p>
+                  <Ruler className={`w-10 h-10 mx-auto mb-2 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>No measurement history yet</p>
                   <button 
                     onClick={handleAddMeasurementClick}
                     className="mt-2 text-[#E06A26] font-medium text-sm"
@@ -1300,19 +1313,19 @@ export default function UserProgressPage() {
     {/* BMI Card - Show if BMI is available */}
     {/* BMI Card */}
 {userProfile?.bmi && (
-  <div className="rounded-3xl bg-white p-6 shadow-sm border border-[#E06A26]/15">
+  <div className={`rounded-3xl p-6 shadow-sm border border-[#E06A26]/15 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
     
     {/* Header */}
     <div className="flex items-center justify-between mb-5">
       <div>
-        <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">
+        <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
           Body Mass Index
         </p>
         <div className="flex items-end gap-2 mt-1">
-          <span className="text-4xl font-bold text-gray-900">
+          <span className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {userProfile.bmi}
           </span>
-          <span className="mb-1 text-sm text-gray-500">kg/m²</span>
+          <span className={`mb-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>kg/m²</span>
         </div>
       </div>
 
@@ -1352,7 +1365,7 @@ export default function UserProgressPage() {
           )}%, 97.5%)`,
         }}
       >
-        <div className="w-5 h-5 bg-white border-2 border-gray-900 rounded-full shadow-md" />
+        <div className={`w-5 h-5 border-2 rounded-full shadow-md ${isDarkMode ? 'bg-gray-950 border-gray-200' : 'bg-white border-gray-900'}`} />
       </div>
     </div>
 
@@ -1373,14 +1386,14 @@ export default function UserProgressPage() {
     </div>
 
     {/* Weight & Height */}
-    <div className="grid grid-cols-2 gap-4 pt-4 mt-6 border-t border-gray-100">
+    <div className={`grid grid-cols-2 gap-4 pt-4 mt-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/15 flex items-center justify-center">
           <Activity className="h-5 w-5 text-[#3AB1A0]" />
         </div>
         <div>
-          <p className="text-xs text-gray-500">Weight</p>
-          <p className="font-semibold text-gray-900">
+          <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Weight</p>
+          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {userProfile.weightKg} kg
           </p>
         </div>
@@ -1391,8 +1404,8 @@ export default function UserProgressPage() {
           <User className="h-5 w-5 text-[#E06A26]" />
         </div>
         <div>
-          <p className="text-xs text-gray-500">Height</p>
-          <p className="font-semibold text-gray-900">
+          <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Height</p>
+          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {userProfile.heightCm} cm
           </p>
         </div>
@@ -1402,9 +1415,9 @@ export default function UserProgressPage() {
 )}
 
             {/* Progress Photos */}
-            <div className="p-4 bg-white shadow-sm rounded-2xl">
+            <div className={`p-4 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900">Transformation Photos</h3>
+                <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Transformation Photos</h3>
                 <button 
                   onClick={() => setShowPhotoModal(true)}
                   className="text-[#E06A26] text-sm font-medium flex items-center gap-1 bg-[#E06A26]/10 px-3 py-1.5 rounded-lg hover:bg-[#E06A26]/20 transition-colors"

@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { LoadingPage, LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChefHat, Target, Calendar, AlertCircle, ArrowLeft, Heart, Leaf, Stethoscope, LayoutGrid, User } from 'lucide-react';
@@ -411,7 +411,7 @@ export default function CreateDietTemplatePage() {
     } finally { setLoading(false); }
   };
 
-  if (!session) return <LoadingSpinner />;
+  if (!session) return <LoadingPage />;
 
   // ------------------ RENDER -----------------------
 

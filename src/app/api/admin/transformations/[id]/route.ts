@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import dbConnect from '@/lib/db/connection';
 import Transformation from '@/lib/db/models/Transformation';
-import { imagekit } from '@/lib/imagekit';
+import { getImageKit } from '@/lib/imagekit';
 import { UserRole } from '@/types';
 import { compressBase64ImageServer } from '@/lib/imageCompressionServer';
 
@@ -77,6 +77,8 @@ export async function PUT(
     transformation.displayOrder = displayOrder;
 
     // Upload new images if provided (with compression)
+    const imageKitInstance = getImageKit();
+    
     if (beforeImageData && beforeImageData.includes('base64')) {
       try {
         const beforeBase64 = beforeImageData.split('base64,')[1];
@@ -87,10 +89,10 @@ export async function PUT(
           maxHeight: 1200,
           format: 'jpeg'
         });
-        const beforeUpload = await imagekit.upload({
+        const beforeUpload = await imageKitInstance.upload({
           file: compressedBefore,
           fileName: `transformation_before_${Date.now()}.jpg`,
-          folder: '/transformations',
+          folder: '/TransformationBeforeAndAfter',
         });
         transformation.beforeImage = beforeUpload.url;
       } catch (uploadError) {
@@ -108,10 +110,10 @@ export async function PUT(
           maxHeight: 1200,
           format: 'jpeg'
         });
-        const afterUpload = await imagekit.upload({
+        const afterUpload = await imageKitInstance.upload({
           file: compressedAfter,
           fileName: `transformation_after_${Date.now()}.jpg`,
-          folder: '/transformations',
+          folder: '/TransformationBeforeAndAfter',
         });
         transformation.afterImage = afterUpload.url;
       } catch (uploadError) {

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import PageTransition from "@/components/animations/PageTransition";
+import { useTheme } from "@/contexts/ThemeContext";
 import { 
   ArrowLeft, 
   Save, 
@@ -70,6 +72,7 @@ const dietTypes = [
 export default function PersonalInfoPage() {
   const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -250,27 +253,36 @@ export default function PersonalInfoPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className={`fixed inset-0 ${isDarkMode ? 'bg-gray-950' : 'bg-white'} flex items-center justify-center z-[100]`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
   }
 
   const heightDisplay = cmToFeetInches(data.heightCm);
+  const labelClassName = isDarkMode ? "text-sm font-medium text-gray-300" : "text-sm font-medium text-gray-700";
+  const fieldClassName = isDarkMode
+    ? "w-full px-4 py-3 bg-[#111] border border-[#2a2a2a] text-white placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff9500] focus:border-transparent transition-all"
+    : "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all";
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#3AB1A0]/10 via-white to-[#3AB1A0]/10">
+    <div className={isDarkMode ? "min-h-screen bg-[#0a0a0a]" : "min-h-screen bg-linear-to-br from-[#3AB1A0]/10 via-white to-[#3AB1A0]/10"}>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
+      <div className={isDarkMode ? "sticky top-0 z-10 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#1f1f1f]" : "sticky top-0 z-10 bg-white border-b border-gray-100"}>
         <div className="relative flex items-center justify-center px-4 py-4">
-          <Link href="/user/profile" className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
+          <Link
+            href="/user/profile"
+            className={isDarkMode ? "absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 transition-colors" : "absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors"}
+          >
+            <ArrowLeft className={isDarkMode ? "w-5 h-5 text-gray-200" : "w-5 h-5 text-gray-700"} />
           </Link>
-          <h1 className="text-lg font-bold text-black">Personal Information</h1>
+          <h1 className={isDarkMode ? "text-lg font-bold text-white" : "text-lg font-bold text-black"}>Personal Information</h1>
           <button 
             onClick={handleSave}
             disabled={saving}
-            className="absolute right-4 flex items-center gap-2 px-4 py-2 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2a9989] transition-colors disabled:opacity-50 shadow-lg shadow-[#3AB1A0]/25"
+            className={isDarkMode
+              ? "absolute right-4 flex items-center gap-2 px-4 py-2 bg-[#ff9500] text-white rounded-xl text-sm font-semibold hover:bg-[#ff9500]/90 transition-colors disabled:opacity-50 shadow-lg shadow-[#ff9500]/25"
+              : "absolute right-4 flex items-center gap-2 px-4 py-2 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2a9989] transition-colors disabled:opacity-50 shadow-lg shadow-[#3AB1A0]/25"}
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save
@@ -295,10 +307,10 @@ export default function PersonalInfoPage() {
                 src={data.profileImage} 
                 alt="Profile" 
                 loading="lazy"
-                className="w-28 h-28 rounded-2xl border-4 border-[#3AB1A0]/20 object-cover shadow-xl"
+                className={isDarkMode ? "w-28 h-28 rounded-2xl border-4 border-white/10 object-cover shadow-xl" : "w-28 h-28 rounded-2xl border-4 border-[#3AB1A0]/20 object-cover shadow-xl"}
               />
             ) : (
-              <div className="w-28 h-28 rounded-2xl bg-linear-to-br from-[#3AB1A0] to-[#2a9989] flex items-center justify-center border-4 border-[#3AB1A0]/20 shadow-xl">
+              <div className={isDarkMode ? "w-28 h-28 rounded-2xl bg-linear-to-br from-[#ff9500] to-[#E06A26] flex items-center justify-center border-4 border-white/10 shadow-xl" : "w-28 h-28 rounded-2xl bg-linear-to-br from-[#3AB1A0] to-[#2a9989] flex items-center justify-center border-4 border-[#3AB1A0]/20 shadow-xl"}>
                 <span className="text-3xl font-bold text-white">
                   {getInitials(data.firstName, data.lastName)}
                 </span>
@@ -307,7 +319,9 @@ export default function PersonalInfoPage() {
             <button 
               onClick={handleImageClick}
               disabled={uploading}
-              className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#3AB1A0] rounded-xl flex items-center justify-center shadow-lg hover:bg-[#2a9989] transition-colors"
+              className={isDarkMode
+                ? "absolute -bottom-2 -right-2 w-10 h-10 bg-[#ff9500] rounded-xl flex items-center justify-center shadow-lg hover:bg-[#ff9500]/90 transition-colors"
+                : "absolute -bottom-2 -right-2 w-10 h-10 bg-[#3AB1A0] rounded-xl flex items-center justify-center shadow-lg hover:bg-[#2a9989] transition-colors"}
             >
               {uploading ? (
                 <Loader2 className="w-5 h-5 text-white animate-spin" />
@@ -361,17 +375,17 @@ export default function PersonalInfoPage() {
             />
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Date of Birth</label>
+              <label className={labelClassName}>Date of Birth</label>
               <input
                 type="date"
                 value={data.dateOfBirth}
                 onChange={(e) => setData({ ...data, dateOfBirth: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
+                className={fieldClassName}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Gender</label>
+              <label className={labelClassName}>Gender</label>
               <div className="flex gap-2 flex-wrap">
                 {["male", "female", "other"].map((gender) => (
                   <button
@@ -379,8 +393,8 @@ export default function PersonalInfoPage() {
                     onClick={() => setData({ ...data, gender })}
                     className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       data.gender === gender
-                        ? "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25"
-                        : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10"
+                        ? (isDarkMode ? "bg-[#ff9500] text-white shadow-lg shadow-[#ff9500]/25" : "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25")
+                        : (isDarkMode ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]" : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10")
                     }`}
                   >
                     {gender.charAt(0).toUpperCase() + gender.slice(1)}
@@ -390,12 +404,12 @@ export default function PersonalInfoPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Anniversary</label>
+              <label className={labelClassName}>Anniversary</label>
               <input
                 type="date"
                 value={data.anniversary}
                 onChange={(e) => setData({ ...data, anniversary: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
+                className={fieldClassName}
               />
             </div>
           </div>
@@ -405,11 +419,11 @@ export default function PersonalInfoPage() {
         <Section title="How did you hear about us?" icon={Users}>
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Source</label>
+              <label className={labelClassName}>Source</label>
               <select
                 value={data.source}
                 onChange={(e) => setData({ ...data, source: e.target.value, referralSource: e.target.value !== 'other' ? '' : data.referralSource })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
+                className={fieldClassName}
               >
                 <option value="">Select source</option>
                 <option value="google_ads">Google Ads</option>
@@ -434,16 +448,16 @@ export default function PersonalInfoPage() {
         <Section title="Body Metrics" icon={Scale}>
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Height (CM)</label>
+              <label className={labelClassName}>Height (CM)</label>
               <input
                 type="number"
                 value={data.heightCm}
                 onChange={(e) => setData({ ...data, heightCm: e.target.value })}
                 placeholder="Height in CM"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
+                className={fieldClassName}
               />
               {data.heightCm && (
-                <p className="text-xs text-gray-500">
+                <p className={isDarkMode ? "text-xs text-gray-400" : "text-xs text-gray-500"}>
                   {heightDisplay.feet} ft {heightDisplay.inches} in
                 </p>
               )}
@@ -451,23 +465,23 @@ export default function PersonalInfoPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Current Weight (KG)</label>
+                <label className={labelClassName}>Current Weight (KG)</label>
                 <input
                   type="number"
                   value={data.weightKg}
                   onChange={(e) => setData({ ...data, weightKg: e.target.value })}
                   placeholder="Weight"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
+                  className={fieldClassName}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Target Weight (KG)</label>
+                <label className={labelClassName}>Target Weight (KG)</label>
                 <input
                   type="number"
                   value={data.targetWeightKg}
                   onChange={(e) => setData({ ...data, targetWeightKg: e.target.value })}
                   placeholder="Target"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
+                  className={fieldClassName}
                 />
               </div>
             </div>
@@ -483,14 +497,14 @@ export default function PersonalInfoPage() {
                 onClick={() => setData({ ...data, activityLevel: level.value })}
                 className={`w-full p-3 rounded-xl text-left transition-all border ${
                   data.activityLevel === level.value
-                    ? "bg-[#3AB1A0]/10 border-[#3AB1A0] ring-2 ring-[#3AB1A0]"
-                    : "bg-gray-50 border-gray-200 hover:border-green-300"
+                    ? (isDarkMode ? "bg-white/5 border-[#ff9500] ring-2 ring-[#ff9500]" : "bg-[#3AB1A0]/10 border-[#3AB1A0] ring-2 ring-[#3AB1A0]")
+                    : (isDarkMode ? "bg-[#111] border-[#2a2a2a] hover:border-[#ff9500]/60" : "bg-gray-50 border-gray-200 hover:border-green-300")
                 }`}
               >
-                <p className={`font-medium ${data.activityLevel === level.value ? 'text-green-700' : 'text-gray-900'}`}>
+                <p className={`font-medium ${data.activityLevel === level.value ? (isDarkMode ? 'text-[#ff9500]' : 'text-green-700') : (isDarkMode ? 'text-white' : 'text-gray-900')}`}>
                   {level.label}
                 </p>
-                <p className="text-xs text-gray-500">{level.desc}</p>
+                <p className={isDarkMode ? "text-xs text-gray-400" : "text-xs text-gray-500"}>{level.desc}</p>
               </button>
             ))}
           </div>
@@ -505,8 +519,8 @@ export default function PersonalInfoPage() {
                 onClick={() => setData({ ...data, generalGoal: goal.value })}
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   data.generalGoal === goal.value
-                    ? "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10"
+                    ? (isDarkMode ? "bg-[#ff9500] text-white shadow-lg shadow-[#ff9500]/25" : "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25")
+                    : (isDarkMode ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]" : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10")
                 }`}
               >
                 {goal.label}
@@ -524,8 +538,8 @@ export default function PersonalInfoPage() {
                 onClick={() => setData({ ...data, dietType: diet.value })}
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   data.dietType === diet.value
-                    ? "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10"
+                    ? (isDarkMode ? "bg-[#ff9500] text-white shadow-lg shadow-[#ff9500]/25" : "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25")
+                    : (isDarkMode ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]" : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10")
                 }`}
               >
                 {diet.label}
@@ -537,11 +551,11 @@ export default function PersonalInfoPage() {
         {/* Email Display (Read-only) */}
         <Section title="Account" icon={Mail}>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Email Address</label>
-            <div className="px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-600">
+            <label className={labelClassName}>Email Address</label>
+            <div className={isDarkMode ? "px-4 py-3 bg-[#111] border border-[#2a2a2a] rounded-xl text-gray-200" : "px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-600"}>
               {session?.user?.email || "Not available"}
             </div>
-            <p className="text-xs text-gray-500">Email cannot be changed</p>
+            <p className={isDarkMode ? "text-xs text-gray-400" : "text-xs text-gray-500"}>Email cannot be changed</p>
           </div>
         </Section>
       </div>
@@ -559,13 +573,14 @@ function Section({
   icon: React.ElementType; 
   children: React.ReactNode;
 }) {
+  const { isDarkMode } = useTheme();
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div className={isDarkMode ? "bg-[#1a1a1a] rounded-2xl p-5 shadow-sm border border-[#2a2a2a]" : "bg-white rounded-2xl p-5 shadow-sm border border-gray-100"}>
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 bg-[#3AB1A0] rounded-xl flex items-center justify-center shadow-lg shadow-[#3AB1A0]/25">
+        <div className={isDarkMode ? "w-10 h-10 bg-[#ff9500] rounded-xl flex items-center justify-center shadow-lg shadow-[#ff9500]/25" : "w-10 h-10 bg-[#3AB1A0] rounded-xl flex items-center justify-center shadow-lg shadow-[#3AB1A0]/25"}>
           <Icon className="w-5 h-5 text-white" />
         </div>
-        <h3 className="font-bold text-gray-900">{title}</h3>
+        <h3 className={isDarkMode ? "font-bold text-white" : "font-bold text-gray-900"}>{title}</h3>
       </div>
       {children}
     </div>
@@ -586,15 +601,18 @@ function InputField({
   placeholder?: string;
   type?: string;
 }) {
+  const { isDarkMode } = useTheme();
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className={isDarkMode ? "text-sm font-medium text-gray-300" : "text-sm font-medium text-gray-700"}>{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"
+        className={isDarkMode
+          ? "w-full px-4 py-3 bg-[#111] border border-[#2a2a2a] text-white placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff9500] focus:border-transparent transition-all"
+          : "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent transition-all"}
       />
     </div>
   );

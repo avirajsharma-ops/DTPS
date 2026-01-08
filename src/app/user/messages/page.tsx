@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import PageTransition from '@/components/animations/PageTransition';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
 import { ResponsiveLayout } from '@/components/client/layouts';
 import { Card, CardContent } from '@/components/ui/card';
@@ -61,6 +63,7 @@ interface Conversation {
 export default function UserMessagesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const { refreshCounts } = useUnreadCountsSafe();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -214,23 +217,32 @@ export default function UserMessagesPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#ECE5DD]">
+    <PageTransition>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-950' : 'bg-[#ECE5DD]'}`}>
       <div className="h-screen md:h-[calc(100vh-120px)] flex flex-col md:flex-row md:gap-4 md:p-6">
         {/* Conversations List - Hidden on mobile when conversation selected */}
-        <div className={`md:w-80 shrink-0 bg-white md:rounded-xl md:shadow-sm md:border border-gray-100 ${selectedConversation ? 'hidden md:block' : 'block'}`}>
+        <div
+          className={`md:w-80 shrink-0 md:rounded-xl md:shadow-sm md:border ${
+            isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'
+          } ${selectedConversation ? 'hidden md:block' : 'block'}`}
+        >
           {/* Header */}
-          <div className="p-4 border-b border-gray-100 flex items-center gap-3 bg-[#075E54] md:bg-white md:rounded-t-xl">
+          <div
+            className={`p-4 border-b flex items-center gap-3 bg-[#075E54] md:rounded-t-xl ${
+              isDarkMode ? 'md:bg-gray-900 border-gray-800' : 'md:bg-white border-gray-100'
+            }`}
+          >
             <Link href="/user" className="p-2 -ml-2 md:hidden">
               <ArrowLeft className="w-5 h-5 text-white md:text-gray-700" />
             </Link>
-            <h2 className="font-bold text-lg text-white md:text-[#075E54]">Messages</h2>
+            <h2 className={`font-bold text-lg text-white ${isDarkMode ? 'md:text-white' : 'md:text-[#075E54]'}`}>Messages</h2>
           </div>
           <div className="overflow-y-auto">
             {conversations.length === 0 ? (
@@ -238,8 +250,8 @@ export default function UserMessagesPage() {
                 <div className="w-16 h-16 bg-[#075E54]/10 rounded-full flex items-center justify-center mb-4">
                   <Send className="w-8 h-8 text-[#075E54]" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">No conversations yet</h3>
-                <p className="text-gray-500 text-sm text-center">
+                <h3 className={`font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No conversations yet</h3>
+                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'} text-sm text-center`}>
                   Your conversations with your dietitian will appear here
                 </p>
               </div>
@@ -248,7 +260,9 @@ export default function UserMessagesPage() {
                 <button
                   key={conv._id}
                   onClick={() => setSelectedConversation(conv)}
-                  className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+                  className={`w-full flex items-center gap-3 p-4 transition-colors border-b ${
+                    isDarkMode ? 'border-gray-800 hover:bg-gray-800' : 'border-gray-100 hover:bg-gray-50'
+                  } ${
                     selectedConversation?._id === conv._id ? 'bg-[#075E54]/5' : ''
                   }`}
                 >
@@ -268,16 +282,26 @@ export default function UserMessagesPage() {
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center justify-between">
-                      <p className="font-medium text-gray-900 truncate">
+                      <p className={`font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                         {conv.user.firstName} {conv.user.lastName}
                       </p>
                       {conv.lastMessage && (
-                        <span className="text-xs text-gray-500">
+                        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           {formatMessageDate(conv.lastMessage.createdAt)}
                         </span>
                       )}
                     </div>
-                    <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                    <p
+                      className={`text-sm truncate ${
+                        conv.unreadCount > 0
+                          ? isDarkMode
+                            ? 'text-white font-medium'
+                            : 'text-gray-900 font-medium'
+                          : isDarkMode
+                            ? 'text-gray-300'
+                            : 'text-gray-500'
+                      }`}
+                    >
                       {conv.lastMessage?.content || 'Start a conversation'}
                     </p>
                   </div>
@@ -288,11 +312,19 @@ export default function UserMessagesPage() {
         </div>
 
         {/* Chat Area */}
-        <div className={`flex-1 flex flex-col md:rounded-xl md:shadow-sm md:border border-gray-100 ${!selectedConversation ? 'hidden md:flex' : 'flex fixed inset-0 z-50 md:relative md:z-auto'}`}>
+        <div
+          className={`flex-1 flex flex-col md:rounded-xl md:shadow-sm md:border ${
+            isDarkMode ? 'border-gray-800' : 'border-gray-100'
+          } ${!selectedConversation ? 'hidden md:flex' : 'flex fixed inset-0 z-50 md:relative md:z-auto'}`}
+        >
           {selectedConversation ? (
             <div className="flex flex-col h-dvh md:h-full">
               {/* Chat Header - WhatsApp Style - Fixed at top */}
-              <div className="flex items-center justify-between p-3 bg-[#075E54] text-white md:bg-white md:text-gray-900 md:border-b md:border-gray-100 md:rounded-t-xl shrink-0">
+              <div
+                className={`flex items-center justify-between p-3 bg-[#075E54] text-white md:border-b md:rounded-t-xl shrink-0 ${
+                  isDarkMode ? 'md:bg-gray-900 md:text-white md:border-gray-800' : 'md:bg-white md:text-gray-900 md:border-gray-100'
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <button 
                     className="p-2 -ml-2 md:hidden hover:bg-white/10 rounded-full"
@@ -308,7 +340,7 @@ export default function UserMessagesPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-white md:text-gray-900">
+                    <p className={`font-medium text-white ${isDarkMode ? 'md:text-white' : 'md:text-gray-900'}`}>
                       {selectedConversation.user.firstName} {selectedConversation.user.lastName}
                     </p>
                     <p className="text-xs text-white/80 md:text-[#25D366] capitalize">
@@ -330,23 +362,25 @@ export default function UserMessagesPage() {
               <div 
                 className="flex-1 overflow-y-auto p-4 space-y-2"
                 style={{
-                  backgroundColor: '#ECE5DD',
-                  backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%23ECE5DD\'/%3E%3Cpath d=\'M20 20h60v60H20z\' fill=\'%23D9D9D9\' opacity=\'.05\'/%3E%3C/svg%3E")',
+                  backgroundColor: isDarkMode ? '#0B141A' : '#ECE5DD',
+                  backgroundImage: isDarkMode
+                    ? 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%230B141A\'/%3E%3Cpath d=\'M20 20h60v60H20z\' fill=\'%23FFFFFF\' opacity=\'.03\'/%3E%3C/svg%3E")'
+                    : 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%23ECE5DD\'/%3E%3Cpath d=\'M20 20h60v60H20z\' fill=\'%23D9D9D9\' opacity=\'.05\'/%3E%3C/svg%3E")',
                   backgroundSize: '300px 300px'
                 }}
               >
                 {loadingMessages ? (
-                  <div className="flex justify-center py-8">
-                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full py-12">
-                    <div className="bg-white/80 rounded-2xl p-6 shadow-sm">
+                    <div className={`rounded-2xl p-6 shadow-sm ${isDarkMode ? 'bg-gray-900/80' : 'bg-white/80'}`}>
                       <div className="w-16 h-16 bg-[#075E54]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Send className="w-8 h-8 text-[#075E54]" />
                       </div>
-                      <h3 className="font-semibold text-gray-900 mb-1 text-center">Start a conversation</h3>
-                      <p className="text-gray-500 text-sm text-center">
+                      <h3 className={`font-semibold mb-1 text-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Start a conversation</h3>
+                      <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'} text-sm text-center`}>
                         Send a message to {selectedConversation.user.firstName}
                       </p>
                     </div>
@@ -364,13 +398,17 @@ export default function UserMessagesPage() {
                           <div
                             className={`px-3 py-2 rounded-lg shadow-sm inline-block ${
                               isOwn
-                                ? 'bg-[#DCF8C6] text-gray-900 rounded-tr-none'
-                                : 'bg-white text-gray-900 rounded-tl-none'
+                                ? isDarkMode
+                                  ? 'bg-emerald-700 text-white rounded-tr-none'
+                                  : 'bg-[#DCF8C6] text-gray-900 rounded-tr-none'
+                                : isDarkMode
+                                  ? 'bg-gray-800 text-white rounded-tl-none'
+                                  : 'bg-white text-gray-900 rounded-tl-none'
                             }`}
                           >
                             <p className="text-[14px] sm:text-[15px] leading-relaxed whitespace-pre-wrap wrap-break-word">{message.content}</p>
                             <div className={`flex items-center justify-end gap-1 mt-1`}>
-                              <span className="text-[10px] sm:text-[11px] text-gray-500">
+                              <span className={`text-[10px] sm:text-[11px] ${isDarkMode ? 'text-gray-200' : 'text-gray-500'}`}>
                                 {formatMessageTime(message.createdAt)}
                               </span>
                               {getStatusIcon(message.isRead, isOwn)}
@@ -385,18 +423,26 @@ export default function UserMessagesPage() {
               </div>
 
               {/* Input Area - WhatsApp Style - Fixed at bottom */}
-              <div className="p-2 sm:p-3 bg-[#F0F0F0] md:bg-white md:border-t md:border-gray-100 md:rounded-b-xl shrink-0">
+              <div
+                className={`p-2 sm:p-3 md:border-t md:rounded-b-xl shrink-0 ${
+                  isDarkMode ? 'bg-gray-900 md:bg-gray-900 md:border-gray-800' : 'bg-[#F0F0F0] md:bg-white md:border-gray-100'
+                }`}
+              >
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 hover:bg-gray-200 rounded-full">
-                    <Paperclip className="h-5 w-5 text-gray-600" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-10 w-10 shrink-0 rounded-full ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-200'}`}
+                  >
+                    <Paperclip className={`h-5 w-5 ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`} />
                   </Button>
-                  <div className="flex-1 bg-white rounded-3xl flex items-center px-4 py-2 shadow-sm">
+                  <div className={`flex-1 rounded-3xl flex items-center px-4 py-2 shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                     <Input
                       ref={inputRef}
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       placeholder="Type a message..."
-                      className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-[14px] sm:text-[15px] p-0"
+                      className={`flex-1 border-0 bg-transparent focus-visible:ring-0 text-[14px] sm:text-[15px] p-0 ${isDarkMode ? 'text-white placeholder:text-gray-400' : 'text-gray-900'}`}
                       onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                     />
                   </div>
@@ -412,18 +458,19 @@ export default function UserMessagesPage() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center bg-[#ECE5DD]">
-              <div className="text-center bg-white/80 rounded-2xl p-8 shadow-sm">
+            <div className={`flex-1 flex items-center justify-center ${isDarkMode ? 'bg-gray-950' : 'bg-[#ECE5DD]'}`}>
+              <div className={`text-center rounded-2xl p-8 shadow-sm ${isDarkMode ? 'bg-gray-900/80' : 'bg-white/80'}`}>
                 <div className="w-16 h-16 bg-[#075E54]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Send className="w-8 h-8 text-[#075E54]" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">Select a conversation</h3>
-                <p className="text-gray-500 text-sm">Choose a conversation from the list to start chatting</p>
+                <h3 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Select a conversation</h3>
+                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'} text-sm`}>Choose a conversation from the list to start chatting</p>
               </div>
             </div>
           )}
         </div>
       </div>
     </div>
+    </PageTransition>
   );
 }

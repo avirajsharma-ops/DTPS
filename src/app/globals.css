@@ -9,6 +9,60 @@
     display: none;
   }
 
+  /* Bottom Nav Icon Click Animation */
+  @keyframes nav-icon-click {
+    0% {
+      transform: scale(1) translateY(0);
+    }
+    50% {
+      transform: scale(0.9) translateY(-12px);
+    }
+    100% {
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes active-glow {
+    0% {
+      box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7);
+      transform: scale(1);
+    }
+    70% {
+      box-shadow: 0 0 0 8px rgba(168, 85, 247, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(168, 85, 247, 0);
+    }
+  }
+
+  @keyframes lift-up {
+    0% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* Floating bubble animation for bottom nav */
+  @keyframes float-up {
+    0% {
+      transform: translateY(20px) scale(0.8);
+      opacity: 0;
+    }
+    50% {
+      transform: translateY(-5px) scale(1.05);
+    }
+    100% {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .animate-float-up {
+    animation: float-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
   /* Custom animations */
   @keyframes slide-up {
     0% {
@@ -49,6 +103,19 @@
     animation: fadeIn 0.3s ease-in forwards;
   }
 
+  /* Bottom nav animations */
+  .animate-nav-click {
+    animation: nav-icon-click 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .animate-active-glow {
+    animation: active-glow 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-lift-up {
+    animation: lift-up 0.3s ease-out forwards;
+  }
+
   .animate-slide-in-right {
     animation: slide-in-right 0.3s ease-out forwards;
   }
@@ -61,14 +128,14 @@
     }
     100% {
       opacity: 1;
-      transform: translateY(0);
+      transform: none;
     }
   }
 
   @keyframes page-exit {
     0% {
       opacity: 1;
-      transform: translateY(0);
+      transform: none;
     }
     100% {
       opacity: 0;
@@ -151,6 +218,119 @@
     }
   }
 
+  /* Smooth modal and dialog animations */
+  @keyframes modal-enter {
+    0% {
+      opacity: 0;
+      transform: scale(0.95) translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes modal-exit {
+    0% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.95) translateY(20px);
+    }
+  }
+
+  /* Smooth button and interactive element animations */
+  @keyframes button-press {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(0.98);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes smooth-pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  /* Smooth hover lift effect */
+  @keyframes lift-hover {
+    0% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* Card entrance animation */
+  @keyframes card-enter {
+    0% {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Dropdown menu animation */
+  @keyframes dropdown-enter {
+    0% {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes dropdown-exit {
+    0% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+
+  /* Toast notification animations */
+  @keyframes toast-enter {
+    0% {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes toast-exit {
+    0% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+  }
+
   /* Animation utility classes */
   .animate-page-enter {
     animation: page-enter 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
@@ -184,6 +364,46 @@
     animation: overlay-fade-in 0.25s ease-out forwards;
   }
 
+  .animate-modal-enter {
+    animation: modal-enter 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  .animate-modal-exit {
+    animation: modal-exit 0.2s ease-in forwards;
+  }
+
+  .animate-button-press {
+    animation: button-press 0.2s ease-out;
+  }
+
+  .animate-smooth-pulse {
+    animation: smooth-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .hover\:animate-lift-hover:hover {
+    animation: lift-hover 0.3s ease-out forwards;
+  }
+
+  .animate-card-enter {
+    animation: card-enter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  .animate-dropdown-enter {
+    animation: dropdown-enter 0.2s ease-out forwards;
+  }
+
+  .animate-dropdown-exit {
+    animation: dropdown-exit 0.2s ease-in forwards;
+  }
+
+  .animate-toast-enter {
+    animation: toast-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-toast-exit {
+    animation: toast-exit 0.25s ease-in forwards;
+  }
+
   /* Stagger animation for lists and cards */
   .animate-stagger-1 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.05s forwards; opacity: 0; }
   .animate-stagger-2 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s forwards; opacity: 0; }
@@ -191,6 +411,30 @@
   .animate-stagger-4 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s forwards; opacity: 0; }
   .animate-stagger-5 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.25s forwards; opacity: 0; }
   .animate-stagger-6 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s forwards; opacity: 0; }
+
+  /* Smooth transition defaults for better UX */
+  * {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Override transition for specific interactive elements */
+  button, a, input, select, textarea {
+    @apply transition-all duration-150 ease-out;
+  }
+
+  /* Smooth hover and focus states */
+  button:hover {
+    @apply transition-all duration-150;
+  }
+
+  button:active {
+    animation: button-press 0.15s ease-out;
+  }
+
+  /* Card hover lift effect */
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-lg transition-all duration-300;
+  }
 
   /* Enhanced mobile responsiveness for quick actions */
   @media (max-width: 380px) {
@@ -482,6 +726,34 @@ body::-webkit-scrollbar {
       transform: scale(1) rotate(0deg);
       opacity: 1;
     }
+  }
+
+  /* Dark Mode Color Scheme for User Panel */
+  .dark {
+    --background: #0a0a0a;
+    --foreground: #ffffff;
+    --card: #1a1a1a;
+    --card-foreground: #ffffff;
+    --primary: #ff9500;
+    --primary-dark: #f08000;
+    --secondary: #18b981;
+    --text-primary: #ffffff;
+    --text-secondary: #d1d5db;
+    --border-color: #374151;
+  }
+
+  /* Light Mode Color Scheme */
+  :root:not(.dark) {
+    --background: #ffffff;
+    --foreground: #000000;
+    --card: #f9fafb;
+    --card-foreground: #111827;
+    --primary: #ff9500;
+    --primary-dark: #f08000;
+    --secondary: #18b981;
+    --text-primary: #000000;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
   }
 
   .animate-bounce-in {

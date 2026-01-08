@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import UserNavBar from '@/components/client/UserNavBar';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   HelpCircle, 
   Search,
@@ -32,6 +33,7 @@ interface FAQCategory {
 }
 
 export default function HelpCenterPage() {
+  const { isDarkMode } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
@@ -235,7 +237,7 @@ export default function HelpCenterPage() {
     : faqCategories;
 
   return (
-    <div className="min-h-screen pb-24 bg-gray-50">
+    <div className={`min-h-screen pb-24 ${isDarkMode ? 'bg-slate-950' : 'bg-gray-50'}`}>
       <UserNavBar 
         title="Help Center" 
         showBack={true}
@@ -245,9 +247,9 @@ export default function HelpCenterPage() {
         backHref="/user/settings"
       />
 
-      <div className="px-4 md:px-6 space-y-4 py-4">
+      <div className="px-4 space-y-4 py-4">
         {/* Search Bar */}
-        <Card className="border-0 shadow-sm">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
           <CardContent className="p-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -255,7 +257,9 @@ export default function HelpCenterPage() {
                 placeholder="Search for help..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]"
+                className={`pl-10 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] ${
+                  isDarkMode ? 'border-slate-800 bg-slate-950 text-white placeholder:text-slate-500' : 'border-gray-200'
+                }`}
               />
             </div>
           </CardContent>
@@ -283,9 +287,12 @@ export default function HelpCenterPage() {
         {/* FAQ Categories */}
         <div className="space-y-3">
           {filteredCategories.map((category) => (
-            <Card key={category.title} className="border-0 shadow-sm overflow-hidden">
+            <Card
+              key={category.title}
+              className={`border-0 shadow-sm overflow-hidden ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}
+            >
               <CardHeader 
-                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                className={`p-4 cursor-pointer transition-colors ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
                 onClick={() => setExpandedCategory(
                   expandedCategory === category.title ? null : category.title
                 )}
@@ -299,31 +306,31 @@ export default function HelpCenterPage() {
                       <category.icon className="h-5 w-5" style={{ color: category.color }} />
                     </div>
                     <div>
-                      <CardTitle className="text-base font-semibold text-gray-900">
+                      <CardTitle className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                         {category.title}
                       </CardTitle>
-                      <p className="text-xs text-gray-500">
+                      <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                         {category.faqs.length} questions
                       </p>
                     </div>
                   </div>
                   {expandedCategory === category.title ? (
-                    <ChevronDown className="h-5 w-5 text-gray-400" />
+                    <ChevronDown className={`h-5 w-5 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} />
                   ) : (
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                    <ChevronRight className={`h-5 w-5 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} />
                   )}
                 </div>
               </CardHeader>
               
               {expandedCategory === category.title && (
-                <CardContent className="p-0 border-t border-gray-100">
+                <CardContent className={`p-0 border-t ${isDarkMode ? 'border-slate-800' : 'border-gray-100'}`}>
                   {category.faqs.map((faq, index) => (
                     <div 
                       key={index}
-                      className="border-b border-gray-50 last:border-0"
+                      className={`border-b last:border-0 ${isDarkMode ? 'border-slate-800' : 'border-gray-50'}`}
                     >
                       <button
-                        className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                        className={`w-full p-4 text-left transition-colors ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
                         onClick={() => setExpandedFAQ(
                           expandedFAQ === `${category.title}-${index}` 
                             ? null 
@@ -331,20 +338,24 @@ export default function HelpCenterPage() {
                         )}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-gray-800 pr-4">
+                          <span className={`font-medium pr-4 ${isDarkMode ? 'text-slate-100' : 'text-gray-800'}`}>
                             {faq.question}
                           </span>
                           {expandedFAQ === `${category.title}-${index}` ? (
-                            <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+                            <ChevronDown className={`h-4 w-4 shrink-0 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} />
                           ) : (
-                            <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
+                            <ChevronRight className={`h-4 w-4 shrink-0 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} />
                           )}
                         </div>
                       </button>
                       
                       {expandedFAQ === `${category.title}-${index}` && (
                         <div className="px-4 pb-4">
-                          <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                          <p
+                            className={`text-sm p-3 rounded-lg ${
+                              isDarkMode ? 'text-slate-200 bg-slate-950/60 ring-1 ring-white/10' : 'text-gray-600 bg-gray-50'
+                            }`}
+                          >
                             {faq.answer}
                           </p>
                         </div>
@@ -359,13 +370,13 @@ export default function HelpCenterPage() {
 
         {/* No Results */}
         {searchQuery && filteredCategories.length === 0 && (
-          <Card className="border-0 shadow-sm">
+          <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
             <CardContent className="p-8 text-center">
-              <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <div className={`h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isDarkMode ? 'bg-slate-950/60 ring-1 ring-white/10' : 'bg-gray-100'}`}>
                 <Search className="h-8 w-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Results Found</h3>
-              <p className="text-gray-600">
+              <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No Results Found</h3>
+              <p className={isDarkMode ? 'text-slate-200' : 'text-gray-600'}>
                 Try different keywords or <a href="/user/settings/contact-support" className="text-[#3AB1A0] hover:underline">contact support</a> for help.
               </p>
             </CardContent>

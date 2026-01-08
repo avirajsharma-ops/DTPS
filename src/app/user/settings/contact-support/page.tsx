@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import UserNavBar from '@/components/client/UserNavBar';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   MessageCircle, 
   Phone, 
@@ -20,6 +21,7 @@ import {
 import { toast } from 'sonner';
 
 export default function ContactSupportPage() {
+  const { isDarkMode } = useTheme();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -84,7 +86,7 @@ export default function ContactSupportPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen pb-24 bg-gray-50">
+      <div className={isDarkMode ? 'min-h-screen pb-24 bg-slate-950' : 'min-h-screen pb-24 bg-gray-50'}>
         <UserNavBar 
           title="Contact Support" 
           showBack={true}
@@ -94,14 +96,22 @@ export default function ContactSupportPage() {
           backHref="/user/settings"
         />
 
-        <div className="px-4 md:px-6 py-8">
-          <Card className="border-0 shadow-sm max-w-md mx-auto">
+        <div className="px-4 py-8">
+          <Card
+            className={
+              isDarkMode
+                ? 'max-w-md mx-auto bg-slate-900 border border-slate-800 shadow-sm'
+                : 'border-0 shadow-sm max-w-md mx-auto'
+            }
+          >
             <CardContent className="p-8 text-center">
               <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="h-8 w-8 text-[#3AB1A0]" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Message Sent!</h2>
-              <p className="text-gray-600 mb-6">
+              <h2 className={isDarkMode ? 'text-xl font-semibold text-slate-100 mb-2' : 'text-xl font-semibold text-gray-900 mb-2'}>
+                Message Sent!
+              </h2>
+              <p className={isDarkMode ? 'text-slate-300 mb-6' : 'text-gray-600 mb-6'}>
                 Thank you for reaching out. Our support team will get back to you within 24 hours.
               </p>
               <Button 
@@ -118,7 +128,7 @@ export default function ContactSupportPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24 bg-gray-50">
+    <div className={isDarkMode ? 'min-h-screen pb-24 bg-slate-950' : 'min-h-screen pb-24 bg-gray-50'}>
       <UserNavBar 
         title="Contact Support" 
         showBack={true}
@@ -128,7 +138,7 @@ export default function ContactSupportPage() {
         backHref="/user/settings"
       />
 
-      <div className="px-4 md:px-6 space-y-4 py-4">
+      <div className="px-4 space-y-4 py-4">
         {/* Header Card */}
         <Card className="border-0 shadow-sm bg-[#E06A26]">
           <CardContent className="p-4">
@@ -149,16 +159,27 @@ export default function ContactSupportPage() {
         {/* Contact Options */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {contactOptions.map((option, index) => (
-            <Card key={index} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <Card
+              key={index}
+              className={
+                isDarkMode
+                  ? 'bg-slate-900 border border-slate-800 shadow-sm hover:border-slate-700 transition-colors'
+                  : 'border-0 shadow-sm hover:shadow-md transition-shadow'
+              }
+            >
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-[#E06A26]/10 flex items-center justify-center">
                     <option.icon className="h-5 w-5 text-[#E06A26]" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-gray-900">{option.title}</h3>
+                    <h3 className={isDarkMode ? 'font-medium text-slate-100' : 'font-medium text-gray-900'}>
+                      {option.title}
+                    </h3>
                     <p className="text-sm text-[#3AB1A0] font-medium">{option.description}</p>
-                    <p className="text-xs text-gray-500">{option.subtitle}</p>
+                    <p className={isDarkMode ? 'text-xs text-slate-400' : 'text-xs text-gray-500'}>
+                      {option.subtitle}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -169,17 +190,17 @@ export default function ContactSupportPage() {
      
 
         {/* Contact Form */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
+        <Card className={isDarkMode ? 'bg-slate-900 border border-slate-800 shadow-sm' : 'border-0 shadow-sm'}>
+          <CardHeader className={isDarkMode ? 'p-4 pb-2 border-b border-slate-800' : 'p-4 pb-2 border-b border-[#3AB1A0]/10'}>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-[#E06A26]/10 flex items-center justify-center">
                 <Send className="h-5 w-5 text-[#E06A26]" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold text-[#3AB1A0]">
+                <CardTitle className={isDarkMode ? 'text-base font-semibold text-slate-100' : 'text-base font-semibold text-[#3AB1A0]'}>
                   Send us a Message
                 </CardTitle>
-                <p className="text-xs text-gray-500">
+                <p className={isDarkMode ? 'text-xs text-slate-400' : 'text-xs text-gray-500'}>
                   We'll respond within 24 hours
                 </p>
               </div>
@@ -189,46 +210,70 @@ export default function ContactSupportPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-gray-700">Name</Label>
+                  <Label htmlFor="name" className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>
+                    Name
+                  </Label>
                   <Input
                     id="name"
                     placeholder="Your name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]"
+                    className={
+                      isDarkMode
+                        ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]'
+                        : 'border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]'
+                    }
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-700">Email</Label>
+                  <Label htmlFor="email" className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
                     placeholder="your@email.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]"
+                    className={
+                      isDarkMode
+                        ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]'
+                        : 'border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]'
+                    }
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="subject" className="text-gray-700">Subject</Label>
+                <Label htmlFor="subject" className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>
+                  Subject
+                </Label>
                 <Input
                   id="subject"
                   placeholder="How can we help?"
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  className="border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]"
+                  className={
+                    isDarkMode
+                      ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]'
+                      : 'border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]'
+                  }
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="message" className="text-gray-700">Message</Label>
+                <Label htmlFor="message" className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>
+                  Message
+                </Label>
                 <Textarea
                   id="message"
                   placeholder="Describe your issue or question..."
                   rows={4}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none"
+                  className={
+                    isDarkMode
+                      ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none'
+                      : 'border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none'
+                  }
                 />
               </div>
               <Button 
@@ -253,15 +298,17 @@ export default function ContactSupportPage() {
         </Card>
 
         {/* Office Address */}
-        <Card className="border-0 shadow-sm">
+        <Card className={isDarkMode ? 'bg-slate-900 border border-slate-800 shadow-sm' : 'border-0 shadow-sm'}>
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-xl bg-[#E06A26]/10 flex items-center justify-center shrink-0">
                 <MapPin className="h-5 w-5 text-[#E06A26]" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Office Address</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className={isDarkMode ? 'font-medium text-slate-100' : 'font-medium text-gray-900'}>
+                  Office Address
+                </h3>
+                <p className={isDarkMode ? 'text-sm text-slate-300' : 'text-sm text-gray-600'}>
                   226, Gufa Mandir Rd, Jain Nagar, Lalghati<br />
                   Bhopal, Madhya Pradesh 462001<br />
                   India

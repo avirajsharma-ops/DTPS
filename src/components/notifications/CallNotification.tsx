@@ -48,7 +48,7 @@ export function CallNotification({
 
   return (
     <div className={cn(
-      "fixed top-4 right-4 z-50 bg-white rounded-lg shadow-2xl border p-4 min-w-[300px]",
+      "fixed top-4 right-4 z-50 bg-white rounded-lg shadow-2xl border p-4 min-w-75",
       "animate-in slide-in-from-top-2 duration-300",
       isAnimating && "animate-pulse",
       className

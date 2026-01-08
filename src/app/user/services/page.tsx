@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ArrowLeft, Star, Check, Sparkles, Clock, Users, ChevronRight, Zap, Award, TrendingUp, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
-import UserNavBar from '@/components/client/UserNavBar';
 
 interface ServicePlan {
   _id: string;
@@ -77,6 +77,7 @@ const getCategoryColor = (category: string) => {
 export default function ServicesPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [services, setServices] = useState<ServicePlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -109,24 +110,24 @@ export default function ServicesPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
+      <div className={`min-h-screen pb-24 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        {/* Header */}
+        <div className={`sticky top-0 z-40 transition-colors duration-300 border-b ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <div className="relative flex items-center justify-center px-4 py-4">
           <button
             onClick={() => router.back()}
             className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
+            <ArrowLeft className={`w-5 h-5 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`} />
           </button>
-          <h1 className="text-lg font-bold text-black">Our Services</h1>
+          <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>Our Services</h1>
         </div>
 
         {/* Category Filter - Horizontal Scroll */}
@@ -139,7 +140,9 @@ export default function ServicesPage() {
                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                   selectedCategory === category
                     ? 'bg-[#3AB1A0] text-white shadow-md'
-                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    : isDarkMode
+                      ? 'bg-gray-800 text-gray-200 hover:bg-gray-700 border border-gray-700'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}
               >
                 {category !== 'All' && <span className="mr-1">{getCategoryIcon(category)}</span>}
@@ -180,9 +183,9 @@ export default function ServicesPage() {
             <div className="p-1.5 bg-[#E06A26]/10 rounded-lg">
               <Zap className="h-4 w-4 text-[#E06A26]" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Service Plans</h2>
+            <h2 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Service Plans</h2>
           </div>
-          <span className="text-xs text-gray-500">{filteredServices.length} plans available</span>
+          <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{filteredServices.length} plans available</span>
         </div>
         
         <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
@@ -191,7 +194,9 @@ export default function ServicesPage() {
               <Link
                 key={service._id}
                 href={`/user/services/${service._id}`}
-                className="block w-80 shrink-0 bg-white rounded-2xl border border-gray-100 hover:border-[#3AB1A0] hover:shadow-xl transition-all group overflow-hidden"
+                className={`block w-80 shrink-0 rounded-2xl border hover:border-[#3AB1A0] hover:shadow-xl transition-all group overflow-hidden ${
+                  isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+                }`}
               >
                 {/* Card Header with Gradient */}
                 <div className={`bg-linear-to-br ${getCategoryColor(service.category)} p-5 relative`}>
@@ -208,33 +213,42 @@ export default function ServicesPage() {
                     </div>
                   )}
                   <div className="text-4xl mb-2 mt-4">{getCategoryIcon(service.category)}</div>
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-white/80 text-gray-700">
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${isDarkMode ? 'bg-gray-900/60 text-gray-200' : 'bg-white/80 text-gray-700'}`}>
                     {service.category || 'General'}
                   </span>
                 </div>
 
                 <div className="p-5">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-[#3AB1A0] transition-colors line-clamp-1">
+                  <h3 className={`text-lg font-bold mb-2 group-hover:text-[#3AB1A0] transition-colors line-clamp-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {service.name}
                   </h3>
-                  <p className="text-sm text-gray-500 mb-4 line-clamp-2 leading-relaxed min-h-10">
+                  <p className={`text-sm mb-4 line-clamp-2 leading-relaxed min-h-10 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                     {stripHtmlTags(service.description || '') || 'Premium nutrition and diet plan customized for your goals.'}
                   </p>
                   
                   {/* Pricing Tiers - Horizontal */}
                   {service.pricingTiers && service.pricingTiers.length > 0 && (
                     <div className="mb-4">
-                      <p className="text-xs text-gray-400 mb-2 font-medium">PRICING OPTIONS</p>
+                      <p className={`text-xs mb-2 font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>PRICING OPTIONS</p>
                       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
                         {service.pricingTiers.slice(0, 3).map((tier, idx) => (
-                          <div key={idx} className="shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-20 border border-gray-100">
-                            <p className="text-xs text-gray-500">{tier.durationLabel}</p>
+                          <div
+                            key={idx}
+                            className={`shrink-0 rounded-xl p-2 text-center min-w-20 border ${
+                              isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-100'
+                            }`}
+                          >
+                            <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{tier.durationLabel}</p>
                             <p className="text-sm font-bold text-[#E06A26]">₹{tier.amount.toLocaleString()}</p>
                           </div>
                         ))}
                         {service.pricingTiers.length > 3 && (
-                          <div className="shrink-0 bg-gray-50 rounded-xl p-2 text-center min-w-15 border border-gray-100 flex items-center justify-center">
-                            <p className="text-xs text-gray-400">+{service.pricingTiers.length - 3}</p>
+                          <div
+                            className={`shrink-0 rounded-xl p-2 text-center min-w-15 border flex items-center justify-center ${
+                              isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-100'
+                            }`}
+                          >
+                            <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-400'}`}>+{service.pricingTiers.length - 3}</p>
                           </div>
                         )}
                       </div>
@@ -243,10 +257,10 @@ export default function ServicesPage() {
 
                   {/* Features Preview */}
                   {service.features && service.features.length > 0 && (
-                    <div className="border-t border-gray-100 pt-4">
+                    <div className={`border-t pt-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                       <div className="space-y-2">
                         {service.features.slice(0, 3).map((feature, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                          <div key={idx} className={`flex items-center gap-2 text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>
                             <Check className="w-4 h-4 text-[#3AB1A0] shrink-0" />
                             <span className="line-clamp-1">{feature}</span>
                           </div>
@@ -260,7 +274,7 @@ export default function ServicesPage() {
 
                   {/* CTA */}
                   <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <div className={`flex items-center gap-1 text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-400'}`}>
                       <Clock className="h-3 w-3" />
                       Starts from {service.pricingTiers?.[0]?.durationLabel || '1 Month'}
                     </div>
@@ -279,8 +293,8 @@ export default function ServicesPage() {
 
         {services.length === 0 && (
           <div className="py-20 text-center">
-            <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 font-medium">No services available</p>
+            <Star className={`w-12 h-12 mx-auto mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'} font-medium`}>No services available</p>
           </div>
         )}
     </div>

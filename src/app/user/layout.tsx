@@ -22,26 +22,27 @@ export default async function UserLayout({ children }: UserLayoutProps) {
   const headersList = await headers();
   const pathname = headersList.get('x-pathname') || '';
   const referer = headersList.get('referer') || '';
+  const fullUrl = headersList.get('x-url') || '';
   
   // Check if accessing password reset pages (these don't require auth)
-  // Check both the pathname from middleware and referer as fallback
+  // Check pathname, referer, and full URL as fallbacks
   const isPasswordResetPage = 
-    pathname === '/user/forget-password' || 
-    pathname === '/user/reset-password' ||
-    pathname.startsWith('/user/forget-password') ||
-    pathname.startsWith('/user/reset-password') ||
+    pathname.includes('/user/forget-password') || 
+    pathname.includes('/user/reset-password') ||
     referer.includes('/user/forget-password') ||
-    referer.includes('/user/reset-password');
+    referer.includes('/user/reset-password') ||
+    fullUrl.includes('/user/forget-password') ||
+    fullUrl.includes('/user/reset-password');
+
+  // For password reset pages, render without any auth check
+  if (isPasswordResetPage) {
+    return <>{children}</>;
+  }
 
   const session = await getServerSession(authOptions);
 
-  // For password reset pages, allow access without session
-  // These pages have their own nested layout that bypasses auth
+  // Redirect to signin if no session
   if (!session) {
-    if (isPasswordResetPage) {
-      return <>{children}</>;
-    }
-    // Redirect to signin for all other user pages
     redirect('/client-auth/signin');
   }
 

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import PageTransition from '@/components/animations/PageTransition';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   ArrowLeft, 
   RefreshCw, 
@@ -180,7 +182,7 @@ export default function WatchPage() {
 
   if (status === 'loading' || watchLoading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className="fixed inset-0 flex items-center justify-center z-[100] bg-white dark:bg-gray-950">
         <SpoonGifLoader size="lg" />
       </div>
     );

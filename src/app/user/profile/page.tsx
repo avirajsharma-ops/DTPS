@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import PageTransition from '@/components/animations/PageTransition';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   User,
   Heart,
@@ -119,6 +121,7 @@ interface DietaryRecallData {
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [activeTab, setActiveTab] = useState("personal");
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -179,7 +182,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className={`fixed inset-0 ${isDarkMode ? 'bg-gray-950' : 'bg-white'} flex items-center justify-center z-[100]`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -239,24 +242,24 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#3AB1A0]/10 via-white to-[#E06A26]/10">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link href="/user" className="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+    <PageTransition>
+      <div className={isDarkMode ? "min-h-screen bg-gray-950" : "min-h-screen bg-gray-50"}>
+        <div className={isDarkMode ? "sticky top-0 z-10 transition-colors duration-300 border-b border-gray-800 bg-gray-900/80 backdrop-blur-md" : "sticky top-0 z-10 transition-colors duration-300 border-b bg-white/80 backdrop-blur-md"}>
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Link href="/user" className={isDarkMode ? "p-2 -ml-2 rounded-xl hover:bg-white/10 transition-colors" : "p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors"}>
+                <ArrowLeft className={isDarkMode ? "w-5 h-5 text-gray-200" : "w-5 h-5 text-gray-600"} />
+              </Link>
+              <h1 className={isDarkMode ? "text-lg font-bold text-white" : "text-lg font-bold text-black"}>My Profile</h1>
+            </div>
+            <Link
+              href="/user/settings"
+              className={isDarkMode ? "p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors" : "p-2 rounded-xl bg-[#3AB1A0]/10 hover:bg-[#3AB1A0]/20 transition-colors"}
+            >
+              <Settings className={isDarkMode ? "w-5 h-5 text-[#ff9500]" : "w-5 h-5 text-[#3AB1A0]"} />
             </Link>
-            <h1 className="text-lg font-bold text-black">My Profile</h1>
           </div>
-          <Link
-            href="/user/settings"
-            className="p-2 rounded-xl bg-[#3AB1A0]/10 hover:bg-[#3AB1A0]/20 transition-colors"
-          >
-            <Settings className="w-5 h-5 text-[#3AB1A0]" />
-          </Link>
         </div>
-      </div>
 
       {/* Profile Header Card */}
       <div className="px-4 py-6">
@@ -334,10 +337,18 @@ export default function ProfilePage() {
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             const colorClasses: Record<string, string> = {
-              blue: isActive ? "bg-[#3AB1A0] text-white shadow-[#3AB1A0]/30" : "bg-white text-gray-600 hover:bg-[#3AB1A0]/10",
-              red: isActive ? "bg-[#E06A26] text-white shadow-[#E06A26]/30" : "bg-white text-gray-600 hover:bg-[#E06A26]/10",
-              green: isActive ? "bg-[#3AB1A0] text-white shadow-[#3AB1A0]/30" : "bg-white text-gray-600 hover:bg-[#3AB1A0]/10",
-              orange: isActive ? "bg-[#E06A26] text-white shadow-[#E06A26]/30" : "bg-white text-gray-600 hover:bg-[#E06A26]/10",
+              blue: isActive
+                ? "bg-[#3AB1A0] text-white shadow-[#3AB1A0]/30"
+                : (isDarkMode ? "bg-[#1a1a1a] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]" : "bg-white text-gray-600 hover:bg-[#3AB1A0]/10"),
+              red: isActive
+                ? "bg-[#E06A26] text-white shadow-[#E06A26]/30"
+                : (isDarkMode ? "bg-[#1a1a1a] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]" : "bg-white text-gray-600 hover:bg-[#E06A26]/10"),
+              green: isActive
+                ? "bg-[#3AB1A0] text-white shadow-[#3AB1A0]/30"
+                : (isDarkMode ? "bg-[#1a1a1a] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]" : "bg-white text-gray-600 hover:bg-[#3AB1A0]/10"),
+              orange: isActive
+                ? "bg-[#E06A26] text-white shadow-[#E06A26]/30"
+                : (isDarkMode ? "bg-[#1a1a1a] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]" : "bg-white text-gray-600 hover:bg-[#E06A26]/10"),
             };
             return (
               <button
@@ -361,7 +372,10 @@ export default function ProfilePage() {
             <div className="flex justify-end">
               <Link
                 href="/user/personal-info"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-lg text-sm font-medium hover:bg-[#3AB1A0]/20 transition-colors"
+                className={isDarkMode 
+                  ? "flex items-center gap-1.5 px-3 py-1.5 bg-[#3AB1A0]/20 text-[#3AB1A0] rounded-lg text-sm font-medium hover:bg-[#3AB1A0]/30 transition-colors border border-[#3AB1A0]/30"
+                  : "flex items-center gap-1.5 px-3 py-1.5 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-lg text-sm font-medium hover:bg-[#3AB1A0]/20 transition-colors"
+                }
               >
                 <Edit3 className="w-4 h-4" /> Edit Personal Info
               </Link>
@@ -408,7 +422,10 @@ export default function ProfilePage() {
             <div className="flex justify-end">
               <Link
                 href="/user/medical-info"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E06A26]/10 text-[#E06A26] rounded-lg text-sm font-medium hover:bg-[#E06A26]/20 transition-colors"
+                className={isDarkMode
+                  ? "flex items-center gap-1.5 px-3 py-1.5 bg-[#E06A26]/20 text-[#E06A26] rounded-lg text-sm font-medium hover:bg-[#E06A26]/30 transition-colors border border-[#E06A26]/30"
+                  : "flex items-center gap-1.5 px-3 py-1.5 bg-[#E06A26]/10 text-[#E06A26] rounded-lg text-sm font-medium hover:bg-[#E06A26]/20 transition-colors"
+                }
               >
                 <Edit3 className="w-4 h-4" /> Edit Medical Info
               </Link>
@@ -459,22 +476,22 @@ export default function ProfilePage() {
             <InfoCard title="Medical Reports" icon={FileText} color="blue">
               {medicalData?.reports && medicalData.reports.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className={isDarkMode ? "w-full text-sm" : "w-full text-sm"}>
                     <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-2 px-2 text-gray-500 font-medium">Date</th>
-                        <th className="text-left py-2 px-2 text-gray-500 font-medium">Report Name</th>
-                        <th className="text-center py-2 px-2 text-gray-500 font-medium">View</th>
+                      <tr className={isDarkMode ? "border-b border-[#2a2a2a]" : "border-b border-gray-200"}>
+                        <th className={isDarkMode ? "text-left py-2 px-2 text-gray-400 font-medium" : "text-left py-2 px-2 text-gray-500 font-medium"}>Date</th>
+                        <th className={isDarkMode ? "text-left py-2 px-2 text-gray-400 font-medium" : "text-left py-2 px-2 text-gray-500 font-medium"}>Report Name</th>
+                        <th className={isDarkMode ? "text-center py-2 px-2 text-gray-400 font-medium" : "text-center py-2 px-2 text-gray-500 font-medium"}>View</th>
                       </tr>
                     </thead>
                     <tbody>
                       {medicalData.reports.map((report, i) => (
-                        <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-2 text-gray-600">
+                        <tr key={i} className={isDarkMode ? "border-b border-[#2a2a2a] hover:bg-white/5" : "border-b border-gray-100 hover:bg-gray-50"}>
+                          <td className={isDarkMode ? "py-3 px-2 text-gray-300" : "py-3 px-2 text-gray-600"}>
                             {report.createdAt ? new Date(report.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
                           </td>
                           <td className="py-3 px-2">
-                            <span className="font-medium text-gray-700">{report.name}</span>
+                            <span className={isDarkMode ? "font-medium text-gray-200" : "font-medium text-gray-700"}>{report.name}</span>
                             {report.category && (
                               <span className="ml-2 text-xs bg-[#3AB1A0]/20 text-[#3AB1A0] px-2 py-0.5 rounded-full">{report.category}</span>
                             )}
@@ -515,7 +532,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {profileData.assignedDietitian.phone && (
+                  {/* {profileData.assignedDietitian.phone && (
                     <div className="flex items-center gap-3 text-sm">
                       <Phone className="w-4 h-4 text-[#3AB1A0]" />
                       <a href={`tel:${profileData.assignedDietitian.phone}`} className="text-gray-700 hover:text-[#E06A26]">
@@ -529,7 +546,7 @@ export default function ProfilePage() {
                     <a href={`mailto:${profileData.assignedDietitian.email}`} className="text-gray-700 hover:text-[#E06A26]">
                       {profileData.assignedDietitian.email}
                     </a>
-                  </div>
+                  </div> */}
                 </div>
               </InfoCard>
             )}
@@ -542,7 +559,10 @@ export default function ProfilePage() {
             <div className="flex justify-end">
               <Link
                 href="/user/lifestyle-info"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-lg text-sm font-medium hover:bg-[#3AB1A0]/20 transition-colors"
+                className={isDarkMode
+                  ? "flex items-center gap-1.5 px-3 py-1.5 bg-[#3AB1A0]/20 text-[#3AB1A0] rounded-lg text-sm font-medium hover:bg-[#3AB1A0]/30 transition-colors border border-[#3AB1A0]/30"
+                  : "flex items-center gap-1.5 px-3 py-1.5 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-lg text-sm font-medium hover:bg-[#3AB1A0]/20 transition-colors"
+                }
               >
                 <Edit3 className="w-4 h-4" /> Edit Lifestyle Info
               </Link>
@@ -605,7 +625,10 @@ export default function ProfilePage() {
             <div className="flex justify-end">
               <Link
                 href="/user/dietary-recall"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E06A26]/10 text-[#E06A26] rounded-lg text-sm font-medium hover:bg-[#E06A26]/20 transition-colors"
+                className={isDarkMode
+                  ? "flex items-center gap-1.5 px-3 py-1.5 bg-[#E06A26]/20 text-[#E06A26] rounded-lg text-sm font-medium hover:bg-[#E06A26]/30 transition-colors border border-[#E06A26]/30"
+                  : "flex items-center gap-1.5 px-3 py-1.5 bg-[#E06A26]/10 text-[#E06A26] rounded-lg text-sm font-medium hover:bg-[#E06A26]/20 transition-colors"
+                }
               >
                 <Edit3 className="w-4 h-4" /> Edit Dietary Recall
               </Link>
@@ -616,32 +639,44 @@ export default function ProfilePage() {
                 {dietaryRecallData.meals.map((meal, index) => (
                   <div
                     key={index}
-                    className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+                    className={isDarkMode 
+                      ? "bg-gray-900/80 rounded-2xl p-4 shadow-lg shadow-black/30 border border-gray-800"
+                      : "bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+                    }
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getMealColor(meal.mealType)}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getMealColor(meal.mealType, isDarkMode)}`}>
                           <Utensils className="w-5 h-5" />
                         </div>
-                        <span className="font-semibold text-gray-800 capitalize">{meal.mealType}</span>
+                        <span className={isDarkMode ? "font-semibold text-gray-100 capitalize" : "font-semibold text-gray-800 capitalize"}>{meal.mealType}</span>
                       </div>
                       {meal.hour && meal.minute && (
-                        <div className="flex items-center gap-1.5 text-gray-500 text-sm bg-gray-50 px-2.5 py-1 rounded-lg">
+                        <div className={isDarkMode 
+                          ? "flex items-center gap-1.5 text-gray-400 text-sm bg-gray-800 px-2.5 py-1 rounded-lg"
+                          : "flex items-center gap-1.5 text-gray-500 text-sm bg-gray-50 px-2.5 py-1 rounded-lg"
+                        }>
                           <Clock className="w-4 h-4" />
                           {meal.hour}:{meal.minute} {meal.meridian}
                         </div>
                       )}
                     </div>
-                    <p className="text-gray-600 text-sm pl-13 ml-13">{meal.food || "No food recorded"}</p>
+                    <p className={isDarkMode ? "text-gray-400 text-sm pl-13 ml-13" : "text-gray-600 text-sm pl-13 ml-13"}>{meal.food || "No food recorded"}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-4">
-                  <Utensils className="w-8 h-8 text-orange-400" />
+              <div className={isDarkMode 
+                ? "bg-gray-900/80 rounded-2xl p-8 shadow-lg shadow-black/30 border border-gray-800 text-center" 
+                : "bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center"
+              }>
+                <div className={isDarkMode 
+                  ? "w-16 h-16 rounded-2xl bg-orange-500/20 flex items-center justify-center mx-auto mb-4" 
+                  : "w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-4"
+                }>
+                  <Utensils className={isDarkMode ? "w-8 h-8 text-orange-400" : "w-8 h-8 text-orange-400"} />
                 </div>
-                <p className="text-gray-500 mb-4">No dietary recall recorded yet</p>
+                <p className={isDarkMode ? "text-gray-400 mb-4" : "text-gray-500 mb-4"}>No dietary recall recorded yet</p>
                 <Link
                   href="/user/dietary-recall"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/25"
@@ -656,26 +691,33 @@ export default function ProfilePage() {
       </div>
 
     </div>
+    </PageTransition>
   );
 }
 
 // Helper Components
 function InfoCard({ title, icon: Icon, color, children }: { title: string; icon: React.ComponentType<{ className?: string }>; color: string; children: React.ReactNode }) {
+  const { isDarkMode } = useTheme();
   const colorClasses: Record<string, string> = {
-    blue: "bg-[#3AB1A0]/10 text-[#3AB1A0]",
-    red: "bg-[#E06A26]/10 text-[#E06A26]",
-    green: "bg-[#3AB1A0]/10 text-[#3AB1A0]",
-    orange: "bg-[#E06A26]/10 text-[#E06A26]",
-    pink: "bg-[#DB9C6E]/10 text-[#DB9C6E]"
+    blue: isDarkMode ? "bg-[#3AB1A0]/20 text-[#3AB1A0]" : "bg-[#3AB1A0]/10 text-[#3AB1A0]",
+    red: isDarkMode ? "bg-[#E06A26]/20 text-[#E06A26]" : "bg-[#E06A26]/10 text-[#E06A26]",
+    green: isDarkMode ? "bg-[#3AB1A0]/20 text-[#3AB1A0]" : "bg-[#3AB1A0]/10 text-[#3AB1A0]",
+    orange: isDarkMode ? "bg-[#E06A26]/20 text-[#E06A26]" : "bg-[#E06A26]/10 text-[#E06A26]",
+    pink: isDarkMode ? "bg-[#DB9C6E]/20 text-[#DB9C6E]" : "bg-[#DB9C6E]/10 text-[#DB9C6E]"
   };
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div
+      className={isDarkMode
+        ? "bg-gray-900/80 backdrop-blur-md rounded-2xl p-5 shadow-lg shadow-black/30 border border-gray-800"
+        : "bg-white/80 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-white/60"
+      }
+    >
       <div className="flex items-center gap-3 mb-4">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colorClasses[color]}`}>
           <Icon className="w-5 h-5" />
         </div>
-        <h3 className="font-bold text-gray-800">{title}</h3>
+        <h3 className={isDarkMode ? "font-bold text-gray-100" : "font-bold text-gray-800"}>{title}</h3>
       </div>
       <div className="space-y-3">
         {children}
@@ -685,12 +727,13 @@ function InfoCard({ title, icon: Icon, color, children }: { title: string; icon:
 }
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
+  const { isDarkMode } = useTheme();
   return (
     <div className="flex items-start gap-3 py-1">
-      <Icon className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+      <Icon className={isDarkMode ? "w-4 h-4 text-gray-500 mt-0.5 shrink-0" : "w-4 h-4 text-gray-400 mt-0.5 shrink-0"} />
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-400 font-medium">{label}</p>
-        <p className="text-sm text-gray-700 font-medium truncate">{value}</p>
+        <p className={isDarkMode ? "text-xs text-gray-500 font-medium" : "text-xs text-gray-400 font-medium"}>{label}</p>
+        <p className={isDarkMode ? "text-sm text-gray-100 font-medium truncate" : "text-sm text-gray-700 font-medium truncate"}>{value}</p>
       </div>
     </div>
   );
@@ -709,11 +752,12 @@ function TagsRow({
   emptyText: string;
   colorClass: string;
 }) {
+  const { isDarkMode } = useTheme();
   return (
     <div className="flex items-start gap-3 py-1">
-      <Icon className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+      <Icon className={isDarkMode ? "w-4 h-4 text-gray-500 mt-0.5 shrink-0" : "w-4 h-4 text-gray-400 mt-0.5 shrink-0"} />
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-400 font-medium mb-1.5">{label}</p>
+        <p className={isDarkMode ? "text-xs text-gray-400 font-medium mb-1.5" : "text-xs text-gray-400 font-medium mb-1.5"}>{label}</p>
         {values && values.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {values.map((v, i) => (
@@ -723,14 +767,14 @@ function TagsRow({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-400">{emptyText}</p>
+          <p className={isDarkMode ? "text-sm text-gray-500" : "text-sm text-gray-400"}>{emptyText}</p>
         )}
       </div>
     </div>
   );
 }
 
-function getMealColor(mealType: string): string {
+function getMealColor(mealType: string, isDarkMode?: boolean): string {
   const colors: Record<string, string> = {
     "early morning": "bg-[#DB9C6E]/20 text-[#DB9C6E]",
     "breakfast": "bg-[#E06A26]/20 text-[#E06A26]",
@@ -739,5 +783,5 @@ function getMealColor(mealType: string): string {
     "dinner": "bg-[#E06A26]/20 text-[#E06A26]",
     "post dinner": "bg-[#DB9C6E]/20 text-[#DB9C6E]",
   };
-  return colors[mealType?.toLowerCase()] || "bg-gray-100 text-gray-600";
+  return colors[mealType?.toLowerCase()] || (isDarkMode ? "bg-white/10 text-gray-200" : "bg-gray-100 text-gray-600");
 }

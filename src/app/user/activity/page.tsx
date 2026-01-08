@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import PageTransition from '@/components/animations/PageTransition';
+import { useTheme } from '@/contexts/ThemeContext';
 import { format } from 'date-fns';
 import {
     ArrowLeft,
@@ -53,6 +55,7 @@ interface ActivityData {
 export default function ActivityPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const { isDarkMode } = useTheme();
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -296,16 +299,17 @@ export default function ActivityPage() {
 
     if (loading) {
         return (
-            <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+            <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
                 <SpoonGifLoader size="lg" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-24">
+        <PageTransition>
+        <div className={`min-h-screen pb-24 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
             {/* Header */}
-            <div className="bg-white px-4 py-4 border-b border-gray-100">
+            <div className={`px-4 py-4 border-b transition-colors duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                 <div className="flex items-center justify-between">
                     <Link href="/user" className="p-2 -ml-2">
                         <ArrowLeft className="w-6 h-6 text-gray-700" />
@@ -791,5 +795,6 @@ export default function ActivityPage() {
         }
       `}</style>
         </div>
+        </PageTransition>
     );
 }

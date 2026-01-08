@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "@/contexts/ThemeContext";
 import { 
   ArrowLeft, 
   Save, 
@@ -59,6 +60,7 @@ const cravings = ["Sweet", "Salty", "Spicy", "Sour", "Fried", "Crunchy"];
 export default function LifestyleInfoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState<LifestyleData>({
@@ -208,22 +210,22 @@ export default function LifestyleInfoPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className={`fixed inset-0 ${isDarkMode ? 'bg-gray-950' : 'bg-white'} flex items-center justify-center z-[100]`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-green-50 via-white to-green-50">
+    <div className={isDarkMode ? "min-h-screen bg-[#0a0a0a]" : "min-h-screen bg-linear-to-br from-green-50 via-white to-green-50"}>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <div className={isDarkMode ? "sticky top-0 z-10 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#1f1f1f]" : "sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100"}>
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Link href="/user/profile" className="p-2 -ml-2 rounded-xl hover:bg-green-50 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <Link href="/user/profile" className={isDarkMode ? "p-2 -ml-2 rounded-xl hover:bg-white/10 transition-colors" : "p-2 -ml-2 rounded-xl hover:bg-green-50 transition-colors"}>
+              <ArrowLeft className={isDarkMode ? "w-5 h-5 text-gray-200" : "w-5 h-5 text-gray-600"} />
             </Link>
-            <h1 className="text-lg font-bold text-gray-900">Lifestyle Information</h1>
+            <h1 className={isDarkMode ? "text-lg font-bold text-white" : "text-lg font-bold text-gray-900"}>Lifestyle Information</h1>
           </div>
           <button 
             onClick={handleSave}
@@ -247,13 +249,15 @@ export default function LifestyleInfoPage() {
                 className={`w-full p-3 rounded-xl text-left transition-all border ${
                   data.activityLevel === level.value
                     ? "bg-green-50 border-green-500 ring-2 ring-green-500"
-                    : "bg-gray-50 border-gray-200 hover:border-green-300"
+                    : isDarkMode
+                      ? "bg-[#111] border-[#2a2a2a] hover:border-green-500/60"
+                      : "bg-gray-50 border-gray-200 hover:border-green-300"
                 }`}
               >
-                <p className={`font-medium ${data.activityLevel === level.value ? 'text-green-700' : 'text-gray-900'}`}>
+                <p className={`font-medium ${data.activityLevel === level.value ? 'text-green-700' : (isDarkMode ? 'text-white' : 'text-gray-900')}`}>
                   {level.label}
                 </p>
-                <p className="text-xs text-gray-500">{level.desc}</p>
+                <p className={isDarkMode ? "text-xs text-gray-400" : "text-xs text-gray-500"}>{level.desc}</p>
               </button>
             ))}
           </div>
@@ -269,7 +273,9 @@ export default function LifestyleInfoPage() {
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   data.foodPreference === pref
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    : isDarkMode
+                      ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
                 }`}
               >
                 {pref}
@@ -288,7 +294,9 @@ export default function LifestyleInfoPage() {
                 className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                   data.preferredCuisine.includes(cuisine)
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    : isDarkMode
+                      ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
                 }`}
               >
                 {cuisine}
@@ -307,7 +315,9 @@ export default function LifestyleInfoPage() {
                 className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                   data.cookingOil.includes(oil)
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    : isDarkMode
+                      ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
                 }`}
               >
                 {oil}
@@ -343,7 +353,9 @@ export default function LifestyleInfoPage() {
                 value={customAllergy}
                 onChange={(e) => setCustomAllergy(e.target.value)}
                 placeholder="Add food allergy..."
-                className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className={isDarkMode
+                  ? "flex-1 px-4 py-2.5 bg-[#111] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  : "flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"}
                 onKeyDown={(e) => e.key === 'Enter' && addCustomAllergy()}
               />
               <button
@@ -366,7 +378,9 @@ export default function LifestyleInfoPage() {
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   data.cravingType === craving
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    : isDarkMode
+                      ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
                 }`}
               >
                 {craving}
@@ -385,7 +399,9 @@ export default function LifestyleInfoPage() {
                 className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                   data.fastDays.includes(day)
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    : isDarkMode
+                      ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
                 }`}
               >
                 {day.slice(0, 3)}
@@ -405,7 +421,9 @@ export default function LifestyleInfoPage() {
                   className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                     data.nonVegExemptDays.includes(day)
                       ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                      : isDarkMode
+                        ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
                   }`}
                 >
                   {day.slice(0, 3)}
@@ -419,23 +437,27 @@ export default function LifestyleInfoPage() {
         <Section title="Food Preferences" icon={Utensils}>
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Foods You Like</label>
+              <label className={isDarkMode ? "text-sm font-medium text-gray-300" : "text-sm font-medium text-gray-700"}>Foods You Like</label>
               <textarea
                 value={data.foodLikes}
                 onChange={(e) => setData({ ...data, foodLikes: e.target.value })}
                 placeholder="E.g., Dal, Rice, Paneer, Chicken..."
                 rows={2}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                className={isDarkMode
+                  ? "w-full px-4 py-3 bg-[#111] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  : "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Foods You Dislike</label>
+              <label className={isDarkMode ? "text-sm font-medium text-gray-300" : "text-sm font-medium text-gray-700"}>Foods You Dislike</label>
               <textarea
                 value={data.foodDislikes}
                 onChange={(e) => setData({ ...data, foodDislikes: e.target.value })}
                 placeholder="E.g., Bitter gourd, Broccoli..."
                 rows={2}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                className={isDarkMode
+                  ? "w-full px-4 py-3 bg-[#111] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  : "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"}
               />
             </div>
           </div>
@@ -451,7 +473,9 @@ export default function LifestyleInfoPage() {
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   data.eatOutFrequency === freq
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    : isDarkMode
+                      ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
                 }`}
               >
                 {freq}
@@ -464,7 +488,7 @@ export default function LifestyleInfoPage() {
         <Section title="Lifestyle Habits" icon={Wine}>
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <label className={isDarkMode ? "text-sm font-medium text-gray-300 flex items-center gap-2" : "text-sm font-medium text-gray-700 flex items-center gap-2"}>
                 <Cigarette className="w-4 h-4" /> Smoking
               </label>
               <div className="flex flex-wrap gap-2">
@@ -475,7 +499,9 @@ export default function LifestyleInfoPage() {
                     className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                       data.smokingFrequency === freq
                         ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                        : isDarkMode
+                          ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                          : "bg-gray-50 text-gray-600 hover:bg-green-50"
                     }`}
                   >
                     {freq}
@@ -485,7 +511,7 @@ export default function LifestyleInfoPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <label className={isDarkMode ? "text-sm font-medium text-gray-300 flex items-center gap-2" : "text-sm font-medium text-gray-700 flex items-center gap-2"}>
                 <Wine className="w-4 h-4" /> Alcohol
               </label>
               <div className="flex flex-wrap gap-2">
@@ -496,7 +522,9 @@ export default function LifestyleInfoPage() {
                     className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                       data.alcoholFrequency === freq
                         ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                        : isDarkMode
+                          ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                          : "bg-gray-50 text-gray-600 hover:bg-green-50"
                     }`}
                   >
                     {freq}
@@ -512,13 +540,14 @@ export default function LifestyleInfoPage() {
 }
 
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
+  const { isDarkMode } = useTheme();
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div className={isDarkMode ? "bg-[#1a1a1a] rounded-2xl p-5 shadow-sm border border-[#2a2a2a]" : "bg-white rounded-2xl p-5 shadow-sm border border-gray-100"}>
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
           <Icon className="w-5 h-5 text-white" />
         </div>
-        <h3 className="font-bold text-gray-900">{title}</h3>
+        <h3 className={isDarkMode ? "font-bold text-white" : "font-bold text-gray-900"}>{title}</h3>
       </div>
       {children}
     </div>

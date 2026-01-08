@@ -43,7 +43,7 @@ export default function TransformationSwiper() {
   const scrollToIndex = (index: number) => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-    const cardWidth = 320;
+    const cardWidth = 380;
     const gap = 16;
     container.scrollTo({
       left: index * (cardWidth + gap),
@@ -55,7 +55,7 @@ export default function TransformationSwiper() {
   const handleScroll = () => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-    const cardWidth = 320;
+    const cardWidth = 380;
     const gap = 16;
     const newIndex = Math.round(container.scrollLeft / (cardWidth + gap));
     setActiveIndex(Math.min(newIndex, transformations.length - 1));
@@ -131,13 +131,13 @@ export default function TransformationSwiper() {
         {transformations.map((transformation) => (
           <div
             key={transformation._id}
-            className="max-w-96 shrink-0 bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl 
+            className="w-[340px] sm:w-[380px] shrink-0 bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl 
             transition-all duration-300 hover:-translate-y-1"
             style={{ scrollSnapAlign: 'start' }}
           >
             {/* Before/After Images */}
             <div className="relative">
-              <div className="flex h-56">
+              <div className="flex h-72 sm:h-80">
                 {/* Before Image */}
                 <div className="w-1/2 relative bg-linear-to-br from-gray-100 to-gray-200 overflow-hidden">
                   {getImageUrl(transformation.beforeImage) && !imageErrors.has(`${transformation._id}-before`) ? (

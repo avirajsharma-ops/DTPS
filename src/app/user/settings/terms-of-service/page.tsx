@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import UserNavBar from '@/components/client/UserNavBar';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   FileText, 
   CheckCircle,
@@ -14,6 +15,8 @@ import {
 } from 'lucide-react';
 
 export default function TermsOfServicePage() {
+  const { isDarkMode } = useTheme();
+
   const sections = [
     {
       title: 'Acceptance of Terms',
@@ -116,7 +119,7 @@ Our total liability shall not exceed the amount paid by you in the 12 months pre
   ];
 
   return (
-    <div className="min-h-screen pb-24 bg-gray-50">
+    <div className={`min-h-screen pb-24 ${isDarkMode ? 'bg-slate-950' : 'bg-gray-50'}`}>
       <UserNavBar 
         title="Terms of Service" 
         showBack={true}
@@ -126,7 +129,7 @@ Our total liability shall not exceed the amount paid by you in the 12 months pre
         backHref="/user/settings"
       />
 
-      <div className="px-4 md:px-6 space-y-4 py-4">
+      <div className="px-4 space-y-4 py-4">
         {/* Header Card */}
         <Card className="border-0 shadow-sm bg-[#e48b57]">
           <CardContent className="p-4">
@@ -145,9 +148,9 @@ Our total liability shall not exceed the amount paid by you in the 12 months pre
         </Card>
 
         {/* Introduction */}
-        <Card className="border-0 shadow-sm">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
           <CardContent className="p-4">
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-200' : 'text-gray-600'}`}>
               Welcome to DTPS. These Terms of Service ("Terms") govern your access to and use of 
               our diet planning and health management platform. Please read these terms carefully 
               before using our services.
@@ -157,8 +160,8 @@ Our total liability shall not exceed the amount paid by you in the 12 months pre
 
         {/* Terms Sections */}
         {sections.map((section, index) => (
-          <Card key={index} className="border-0 shadow-sm">
-            <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
+          <Card key={index} className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
+            <CardHeader className={`p-4 pb-2 border-b ${isDarkMode ? 'border-slate-800' : 'border-[#3AB1A0]/10'}`}>
               <div className="flex items-center gap-3">
                 <div 
                   className="h-10 w-10 rounded-xl flex items-center justify-center"
@@ -166,13 +169,13 @@ Our total liability shall not exceed the amount paid by you in the 12 months pre
                 >
                   <section.icon className="h-5 w-5" style={{ color: section.color }} />
                 </div>
-                <CardTitle className="text-base font-semibold text-gray-900">
+                <CardTitle className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {section.title}
                 </CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-4">
-              <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
+              <p className={`text-sm leading-relaxed whitespace-pre-line ${isDarkMode ? 'text-slate-200' : 'text-gray-600'}`}>
                 {section.content}
               </p>
             </CardContent>
@@ -180,24 +183,24 @@ Our total liability shall not exceed the amount paid by you in the 12 months pre
         ))}
 
         {/* Termination */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
+          <CardHeader className={`p-4 pb-2 border-b ${isDarkMode ? 'border-slate-800' : 'border-[#3AB1A0]/10'}`}>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-[#E06A26]/10 flex items-center justify-center">
                 <XCircle className="h-5 w-5 text-[#E06A26]" />
               </div>
-              <CardTitle className="text-base font-semibold text-gray-900">
+              <CardTitle className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Termination
               </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-200' : 'text-gray-600'}`}>
               We reserve the right to suspend or terminate your account at any time for violation 
               of these terms or for any other reason at our discretion. You may also terminate your 
               account at any time by contacting support.
             </p>
-            <p className="text-gray-600 text-sm leading-relaxed mt-3">
+            <p className={`text-sm leading-relaxed mt-3 ${isDarkMode ? 'text-slate-200' : 'text-gray-600'}`}>
               Upon termination, your right to use the services will cease immediately. Provisions 
               that by their nature should survive termination shall remain in effect.
             </p>
@@ -205,19 +208,19 @@ Our total liability shall not exceed the amount paid by you in the 12 months pre
         </Card>
 
         {/* Changes to Terms */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
+          <CardHeader className={`p-4 pb-2 border-b ${isDarkMode ? 'border-slate-800' : 'border-[#3AB1A0]/10'}`}>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/10 flex items-center justify-center">
                 <FileText className="h-5 w-5 text-[#3AB1A0]" />
               </div>
-              <CardTitle className="text-base font-semibold text-gray-900">
+              <CardTitle className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Changes to Terms
               </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-200' : 'text-gray-600'}`}>
               We may modify these Terms at any time. We will notify you of material changes by 
               posting the updated terms on this page and updating the effective date. Your continued 
               use of our services after changes indicates acceptance of the modified terms.
@@ -226,15 +229,15 @@ Our total liability shall not exceed the amount paid by you in the 12 months pre
         </Card>
 
         {/* Contact */}
-        <Card className="border-0 shadow-sm">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
           <CardContent className="p-4">
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-200' : 'text-gray-600'}`}>
               For questions about these Terms of Service, please contact us at:
             </p>
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
-              <p className="text-sm text-gray-800 font-medium">support@dtpoonamsagar.com</p>
+            <div className={`mt-3 p-3 rounded-lg space-y-2 ${isDarkMode ? 'bg-slate-950/60 ring-1 ring-white/10' : 'bg-gray-50'}`}>
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>support@dtpoonamsagar.com</p>
               <p className="text-sm text-[#3AB1A0] font-medium">+91 98930 27688</p>
-              <p className="text-xs text-gray-500">
+              <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                 DTPS Legal Team
               </p>
             </div>
@@ -242,11 +245,11 @@ Our total liability shall not exceed the amount paid by you in the 12 months pre
         </Card>
 
         {/* Acknowledgment */}
-        <Card className="border-0 shadow-sm bg-[#3AB1A0]/5">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : 'bg-[#3AB1A0]/5'}`}>
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <CheckCircle className="h-5 w-5 text-[#3AB1A0] mt-0.5" />
-              <p className="text-gray-600 text-xs leading-relaxed">
+              <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-slate-200' : 'text-gray-600'}`}>
                 By using DTPS, you acknowledge that you have read, understood, and agree to be 
                 bound by these Terms of Service. If you are using our services on behalf of an 
                 organization, you represent that you have the authority to bind that organization 

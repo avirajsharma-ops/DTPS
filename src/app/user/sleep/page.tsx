@@ -256,7 +256,7 @@ export default function SleepPage() {
 
     if (loading) {
         return (
-            <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+            <div className="fixed inset-0 flex items-center justify-center z-[100] bg-white dark:bg-gray-950">
                 <SpoonGifLoader size="lg" />
             </div>
         );

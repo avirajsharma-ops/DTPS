@@ -44,3 +44,37 @@ export default function SpoonGifLoader({
     </div>
   );
 }
+
+// Full page centered loader - use this for page loading states
+interface FullPageLoaderProps {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  isDarkMode?: boolean;
+  text?: string;
+}
+
+export function FullPageLoader({ size = 'lg', isDarkMode = false, text }: FullPageLoaderProps) {
+  return (
+    <div
+      className={`flex flex-col items-center justify-center ${
+        isDarkMode ? 'bg-gray-950' : 'bg-white'
+      }`}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 9999,
+      }}
+    >
+      <SpoonGifLoader size={size} />
+      {text && (
+        <p className={`mt-4 font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          {text}
+        </p>
+      )}
+    </div>
+  );
+}

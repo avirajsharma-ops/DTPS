@@ -108,7 +108,7 @@ function ResetPasswordForm() {
   if (!isValid && !success) {
     return (
       <div className="flex flex-col min-h-screen bg-white md:bg-gray-50">
-        <div className="flex flex-col items-center justify-center flex-1 px-4 py-4 sm:px-6 md:px-8">
+        <div className="flex flex-col items-center justify-center flex-1 px-4 py-4">
           <div className="w-full max-w-md md:bg-white md:rounded-2xl md:shadow-lg md:p-8 lg:p-10">
             {/* Logo */}
             <div className="flex items-center justify-center overflow-hidden w-24 h-24 mx-auto rounded-xl sm:w-28 sm:h-28 md:w-32 md:h-32">
@@ -157,7 +157,7 @@ function ResetPasswordForm() {
   if (success) {
     return (
       <div className="flex flex-col min-h-screen bg-white md:bg-gray-50">
-        <div className="flex flex-col items-center justify-center flex-1 px-4 py-4 sm:px-6 md:px-8">
+        <div className="flex flex-col items-center justify-center flex-1 px-4 py-4">
           <div className="w-full max-w-md md:bg-white md:rounded-2xl md:shadow-lg md:p-8 lg:p-10">
             {/* Logo */}
             <div className="flex items-center justify-center overflow-hidden w-24 h-24 mx-auto rounded-xl sm:w-28 sm:h-28 md:w-32 md:h-32">
@@ -201,7 +201,7 @@ function ResetPasswordForm() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center justify-center flex-1 px-4 py-4 sm:px-6 md:px-8">
+      <div className="flex flex-col items-center justify-center flex-1 px-4 py-4">
         <div className="w-full max-w-md md:bg-white md:rounded-2xl md:shadow-lg md:p-8 lg:p-10">
           {/* Logo */}
           <div className="flex items-center justify-center overflow-hidden w-24 h-24 mx-auto rounded-xl sm:w-28 sm:h-28 md:w-32 md:h-32">

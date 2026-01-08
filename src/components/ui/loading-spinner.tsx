@@ -39,7 +39,7 @@ export const LoadingSpinner = memo(function LoadingSpinner({ size = 'md', classN
 // Optimized loading page with fade-in animation
 export const LoadingPage = memo(function LoadingPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center animate-fadeIn">
       <div className="text-center">
         <LoadingSpinner size="lg" />
       </div>

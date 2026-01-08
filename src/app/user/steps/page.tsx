@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import PageTransition from '@/components/animations/PageTransition';
+import { useTheme } from '@/contexts/ThemeContext';
 import { format } from 'date-fns';
 import {
     ArrowLeft,
@@ -47,6 +49,7 @@ interface StepsData {
 export default function StepsPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const { isDarkMode } = useTheme();
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -250,7 +253,7 @@ export default function StepsPage() {
 
     if (loading) {
         return (
-            <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+            <div className="fixed inset-0 flex items-center justify-center z-[100] bg-white dark:bg-gray-950">
                 <SpoonGifLoader size="lg" />
             </div>
         );

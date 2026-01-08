@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import UserNavBar from '@/components/client/UserNavBar';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   Bug, 
   Camera,
@@ -32,6 +33,7 @@ interface FormData {
 }
 
 export default function ReportProblemPage() {
+  const { isDarkMode } = useTheme();
   const [formData, setFormData] = useState<FormData>({
     title: '',
     category: 'ui',
@@ -160,7 +162,7 @@ export default function ReportProblemPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen pb-24 bg-gray-50">
+      <div className={isDarkMode ? 'min-h-screen pb-24 bg-slate-950' : 'min-h-screen pb-24 bg-gray-50'}>
         <UserNavBar 
           title="Report a Problem" 
           showBack={true}
@@ -170,14 +172,22 @@ export default function ReportProblemPage() {
           backHref="/user/settings"
         />
 
-        <div className="px-4 md:px-6 py-8">
-          <Card className="border-0 shadow-sm max-w-md mx-auto">
+        <div className="px-4 py-8">
+          <Card
+            className={
+              isDarkMode
+                ? 'max-w-md mx-auto bg-slate-900 border border-slate-800 shadow-sm'
+                : 'border-0 shadow-sm max-w-md mx-auto'
+            }
+          >
             <CardContent className="p-8 text-center">
               <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="h-8 w-8 text-[#3AB1A0]" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Report Submitted!</h2>
-              <p className="text-gray-600 mb-6">
+              <h2 className={isDarkMode ? 'text-xl font-semibold text-slate-100 mb-2' : 'text-xl font-semibold text-gray-900 mb-2'}>
+                Report Submitted!
+              </h2>
+              <p className={isDarkMode ? 'text-slate-300 mb-6' : 'text-gray-600 mb-6'}>
                 Thank you for helping us improve. Our team will review your report and work on a fix.
               </p>
               <Button 
@@ -194,7 +204,7 @@ export default function ReportProblemPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24 bg-gray-50">
+    <div className={isDarkMode ? 'min-h-screen pb-24 bg-slate-950' : 'min-h-screen pb-24 bg-gray-50'}>
       <UserNavBar 
         title="Report a Problem" 
         showBack={true}
@@ -204,7 +214,7 @@ export default function ReportProblemPage() {
         backHref="/user/settings"
       />
 
-      <div className="px-4 md:px-6 space-y-4 py-4">
+      <div className="px-4 space-y-4 py-4">
         {/* Info Banner */}
         <Card className="border-0 shadow-sm bg-[#e48b57]">
           <CardContent className="p-4">
@@ -223,17 +233,17 @@ export default function ReportProblemPage() {
         </Card>
 
         {/* Bug Report Form */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
+        <Card className={isDarkMode ? 'bg-slate-900 border border-slate-800 shadow-sm' : 'border-0 shadow-sm'}>
+          <CardHeader className={isDarkMode ? 'p-4 pb-2 border-b border-slate-800' : 'p-4 pb-2 border-b border-[#3AB1A0]/10'}>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-[#E06A26]/10 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-[#E06A26]" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold text-[#3AB1A0]">
+                <CardTitle className={isDarkMode ? 'text-base font-semibold text-slate-100' : 'text-base font-semibold text-[#3AB1A0]'}>
                   Bug Report Form
                 </CardTitle>
-                <p className="text-xs text-gray-500">
+                <p className={isDarkMode ? 'text-xs text-slate-400' : 'text-xs text-gray-500'}>
                   Fields marked with * are required
                 </p>
               </div>
@@ -243,7 +253,7 @@ export default function ReportProblemPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Title */}
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-gray-700">
+                <Label htmlFor="title" className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>
                   Title <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -251,13 +261,17 @@ export default function ReportProblemPage() {
                   placeholder="Brief description of the issue"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]"
+                  className={
+                    isDarkMode
+                      ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]'
+                      : 'border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]'
+                  }
                 />
               </div>
 
               {/* Category */}
               <div className="space-y-2">
-                <Label className="text-gray-700">Category</Label>
+                <Label className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>Category</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {categories.map((cat) => (
                     <button
@@ -267,14 +281,20 @@ export default function ReportProblemPage() {
                       className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                         formData.category === cat.value
                           ? 'border-[#3AB1A0] bg-[#3AB1A0]/5'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : isDarkMode
+                            ? 'border-slate-800 hover:border-slate-700 bg-slate-950/40'
+                            : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <cat.icon className={`h-4 w-4 ${
-                        formData.category === cat.value ? 'text-[#3AB1A0]' : 'text-gray-400'
+                        formData.category === cat.value ? 'text-[#3AB1A0]' : isDarkMode ? 'text-slate-400' : 'text-gray-400'
                       }`} />
                       <span className={`text-sm ${
-                        formData.category === cat.value ? 'text-[#3AB1A0] font-medium' : 'text-gray-600'
+                        formData.category === cat.value
+                          ? 'text-[#3AB1A0] font-medium'
+                          : isDarkMode
+                            ? 'text-slate-300'
+                            : 'text-gray-600'
                       }`}>
                         {cat.label}
                       </span>
@@ -285,7 +305,7 @@ export default function ReportProblemPage() {
 
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-gray-700">
+                <Label htmlFor="description" className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>
                   Description <span className="text-red-500">*</span>
                 </Label>
                 <Textarea
@@ -294,13 +314,17 @@ export default function ReportProblemPage() {
                   rows={4}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none"
+                  className={
+                    isDarkMode
+                      ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none'
+                      : 'border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none'
+                  }
                 />
               </div>
 
               {/* Steps to Reproduce */}
               <div className="space-y-2">
-                <Label htmlFor="steps" className="text-gray-700">
+                <Label htmlFor="steps" className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>
                   Steps to Reproduce
                 </Label>
                 <Textarea
@@ -309,13 +333,17 @@ export default function ReportProblemPage() {
                   rows={3}
                   value={formData.steps}
                   onChange={(e) => setFormData({ ...formData, steps: e.target.value })}
-                  className="border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none"
+                  className={
+                    isDarkMode
+                      ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none'
+                      : 'border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none'
+                  }
                 />
               </div>
 
               {/* Expected Behavior */}
               <div className="space-y-2">
-                <Label htmlFor="expectedBehavior" className="text-gray-700">
+                <Label htmlFor="expectedBehavior" className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>
                   Expected Behavior
                 </Label>
                 <Textarea
@@ -324,14 +352,20 @@ export default function ReportProblemPage() {
                   rows={2}
                   value={formData.expectedBehavior}
                   onChange={(e) => setFormData({ ...formData, expectedBehavior: e.target.value })}
-                  className="border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none"
+                  className={
+                    isDarkMode
+                      ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none'
+                      : 'border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0] resize-none'
+                  }
                 />
               </div>
 
               {/* Screenshots */}
               <div className="space-y-2">
-                <Label className="text-gray-700">Screenshots (Optional)</Label>
-                <p className="text-xs text-gray-500">Add up to 5 screenshots to help us understand the issue</p>
+                <Label className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>Screenshots (Optional)</Label>
+                <p className={isDarkMode ? 'text-xs text-slate-400' : 'text-xs text-gray-500'}>
+                  Add up to 5 screenshots to help us understand the issue
+                </p>
                 
                 <input
                   type="file"
@@ -347,7 +381,14 @@ export default function ReportProblemPage() {
                 {previewUrls.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {previewUrls.map((url, index) => (
-                      <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200">
+                      <div
+                        key={index}
+                        className={
+                          isDarkMode
+                            ? 'relative aspect-square rounded-xl overflow-hidden border border-slate-800'
+                            : 'relative aspect-square rounded-xl overflow-hidden border border-gray-200'
+                        }
+                      >
                         <img 
                           src={url} 
                           alt={`Screenshot ${index + 1}`}
@@ -369,14 +410,18 @@ export default function ReportProblemPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-[#3AB1A0] hover:bg-[#3AB1A0]/5 transition-colors"
+                    className={
+                      isDarkMode
+                        ? 'w-full p-4 border-2 border-dashed border-slate-800 rounded-xl hover:border-[#3AB1A0] hover:bg-[#3AB1A0]/10 transition-colors'
+                        : 'w-full p-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-[#3AB1A0] hover:bg-[#3AB1A0]/5 transition-colors'
+                    }
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <Camera className="h-8 w-8 text-gray-400" />
-                      <span className="text-sm text-gray-600">
+                      <Camera className={isDarkMode ? 'h-8 w-8 text-slate-400' : 'h-8 w-8 text-gray-400'} />
+                      <span className={isDarkMode ? 'text-sm text-slate-300' : 'text-sm text-gray-600'}>
                         Click to add screenshots
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className={isDarkMode ? 'text-xs text-slate-500' : 'text-xs text-gray-400'}>
                         {screenshots.length}/5 images
                       </span>
                     </div>
@@ -386,7 +431,7 @@ export default function ReportProblemPage() {
 
               {/* Device Info */}
               <div className="space-y-2">
-                <Label htmlFor="deviceInfo" className="text-gray-700">
+                <Label htmlFor="deviceInfo" className={isDarkMode ? 'text-slate-200' : 'text-gray-700'}>
                   Device Information (Optional)
                 </Label>
                 <Input
@@ -394,9 +439,13 @@ export default function ReportProblemPage() {
                   placeholder="e.g., iPhone 14, iOS 17.2"
                   value={formData.deviceInfo}
                   onChange={(e) => setFormData({ ...formData, deviceInfo: e.target.value })}
-                  className="border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]"
+                  className={
+                    isDarkMode
+                      ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]'
+                      : 'border-gray-200 focus:border-[#3AB1A0] focus:ring-[#3AB1A0]'
+                  }
                 />
-                <p className="text-xs text-gray-400">
+                <p className={isDarkMode ? 'text-xs text-slate-500' : 'text-xs text-gray-400'}>
                   We'll automatically capture your browser information if not provided
                 </p>
               </div>
@@ -424,13 +473,15 @@ export default function ReportProblemPage() {
         </Card>
 
         {/* Tips */}
-        <Card className="border-0 shadow-sm">
+        <Card className={isDarkMode ? 'bg-slate-900 border border-slate-800 shadow-sm' : 'border-0 shadow-sm'}>
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <Info className="h-5 w-5 text-[#3AB1A0] mt-0.5" />
               <div>
-                <h4 className="font-medium text-gray-900 text-sm mb-1">Tips for a good bug report:</h4>
-                <ul className="text-xs text-gray-600 space-y-1">
+                <h4 className={isDarkMode ? 'font-medium text-slate-100 text-sm mb-1' : 'font-medium text-gray-900 text-sm mb-1'}>
+                  Tips for a good bug report:
+                </h4>
+                <ul className={isDarkMode ? 'text-xs text-slate-300 space-y-1' : 'text-xs text-gray-600 space-y-1'}>
                   <li>• Be specific about what you were doing when the issue occurred</li>
                   <li>• Include exact error messages if any</li>
                   <li>• Screenshots help us understand the issue faster</li>

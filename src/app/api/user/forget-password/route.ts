@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
     await user.save({ validateBeforeSave: false });
 
 
-    // Generate reset link for user/client section
+    // Generate reset link - use client-auth route which doesn't require authentication
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const resetLink = `${baseUrl}/user/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    const resetLink = `${baseUrl}/client-auth/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
 
     // Send password reset email

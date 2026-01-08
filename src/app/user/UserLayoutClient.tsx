@@ -7,9 +7,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import BottomNavBar from '@/components/client/BottomNavBar';
 import UserSidebar from '@/components/client/UserSidebar';
-import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
+import SpoonGifLoader, { FullPageLoader } from '@/components/ui/SpoonGifLoader';
 import { Menu, Bell } from 'lucide-react';
 import { UnreadCountProvider, useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import PageTransition from '@/components/animations/PageTransition';
 
 interface UserLayoutClientProps {
   children: ReactNode;
@@ -75,39 +77,39 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
 
   // Show loading state only on initial mount, not on route changes
   if (!mounted || status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#61a035]/10 to-[#3AB1A0]/10">
-        <SpoonGifLoader size="lg" text="Loading..." />
-      </div>
-    );
+    return <FullPageLoader size="lg" text="Loading..." />;
   }
 
   // Redirect if not authenticated
   if (status === 'unauthenticated') {
     router.push('/client-auth/signin');
+    return <FullPageLoader size="lg" text="Redirecting..." />;
+  }
+
+  // If navigation should be hidden (e.g., onboarding), still wrap in ThemeProvider
+  if (!showNavigation) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#61a035]/10 to-[#3AB1A0]/10">
-        <SpoonGifLoader size="lg" text="Redirecting..." />
-      </div>
+      <ThemeProvider>
+        <UnreadCountProvider>
+          {children}
+        </UnreadCountProvider>
+      </ThemeProvider>
     );
   }
 
-  // If navigation should be hidden (e.g., onboarding), just render children
-  if (!showNavigation) {
-    return <>{children}</>;
-  }
-
   return (
-    <UnreadCountProvider>
-      <UserLayoutContent 
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        showLoader={showLoader}
-        isNavigating={isNavigating}
-      >
-        {children}
-      </UserLayoutContent>
-    </UnreadCountProvider>
+    <ThemeProvider>
+      <UnreadCountProvider>
+        <UserLayoutContent 
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          showLoader={showLoader}
+          isNavigating={isNavigating}
+        >
+          {children}
+        </UserLayoutContent>
+      </UnreadCountProvider>
+    </ThemeProvider>
   );
 }
 
@@ -126,9 +128,10 @@ function UserLayoutContent({
   isNavigating: boolean;
 }) {
   const { counts } = useUnreadCountsSafe();
+  const { isDarkMode } = useTheme();
 
   return (
-    <div className="relative flex flex-col min-h-screen bg-gray-50">
+    <div className={`relative flex flex-col min-h-screen transition-colors duration-500 ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
       {/* Sidebar overlay for mobile - smooth fade */}
       <div 
         className={`fixed inset-0 bg-black z-40 lg:hidden transition-opacity duration-900 ease-in-out ${
@@ -138,27 +141,31 @@ function UserLayoutContent({
       />
 
       {/* Sidebar for desktop - always mounted with smooth graceful animation */}
-      <div className={`
+      <aside className={`
         fixed inset-y-0 left-0 z-50 lg:z-30
-        transform transition-all duration-900 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        motion-reduce:duration-300 motion-reduce:ease-out
+        ${sidebarOpen ? '' : '-translate-x-full lg:translate-x-0'}
+        transition-transform duration-300 ease-in-out
       `}>
         <UserSidebar 
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)} 
         />
-      </div>
+      </aside>
+
+      {/* Navigation Loader - OUTSIDE main, true viewport center */}
+      {showLoader && isNavigating && (
+        <FullPageLoader size="lg" isDarkMode={isDarkMode} />
+      )}
 
       {/* Main Content Area - this is what reloads on route change */}
       <main className="flex-1 pb-20 lg:pb-0 lg:ml-64">
         {/* Mobile Header */}
-        <div className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shadow-sm lg:hidden">
+        <div className={`sticky top-0 z-40 flex items-center justify-between px-4 py-3 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'} border-b shadow-sm lg:hidden`}>
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 transition-all duration-150 rounded-lg hover:bg-gray-100 active:scale-95"
           >
-            <Menu className="w-6 h-6 text-gray-600" />
+            <Menu className={`w-6 h-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
           </button>
           <div className="flex items-center gap-2">
             <Image
@@ -175,7 +182,7 @@ function UserLayoutContent({
             href="/user/notifications"
             className="relative p-2 transition-all duration-150 rounded-lg hover:bg-gray-100 active:scale-95"
           >
-            <Bell className="w-6 h-6 text-gray-600" />
+            <Bell className={`w-6 h-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
             {counts.notifications > 0 && (
               <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
                 {counts.notifications > 99 ? '99+' : counts.notifications}
@@ -184,17 +191,11 @@ function UserLayoutContent({
           </Link>
         </div>
 
-        {/* Page Content with delayed loader */}
+        {/* Page Content */}
         <div className="min-h-[calc(100vh-140px)] lg:min-h-[calc(100vh-20px)]">
-          {showLoader && isNavigating ? (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm">
-              <SpoonGifLoader size="lg" text="Loading..." />
-            </div>
-          ) : (
-            <div className={`transition-opacity duration-300 ${isNavigating ? 'opacity-50' : 'opacity-100'}`}>
-              {children}
-            </div>
-          )}
+          <div className={`transition-opacity duration-300 ${isNavigating ? 'opacity-50' : 'opacity-100'}`}>
+            {children}
+          </div>
         </div>
       </main>
 

@@ -27,6 +27,8 @@ import UserNavBar from '@/components/client/UserNavBar';
 import { SpoonLoader } from '@/components/ui/SpoonLoader';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { toast } from 'sonner';
+import { useTheme } from '@/contexts/ThemeContext';
+import PageTransition from '@/components/animations/PageTransition';
 
 interface UserSettings {
   pushNotifications: boolean;
@@ -41,6 +43,7 @@ interface UserSettings {
 export default function UserSettingsPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { isDarkMode, setIsDarkMode } = useTheme();
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
@@ -50,12 +53,9 @@ export default function UserSettingsPage() {
     mealReminders: true,
     appointmentReminders: true,
     progressUpdates: false,
-    darkMode: false,
+    darkMode: isDarkMode,
     soundEnabled: true,
   });
-
-  // Derive isDarkMode from settings for UI rendering
-  const isDarkMode = settings.darkMode;
 
   // Handle logout with proper cookie clearing
   const handleLogout = useCallback(async () => {
@@ -76,7 +76,7 @@ export default function UserSettingsPage() {
       // Clear any local storage items
       if (typeof window !== 'undefined') {
         localStorage.removeItem('user-preferences');
-        localStorage.removeItem('theme');
+        localStorage.removeItem('dtps-theme');
         localStorage.removeItem('onboarding-data');
         sessionStorage.clear();
       }
@@ -104,10 +104,6 @@ export default function UserSettingsPage() {
           const data = await response.json();
           if (data.settings) {
             setSettings(data.settings);
-            // Apply dark mode if enabled
-            if (data.settings.darkMode) {
-              document.documentElement.classList.add('dark');
-            }
           }
         }
       } catch (error) {
@@ -127,15 +123,9 @@ export default function UserSettingsPage() {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
 
-    // Handle dark mode immediately
+    // Handle dark mode immediately using ThemeContext
     if (key === 'darkMode') {
-      if (value) {
-        document.documentElement.classList.add('dark');
-        document.body.style.backgroundColor = '#1a1a1a';
-      } else {
-        document.documentElement.classList.remove('dark');
-        document.body.style.backgroundColor = '';
-      }
+      setIsDarkMode(value);
     }
 
     // Play sound effect if enabled
@@ -168,11 +158,17 @@ export default function UserSettingsPage() {
       } else {
         // Revert on error
         setSettings(settings);
+        if (key === 'darkMode') {
+          setIsDarkMode(!value);
+        }
         toast.error('Failed to update setting');
       }
     } catch (error) {
       console.error('Error updating setting:', error);
       setSettings(settings);
+      if (key === 'darkMode') {
+        setIsDarkMode(!value);
+      }
       toast.error('Failed to update setting');
     } finally {
       setSaving(null);
@@ -298,32 +294,33 @@ export default function UserSettingsPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className="fixed inset-0 flex items-center justify-center z-[100] bg-white dark:bg-gray-950">
         <SpoonGifLoader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen pb-24 ${settings.darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      {/* Navigation Bar */}
-      <UserNavBar 
-        title="Settings" 
-        subtitle="Manage your preferences"
-        showBack={true}
-        showMenu={false}
-        showProfile={false}
-        showNotification={false}
-        backHref="/user"
-      />
+    <PageTransition>
+      <div className={`min-h-screen pb-24 transition-colors duration-500 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        {/* Navigation Bar */}
+        <UserNavBar 
+          title="Settings" 
+          subtitle="Manage your preferences"
+          showBack={true}
+          showMenu={false}
+          showProfile={false}
+          showNotification={false}
+          backHref="/user"
+        />
 
-      <div className="px-4 md:px-6 space-y-4 py-4">
+        <div className="px-4 space-y-4 py-4">
         {/* Setting Sections with Toggles */}
         {settingSections.map((section) => (
           <Card 
             key={section.title} 
             className={`border-0 shadow-sm hover:shadow-md transition-shadow ${
-              settings.darkMode ? 'bg-gray-800' : 'bg-white'
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
             }`}
           >
             <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
@@ -333,11 +330,11 @@ export default function UserSettingsPage() {
                 </div>
                 <div>
                   <CardTitle className={`text-base font-semibold ${
-                    settings.darkMode ? 'text-white' : 'text-[#3AB1A0]'
+                    isDarkMode ? 'text-white' : 'text-[#3AB1A0]'
                   }`}>
                     {section.title}
                   </CardTitle>
-                  <p className={`text-xs ${settings.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     {section.description}
                   </p>
                 </div>
@@ -348,7 +345,7 @@ export default function UserSettingsPage() {
                 <div 
                   key={item.key} 
                   className={`flex items-center justify-between p-3 rounded-xl transition-colors ${
-                    settings.darkMode 
+                    isDarkMode 
                       ? 'hover:bg-gray-700' 
                       : 'hover:bg-[#3AB1A0]/5'
                   }`}
@@ -504,7 +501,7 @@ export default function UserSettingsPage() {
           </CardContent>
         </Card>
       </div>
-
-    </div>
-  );
+      </div>
+    </PageTransition>
+    );
 }

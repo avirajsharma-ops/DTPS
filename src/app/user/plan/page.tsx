@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   Clock, 
   Check, 
@@ -168,6 +169,7 @@ function formatNotesWithLineBreaks(note: string): string[] {
 
 export default function UserPlanPage() {
   const { data: session, status } = useSession();
+  const { isDarkMode } = useTheme();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekDates, setWeekDates] = useState<Date[]>([]);
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
@@ -666,24 +668,28 @@ export default function UserPlanPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div
+        className={`fixed inset-0 flex items-center justify-center z-50 ${
+          isDarkMode ? 'bg-gray-950' : 'bg-white'
+        }`}
+      >
         <SpoonGifLoader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-24 bg-gray-50">
+    <div className={`min-h-screen pb-24 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
      
       {/* Header */}
-      <div className="px-4 py-4 bg-white border-b border-gray-100">
+      <div className={`px-4 py-4 border-b transition-colors duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <div className="flex items-center justify-between">
           <Link href="/user" className="p-2 -ml-2">
-            <ArrowLeft className="w-6 h-6 text-gray-700" />
+            <ArrowLeft className={`w-6 h-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`} />
           </Link>
           <div className="text-center">
-            <h1 className="text-lg font-bold text-black">My Meal Plan</h1>
-            <p className="text-xs text-gray-500 uppercase">{format(selectedDate, 'EEEE, MMMM d')}</p>
+            <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>My Meal Plan</h1>
+            <p className={`text-xs uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{format(selectedDate, 'EEEE, MMMM d')}</p>
           </div>
           <div className="flex items-center gap-2">
             <button 
@@ -694,16 +700,16 @@ export default function UserPlanPage() {
               className="p-2"
               title="Open Calendar"
             >
-              <CalendarDays className="w-5 h-5 text-gray-700" />
+              <CalendarDays className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`} />
             </button>
             <button 
               onClick={handleRefresh}
               className="p-2"
               disabled={refreshing}
             >
-              <RefreshCw className={`w-5 h-5 text-gray-700 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-700'} ${refreshing ? 'animate-spin' : ''}`} />
             </button>
-            <div className="w-8 h-8 rounded-full bg-[#3AB1A0] flex items-center justify-center text-white text-sm font-semibold">
+            <div className="w-8 h-8 rounded-full bg-[#ff9500] flex items-center justify-center text-white text-sm font-semibold">
               {session?.user?.name?.charAt(0) || 'U'}
             </div>
           </div>
@@ -728,7 +734,7 @@ export default function UserPlanPage() {
       </div>
 
       {/* Week Date Selector */}
-      <div className="px-4 py-3 bg-white border-b border-gray-100">
+      <div className={`px-4 py-3 border-b ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-100'}`}>
         <div 
           ref={dateScrollRef}
           className="flex gap-2 overflow-x-auto hide-scrollbar scroll-smooth"
@@ -744,13 +750,19 @@ export default function UserPlanPage() {
                 className={`flex flex-col items-center py-2 px-4 rounded-2xl min-w-12.5 transition-all ${
                   isSelected 
                     ? 'bg-[#3AB1A0] text-white' 
-                    : 'bg-transparent text-gray-600 hover:bg-gray-100'
+                    : isDarkMode
+                      ? 'bg-transparent text-gray-300 hover:bg-white/10'
+                      : 'bg-transparent text-gray-600 hover:bg-gray-100'
                 }`}
               >
                 <span className={`text-xs font-medium ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>
                   {format(date, 'EEE')}
                 </span>
-                <span className={`text-lg font-bold ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                <span
+                  className={`text-lg font-bold ${
+                    isSelected ? 'text-white' : isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                  }`}
+                >
                   {format(date, 'd')}
                 </span>
                 {today && !isSelected && (
@@ -767,43 +779,43 @@ export default function UserPlanPage() {
         {isChangingDate ? (
           <div className="space-y-4 animate-pulse">
             {/* Summary skeleton */}
-            <div className="p-5 bg-white shadow-sm rounded-2xl">
+            <div className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <div className="h-3 w-20 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-8 w-24 bg-gray-200 rounded"></div>
+                  <div className={`h-3 w-20 rounded mb-2 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
+                  <div className={`h-8 w-24 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
                 </div>
                 <div className="text-right">
-                  <div className="h-3 w-20 bg-gray-200 rounded mb-2 ml-auto"></div>
-                  <div className="h-8 w-16 bg-gray-200 rounded ml-auto"></div>
+                  <div className={`h-3 w-20 rounded mb-2 ml-auto ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
+                  <div className={`h-8 w-16 rounded ml-auto ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
                 </div>
               </div>
               <div className="flex gap-1">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-2 flex-1 bg-gray-200 rounded-full"></div>
+                  <div key={i} className={`h-2 flex-1 rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
                 ))}
               </div>
             </div>
             
             {/* Meal cards skeleton */}
             {[1, 2, 3].map(i => (
-              <div key={i} className="p-5 bg-white shadow-sm rounded-2xl">
+              <div key={i} className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gray-200 rounded-2xl"></div>
+                    <div className={`w-12 h-12 rounded-2xl ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
                     <div>
-                      <div className="h-5 w-24 bg-gray-200 rounded mb-1"></div>
-                      <div className="h-3 w-16 bg-gray-200 rounded"></div>
+                      <div className={`h-5 w-24 rounded mb-1 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
+                      <div className={`h-3 w-16 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
                     </div>
                   </div>
-                  <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
+                  <div className={`h-6 w-16 rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
                 </div>
                 <div className="space-y-3">
                   {[1, 2].map(j => (
-                    <div key={j} className="p-4 bg-gray-50 rounded-xl">
+                    <div key={j} className={`p-4 rounded-xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}>
                       <div className="flex items-center justify-between">
-                        <div className="h-4 w-32 bg-gray-200 rounded"></div>
-                        <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                        <div className={`h-4 w-32 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
+                        <div className={`h-4 w-16 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
                       </div>
                     </div>
                   ))}
@@ -813,26 +825,34 @@ export default function UserPlanPage() {
           </div>
         ) : dayPlan?.isFrozen ? (
           /* Frozen Day Message */
-          <div className="p-8 text-center bg-white shadow-sm rounded-2xl border-2 border-blue-200 relative overflow-hidden">
+          <div
+            className={`p-8 text-center shadow-sm rounded-2xl border-2 relative overflow-hidden ${
+              isDarkMode ? 'bg-gray-900 border-blue-500/40 ring-1 ring-white/10' : 'bg-white border-blue-200'
+            }`}
+          >
             {/* <style>{`@keyframes snowFall { to { transform: translateY(350px) rotateZ(360deg); opacity: 0; } } .snowflake-anim { position: absolute; color: #b3d9ff; font-size: 1.5rem; pointer-events: none; animation: snowFall 5s linear infinite; }`}</style> */}
             {/* {[...Array(6)].map((_, i) => (<div key={i} className="snowflake-anim" style={{left: `${15 + i * 15}%`, top: `-10px`, animationDelay: `${i * 0.8}s`}}>❄️</div>))} */}
             <div className="relative z-10">
               <div className="w-24 h-24 mx-auto mb-4 bg-linear-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center animate-pulse">
                 <span className="text-5xl">❄️</span>
               </div>
-              <h3 className="mb-2 text-xl font-bold text-blue-800">This Day is Frozen</h3>
+              <h3 className={`mb-2 text-xl font-bold ${isDarkMode ? 'text-blue-200' : 'text-blue-800'}`}>This Day is Frozen</h3>
             </div>
             <div className="relative z-10">
-              <p className="mb-2 text-sm text-gray-600 font-medium">
+              <p className={`mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>
                 {format(selectedDate, 'EEEE, MMMM d, yyyy')}
               </p>
-              <p className="mb-4 text-sm text-gray-500">
+              <p className={`mb-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                 Your dietitian has frozen this day. No meals are scheduled.
               </p>
-              {dayPlan.freezeInfo?.reason && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-left">
-                  <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Reason</p>
-                  <p className="text-sm text-blue-800">{dayPlan.freezeInfo.reason}</p>
+              {dayPlan?.freezeInfo?.reason && (
+                <div
+                  className={`rounded-xl p-4 mb-4 text-left border ${
+                    isDarkMode ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'
+                  }`}
+                >
+                  <p className={`text-xs font-semibold uppercase mb-1 ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>Reason</p>
+                  <p className={`text-sm ${isDarkMode ? 'text-blue-100' : 'text-blue-800'}`}>{dayPlan?.freezeInfo?.reason}</p>
                 </div>
               )}
               <div className="flex flex-col gap-3">
@@ -848,7 +868,9 @@ export default function UserPlanPage() {
                 </button>
                 <Link 
                   href="/user/messages"
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors"
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                    isDarkMode ? 'bg-blue-500/10 text-blue-200 hover:bg-blue-500/15' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                  }`}
                 >
                   💬 Contact Dietitian
                 </Link>
@@ -857,15 +879,15 @@ export default function UserPlanPage() {
           </div>
         ) : !dayPlan?.hasPlan ? (
           /* No Plan Message - Show Buy Plan option */
-          <div className="p-8 text-center bg-white shadow-sm rounded-2xl">
+          <div className={`p-8 text-center shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}>
             <div className="w-20 h-20 mx-auto mb-4 bg-linear-to-br from-[#E06A26]/20 to-[#DB9C6E]/20 rounded-full flex items-center justify-center">
               <span className="text-4xl">🍽️</span>
             </div>
-            <h3 className="mb-2 text-xl font-bold text-gray-800">No Meal Plan Available</h3>
-            <p className="mb-2 text-sm text-gray-600 font-medium">
+            <h3 className={`mb-2 text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>No Meal Plan Available</h3>
+            <p className={`mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>
               {format(selectedDate, 'EEEE, MMMM d, yyyy')}
             </p>
-            <p className="mb-6 text-sm text-gray-500">
+            <p className={`mb-6 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
               You don't have a meal plan for this date. Get a personalized diet plan from our expert dietitians!
             </p>
             <div className="flex flex-col gap-3">
@@ -887,16 +909,16 @@ export default function UserPlanPage() {
         ) : (
           <>
             {/* Daily Summary Card */}
-            <div className="p-5 bg-white shadow-sm rounded-2xl">
+            <div className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs tracking-wide text-gray-500 uppercase">Daily Target</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {dayPlan?.totalCalories}<span className="ml-1 text-lg font-normal text-gray-400">kcal</span>
+                  <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Daily Target</p>
+                  <p className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {dayPlan?.totalCalories}<span className={`ml-1 text-lg font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>kcal</span>
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs tracking-wide text-gray-500 uppercase">Completed</p>
+                  <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Completed</p>
                   <p className="text-3xl font-bold text-[#3AB1A0]">
                     {completedMeals}/{totalMeals}<span className="ml-1 text-lg font-normal text-gray-400">meals</span>
                   </p>
@@ -909,7 +931,7 @@ export default function UserPlanPage() {
                   <div 
                     key={index}
                     className={`h-2 flex-1 rounded-full transition-all ${
-                      segment.isCompleted ? 'bg-[#3AB1A0]' : 'bg-gray-200'
+                      segment.isCompleted ? 'bg-[#3AB1A0]' : isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
                     }`}
                   />
                 ))}
@@ -917,13 +939,17 @@ export default function UserPlanPage() {
               
               {/* Daily Note from Dietitian */}
               {dayPlan?.dailyNote && (
-                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                <div
+                  className={`mt-4 p-4 rounded-xl border ${
+                    isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'
+                  }`}
+                >
                   <div className="flex items-start gap-2">
                     <span className="text-lg">📝</span>
                     <div>
-                      <p className="text-xs font-semibold text-yellow-700 mb-1">Note from Dietitian</p>
-                      <div className="text-sm text-yellow-800 space-y-1">
-                        {formatNotesWithLineBreaks(dayPlan.dailyNote).map((line, idx) => (
+                      <p className={`text-xs font-semibold mb-1 ${isDarkMode ? 'text-yellow-200' : 'text-yellow-700'}`}>Note from Dietitian</p>
+                      <div className={`text-sm space-y-1 ${isDarkMode ? 'text-yellow-100' : 'text-yellow-800'}`}>
+                        {formatNotesWithLineBreaks(dayPlan.dailyNote || '').map((line, idx) => (
                           <p key={idx}>• {line}</p>
                         ))}
                       </div>
@@ -937,17 +963,17 @@ export default function UserPlanPage() {
             {allMealSlots.map((meal) => (
               <div 
                 key={meal.id} 
-                className="p-5 bg-white shadow-sm rounded-2xl"
+                className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}
               >
                 {/* Meal Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-12 h-12 text-2xl rounded-2xl bg-gray-50">
+                    <div className={`flex items-center justify-center w-12 h-12 text-2xl rounded-2xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}>
                       {getMealIcon(meal.type)}
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-gray-900">{getMealLabel(meal.type)}</h3>
-                      <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <h3 className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{getMealLabel(meal.type)}</h3>
+                      <div className={`flex items-center gap-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         <Clock className="w-3 h-3" />
                         <span>{meal.time}</span>
                       </div>
@@ -964,7 +990,7 @@ export default function UserPlanPage() {
                       <span>{meal.totalCalories} kcal</span>
                     </div>
                   ) : (
-                    <div className="px-3 py-1 text-sm font-medium text-gray-500 bg-gray-100 rounded-full">
+                    <div className={`px-3 py-1 text-sm font-medium rounded-full ${isDarkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-500 bg-gray-100'}`}>
                       No food allotted
                     </div>
                   )}
@@ -972,9 +998,9 @@ export default function UserPlanPage() {
 
                 {/* Meal Notes if any */}
                 {meal.notes && (
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
-                    <p className="text-xs font-semibold text-yellow-700 mb-1">📝 Notes from Dietitian</p>
-                    <div className="text-sm text-yellow-800 space-y-1">
+                  <div className={`mb-4 p-3 rounded-xl border ${isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'}`}>
+                    <p className={`text-xs font-semibold mb-1 ${isDarkMode ? 'text-yellow-200' : 'text-yellow-700'}`}>📝 Notes from Dietitian</p>
+                    <div className={`text-sm space-y-1 ${isDarkMode ? 'text-yellow-100' : 'text-yellow-800'}`}>
                       {formatNotesWithLineBreaks(meal.notes).map((line, idx) => (
                         <p key={idx}>• {line}</p>
                       ))}
@@ -988,13 +1014,13 @@ export default function UserPlanPage() {
                     {meal.items.map((item) => (
                       <div 
                         key={item.id}
-                        className="p-3 bg-gray-50 rounded-xl"
+                        className={`p-3 rounded-xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center flex-1 gap-3">
                             <div className="w-2 h-2 rounded-full bg-[#3AB1A0]" />
                             <div className="flex-1">
-                              <span className="text-sm font-medium text-gray-800">{item.name}</span>
+                              <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{item.name}</span>
                               {/* Tags */}
                               {item.tags && item.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-1">
@@ -1012,15 +1038,15 @@ export default function UserPlanPage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className="text-sm font-medium text-gray-700">{item.portion}</span>
-                            <p className="text-xs text-gray-400">({item.calories} kcal)</p>
+                            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{item.portion}</span>
+                            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>({item.calories} kcal)</p>
                           </div>
                         </div>
                         
                         {/* Alternatives - Show inline */}
                         {item.alternatives && item.alternatives.length > 0 && (
-                          <div className="mt-2 pt-2 border-t border-gray-200">
-                            <p className="text-xs text-gray-500 mb-1">🔄 Alternatives:</p>
+                          <div className={`mt-2 pt-2 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                            <p className={`text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>🔄 Alternatives:</p>
                             <div className="flex flex-wrap gap-2">
                               {item.alternatives.map((alt, altIndex) => (
                                 <span 
@@ -1037,7 +1063,7 @@ export default function UserPlanPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="py-6 mb-4 text-center text-gray-400 bg-gray-50 rounded-xl">
+                  <div className={`py-6 mb-4 text-center rounded-xl ${isDarkMode ? 'text-gray-400 bg-black/40' : 'text-gray-400 bg-gray-50'}`}>
                     <span className="block mb-2 text-2xl">🍽️</span>
                     <p className="text-sm">No food assigned for this meal</p>
                   </div>
@@ -1053,7 +1079,9 @@ export default function UserPlanPage() {
                     /* Disabled for past/future dates */
                     <button 
                       disabled
-                      className="flex-1 py-2.5 px-4 bg-gray-200 text-gray-500 rounded-xl text-sm font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+                      className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold cursor-not-allowed flex items-center justify-center gap-2 ${
+                        isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-500'
+                      }`}
                       title={selectedDate < new Date() ? 'Cannot mark past meals as complete' : 'Cannot mark future meals as complete'}
                     >
                       <Clock className="w-4 h-4" />
@@ -1061,7 +1089,9 @@ export default function UserPlanPage() {
                     </button>
                   ) : meal.items.length === 0 ? (
                     /* Hide complete button when no food is allotted */
-                    <div className="flex-1 min-w-30 py-2.5 px-4 bg-gray-100 text-gray-400 rounded-xl text-sm font-medium text-center">
+                    <div className={`flex-1 min-w-30 py-2.5 px-4 rounded-xl text-sm font-medium text-center ${
+                      isDarkMode ? 'bg-gray-900 text-gray-500 ring-1 ring-white/10' : 'bg-gray-100 text-gray-400'
+                    }`}>
                       No food to mark as complete
                     </div>
                   ) : (
@@ -1123,14 +1153,14 @@ export default function UserPlanPage() {
             }
           }}
         >
-          <div className="bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className={`w-full max-w-lg mx-4 rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col ${isDarkMode ? 'bg-gray-900 text-white ring-1 ring-white/10' : 'bg-white'}`}>
             {/* Modal Header - Sticky */}
             <div className="flex items-center justify-between p-5 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B]">
               <div className="flex-1 pr-4">
-                <h3 className="text-lg font-bold text-white">{fullRecipeData?.name || recipeModal.item.name}</h3>
+                <h3 className="text-lg font-bold text-white">{fullRecipeData?.name || recipeModal.item?.name}</h3>
                 {fullRecipeData?.createdBy && (
                   <p className="text-xs text-white/70 mt-0.5">
-                    By Dr. {fullRecipeData.createdBy.firstName} {fullRecipeData.createdBy.lastName}
+                    By Dr. {fullRecipeData.createdBy?.firstName} {fullRecipeData.createdBy?.lastName}
                   </p>
                 )}
               </div>
@@ -1147,7 +1177,7 @@ export default function UserPlanPage() {
               {loadingRecipe ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 className="w-10 h-10 text-[#3AB1A0] animate-spin mb-3" />
-                  <p className="text-sm text-gray-500">Loading recipe details...</p>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Loading recipe details...</p>
                 </div>
               ) : (
                 <div className="p-5 space-y-5">
@@ -1165,36 +1195,36 @@ export default function UserPlanPage() {
 
                   {/* Description */}
                   {fullRecipeData?.description && (
-                    <p className="text-gray-600 text-sm leading-relaxed">{fullRecipeData.description}</p>
+                    <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>{fullRecipeData?.description}</p>
                   )}
 
                   {/* Food Info */}
                   <div className="flex items-center justify-between p-4 bg-[#E06A26]/10 rounded-xl">
                     <div>
-                      <p className="text-sm text-gray-500">Portion</p>
-                      <p className="font-semibold text-gray-800">{fullRecipeData?.servings || recipeModal.item.portion}</p>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Portion</p>
+                      <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{fullRecipeData?.servings || recipeModal.item.portion}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-500">Calories</p>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Calories</p>
                       <p className="font-bold text-[#E06A26]">{fullRecipeData?.nutrition?.calories || recipeModal.item.calories} kcal</p>
                     </div>
                   </div>
 
                   {/* Prep & Cook Time */}
                   {(fullRecipeData?.prepTime || fullRecipeData?.cookTime || recipeModal.item.recipe?.prepTime || recipeModal.item.recipe?.cookTime) && (
-                    <div className="flex gap-6 p-4 bg-gray-50 rounded-xl">
+                    <div className={`flex gap-6 p-4 rounded-xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}>
                       {(fullRecipeData?.prepTime || recipeModal.item.recipe?.prepTime) && (
                         <div className="text-center flex-1">
                           <Clock className="w-5 h-5 text-[#3AB1A0] mx-auto mb-1" />
-                          <p className="text-xs text-gray-500">Prep Time</p>
-                          <p className="font-bold text-gray-800">{fullRecipeData?.prepTime || recipeModal.item.recipe?.prepTime} min</p>
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Prep Time</p>
+                          <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{fullRecipeData?.prepTime || recipeModal.item.recipe?.prepTime} min</p>
                         </div>
                       )}
                       {(fullRecipeData?.cookTime || recipeModal.item.recipe?.cookTime) && (
                         <div className="text-center flex-1">
                           <Clock className="w-5 h-5 text-[#E06A26] mx-auto mb-1" />
-                          <p className="text-xs text-gray-500">Cook Time</p>
-                          <p className="font-bold text-gray-800">{fullRecipeData?.cookTime || recipeModal.item.recipe?.cookTime} min</p>
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cook Time</p>
+                          <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{fullRecipeData?.cookTime || recipeModal.item.recipe?.cookTime} min</p>
                         </div>
                       )}
                     </div>
@@ -1203,7 +1233,7 @@ export default function UserPlanPage() {
                   {/* Nutrition Info */}
                   {(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition) && (
                     <div>
-                      <h4 className="mb-3 text-base font-bold text-gray-900">📊 Nutrition (per serving)</h4>
+                      <h4 className={`mb-3 text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>📊 Nutrition (per serving)</h4>
                       <div className="grid grid-cols-4 gap-2">
                         <div className="text-center p-2 bg-red-50 rounded-lg">
                           <p className="text-lg font-bold text-red-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.calories || 0}</p>
@@ -1227,9 +1257,9 @@ export default function UserPlanPage() {
 
                   {/* Dietary Restrictions */}
                   {((fullRecipeData?.dietaryRestrictions && fullRecipeData.dietaryRestrictions.length > 0) || 
-                    (recipeModal.item.recipe?.dietaryRestrictions && recipeModal.item.recipe.dietaryRestrictions.length > 0)) && (
+                    (recipeModal.item?.recipe?.dietaryRestrictions && recipeModal.item.recipe.dietaryRestrictions.length > 0)) && (
                     <div>
-                      <h4 className="mb-2 text-sm font-bold text-gray-900">🥗 Dietary Info</h4>
+                      <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🥗 Dietary Info</h4>
                       <div className="flex flex-wrap gap-2">
                         {(fullRecipeData?.dietaryRestrictions || recipeModal.item.recipe?.dietaryRestrictions)?.map((restriction, i) => (
                           <span key={i} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">{restriction}</span>
@@ -1254,16 +1284,16 @@ export default function UserPlanPage() {
                   {((fullRecipeData?.ingredients && fullRecipeData.ingredients.length > 0) || 
                     (recipeModal.item.recipe?.ingredients && recipeModal.item.recipe.ingredients.length > 0)) && (
                     <div>
-                      <h4 className="mb-3 text-base font-bold text-gray-900">🥗 Ingredients</h4>
+                      <h4 className={`mb-3 text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🥗 Ingredients</h4>
                       <ul className="space-y-2">
                         {fullRecipeData?.ingredients ? (
                           fullRecipeData.ingredients.map((ing, i) => (
                             <li key={i} className="flex items-start gap-3 p-3 bg-[#3AB1A0]/5 rounded-lg">
                               <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 shrink-0" />
                               <div className="flex-1">
-                                <span className="text-gray-800 font-medium text-sm">{ing.name}</span>
-                                <span className="text-gray-500 text-sm"> - {ing.quantity} {ing.unit}</span>
-                                {ing.remarks && <span className="text-gray-400 text-xs ml-1">({ing.remarks})</span>}
+                                <span className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{ing.name}</span>
+                                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}> - {ing.quantity} {ing.unit}</span>
+                                {ing.remarks && <span className={`text-xs ml-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>({ing.remarks})</span>}
                               </div>
                             </li>
                           ))
@@ -1271,7 +1301,7 @@ export default function UserPlanPage() {
                           recipeModal.item.recipe?.ingredients?.map((ing, i) => (
                             <li key={i} className="flex items-start gap-3 p-3 bg-[#3AB1A0]/5 rounded-lg">
                               <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 shrink-0" />
-                              <span className="text-gray-700 text-sm">{ing}</span>
+                              <span className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{ing}</span>
                             </li>
                           ))
                         )}
@@ -1283,14 +1313,14 @@ export default function UserPlanPage() {
                   {((fullRecipeData?.instructions && fullRecipeData.instructions.length > 0) || 
                     (recipeModal.item.recipe?.instructions && recipeModal.item.recipe.instructions.length > 0)) && (
                     <div>
-                      <h4 className="mb-3 text-base font-bold text-gray-900">👨‍🍳 Instructions</h4>
+                      <h4 className={`mb-3 text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>👨‍🍳 Instructions</h4>
                       <ol className="space-y-3">
                         {(fullRecipeData?.instructions || recipeModal.item.recipe?.instructions)?.map((step, i) => (
                           <li key={i} className="flex gap-3">
                             <span className="shrink-0 w-7 h-7 rounded-full bg-[#E06A26] text-white flex items-center justify-center text-xs font-bold">
                               {i + 1}
                             </span>
-                            <span className="text-gray-700 text-sm pt-0.5">{step}</span>
+                            <span className={`text-sm pt-0.5 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{step}</span>
                           </li>
                         ))}
                       </ol>
@@ -1317,10 +1347,10 @@ export default function UserPlanPage() {
                   {((fullRecipeData?.equipment && fullRecipeData.equipment.length > 0) || 
                     (recipeModal.item.recipe?.equipment && recipeModal.item.recipe.equipment.length > 0)) && (
                     <div>
-                      <h4 className="mb-2 text-sm font-bold text-gray-900">🔧 Equipment Needed</h4>
+                      <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🔧 Equipment Needed</h4>
                       <div className="flex flex-wrap gap-2">
                         {(fullRecipeData?.equipment || recipeModal.item.recipe?.equipment)?.map((eq, i) => (
-                          <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">{eq}</span>
+                          <span key={i} className={`px-3 py-1 rounded-full text-xs ${isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>{eq}</span>
                         ))}
                       </div>
                     </div>
@@ -1329,9 +1359,9 @@ export default function UserPlanPage() {
                   {/* Storage Info */}
                   {((fullRecipeData?.storage && (fullRecipeData.storage.refrigerator || fullRecipeData.storage.freezer)) || 
                     (recipeModal.item.recipe?.storage && (recipeModal.item.recipe.storage.refrigerator || recipeModal.item.recipe.storage.freezer))) && (
-                    <div className="p-4 bg-gray-50 rounded-xl">
-                      <h4 className="mb-2 text-sm font-bold text-gray-900">🧊 Storage</h4>
-                      <div className="space-y-1 text-sm text-gray-700">
+                    <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}>
+                      <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🧊 Storage</h4>
+                      <div className={`space-y-1 text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                         {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.refrigerator && (
                           <p>🥶 Refrigerator: {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.refrigerator}</p>
                         )}
@@ -1339,7 +1369,7 @@ export default function UserPlanPage() {
                           <p>❄️ Freezer: {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.freezer}</p>
                         )}
                         {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.instructions && (
-                          <p className="text-xs text-gray-500 mt-1">{(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.instructions}</p>
+                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.instructions}</p>
                         )}
                       </div>
                     </div>
@@ -1348,13 +1378,13 @@ export default function UserPlanPage() {
                   {/* Alternatives */}
                   {recipeModal.item.alternatives && recipeModal.item.alternatives.length > 0 && (
                     <div className="p-4 bg-[#3AB1A0]/10 rounded-xl">
-                      <h4 className="mb-2 text-sm font-bold text-gray-900">🔄 Alternative Options</h4>
+                      <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🔄 Alternative Options</h4>
                       <div className="space-y-2">
                         {recipeModal.item.alternatives.map((alt, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 bg-white rounded-lg">
+                          <div key={i} className={`flex items-center justify-between p-2 rounded-lg ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}>
                             <div>
-                              <p className="font-medium text-gray-800 text-sm">{alt.name}</p>
-                              <p className="text-xs text-gray-500">{alt.portion}</p>
+                              <p className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{alt.name}</p>
+                              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{alt.portion}</p>
                             </div>
                             <span className="text-sm font-semibold text-[#3AB1A0]">{alt.calories} kcal</span>
                           </div>
@@ -1365,10 +1395,10 @@ export default function UserPlanPage() {
 
                   {/* No Recipe Data Message */}
                   {!fullRecipeData && !recipeModal.item.recipe && !loadingRecipe && (
-                    <div className="py-8 text-center text-gray-500">
-                      <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <div className={`py-8 text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                      <BookOpen className={`w-12 h-12 mx-auto mb-3 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                       <p className="text-sm">No recipe details available for this food item</p>
-                      <p className="text-xs text-gray-400 mt-1">The dietitian will add recipe soon</p>
+                      <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>The dietitian will add recipe soon</p>
                     </div>
                   )}
                 </div>
@@ -1376,7 +1406,7 @@ export default function UserPlanPage() {
             </div>
             
             {/* Modal Footer - Close Button */}
-            <div className="p-4 bg-gray-50 border-t border-gray-200">
+            <div className={`p-4 border-t ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
               <button
                 onClick={closeRecipeModal}
                 className="w-full py-3 bg-[#3AB1A0] text-white rounded-xl font-bold hover:bg-[#2A9A8B] transition-colors"
@@ -1391,26 +1421,26 @@ export default function UserPlanPage() {
       {/* Alternatives Modal */}
       {alternativesModal.isOpen && alternativesModal.item.alternatives && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center">
-          <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[80vh] overflow-hidden">
-            <div className="sticky top-0 flex items-center justify-between p-4 bg-white border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900">Alternative Foods</h3>
+          <div className={`w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[80vh] overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white ring-1 ring-white/10' : 'bg-white'}`}>
+            <div className={`sticky top-0 flex items-center justify-between p-4 border-b ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
+              <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Alternative Foods</h3>
               <button 
                 onClick={() => setAlternativesModal({ item: {} as MealItem, isOpen: false })}
-                className="p-2 rounded-full hover:bg-gray-100"
+                className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className={`w-5 h-5 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`} />
               </button>
             </div>
             <div className="p-4 overflow-y-auto max-h-[60vh]">
-              <p className="mb-4 text-sm text-gray-500">
-                Instead of <span className="font-medium text-gray-700">{alternativesModal.item.name}</span>, you can have:
+              <p className={`mb-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                Instead of <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{alternativesModal.item?.name}</span>, you can have:
               </p>
               <div className="space-y-3">
-                {alternativesModal.item.alternatives.map((alt, i) => (
+                {alternativesModal.item?.alternatives?.map((alt, i) => (
                   <div key={i} className="flex items-center justify-between p-3 bg-[#DB9C6E]/10 rounded-xl">
                     <div>
-                      <p className="font-medium text-gray-800">{alt.name}</p>
-                      <p className="text-sm text-gray-500">{alt.portion}</p>
+                      <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{alt.name}</p>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{alt.portion}</p>
                     </div>
                     <span className="text-sm font-semibold text-[#E06A26]">{alt.calories} kcal</span>
                   </div>
@@ -1431,11 +1461,11 @@ export default function UserPlanPage() {
             }
           }}
         >
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <div className={`w-full max-w-lg rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col ${isDarkMode ? 'bg-gray-900 text-white ring-1 ring-white/10' : 'bg-white'}`}>
             {/* Modal Header */}
             <div className="flex items-center justify-between p-5 bg-linear-to-r from-[#DB9C6E] to-[#E06A26]">
               <div>
-                <h3 className="text-lg font-bold text-white">{getMealLabel(foodSelectorModal.meal.type)}</h3>
+                <h3 className="text-lg font-bold text-white">{foodSelectorModal.meal ? getMealLabel(foodSelectorModal.meal.type) : ''}</h3>
                 <p className="text-sm text-white/80">Select a food to view recipe</p>
               </div>
               <button 
@@ -1449,16 +1479,16 @@ export default function UserPlanPage() {
             {/* Food Items List */}
             <div className="overflow-y-auto flex-1 p-4 space-y-3">
               {/* Meal Notes */}
-              {foodSelectorModal.meal.notes && (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl mb-4">
-                  <p className="text-xs font-semibold text-yellow-700 mb-1">📝 Notes from Dietitian</p>
-                  <p className="text-sm text-yellow-800">{foodSelectorModal.meal.notes}</p>
+              {foodSelectorModal.meal?.notes && (
+                <div className={`p-4 rounded-xl mb-4 border ${isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'}`}>
+                  <p className={`text-xs font-semibold mb-1 ${isDarkMode ? 'text-yellow-200' : 'text-yellow-700'}`}>📝 Notes from Dietitian</p>
+                  <p className={`text-sm ${isDarkMode ? 'text-yellow-100' : 'text-yellow-800'}`}>{foodSelectorModal.meal?.notes}</p>
                 </div>
               )}
 
-              <p className="text-sm text-gray-500 mb-2">Tap on a food item to view its recipe:</p>
+              <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Tap on a food item to view its recipe:</p>
               
-              {foodSelectorModal.meal.items.map((item, index) => (
+              {foodSelectorModal.meal?.items.map((item, index) => (
                 <div key={item.id || index} className="space-y-2">
                   {/* Main Food Item */}
                   <button
@@ -1466,7 +1496,11 @@ export default function UserPlanPage() {
                       openRecipeModal(item);
                       setFoodSelectorModal({ meal: null, isOpen: false });
                     }}
-                    className="w-full p-4 bg-gray-50 hover:bg-[#3AB1A0]/10 rounded-xl text-left transition-colors border border-gray-100 hover:border-[#3AB1A0]/30"
+                    className={`w-full p-4 rounded-xl text-left transition-colors border hover:border-[#3AB1A0]/30 ${
+                      isDarkMode
+                        ? 'bg-black/40 border-gray-800 hover:bg-[#3AB1A0]/10'
+                        : 'bg-gray-50 border-gray-100 hover:bg-[#3AB1A0]/10'
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1474,14 +1508,14 @@ export default function UserPlanPage() {
                           <BookOpen className="w-5 h-5 text-[#3AB1A0]" />
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-800">{item.name}</p>
-                          <p className="text-xs text-gray-500">{item.portion}</p>
+                          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{item.name}</p>
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{item.portion}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-[#E06A26]">{item.calories} kcal</p>
                         {(item.protein || item.carbs || item.fats) && (
-                          <p className="text-xs text-gray-400">
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>
                             P:{item.protein || 0}g C:{item.carbs || 0}g F:{item.fats || 0}g
                           </p>
                         )}
@@ -1517,11 +1551,11 @@ export default function UserPlanPage() {
                         {item.alternatives.map((alt, altIndex) => (
                           <div 
                             key={altIndex}
-                            className="flex items-center justify-between p-2 bg-white rounded-lg"
+                            className={`flex items-center justify-between p-2 rounded-lg ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}
                           >
                             <div>
-                              <p className="text-sm font-medium text-gray-700">{alt.name}</p>
-                              <p className="text-xs text-gray-400">{alt.portion}</p>
+                              <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{alt.name}</p>
+                              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>{alt.portion}</p>
                             </div>
                             <span className="text-sm font-semibold text-[#E06A26]">{alt.calories} kcal</span>
                           </div>
@@ -1534,7 +1568,7 @@ export default function UserPlanPage() {
             </div>
             
             {/* Modal Footer */}
-            <div className="p-4 bg-gray-50 border-t border-gray-200">
+            <div className={`p-4 border-t ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
               <button
                 onClick={() => setFoodSelectorModal({ meal: null, isOpen: false })}
                 className="w-full py-3 bg-[#3AB1A0] text-white rounded-xl font-bold hover:bg-[#2A9A8B] transition-colors"
@@ -1549,19 +1583,19 @@ export default function UserPlanPage() {
       {/* Meal Completion Modal */}
       {completionModal.isOpen && completionModal.meal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center">
-          <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-hidden">
-            <div className="sticky top-0 flex items-center justify-between p-4 bg-white border-b border-gray-100">
+          <div className={`w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white ring-1 ring-white/10' : 'bg-white'}`}>
+            <div className={`sticky top-0 flex items-center justify-between p-4 border-b ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Complete Meal</h3>
-                <p className="text-sm text-gray-500">
-                  {getMealLabel(completionModal.meal.type)} • {completionModal.meal.time}
+                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Complete Meal</h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                  {completionModal.meal ? getMealLabel(completionModal.meal.type) : ''} • {completionModal.meal?.time}
                 </p>
               </div>
               <button 
                 onClick={closeCompletionModal}
-                className="p-2 rounded-full hover:bg-gray-100"
+                className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className={`w-5 h-5 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`} />
               </button>
             </div>
             
@@ -1569,20 +1603,20 @@ export default function UserPlanPage() {
               {/* Meal Type - Auto fetched */}
               <div className="bg-linear-to-r from-[#3AB1A0]/10 to-[#E06A26]/10 rounded-xl p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-12 h-12 text-2xl bg-white shadow-sm rounded-2xl">
-                    {getMealIcon(completionModal.meal.type)}
+                  <div className={`flex items-center justify-center w-12 h-12 text-2xl shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}>
+                    {completionModal.meal ? getMealIcon(completionModal.meal.type) : ''}
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Meal Type</p>
-                    <p className="font-semibold text-gray-900">{getMealLabel(completionModal.meal.type)}</p>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Meal Type</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{completionModal.meal ? getMealLabel(completionModal.meal.type) : ''}</p>
                   </div>
                 </div>
-                {completionModal.meal.items.length > 0 && (
+                {completionModal.meal?.items && completionModal.meal?.items.length > 0 && (
                   <div className="pt-3 mt-3 border-t border-gray-200/50">
-                    <p className="mb-2 text-xs text-gray-500">Planned foods:</p>
+                    <p className={`mb-2 text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Planned foods:</p>
                     <div className="flex flex-wrap gap-2">
-                      {completionModal.meal.items.map((item, i) => (
-                        <span key={i} className="px-2 py-1 text-xs text-gray-700 bg-white rounded-full shadow-sm">
+                      {completionModal.meal?.items.map((item, i) => (
+                        <span key={i} className={`px-2 py-1 text-xs rounded-full shadow-sm ${isDarkMode ? 'text-gray-200 bg-gray-900 ring-1 ring-white/10' : 'text-gray-700 bg-white'}`}>
                           {item.name}
                         </span>
                       ))}
@@ -1593,26 +1627,30 @@ export default function UserPlanPage() {
 
               {/* Notes - Optional */}
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">
+                <label className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                   Notes <span className="text-gray-400">(Optional)</span>
                 </label>
                 <textarea
                   value={completionNotes}
                   onChange={(e) => setCompletionNotes(e.target.value)}
                   placeholder="Any notes about this meal? (e.g., substitutions made, how you felt)"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent resize-none"
+                  className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent resize-none ${
+                    isDarkMode
+                      ? 'border border-gray-800 bg-gray-950 text-white placeholder:text-gray-500'
+                      : 'border border-gray-200'
+                  }`}
                   rows={3}
                   maxLength={300}
                 />
-                <p className="mt-1 text-xs text-right text-gray-400">{completionNotes.length}/300</p>
+                <p className={`mt-1 text-xs text-right ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{completionNotes.length}/300</p>
               </div>
 
               {/* Image Upload - Required */}
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">
+                <label className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                   Meal Photo <span className="text-red-500">*</span>
                 </label>
-                <p className="mb-3 text-xs text-gray-500">
+                <p className={`mb-3 text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                   Please upload a photo of your meal as proof of completion
                 </p>
                 
@@ -1627,9 +1665,9 @@ export default function UserPlanPage() {
                 
                 {completionImagePreview ? (
                   <div className="relative">
-                    <div className="relative w-full h-48 overflow-hidden bg-gray-100 rounded-xl">
+                    <div className={`relative w-full h-48 overflow-hidden rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
                       <Image
-                        src={completionImagePreview}
+                        src={completionImagePreview as string}
                         alt="Meal preview"
                         fill
                         className="object-cover"
@@ -1649,7 +1687,9 @@ export default function UserPlanPage() {
                     </button>
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="absolute bottom-2 right-2 px-3 py-1.5 bg-white/90 text-gray-700 rounded-lg text-sm font-medium hover:bg-white transition-colors flex items-center gap-1"
+                      className={`absolute bottom-2 right-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                        isDarkMode ? 'bg-black/60 text-white hover:bg-black/70' : 'bg-white/90 text-gray-700 hover:bg-white'
+                      }`}
                     >
                       <Camera className="w-4 h-4" />
                       Change
@@ -1658,14 +1698,16 @@ export default function UserPlanPage() {
                 ) : (
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-48 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-3 hover:border-[#3AB1A0] hover:bg-[#3AB1A0]/5 transition-all"
+                    className={`w-full h-48 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 hover:border-[#3AB1A0] hover:bg-[#3AB1A0]/5 transition-all ${
+                      isDarkMode ? 'border-gray-700' : 'border-gray-300'
+                    }`}
                   >
                     <div className="w-16 h-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
                       <Camera className="w-8 h-8 text-[#3AB1A0]" />
                     </div>
                     <div className="text-center">
-                      <p className="font-medium text-gray-700">Take or upload a photo</p>
-                      <p className="text-sm text-gray-500">Tap to add meal photo</p>
+                      <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>Take or upload a photo</p>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Tap to add meal photo</p>
                     </div>
                   </button>
                 )}
@@ -1673,7 +1715,7 @@ export default function UserPlanPage() {
             </div>
 
             {/* Submit Button */}
-            <div className="p-4 bg-white border-t border-gray-100">
+            <div className={`p-4 border-t ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-100'}`}>
               <button
                 onClick={handleSubmitCompletion}
                 disabled={isSubmitting || !completionImage}
@@ -1705,7 +1747,7 @@ export default function UserPlanPage() {
           onClick={() => setShowDatePicker(false)}
         >
           <div 
-            className="bg-white w-full max-w-sm mx-4 rounded-3xl shadow-2xl overflow-hidden"
+            className={`w-full max-w-sm mx-4 rounded-3xl shadow-2xl overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white ring-1 ring-white/10' : 'bg-white'}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -1721,19 +1763,23 @@ export default function UserPlanPage() {
             
             {/* Date Input */}
             <div className="p-6 space-y-4">
-              <p className="text-sm text-gray-600 text-center">
+              <p className={`text-sm text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 Choose a date to view your meal plan
               </p>
               <input
                 type="date"
                 value={datePickerValue}
                 onChange={(e) => setDatePickerValue(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-700 text-center text-lg font-medium focus:outline-none focus:border-[#3AB1A0] transition-colors"
+                className={`w-full px-4 py-3 border-2 rounded-xl text-center text-lg font-medium focus:outline-none focus:border-[#3AB1A0] transition-colors ${
+                  isDarkMode ? 'border-gray-800 bg-gray-950 text-white' : 'border-gray-200 text-gray-700'
+                }`}
               />
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setShowDatePicker(false)}
-                  className="flex-1 py-3 border-2 border-gray-200 text-gray-600 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+                  className={`flex-1 py-3 border-2 rounded-xl font-semibold transition-colors ${
+                    isDarkMode ? 'border-gray-700 text-gray-200 hover:bg-white/10' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
                 >
                   Cancel
                 </button>

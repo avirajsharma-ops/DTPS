@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import PageTransition from "@/components/animations/PageTransition";
+import { useTheme } from "@/contexts/ThemeContext";
 import { 
   ArrowLeft, 
   Save, 
@@ -76,6 +78,7 @@ const gutIssueOptions = ["Bloating", "Constipation", "Diarrhea", "Acidity", "IBS
 export default function MedicalInfoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -319,22 +322,22 @@ export default function MedicalInfoPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className={`fixed inset-0 ${isDarkMode ? 'bg-gray-950' : 'bg-white'} flex items-center justify-center z-[100]`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-green-50 via-white to-green-50">
+    <div className={isDarkMode ? "min-h-screen bg-[#0a0a0a]" : "min-h-screen bg-linear-to-br from-green-50 via-white to-green-50"}>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <div className={isDarkMode ? "sticky top-0 z-10 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#1f1f1f]" : "sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100"}>
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Link href="/user/profile" className="p-2 -ml-2 rounded-xl hover:bg-green-50 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <Link href="/user/profile" className={isDarkMode ? "p-2 -ml-2 rounded-xl hover:bg-white/10 transition-colors" : "p-2 -ml-2 rounded-xl hover:bg-green-50 transition-colors"}>
+              <ArrowLeft className={isDarkMode ? "w-5 h-5 text-gray-200" : "w-5 h-5 text-gray-600"} />
             </Link>
-            <h1 className="text-lg font-bold text-gray-900">Medical Information</h1>
+            <h1 className={isDarkMode ? "text-lg font-bold text-white" : "text-lg font-bold text-gray-900"}>Medical Information</h1>
           </div>
           <button 
             onClick={handleSave}
@@ -358,7 +361,9 @@ export default function MedicalInfoPage() {
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   data.bloodGroup === group
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    : isDarkMode
+                      ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
                 }`}
               >
                 {group}
@@ -378,7 +383,9 @@ export default function MedicalInfoPage() {
                   className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                     data.medicalConditions.includes(condition)
                       ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                      : isDarkMode
+                        ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
                   }`}
                 >
                   {condition}
@@ -391,7 +398,9 @@ export default function MedicalInfoPage() {
                 value={customCondition}
                 onChange={(e) => setCustomCondition(e.target.value)}
                 placeholder="Add other condition..."
-                className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className={isDarkMode
+                  ? "flex-1 px-4 py-2.5 bg-[#111] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  : "flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"}
                 onKeyDown={(e) => e.key === 'Enter' && addCustomCondition()}
               />
               <button
@@ -415,7 +424,9 @@ export default function MedicalInfoPage() {
                   className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                     data.allergies.includes(allergy)
                       ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                      : isDarkMode
+                        ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
                   }`}
                 >
                   {allergy}
@@ -428,7 +439,9 @@ export default function MedicalInfoPage() {
                 value={customAllergy}
                 onChange={(e) => setCustomAllergy(e.target.value)}
                 placeholder="Add other allergy..."
-                className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className={isDarkMode
+                  ? "flex-1 px-4 py-2.5 bg-[#111] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  : "flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"}
                 onKeyDown={(e) => e.key === 'Enter' && addCustomAllergy()}
               />
               <button
@@ -451,7 +464,9 @@ export default function MedicalInfoPage() {
                 className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                   data.gutIssues.includes(issue)
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    : isDarkMode
+                      ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
                 }`}
               >
                 {issue}
@@ -495,7 +510,9 @@ export default function MedicalInfoPage() {
                       className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                         data.menstrualCycle === cycle
                           ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                          : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                          : isDarkMode
+                            ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                            : "bg-gray-50 text-gray-600 hover:bg-green-50"
                       }`}
                     >
                       {cycle.charAt(0).toUpperCase() + cycle.slice(1)}
@@ -514,7 +531,9 @@ export default function MedicalInfoPage() {
                       className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                         data.bloodFlow === flow
                           ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
-                          : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                          : isDarkMode
+                            ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                            : "bg-gray-50 text-gray-600 hover:bg-green-50"
                       }`}
                     >
                       {flow.charAt(0).toUpperCase() + flow.slice(1)}
@@ -536,7 +555,9 @@ export default function MedicalInfoPage() {
                 onChange={(e) => setData({ ...data, medication: e.target.value })}
                 placeholder="List any medications you are currently taking..."
                 rows={2}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                className={isDarkMode
+                  ? "w-full px-4 py-3 bg-[#111] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  : "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"}
               />
             </div>
             <div className="space-y-2">
@@ -546,7 +567,9 @@ export default function MedicalInfoPage() {
                 onChange={(e) => setData({ ...data, medicalHistory: e.target.value })}
                 placeholder="Any past surgeries, hospitalizations, or major health events..."
                 rows={2}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                className={isDarkMode
+                  ? "w-full px-4 py-3 bg-[#111] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  : "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"}
               />
             </div>
             <div className="space-y-2">
@@ -556,7 +579,9 @@ export default function MedicalInfoPage() {
                 onChange={(e) => setData({ ...data, familyHistory: e.target.value })}
                 placeholder="Any family history of diseases or conditions..."
                 rows={2}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                className={isDarkMode
+                  ? "w-full px-4 py-3 bg-[#111] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  : "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"}
               />
             </div>
           </div>
@@ -579,19 +604,21 @@ export default function MedicalInfoPage() {
               <button
                 onClick={handleFileSelect}
                 disabled={uploading}
-                className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl hover:border-green-500 hover:bg-green-50/50 transition-all flex flex-col items-center justify-center gap-2"
+                className={isDarkMode
+                  ? "w-full py-8 border-2 border-dashed border-[#2a2a2a] rounded-xl hover:border-green-500 hover:bg-white/5 transition-all flex flex-col items-center justify-center gap-2"
+                  : "w-full py-8 border-2 border-dashed border-gray-300 rounded-xl hover:border-green-500 hover:bg-green-50/50 transition-all flex flex-col items-center justify-center gap-2"}
               >
-                <Upload className="w-8 h-8 text-gray-400" />
-                <span className="text-sm text-gray-500">Click to upload report</span>
-                <span className="text-xs text-gray-400">JPEG, PNG, WebP or PDF (Max 10MB)</span>
+                <Upload className={isDarkMode ? "w-8 h-8 text-gray-500" : "w-8 h-8 text-gray-400"} />
+                <span className={isDarkMode ? "text-sm text-gray-300" : "text-sm text-gray-500"}>Click to upload report</span>
+                <span className={isDarkMode ? "text-xs text-gray-500" : "text-xs text-gray-400"}>JPEG, PNG, WebP or PDF (Max 10MB)</span>
               </button>
             ) : (
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+              <div className={isDarkMode ? "p-4 bg-[#111] rounded-xl border border-[#2a2a2a] space-y-3" : "p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3"}>
                 <div className="flex items-center gap-3">
                   <FileText className="w-8 h-8 text-green-500" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-700">{pendingFile.name}</p>
-                    <p className="text-xs text-gray-500">{(pendingFile.size / 1024).toFixed(1)} KB</p>
+                    <p className={isDarkMode ? "text-sm font-medium text-gray-200" : "text-sm font-medium text-gray-700"}>{pendingFile.name}</p>
+                    <p className={isDarkMode ? "text-xs text-gray-400" : "text-xs text-gray-500"}>{(pendingFile.size / 1024).toFixed(1)} KB</p>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -601,7 +628,9 @@ export default function MedicalInfoPage() {
                     value={reportName}
                     onChange={(e) => setReportName(e.target.value)}
                     placeholder="Enter report name..."
-                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className={isDarkMode
+                      ? "w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      : "w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"}
                   />
                 </div>
                 <div className="space-y-2">
@@ -609,7 +638,9 @@ export default function MedicalInfoPage() {
                   <select
                     value={reportCategory}
                     onChange={(e) => setReportCategory(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className={isDarkMode
+                      ? "w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#2a2a2a] rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                      : "w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"}
                   >
                     {reportCategories.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -638,31 +669,31 @@ export default function MedicalInfoPage() {
             {/* Uploaded Reports - Table Format */}
             {data.reports.length > 0 && (
               <div className="space-y-3">
-                <p className="text-sm font-medium text-gray-600">Uploaded Reports ({data.reports.length})</p>
+                <p className={isDarkMode ? "text-sm font-medium text-gray-300" : "text-sm font-medium text-gray-600"}>Uploaded Reports ({data.reports.length})</p>
                 <div className="overflow-x-auto -mx-1">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left py-2.5 px-3 text-gray-600 font-semibold text-xs">S.No</th>
-                        <th className="text-left py-2.5 px-3 text-gray-600 font-semibold text-xs">Name</th>
-                        <th className="text-left py-2.5 px-3 text-gray-600 font-semibold text-xs">Category</th>
-                        <th className="text-left py-2.5 px-3 text-gray-600 font-semibold text-xs">Date</th>
-                        <th className="text-center py-2.5 px-3 text-gray-600 font-semibold text-xs">Actions</th>
+                      <tr className={isDarkMode ? "border-b border-[#2a2a2a] bg-[#111]" : "border-b border-gray-200 bg-gray-50"}>
+                        <th className={isDarkMode ? "text-left py-2.5 px-3 text-gray-300 font-semibold text-xs" : "text-left py-2.5 px-3 text-gray-600 font-semibold text-xs"}>S.No</th>
+                        <th className={isDarkMode ? "text-left py-2.5 px-3 text-gray-300 font-semibold text-xs" : "text-left py-2.5 px-3 text-gray-600 font-semibold text-xs"}>Name</th>
+                        <th className={isDarkMode ? "text-left py-2.5 px-3 text-gray-300 font-semibold text-xs" : "text-left py-2.5 px-3 text-gray-600 font-semibold text-xs"}>Category</th>
+                        <th className={isDarkMode ? "text-left py-2.5 px-3 text-gray-300 font-semibold text-xs" : "text-left py-2.5 px-3 text-gray-600 font-semibold text-xs"}>Date</th>
+                        <th className={isDarkMode ? "text-center py-2.5 px-3 text-gray-300 font-semibold text-xs" : "text-center py-2.5 px-3 text-gray-600 font-semibold text-xs"}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.reports.map((report, index) => (
-                        <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-2.5 px-3 text-gray-500 text-xs">{index + 1}</td>
+                        <tr key={index} className={isDarkMode ? "border-b border-[#2a2a2a] hover:bg-white/5" : "border-b border-gray-100 hover:bg-gray-50"}>
+                          <td className={isDarkMode ? "py-2.5 px-3 text-gray-400 text-xs" : "py-2.5 px-3 text-gray-500 text-xs"}>{index + 1}</td>
                           <td className="py-2.5 px-3">
-                            <p className="text-gray-800 font-medium text-xs truncate max-w-30">{getReportName(report)}</p>
+                            <p className={isDarkMode ? "text-gray-200 font-medium text-xs truncate max-w-30" : "text-gray-800 font-medium text-xs truncate max-w-30"}>{getReportName(report)}</p>
                           </td>
                           <td className="py-2.5 px-3">
                             <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-medium">
                               {report.category || 'Medical Report'}
                             </span>
                           </td>
-                          <td className="py-2.5 px-3 text-gray-500 text-xs">
+                          <td className={isDarkMode ? "py-2.5 px-3 text-gray-400 text-xs" : "py-2.5 px-3 text-gray-500 text-xs"}>
                             {getReportDate(report)}
                           </td>
                           <td className="py-2.5 px-3">
@@ -757,13 +788,14 @@ export default function MedicalInfoPage() {
 }
 
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
+  const { isDarkMode } = useTheme();
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div className={isDarkMode ? "bg-[#1a1a1a] rounded-2xl p-5 shadow-sm border border-[#2a2a2a]" : "bg-white rounded-2xl p-5 shadow-sm border border-gray-100"}>
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
           <Icon className="w-5 h-5 text-white" />
         </div>
-        <h3 className="font-bold text-gray-900">{title}</h3>
+        <h3 className={isDarkMode ? "font-bold text-white" : "font-bold text-gray-900"}>{title}</h3>
       </div>
       {children}
     </div>

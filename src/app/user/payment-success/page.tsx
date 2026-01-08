@@ -177,7 +177,7 @@ export default function PaymentSuccessPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-linear-to-br from-green-50 to-teal-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-white dark:bg-gray-950 flex items-center justify-center z-[100]">
         <div className="text-center">
           <SpoonGifLoader size="lg" />
           <p className="text-gray-600 mt-4">Loading payment details...</p>

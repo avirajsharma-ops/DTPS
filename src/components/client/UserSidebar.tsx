@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { X, LayoutDashboard, Heart, Utensils, TrendingUp, Calendar, MessageCircle, CreditCard, User, Settings, HelpCircle, LogOut, ShoppingBag, BookOpen, Package, ChevronRight, Bell } from 'lucide-react';
 import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ServicePlan {
   _id: string;
@@ -30,6 +31,7 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
   const pathname = usePathname();
   const [services, setServices] = useState<ServicePlan[]>([]);
   const { counts } = useUnreadCountsSafe();
+  const { isDarkMode } = useTheme();
 
   // Fetch services when sidebar opens
   useEffect(() => {
@@ -110,9 +112,17 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
       />
       
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 flex flex-col transform bg-white shadow-2xl w-72 transition-all duration-700 ease-in-out motion-reduce:duration-300 motion-reduce:ease-out">
+      <div
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col transform shadow-2xl w-72 transition-all duration-700 ease-in-out motion-reduce:duration-300 motion-reduce:ease-out ${
+          isDarkMode ? 'bg-gray-950' : 'bg-white'
+        }`}
+      >
         {/* Header with Logo */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 animate-in fade-in slide-in-from-top-2 duration-500 delay-75">
+        <div
+          className={`flex items-center justify-between px-4 py-4 border-b animate-in fade-in slide-in-from-top-2 duration-500 delay-75 ${
+            isDarkMode ? 'border-gray-800' : 'border-gray-100'
+          }`}
+        >
           <div className="flex items-center gap-2">
             <div className="h-10 w-10 rounded-xl overflow-hidden bg-[#3AB1A0]/10 flex items-center justify-center">
               <Image
@@ -127,14 +137,20 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
           </div>
           <button 
             onClick={onClose}
-            className="flex items-center justify-center w-8 h-8 transition-colors rounded-full hover:bg-gray-100 active:scale-95"
+            className={`flex items-center justify-center w-8 h-8 transition-colors rounded-full active:scale-95 ${
+              isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'
+            }`}
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className={`w-5 h-5 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`} />
           </button>
         </div>
 
         {/* User Info */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 animate-in fade-in slide-in-from-top-2 duration-500 delay-100">
+        <div
+          className={`flex items-center gap-3 px-4 py-4 border-b animate-in fade-in slide-in-from-top-2 duration-500 delay-100 ${
+            isDarkMode ? 'border-gray-800' : 'border-gray-100'
+          }`}
+        >
           <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center">
             {session?.user?.avatar ? (
               <img 
@@ -147,8 +163,8 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
-            <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+            <p className={`text-sm font-semibold truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{userName}</p>
+            <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{userEmail}</p>
           </div>
         
         </div>
@@ -169,10 +185,16 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
                 className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 active:scale-[0.98] ${
                   isActive 
                     ? 'bg-[#3AB1A0]/10 text-[#E06A26]' 
-                    : 'text-gray-700 hover:bg-gray-50'
+                    : isDarkMode
+                      ? 'text-gray-200 hover:bg-white/10'
+                      : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                <Icon className={`h-5 w-5 transition-colors ${isActive ? 'text-[#E06A26]' : 'text-gray-400'}`} />
+                <Icon
+                  className={`h-5 w-5 transition-colors ${
+                    isActive ? 'text-[#E06A26]' : isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                  }`}
+                />
                 <span className={`flex-1 text-sm ${isActive ? 'font-semibold' : 'font-medium'}`}>
                   {item.label}
                 </span>
@@ -187,10 +209,16 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
         </nav>
 
         {/* Sign Out */}
-        <div className="p-4 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
+        <div
+          className={`p-4 border-t animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200 ${
+            isDarkMode ? 'border-gray-800' : 'border-gray-100'
+          }`}
+        >
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 w-full px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 active:scale-[0.98]"
+            className={`flex items-center gap-3 w-full px-4 py-3 text-red-500 rounded-xl transition-all duration-200 active:scale-[0.98] ${
+              isDarkMode ? 'hover:bg-red-500/10' : 'hover:bg-red-50'
+            }`}
           >
             <LogOut className="w-5 h-5" />
             <span className="text-sm font-medium">Sign Out</span>

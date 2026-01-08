@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -101,10 +102,26 @@ export default function ClientSignUpPage() {
         throw new Error(result.error || 'Registration failed');
       }
 
-      setSuccess('Account created successfully! Redirecting to onboarding...');
-      setTimeout(() => {
-        router.push('/user/onboarding');
-      }, 2000);
+      setSuccess('Account created successfully! Logging you in...');
+      
+      // Auto-login the user after successful registration
+      const signInResult = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        // If auto-login fails, redirect to login page
+        setError('Account created but auto-login failed. Please sign in manually.');
+        setTimeout(() => {
+          router.push('/client-auth/signin');
+        }, 2000);
+        return;
+      }
+
+      // Redirect to onboarding after successful auto-login
+      router.push('/user/onboarding');
 
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An unexpected error occurred');

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { ResponsiveLayout } from '@/components/client/layouts';
+import PageTransition from '@/components/animations/PageTransition';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +56,7 @@ interface DayLog {
 
 export default function UserFoodLogPage() {
   const { data: session } = useSession();
+  const { isDarkMode } = useTheme();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [dayLog, setDayLog] = useState<DayLog | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -176,7 +179,8 @@ export default function UserFoodLogPage() {
   const mealOrder = ['breakfast', 'lunch', 'snack', 'dinner'];
 
   return (
-    <ResponsiveLayout 
+    <PageTransition>
+      <ResponsiveLayout 
       title="Food Log" 
       subtitle={format(selectedDate, 'EEEE, MMMM d')}
       headerAction={
@@ -335,5 +339,6 @@ export default function UserFoodLogPage() {
         </div>
       </div>
     </ResponsiveLayout>
+    </PageTransition>
   );
 }

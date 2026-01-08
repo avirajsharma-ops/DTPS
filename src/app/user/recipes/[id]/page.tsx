@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Clock, Users, Flame, ChefHat, Bookmark, Lightbulb } from 'lucide-react';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Recipe {
   _id: string;
@@ -30,6 +31,7 @@ interface Recipe {
 export default function RecipeDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
@@ -56,7 +58,7 @@ export default function RecipeDetailPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -64,9 +66,9 @@ export default function RecipeDetailPage() {
 
   if (!recipe) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className={`flex items-center justify-center min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="text-center">
-          <p className="text-gray-500 mb-4">Recipe not found</p>
+          <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'} mb-4`}>Recipe not found</p>
           <button
             onClick={() => router.back()}
             className="px-4 py-2 bg-[#3AB1A0] text-white rounded-lg"
@@ -79,24 +81,24 @@ export default function RecipeDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-white to-gray-50 pb-24">
+    <div className={`min-h-screen pb-24 ${isDarkMode ? 'bg-gray-900' : 'bg-linear-to-b from-white to-gray-50'}`}>
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <div className={`sticky top-0 z-40 backdrop-blur-sm border-b ${isDarkMode ? 'bg-gray-900/80 border-gray-800' : 'bg-white/95 border-gray-100'}`}>
         <div className="flex items-center justify-between px-4 py-4 max-w-4xl mx-auto w-full">
           <button
             onClick={() => router.back()}
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors"
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-[#3AB1A0]/10'}`}
           >
             <ArrowLeft className="w-5 h-5 text-[#3AB1A0]" />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Recipe Details</h1>
+          <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recipe Details</h1>
           <button
             onClick={() => setIsSaved(!isSaved)}
             className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
-              isSaved ? 'bg-[#E06A26]/10' : 'hover:bg-gray-100'
+              isSaved ? 'bg-[#E06A26]/10' : isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'
             }`}
           >
-            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-[#E06A26] text-[#E06A26]' : 'text-gray-400'}`} />
+            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-[#E06A26] text-[#E06A26]' : isDarkMode ? 'text-gray-300' : 'text-gray-400'}`} />
           </button>
         </div>
       </div>
@@ -112,7 +114,7 @@ export default function RecipeDetailPage() {
               className="w-full h-full object-cover"
             />
             {recipe.difficulty && (
-              <div className="absolute top-4 right-4 px-3 py-1 rounded-lg bg-white/95 text-[#E06A26] font-semibold text-xs">
+              <div className={`absolute top-4 right-4 px-3 py-1 rounded-lg font-semibold text-xs ${isDarkMode ? 'bg-gray-900/80 text-[#E06A26]' : 'bg-white/95 text-[#E06A26]'}`}>
                 {recipe.difficulty.toUpperCase()}
               </div>
             )}
@@ -126,46 +128,46 @@ export default function RecipeDetailPage() {
               {recipe.category || 'Recipe'}
             </span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{recipe.name}</h2>
-          <p className="text-gray-600 text-base leading-relaxed">{recipe.description}</p>
+          <h2 className={`text-3xl sm:text-4xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{recipe.name}</h2>
+          <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-base leading-relaxed`}>{recipe.description}</p>
         </div>
 
         {/* Meta Info Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
           {recipe.prepTime && (
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+            <div className={`rounded-xl p-4 shadow-sm border text-center ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
               <Clock className="w-5 h-5 text-[#3AB1A0] mx-auto mb-2" />
-              <p className="text-xs text-gray-500 mb-1">Prep Time</p>
-              <p className="font-bold text-gray-900 text-sm">{recipe.prepTime}</p>
+              <p className={`text-xs mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Prep Time</p>
+              <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{recipe.prepTime}</p>
             </div>
           )}
           {recipe.cookTime && (
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+            <div className={`rounded-xl p-4 shadow-sm border text-center ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
               <ChefHat className="w-5 h-5 text-[#DB9C6E] mx-auto mb-2" />
-              <p className="text-xs text-gray-500 mb-1">Cook Time</p>
-              <p className="font-bold text-gray-900 text-sm">{recipe.cookTime}</p>
+              <p className={`text-xs mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Cook Time</p>
+              <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{recipe.cookTime}</p>
             </div>
           )}
           {recipe.servings && (
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+            <div className={`rounded-xl p-4 shadow-sm border text-center ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
               <Users className="w-5 h-5 text-[#3AB1A0] mx-auto mb-2" />
-              <p className="text-xs text-gray-500 mb-1">Servings</p>
-              <p className="font-bold text-gray-900 text-sm">{recipe.servings}</p>
+              <p className={`text-xs mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Servings</p>
+              <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{recipe.servings}</p>
             </div>
           )}
           {recipe.calories && (
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+            <div className={`rounded-xl p-4 shadow-sm border text-center ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
               <Flame className="w-5 h-5 text-[#E06A26] mx-auto mb-2" />
-              <p className="text-xs text-gray-500 mb-1">Calories</p>
-              <p className="font-bold text-gray-900 text-sm">{recipe.calories}</p>
+              <p className={`text-xs mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Calories</p>
+              <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{recipe.calories}</p>
             </div>
           )}
         </div>
 
         {/* Serving Multiplier */}
         {recipe.servings && (
-          <div className="mb-8 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <p className="text-sm font-bold text-gray-900 mb-4">Adjust Servings</p>
+          <div className={`mb-8 rounded-2xl p-6 shadow-sm border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <p className={`text-sm font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Adjust Servings</p>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setServingMultiplier(Math.max(0.5, servingMultiplier - 0.5))}
@@ -174,8 +176,8 @@ export default function RecipeDetailPage() {
                 −
               </button>
               <span className="flex-1 text-center">
-                <p className="font-bold text-gray-900 text-lg">{servingMultiplier}×</p>
-                <p className="text-sm text-gray-500">{Math.round(recipe.servings * servingMultiplier)} servings</p>
+                <p className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{servingMultiplier}×</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{Math.round(recipe.servings * servingMultiplier)} servings</p>
               </span>
               <button
                 onClick={() => setServingMultiplier(servingMultiplier + 0.5)}
@@ -189,15 +191,18 @@ export default function RecipeDetailPage() {
 
         {/* Ingredients */}
         {recipe.ingredients && recipe.ingredients.length > 0 && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-5">Ingredients</h3>
+          <div className={`rounded-2xl p-6 shadow-sm border mb-8 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <h3 className={`text-xl font-bold mb-5 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Ingredients</h3>
             <ul className="space-y-3">
               {recipe.ingredients.map((ingredient, index) => (
-                <li key={index} className="flex items-center gap-3 p-3 bg-linear-to-r from-[#3AB1A0]/5 to-transparent rounded-lg border border-[#3AB1A0]/10">
+                <li
+                  key={index}
+                  className={`flex items-center gap-3 p-3 rounded-lg border ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-linear-to-r from-[#3AB1A0]/5 to-transparent border-[#3AB1A0]/10'}`}
+                >
                   <input type="checkbox" className="w-5 h-5 text-[#3AB1A0] rounded cursor-pointer accent-[#3AB1A0]" />
                   <span className="flex-1">
-                    <span className="font-medium text-gray-900">{ingredient.name}</span>
-                    <span className="text-gray-500 text-sm ml-1">
+                    <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{ingredient.name}</span>
+                    <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'} text-sm ml-1`}>
                       {Math.round(parseFloat(ingredient.quantity) * servingMultiplier * 100) / 100} {ingredient.unit}
                     </span>
                   </span>
@@ -209,15 +214,15 @@ export default function RecipeDetailPage() {
 
         {/* Instructions */}
         {recipe.instructions && recipe.instructions.length > 0 && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-5">Instructions</h3>
+          <div className={`rounded-2xl p-6 shadow-sm border mb-8 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <h3 className={`text-xl font-bold mb-5 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Instructions</h3>
             <ol className="space-y-4">
               {recipe.instructions.map((instruction, index) => (
                 <li key={index} className="flex gap-4">
                   <span className="shrink-0 w-8 h-8 rounded-full bg-[#3AB1A0] text-white flex items-center justify-center font-bold text-sm">
                     {index + 1}
                   </span>
-                  <span className="text-gray-700 pt-0.5 text-sm leading-relaxed">{instruction}</span>
+                  <span className={`${isDarkMode ? 'text-gray-200' : 'text-gray-700'} pt-0.5 text-sm leading-relaxed`}>{instruction}</span>
                 </li>
               ))}
             </ol>
@@ -229,11 +234,11 @@ export default function RecipeDetailPage() {
           <div className="bg-[#DB9C6E]/10 rounded-2xl p-6 shadow-sm border border-[#DB9C6E]/20 mb-8">
             <div className="flex items-start gap-3 mb-4">
               <Lightbulb className="w-5 h-5 text-[#DB9C6E] shrink-0 mt-0.5" />
-              <h3 className="text-lg font-bold text-gray-900">Cooking Tips</h3>
+              <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Cooking Tips</h3>
             </div>
             <ul className="space-y-2">
               {recipe.tips.map((tip, index) => (
-                <li key={index} className="text-gray-700 text-sm">
+                <li key={index} className={`${isDarkMode ? 'text-gray-200' : 'text-gray-700'} text-sm`}>
                   • {tip}
                 </li>
               ))}
@@ -243,31 +248,31 @@ export default function RecipeDetailPage() {
 
         {/* Nutrition Info */}
         {recipe.nutrition && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-5">Nutrition Information</h3>
+          <div className={`rounded-2xl p-6 shadow-sm border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <h3 className={`text-xl font-bold mb-5 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Nutrition Information</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {recipe.nutrition.protein && (
                 <div className="p-4 bg-[#3AB1A0]/10 rounded-xl border border-[#3AB1A0]">
-                  <p className="text-xs font-bold text-gray-700 mb-1">PROTEIN</p>
-                  <p className="text-2xl font-bold text-gray-700">{recipe.nutrition.protein}g</p>
+                  <p className={`text-xs font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>PROTEIN</p>
+                  <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{recipe.nutrition.protein}g</p>
                 </div>
               )}
               {recipe.nutrition.carbs && (
                 <div className="p-4 bg-[#3AB1A0]/10 rounded-xl border border-[#3AB1A0]">
-                  <p className="text-xs font-bold text-gray-700 mb-1">CARBS</p>
-                  <p className="text-2xl font-bold text-gray-700">{recipe.nutrition.carbs}g</p>
+                  <p className={`text-xs font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>CARBS</p>
+                  <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{recipe.nutrition.carbs}g</p>
                 </div>
               )}
               {recipe.nutrition.fat && (
                 <div className="p-4 bg-[#3AB1A0]/10 rounded-xl border border-[#3AB1A0]">
-                  <p className="text-xs font-bold text-gray-700 mb-1">FAT</p>
-                  <p className="text-2xl font-bold text-gray-700">{recipe.nutrition.fat}g</p>
+                  <p className={`text-xs font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>FAT</p>
+                  <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{recipe.nutrition.fat}g</p>
                 </div>
               )}
               {recipe.nutrition.fiber && (
                 <div className="p-4 bg-[#3AB1A0]/10 rounded-xl border border-[#3AB1A0]">
-                  <p className="text-xs font-bold text-gray-700 mb-1">FIBER</p>
-                  <p className="text-2xl font-bold text-gray-700">{recipe.nutrition.fiber}g</p>
+                  <p className={`text-xs font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>FIBER</p>
+                  <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{recipe.nutrition.fiber}g</p>
                 </div>
               )}
             </div>

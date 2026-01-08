@@ -1,11 +1,36 @@
 import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { UserRole } from '@/types';
+
+// Public routes that should completely bypass middleware auth
+const publicUserRoutes = [
+  '/user/forget-password',
+  '/user/reset-password',
+];
+
+// Check if the path is a public user route
+function isPublicUserRoute(pathname: string): boolean {
+  return publicUserRoutes.some(route => pathname.startsWith(route));
+}
 
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
+    const fullUrl = req.nextUrl.href;
+
+    // If it's a public user route, just pass through with pathname and URL headers
+    if (isPublicUserRoute(pathname)) {
+      const response = NextResponse.next();
+      response.headers.set('x-pathname', pathname);
+      response.headers.set('x-url', fullUrl);
+      return response;
+    }
+
+    // If no token and not a public route, the authorized callback will handle redirect
+    if (!token) {
+      return NextResponse.next();
+    }
 
     // Normalize role to lowercase for comparison
     const userRole = token?.role?.toLowerCase();
@@ -56,9 +81,8 @@ export default withAuth(
     }
     
     // Client/User routes - only for clients (NOT for admin or dietitian)
-    // Skip auth routes that are under /user but should be publicly accessible
-    const isUserPublicRoute = pathname === '/user/forget-password' || pathname === '/user/reset-password';
-    if (!isUserPublicRoute && (pathname.startsWith('/user') || pathname.startsWith('/dashboard/client') || pathname.startsWith('/client-dashboard'))) {
+    // Public user routes are already handled above, so we can safely check all /user routes here
+    if (pathname.startsWith('/user') || pathname.startsWith('/dashboard/client') || pathname.startsWith('/client-dashboard')) {
       if (userRole !== 'client') {
         console.log('Client access denied. Role:', token?.role);
         // Redirect to appropriate dashboard
@@ -83,6 +107,11 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
 
+        // CRITICAL: Check public user routes FIRST before anything else
+        if (isPublicUserRoute(pathname)) {
+          return true;
+        }
+
         // Public routes that don't require authentication
         const publicRoutes = [
           '/auth/signin',
@@ -92,8 +121,6 @@ export default withAuth(
           '/api/user/forget-password',
           '/api/user/reset-password',
           '/client-login',
-          '/user/forget-password',
-          '/user/reset-password',
           '/client-auth/signin',
           '/client-auth/signup',
           '/client-auth/onboarding',

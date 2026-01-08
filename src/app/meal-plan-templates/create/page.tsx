@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { LoadingPage, LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -354,7 +354,7 @@ export default function CreateMealPlanTemplatePage() {
   };
 
   if (!session) {
-    return <LoadingSpinner />;
+    return <LoadingPage />;
   }
 
   return (

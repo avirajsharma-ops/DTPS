@@ -5,8 +5,11 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import UserNavBar from '@/components/client/UserNavBar';
 import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
+import PageTransition from '@/components/animations/PageTransition';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Bell, Check, CheckCheck, Trash2, Calendar, MessageSquare, Utensils, TrendingUp, Clock, CreditCard, Settings, RefreshCw, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
 interface Notification {
   _id: string;
@@ -35,6 +38,7 @@ export default function NotificationsPage() {
     const router = useRouter();
   const { data: session, status } = useSession();
   const { refreshCounts } = useUnreadCountsSafe();
+  const { isDarkMode } = useTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -204,33 +208,35 @@ export default function NotificationsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3AB1A0]"></div>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white dark:bg-gray-950">
+        <SpoonGifLoader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 overflow-x-hidden">
+    <PageTransition>
+      <div className={`min-h-screen pb-20 overflow-x-hidden transition-colors duration-500 ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
       {/* Header with centered title */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
+      {/* Header with centered title */}
+      <div className={`sticky top-0 z-40 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'} border-b`}>
         <div className="relative flex items-center justify-center px-4 py-4">
           <button
             onClick={() => router.back()}
             className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
+            <ArrowLeft className={`w-5 h-5 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} />
           </button>
-          <h1 className="text-lg font-bold text-black">Notifications</h1>
+          <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>Notifications</h1>
         </div>
       </div>
 
       {/* Header Actions */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3">
+      <div className={`transition-colors duration-300 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'} border-b px-4 py-3`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell className="h-5 w-5 text-[#3AB1A0]" />
-            <span className="text-sm font-medium text-gray-700">
+            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
               {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
             </span>
           </div>
@@ -238,7 +244,9 @@ export default function NotificationsPage() {
             <button
               onClick={() => fetchNotifications(true)}
               disabled={refreshing}
-              className="p-2 text-gray-500 hover:text-[#3AB1A0] hover:bg-[#3AB1A0]/10 rounded-full transition-colors"
+              className={`p-2 hover:text-[#3AB1A0] hover:bg-[#3AB1A0]/10 rounded-full transition-colors ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-500'
+              }`}
             >
               <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -256,7 +264,12 @@ export default function NotificationsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div
+        className={`px-4 py-3 overflow-x-auto scrollbar-hide border-b ${
+          isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'
+        }`}
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         <div className="flex gap-2 min-w-max">
           {filters.map(filter => (
             <button
@@ -265,7 +278,9 @@ export default function NotificationsPage() {
               className={`px-5 py-2 text-base font-semibold rounded-full transition-colors ${
                 activeFilter === filter.id
                   ? 'bg-[#3AB1A0] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : isDarkMode
+                    ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {filter.label}
@@ -277,16 +292,16 @@ export default function NotificationsPage() {
       {/* Notifications List */}
       <div className="p-4">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3AB1A0]"></div>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white dark:bg-gray-950">
+            <SpoonGifLoader size="lg" />
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Bell className="h-10 w-10 text-gray-400" />
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+              <Bell className={`h-10 w-10 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
             </div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-1">No notifications</h3>
-            <p className="text-sm text-gray-500 max-w-xs">
+            <h3 className={`text-lg font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>No notifications</h3>
+            <p className={`text-sm max-w-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
               {activeFilter === 'unread' 
                 ? "You've read all your notifications" 
                 : "You don't have any notifications yet"}
@@ -297,9 +312,9 @@ export default function NotificationsPage() {
             {notifications.map((notification) => (
               <div
                 key={notification._id}
-                className={`bg-white rounded-xl shadow-sm overflow-hidden transition-all ${
-                  !notification.read ? 'border-l-4 border-[#3AB1A0]' : ''
-                }`}
+                className={`rounded-xl shadow-sm overflow-hidden transition-all ${
+                  isDarkMode ? 'bg-gray-900' : 'bg-white'
+                } ${!notification.read ? 'border-l-4 border-[#3AB1A0]' : ''}`}
               >
                 <div 
                   className="p-4 flex gap-3"
@@ -318,24 +333,32 @@ export default function NotificationsPage() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className={`text-sm ${!notification.read ? 'font-bold text-gray-900' : 'font-semibold text-gray-700'}`}>
+                      <h3
+                        className={`text-sm ${
+                          !notification.read ? 'font-bold' : 'font-semibold'
+                        } ${isDarkMode ? 'text-white' : !notification.read ? 'text-gray-900' : 'text-gray-700'}`}
+                      >
                         {notification.title}
                       </h3>
                       {!notification.read && (
                         <span className="shrink-0 w-2 h-2 rounded-full bg-[#3AB1A0]"></span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+                    <p className={`text-sm mt-0.5 line-clamp-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>
                       {notification.message}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1.5">
+                    <p className={`text-xs mt-1.5 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>
                       {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                     </p>
                   </div>
                 </div>
 
                 {/* Actions - only delete button, no type tag */}
-                <div className="px-4 py-2 bg-gray-50 flex items-center justify-end border-t border-gray-100">
+                <div
+                  className={`px-4 py-2 flex items-center justify-end border-t ${
+                    isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-gray-50 border-gray-100'
+                  }`}
+                >
                   <div className="flex items-center gap-1">
                     {!notification.read && (
                       <button
@@ -354,7 +377,9 @@ export default function NotificationsPage() {
                         e.stopPropagation();
                         deleteNotification(notification._id);
                       }}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                      className={`p-1.5 text-gray-400 hover:text-red-600 rounded-full transition-colors ${
+                        isDarkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50'
+                      }`}
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -366,6 +391,7 @@ export default function NotificationsPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </PageTransition>
   );
 }

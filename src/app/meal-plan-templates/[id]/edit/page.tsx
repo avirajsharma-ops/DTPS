@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { LoadingPage, LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ArrowLeft, Save, ChefHat } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -145,7 +145,7 @@ export default function EditTemplatePage() {
   };
 
   if (!session) {
-    return <LoadingSpinner />;
+    return <LoadingPage />;
   }
 
   if (loading) {

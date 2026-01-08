@@ -6,6 +6,7 @@ import { ArrowLeft, Star, Check, X, Loader2, ShoppingCart } from 'lucide-react';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { toast } from 'sonner';
 import Script from 'next/script';
+import { useTheme } from '@/contexts/ThemeContext';
 
 declare global {
   interface Window {
@@ -52,6 +53,7 @@ interface ServicePlan {
 export default function ServiceDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [service, setService] = useState<ServicePlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
@@ -189,7 +191,7 @@ export default function ServiceDetailPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -197,9 +199,9 @@ export default function ServiceDetailPage() {
 
   if (!service) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className={`flex items-center justify-center min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="text-center">
-          <p className="text-gray-500 mb-4">Service not found</p>
+          <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'} mb-4`}>Service not found</p>
           <button
             onClick={() => router.back()}
             className="px-4 py-2 bg-[#3AB1A0] text-white rounded-lg"
@@ -212,7 +214,7 @@ export default function ServiceDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-white to-gray-50 pb-32">
+    <div className={`min-h-screen pb-32 ${isDarkMode ? 'bg-gray-900' : 'bg-linear-to-b from-white to-gray-50'}`}>
       {/* Razorpay Script */}
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
@@ -220,15 +222,15 @@ export default function ServiceDetailPage() {
       />
 
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <div className={`sticky top-0 z-40 backdrop-blur-sm border-b ${isDarkMode ? 'bg-gray-900/80 border-gray-800' : 'bg-white/95 border-gray-100'}`}>
         <div className="flex items-center gap-3 px-4 py-4 max-w-5xl mx-auto w-full">
           <button
             onClick={() => router.back()}
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors"
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-[#3AB1A0]/10'}`}
           >
             <ArrowLeft className="w-5 h-5 text-[#3AB1A0]" />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Service Details</h1>
+          <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Service Details</h1>
         </div>
       </div>
 
@@ -246,7 +248,9 @@ export default function ServiceDetailPage() {
               <div 
                 className="prose prose-invert max-w-none"
                 dangerouslySetInnerHTML={{ 
-                  __html: service.description.replace(/<strong>/g, '<strong class="text-black font-bold">').replace(/<b>/g, '<b class="text-black font-bold">') 
+                  __html: service.description
+                    .replace(/<strong>/g, `<strong class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`)
+                    .replace(/<b>/g, `<b class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`)
                 }} 
               />
             ) : (
@@ -258,7 +262,7 @@ export default function ServiceDetailPage() {
         {/* Pricing Section - Vertical Display */}
         {service.pricingTiers && service.pricingTiers.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-5">Choose Your Plan</h3>
+            <h3 className={`text-2xl font-bold mb-5 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Choose Your Plan</h3>
             <div className="flex flex-col gap-4">
               {service.pricingTiers.map((tier, index) => (
                 <button
@@ -267,18 +271,22 @@ export default function ServiceDetailPage() {
                   className={`w-full p-6 rounded-2xl border-2 transition-all ${
                     selectedTier === index
                       ? 'border-[#3AB1A0] bg-linear-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/5 shadow-md'
-                      : 'border-gray-200 hover:border-[#3AB1A0] bg-white'
+                      : isDarkMode
+                        ? 'border-gray-700 hover:border-[#3AB1A0] bg-gray-800'
+                        : 'border-gray-200 hover:border-[#3AB1A0] bg-white'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="text-left">
-                      <p className="text-sm font-semibold text-gray-600 mb-1">{tier.durationLabel}</p>
+                      <p className={`text-sm font-semibold mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{tier.durationLabel}</p>
                       <p className="text-3xl font-bold text-[#E06A26]">₹{tier.amount}</p>
                     </div>
                     <div className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${
                       selectedTier === index
                         ? 'bg-[#3AB1A0] text-white'
-                        : 'bg-gray-100 text-gray-700'
+                        : isDarkMode
+                          ? 'bg-gray-700 text-gray-100'
+                          : 'bg-gray-100 text-gray-700'
                     }`}>
                       {selectedTier === index ? '✓ Selected' : 'Select'}
                     </div>
@@ -291,19 +299,22 @@ export default function ServiceDetailPage() {
 
         {/* Features */}
         {service.features && service.features.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm p-8 mb-8 border border-gray-100">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">What's Included</h3>
+          <div className={`rounded-2xl shadow-sm p-8 mb-8 border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <h3 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>What's Included</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {service.features.map((feature, index) => (
-                <div key={index} className="flex items-start gap-3 p-4 bg-linear-to-br from-green-50 to-emerald-50 rounded-lg hover:shadow-sm transition-all">
+                <div
+                  key={index}
+                  className={`flex items-start gap-3 p-4 rounded-lg hover:shadow-sm transition-all ${isDarkMode ? 'bg-gray-900 border border-gray-700' : 'bg-linear-to-br from-green-50 to-emerald-50'}`}
+                >
                   <Check className="w-6 h-6 text-[#3AB1A0] mt-0.5 shrink-0 font-bold" />
                   <div className="prose prose-sm max-w-none">
                     <span 
-                      className="text-gray-700 font-medium leading-relaxed"
+                      className={`${isDarkMode ? 'text-white' : 'text-gray-700'} font-medium leading-relaxed`}
                       dangerouslySetInnerHTML={{ 
                         __html: feature
-                          .replace(/<strong>/g, '<strong class="text-black font-bold">')
-                          .replace(/<b>/g, '<b class="text-black font-bold">') 
+                          .replace(/<strong>/g, `<strong class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`)
+                          .replace(/<b>/g, `<b class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`) 
                       }}
                     />
                   </div>
@@ -316,21 +327,24 @@ export default function ServiceDetailPage() {
         {/* Benefits */}
         {service.benefits && service.benefits.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-5">Key Benefits</h3>
+            <h3 className={`text-2xl font-bold mb-5 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Key Benefits</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {service.benefits.map((benefit, index) => (
-                <div key={index} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all bg-linear-to-br from-white to-blue-50/50">
+                <div
+                  key={index}
+                  className={`rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100 bg-linear-to-br from-white to-blue-50/50'}`}
+                >
                   <div className="flex items-start gap-4">
                     <div className="shrink-0 w-12 h-12 rounded-xl bg-[#3AB1A0]/10 flex items-center justify-center">
                       <Star className="w-6 h-6 text-[#3AB1A0]" />
                     </div>
                     <div className="flex-1">
                       <div 
-                        className="text-gray-700 font-medium leading-relaxed prose prose-sm max-w-none"
+                        className={`${isDarkMode ? 'text-white prose-invert' : 'text-gray-700'} font-medium leading-relaxed prose prose-sm max-w-none`}
                         dangerouslySetInnerHTML={{ 
                           __html: benefit
-                            .replace(/<strong>/g, '<strong class="text-black font-bold">')
-                            .replace(/<b>/g, '<b class="text-black font-bold">') 
+                            .replace(/<strong>/g, `<strong class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`)
+                            .replace(/<b>/g, `<b class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`) 
                         }}
                       />
                     </div>
@@ -344,7 +358,7 @@ export default function ServiceDetailPage() {
         
 
         {/* Purchase Button */}
-        <div className="sticky bottom-0 left-0 right-0 bg-linear-to-t from-white via-white to-transparent pt-4 pb-6 -mx-4 px-4">
+        <div className={`sticky bottom-0 left-0 right-0 pt-4 pb-6 -mx-4 px-4 ${isDarkMode ? 'bg-linear-to-t from-gray-900 via-gray-900 to-transparent' : 'bg-linear-to-t from-white via-white to-transparent'}`}>
           <button 
             onClick={handlePurchase}
             disabled={isPurchasing || selectedTier === null}

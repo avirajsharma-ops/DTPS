@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +45,7 @@ interface Appointment {
 export default function UserAppointmentsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [loading, setLoading] = useState(true);
@@ -224,16 +226,16 @@ export default function UserAppointmentsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className="fixed inset-0 flex items-center justify-center z-[100] bg-white dark:bg-gray-950">
         <SpoonGifLoader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className={`min-h-screen pb-24 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
+      <div className={`border-b transition-colors duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <Link href="/user" className="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors">

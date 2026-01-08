@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import UserNavBar from '@/components/client/UserNavBar';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   Shield, 
   Database,
@@ -14,6 +15,8 @@ import {
 } from 'lucide-react';
 
 export default function PrivacyPolicyPage() {
+  const { isDarkMode } = useTheme();
+
   const sections = [
     {
       title: 'Information We Collect',
@@ -132,7 +135,7 @@ export default function PrivacyPolicyPage() {
   ];
 
   return (
-    <div className="min-h-screen pb-24 bg-gray-50">
+    <div className={`min-h-screen pb-24 ${isDarkMode ? 'bg-slate-950' : 'bg-gray-50'}`}>
       <UserNavBar 
         title="Privacy Policy" 
         showBack={true}
@@ -142,7 +145,7 @@ export default function PrivacyPolicyPage() {
         backHref="/user/settings"
       />
 
-      <div className="px-4 md:px-6 space-y-4 py-4">
+      <div className="px-4 space-y-4 py-4">
         {/* Header Card */}
         <Card className="border-0 shadow-sm bg-[#e48b57]">
           <CardContent className="p-4">
@@ -161,9 +164,9 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Introduction */}
-        <Card className="border-0 shadow-sm">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
           <CardContent className="p-4">
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-200' : 'text-gray-600'}`}>
               At DTPS (Diet & Treatment Planning System), we are committed to protecting your privacy 
               and ensuring the security of your personal health information. This Privacy Policy explains 
               how we collect, use, share, and protect your data when you use our services.
@@ -173,8 +176,8 @@ export default function PrivacyPolicyPage() {
 
         {/* Policy Sections */}
         {sections.map((section, index) => (
-          <Card key={index} className="border-0 shadow-sm">
-            <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
+          <Card key={index} className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
+            <CardHeader className={`p-4 pb-2 border-b ${isDarkMode ? 'border-slate-800' : 'border-[#3AB1A0]/10'}`}>
               <div className="flex items-center gap-3">
                 <div 
                   className="h-10 w-10 rounded-xl flex items-center justify-center"
@@ -182,7 +185,7 @@ export default function PrivacyPolicyPage() {
                 >
                   <section.icon className="h-5 w-5" style={{ color: section.color }} />
                 </div>
-                <CardTitle className="text-base font-semibold text-gray-900">
+                <CardTitle className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {section.title}
                 </CardTitle>
               </div>
@@ -193,7 +196,7 @@ export default function PrivacyPolicyPage() {
                   <h4 className="font-medium text-[#3AB1A0] text-sm mb-1">
                     {item.subtitle}
                   </h4>
-                  <p className="text-gray-600 text-sm leading-relaxed">
+                  <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-200' : 'text-gray-600'}`}>
                     {item.text}
                   </p>
                 </div>
@@ -203,26 +206,26 @@ export default function PrivacyPolicyPage() {
         ))}
 
         {/* Contact Section */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="p-4 pb-2 border-b border-[#3AB1A0]/10">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
+          <CardHeader className={`p-4 pb-2 border-b ${isDarkMode ? 'border-slate-800' : 'border-[#3AB1A0]/10'}`}>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-[#E06A26]/10 flex items-center justify-center">
                 <Mail className="h-5 w-5 text-[#E06A26]" />
               </div>
-              <CardTitle className="text-base font-semibold text-gray-900">
+              <CardTitle className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Contact Us
               </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-200' : 'text-gray-600'}`}>
               If you have any questions about this Privacy Policy or our data practices, 
               please contact us at:
             </p>
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
-              <p className="text-sm text-gray-800 font-medium">support@dtpoonamsagar.com</p>
+            <div className={`mt-3 p-3 rounded-lg space-y-2 ${isDarkMode ? 'bg-slate-950/60 ring-1 ring-white/10' : 'bg-gray-50'}`}>
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>support@dtpoonamsagar.com</p>
               <p className="text-sm text-[#3AB1A0] font-medium">+91 98930 27688</p>
-              <p className="text-xs text-gray-500">
+              <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                 We aim to respond to all inquiries within 48 hours.
               </p>
             </div>
@@ -230,11 +233,11 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Footer Note */}
-        <Card className="border-0 shadow-sm">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-slate-900 ring-1 ring-white/10' : ''}`}>
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
-              <p className="text-gray-500 text-xs leading-relaxed">
+              <FileText className={`h-5 w-5 mt-0.5 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} />
+              <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                 This Privacy Policy may be updated from time to time. We will notify you of any 
                 material changes by posting the new policy on this page and updating the "Last updated" 
                 date. Your continued use of our services after any changes indicates your acceptance 

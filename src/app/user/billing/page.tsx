@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -47,6 +48,7 @@ interface Subscription {
 export default function UserBillingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
@@ -133,14 +135,26 @@ export default function UserBillingPage() {
       case 'paid':
       case 'active':
         return (
-          <Badge className="text-green-700 bg-green-100">
+          <Badge
+            className={
+              isDarkMode
+                ? 'text-green-200 bg-green-900/40 border border-green-800'
+                : 'text-green-700 bg-green-100'
+            }
+          >
             <CheckCircle className="w-3 h-3 mr-1" />
             {status === 'paid' ? 'Paid' : 'Active'}
           </Badge>
         );
       case 'pending':
         return (
-          <Badge className="text-yellow-700 bg-yellow-100">
+          <Badge
+            className={
+              isDarkMode
+                ? 'text-yellow-200 bg-yellow-900/40 border border-yellow-800'
+                : 'text-yellow-700 bg-yellow-100'
+            }
+          >
             <Clock className="w-3 h-3 mr-1" />
             Pending
           </Badge>
@@ -148,14 +162,26 @@ export default function UserBillingPage() {
       case 'failed':
       case 'expired':
         return (
-          <Badge className="text-red-700 bg-red-100">
+          <Badge
+            className={
+              isDarkMode
+                ? 'text-red-200 bg-red-900/40 border border-red-800'
+                : 'text-red-700 bg-red-100'
+            }
+          >
             <AlertCircle className="w-3 h-3 mr-1" />
             {status === 'failed' ? 'Failed' : 'Expired'}
           </Badge>
         );
       case 'cancelled':
         return (
-          <Badge className="text-gray-700 bg-gray-100">
+          <Badge
+            className={
+              isDarkMode
+                ? 'text-gray-200 bg-gray-800 border border-gray-700'
+                : 'text-gray-700 bg-gray-100'
+            }
+          >
             Cancelled
           </Badge>
         );
@@ -166,44 +192,48 @@ export default function UserBillingPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-24 bg-gray-50">
+    <div className={`min-h-screen pb-24 transition-colors duration-300 ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
+      <div className={`sticky top-0 z-40 transition-colors duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} border-b`}>
         <div className="relative flex items-center justify-center px-4 py-4">
-          <Link href="/user" className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#3AB1A0]/10 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
+          <Link href="/user" className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#ff9500]/10 transition-colors">
+            <ArrowLeft className={`w-5 h-5 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`} />
           </Link>
-          <h1 className="text-lg font-bold text-black">Billing</h1>
+          <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>Billing</h1>
         </div>
       </div>
 
       <div className="px-4 py-4 space-y-4">
         {/* Subscription Card */}
-        <Card className="border-0 shadow-sm bg-linear-to-br from-[#3AB1A0]/10 to-emerald-50">
+        <Card
+          className={`border-0 shadow-sm bg-linear-to-br ${
+            isDarkMode ? 'from-[#3AB1A0]/20 to-gray-900' : 'from-[#3AB1A0]/10 to-emerald-50'
+          }`}
+        >
           <CardContent className="p-4 md:p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-sm text-gray-600">Current Plan</p>
-                <h2 className="text-xl font-bold text-gray-900">{displaySubscription.planName}</h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Current Plan</p>
+                <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{displaySubscription.planName}</h2>
               </div>
               {getStatusBadge(displaySubscription.status)}
             </div>
 
             <div className="flex items-baseline gap-1 mb-4">
-              <span className="text-3xl font-bold text-gray-900">
+              <span className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {formatCurrency(displaySubscription.price)}
               </span>
-              <span className="text-gray-500">/{displaySubscription.billingCycle}</span>
+              <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>/{displaySubscription.billingCycle}</span>
             </div>
 
-            <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
+            <div className={`flex items-center gap-4 mb-4 text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
                 <span>Next billing: {format(displaySubscription.nextBillingDate, 'MMM d, yyyy')}</span>
@@ -222,16 +252,16 @@ export default function UserBillingPage() {
         </Card>
 
         {/* Plan Features */}
-        <Card className="border-0 shadow-sm">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-base font-semibold">Plan Features</CardTitle>
+            <CardTitle className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Plan Features</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2">
             <ul className="space-y-2">
               {displaySubscription.features.map((feature, index) => (
                 <li key={index} className="flex items-center gap-2 text-sm">
                   <CheckCircle className="h-4 w-4 text-[#2a9989] shrink-0" />
-                  <span className="text-gray-700">{feature}</span>
+                  <span className={isDarkMode ? 'text-gray-200' : 'text-gray-700'}>{feature}</span>
                 </li>
               ))}
             </ul>
@@ -241,10 +271,10 @@ export default function UserBillingPage() {
      
 
         {/* Invoices */}
-        <Card className="border-0 shadow-sm">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Billing History</CardTitle>
+              <CardTitle className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Billing History</CardTitle>
               <Button variant="ghost" size="sm" className="text-[#2a9989]">
                 View All
               </Button>
@@ -255,24 +285,24 @@ export default function UserBillingPage() {
               {displayInvoices.slice(0, 5).map((invoice) => (
                 <div 
                   key={invoice.id}
-                  className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
+                  className={`flex items-center justify-between py-3 border-b last:border-0 ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg">
-                      <FileText className="w-5 h-5 text-gray-600" />
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                      <FileText className={`w-5 h-5 ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`} />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{invoice.planName}</p>
-                      <p className="text-xs text-gray-500">{format(invoice.date, 'MMM d, yyyy')}</p>
+                      <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{invoice.planName}</p>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{format(invoice.date, 'MMM d, yyyy')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="font-medium text-gray-900">{formatCurrency(invoice.amount)}</p>
+                      <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatCurrency(invoice.amount)}</p>
                       {getStatusBadge(invoice.status)}
                     </div>
                     <Button variant="ghost" size="icon" className="w-8 h-8">
-                      <Download className="w-4 h-4 text-gray-500" />
+                      <Download className={`w-4 h-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`} />
                     </Button>
                   </div>
                 </div>
@@ -282,12 +312,12 @@ export default function UserBillingPage() {
         </Card>
 
         {/* Help Section */}
-        <Card className="border-0 shadow-sm bg-gray-50">
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-gray-900">Need help with billing?</p>
-                <p className="text-sm text-gray-500">Contact our support team</p>
+                <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Need help with billing?</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Contact our support team</p>
               </div>
               <Button variant="outline">
                 Get Help
