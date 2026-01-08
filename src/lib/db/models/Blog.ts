@@ -51,8 +51,7 @@ const blogSchema = new Schema<IBlog>({
   description: {
     type: String,
     required: true,
-    trim: true,
-    maxlength: 500
+    trim: true
   },
   content: {
     type: String,

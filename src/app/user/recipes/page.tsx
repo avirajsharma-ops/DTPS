@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import PageTransition from '@/components/animations/PageTransition';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ArrowLeft, Clock, Users, Flame, Search } from 'lucide-react';
@@ -36,6 +37,7 @@ export default function RecipesPage() {
   const [totalRecipes, setTotalRecipes] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [categories, setCategories] = useState<string[]>([]);
+  const [imageLoading, setImageLoading] = useState<Record<string, boolean>>({});
   const ITEMS_PER_PAGE = 25;
 
   // Fetch categories on mount
@@ -99,7 +101,7 @@ export default function RecipesPage() {
 
   if (loading) {
     return (
-      <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
+      <div className={`fixed inset-0 flex items-center justify-center z-100 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -181,14 +183,22 @@ export default function RecipesPage() {
                 isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
               }`}
             >
-              {/* Recipe Image */}
+              {/* Recipe Image with Lazy Loading & Skeleton */}
               {recipe.image && (
-                <div className="relative h-44 bg-linear-to-br from-gray-200 to-gray-300">
-                  <img
+                <div className="relative h-44 bg-linear-to-br from-gray-200 to-gray-300 overflow-hidden">
+                  {imageLoading[recipe._id] && (
+                    <div className="absolute inset-0 bg-linear-to-r from-gray-300 via-gray-200 to-gray-300 animate-pulse" />
+                  )}
+                  <Image
                     src={recipe.image}
                     alt={recipe.name}
+                    fill
                     loading="lazy"
+                    placeholder="blur"
+                    blurDataURL="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3Crect fill='%23e5e7eb' width='1' height='1'/%3E%3C/svg%3E"
                     className="w-full h-full object-cover"
+                    onLoadingComplete={() => setImageLoading(prev => ({ ...prev, [recipe._id]: false }))}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                   {recipe.difficulty && (
                     <div

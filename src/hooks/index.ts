@@ -1,3 +1,5 @@
+'use client';
+
 // Hooks barrel export
 export { 
   useMediaQuery, 
@@ -16,4 +18,5 @@ export { useNotifications } from './useNotifications';
 export { useRealtime } from './useRealtime';
 export { useCallManager } from './useCallManager';
 export { useSimpleWebRTC } from './useSimpleWebRTC';
-export { useBodyScrollLock } from './useBodyScrollLock';
+export { default as useBodyScrollLock } from './useBodyScrollLock';
+export { useScrollRestoration, saveScrollPosition, getScrollPosition } from './useScrollRestoration';

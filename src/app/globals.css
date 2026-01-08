@@ -1,5 +1,213 @@
   @import "tailwindcss";
 
+  /* Dark mode configuration */
+  @custom-variant dark (&:where(.dark, .dark *));
+
+  /* CSS Variables for theme colors */
+  :root {
+    --background: #ffffff;
+    --foreground: #0a0a0a;
+    --card: #ffffff;
+    --card-foreground: #0a0a0a;
+    --popover: #ffffff;
+    --popover-foreground: #0a0a0a;
+    --primary: #0a0a0a;
+    --primary-foreground: #fafafa;
+    --secondary: #f5f5f5;
+    --secondary-foreground: #0a0a0a;
+    --muted: #f5f5f5;
+    --muted-foreground: #737373;
+    --accent: #f5f5f5;
+    --accent-foreground: #0a0a0a;
+    --destructive: #ef4444;
+    --destructive-foreground: #fafafa;
+    --border: #e5e5e5;
+    --input: #e5e5e5;
+    --ring: #0a0a0a;
+  }
+
+  .dark {
+    --background: #0a0a0a;
+    --foreground: #fafafa;
+    --card: #0a0a0a;
+    --card-foreground: #fafafa;
+    --popover: #0a0a0a;
+    --popover-foreground: #fafafa;
+    --primary: #fafafa;
+    --primary-foreground: #0a0a0a;
+    --secondary: #262626;
+    --secondary-foreground: #fafafa;
+    --muted: #262626;
+    --muted-foreground: #a3a3a3;
+    --accent: #262626;
+    --accent-foreground: #fafafa;
+    --destructive: #7f1d1d;
+    --destructive-foreground: #fafafa;
+    --border: #262626;
+    --input: #262626;
+    --ring: #d4d4d4;
+  }
+
+  /* Apply theme colors to body */
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  /* Dark mode overrides for common elements */
+  .dark .bg-white {
+    background-color: #111827 !important;
+  }
+  
+  .dark .bg-gray-50 {
+    background-color: #0a0a0a !important;
+  }
+  
+  .dark .bg-gray-100 {
+    background-color: #1f2937 !important;
+  }
+
+  .dark .text-gray-900 {
+    color: #f9fafb !important;
+  }
+  
+  .dark .text-gray-800 {
+    color: #f3f4f6 !important;
+  }
+  
+  .dark .text-gray-700 {
+    color: #e5e7eb !important;
+  }
+  
+  .dark .text-gray-600 {
+    color: #d1d5db !important;
+  }
+  
+  .dark .text-gray-500 {
+    color: #9ca3af !important;
+  }
+
+  .dark .border-gray-200 {
+    border-color: #374151 !important;
+  }
+  
+  .dark .border-gray-100 {
+    border-color: #1f2937 !important;
+  }
+
+  .dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #374151 !important;
+  }
+
+  /* Card dark mode */
+  .dark [class*="CardContent"],
+  .dark [class*="CardHeader"],
+  .dark .rounded-lg.border {
+    background-color: #111827 !important;
+    border-color: #374151 !important;
+  }
+
+  /* Table dark mode */
+  .dark table {
+    background-color: #111827;
+  }
+  
+  .dark th {
+    background-color: #1f2937 !important;
+    color: #e5e7eb !important;
+  }
+  
+  .dark td {
+    border-color: #374151 !important;
+    color: #d1d5db !important;
+  }
+  
+  .dark tr:hover {
+    background-color: #1f2937 !important;
+  }
+
+  /* Input dark mode */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f9fafb !important;
+  }
+  
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #9ca3af !important;
+  }
+
+  /* Button ghost/outline dark mode */
+  .dark .hover\:bg-gray-100:hover {
+    background-color: #374151 !important;
+  }
+
+  /* Badge/status dark mode */
+  .dark .bg-green-100 {
+    background-color: rgba(34, 197, 94, 0.2) !important;
+  }
+  
+  .dark .bg-red-100 {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+  }
+  
+  .dark .bg-yellow-100 {
+    background-color: rgba(234, 179, 8, 0.2) !important;
+  }
+  
+  .dark .bg-blue-100 {
+    background-color: rgba(59, 130, 246, 0.2) !important;
+  }
+
+  /* Dropdown/Popover dark mode */
+  .dark [role="menu"],
+  .dark [role="listbox"],
+  .dark [data-radix-popper-content-wrapper] > div {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+  }
+  
+  .dark [role="menuitem"]:hover,
+  .dark [role="option"]:hover {
+    background-color: #374151 !important;
+  }
+
+  /* Dialog/Modal dark mode */
+  .dark [role="dialog"],
+  .dark [data-slot="dialog-content"] {
+    background-color: #111827 !important;
+    border-color: #374151 !important;
+    color: #f9fafb !important;
+  }
+
+  /* Labels in dark mode */
+  .dark label {
+    color: #e5e7eb !important;
+  }
+
+  /* Checkbox/Switch backgrounds in dark mode */
+  .dark .bg-white\/80 {
+    background-color: rgba(31, 41, 55, 0.8) !important;
+  }
+
+  /* Tabs dark mode */
+  .dark [role="tablist"] {
+    background-color: #1f2937 !important;
+  }
+  
+  .dark [role="tab"][data-state="active"] {
+    background-color: #111827 !important;
+    color: #f9fafb !important;
+  }
+
+  /* Alert dark mode */
+  .dark .bg-blue-50 {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+  }
+
   /* Hide scrollbar for swipeable sections */
   .scrollbar-hide {
     -ms-overflow-style: none;

@@ -384,13 +384,21 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                                             </div>
                                         </div>
 
-                                        <button
-                                            onClick={() => handleGetStarted(plan)}
-                                            className="w-full py-3 rounded-2xl bg-linear-to-r from-[#E06A26] to-[#DB9C6E] text-white font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                                        >
-                                            Get Started
-                                            <ArrowRight className="h-4 w-4" />
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => router.push(`/user/services/${plan._id}`)}
+                                                className="flex-1 py-3 rounded-2xl border-2 border-[#3AB1A0] text-[#3AB1A0] font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] hover:bg-[#3AB1A0]/10"
+                                            >
+                                                View Details
+                                            </button>
+                                            <button
+                                                onClick={() => handleGetStarted(plan)}
+                                                className="flex-1 py-3 rounded-2xl bg-linear-to-r from-[#E06A26] to-[#DB9C6E] text-white font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                                            >
+                                                Get Started
+                                                <ArrowRight className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -101,6 +101,17 @@ interface PurchaseInfo {
   } | null;
 }
 
+interface BlogItem {
+  _id: string;
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  readTime: number;
+  featuredImage: string;
+  thumbnailImage?: string;
+}
+
 export default function UserHomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -114,6 +125,7 @@ export default function UserHomePage() {
   const [activePurchases, setActivePurchases] = useState<PurchaseInfo[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [paymentVerifying, setPaymentVerifying] = useState(false);
+  const [blogs, setBlogs] = useState<BlogItem[]>([]);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<DashboardData>({
     caloriesLeft: 0,
@@ -443,6 +455,17 @@ export default function UserHomePage() {
         
         // Fetch real-time health data (water, sleep, activity, steps)
         fetchHealthData();
+        
+        // Fetch latest blogs for home page
+        try {
+          const blogsRes = await fetch('/api/client/blogs?limit=5');
+          if (blogsRes.ok) {
+            const blogsData = await blogsRes.json();
+            setBlogs(blogsData.blogs || []);
+          }
+        } catch (blogsError) {
+          console.error('Error fetching blogs:', blogsError);
+        }
       } catch (error) {
         console.error('Error checking onboarding:', error);
         // If there's an error, assume no active plan so user can see available plans
@@ -1371,83 +1394,77 @@ export default function UserHomePage() {
         </Suspense>
 
         {/* Blogs Section */}
-        <div className="">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-[#E06A26]">Blogs</h2>
-            <Link href="/user/blogs" className="text-[#3AB1A0] text-sm font-medium uppercase tracking-wider hover:underline">
-              View All
-            </Link>
-          </div>
-        </div>
-        <div className="px-">
-          <div className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
-            {/* Blog Card 1 */}
-            <div className={`min-w-65 snap-start rounded-2xl shadow-sm overflow-hidden ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white'}`}>
-              <div className="relative h-32 bg-linear-to-br from-amber-100 to-orange-100">
-                <span className={`absolute px-2 py-1 text-xs font-semibold rounded-full top-3 left-3 ${isDarkMode ? 'bg-gray-950/60 text-gray-200' : 'bg-white/90 text-gray-700'}`}>
-                  NUTRITION
-                </span>
-                <div className="absolute flex items-center gap-1 px-2 py-1 text-xs text-white rounded-full bottom-3 right-3 bg-black/50">
-                  <Clock className="w-3 h-3" />
-                  5 min read
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className={`font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Meal Prep 101: A Guide</h3>
-                <p className={`mt-1 text-sm line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Master the art of preparing healthy meals for the entire week in under two hours.
-                </p>
-                <Link href="/user/blogs/1" className="text-[#E06A26] text-sm font-semibold mt-3 inline-flex items-center">
-                  Read More <ChevronRight className="w-4 h-4 ml-1" />
+        {blogs.length > 0 && (
+          <>
+            <div className="">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold text-[#E06A26]">Blogs</h2>
+                <Link href="/user/blogs" className="text-[#3AB1A0] text-sm font-medium uppercase tracking-wider hover:underline">
+                  View All
                 </Link>
               </div>
             </div>
-
-            {/* Blog Card 2 */}
-            <div className={`min-w-65 snap-start rounded-2xl shadow-sm overflow-hidden ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white'}`}>
-              <div className="h-32 bg-linear-to-br from-[#3AB1A0]/20 to-[#3AB1A0]/10 relative">
-                <span className={`absolute px-2 py-1 text-xs font-semibold rounded-full top-3 left-3 ${isDarkMode ? 'bg-gray-950/60 text-gray-200' : 'bg-white/90 text-gray-700'}`}>
-                  FITNESS
-                </span>
-                <div className="absolute flex items-center gap-1 px-2 py-1 text-xs text-white rounded-full bottom-3 right-3 bg-black/50">
-                  <Clock className="w-3 h-3" />
-                  4 min read
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className={`font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>5 Moves for Core Strength</h3>
-                <p className={`mt-1 text-sm line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Strengthen your core with these simple yet effective exercises you can do anywhere.
-                </p>
-                <Link href="/user/blogs/2" className="text-[#3AB1A0] text-sm font-semibold mt-3 inline-flex items-center">
-                  Read More <ChevronRight className="w-4 h-4 ml-1" />
-                </Link>
+            <div className="px-">
+              <div className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+                {blogs.map((blog) => {
+                  const getCategoryColor = (category: string) => {
+                    switch (category.toLowerCase()) {
+                      case 'nutrition': return 'text-[#E06A26]';
+                      case 'fitness': return 'text-[#3AB1A0]';
+                      case 'wellness': return 'text-purple-500';
+                      case 'recipes': return 'text-green-500';
+                      case 'lifestyle': return 'text-blue-500';
+                      default: return 'text-[#DB9C6E]';
+                    }
+                  };
+                  const getCategoryBg = (category: string) => {
+                    switch (category.toLowerCase()) {
+                      case 'nutrition': return 'from-amber-100 to-orange-100';
+                      case 'fitness': return 'from-[#3AB1A0]/20 to-[#3AB1A0]/10';
+                      case 'wellness': return 'from-purple-100 to-purple-50';
+                      case 'recipes': return 'from-green-100 to-green-50';
+                      case 'lifestyle': return 'from-blue-100 to-blue-50';
+                      default: return 'from-[#DB9C6E]/20 to-[#DB9C6E]/10';
+                    }
+                  };
+                  return (
+                    <Link 
+                      key={blog._id} 
+                      href={`/user/blogs/${blog.slug || blog._id}`}
+                      className={`min-w-65 snap-start rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md hover:-translate-y-1 ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white'}`}
+                    >
+                      <div className={`relative h-32 bg-linear-to-br ${blog.thumbnailImage || blog.featuredImage ? '' : getCategoryBg(blog.category)}`}>
+                        {(blog.thumbnailImage || blog.featuredImage) ? (
+                          <img 
+                            src={blog.thumbnailImage || blog.featuredImage} 
+                            alt={blog.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : null}
+                        <span className={`absolute px-2 py-1 text-xs font-semibold rounded-full top-3 left-3 ${isDarkMode ? 'bg-gray-950/60 text-gray-200' : 'bg-white/90 text-gray-700'}`}>
+                          {blog.category.toUpperCase()}
+                        </span>
+                        <div className="absolute flex items-center gap-1 px-2 py-1 text-xs text-white rounded-full bottom-3 right-3 bg-black/50">
+                          <Clock className="w-3 h-3" />
+                          {blog.readTime} min read
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <h3 className={`font-bold line-clamp-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{blog.title}</h3>
+                        <p className={`mt-1 text-sm line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                          {blog.description?.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                        </p>
+                        <span className={`${getCategoryColor(blog.category)} text-sm font-semibold mt-3 inline-flex items-center`}>
+                          Read More <ChevronRight className="w-4 h-4 ml-1" />
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
-
-            {/* Blog Card 3 */}
-            <div className={`min-w-65 snap-start rounded-2xl shadow-sm overflow-hidden ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white'}`}>
-              <div className="h-32 bg-linear-to-br from-[#DB9C6E]/20 to-[#DB9C6E]/10 relative">
-                <span className={`absolute px-2 py-1 text-xs font-semibold rounded-full top-3 left-3 ${isDarkMode ? 'bg-gray-950/60 text-gray-200' : 'bg-white/90 text-gray-700'}`}>
-                  WELLNESS
-                </span>
-                <div className="absolute flex items-center gap-1 px-2 py-1 text-xs text-white rounded-full bottom-3 right-3 bg-black/50">
-                  <Clock className="w-3 h-3" />
-                  6 min read
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className={`font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Mindful Eating Habits</h3>
-                <p className={`mt-1 text-sm line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Learn how to develop a healthier relationship with food through mindfulness.
-                </p>
-                <Link href="/user/blogs/3" className="text-[#DB9C6E] text-sm font-semibold mt-3 inline-flex items-center">
-                  Read More <ChevronRight className="w-4 h-4 ml-1" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
       </div>
   );

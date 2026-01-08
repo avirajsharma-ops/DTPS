@@ -12,6 +12,7 @@ import { Menu, Bell } from 'lucide-react';
 import { UnreadCountProvider, useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import PageTransition from '@/components/animations/PageTransition';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
 interface UserLayoutClientProps {
   children: ReactNode;
@@ -39,6 +40,9 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
+  
+  // Enable scroll restoration
+  useScrollRestoration();
 
   useEffect(() => {
     setMounted(true);

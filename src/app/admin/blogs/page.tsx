@@ -355,32 +355,36 @@ export default function BlogsManagement() {
       submitData.append('displayOrder', formData.displayOrder.toString());
       submitData.append('metaTitle', formData.metaTitle);
       submitData.append('metaDescription', formData.metaDescription);
-      
-      if (formData.featuredImage.includes('base64')) {
-        submitData.append('featuredImage', formData.featuredImage);
-      }
 
       if (editingBlog) {
+        // For editing, only append image if a new one was uploaded
+        if (formData.featuredImage && formData.featuredImage.includes('base64')) {
+          submitData.append('featuredImage', formData.featuredImage);
+        }
+
         const response = await fetch(`/api/admin/blogs/${editingBlog._id}`, {
           method: 'PUT',
           body: submitData,
         });
 
         if (!response.ok) {
-          throw new Error('Failed to update blog');
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to update blog');
         }
 
         toast.success('Blog updated successfully');
       } else {
+        // For new blog, always append the image
         submitData.append('featuredImage', formData.featuredImage);
 
         const response = await fetch('/api/admin/blogs', {
           method: 'POST',
           body: submitData,
         });
-
+        
         if (!response.ok) {
-          throw new Error('Failed to create blog');
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to create blog');
         }
 
         toast.success('Blog created successfully');
@@ -388,9 +392,9 @@ export default function BlogsManagement() {
 
       handleCloseDialog();
       fetchBlogs();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving blog:', error);
-      toast.error(editingBlog ? 'Failed to update blog' : 'Failed to create blog');
+      toast.error(error.message || (editingBlog ? 'Failed to update blog' : 'Failed to create blog'));
     } finally {
       setIsSaving(false);
     }
@@ -651,9 +655,9 @@ export default function BlogsManagement() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] max-h-[95vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto mx-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="dark:text-white">
               {editingBlog ? 'Edit Blog' : 'Create New Blog'}
             </DialogTitle>
           </DialogHeader>

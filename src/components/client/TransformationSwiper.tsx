@@ -43,7 +43,9 @@ export default function TransformationSwiper() {
   const scrollToIndex = (index: number) => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-    const cardWidth = 380;
+    // Get actual card width from container
+    const firstCard = container.querySelector('[style*="scrollSnapAlign"]') as HTMLElement;
+    const cardWidth = firstCard?.offsetWidth || (window.innerWidth - 32);
     const gap = 16;
     container.scrollTo({
       left: index * (cardWidth + gap),
@@ -55,7 +57,9 @@ export default function TransformationSwiper() {
   const handleScroll = () => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-    const cardWidth = 380;
+    // Get actual card width from container
+    const firstCard = container.querySelector('[style*="scrollSnapAlign"]') as HTMLElement;
+    const cardWidth = firstCard?.offsetWidth || (window.innerWidth - 32);
     const gap = 16;
     const newIndex = Math.round(container.scrollLeft / (cardWidth + gap));
     setActiveIndex(Math.min(newIndex, transformations.length - 1));
@@ -125,13 +129,13 @@ export default function TransformationSwiper() {
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-3 -mx-1 px-1"
+        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-3 -mx-4 px-4"
         style={{ scrollSnapType: 'x mandatory' }}
       >
         {transformations.map((transformation) => (
           <div
             key={transformation._id}
-            className="w-[340px] sm:w-[380px] shrink-0 bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl 
+            className="w-[calc(100vw-32px)] sm:w-[380px] shrink-0 bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl 
             transition-all duration-300 hover:-translate-y-1"
             style={{ scrollSnapAlign: 'start' }}
           >

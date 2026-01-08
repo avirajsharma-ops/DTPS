@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   User,
   Save,
@@ -19,7 +21,10 @@ import {
   CheckCircle,
   AlertCircle,
   Calendar,
-  Loader2
+  Loader2,
+  Moon,
+  Sun,
+  Palette
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { log } from 'console';
@@ -56,6 +61,7 @@ interface UserProfile {
 // Desktop version component
 function DesktopSettingsPage() {
   const { data: session, update } = useSession();
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -198,8 +204,8 @@ function DesktopSettingsPage() {
       <div className="p-6 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your account and preferences</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your account and preferences</p>
         </div>
 
         {/* Messages */}
@@ -217,11 +223,48 @@ function DesktopSettingsPage() {
           </Alert>
         )}
 
-        <Tabs defaultValue="notifications" className="space-y-4">
+        <Tabs defaultValue="appearance" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="appearance">Appearance</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="integrations">Integrations</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="appearance" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Palette className="h-5 w-5" />
+                  <span>Appearance</span>
+                </CardTitle>
+                <CardDescription>Customize how the dashboard looks</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
+                  <div className="flex items-center space-x-3">
+                    {isDarkMode ? (
+                      <Moon className="h-6 w-6 text-blue-500" />
+                    ) : (
+                      <Sun className="h-6 w-6 text-yellow-500" />
+                    )}
+                    <div>
+                      <h3 className="font-medium dark:text-white">Dark Mode</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {isDarkMode ? 'Dark theme is enabled' : 'Light theme is enabled'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={isDarkMode}
+                    onCheckedChange={toggleDarkMode}
+                  />
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Switch between light and dark themes. Your preference will be saved and applied automatically.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="notifications" className="space-y-4">
             <Card>

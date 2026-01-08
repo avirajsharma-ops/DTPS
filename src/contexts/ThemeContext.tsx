@@ -14,41 +14,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [isDarkMode, setIsDarkModeState] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Initialize dark mode from localStorage and device preference
+  // Initialize dark mode from localStorage only - default to light mode
   useEffect(() => {
     // Set mounted immediately to prevent hydration mismatch
     setMounted(true);
     
-    const savedTheme = localStorage.getItem('dtps-theme');
+    const savedTheme = localStorage.getItem('dtps-staff-theme');
     
-    let prefersDark: boolean;
-    
-    if (savedTheme) {
-      // Use saved preference
-      prefersDark = savedTheme === 'dark';
-    } else {
-      // Check device preference
-      prefersDark = typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
-    }
+    // Only use dark mode if explicitly saved as 'dark', otherwise default to light
+    const prefersDark = savedTheme === 'dark';
 
     setIsDarkModeState(prefersDark);
     applyTheme(prefersDark);
-  }, []);
-
-  // Listen for system dark mode changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      const savedTheme = localStorage.getItem('dtps-theme');
-      // Only apply system preference if user hasn't manually set a preference
-      if (!savedTheme) {
-        setIsDarkModeState(e.matches);
-        applyTheme(e.matches);
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   const applyTheme = (isDark: boolean) => {
@@ -67,7 +44,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setIsDarkMode = (isDark: boolean) => {
     setIsDarkModeState(isDark);
-    localStorage.setItem('dtps-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('dtps-staff-theme', isDark ? 'dark' : 'light');
     applyTheme(isDark);
   };
 

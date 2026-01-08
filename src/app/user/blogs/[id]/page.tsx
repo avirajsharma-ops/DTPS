@@ -212,7 +212,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Category Badge */}
-          <div className="absolute bottom-4 left-4">
+          <div className="absolute bottom-8 left-4">
             <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${getCategoryColor(blog.category)}`}>
               {blog.category.charAt(0).toUpperCase() + blog.category.slice(1)}
             </span>
@@ -270,22 +270,20 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
 
-            {/* Description */}
-            <p className={`mt-6 text-base leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              {blog.description}
-            </p>
-
-            {/* Divider */}
-            <div className={`my-6 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`} />
-
-            {/* Blog Content */}
-            <div 
-              className={`prose prose-lg max-w-none ${isDarkMode ? 'prose-invert' : ''}`}
-              dangerouslySetInnerHTML={{ __html: blog.content }}
-              style={{
-                lineHeight: '1.8',
-              }}
-            />
+            {/* Blog Content - only show description if no content or different from content */}
+            {blog.content ? (
+              <div 
+                className={`mt-6 prose prose-lg max-w-none ${isDarkMode ? 'prose-invert' : ''}`}
+                dangerouslySetInnerHTML={{ __html: blog.content }}
+                style={{
+                  lineHeight: '1.8',
+                }}
+              />
+            ) : blog.description ? (
+              <p className={`mt-6 text-base leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                {blog.description}
+              </p>
+            ) : null}
 
             {/* Like Button */}
             <div className="flex items-center justify-center mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
@@ -351,7 +349,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        <UserNavBar />
+   
       </div>
     </PageTransition>
   );

@@ -32,9 +32,10 @@ import { UserRole } from '@/types';
 
 interface SidebarProps {
   className?: string;
+  isDarkMode?: boolean;
 }
 
-export default function Sidebar({ className }: SidebarProps) {
+export default function Sidebar({ className, isDarkMode = false }: SidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -317,18 +318,27 @@ export default function Sidebar({ className }: SidebarProps) {
 
   return (
     <div className={cn(
-      "flex flex-col bg-white border-r border-gray-200 transition-all duration-300 h-screen",
+      "flex flex-col border-r transition-all duration-300 h-screen",
+      isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200",
       isCollapsed ? "w-22" : "w-[15.9rem]",
       className
     )}>
       {/* Header - Always shows Dashboard button */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className={cn(
+        "flex items-center justify-between p-4 border-b",
+        isDarkMode ? "border-gray-700" : "border-gray-200"
+      )}>
         {!isCollapsed && (
           <Link
             href={dashboardHref}
-            className="flex items-center space-x-2 px-3 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200"
+            className={cn(
+              "flex items-center space-x-2 px-3 py-1 rounded-lg border",
+              isDarkMode 
+                ? "bg-green-900/50 text-green-400 border-green-800" 
+                : "bg-green-100 text-green-700 border-green-200"
+            )}
           >
-            <BarChart3 className="h-5 w-5 text-green-600" />
+            <BarChart3 className={cn("h-5 w-5", isDarkMode ? "text-green-400" : "text-green-600")} />
             <span className="text-sm font-medium">Dashboard</span>
           </Link>
         )}
@@ -336,7 +346,7 @@ export default function Sidebar({ className }: SidebarProps) {
           variant="ghost"
           size="sm"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="h-8 w-8 p-0"
+          className={cn("h-8 w-8 p-0", isDarkMode && "hover:bg-gray-800 text-gray-400")}
         >
           {isCollapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -359,18 +369,22 @@ export default function Sidebar({ className }: SidebarProps) {
               className={cn(
                 "flex items-center justify-between space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative",
                 isActive
-                  ? "bg-green-100 text-green-700 border border-green-200"
-                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                  ? isDarkMode 
+                    ? "bg-green-900/50 text-green-400 border border-green-800"
+                    : "bg-green-100 text-green-700 border border-green-200"
+                  : isDarkMode
+                    ? "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
                 isCollapsed && "justify-center"
               )}
               title={isCollapsed ? item.label : undefined}
             >
               <div className="flex items-center space-x-3">
-                <Icon className={cn("h-5 w-5", isActive && "text-green-600")} />
+                <Icon className={cn("h-5 w-5", isActive && (isDarkMode ? "text-green-400" : "text-green-600"))} />
                 {!isCollapsed && (
                   <div className="flex flex-col">
                     <span>{item.label}</span>
-                    <span className="text-xs text-gray-500">{item.description}</span>
+                    <span className={cn("text-xs", isDarkMode ? "text-gray-500" : "text-gray-500")}>{item.description}</span>
                   </div>
                 )}
               </div>
@@ -380,22 +394,25 @@ export default function Sidebar({ className }: SidebarProps) {
       </nav>
 
       {/* User Info */}
-      <div className="p-4 border-t border-gray-200">
+      <div className={cn("p-4 border-t", isDarkMode ? "border-gray-700" : "border-gray-200")}>
         <div className={cn(
           "flex items-center space-x-3",
           isCollapsed && "justify-center"
         )}>
           <div className="shrink-0">
-            <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-              <User className="h-4 w-4 text-green-600" />
+            <div className={cn(
+              "h-8 w-8 rounded-full flex items-center justify-center",
+              isDarkMode ? "bg-green-900/50" : "bg-green-100"
+            )}>
+              <User className={cn("h-4 w-4", isDarkMode ? "text-green-400" : "text-green-600")} />
             </div>
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className={cn("text-sm font-medium truncate", isDarkMode ? "text-white" : "text-gray-900")}>
                 {session.user.name}
               </p>
-              <p className="text-xs text-gray-500 truncate capitalize">
+              <p className={cn("text-xs truncate capitalize", isDarkMode ? "text-gray-500" : "text-gray-500")}>
                 {session.user.role}
               </p>
             </div>

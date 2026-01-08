@@ -30,8 +30,13 @@ import {
 } from 'lucide-react';
 import { UserRole } from '@/types';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
-export default function Navbar() {
+interface NavbarProps {
+  isDarkMode?: boolean;
+}
+
+export default function Navbar({ isDarkMode = false }: NavbarProps) {
   const pathname = usePathname();
   const isDashboard = pathname?.includes('/dashboard');
   const { data: session, status } = useSession();
@@ -93,13 +98,13 @@ export default function Navbar() {
 
   if (status === 'loading') {
     return (
-      <nav className="border-b bg-white safe-area-top">
+      <nav className={cn("border-b safe-area-top", isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white")}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex items-center space-x-2">
                 <Heart className="h-6 w-6 text-green-600" />
-                <span className="text-lg font-semibold text-gray-900">DTPS</span>
+                <span className={cn("text-lg font-semibold", isDarkMode ? "text-white" : "text-gray-900")}>DTPS</span>
               </div>
             </div>
           </div>
@@ -109,14 +114,14 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="border-b bg-white sticky top-0 z-50 safe-area-top">
+    <nav className={cn("border-b sticky top-0 z-50 safe-area-top", isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white")}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex items-center space-x-2">
               <Heart className="h-6 w-6 text-green-600" />
-              <span className="text-lg font-semibold text-gray-900">DTPS</span>
+              <span className={cn("text-lg font-semibold", isDarkMode ? "text-white" : "text-gray-900")}>DTPS</span>
             </div>
           </div>
 
@@ -129,7 +134,12 @@ export default function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                    className={cn(
+                      "flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                      isDarkMode 
+                        ? "text-gray-300 hover:text-white hover:bg-gray-800" 
+                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                    )}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -149,6 +159,7 @@ export default function Navbar() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className={isDarkMode ? "text-gray-300 hover:bg-gray-800" : ""}
                   >
                     {isMobileMenuOpen ? (
                       <X className="h-5 w-5" />
@@ -167,41 +178,41 @@ export default function Navbar() {
                           src={session.user.avatar} 
                           alt={session.user.name} 
                         />
-                        <AvatarFallback>
+                        <AvatarFallback className={isDarkMode ? "bg-gray-700 text-gray-300" : ""}>
                           {getInitials(session.user.firstName, session.user.lastName)}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuContent className={cn("w-56", isDarkMode && "bg-gray-800 border-gray-700")} align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">
+                        <p className={cn("text-sm font-medium leading-none", isDarkMode && "text-white")}>
                           {session.user.name}
                         </p>
-                        <p className="text-xs leading-none text-muted-foreground">
+                        <p className={cn("text-xs leading-none", isDarkMode ? "text-gray-400" : "text-muted-foreground")}>
                           {session.user.email}
                         </p>
-                        <p className="text-xs leading-none text-muted-foreground capitalize">
+                        <p className={cn("text-xs leading-none capitalize", isDarkMode ? "text-gray-400" : "text-muted-foreground")}>
                           {session.user.role}
                         </p>
                       </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuSeparator className={isDarkMode ? "bg-gray-700" : ""} />
+                    <DropdownMenuItem asChild className={isDarkMode ? "text-gray-300 focus:bg-gray-700 focus:text-white" : ""}>
                       <Link href="/profile" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
                         <span>Profile</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild className={isDarkMode ? "text-gray-300 focus:bg-gray-700 focus:text-white" : ""}>
                       <Link href="/settings" className="flex items-center">
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
+                    <DropdownMenuSeparator className={isDarkMode ? "bg-gray-700" : ""} />
+                    <DropdownMenuItem onClick={handleSignOut} className={isDarkMode ? "text-gray-300 focus:bg-gray-700 focus:text-white" : ""}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
@@ -210,7 +221,7 @@ export default function Navbar() {
               </>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" asChild className={isDarkMode ? "text-gray-300 hover:bg-gray-800" : ""}>
                   <Link href="/auth/signin">Sign In</Link>
                 </Button>
                 <Button asChild>
@@ -224,14 +235,19 @@ export default function Navbar() {
         {/* Mobile Navigation */}
         {session?.user && isMobileMenuOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
+            <div className={cn("px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t", isDarkMode ? "border-gray-700" : "")}>
               {getNavigationItems(session.user.role).map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                    className={cn(
+                      "flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors",
+                      isDarkMode 
+                        ? "text-gray-300 hover:text-white hover:bg-gray-800" 
+                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                    )}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Icon className="h-5 w-5" />
