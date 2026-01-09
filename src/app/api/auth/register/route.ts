@@ -24,6 +24,7 @@ function normalizePhoneNumber(phone: string, defaultCountryCode: string = '+91')
 }
 
 const registerSchema = z.object({
+  signupContext: z.enum(['client', 'staff']).optional(),
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),
   confirmPassword: z.string().optional(),
@@ -59,6 +60,16 @@ export async function POST(request: NextRequest) {
     
     // Validate input
     const validatedData = registerSchema.parse(body);
+
+    // If this request came from the auth UIs, enforce intent:
+    // - staff signup page must not create client accounts
+    // - client signup page must not create staff accounts
+    if (validatedData.signupContext === 'staff' && validatedData.role === UserRole.CLIENT) {
+      return NextResponse.json({ error: 'Registration failed' }, { status: 400 });
+    }
+    if (validatedData.signupContext === 'client' && validatedData.role !== UserRole.CLIENT) {
+      return NextResponse.json({ error: 'Registration failed' }, { status: 400 });
+    }
     
     await connectDB();
     

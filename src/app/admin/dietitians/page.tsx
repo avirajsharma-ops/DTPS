@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ interface Dietitian {
 }
 
 export default function AdminDietitiansPage() {
+  const router = useRouter();
   const [data, setData] = useState<Dietitian[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -198,6 +200,7 @@ export default function AdminDietitiansPage() {
                       <td className="p-3">{u.consultationFee ? `₹${u.consultationFee}` : '-'}</td>
                       <td className="p-3 truncate max-w-xs">{(u.specializations || []).join(', ')}</td>
                       <td className="p-3 flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => router.push(`/admin/dietitians/${u._id}`)}>View</Button>
                         <Button variant="outline" size="sm" onClick={() => openEdit(u)}>Edit</Button>
                         <Button
                           variant={u.status === 'active' ? 'destructive' : 'default'}

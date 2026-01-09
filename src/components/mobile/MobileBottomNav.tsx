@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Target, Utensils, Plus, TrendingUp, User, Droplet, Scale, Calendar, Camera, Activity, Heart } from 'lucide-react';
+import { Target, Plus, TrendingUp, User, Droplet, Scale, Calendar, Camera, Activity, Heart } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export function MobileBottomNav() {
@@ -16,10 +16,10 @@ export function MobileBottomNav() {
 
   const quickActions = [
     {
-      icon: Utensils,
-      label: 'Log Food',
+      icon: Heart,
+      label: 'My Plan',
       gradient: 'from-orange-500 to-red-500',
-      action: () => router.push('/food-log')
+      action: () => router.push('/my-plan')
     },
     {
       icon: Droplet,
@@ -131,13 +131,13 @@ export function MobileBottomNav() {
           </Link>
 
           <Link
-            href="/food-log"
+            href="/my-plan"
             className={`flex flex-col items-center justify-center transition-colors duration-300 ${
-              isActive('/food-log') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+              isActive('/my-plan') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
-            <Utensils className="h-6 w-6 mb-1" />
-            <span className="text-xs font-medium">Food</span>
+            <Heart className="h-6 w-6 mb-1" />
+            <span className="text-xs font-medium">Plan</span>
           </Link>
 
           <button

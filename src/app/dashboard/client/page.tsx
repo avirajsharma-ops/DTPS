@@ -87,9 +87,6 @@ export default function ClientDashboard() {
               Here's your health overview for today
             </p>
           </div>
-          <Button asChild>
-            <Link href="/food-log">Log Food</Link>
-          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -189,9 +186,6 @@ export default function ClientDashboard() {
                   </div>
                 ))}
                 
-                <Button variant="outline" className="w-full mt-4" asChild>
-                  <Link href="/food-log">View Full Food Log</Link>
-                </Button>
               </div>
             </CardContent>
           </Card>

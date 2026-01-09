@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -125,6 +126,7 @@ interface HealthCounselor {
 
 export default function AdminAllClientsPage() {
   const { status } = useSession();
+  const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [dietitians, setDietitians] = useState<Dietitian[]>([]);
   const [healthCounselors, setHealthCounselors] = useState<HealthCounselor[]>([]);
@@ -998,7 +1000,7 @@ export default function AdminAllClientsPage() {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              onClick={() => openDetailDialog(client)}
+                              onClick={() => router.push(`/admin/clients/${client._id}`)}
                               className="text-xs px-2 sm:px-3"
                             >
                               <Eye className="h-3 w-3 sm:mr-1" />

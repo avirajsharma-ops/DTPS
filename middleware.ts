@@ -126,6 +126,7 @@ export default withAuth(
           '/client-auth/onboarding',
           '/client-auth/forget-password',
           '/client-auth/reset-password',
+          '/client-auth/error',
         ];
         
         // Exact match for home page

@@ -89,43 +89,38 @@ export async function PUT(
     if (metaTitle !== null) blog.metaTitle = metaTitle || undefined;
     if (metaDescription !== null) blog.metaDescription = metaDescription || undefined;
 
-    // Upload new image if provided
+    // Upload new image if provided - single upload only
     if (featuredImageData && featuredImageData.includes('base64')) {
       try {
         const imageBase64 = featuredImageData.split('base64,')[1];
         
-        // Compress for featured image
-        const compressedFeatured = await compressBase64ImageServer(imageBase64, {
+        // Compress image once
+        const compressedImage = await compressBase64ImageServer(imageBase64, {
           quality: 85,
           maxWidth: 1920,
           maxHeight: 1080,
           format: 'jpeg'
         });
 
-        // Compress for thumbnail
-        const compressedThumbnail = await compressBase64ImageServer(imageBase64, {
-          quality: 80,
-          maxWidth: 600,
-          maxHeight: 400,
-          format: 'jpeg'
-        });
-
-        // Upload featured image
+        // Upload single image to ImageKit
         const imageKitInstance = getImageKit();
-        const featuredUpload = await imageKitInstance.upload({
-          file: compressedFeatured,
-          fileName: `blog_featured_${Date.now()}.jpg`,
+        const uploadResult = await imageKitInstance.upload({
+          file: compressedImage,
+          fileName: `blog_${Date.now()}.jpg`,
           folder: '/blogs',
         });
-        blog.featuredImage = featuredUpload.url;
-
-        // Upload thumbnail
-        const thumbnailUpload = await imageKitInstance.upload({
-          file: compressedThumbnail,
-          fileName: `blog_thumb_${Date.now()}.jpg`,
-          folder: '/blogs',
-        });
-        blog.thumbnailImage = thumbnailUpload.url;
+        
+        // Use the same URL for featured image
+        blog.featuredImage = uploadResult.url;
+        
+        // Generate thumbnail URL using ImageKit's URL transformation
+        const filePath = (uploadResult as any).filePath as string | undefined;
+        if (filePath && uploadResult.url.endsWith(filePath)) {
+          const baseUrl = uploadResult.url.slice(0, -filePath.length);
+          blog.thumbnailImage = `${baseUrl}/tr:w-600,h-400,fo-auto${filePath}`;
+        } else {
+          blog.thumbnailImage = uploadResult.url;
+        }
       } catch (uploadError) {
         console.error('Image upload failed:', uploadError);
       }

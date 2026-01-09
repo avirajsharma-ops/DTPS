@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,7 @@ interface HealthCounselor {
 }
 
 export default function AdminHealthCounselorsPage() {
+  const router = useRouter();
   const [healthCounselors, setHealthCounselors] = useState<HealthCounselor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -213,6 +215,7 @@ export default function AdminHealthCounselorsPage() {
                       <td className="p-3">${hc.consultationFee || 0}</td>
                       <td className="p-3">{hc.createdAt ? new Date(hc.createdAt).toLocaleString() : '-'}</td>
                       <td className="p-3 flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => router.push(`/admin/health-counselors/${hc._id}`)}>View</Button>
                         <Button variant="outline" size="sm" onClick={() => openEdit(hc)}>Edit</Button>
                         <Button
                           variant={hc.status === 'active' ? 'destructive' : 'default'}

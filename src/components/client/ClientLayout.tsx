@@ -18,7 +18,6 @@ interface ClientLayoutProps {
 const CLIENT_ROUTES = [
   '/client-dashboard',
   '/my-plan',
-  '/food-log',
   '/progress',
   '/appointments',
   '/messages',
@@ -55,10 +54,6 @@ const getPageInfo = (pathname: string, session: any) => {
     },
     '/my-plan': {
       title: 'My Meal Plan',
-      subtitle: format(new Date(), 'EEEE, MMM d')
-    },
-    '/food-log': {
-      title: 'Food Diary',
       subtitle: format(new Date(), 'EEEE, MMM d')
     },
     '/progress': {

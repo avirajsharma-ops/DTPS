@@ -166,12 +166,6 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
             description: 'Current meal plan'
           },
           { 
-            href: '/food-log', 
-            label: 'Food Log', 
-            icon: Utensils,
-            description: 'Track your meals'
-          },
-          { 
             href: '/progress', 
             label: 'Progress', 
             icon: TrendingUp,

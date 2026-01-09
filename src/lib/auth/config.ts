@@ -12,12 +12,15 @@ export const authOptions: NextAuthOptions = {
       name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
+        password: { label: 'Password', type: 'password' },
+        loginContext: { label: 'Login Context', type: 'text' }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required');
         }
+
+        const loginContext = (credentials as any)?.loginContext as 'staff' | 'client' | undefined;
 
         try {
           await connectDB();
@@ -28,6 +31,14 @@ export const authOptions: NextAuthOptions = {
           }).select('+password');
 
           if (user) {
+            // Block clients from using the staff auth pages, and block staff from using the client auth pages.
+            if (loginContext === 'staff' && user.role === UserRole.CLIENT) {
+              throw new Error('Wrong email or password');
+            }
+            if (loginContext === 'client' && user.role !== UserRole.CLIENT) {
+              throw new Error('Wrong email or password');
+            }
+
             const isPasswordValid = await user.comparePassword(credentials.password);
 
             if (!isPasswordValid) {
@@ -59,6 +70,11 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (wooClient) {
+            // WooCommerce clients are always clients.
+            if (loginContext === 'staff') {
+              throw new Error('Wrong email or password');
+            }
+
             // For WooCommerce clients, use plain text password comparison
             if (wooClient.password !== credentials.password) {
               throw new Error('Wrong email or password');

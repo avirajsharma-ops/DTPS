@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { X, LayoutDashboard, Heart, Utensils, TrendingUp, Calendar, MessageCircle, CreditCard, User, Settings, HelpCircle, LogOut, ShoppingBag } from 'lucide-react';
+import { X, LayoutDashboard, Heart, TrendingUp, Calendar, MessageCircle, CreditCard, User, Settings, HelpCircle, LogOut, ShoppingBag } from 'lucide-react';
 
 interface UserSidebarProps {
   isOpen: boolean;
@@ -39,7 +39,6 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
   const menuItems = [
     { href: '/user', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/user/plan', label: 'My Meal Plan', icon: Heart },
-    { href: '/user/food-log', label: 'Food Log', icon: Utensils },
     { href: '/user/progress', label: 'Progress', icon: TrendingUp },
     { href: '/user/appointments', label: 'Appointments', icon: Calendar ,badge: (session as any)?.user?.upcomingAppointmentsCount || ""},
     { href: '/user/messages', label: 'Messages', icon: MessageCircle, badge: (session as any)?.user?.unreadMessagesCount || ""},

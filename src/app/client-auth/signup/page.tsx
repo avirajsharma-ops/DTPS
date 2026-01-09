@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -48,12 +48,33 @@ type ClientSignUpInput = z.infer<typeof clientSignUpSchema>;
 
 export default function ClientSignUpPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      if (session.user.role === 'client') {
+        router.replace('/user');
+      } else if (session.user.role === 'admin') {
+        router.replace('/dashboard/admin');
+      } else if (session.user.role === 'dietitian') {
+        router.replace('/dashboard/dietitian');
+      } else if (session.user.role === 'health_counselor') {
+        router.replace('/health-counselor/clients');
+      }
+    }
+  }, [status, session, router]);
 
   const {
     register,
@@ -93,6 +114,7 @@ export default function ClientSignUpPage() {
           confirmPassword: data.confirmPassword,
           referralCode: data.referralCode,
           role: 'client', // Always set role as client
+          signupContext: 'client'
         }),
       });
 
@@ -108,7 +130,9 @@ export default function ClientSignUpPage() {
       const signInResult = await signIn('credentials', {
         email: data.email,
         password: data.password,
+        loginContext: 'client',
         redirect: false,
+        callbackUrl: '/user/onboarding',
       });
 
       if (signInResult?.error) {
@@ -121,14 +145,41 @@ export default function ClientSignUpPage() {
       }
 
       // Redirect to onboarding after successful auto-login
-      router.push('/user/onboarding');
+      router.replace('/user/onboarding');
 
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } catch (err) {
+      console.error('Registration error:', err);
+      if (err instanceof Error) {
+        // Handle specific error messages
+        if (err.message.includes('already exists') || err.message.includes('already registered')) {
+          setError(err.message);
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+          setError('Network error. Please check your connection and try again.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (!mounted || status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#E06A26] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If already authenticated, redirect effect will run; don't show any intermediate UI.
+  if (status === 'authenticated') return null;
 
   return (
     <div className="flex flex-col min-h-screen bg-white md:bg-gray-50">

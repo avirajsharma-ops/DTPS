@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { 
   Home, 
   Heart, 
-  Utensils, 
   TrendingUp, 
   Calendar, 
   MessageCircle,
@@ -19,7 +18,6 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/user', label: 'Home', icon: Home },
   { href: '/user/plan', label: 'My Plan', icon: Heart },
-  { href: '/user/food-log', label: 'Food Log', icon: Utensils },
   { href: '/user/progress', label: 'Progress', icon: TrendingUp },
   { href: '/user/messages', label: 'Messages', icon: MessageCircle },
 ];

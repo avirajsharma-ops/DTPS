@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { 
   Home, 
   Heart, 
-  Utensils, 
   TrendingUp, 
   Calendar,
   MessageCircle,
@@ -43,7 +42,6 @@ interface MobileLayoutProps {
 const bottomNavItems = [
   { href: '/user/dashboard', label: 'Home', icon: Home },
   { href: '/user/plan', label: 'My Plan', icon: Heart },
-  { href: '/user/food-log', label: 'Food Log', icon: Utensils },
   { href: '/user/progress', label: 'Progress', icon: TrendingUp },
   { href: '/user/messages', label: 'Chat', icon: MessageCircle },
 ];
@@ -52,7 +50,6 @@ const bottomNavItems = [
 const menuItems = [
   { href: '/user/dashboard', label: 'Dashboard', icon: Home },
   { href: '/user/plan', label: 'My Meal Plan', icon: Heart },
-  { href: '/user/food-log', label: 'Food Log', icon: Utensils },
   { href: '/user/progress', label: 'Progress', icon: TrendingUp },
   { href: '/user/appointments', label: 'Appointments', icon: Calendar },
   { href: '/user/notifications', label: 'Notifications', icon: Bell },

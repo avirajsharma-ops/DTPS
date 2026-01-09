@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn, getSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signIn, getSession, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -16,9 +16,30 @@ import Image from 'next/image';
 
 export default function ClientSignInPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      if (session.user.role === 'client') {
+        router.replace('/user');
+      } else if (session.user.role === 'admin') {
+        router.replace('/dashboard/admin');
+      } else if (session.user.role === 'dietitian') {
+        router.replace('/dashboard/dietitian');
+      } else if (session.user.role === 'health_counselor') {
+        router.replace('/health-counselor/clients');
+      }
+    }
+  }, [status, session, router]);
 
   const {
     register,
@@ -36,30 +57,61 @@ export default function ClientSignInPage() {
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
+        loginContext: 'client',
         redirect: false,
+        callbackUrl: '/user',
       });
 
       if (result?.error) {
-        setError('Wrong email or password');
-      } else {
+        // Handle specific error types
+        if (result.error === 'CredentialsSignin') {
+          setError('Wrong email or password. Please try again.');
+        } else if (result.error === 'Configuration') {
+          setError('Server configuration error. Please try again later.');
+        } else {
+          setError(result.error || 'Wrong email or password');
+        }
+        return;
+      }
+
+      if (result?.ok) {
         // Get the updated session to verify client role
-        const session = await getSession();
-        if (session?.user) {
+        const sessionData = await getSession();
+        if (sessionData?.user) {
           // Only allow clients to use this login
-          if (session.user.role === 'client') {
-            router.push('/user');
+          if (sessionData.user.role === 'client') {
+            router.replace('/user');
           } else {
             // Redirect non-clients to their appropriate dashboard
             setError('This login is for clients only. Please use the main login page.');
           }
+        } else {
+          // Session not available yet, still redirect
+          router.replace('/user');
         }
       }
-    } catch (error) {
-      setError('An unexpected error occurred. Please try again.');
+    } catch (err) {
+      console.error('Sign in error:', err);
+      setError('An unexpected error occurred. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (!mounted || status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#E06A26] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If already authenticated, redirect effect will run; don't show any intermediate UI.
+  if (status === 'authenticated') return null;
 
   return (
     <div className="flex flex-col min-h-screen bg-white md:bg-gray-50">

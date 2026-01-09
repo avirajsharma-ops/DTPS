@@ -14,7 +14,6 @@ interface ClientAppLayoutProps {
 // Client routes that should have the persistent layout
 const CLIENT_ROUTES = [
   '/client-dashboard',
-  '/food-log',
   '/progress',
   '/profile',
   '/fitness',
@@ -49,11 +48,6 @@ const getPageInfo = (pathname: string, session: any) => {
       return {
         title: firstName,
         subtitle: `${getGreeting()} ${getGreetingEmoji()}`
-      };
-    case '/food-log':
-      return {
-        title: 'Food Diary',
-        subtitle: format(new Date(), 'EEEE, MMM d')
       };
     case '/progress':
       return {
@@ -122,7 +116,7 @@ export function ClientAppLayout({ children }: ClientAppLayoutProps) {
       </div>
 
       {/* Scrollable Content Area */}
-      <main className="flex-1 overflow-y-auto pt-[78px] pb-20">
+      <main className="flex-1 overflow-y-auto pt-19.5 pb-20">
         <div className="p-4">
           {children}
         </div>

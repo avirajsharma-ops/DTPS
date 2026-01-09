@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upload image to ImageKit
+    // Upload image to ImageKit - single upload only
     let featuredImageUrl = '';
     let thumbnailImageUrl = '';
 
@@ -96,38 +96,35 @@ export async function POST(request: NextRequest) {
         ? featuredImageData.split('base64,')[1] 
         : featuredImageData;
 
-      // Compress for featured image (larger)
-      const compressedFeatured = await compressBase64ImageServer(imageBase64, {
+      // Compress image once (already compressed on client, but ensure server-side optimization)
+      const compressedImage = await compressBase64ImageServer(imageBase64, {
         quality: 85,
         maxWidth: 1920,
         maxHeight: 1080,
         format: 'jpeg'
       });
 
-      // Compress for thumbnail (smaller)
-      const compressedThumbnail = await compressBase64ImageServer(imageBase64, {
-        quality: 80,
-        maxWidth: 600,
-        maxHeight: 400,
-        format: 'jpeg'
-      });
-
-      // Upload featured image
+      // Upload single image to ImageKit
       const imageKitInstance = getImageKit();
-      const featuredUpload = await imageKitInstance.upload({
-        file: compressedFeatured,
-        fileName: `blog_featured_${Date.now()}.jpg`,
+      const uploadResult = await imageKitInstance.upload({
+        file: compressedImage,
+        fileName: `blog_${Date.now()}.jpg`,
         folder: '/blogs',
       });
-      featuredImageUrl = featuredUpload.url;
-
-      // Upload thumbnail
-      const thumbnailUpload = await imageKitInstance.upload({
-        file: compressedThumbnail,
-        fileName: `blog_thumb_${Date.now()}.jpg`,
-        folder: '/blogs',
-      });
-      thumbnailImageUrl = thumbnailUpload.url;
+      
+      // Use the same URL for featured image
+      featuredImageUrl = uploadResult.url;
+      
+      // Generate thumbnail URL using ImageKit's URL transformation
+      // This doesn't create a new file, just transforms on-the-fly
+      const filePath = (uploadResult as any).filePath as string | undefined;
+      if (filePath && uploadResult.url.endsWith(filePath)) {
+        const baseUrl = uploadResult.url.slice(0, -filePath.length);
+        thumbnailImageUrl = `${baseUrl}/tr:w-600,h-400,fo-auto${filePath}`;
+      } else {
+        // Fallback: keep same URL if we can't safely build transform URL
+        thumbnailImageUrl = uploadResult.url;
+      }
     } catch (uploadError) {
       console.error('Image upload failed:', uploadError);
       return NextResponse.json(

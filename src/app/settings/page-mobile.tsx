@@ -25,7 +25,6 @@ import {
   FileText,
   MessageCircle,
   Home,
-  Utensils,
   TrendingUp,
   Plus
 } from 'lucide-react';
@@ -326,11 +325,11 @@ export default function MobileSettingsPage() {
             <Home className="h-6 w-6 mb-1" />
             <span className="text-xs font-medium">Home</span>
           </Link>
-          <Link href="/food-log" className="flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 active:bg-gray-50 transition-colors">
-            <Utensils className="h-6 w-6 mb-1" />
-            <span className="text-xs font-medium">Food</span>
+          <Link href="/my-plan" className="flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 active:bg-gray-50 transition-colors">
+            <Heart className="h-6 w-6 mb-1" />
+            <span className="text-xs font-medium">Plan</span>
           </Link>
-          <Link href="/food-log" className="flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 active:bg-gray-50 transition-colors">
+          <Link href="/my-plan" className="flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 active:bg-gray-50 transition-colors">
             <div className="h-12 w-12 bg-emerald-500 rounded-full flex items-center justify-center -mt-6 shadow-lg">
               <Plus className="h-6 w-6 text-white" />
             </div>

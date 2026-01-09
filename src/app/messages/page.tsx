@@ -26,7 +26,7 @@ import {
   Video,
   MoreVertical,
   Home,
-  Utensils,
+  Target,
   TrendingUp,
   User as UserIcon,
   Camera,
@@ -1831,9 +1831,9 @@ function ClientMessagesUI() {
               <Home className="h-6 w-6 mb-1" />
               <span className="text-xs font-medium">Home</span>
             </Link>
-            <Link href="/food-log" className="flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 active:bg-gray-50 transition-colors">
-              <Utensils className="h-6 w-6 mb-1" />
-              <span className="text-xs font-medium">Food</span>
+            <Link href="/my-plan" className="flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 active:bg-gray-50 transition-colors">
+              <Target className="h-6 w-6 mb-1" />
+              <span className="text-xs font-medium">Plan</span>
             </Link>
             <button className="flex flex-col items-center justify-center -mt-6">
               <div className="h-14 w-14 rounded-full bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform">

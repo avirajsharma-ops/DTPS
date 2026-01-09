@@ -56,7 +56,10 @@ export default function SignUpPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(submitData),
+        body: JSON.stringify({
+          ...submitData,
+          signupContext: 'staff'
+        }),
       });
 
       const result = await response.json();

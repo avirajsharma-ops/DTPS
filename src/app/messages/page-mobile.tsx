@@ -22,7 +22,7 @@ import {
   Video,
   User,
   Target,
-  Utensils,
+  Heart,
   TrendingUp
 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -390,9 +390,9 @@ export default function MessagesPage() {
             <Target className="h-6 w-6 mb-1" />
             <span className="text-xs font-medium">Home</span>
           </Link>
-          <Link href="/food-log" className="flex flex-col items-center justify-center text-gray-400 hover:text-gray-600">
-            <Utensils className="h-6 w-6 mb-1" />
-            <span className="text-xs font-medium">Food</span>
+          <Link href="/my-plan" className="flex flex-col items-center justify-center text-gray-400 hover:text-gray-600">
+            <Heart className="h-6 w-6 mb-1" />
+            <span className="text-xs font-medium">Plan</span>
           </Link>
           <button className="flex flex-col items-center justify-center -mt-6">
             <div className="h-14 w-14 rounded-full bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">

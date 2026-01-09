@@ -153,7 +153,7 @@ export default function UserHomePage() {
         fetch(`/api/client/activity?date=${today}`),
         fetch(`/api/client/steps?date=${today}`),
         fetch(`/api/client/meal-plan?date=${today}`),
-        fetch(`/api/client/food-log?date=${today}`)
+        fetch(`/api/food-logs?date=${today}`)
       ]);
 
       const newData = { ...data };
@@ -269,17 +269,11 @@ export default function UserHomePage() {
       // Also add calories from food log entries (manual food logging)
       if (foodLogRes.ok) {
         const foodLogData = await foodLogRes.json();
-        if (foodLogData.success && foodLogData.entries) {
-          const entries = foodLogData.entries || [];
-          const foodLogCalories = entries.reduce((sum: number, entry: any) => sum + (entry.calories || 0), 0);
-          const foodLogProtein = entries.reduce((sum: number, entry: any) => sum + (entry.protein || 0), 0);
-          const foodLogCarbs = entries.reduce((sum: number, entry: any) => sum + (entry.carbs || 0), 0);
-          const foodLogFat = entries.reduce((sum: number, entry: any) => sum + (entry.fat || 0), 0);
-          caloriesConsumed += foodLogCalories;
-          proteinConsumed += foodLogProtein;
-          carbsConsumed += foodLogCarbs;
-          fatConsumed += foodLogFat;
-        }
+        const totals = foodLogData?.dailyTotals || {};
+        caloriesConsumed += totals.calories || 0;
+        proteinConsumed += totals.protein || 0;
+        carbsConsumed += totals.carbs || 0;
+        fatConsumed += totals.fat || 0;
       }
 
       // Round all values for display

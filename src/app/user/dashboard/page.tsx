@@ -88,9 +88,8 @@ export default function UserDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-4 gap-3 md:hidden">
+        <div className="grid grid-cols-3 gap-3 md:hidden">
           {[
-            { icon: Apple, label: 'Log Food', href: '/user/food-log', color: 'bg-orange-100 text-orange-600' },
             { icon: Droplet, label: 'Add Water', href: '#', color: 'bg-blue-100 text-blue-600' },
             { icon: Activity, label: 'Log Weight', href: '/user/progress', color: 'bg-purple-100 text-purple-600' },
             { icon: Moon, label: 'Log Sleep', href: '#', color: 'bg-indigo-100 text-indigo-600' },

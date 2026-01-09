@@ -38,16 +38,17 @@ function SignInForm() {
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
+        loginContext: 'staff',
         redirect: false,
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setError('Invalid password');
       } else {
         // Get the updated session to determine redirect
         const session = await getSession();
         if (session?.user) {
-          let redirectUrl = '/user';
+          let redirectUrl = '/dashboard/admin';
           if (session.user.role === 'dietitian') {
             redirectUrl = '/dashboard/dietitian';
           } else if (session.user.role === 'health_counselor') {

@@ -70,11 +70,41 @@ export default function UserFoodLogPage() {
   const fetchDayLog = async (date: Date) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/client/food-log?date=${format(date, 'yyyy-MM-dd')}`);
-      if (response.ok) {
-        const data = await response.json();
-        setDayLog(data);
+      const response = await fetch(`/api/food-logs?date=${format(date, 'yyyy-MM-dd')}`);
+      if (!response.ok) return;
+
+      const apiData = await response.json();
+      const foodLogs = Array.isArray(apiData?.foodLogs) ? apiData.foodLogs : [];
+      const totals = apiData?.dailyTotals || {};
+
+      if (foodLogs.length === 0) {
+        setDayLog(null);
+        return;
       }
+
+      const entries: FoodEntry[] = foodLogs.map((item: any) => ({
+        id: item?._id || crypto.randomUUID(),
+        name: item?.foodName || 'Food',
+        portion: `${item?.quantity ?? ''}${item?.unit ? ` ${item.unit}` : ''}`.trim() || '-',
+        calories: Number(item?.calories) || 0,
+        protein: Number(item?.macros?.protein) || 0,
+        carbs: Number(item?.macros?.carbs) || 0,
+        fat: Number(item?.macros?.fat) || 0,
+        time: item?.loggedAt ? format(new Date(item.loggedAt), 'h:mm a') : '-',
+        mealType: item?.mealType || 'breakfast',
+      }));
+
+      setDayLog({
+        date,
+        entries,
+        totals: {
+          calories: Number(totals?.calories) || 0,
+          protein: Number(totals?.protein) || 0,
+          carbs: Number(totals?.carbs) || 0,
+          fat: Number(totals?.fat) || 0,
+        },
+        targets: defaultLog.targets,
+      });
     } catch (error) {
       console.error('Error fetching food log:', error);
     } finally {
