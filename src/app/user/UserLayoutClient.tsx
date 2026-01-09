@@ -84,10 +84,10 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
     return <FullPageLoader size="lg" text="Loading..." />;
   }
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated - use replace to avoid back button issues
   if (status === 'unauthenticated') {
-    router.push('/client-auth/signin');
-    return <FullPageLoader size="lg" text="Redirecting..." />;
+    router.replace('/client-auth/signin');
+    return null; // Return null to prevent any rendering while redirecting
   }
 
   // If navigation should be hidden (e.g., onboarding), still wrap in ThemeProvider

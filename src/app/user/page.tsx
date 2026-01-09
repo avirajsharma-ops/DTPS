@@ -127,6 +127,7 @@ export default function UserHomePage() {
   const [paymentVerifying, setPaymentVerifying] = useState(false);
   const [blogs, setBlogs] = useState<BlogItem[]>([]);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [data, setData] = useState<DashboardData>({
     caloriesLeft: 0,
     caloriesGoal: 2000,
@@ -142,6 +143,12 @@ export default function UserHomePage() {
     meals: { eaten: 0, total: 4, calories: 0 },
     steps: { current: 0, goal: 10000 },
   });
+
+  // Track mount state
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   // Function to fetch real-time health data (water, sleep, activity, steps, calories)
   const fetchHealthData = useCallback(async () => {
@@ -401,9 +408,15 @@ export default function UserHomePage() {
 
   // Check onboarding status on mount
   useEffect(() => {
-    const checkOnboarding = async () => {
-      if (status === 'loading') return;
+    // Skip if not authenticated
+    if (status !== 'authenticated') {
+      if (status === 'unauthenticated') {
+        setCheckingOnboarding(false);
+      }
+      return;
+    }
 
+    const checkOnboarding = async () => {
       try {
         // Check onboarding and active plan in parallel
         const [onboardingRes, planRes] = await Promise.all([
@@ -493,8 +506,8 @@ export default function UserHomePage() {
 
   const userName = session?.user?.firstName || 'Alex';
 
-  // Show loading while session is loading, checking onboarding, or verifying payment
-  if (status === 'loading' || checkingOnboarding || paymentVerifying) {
+  // Show loading while mounting, session is loading, checking onboarding, or verifying payment
+  if (!mounted || status === 'loading' || checkingOnboarding || paymentVerifying) {
     return (
       <FullPageLoader 
         size="lg" 
@@ -507,12 +520,7 @@ export default function UserHomePage() {
   // Redirect to login if not authenticated
   if (status === 'unauthenticated') {
     router.replace('/client-auth/signin');
-    return (
-      <FullPageLoader 
-        size="lg" 
-        isDarkMode={isDarkMode} 
-      />
-    );
+    return null;
   }
 
   return (
