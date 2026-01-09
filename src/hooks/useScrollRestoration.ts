@@ -6,10 +6,11 @@ import { usePathname } from 'next/navigation';
 // Store scroll positions by path
 const scrollPositions: Record<string, number> = {};
 
-export function useScrollRestoration() {
+export function useScrollRestoration(enabled: boolean = true) {
   const pathname = usePathname();
 
   useEffect(() => {
+    if (!enabled) return;
     // Restore scroll position when component mounts
     const savedPosition = scrollPositions[pathname];
     if (savedPosition !== undefined) {
@@ -43,7 +44,7 @@ export function useScrollRestoration() {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(scrollTimeout);
     };
-  }, [pathname]);
+  }, [pathname, enabled]);
 }
 
 // Export a function to manually save scroll position

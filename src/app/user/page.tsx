@@ -117,6 +117,7 @@ export default function UserHomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isDarkMode } = useTheme();
+  const unmountedRef = useRef(false);
   const [activeCard, setActiveCard] = useState(0);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
   const [hasActivePlan, setHasActivePlan] = useState<boolean | null>(null);
@@ -148,7 +149,20 @@ export default function UserHomePage() {
   // Track mount state
   useEffect(() => {
     setMounted(true);
-    return () => setMounted(false);
+    return () => {
+      setMounted(false);
+      unmountedRef.current = true;
+    };
+  }, []);
+
+  const fetchWithTimeout = useCallback(async (input: RequestInfo | URL, init?: RequestInit, timeoutMs: number = 8000) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(input, { ...(init || {}), signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }, []);
 
   // Redirect unauthenticated users (do this in an effect to avoid navigation flooding)
@@ -429,16 +443,22 @@ export default function UserHomePage() {
     }
 
     const checkOnboarding = async () => {
+      // Hard stop: never block the UI forever on slow networks/proxy issues
+      const hardStop = setTimeout(() => {
+        if (!unmountedRef.current) setCheckingOnboarding(false);
+      }, 8000);
+
       try {
         // Check onboarding and active plan in parallel
         const [onboardingRes, planRes] = await Promise.all([
-          fetch('/api/client/onboarding'),
-          fetch('/api/client/service-plans')
+          fetchWithTimeout('/api/client/onboarding', undefined, 6000),
+          fetchWithTimeout('/api/client/service-plans', undefined, 6000)
         ]);
 
         if (onboardingRes.ok) {
           const data = await onboardingRes.json();
           if (!data.onboardingCompleted) {
+            setCheckingOnboarding(false);
             router.replace('/user/onboarding');
             return;
           }
@@ -455,46 +475,53 @@ export default function UserHomePage() {
           setHasActivePlan(false);
         }
 
+        // IMPORTANT: don't block the whole /user page on other API calls
+        setCheckingOnboarding(false);
+
         // Fetch user profile data (BMI, weight, height, etc.)
-        try {
-          const profileRes = await fetch('/api/client/profile');
-          if (profileRes.ok) {
-            const profileData = await profileRes.json();
-            setUserProfile({
-              bmi: profileData.bmi || '',
-              bmiCategory: profileData.bmiCategory || '',
-              weightKg: profileData.weightKg || '',
-              heightCm: profileData.heightCm || '',
-              generalGoal: profileData.generalGoal || ''
-            });
+        (async () => {
+          try {
+            const profileRes = await fetchWithTimeout('/api/client/profile', undefined, 6000);
+            if (profileRes.ok && !unmountedRef.current) {
+              const profileData = await profileRes.json();
+              setUserProfile({
+                bmi: profileData.bmi || '',
+                bmiCategory: profileData.bmiCategory || '',
+                weightKg: profileData.weightKg || '',
+                heightCm: profileData.heightCm || '',
+                generalGoal: profileData.generalGoal || ''
+              });
+            }
+          } catch (profileError) {
+            console.error('Error fetching profile:', profileError);
           }
-        } catch (profileError) {
-          console.error('Error fetching profile:', profileError);
-        }
-        
+        })();
+
         // Fetch real-time health data (water, sleep, activity, steps)
         fetchHealthData();
-        
-        // Fetch latest blogs for home page
-        try {
-          const blogsRes = await fetch('/api/client/blogs?limit=5');
-          if (blogsRes.ok) {
-            const blogsData = await blogsRes.json();
-            setBlogs(blogsData.blogs || []);
+
+        (async () => {
+          try {
+            const blogsRes = await fetchWithTimeout('/api/client/blogs?limit=5', undefined, 6000);
+            if (blogsRes.ok && !unmountedRef.current) {
+              const blogsData = await blogsRes.json();
+              setBlogs(blogsData.blogs || []);
+            }
+          } catch (blogsError) {
+            console.error('Error fetching blogs:', blogsError);
           }
-        } catch (blogsError) {
-          console.error('Error fetching blogs:', blogsError);
-        }
+        })();
       } catch (error) {
         console.error('Error checking onboarding:', error);
         // If there's an error, assume no active plan so user can see available plans
         setHasActivePlan(false);
+        setCheckingOnboarding(false);
       }
-      setCheckingOnboarding(false);
+      clearTimeout(hardStop);
     };
 
     checkOnboarding();
-  }, [status, router]);
+  }, [status, router, fetchHealthData, fetchWithTimeout]);
 
   // Handle scroll to update active card indicator
   const handleCardsScroll = () => {
@@ -531,7 +558,7 @@ export default function UserHomePage() {
 
   // Redirect to login if not authenticated
   if (status === 'unauthenticated') {
-    return null;
+    return <FullPageLoader size="lg" isDarkMode={isDarkMode} />;
   }
 
   return (

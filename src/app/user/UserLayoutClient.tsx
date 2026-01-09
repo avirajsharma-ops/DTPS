@@ -43,7 +43,7 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   const redirectingRef = useRef(false);
   
   // Enable scroll restoration
-  useScrollRestoration();
+  useScrollRestoration(!pathname.startsWith('/user/recipes'));
 
   useEffect(() => {
     setMounted(true);
@@ -97,7 +97,7 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
 
   // Redirect if not authenticated - use replace to avoid back button issues
   if (status === 'unauthenticated') {
-    return null; // Return null to prevent any rendering while redirecting
+    return <FullPageLoader size="lg" />;
   }
 
   // If navigation should be hidden (e.g., onboarding), still wrap in ThemeProvider

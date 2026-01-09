@@ -67,6 +67,17 @@ export default function ClientSignInPage() {
     setIsLoading(true);
     setError('');
 
+    const isProbablyWebView = () => {
+      try {
+        const w = window as any;
+        if (w?.NativeApp || w?.ReactNativeWebView) return true;
+        const ua = navigator.userAgent || '';
+        return /\bwv\b/i.test(ua) || /WebView/i.test(ua);
+      } catch {
+        return false;
+      }
+    };
+
     try {
       const result = await signIn('credentials', {
         email: data.email,
@@ -89,22 +100,35 @@ export default function ClientSignInPage() {
       }
 
       if (result?.ok) {
-        // Get the updated session to verify client role
-        const sessionData = await getSession();
+        // Get the updated session, but don't block forever.
+        const sessionOrTimeout = await Promise.race([
+          getSession(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500))
+        ]);
+
+        const sessionData = sessionOrTimeout as any;
         if (sessionData?.user) {
-          // Only allow clients to use this login
           if (sessionData.user.role === 'client') {
             redirectAttemptedRef.current = true;
             sessionStorage.setItem('dtps:authRedirectLockUntil', String(Date.now() + 2000));
             router.replace('/user');
           } else {
-            // Redirect non-clients to their appropriate dashboard
             setError('This login is for clients only. Please use the main login page.');
           }
-        } else {
-          // If session isn't established, DO NOT redirect (prevents infinite redirect loops in webviews)
-          setError('Login succeeded but session could not be established. Please try again or open in a browser with cookies enabled.');
+          return;
         }
+
+        // If session isn't established quickly:
+        // - In normal browsers, still navigate to /user immediately (it will hydrate and fetch data).
+        // - In webviews, avoid redirect loops when cookies/storage are blocked.
+        if (!isProbablyWebView()) {
+          redirectAttemptedRef.current = true;
+          sessionStorage.setItem('dtps:authRedirectLockUntil', String(Date.now() + 2000));
+          router.replace('/user');
+          return;
+        }
+
+        setError('Login succeeded but session could not be established. Please enable cookies/storage in the app webview or open in a browser.');
       }
     } catch (err) {
       console.error('Sign in error:', err);
