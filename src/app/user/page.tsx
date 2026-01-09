@@ -128,6 +128,7 @@ export default function UserHomePage() {
   const [blogs, setBlogs] = useState<BlogItem[]>([]);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const redirectingRef = useRef(false);
   const [data, setData] = useState<DashboardData>({
     caloriesLeft: 0,
     caloriesGoal: 2000,
@@ -149,6 +150,17 @@ export default function UserHomePage() {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  // Redirect unauthenticated users (do this in an effect to avoid navigation flooding)
+  useEffect(() => {
+    if (!mounted) return;
+    if (status !== 'unauthenticated') return;
+    if (redirectingRef.current) return;
+
+    redirectingRef.current = true;
+    setCheckingOnboarding(false);
+    router.replace('/client-auth/signin');
+  }, [mounted, status, router]);
 
   // Function to fetch real-time health data (water, sleep, activity, steps, calories)
   const fetchHealthData = useCallback(async () => {
@@ -519,7 +531,6 @@ export default function UserHomePage() {
 
   // Redirect to login if not authenticated
   if (status === 'unauthenticated') {
-    router.replace('/client-auth/signin');
     return null;
   }
 

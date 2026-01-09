@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { signIn, getSession, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -21,6 +21,7 @@ export default function ClientSignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
+  const redirectAttemptedRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -28,18 +29,31 @@ export default function ClientSignInPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
-      if (session.user.role === 'client') {
-        router.replace('/user');
-      } else if (session.user.role === 'admin') {
-        router.replace('/dashboard/admin');
-      } else if (session.user.role === 'dietitian') {
-        router.replace('/dashboard/dietitian');
-      } else if (session.user.role === 'health_counselor') {
-        router.replace('/health-counselor/clients');
-      }
+    if (!mounted) return;
+    if (status !== 'authenticated' || !session?.user) return;
+    if (redirectAttemptedRef.current) return;
+
+    // Prevent navigation ping-pong loops (common in mobile/webview when cookies/session fail)
+    const now = Date.now();
+    const lockUntil = Number(sessionStorage.getItem('dtps:authRedirectLockUntil') || '0');
+    if (lockUntil && now < lockUntil) {
+      return;
     }
-  }, [status, session, router]);
+
+    redirectAttemptedRef.current = true;
+    sessionStorage.setItem('dtps:authRedirectLockUntil', String(now + 2000));
+
+    const role = (session.user.role || '').toLowerCase();
+    if (role === 'client') {
+      router.replace('/user');
+    } else if (role.includes('admin')) {
+      router.replace('/dashboard/admin');
+    } else if (role === 'dietitian') {
+      router.replace('/dashboard/dietitian');
+    } else if (role === 'health_counselor') {
+      router.replace('/health-counselor/clients');
+    }
+  }, [mounted, status, session?.user, router]);
 
   const {
     register,
@@ -80,14 +94,16 @@ export default function ClientSignInPage() {
         if (sessionData?.user) {
           // Only allow clients to use this login
           if (sessionData.user.role === 'client') {
+            redirectAttemptedRef.current = true;
+            sessionStorage.setItem('dtps:authRedirectLockUntil', String(Date.now() + 2000));
             router.replace('/user');
           } else {
             // Redirect non-clients to their appropriate dashboard
             setError('This login is for clients only. Please use the main login page.');
           }
         } else {
-          // Session not available yet, still redirect
-          router.replace('/user');
+          // If session isn't established, DO NOT redirect (prevents infinite redirect loops in webviews)
+          setError('Login succeeded but session could not be established. Please try again or open in a browser with cookies enabled.');
         }
       }
     } catch (err) {
@@ -111,7 +127,16 @@ export default function ClientSignInPage() {
   }
 
   // If already authenticated, redirect effect will run; don't show any intermediate UI.
-  if (status === 'authenticated') return null;
+  if (status === 'authenticated') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#E06A26] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-white md:bg-gray-50">

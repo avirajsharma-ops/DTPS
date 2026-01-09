@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -40,6 +40,7 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
+  const redirectingRef = useRef(false);
   
   // Enable scroll restoration
   useScrollRestoration();
@@ -47,6 +48,16 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Redirect if not authenticated (in effect to avoid navigation flooding)
+  useEffect(() => {
+    if (!mounted) return;
+    if (status !== 'unauthenticated') return;
+    if (redirectingRef.current) return;
+
+    redirectingRef.current = true;
+    router.replace('/client-auth/signin');
+  }, [mounted, status, router]);
 
   // Handle route changes - show loader only after delay
   useEffect(() => {
@@ -86,7 +97,6 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
 
   // Redirect if not authenticated - use replace to avoid back button issues
   if (status === 'unauthenticated') {
-    router.replace('/client-auth/signin');
     return null; // Return null to prevent any rendering while redirecting
   }
 
