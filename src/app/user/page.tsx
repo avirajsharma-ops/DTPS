@@ -493,13 +493,24 @@ export default function UserHomePage() {
 
   const userName = session?.user?.firstName || 'Alex';
 
-  // Show loading while checking onboarding or verifying payment
-  if (checkingOnboarding || paymentVerifying) {
+  // Show loading while session is loading, checking onboarding, or verifying payment
+  if (status === 'loading' || checkingOnboarding || paymentVerifying) {
     return (
       <FullPageLoader 
         size="lg" 
         isDarkMode={isDarkMode} 
         text={paymentVerifying ? 'Verifying your payment...' : undefined} 
+      />
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (status === 'unauthenticated') {
+    router.replace('/client-auth/signin');
+    return (
+      <FullPageLoader 
+        size="lg" 
+        isDarkMode={isDarkMode} 
       />
     );
   }
