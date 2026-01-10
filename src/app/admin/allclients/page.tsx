@@ -1000,11 +1000,11 @@ export default function AdminAllClientsPage() {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              onClick={() => router.push(`/admin/clients/${client._id}`)}
+                              onClick={() => router.push(`/dietician/clients/${client._id}`)}
                               className="text-xs px-2 sm:px-3"
                             >
                               <Eye className="h-3 w-3 sm:mr-1" />
-                              <span className="hidden sm:inline">View</span>
+                              <span className="hidden sm:inline">View Dashboard</span>
                             </Button>
                           </div>
                         </td>

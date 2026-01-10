@@ -39,6 +39,7 @@ import {
   Settings,
   Save,
   Trash2,
+  UserX,
   StickyNote,
   X,
   Plus,
@@ -220,6 +221,7 @@ export default function ClientDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
+  const isAdmin = (session?.user?.role || '').toString().toLowerCase().includes('admin');
   const [client, setClient] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('forms'); // Main section: forms, journal, progress, planning, payments, bookings, documents
@@ -387,6 +389,42 @@ export default function ClientDetailPage() {
       fetchActivePlan();
     }
   }, [params.clientId]);
+
+  const handleAdminDeactivateClient = async () => {
+    if (!isAdmin) return;
+    const ok = window.confirm('Deactivate this client? They will not be able to login.');
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/api/admin/clients/${params.clientId}?action=deactivate`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to deactivate client');
+      toast.success('Client deactivated successfully');
+      router.push('/admin/allclients');
+    } catch (error) {
+      console.error('Error deactivating client:', error);
+      toast.error('Failed to deactivate client');
+    }
+  };
+
+  const handleAdminDeleteClient = async () => {
+    if (!isAdmin) return;
+    const ok = window.confirm('Delete this client permanently? This cannot be undone.');
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/api/admin/clients/${params.clientId}?action=delete`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete client');
+      toast.success('Client deleted permanently');
+      router.push('/admin/allclients');
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast.error('Failed to delete client');
+    }
+  };
 
   // Subscribe to data change events for automatic refresh of active plan
   useDataRefresh(
@@ -1614,6 +1652,29 @@ export default function ClientDetailPage() {
                       </Badge>
                     )}
                   </Button>
+
+                  {isAdmin && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-8 flex items-center gap-1.5 text-amber-600 border-amber-600 hover:bg-amber-50"
+                        onClick={handleAdminDeactivateClient}
+                      >
+                        <UserX className="h-3.5 w-3.5" />
+                        Deactivate
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="text-xs h-8 flex items-center gap-1.5"
+                        onClick={handleAdminDeleteClient}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </Button>
+                    </>
+                  )}
                   {/* <Button 
                     variant="outline" 
                     size="sm" 

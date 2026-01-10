@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { UserRole, UserStatus } from "@/types";
-import { Copy } from "lucide-react";
+import { Copy, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { formatUserId } from "@/lib/utils";
 import { COUNTRY_CODES } from "@/lib/constants/countries";
@@ -29,6 +30,7 @@ interface AdminUser {
 }
 
 export default function AdminUsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -318,6 +320,16 @@ export default function AdminUsersPage() {
                       <td className="p-3 capitalize">{u.status}</td>
                       <td className="p-3">{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
                       <td className="p-3 flex gap-2">
+                        {u.role === 'client' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/dietician/clients/${u._id}`)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View Dashboard
+                          </Button>
+                        )}
                         <Button variant="outline" size="sm" onClick={() => openEdit(u)}>Edit</Button>
                         <Button variant="outline" size="sm" onClick={() => openActivity(u)}>Activity</Button>
                         <Button

@@ -316,6 +316,13 @@ export default function AdminClientDetailPage() {
         <div className="flex gap-2">
           {!isEditing ? (
             <>
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/dietician/clients/${clientId}`)}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                View Dashboard
+              </Button>
               <Button variant="outline" onClick={handleEdit}>
                 <Edit2 className="h-4 w-4 mr-2" />
                 Edit
@@ -355,7 +362,7 @@ export default function AdminClientDetailPage() {
       <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-6">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <Avatar className="h-24 w-24">
                 <AvatarImage src={client.avatar} />
                 <AvatarFallback className="text-2xl bg-[#3AB1A0] text-white">
@@ -677,7 +684,7 @@ export default function AdminClientDetailPage() {
                           <FileText className="h-8 w-8 text-gray-500" />
                         )}
                         <div>
-                          <p className="font-medium text-sm truncate max-w-[150px]">{doc.fileName}</p>
+                          <p className="font-medium text-sm truncate max-w-37.5">{doc.fileName}</p>
                           <p className="text-xs text-gray-500">{doc.type}</p>
                           <p className="text-xs text-gray-400">
                             {format(new Date(doc.uploadedAt), 'MMM dd, yyyy')}
