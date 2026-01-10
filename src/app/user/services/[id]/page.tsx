@@ -358,12 +358,14 @@ export default function ServiceDetailPage() {
         
 
         {/* Purchase Button */}
-        <div className={`sticky bottom-0 left-0 right-0 pt-4 pb-6 -mx-4 px-4 ${isDarkMode ? 'bg-linear-to-t from-gray-900 via-gray-900 to-transparent' : 'bg-linear-to-t from-white via-white to-transparent'}`}>
+        <div className={`sticky bottom-8 left-0 right-0 pt-4 pb-6 -mx-4 px-4 ${isDarkMode ? 'bg-linear-to-t from-gray-900 via-gray-900 to-transparent' : 'bg-linear-to-t from-white via-white to-transparent'}`}>
           <button 
             onClick={handlePurchase}
             disabled={isPurchasing || selectedTier === null}
             className="w-full py-4 px-6 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B] text-white rounded-2xl font-bold text-lg hover:shadow-lg transition-all max-w-5xl mx-auto disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
+
+            
             {isPurchasing ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
