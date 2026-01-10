@@ -77,6 +77,7 @@ export default function BlogsPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [categories, setCategories] = useState<string[]>(['All']);
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState<Set<string>>(new Set());
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchBlogs();
@@ -85,17 +86,26 @@ export default function BlogsPage() {
   const fetchBlogs = async () => {
     try {
       setLoading(true);
+      setError('');
       const response = await fetch('/api/client/blogs');
-      if (response.ok) {
-        const data = await response.json();
-        setBlogs(data.blogs || []);
-        const uniqueCategories = ['All', ...(data.categories || []).map((c: string) => 
-          c.charAt(0).toUpperCase() + c.slice(1)
-        )];
-        setCategories(uniqueCategories);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch blogs (${response.status})`);
       }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Blogs response was not JSON');
+      }
+
+      const data = await response.json();
+      setBlogs(data.blogs || []);
+      const uniqueCategories = ['All', ...(data.categories || []).map((c: string) =>
+        c.charAt(0).toUpperCase() + c.slice(1)
+      )];
+      setCategories(uniqueCategories);
     } catch (error) {
       console.error('Error fetching blogs:', error);
+      setError('Unable to load blogs right now.');
     } finally {
       setLoading(false);
     }
@@ -129,9 +139,34 @@ export default function BlogsPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-[100] bg-white dark:bg-gray-950">
+      <div className="fixed inset-0 flex items-center justify-center z-100 bg-white dark:bg-gray-950">
         <SpoonGifLoader size="lg" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageTransition>
+        <div className={`min-h-screen pb-24 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+          <div className="px-4 pt-10">
+            <Link href="/user" className="inline-flex items-center gap-2 text-[#3AB1A0] font-semibold">
+              <ArrowLeft className="h-5 w-5" />
+              Back
+            </Link>
+            <div className={`mt-6 rounded-2xl p-6 ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white shadow-md'}`}>
+              <p className={`${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{error}</p>
+              <button
+                type="button"
+                onClick={fetchBlogs}
+                className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-full bg-[#3AB1A0] text-white text-sm font-semibold"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      </PageTransition>
     );
   }
 
@@ -152,7 +187,7 @@ export default function BlogsPage() {
                 <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Health Blogs</h1>
                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tips & insights for your wellness journey</p>
               </div>
-              <div className="p-2 bg-gradient-to-br from-[#3AB1A0] to-[#2D8A7C] rounded-xl shadow-md">
+              <div className="p-2 bg-linear-to-br from-[#3AB1A0] to-[#2D8A7C] rounded-xl shadow-md">
                 <BookOpen className="h-5 w-5 text-white" />
               </div>
             </div>
@@ -181,7 +216,7 @@ export default function BlogsPage() {
                   onClick={() => setSelectedCategory(category)}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                     selectedCategory === category
-                      ? 'bg-gradient-to-r from-[#3AB1A0] to-[#2D8A7C] text-white shadow-md'
+                      ? 'bg-linear-to-r from-[#3AB1A0] to-[#2D8A7C] text-white shadow-md'
                       : isDarkMode
                         ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
                         : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'

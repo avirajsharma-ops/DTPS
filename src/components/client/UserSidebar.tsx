@@ -82,7 +82,7 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
     { href: '/user/billing', label: 'Billing', icon: CreditCard },
     { href: '/user/profile', label: 'Profile', icon: User },
     { href: '/user/settings', label: 'Settings', icon: Settings },
-    { href: '/user/help', label: 'Help & Support', icon: HelpCircle },
+    
   ];
 
   const userName = session?.user?.firstName && session?.user?.lastName 

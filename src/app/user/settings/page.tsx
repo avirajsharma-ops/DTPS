@@ -288,13 +288,14 @@ export default function UserSettingsPage() {
       links: [
         { label: 'Terms of Service', href: '/user/settings/terms-of-service', icon: FileText },
         { label: 'Privacy Policy', href: '/user/settings/privacy-policy', icon: FileText },
+        { label: 'Refund & Cancellation Policy', href: '/user/settings/refund', icon: FileText },
       ],
     },
   ];
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-[100] bg-white dark:bg-gray-950">
+      <div className="fixed inset-0 flex items-center justify-center z-100 bg-white dark:bg-gray-950">
         <SpoonGifLoader size="lg" />
       </div>
     );

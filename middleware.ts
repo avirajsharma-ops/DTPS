@@ -107,6 +107,13 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
 
+        // Allow public read-only access to blogs endpoints (list + detail).
+        // This prevents WebView cookie/session flakiness from hiding blogs UI.
+        if (pathname.startsWith('/api/client/blogs')) {
+          const method = req.method?.toUpperCase();
+          if (method === 'GET' || method === 'HEAD') return true;
+        }
+
         // CRITICAL: Check public user routes FIRST before anything else
         if (isPublicUserRoute(pathname)) {
           return true;

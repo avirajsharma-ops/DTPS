@@ -87,15 +87,19 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
     try {
       setLoading(true);
       const response = await fetch(`/api/client/blogs/${blogId}`);
-      if (!response.ok) {
-        throw new Error('Blog not found');
+      if (!response.ok) throw new Error('Blog not found');
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Blog response was not JSON');
       }
+
       const data = await response.json();
       setBlog(data.blog);
       setRelatedBlogs(data.relatedBlogs || []);
       setLikesCount(data.blog.likes || 0);
     } catch (err) {
-      setError('Blog not found');
+      setError('Unable to load this blog right now.');
       console.error('Error fetching blog:', err);
     } finally {
       setLoading(false);
@@ -144,7 +148,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-[100] bg-white dark:bg-gray-950">
+      <div className="fixed inset-0 flex items-center justify-center z-100 bg-white dark:bg-gray-950">
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -183,7 +187,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
               <ImageOff className="h-16 w-16 text-gray-400" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-black/30" />
           
           {/* Top Navigation */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 pt-8">

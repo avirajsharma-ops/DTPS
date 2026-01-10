@@ -127,6 +127,8 @@ export default function UserHomePage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [paymentVerifying, setPaymentVerifying] = useState(false);
   const [blogs, setBlogs] = useState<BlogItem[]>([]);
+  const [blogsLoading, setBlogsLoading] = useState(false);
+  const [blogsError, setBlogsError] = useState<string>('');
   const cardsContainerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const redirectingRef = useRef(false);
@@ -156,12 +158,30 @@ export default function UserHomePage() {
   }, []);
 
   const fetchWithTimeout = useCallback(async (input: RequestInfo | URL, init?: RequestInit, timeoutMs: number = 8000) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const doFetch = () => fetch(input, init);
+
+    // Some Android WebViews have partial/buggy AbortController+fetch(signal) support.
+    // In that case, fall back to a non-aborting timeout strategy.
+    if (typeof AbortController === 'undefined') {
+      return await Promise.race([
+        doFetch(),
+        new Promise<Response>((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+        ),
+      ]);
+    }
+
     try {
-      return await fetch(input, { ...(init || {}), signal: controller.signal });
-    } finally {
-      clearTimeout(timeoutId);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(input, { ...(init || {}), signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } catch {
+      // Retry without `signal` for WebViews that error on it.
+      return await doFetch();
     }
   }, []);
 
@@ -502,13 +522,33 @@ export default function UserHomePage() {
 
         (async () => {
           try {
+            if (!unmountedRef.current) {
+              setBlogsLoading(true);
+              setBlogsError('');
+            }
             const blogsRes = await fetchWithTimeout('/api/client/blogs?limit=5', undefined, 6000);
-            if (blogsRes.ok && !unmountedRef.current) {
-              const blogsData = await blogsRes.json();
+            if (!blogsRes.ok) {
+              throw new Error(`Failed to fetch blogs (${blogsRes.status})`);
+            }
+
+            const contentType = blogsRes.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+              throw new Error('Blogs response was not JSON');
+            }
+
+            const blogsData = await blogsRes.json();
+            if (!unmountedRef.current) {
               setBlogs(blogsData.blogs || []);
             }
           } catch (blogsError) {
             console.error('Error fetching blogs:', blogsError);
+            if (!unmountedRef.current) {
+              setBlogsError('Unable to load blogs right now.');
+            }
+          } finally {
+            if (!unmountedRef.current) {
+              setBlogsLoading(false);
+            }
           }
         })();
       } catch (error) {
@@ -1445,16 +1485,57 @@ export default function UserHomePage() {
         </Suspense>
 
         {/* Blogs Section */}
-        {blogs.length > 0 && (
-          <>
-            <div className="">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold text-[#E06A26]">Blogs</h2>
-                <Link href="/user/blogs" className="text-[#3AB1A0] text-sm font-medium uppercase tracking-wider hover:underline">
-                  View All
-                </Link>
+        <>
+          <div className="">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-[#E06A26]">Blogs</h2>
+              <Link href="/user/blogs" className="text-[#3AB1A0] text-sm font-medium uppercase tracking-wider hover:underline">
+                View All
+              </Link>
+            </div>
+          </div>
+
+          {blogsLoading ? (
+            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white shadow-md'}`}>
+              <div className="flex items-center gap-3">
+                <SpoonGifLoader size="sm" />
+                <p className={`${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Loading blogs…</p>
               </div>
             </div>
+          ) : blogsError ? (
+            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white shadow-md'}`}>
+              <p className={`${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{blogsError}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setBlogsError('');
+                  setBlogsLoading(true);
+                  (async () => {
+                    try {
+                      const res = await fetchWithTimeout('/api/client/blogs?limit=5', undefined, 6000);
+                      if (!res.ok) throw new Error(`Failed to fetch blogs (${res.status})`);
+                      const ct = res.headers.get('content-type') || '';
+                      if (!ct.includes('application/json')) throw new Error('Blogs response was not JSON');
+                      const data = await res.json();
+                      if (!unmountedRef.current) setBlogs(data.blogs || []);
+                    } catch (e) {
+                      console.error('Retry blogs failed:', e);
+                      if (!unmountedRef.current) setBlogsError('Unable to load blogs right now.');
+                    } finally {
+                      if (!unmountedRef.current) setBlogsLoading(false);
+                    }
+                  })();
+                }}
+                className="mt-3 inline-flex items-center justify-center px-4 py-2 rounded-full bg-[#3AB1A0] text-white text-sm font-semibold"
+              >
+                Retry
+              </button>
+            </div>
+          ) : blogs.length === 0 ? (
+            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white shadow-md'}`}>
+              <p className={`${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>No blogs available yet.</p>
+            </div>
+          ) : (
             <div className="px-">
               <div className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                 {blogs.map((blog) => {
@@ -1514,8 +1595,8 @@ export default function UserHomePage() {
                 })}
               </div>
             </div>
-          </>
-        )}
+          )}
+        </>
       </div>
       </div>
   );
