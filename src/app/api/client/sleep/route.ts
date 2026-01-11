@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       async () => await JournalTracking.findOne({
             client: session.user.id,
             date: { $gte: dayStart, $lt: dayEnd }
-        }).lean(),
+        }),
       { ttl: 120000, tags: ['client'] }
     );
 

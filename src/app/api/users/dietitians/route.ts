@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
     // For clients, only show their assigned dietitian
     if (session.user.role === UserRole.CLIENT) {
       const currentUser = await withCache(
-      `users:dietitians:${JSON.stringify(session.user.id).select('assignedDietitian')}`,
-      async () => await User.findById(session.user.id).select('assignedDietitian').lean(),
+      `users:dietitians:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('assignedDietitian'),
       { ttl: 120000, tags: ['users'] }
     );
 
@@ -72,14 +72,11 @@ export async function GET(request: NextRequest) {
     }
 
     const dietitians = await withCache(
-      `users:dietitians:${JSON.stringify(query)
-      .select(selectFields)
-      .sort({ firstName: 1, lastName: 1 })
-      .lean()}`,
+      `users:dietitians:${JSON.stringify(query)}`,
       async () => await User.find(query)
       .select(selectFields)
       .sort({ firstName: 1, lastName: 1 })
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['users'] }
     );
 

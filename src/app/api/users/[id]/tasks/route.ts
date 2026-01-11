@@ -26,16 +26,12 @@ export async function GET(
 
     // Get tasks for this client
     const tasks = await withCache(
-      `users:id:tasks:${JSON.stringify({ client: clientObjectId })
-      .populate('dietitian', 'firstName lastName email')
-      .populate('tags', 'name color icon')
-      .sort({ createdAt: -1 })
-      .lean()}`,
+      `users:id:tasks:${JSON.stringify({ client: clientObjectId })}`,
       async () => await Task.find({ client: clientObjectId })
       .populate('dietitian', 'firstName lastName email')
       .populate('tags', 'name color icon')
       .sort({ createdAt: -1 })
-      .lean().lean(),
+      ,
       { ttl: 60000, tags: ['users'] }
     );
 
@@ -112,14 +108,11 @@ export async function POST(
 
     // Populate the task for response
     const populatedTask = await withCache(
-      `users:id:tasks:${JSON.stringify(newTask._id)
-      .populate('dietitian', 'firstName lastName email')
-      .populate('tags', 'name color icon')
-      .lean()}`,
+      `users:id:tasks:${JSON.stringify(newTask._id)}`,
       async () => await Task.findById(newTask._id)
       .populate('dietitian', 'firstName lastName email')
       .populate('tags', 'name color icon')
-      .lean().lean(),
+      ,
       { ttl: 60000, tags: ['users'] }
     );
 

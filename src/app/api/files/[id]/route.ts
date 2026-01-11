@@ -12,7 +12,7 @@ export async function GET(
     const { id } = await params;
     const fileDoc = await withCache(
       `files:id:${JSON.stringify(id)}`,
-      async () => await FileModel.findById(id).lean(),
+      async () => await FileModel.findById(id),
       { ttl: 120000, tags: ['files'] }
     );
     if (!fileDoc) {

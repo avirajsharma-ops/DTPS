@@ -35,8 +35,8 @@ export async function GET(request: Request) {
 
     // Get user's water goal from their profile
     const user = await withCache(
-      `client:hydration:${JSON.stringify(session.user.id).select('goals')}`,
-      async () => await User.findById(session.user.id).select('goals').lean(),
+      `client:hydration:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('goals'),
       { ttl: 120000, tags: ['client'] }
     );
     const waterGoal = user?.goals?.water || 2500; // Default 2500ml

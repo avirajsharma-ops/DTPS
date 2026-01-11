@@ -23,8 +23,8 @@ export async function GET(
     await dbConnect();
 
     const transformation = await withCache(
-      `admin:transformations:id:${JSON.stringify(id).lean()}`,
-      async () => await Transformation.findById(id).lean().lean(),
+      `admin:transformations:id:${JSON.stringify(id)}`,
+      async () => await Transformation.findById(id),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!transformation) {
@@ -57,7 +57,7 @@ export async function PUT(
 
     const transformation = await withCache(
       `admin:transformations:id:${JSON.stringify(id)}`,
-      async () => await Transformation.findById(id).lean(),
+      async () => await Transformation.findById(id),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!transformation) {

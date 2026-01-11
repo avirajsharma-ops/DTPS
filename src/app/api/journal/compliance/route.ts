@@ -56,11 +56,11 @@ export async function GET(request: NextRequest) {
       `journal:compliance:${JSON.stringify({
       client: clientObjectId,
       date: { $gte: startDate, $lte: endDate }
-    }).sort({ date: 1 })}`,
+    })}`,
       async () => await JournalTracking.find({
       client: clientObjectId,
       date: { $gte: startDate, $lte: endDate }
-    }).sort({ date: 1 }).lean(),
+    }).sort({ date: 1 }),
       { ttl: 120000, tags: ['journal'] }
     );
 
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       status: 'active',
       startDate: { $lte: endDate },
       endDate: { $gte: startDate }
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['journal'] }
     );
 

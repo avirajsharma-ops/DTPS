@@ -89,14 +89,11 @@ export async function GET(
     // HC and Dietitian can see ALL notes but can only delete their own (handled in DELETE)
 
     const notes = await withCache(
-      `users:id:notes:${JSON.stringify(query)
-      .populate('createdBy', 'firstName lastName')
-      .sort({ createdAt: -1 })
-      .lean()}`,
+      `users:id:notes:${JSON.stringify(query)}`,
       async () => await ClientNote.find(query)
       .populate('createdBy', 'firstName lastName')
       .sort({ createdAt: -1 })
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['users'] }
     );
 

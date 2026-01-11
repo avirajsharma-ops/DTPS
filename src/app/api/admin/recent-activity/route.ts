@@ -20,18 +20,13 @@ export async function GET(request: NextRequest) {
 
     // Get recent user registrations (last 24 hours)
     const recentUsers = await withCache(
-      `admin:recent-activity:${JSON.stringify({
-      createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-    })
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .select('firstName lastName email role createdAt')}`,
+      `admin:recent-activity:users`,
       async () => await User.find({
       createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
     })
     .sort({ createdAt: -1 })
     .limit(5)
-    .select('firstName lastName email role createdAt').lean(),
+    .select('firstName lastName email role createdAt'),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -48,14 +43,7 @@ export async function GET(request: NextRequest) {
 
     // Get recent completed appointments (last 24 hours)
     const recentAppointments = await withCache(
-      `admin:recent-activity:${JSON.stringify({
-      status: 'confirmed',
-      updatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-    })
-    .populate('client', 'firstName lastName')
-    .populate('dietitian', 'firstName lastName')
-    .sort({ updatedAt: -1 })
-    .limit(5)}`,
+      `admin:recent-activity:appointments`,
       async () => await Appointment.find({
       status: 'confirmed',
       updatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
@@ -63,7 +51,7 @@ export async function GET(request: NextRequest) {
     .populate('client', 'firstName lastName')
     .populate('dietitian', 'firstName lastName')
     .sort({ updatedAt: -1 })
-    .limit(5).lean(),
+    .limit(5),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -82,14 +70,7 @@ export async function GET(request: NextRequest) {
 
     // Get recent payments/orders from WooCommerce data (simulate payment activity)
     const recentPayments = await withCache(
-      `admin:recent-activity:${JSON.stringify({
-      role: 'client',
-      'wooCommerceData.orders.0': { $exists: true },
-      updatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-    })
-    .sort({ updatedAt: -1 })
-    .limit(3)
-    .select('firstName lastName wooCommerceData.totalSpent updatedAt')}`,
+      `admin:recent-activity:payments`,
       async () => await User.find({
       role: 'client',
       'wooCommerceData.orders.0': { $exists: true },
@@ -97,7 +78,7 @@ export async function GET(request: NextRequest) {
     })
     .sort({ updatedAt: -1 })
     .limit(3)
-    .select('firstName lastName wooCommerceData.totalSpent updatedAt').lean(),
+    .select('firstName lastName wooCommerceData.totalSpent updatedAt'),
       { ttl: 120000, tags: ['admin'] }
     );
 

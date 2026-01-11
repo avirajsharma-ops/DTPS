@@ -183,18 +183,13 @@ export async function GET(request: NextRequest) {
     }
 
     const templates = await withCache(
-      `diet-templates:${JSON.stringify(query)
-      .populate('createdBy', 'firstName lastName')
-      .sort(sortOptions)
-      .limit(limit)
-      .skip(skip)
-      .lean()}`,
+      `diet-templates:${JSON.stringify(query)}:limit=${limit}:skip=${skip}`,
       async () => await DietTemplate.find(query)
       .populate('createdBy', 'firstName lastName')
       .sort(sortOptions)
       .limit(limit)
       .skip(skip)
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['diet_templates'] }
     );
 

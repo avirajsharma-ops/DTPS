@@ -13,11 +13,11 @@ export async function GET(request: NextRequest) {
       `service-plans:${JSON.stringify({
       isActive: true,
       showToClients: true
-    }).sort({ createdAt: -1 }).lean()}`,
+    })}`,
       async () => await ServicePlan.find({
       isActive: true,
       showToClients: true
-    }).sort({ createdAt: -1 }).lean().lean(),
+    }).sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['service_plans'] }
     );
 

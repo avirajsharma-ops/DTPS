@@ -32,18 +32,13 @@ export async function GET(request: NextRequest) {
     }
 
     const appointments = await withCache(
-      `client:appointments:${JSON.stringify(query)
-      .populate('dietitian', 'firstName lastName email avatar')
-      .populate('client', 'firstName lastName email avatar')
-      .sort({ scheduledAt: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit)}`,
+      `client:appointments:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await Appointment.find(query)
       .populate('dietitian', 'firstName lastName email avatar')
       .populate('client', 'firstName lastName email avatar')
       .sort({ scheduledAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit).lean(),
+      .skip((page - 1) * limit),
       { ttl: 60000, tags: ['client'] }
     );
 
@@ -116,8 +111,8 @@ export async function POST(request: NextRequest) {
 
     // Verify the dietitian exists and is assigned to this client
     const client = await withCache(
-      `client:appointments:${JSON.stringify(session.user.id).select('assignedDietitian assignedDietitians')}`,
-      async () => await User.findById(session.user.id).select('assignedDietitian assignedDietitians').lean(),
+      `client:appointments:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('assignedDietitian assignedDietitians'),
       { ttl: 60000, tags: ['client'] }
     );
     const assignedDietitians = [

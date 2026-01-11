@@ -48,12 +48,10 @@ export async function GET(request: NextRequest) {
     if (isActive !== null) query.isActive = isActive === 'true';
 
     const plans = await withCache(
-      `admin:subscription-plans:${JSON.stringify(query)
-      .populate('createdBy', 'firstName lastName')
-      .sort({ createdAt: -1 })}`,
+      `admin:subscription-plans:${JSON.stringify(query)}`,
       async () => await SubscriptionPlan.find(query)
       .populate('createdBy', 'firstName lastName')
-      .sort({ createdAt: -1 }).lean(),
+      .sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['admin'] }
     );
 

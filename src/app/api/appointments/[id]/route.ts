@@ -26,12 +26,10 @@ export async function GET(
     const { id } = await params;
 
     const appointment = await withCache(
-      `appointments:id:${JSON.stringify(id)
-      .populate('dietitian', 'firstName lastName email avatar')
-      .populate('client', 'firstName lastName email avatar')}`,
+      `appointments:id:${JSON.stringify(id)}`,
       async () => await Appointment.findById(id)
       .populate('dietitian', 'firstName lastName email avatar')
-      .populate('client', 'firstName lastName email avatar').lean(),
+      .populate('client', 'firstName lastName email avatar'),
       { ttl: 60000, tags: ['appointments'] }
     );
 
@@ -57,7 +55,7 @@ export async function GET(
       // HC can access appointments for their assigned clients
       const client = await withCache(
       `appointments:id:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 60000, tags: ['appointments'] }
     );
       if (client?.assignedHealthCounselor?.toString() === userId) {
@@ -97,7 +95,7 @@ export async function PUT(
 
     const appointment = await withCache(
       `appointments:id:${JSON.stringify(id)}`,
-      async () => await Appointment.findById(id).lean(),
+      async () => await Appointment.findById(id),
       { ttl: 60000, tags: ['appointments'] }
     );
     if (!appointment) {
@@ -336,7 +334,7 @@ export async function DELETE(
 
     const appointment = await withCache(
       `appointments:id:${JSON.stringify(id)}`,
-      async () => await Appointment.findById(id).lean(),
+      async () => await Appointment.findById(id),
       { ttl: 60000, tags: ['appointments'] }
     );
     if (!appointment) {
@@ -411,13 +409,13 @@ export async function DELETE(
 
     // Get user details for notifications
     const dietitian = await withCache(
-      `appointments:id:${JSON.stringify(appointment.dietitian).select('firstName lastName avatar')}`,
-      async () => await User.findById(appointment.dietitian).select('firstName lastName avatar').lean(),
+      `appointments:id:${JSON.stringify(appointment.dietitian)}`,
+      async () => await User.findById(appointment.dietitian).select('firstName lastName avatar'),
       { ttl: 60000, tags: ['appointments'] }
     );
     const client = await withCache(
-      `appointments:id:${JSON.stringify(appointment.client).select('firstName lastName avatar')}`,
-      async () => await User.findById(appointment.client).select('firstName lastName avatar').lean(),
+      `appointments:id:${JSON.stringify(appointment.client)}`,
+      async () => await User.findById(appointment.client).select('firstName lastName avatar'),
       { ttl: 60000, tags: ['appointments'] }
     );
 

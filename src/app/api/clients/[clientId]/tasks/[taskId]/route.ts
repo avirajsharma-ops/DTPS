@@ -20,14 +20,11 @@ export async function GET(
     const { taskId } = await params;
 
     const task = await withCache(
-      `clients:clientId:tasks:taskId:${JSON.stringify(taskId)
-      .populate('client', 'firstName lastName email')
-      .populate('dietitian', 'firstName lastName email')
-      .populate('tags', 'name color icon')}`,
+      `clients:clientId:tasks:taskId:${JSON.stringify(taskId)}`,
       async () => await Task.findById(taskId)
       .populate('client', 'firstName lastName email')
       .populate('dietitian', 'firstName lastName email')
-      .populate('tags', 'name color icon').lean(),
+      .populate('tags', 'name color icon'),
       { ttl: 60000, tags: ['clients'] }
     );
 
@@ -66,7 +63,7 @@ export async function PUT(
     // Find the task first to check ownership
     const existingTask = await withCache(
       `clients:clientId:tasks:taskId:${JSON.stringify(taskId)}`,
-      async () => await Task.findById(taskId).lean(),
+      async () => await Task.findById(taskId),
       { ttl: 60000, tags: ['clients'] }
     );
     
@@ -133,7 +130,7 @@ export async function DELETE(
     // Find the task first to check ownership
     const task = await withCache(
       `clients:clientId:tasks:taskId:${JSON.stringify(taskId)}`,
-      async () => await Task.findById(taskId).lean(),
+      async () => await Task.findById(taskId),
       { ttl: 60000, tags: ['clients'] }
     );
     

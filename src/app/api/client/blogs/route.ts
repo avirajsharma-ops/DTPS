@@ -32,16 +32,12 @@ export async function GET(request: NextRequest) {
     }
 
     const blogs = await withCache(
-      `client:blogs:${JSON.stringify(query)
-      .select('uuid slug title description category featuredImage thumbnailImage author readTime tags isFeatured publishedAt createdAt views likes')
-      .sort({ isFeatured: -1, displayOrder: 1, publishedAt: -1 })
-      .limit(limit)
-      .lean()}`,
+      `client:blogs:${JSON.stringify(query)}`,
       async () => await Blog.find(query)
       .select('uuid slug title description category featuredImage thumbnailImage author readTime tags isFeatured publishedAt createdAt views likes')
       .sort({ isFeatured: -1, displayOrder: 1, publishedAt: -1 })
       .limit(limit)
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['client'] }
     );
 

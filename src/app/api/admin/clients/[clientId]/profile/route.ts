@@ -28,14 +28,11 @@ export async function GET(
     await connectDB();
 
     const client = await withCache(
-      `admin:clients:clientId:profile:${JSON.stringify(clientId)
-      .select('-password')
-      .populate('assignedDietitian', 'firstName lastName email')
-      .populate('assignedDietitians', 'firstName lastName email')}`,
+      `admin:clients:clientId:profile:${JSON.stringify(clientId)}`,
       async () => await User.findById(clientId)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email')
-      .populate('assignedDietitians', 'firstName lastName email').lean(),
+      .populate('assignedDietitians', 'firstName lastName email'),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -76,7 +73,7 @@ export async function PUT(
     // Verify the client exists
     const existingClient = await withCache(
       `admin:clients:clientId:profile:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!existingClient) {

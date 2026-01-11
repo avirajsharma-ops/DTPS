@@ -28,10 +28,9 @@ export async function GET(
     const { dietitianId } = await params;
 
     const dietitian = await withCache(
-      `admin:dietitians:dietitianId:${JSON.stringify(dietitianId)
-      .select('-password')}`,
+      `admin:dietitians:dietitianId:${JSON.stringify(dietitianId)}`,
       async () => await User.findById(dietitianId)
-      .select('-password').lean(),
+      .select('-password'),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -51,9 +50,7 @@ export async function GET(
         { assignedDietitian: dietitianId },
         { assignedDietitians: dietitianId }
       ]
-    })
-      .select('firstName lastName email avatar phone status createdAt weight height healthGoals generalGoal onboardingCompleted')
-      .sort({ createdAt: -1 })}`,
+    })}`,
       async () => await User.find({
       role: UserRole.CLIENT,
       $or: [
@@ -62,7 +59,7 @@ export async function GET(
       ]
     })
       .select('firstName lastName email avatar phone status createdAt weight height healthGoals generalGoal onboardingCompleted')
-      .sort({ createdAt: -1 }).lean(),
+      .sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -79,14 +76,12 @@ export async function GET(
         const latestMealPlan = await withCache(
       `admin:dietitians:dietitianId:${JSON.stringify({
           clientId: client._id
-        })
-          .populate('templateId', 'name')
-          .sort({ createdAt: -1 })}`,
+        })}`,
       async () => await ClientMealPlan.findOne({
           clientId: client._id
         })
           .populate('templateId', 'name')
-          .sort({ createdAt: -1 }).lean(),
+          .sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -109,7 +104,7 @@ export async function GET(
           dietitian: dietitianId,
           scheduledAt: { $gte: new Date() },
           status: AppointmentStatus.SCHEDULED
-        }).sort({ scheduledAt: 1 }).lean(),
+        }).sort({ scheduledAt: 1 }),
       { ttl: 120000, tags: ['admin'] }
     );
 

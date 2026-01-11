@@ -69,16 +69,7 @@ export async function GET(request: NextRequest) {
     }
 
     const mealPlans = await withCache(
-      `meals:${JSON.stringify(query)
-      .populate('dietitian', 'firstName lastName email avatar')
-      .populate('client', 'firstName lastName email avatar')
-      .populate('meals.breakfast', 'name description nutrition')
-      .populate('meals.lunch', 'name description nutrition')
-      .populate('meals.dinner', 'name description nutrition')
-      .populate('meals.snacks', 'name description nutrition')
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit)}`,
+      `meals:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await MealPlan.find(query)
       .populate('dietitian', 'firstName lastName email avatar')
       .populate('client', 'firstName lastName email avatar')
@@ -88,7 +79,7 @@ export async function GET(request: NextRequest) {
       .populate('meals.snacks', 'name description nutrition')
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit).lean(),
+      .skip((page - 1) * limit),
       { ttl: 120000, tags: ['meals'] }
     );
 

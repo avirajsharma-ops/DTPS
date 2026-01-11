@@ -28,12 +28,10 @@ export async function GET(request: NextRequest) {
 
     // Get user profile for goals and assigned dietitian
     const user = await withCache(
-      `dashboard:client-stats:${JSON.stringify(userId)
-      .select('firstName lastName email goals assignedDietitian')
-      .populate('assignedDietitian', 'firstName lastName email avatar bio experience specializations')}`,
+      `dashboard:client-stats:${JSON.stringify(userId)}`,
       async () => await User.findById(userId)
       .select('firstName lastName email goals assignedDietitian')
-      .populate('assignedDietitian', 'firstName lastName email avatar bio experience specializations').lean(),
+      .populate('assignedDietitian', 'firstName lastName email avatar bio experience specializations'),
       { ttl: 120000, tags: ['dashboard'] }
     );
 
@@ -46,7 +44,7 @@ export async function GET(request: NextRequest) {
       async () => await FoodLog.findOne({
       client: userId,
       date: { $gte: today, $lte: endOfDay }
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['dashboard'] }
     );
 
@@ -63,11 +61,11 @@ export async function GET(request: NextRequest) {
       `dashboard:client-stats:${JSON.stringify({
       user: userId,
       type: 'weight'
-    }).sort({ recordedAt: -1 })}`,
+    })}`,
       async () => await ProgressEntry.findOne({
       user: userId,
       type: 'weight'
-    }).sort({ recordedAt: -1 }).lean(),
+    }).sort({ recordedAt: -1 }),
       { ttl: 120000, tags: ['dashboard'] }
     );
 
@@ -79,12 +77,12 @@ export async function GET(request: NextRequest) {
       user: userId,
       type: 'weight',
       recordedAt: { $lte: sevenDaysAgo }
-    }).sort({ recordedAt: -1 })}`,
+    })}`,
       async () => await ProgressEntry.findOne({
       user: userId,
       type: 'weight',
       recordedAt: { $lte: sevenDaysAgo }
-    }).sort({ recordedAt: -1 }).lean(),
+    }).sort({ recordedAt: -1 }),
       { ttl: 120000, tags: ['dashboard'] }
     );
 
@@ -98,11 +96,11 @@ export async function GET(request: NextRequest) {
       `dashboard:client-stats:${JSON.stringify({
       user: userId,
       type: 'weight'
-    }).sort({ recordedAt: 1 })}`,
+    })}`,
       async () => await ProgressEntry.findOne({
       user: userId,
       type: 'weight'
-    }).sort({ recordedAt: 1 }).lean(),
+    }).sort({ recordedAt: 1 }),
       { ttl: 120000, tags: ['dashboard'] }
     );
 
@@ -124,7 +122,7 @@ export async function GET(request: NextRequest) {
       status: { $in: ['scheduled', 'confirmed'] }
     })
     .populate('dietitian', 'firstName lastName')
-    .sort({ scheduledAt: 1 }).lean(),
+    .sort({ scheduledAt: 1 }),
       { ttl: 120000, tags: ['dashboard'] }
     );
 

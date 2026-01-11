@@ -16,12 +16,10 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const tags = await withCache(
-      `tags:${JSON.stringify()
-      .sort({ createdAt: -1 })
-      .lean()}`,
+      `tags:all`,
       async () => await Tag.find()
       .sort({ createdAt: -1 })
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['tags'] }
     );
 
@@ -58,7 +56,7 @@ export async function POST(request: NextRequest) {
     // Check if tag already exists
     const existingTag = await withCache(
       `tags:${JSON.stringify({ name: name.trim() })}`,
-      async () => await Tag.findOne({ name: name.trim() }).lean(),
+      async () => await Tag.findOne({ name: name.trim() }),
       { ttl: 120000, tags: ['tags'] }
     );
     if (existingTag) {

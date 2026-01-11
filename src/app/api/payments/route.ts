@@ -45,20 +45,14 @@ export async function GET(request: NextRequest) {
     }
 
     const payments = await withCache(
-      `payments:${JSON.stringify(query)
-      .populate('client', 'firstName lastName email')
-      .populate('dietitian', 'firstName lastName email')
-      .populate('appointment', 'type scheduledAt')
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit)}`,
+      `payments:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await Payment.find(query)
       .populate('client', 'firstName lastName email')
       .populate('dietitian', 'firstName lastName email')
       .populate('appointment', 'type scheduledAt')
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit).lean(),
+      .skip((page - 1) * limit),
       { ttl: 120000, tags: ['payments'] }
     );
 
@@ -199,7 +193,7 @@ export async function PUT(request: NextRequest) {
     // Find payment by Stripe payment intent ID
     const payment = await withCache(
       `payments:${JSON.stringify({ stripePaymentIntentId: paymentIntentId })}`,
-      async () => await Payment.findOne({ stripePaymentIntentId: paymentIntentId }).lean(),
+      async () => await Payment.findOne({ stripePaymentIntentId: paymentIntentId }),
       { ttl: 120000, tags: ['payments'] }
     );
     if (!payment) {

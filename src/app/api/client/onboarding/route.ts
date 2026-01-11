@@ -159,8 +159,8 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const user = await withCache(
-      `client:onboarding:${JSON.stringify(session.user.id).select('onboardingCompleted onboardingStep')}`,
-      async () => await User.findById(session.user.id).select('onboardingCompleted onboardingStep').lean(),
+      `client:onboarding:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('onboardingCompleted onboardingStep'),
       { ttl: 120000, tags: ['client'] }
     );
 

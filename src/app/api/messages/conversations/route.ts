@@ -125,8 +125,8 @@ export async function GET(request: NextRequest) {
     const conversationList = await Promise.all(
       conversations.map(async (conv) => {
         const user = await withCache(
-      `messages:conversations:${JSON.stringify(conv._id).select('firstName lastName avatar role')}`,
-      async () => await User.findById(conv._id).select('firstName lastName avatar role').lean(),
+      `messages:conversations:${JSON.stringify(conv._id)}`,
+      async () => await User.findById(conv._id).select('firstName lastName avatar role'),
       { ttl: 30000, tags: ['messages'] }
     );
         if (!user) {
@@ -136,8 +136,8 @@ export async function GET(request: NextRequest) {
         // For clients, only show conversations with their assigned dietitians
         if (session.user.role === 'client') {
           const currentUser = await withCache(
-      `messages:conversations:${JSON.stringify(session.user.id).select('assignedDietitian assignedDietitians')}`,
-      async () => await User.findById(session.user.id).select('assignedDietitian assignedDietitians').lean(),
+      `messages:conversations:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('assignedDietitian assignedDietitians'),
       { ttl: 30000, tags: ['messages'] }
     );
           const assignedIds = [
@@ -153,8 +153,8 @@ export async function GET(request: NextRequest) {
         if (session.user.role === 'dietitian' || session.user.role === 'health_counselor') {
           if (user.role === 'client') {
             const clientUser = await withCache(
-      `messages:conversations:${JSON.stringify(user._id).select('assignedDietitian assignedDietitians assignedHealthCounselor')}`,
-      async () => await User.findById(user._id).select('assignedDietitian assignedDietitians assignedHealthCounselor').lean(),
+      `messages:conversations:${JSON.stringify(user._id)}`,
+      async () => await User.findById(user._id).select('assignedDietitian assignedDietitians assignedHealthCounselor'),
       { ttl: 30000, tags: ['messages'] }
     );
             const isAssignedAsDietitian = 

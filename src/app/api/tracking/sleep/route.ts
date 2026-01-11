@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
       async () => await DailyTracking.findOne({
       client: session.user.id,
       date: today
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['tracking'] }
     );
 

@@ -28,14 +28,53 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
     const search = searchParams.get('search');
     const dietitianId = searchParams.get('dietitianId');
+    const clientId = searchParams.get('clientId');
     const limit = parseInt(searchParams.get('limit') || '10');
     const page = parseInt(searchParams.get('page') || '1');
 
     // Build query based on user role
     let query: any = {};
-    
-    // If specific dietitianId is requested (for slots view)
-    if (dietitianId) {
+
+    // If specific clientId is requested (client panel view), enforce access and scope to that client
+    if (clientId) {
+      const requestedClient = await User.findById(clientId).select(
+        '_id role assignedDietitian assignedDietitians assignedHealthCounselor'
+      );
+      if (!requestedClient) {
+        return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+      }
+
+      const role = session.user.role;
+      const requesterId = String(session.user.id);
+
+      if (role === UserRole.CLIENT || role === 'client') {
+        if (requesterId !== String(clientId)) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      } else if (role === UserRole.DIETITIAN || role === 'dietitian') {
+        const assignedDietitian = requestedClient.assignedDietitian?.toString();
+        const assignedDietitiansRaw = (requestedClient as unknown as { assignedDietitians?: unknown })
+          .assignedDietitians;
+        const assignedDietitians = Array.isArray(assignedDietitiansRaw)
+          ? assignedDietitiansRaw.map(String)
+          : [];
+        const inAssignedList = assignedDietitians.includes(requesterId);
+        if (assignedDietitian !== requesterId && !inAssignedList) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      } else if (role === UserRole.HEALTH_COUNSELOR || role === 'health_counselor') {
+        const assignedHC = requestedClient.assignedHealthCounselor?.toString();
+        if (assignedHC !== requesterId) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      } else {
+        // admin: allowed
+      }
+
+      query.client = clientId;
+      if (dietitianId) query.dietitian = dietitianId;
+    } else if (dietitianId) {
+      // If specific dietitianId is requested (for slots view)
       query.dietitian = dietitianId;
     } else if (session.user.role === UserRole.DIETITIAN) {
       // Get all clients assigned to this dietitian
@@ -109,7 +148,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Generate cache key based on user and query params
-    const cacheKey = `appointments:${session.user.id}:${session.user.role}:${status || ''}:${date || ''}:${search || ''}:${dietitianId || ''}:${page}:${limit}:${includeAll}`;
+    const cacheKey = `appointments:${session.user.id}:${session.user.role}:${clientId || ''}:${status || ''}:${date || ''}:${search || ''}:${dietitianId || ''}:${page}:${limit}:${includeAll}`;
     
     const { appointments, total } = await withCache(
       cacheKey,

@@ -36,12 +36,10 @@ export async function GET(request: NextRequest) {
 
     // Get all clients
     const clients = await withCache(
-      `dashboard:pending-plans:${JSON.stringify(clientQuery)
-      .select('_id firstName lastName email phone')
-      .lean()}`,
+      `dashboard:pending-plans:${JSON.stringify(clientQuery)}`,
       async () => await User.find(clientQuery)
       .select('_id firstName lastName email phone')
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['dashboard'] }
     );
 
@@ -52,17 +50,14 @@ export async function GET(request: NextRequest) {
       `dashboard:pending-plans:${JSON.stringify({
       clientId: { $in: clientIds },
       status: { $in: ['active', 'completed'] }
-    })
-      .select('clientId name startDate endDate duration status purchaseId')
-      .sort({ startDate: 1 })
-      .lean()}`,
+    })}`,
       async () => await ClientMealPlan.find({
       clientId: { $in: clientIds },
       status: { $in: ['active', 'completed'] }
     })
       .select('clientId name startDate endDate duration status purchaseId')
       .sort({ startDate: 1 })
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['dashboard'] }
     );
 
@@ -71,17 +66,14 @@ export async function GET(request: NextRequest) {
       `dashboard:pending-plans:${JSON.stringify({
       client: { $in: clientIds },
       status: { $in: ['active', 'paid'] }
-    })
-      .select('client planName durationDays durationLabel expectedStartDate expectedEndDate mealPlanCreated daysUsed parentPurchaseId status createdAt')
-      .sort({ createdAt: -1 })
-      .lean()}`,
+    })}`,
       async () => await ClientPurchase.find({
       client: { $in: clientIds },
       status: { $in: ['active', 'paid'] }
     })
       .select('client planName durationDays durationLabel expectedStartDate expectedEndDate mealPlanCreated daysUsed parentPurchaseId status createdAt')
       .sort({ createdAt: -1 })
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['dashboard'] }
     );
 

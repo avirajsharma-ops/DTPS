@@ -24,7 +24,7 @@ export async function PUT(request: NextRequest) {
       // Update specific message status
       const message = await withCache(
       `messages:status:${JSON.stringify(messageId)}`,
-      async () => await Message.findById(messageId).lean(),
+      async () => await Message.findById(messageId),
       { ttl: 30000, tags: ['messages'] }
     );
       if (!message) {
@@ -176,12 +176,12 @@ export async function GET(request: NextRequest) {
       sender: conversationWith,
       receiver: session.user.id,
       isRead: true
-    }).sort({ readAt: -1 })}`,
+    })}`,
       async () => await Message.findOne({
       sender: conversationWith,
       receiver: session.user.id,
       isRead: true
-    }).sort({ readAt: -1 }).lean(),
+    }).sort({ readAt: -1 }),
       { ttl: 30000, tags: ['messages'] }
     );
 

@@ -84,8 +84,8 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const dietitian = await withCache(
-      `users:dietitian:availability:setup:${JSON.stringify(session.user.id).select('availability')}`,
-      async () => await User.findById(session.user.id).select('availability').lean(),
+      `users:dietitian:availability:setup:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('availability'),
       { ttl: 120000, tags: ['users'] }
     );
     

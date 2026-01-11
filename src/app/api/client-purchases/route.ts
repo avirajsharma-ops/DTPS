@@ -40,18 +40,13 @@ export async function GET(request: NextRequest) {
     }
 
     const purchases = await withCache(
-      `client-purchases:${JSON.stringify(query)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName')
-      .populate('servicePlan', 'name category')
-      .populate('paymentLink', 'razorpayPaymentLinkId status paidAt')
-      .sort({ purchaseDate: -1 })}`,
+      `client-purchases:${JSON.stringify(query)}`,
       async () => await ClientPurchase.find(query)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName')
       .populate('servicePlan', 'name category')
       .populate('paymentLink', 'razorpayPaymentLinkId status paidAt')
-      .sort({ purchaseDate: -1 }).lean(),
+      .sort({ purchaseDate: -1 }),
       { ttl: 120000, tags: ['client_purchases'] }
     );
 
@@ -176,7 +171,7 @@ export async function PUT(request: NextRequest) {
     // Get current purchase to check existing daysUsed
     const currentPurchase = await withCache(
       `client-purchases:${JSON.stringify(purchaseId)}`,
-      async () => await ClientPurchase.findById(purchaseId).lean(),
+      async () => await ClientPurchase.findById(purchaseId),
       { ttl: 120000, tags: ['client_purchases'] }
     );
     if (!currentPurchase) {

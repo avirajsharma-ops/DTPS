@@ -14,8 +14,8 @@ export async function GET(
     await dbConnect();
 
     const plan = await withCache(
-      `service-plans:id:${JSON.stringify(id).lean()}`,
-      async () => await ServicePlan.findById(id).lean().lean(),
+      `service-plans:id:${JSON.stringify(id)}`,
+      async () => await ServicePlan.findById(id),
       { ttl: 120000, tags: ['service_plans'] }
     );
 

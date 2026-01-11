@@ -22,7 +22,7 @@ async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<an
       async () => await ClientPurchase.findOne({
       client: paymentLink.client,
       razorpayPaymentId: paymentLink.razorpayPaymentId
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['payment_links'] }
     );
 
@@ -77,7 +77,7 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<any> {
     })}`,
       async () => await Payment.findOne({
       paymentLink: paymentLink._id
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['payment_links'] }
     );
 
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
         })}`,
       async () => await PaymentLink.findOne({
           razorpayPaymentLinkId: paymentLinkEntity.id
-        }).lean(),
+        }),
       { ttl: 120000, tags: ['payment_links'] }
     );
 
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
         })}`,
       async () => await PaymentLink.findOne({
           razorpayPaymentLinkId: paymentLinkEntity.id
-        }).lean(),
+        }),
       { ttl: 120000, tags: ['payment_links'] }
     );
 
@@ -266,7 +266,7 @@ export async function POST(request: NextRequest) {
         })}`,
       async () => await PaymentLink.findOne({
           razorpayPaymentLinkId: paymentLinkEntity.id
-        }).lean(),
+        }),
       { ttl: 120000, tags: ['payment_links'] }
     );
 

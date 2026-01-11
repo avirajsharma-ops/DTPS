@@ -41,12 +41,10 @@ export async function GET(request: NextRequest) {
     }
 
     const blogs = await withCache(
-      `admin:blogs:${JSON.stringify(query)
-      .sort({ displayOrder: 1, publishedAt: -1, createdAt: -1 })
-      .lean()}`,
+      `admin:blogs:${JSON.stringify(query)}`,
       async () => await Blog.find(query)
       .sort({ displayOrder: 1, publishedAt: -1, createdAt: -1 })
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['admin'] }
     );
 

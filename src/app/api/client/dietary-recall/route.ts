@@ -17,12 +17,10 @@ export async function GET() {
 
     // Get all dietary recalls for the user, sorted by date descending
     const recalls = await withCache(
-      `client:dietary-recall:${JSON.stringify({ userId: session.user.id })
-      .sort({ date: -1 })
-      .limit(30)}`,
+      `client:dietary-recall:${JSON.stringify({ userId: session.user.id })}`,
       async () => await DietaryRecall.find({ userId: session.user.id })
       .sort({ date: -1 })
-      .limit(30).lean(),
+      .limit(30),
       { ttl: 120000, tags: ['client'] }
     ); // Get last 30 recalls
 
@@ -63,7 +61,7 @@ export async function POST(request: Request) {
         $gte: date,
         $lt: new Date(date.getTime() + 24 * 60 * 60 * 1000)
       }
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['client'] }
     );
 

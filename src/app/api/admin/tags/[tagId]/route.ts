@@ -33,7 +33,7 @@ export async function GET(
 
     const tag = await withCache(
       `admin:tags:tagId:${JSON.stringify(tagId)}`,
-      async () => await Tag.findById(tagId).lean(),
+      async () => await Tag.findById(tagId),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -84,7 +84,7 @@ export async function PUT(
 
     const tag = await withCache(
       `admin:tags:tagId:${JSON.stringify(tagId)}`,
-      async () => await Tag.findById(tagId).lean(),
+      async () => await Tag.findById(tagId),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -99,7 +99,7 @@ export async function PUT(
     if (name && name.trim() !== tag.name) {
       const existingTag = await withCache(
       `admin:tags:tagId:${JSON.stringify({ name: name.trim() })}`,
-      async () => await Tag.findOne({ name: name.trim() }).lean(),
+      async () => await Tag.findOne({ name: name.trim() }),
       { ttl: 120000, tags: ['admin'] }
     );
       if (existingTag) {

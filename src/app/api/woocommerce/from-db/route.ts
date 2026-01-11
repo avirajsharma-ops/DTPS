@@ -31,16 +31,12 @@ export async function GET(request: NextRequest) {
       // Get clients with pagination
       const skip = (page - 1) * per_page;
       const clients = await withCache(
-      `woocommerce:from-db:${JSON.stringify({})
-        .sort({ totalSpent: -1 })
-        .skip(skip)
-        .limit(per_page)
-        .lean()}`,
+      `woocommerce:from-db:clients:page=${page}:limit=${per_page}`,
       async () => await WooCommerceClient.find({})
         .sort({ totalSpent: -1 })
         .skip(skip)
         .limit(per_page)
-        .lean().lean(),
+        ,
       { ttl: 120000, tags: ['woocommerce'] }
     );
 
@@ -77,12 +73,10 @@ export async function GET(request: NextRequest) {
       // Get orders from all clients
       const skip = (page - 1) * per_page;
       const clientsWithOrders = await withCache(
-      `woocommerce:from-db:${JSON.stringify({})
-        .sort({ lastOrderDate: -1 })
-        .lean()}`,
+      `woocommerce:from-db:${JSON.stringify({})}`,
       async () => await WooCommerceClient.find({})
         .sort({ lastOrderDate: -1 })
-        .lean().lean(),
+        ,
       { ttl: 120000, tags: ['woocommerce'] }
     );
 

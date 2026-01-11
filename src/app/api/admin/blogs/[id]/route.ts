@@ -22,8 +22,8 @@ export async function GET(
     await dbConnect();
 
     const blog = await withCache(
-      `admin:blogs:id:${JSON.stringify(id).lean()}`,
-      async () => await Blog.findById(id).lean().lean(),
+      `admin:blogs:id:${JSON.stringify(id)}`,
+      async () => await Blog.findById(id),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!blog) {
@@ -56,7 +56,7 @@ export async function PUT(
 
     const blog = await withCache(
       `admin:blogs:id:${JSON.stringify(id)}`,
-      async () => await Blog.findById(id).lean(),
+      async () => await Blog.findById(id),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!blog) {

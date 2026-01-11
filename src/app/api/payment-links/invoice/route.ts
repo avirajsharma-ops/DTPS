@@ -34,12 +34,10 @@ export async function GET(request: NextRequest) {
 
     // Find the payment link with populated data
     const paymentLink = await withCache(
-      `payment-links:invoice:${JSON.stringify(paymentLinkId)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email')}`,
+      `payment-links:invoice:${JSON.stringify(paymentLinkId)}`,
       async () => await PaymentLink.findById(paymentLinkId)
       .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email').lean(),
+      .populate('dietitian', 'firstName lastName email'),
       { ttl: 120000, tags: ['payment_links'] }
     );
 
@@ -125,12 +123,10 @@ export async function POST(request: NextRequest) {
 
     // Find the payment link with populated data
     const paymentLink = await withCache(
-      `payment-links:invoice:${JSON.stringify(paymentLinkId)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email')}`,
+      `payment-links:invoice:${JSON.stringify(paymentLinkId)}`,
       async () => await PaymentLink.findById(paymentLinkId)
       .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email').lean(),
+      .populate('dietitian', 'firstName lastName email'),
       { ttl: 120000, tags: ['payment_links'] }
     );
 

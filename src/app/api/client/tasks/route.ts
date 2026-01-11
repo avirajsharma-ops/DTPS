@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       async () => await JournalTracking.findOne({
             client: session.user.id,
             date: { $gte: targetDate, $lt: nextDay }
-        }).lean(),
+        }),
       { ttl: 60000, tags: ['client'] }
     );
 
@@ -253,7 +253,7 @@ export async function PATCH(request: Request) {
       async () => await JournalTracking.findOne({
                     client: session.user.id,
                     date: { $gte: targetDate, $lt: nextDay }
-                }).lean(),
+                }),
       { ttl: 60000, tags: ['client'] }
     );
 

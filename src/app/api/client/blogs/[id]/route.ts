@@ -36,11 +36,7 @@ export async function GET(
       _id: { $ne: blog._id },
       category: blog.category,
       isActive: true
-    })
-      .select('uuid slug title description category thumbnailImage author readTime publishedAt')
-      .sort({ publishedAt: -1 })
-      .limit(3)
-      .lean()}`,
+    })}`,
       async () => await Blog.find({
       _id: { $ne: blog._id },
       category: blog.category,
@@ -49,7 +45,7 @@ export async function GET(
       .select('uuid slug title description category thumbnailImage author readTime publishedAt')
       .sort({ publishedAt: -1 })
       .limit(3)
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['client'] }
     );
 
@@ -79,7 +75,7 @@ export async function POST(
 
     const blog = await withCache(
       `client:blogs:id:${JSON.stringify(id)}`,
-      async () => await Blog.findById(id).lean(),
+      async () => await Blog.findById(id),
       { ttl: 120000, tags: ['client'] }
     );
     if (!blog) {

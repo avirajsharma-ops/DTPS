@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/config';
 import { logActivity } from '@/lib/utils/activityLogger';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { SSEManager } from '@/lib/realtime/sse-manager';
 
 export async function GET(
   req: NextRequest,
@@ -41,18 +42,13 @@ export async function GET(
     }
 
     const tasks = await withCache(
-      `clients:clientId:tasks:${JSON.stringify(query)
-      .populate('client', 'firstName lastName email')
-      .populate('dietitian', 'firstName lastName email')
-      .populate('tags', 'name color icon')
-      .sort({ startDate: 1 })
-      .lean()}`,
+      `clients:clientId:tasks:${JSON.stringify(query)}`,
       async () => await Task.find(query)
       .populate('client', 'firstName lastName email')
       .populate('dietitian', 'firstName lastName email')
       .populate('tags', 'name color icon')
       .sort({ startDate: 1 })
-      .lean().lean(),
+      ,
       { ttl: 60000, tags: ['clients'] }
     );
 
@@ -122,10 +118,33 @@ export async function POST(
     await task.populate('dietitian', 'firstName lastName email');
     await task.populate('tags', 'name color icon');
 
+    // Invalidate cached task lists immediately
+    clearCacheByTag('clients');
+
+    // Real-time update for dashboards currently open
+    try {
+      const sseManager = SSEManager.getInstance();
+      const sessionUser = session.user as unknown as { id?: string; _id?: string };
+      const creatorId = String(sessionUser?.id || sessionUser?._id || '');
+      const payload = {
+        taskId: task._id,
+        clientId,
+        timestamp: Date.now()
+      };
+
+      if (creatorId) {
+        sseManager.sendToUser(creatorId, 'task_created', payload);
+      }
+      sseManager.sendToUser(String(clientId), 'task_created', payload);
+    } catch (sseError) {
+      console.error('Failed to send task SSE notification:', sseError);
+      // Don't fail the request if SSE notification fails
+    }
+
     // Log activity
     const client = await withCache(
-      `clients:clientId:tasks:${JSON.stringify(clientId).select('firstName lastName')}`,
-      async () => await User.findById(clientId).select('firstName lastName').lean(),
+      `clients:clientId:tasks:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).select('firstName lastName'),
       { ttl: 60000, tags: ['clients'] }
     );
     await logActivity({

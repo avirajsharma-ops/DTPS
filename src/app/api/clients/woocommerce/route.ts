@@ -49,16 +49,12 @@ export async function GET(request: NextRequest) {
     // Get clients with pagination
     const skip = (page - 1) * per_page;
     const clients = await withCache(
-      `clients:woocommerce:${JSON.stringify(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(per_page)
-      .lean()}`,
+      `clients:woocommerce:${JSON.stringify(query)}:skip=${skip}:limit=${per_page}`,
       async () => await WooCommerceClient.find(query)
       .sort(sort)
       .skip(skip)
       .limit(per_page)
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['clients'] }
     );
 
@@ -175,8 +171,8 @@ export async function POST(request: NextRequest) {
     }
 
     const client = await withCache(
-      `clients:woocommerce:${JSON.stringify(clientId).lean()}`,
-      async () => await WooCommerceClient.findById(clientId).lean().lean(),
+      `clients:woocommerce:${JSON.stringify(clientId)}`,
+      async () => await WooCommerceClient.findById(clientId),
       { ttl: 120000, tags: ['clients'] }
     );
 

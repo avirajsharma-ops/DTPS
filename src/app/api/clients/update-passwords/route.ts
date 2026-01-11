@@ -29,14 +29,14 @@ export async function POST(request: NextRequest) {
         { password: null },
         { password: '' }
       ]
-    }).sort({ createdAt: 1 })}`,
+    })}`,
       async () => await WooCommerceClient.find({
       $or: [
         { password: { $exists: false } },
         { password: null },
         { password: '' }
       ]
-    }).sort({ createdAt: 1 }).lean(),
+    }).sort({ createdAt: 1 }),
       { ttl: 120000, tags: ['clients'] }
     );
 
@@ -60,10 +60,10 @@ export async function POST(request: NextRequest) {
     const clientsWithDefaultPassword = await withCache(
       `clients:update-passwords:${JSON.stringify({
       password: 'Password123'
-    }).sort({ createdAt: 1 })}`,
+    })}`,
       async () => await WooCommerceClient.find({
       password: 'Password123'
-    }).sort({ createdAt: 1 }).lean(),
+    }).sort({ createdAt: 1 }),
       { ttl: 120000, tags: ['clients'] }
     );
 
@@ -124,14 +124,11 @@ export async function GET(request: NextRequest) {
 
     // Get sample clients with their passwords (first 5)
     const sampleClients = await withCache(
-      `clients:update-passwords:${JSON.stringify(passwordQuery)
-    .select('name email password')
-    .limit(5)
-    .lean()}`,
+      `clients:update-passwords:${JSON.stringify(passwordQuery)}`,
       async () => await WooCommerceClient.find(passwordQuery)
     .select('name email password')
     .limit(5)
-    .lean().lean(),
+    ,
       { ttl: 120000, tags: ['clients'] }
     );
 

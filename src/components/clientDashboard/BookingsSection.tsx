@@ -43,6 +43,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRealtime } from '@/hooks/useRealtime';
 
 interface Appointment {
   _id: string;
@@ -89,7 +90,6 @@ export default function BookingsSection({ clientId, clientName, userRole = 'diet
 
   // Helper to check if user can cancel an appointment
   const canCancelAppointment = (apt: Appointment) => {
-    if (userRole === 'admin') return true; // Admin can cancel any
     const currentUserId = (session?.user as any)?.id || (session?.user as any)?._id;
     return apt.createdBy === currentUserId; // Both dietitian and HC can only cancel their own
   };
@@ -102,7 +102,7 @@ export default function BookingsSection({ clientId, clientName, userRole = 'diet
     
     try {
       // Include all appointments (past + future) for client panel view
-      const response = await fetch(`/api/appointments?clientId=${clientId}&includeAll=true`);
+      const response = await fetch(`/api/appointments?clientId=${clientId}&includeAll=true&limit=1000&page=1`);
       if (response.ok) {
         const data = await response.json();
         setAppointments(data.appointments || []);
@@ -119,6 +119,29 @@ export default function BookingsSection({ clientId, clientName, userRole = 'diet
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
+
+  const handleRealtimeMessage = useCallback(
+    (event: { type: string; data: string }) => {
+      if (!event?.type) return;
+      if (!['appointment_booked', 'appointment_cancelled', 'appointment_updated'].includes(event.type)) return;
+
+      try {
+        const data = JSON.parse(event.data);
+        const eventClientId =
+          data?.clientId ||
+          data?.client?._id ||
+          data?.client?.id;
+        if (eventClientId && String(eventClientId) !== String(clientId)) return;
+      } catch {
+        // If payload isn't parseable, do a safe refresh.
+      }
+
+      fetchAppointments(true);
+    },
+    [clientId, fetchAppointments]
+  );
+
+  useRealtime({ onMessage: handleRealtimeMessage });
 
   const handleRefresh = () => {
     fetchAppointments(true);
@@ -384,7 +407,7 @@ export default function BookingsSection({ clientId, clientName, userRole = 'diet
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {pastAppointments.slice(0, 5).map((apt) => (
+              {pastAppointments.map((apt) => (
                 <div 
                   key={apt._id} 
                   className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg"
@@ -406,11 +429,6 @@ export default function BookingsSection({ clientId, clientName, userRole = 'diet
                   )}
                 </div>
               ))}
-              {pastAppointments.length > 5 && (
-                <p className="text-sm text-gray-500 text-center pt-2">
-                  + {pastAppointments.length - 5} more appointments
-                </p>
-              )}
             </div>
           </CardContent>
         </Card>

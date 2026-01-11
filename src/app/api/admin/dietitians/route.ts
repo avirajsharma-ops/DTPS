@@ -40,12 +40,10 @@ export async function GET(request: NextRequest) {
     }
 
     const dietitians = await withCache(
-      `admin:dietitians:${JSON.stringify(query)
-      .select('firstName lastName email avatar phone specialization status updatedAt')
-      .sort({ firstName: 1, lastName: 1 })}`,
+      `admin:dietitians:${JSON.stringify(query)}`,
       async () => await User.find(query)
       .select('firstName lastName email avatar phone specialization status updatedAt')
-      .sort({ firstName: 1, lastName: 1 }).lean(),
+      .sort({ firstName: 1, lastName: 1 }),
       { ttl: 120000, tags: ['admin'] }
     );
 

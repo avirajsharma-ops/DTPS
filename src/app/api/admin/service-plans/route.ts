@@ -29,12 +29,10 @@ export async function GET(request: NextRequest) {
     }
 
     const plans = await withCache(
-      `admin:service-plans:${JSON.stringify(query)
-      .populate('createdBy', 'firstName lastName')
-      .sort({ createdAt: -1 })}`,
+      `admin:service-plans:${JSON.stringify(query)}`,
       async () => await ServicePlan.find(query)
       .populate('createdBy', 'firstName lastName')
-      .sort({ createdAt: -1 }).lean(),
+      .sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['admin'] }
     );
 

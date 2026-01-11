@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
       if (clientId) {
         // Verify the dietitian is assigned to this client
         const client = await withCache(
-      `food-logs:${JSON.stringify(clientId).select('assignedDietitian assignedDietitians')}`,
-      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians').lean(),
+      `food-logs:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
       { ttl: 120000, tags: ['food_logs'] }
     );
         const isAssigned = 
@@ -77,16 +77,12 @@ export async function GET(request: NextRequest) {
     }
 
     const foodLogs = await withCache(
-      `food-logs:${JSON.stringify(query)
-      .populate('client', 'firstName lastName')
-      .sort({ date: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit)}`,
+      `food-logs:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await FoodLog.find(query)
       .populate('client', 'firstName lastName')
       .sort({ date: -1 })
       .limit(limit)
-      .skip((page - 1) * limit).lean(),
+      .skip((page - 1) * limit),
       { ttl: 120000, tags: ['food_logs'] }
     );
 

@@ -27,7 +27,7 @@ async function hasActiveMealPlan(clientId: string, targetDate: Date): Promise<bo
         status: 'active',
         startDate: { $lte: planEndOfDay },
         endDate: { $gte: planStartOfDay }
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['admin'] }
     );
     
@@ -55,7 +55,7 @@ export async function GET(
         // Verify the user is a dietitian/admin/health_counselor
         const currentUser = await withCache(
       `admin:clients:clientId:assign-steps:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).lean(),
+      async () => await User.findById(session.user.id),
       { ttl: 120000, tags: ['admin'] }
     );
         if (!currentUser || !['admin', 'dietitian', 'health_counselor'].includes(currentUser.role)) {
@@ -65,7 +65,7 @@ export async function GET(
         // Verify the client exists
         const client = await withCache(
       `admin:clients:clientId:assign-steps:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['admin'] }
     );
         if (!client) {
@@ -87,7 +87,7 @@ export async function GET(
       async () => await JournalTracking.findOne({
             client: clientId,
             date: { $gte: targetDate, $lt: nextDay }
-        }).lean(),
+        }),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -132,7 +132,7 @@ export async function POST(
         // Verify the user is a dietitian/admin/health_counselor
         const currentUser = await withCache(
       `admin:clients:clientId:assign-steps:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).lean(),
+      async () => await User.findById(session.user.id),
       { ttl: 120000, tags: ['admin'] }
     );
         if (!currentUser || !['admin', 'dietitian', 'health_counselor'].includes(currentUser.role)) {
@@ -142,7 +142,7 @@ export async function POST(
         // Verify the client exists
         const client = await withCache(
       `admin:clients:clientId:assign-steps:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['admin'] }
     );
         if (!client) {
@@ -250,7 +250,7 @@ export async function DELETE(
         // Verify the user is a dietitian/admin/health_counselor
         const currentUser = await withCache(
       `admin:clients:clientId:assign-steps:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).lean(),
+      async () => await User.findById(session.user.id),
       { ttl: 120000, tags: ['admin'] }
     );
         if (!currentUser || !['admin', 'dietitian', 'health_counselor'].includes(currentUser.role)) {

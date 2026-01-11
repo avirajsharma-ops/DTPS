@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
 
     // Get dietitian's availability
     const dietitian = await withCache(
-      `appointments:available-slots:${JSON.stringify(dietitianId).select('availability role')}`,
-      async () => await User.findById(dietitianId).select('availability role').lean(),
+      `appointments:available-slots:${JSON.stringify(dietitianId)}`,
+      async () => await User.findById(dietitianId).select('availability role'),
       { ttl: 60000, tags: ['appointments'] }
     );
 
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
         $lte: endOfDay
       },
       status: { $in: ['scheduled', 'confirmed'] }
-    }).select('scheduledAt duration')}`,
+    })}`,
       async () => await Appointment.find({
       dietitian: dietitianId,
       scheduledAt: {
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
         $lte: endOfDay
       },
       status: { $in: ['scheduled', 'confirmed'] }
-    }).select('scheduledAt duration').lean(),
+    }).select('scheduledAt duration'),
       { ttl: 60000, tags: ['appointments'] }
     );
 

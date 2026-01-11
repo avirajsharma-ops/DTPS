@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useRealtime } from '@/hooks/useRealtime';
 
 interface Tag {
   _id: string;
@@ -92,12 +93,7 @@ export default function TasksSection({
     return { creatorName, roleLabel, roleColor };
   };
 
-  useEffect(() => {
-    fetchTasks();
-    fetchAvailableTags();
-  }, [clientId]);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/clients/${clientId}/tasks`);
@@ -115,9 +111,9 @@ export default function TasksSection({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [clientId]);
 
-  const fetchAvailableTags = async () => {
+  const fetchAvailableTags = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/tags');
       if (response.ok) {
@@ -127,7 +123,29 @@ export default function TasksSection({
     } catch (error) {
       console.error('Error fetching tags:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+    fetchAvailableTags();
+  }, [fetchTasks, fetchAvailableTags]);
+
+  const handleRealtimeMessage = useCallback(
+    (event: { type: string; data: string }) => {
+      if (!event?.type) return;
+      if (!['task_created', 'task_updated', 'task_deleted'].includes(event.type)) return;
+      try {
+        const data = JSON.parse(event.data);
+        if (data?.clientId && String(data.clientId) !== String(clientId)) return;
+      } catch {
+        // If payload is not parseable, do a safe refresh.
+      }
+      fetchTasks();
+    },
+    [clientId, fetchTasks]
+  );
+
+  useRealtime({ onMessage: handleRealtimeMessage });
 
   const handleDeleteTask = async (taskId: string) => {
     if (!confirm('Are you sure you want to delete this task?')) return;

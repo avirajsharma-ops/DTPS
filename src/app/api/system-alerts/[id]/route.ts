@@ -21,14 +21,11 @@ export async function GET(
     await connectDB();
 
     const alert = await withCache(
-      `system-alerts:id:${JSON.stringify(id)
-      .populate('createdBy', 'firstName lastName email')
-      .populate('resolvedBy', 'firstName lastName email')
-      .lean()}`,
+      `system-alerts:id:${JSON.stringify(id)}`,
       async () => await SystemAlert.findById(id)
       .populate('createdBy', 'firstName lastName email')
       .populate('resolvedBy', 'firstName lastName email')
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['system_alerts'] }
     );
 

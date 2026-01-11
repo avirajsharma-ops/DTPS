@@ -21,17 +21,16 @@ export async function GET(request: NextRequest) {
       // Clients can see their assigned dietitian and all dietitians
       const currentUser = await withCache(
       `users:available:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).lean(),
+      async () => await User.findById(session.user.id),
       { ttl: 120000, tags: ['users'] }
     );
       
       if (currentUser?.assignedDietitian) {
         // Get assigned dietitian first
         const assignedDietitian = await withCache(
-      `users:available:${JSON.stringify(currentUser.assignedDietitian)
-          .select('firstName lastName avatar role consultationFee specializations')}`,
+      `users:available:${JSON.stringify(currentUser.assignedDietitian)}`,
       async () => await User.findById(currentUser.assignedDietitian)
-          .select('firstName lastName avatar role consultationFee specializations').lean(),
+          .select('firstName lastName avatar role consultationFee specializations'),
       { ttl: 120000, tags: ['users'] }
     );
         
@@ -49,16 +48,14 @@ export async function GET(request: NextRequest) {
         role: 'dietitian',
         _id: { $ne: currentUser?.assignedDietitian },
         status: 'active'
-      })
-      .select('firstName lastName avatar role consultationFee specializations')
-      .limit(10)}`,
+      })}`,
       async () => await User.find({
         role: 'dietitian',
         _id: { $ne: currentUser?.assignedDietitian },
         status: 'active'
       })
       .select('firstName lastName avatar role consultationFee specializations')
-      .limit(10).lean(),
+      .limit(10),
       { ttl: 120000, tags: ['users'] }
     );
       

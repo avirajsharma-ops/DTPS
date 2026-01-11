@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     // Get the service plan
     const servicePlan = await withCache(
       `client:purchase-request:${JSON.stringify(servicePlanId)}`,
-      async () => await ServicePlan.findById(servicePlanId).lean(),
+      async () => await ServicePlan.findById(servicePlanId),
       { ttl: 120000, tags: ['client'] }
     );
     if (!servicePlan || !servicePlan.isActive) {
@@ -72,10 +72,9 @@ export async function POST(request: NextRequest) {
 
     // Get the client's assigned dietitian
     const client = await withCache(
-      `client:purchase-request:${JSON.stringify(session.user.id)
-      .select('assignedDietitian assignedDietitians firstName lastName email')}`,
+      `client:purchase-request:${JSON.stringify(session.user.id)}`,
       async () => await User.findById(session.user.id)
-      .select('assignedDietitian assignedDietitians firstName lastName email').lean(),
+      .select('assignedDietitian assignedDietitians firstName lastName email'),
       { ttl: 120000, tags: ['client'] }
     );
     
@@ -94,7 +93,7 @@ export async function POST(request: NextRequest) {
       servicePlan: servicePlanId,
       pricingTierId,
       status: 'pending'
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['client'] }
     );
 
@@ -154,14 +153,12 @@ export async function GET(request: NextRequest) {
     const purchaseRequests = await withCache(
       `client:purchase-request:${JSON.stringify({
       client: session.user.id
-    })
-    .populate('servicePlan', 'name category description')
-    .sort({ createdAt: -1 })}`,
+    })}`,
       async () => await PurchaseRequest.find({
       client: session.user.id
     })
     .populate('servicePlan', 'name category description')
-    .sort({ createdAt: -1 }).lean(),
+    .sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['client'] }
     );
 

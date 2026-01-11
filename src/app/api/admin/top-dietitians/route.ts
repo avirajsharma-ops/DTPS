@@ -26,11 +26,11 @@ export async function GET(request: NextRequest) {
       `admin:top-dietitians:${JSON.stringify({
       role: { $in: [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR] },
       status: 'active'
-    }).select('firstName lastName email avatar createdAt')}`,
+    })}`,
       async () => await User.find({
       role: { $in: [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR] },
       status: 'active'
-    }).select('firstName lastName email avatar createdAt').lean(),
+    }).select('firstName lastName email avatar createdAt'),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         role: 'client',
         assignedDietitian: dietitian._id,
         updatedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-      }).countDocuments().lean(),
+      }).countDocuments(),
       { ttl: 120000, tags: ['admin'] }
     );
 

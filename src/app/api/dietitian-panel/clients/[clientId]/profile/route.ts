@@ -11,8 +11,8 @@ export const dynamic = 'force-dynamic';
 // Helper function to check if dietitian is assigned to client
 async function isDietitianAssigned(dietitianId: string, clientId: string): Promise<boolean> {
   const client = await withCache(
-      `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId).select('assignedDietitian assignedDietitians')}`,
-      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians').lean(),
+      `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
       { ttl: 120000, tags: ['dietitian_panel'] }
     );
   if (!client) return false;
@@ -49,14 +49,11 @@ export async function GET(
     }
 
     const client = await withCache(
-      `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId)
-      .select('-password')
-      .populate('assignedDietitian', 'firstName lastName email')
-      .populate('assignedDietitians', 'firstName lastName email')}`,
+      `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId)}`,
       async () => await User.findById(clientId)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email')
-      .populate('assignedDietitians', 'firstName lastName email').lean(),
+      .populate('assignedDietitians', 'firstName lastName email'),
       { ttl: 120000, tags: ['dietitian_panel'] }
     );
 
@@ -102,7 +99,7 @@ export async function PUT(
     // Verify the client exists
     const existingClient = await withCache(
       `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['dietitian_panel'] }
     );
     if (!existingClient) {

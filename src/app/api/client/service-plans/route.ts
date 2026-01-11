@@ -22,11 +22,11 @@ export async function GET(request: NextRequest) {
       `client:service-plans:${JSON.stringify({
             client: session.user.id,
             status: { $in: ['active', 'pending', 'on_hold'] }
-        }).populate('dietitian', 'firstName lastName email phone avatar').sort({ createdAt: -1 })}`,
+        })}`,
       async () => await ClientPurchase.find({
             client: session.user.id,
             status: { $in: ['active', 'pending', 'on_hold'] }
-        }).populate('dietitian', 'firstName lastName email phone avatar').sort({ createdAt: -1 }).lean(),
+        }).populate('dietitian', 'firstName lastName email phone avatar').sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['client'] }
     );
 
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       async () => await Payment.find({
             client: session.user.id,
             status: { $in: ['completed', 'captured', 'paid'] }
-        }).lean(),
+        }),
       { ttl: 120000, tags: ['client'] }
     );
 
@@ -58,11 +58,11 @@ export async function GET(request: NextRequest) {
       `client:service-plans:${JSON.stringify({
             isActive: true,
             showToClients: true
-        }).sort({ createdAt: -1 })}`,
+        })}`,
       async () => await ServicePlan.find({
             isActive: true,
             showToClients: true
-        }).sort({ createdAt: -1 }).lean(),
+        }).sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['client'] }
     );
 

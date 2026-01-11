@@ -14,12 +14,10 @@ export async function GET(
     const { id } = await context.params;
     
     const mealPlan = await withCache(
-      `client-meal-plans:id:${JSON.stringify(id)
-      .populate('templateId', 'name category duration')
-      .lean()}`,
+      `client-meal-plans:id:${JSON.stringify(id)}`,
       async () => await ClientMealPlan.findById(id)
       .populate('templateId', 'name category duration')
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['client_meal_plans'] }
     );
     

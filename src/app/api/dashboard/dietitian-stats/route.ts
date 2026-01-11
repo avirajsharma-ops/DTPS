@@ -110,16 +110,12 @@ export async function GET(request: NextRequest) {
 
     // Get recent clients (last 10 assigned to this dietitian or all for admin)
     const recentClients = await withCache(
-      `dashboard:dietitian-stats:${JSON.stringify(clientQuery)
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .select('firstName lastName email phone wooCommerceData createdAt')
-    .lean()}`,
+      `dashboard:dietitian-stats:${JSON.stringify(clientQuery)}`,
       async () => await User.find(clientQuery)
     .sort({ createdAt: -1 })
     .limit(10)
     .select('firstName lastName email phone wooCommerceData createdAt')
-    .lean().lean(),
+    ,
       { ttl: 120000, tags: ['dashboard'] }
     );
 
@@ -131,10 +127,7 @@ export async function GET(request: NextRequest) {
         $gte: startOfToday,
         $lt: endOfToday
       }
-    })
-    .populate('client', 'firstName lastName email')
-    .sort({ scheduledAt: 1 })
-    .lean()}`,
+    })}`,
       async () => await Appointment.find({
       ...appointmentQuery,
       scheduledAt: {
@@ -144,7 +137,7 @@ export async function GET(request: NextRequest) {
     })
     .populate('client', 'firstName lastName email')
     .sort({ scheduledAt: 1 })
-    .lean().lean(),
+    ,
       { ttl: 120000, tags: ['dashboard'] }
     );
 
@@ -180,16 +173,12 @@ export async function GET(request: NextRequest) {
 
     // Get recent payments (last 10)
     const recentPayments = await withCache(
-      `dashboard:dietitian-stats:${JSON.stringify(paymentQuery)
-      .populate('client', 'firstName lastName email phone')
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .lean()}`,
+      `dashboard:dietitian-stats:${JSON.stringify(paymentQuery)}`,
       async () => await Payment.find(paymentQuery)
       .populate('client', 'firstName lastName email phone')
       .sort({ createdAt: -1 })
       .limit(10)
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['dashboard'] }
     );
 

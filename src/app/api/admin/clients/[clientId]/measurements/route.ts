@@ -29,7 +29,7 @@ export async function GET(
     // Verify client exists
     const client = await withCache(
       `admin:clients:clientId:measurements:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!client) {
@@ -41,11 +41,11 @@ export async function GET(
       `admin:clients:clientId:measurements:${JSON.stringify({
       client: clientId,
       measurements: { $exists: true, $ne: [] }
-    }).sort({ date: -1 })}`,
+    })}`,
       async () => await JournalTracking.find({
       client: clientId,
       measurements: { $exists: true, $ne: [] }
-    }).sort({ date: -1 }).lean(),
+    }).sort({ date: -1 }),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -78,11 +78,11 @@ export async function GET(
       `admin:clients:clientId:measurements:${JSON.stringify({
       user: clientId,
       type: { $in: measurementTypes }
-    }).sort({ recordedAt: -1 })}`,
+    })}`,
       async () => await ProgressEntry.find({
       user: clientId,
       type: { $in: measurementTypes }
-    }).sort({ recordedAt: -1 }).lean(),
+    }).sort({ recordedAt: -1 }),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -145,7 +145,7 @@ export async function POST(
     // Verify client exists
     const client = await withCache(
       `admin:clients:clientId:measurements:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!client) {
@@ -269,7 +269,7 @@ export async function DELETE(
     // Get the entry to find the date
     const entry = await withCache(
       `admin:clients:clientId:measurements:${JSON.stringify(measurementId)}`,
-      async () => await ProgressEntry.findById(measurementId).lean(),
+      async () => await ProgressEntry.findById(measurementId),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!entry) {

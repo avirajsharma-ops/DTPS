@@ -61,34 +61,21 @@ export async function GET(request: NextRequest) {
     }
 
     const clients = await withCache(
-      `users:clients:${JSON.stringify(query)
-      .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors status clientStatus createdAt createdBy')
-      .populate('assignedDietitian', 'firstName lastName email avatar')
-      .populate('assignedDietitians', 'firstName lastName email avatar')
-      .populate('assignedHealthCounselor', 'firstName lastName email avatar')
-      .populate('assignedHealthCounselors', 'firstName lastName email avatar')
-      .populate({
-        path: 'createdBy.userId',
-        select: 'firstName lastName role',
-        strictPopulate: false
-      })
-      .sort({ firstName: 1, lastName: 1 })
-      .limit(limit)
-      .skip((page - 1) * limit)}`,
+      `users:clients:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await User.find(query)
-      .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors status clientStatus createdAt createdBy')
-      .populate('assignedDietitian', 'firstName lastName email avatar')
-      .populate('assignedDietitians', 'firstName lastName email avatar')
-      .populate('assignedHealthCounselor', 'firstName lastName email avatar')
-      .populate('assignedHealthCounselors', 'firstName lastName email avatar')
-      .populate({
-        path: 'createdBy.userId',
-        select: 'firstName lastName role',
-        strictPopulate: false
-      })
-      .sort({ firstName: 1, lastName: 1 })
-      .limit(limit)
-      .skip((page - 1) * limit).lean(),
+        .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors status clientStatus createdAt createdBy')
+        .populate('assignedDietitian', 'firstName lastName email avatar')
+        .populate('assignedDietitians', 'firstName lastName email avatar')
+        .populate('assignedHealthCounselor', 'firstName lastName email avatar')
+        .populate('assignedHealthCounselors', 'firstName lastName email avatar')
+        .populate({
+          path: 'createdBy.userId',
+          select: 'firstName lastName role',
+          strictPopulate: false
+        })
+        .sort({ firstName: 1, lastName: 1 })
+        .limit(limit)
+        .skip((page - 1) * limit),
       { ttl: 120000, tags: ['users'] }
     );
 

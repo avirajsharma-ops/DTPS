@@ -32,18 +32,13 @@ export async function GET(request: NextRequest) {
 
     // Fetch payments
     const payments = await withCache(
-      `admin:payments:${JSON.stringify(query)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName')
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip(skip)}`,
+      `admin:payments:${JSON.stringify(query)}:limit=${limit}:skip=${skip}`,
       async () => await Payment.find(query)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName')
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip(skip).lean(),
+      .skip(skip),
       { ttl: 120000, tags: ['admin'] }
     );
 

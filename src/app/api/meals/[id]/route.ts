@@ -21,14 +21,11 @@ export async function GET(
     const { id } = await params;
 
     const mealPlan = await withCache(
-      `meals:id:${JSON.stringify(id)
-      .populate('dietitian', 'firstName lastName email avatar')
-      .populate('client', 'firstName lastName email avatar')
-      .populate('meals.recipe', 'name description calories macros ingredients instructions')}`,
+      `meals:id:${JSON.stringify(id)}`,
       async () => await MealPlan.findById(id)
       .populate('dietitian', 'firstName lastName email avatar')
       .populate('client', 'firstName lastName email avatar')
-      .populate('meals.recipe', 'name description calories macros ingredients instructions').lean(),
+      .populate('meals.recipe', 'name description calories macros ingredients instructions'),
       { ttl: 120000, tags: ['meals'] }
     );
 
@@ -77,7 +74,7 @@ export async function PUT(
 
     const mealPlan = await withCache(
       `meals:id:${JSON.stringify(id)}`,
-      async () => await MealPlan.findById(id).lean(),
+      async () => await MealPlan.findById(id),
       { ttl: 120000, tags: ['meals'] }
     );
     if (!mealPlan) {
@@ -132,7 +129,7 @@ export async function DELETE(
 
     const mealPlan = await withCache(
       `meals:id:${JSON.stringify(id)}`,
-      async () => await MealPlan.findById(id).lean(),
+      async () => await MealPlan.findById(id),
       { ttl: 120000, tags: ['meals'] }
     );
     if (!mealPlan) {

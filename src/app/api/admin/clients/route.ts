@@ -61,20 +61,7 @@ export async function GET(request: NextRequest) {
     console.log('Query:', JSON.stringify(query));
 
     const clients = await withCache(
-      `admin:clients:${JSON.stringify(query)
-      .select('-password')
-      .populate('assignedDietitian', 'firstName lastName email avatar')
-      .populate('assignedDietitians', 'firstName lastName email avatar')
-      .populate('assignedHealthCounselor', 'firstName lastName email avatar')
-      .populate('assignedHealthCounselors', 'firstName lastName email avatar')
-      .populate({
-        path: 'createdBy.userId',
-        select: 'firstName lastName role',
-        strictPopulate: false
-      })
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit)}`,
+      `admin:clients:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await User.find(query)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email avatar')
@@ -88,7 +75,7 @@ export async function GET(request: NextRequest) {
       })
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit).lean(),
+      .skip((page - 1) * limit),
       { ttl: 120000, tags: ['admin'] }
     );
 

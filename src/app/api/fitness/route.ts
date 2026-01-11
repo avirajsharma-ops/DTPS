@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
 
     // Get user's fitness data
     const user = await withCache(
-      `fitness:${JSON.stringify(session.user.id).select('fitnessData')}`,
-      async () => await User.findById(session.user.id).select('fitnessData').lean(),
+      `fitness:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('fitnessData'),
       { ttl: 120000, tags: ['fitness'] }
     );
     

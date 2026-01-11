@@ -31,7 +31,7 @@ export async function GET(
     // Verify the client exists
     const client = await withCache(
       `admin:clients:clientId:dietary-recall:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!client) {
@@ -40,7 +40,7 @@ export async function GET(
 
     const dietaryRecall = await withCache(
       `admin:clients:clientId:dietary-recall:${JSON.stringify({ userId: clientId })}`,
-      async () => await DietaryRecall.findOne({ userId: clientId }).lean(),
+      async () => await DietaryRecall.findOne({ userId: clientId }),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -83,7 +83,7 @@ export async function PUT(
     // Verify the client exists
     const client = await withCache(
       `admin:clients:clientId:dietary-recall:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!client) {

@@ -22,20 +22,14 @@ export async function GET(
     await connectDB();
 
     const task = await withCache(
-      `users:id:tasks:taskId:${JSON.stringify({
-      _id: new mongoose.Types.ObjectId(taskId),
-      client: new mongoose.Types.ObjectId(id)
-    })
-      .populate('dietitian', 'firstName lastName email')
-      .populate('tags', 'name color icon')
-      .lean()}`,
+      `users:id:tasks:taskId:${id}:${taskId}`,
       async () => await Task.findOne({
       _id: new mongoose.Types.ObjectId(taskId),
       client: new mongoose.Types.ObjectId(id)
     })
       .populate('dietitian', 'firstName lastName email')
       .populate('tags', 'name color icon')
-      .lean().lean(),
+      ,
       { ttl: 60000, tags: ['users'] }
     );
 
@@ -74,7 +68,7 @@ export async function PATCH(
       async () => await Task.findOne({
       _id: new mongoose.Types.ObjectId(taskId),
       client: new mongoose.Types.ObjectId(id)
-    }).lean(),
+    }),
       { ttl: 60000, tags: ['users'] }
     );
 
@@ -103,14 +97,11 @@ export async function PATCH(
 
     // Populate for response
     const updatedTask = await withCache(
-      `users:id:tasks:taskId:${JSON.stringify(task._id)
-      .populate('dietitian', 'firstName lastName email')
-      .populate('tags', 'name color icon')
-      .lean()}`,
+      `users:id:tasks:taskId:${JSON.stringify(task._id)}`,
       async () => await Task.findById(task._id)
       .populate('dietitian', 'firstName lastName email')
       .populate('tags', 'name color icon')
-      .lean().lean(),
+      ,
       { ttl: 60000, tags: ['users'] }
     );
 

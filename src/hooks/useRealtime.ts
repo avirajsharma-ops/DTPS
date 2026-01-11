@@ -111,7 +111,11 @@ class GlobalSSEManager {
         [
           'user_online','user_offline','typing_start','typing_stop','heartbeat','connected','new_message',
           'incoming_call','call_accepted','call_rejected','call_ended','ice_candidate','missed_call',
-          'webrtc-signal'  // 🚀 NEW: Simple WebRTC signals
+          'webrtc-signal',  // 🚀 NEW: Simple WebRTC signals
+
+          // App domain events
+          'appointment_booked','appointment_cancelled','appointment_updated',
+          'task_created','task_updated','task_deleted'
         ].forEach(eventType => {
           eventSource.addEventListener(eventType, (event) => {
             const subscribers = this.subscribers.get(userId);
@@ -343,6 +347,10 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
           } catch (error) {
             console.error(`Failed to parse ${event.type} event:`, error);
           }
+        } else if (onMessage) {
+          // Forward any other custom events to consumers.
+          // Keep `data` as a string for backward compatibility with existing handlers.
+          onMessage({ type: event.type, data: event.data, timestamp: Date.now() });
         }
       });
 

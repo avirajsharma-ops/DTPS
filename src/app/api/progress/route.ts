@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
       if (clientId) {
         // Verify the dietitian is assigned to this client
         const client = await withCache(
-      `progress:${JSON.stringify(clientId).select('assignedDietitian assignedDietitians')}`,
-      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians').lean(),
+      `progress:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
       { ttl: 120000, tags: ['progress'] }
     );
         const isAssigned = 
@@ -76,16 +76,12 @@ export async function GET(request: NextRequest) {
     }
 
     const progressEntries = await withCache(
-      `progress:${JSON.stringify(query)
-      .populate('user', 'firstName lastName')
-      .sort({ recordedAt: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit)}`,
+      `progress:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await ProgressEntry.find(query)
       .populate('user', 'firstName lastName')
       .sort({ recordedAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit).lean(),
+      .skip((page - 1) * limit),
       { ttl: 120000, tags: ['progress'] }
     );
 

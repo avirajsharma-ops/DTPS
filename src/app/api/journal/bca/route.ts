@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
 
     // Get journal entries for this client with BCA data
     const journals = await withCache(
-      `journal:bca:${JSON.stringify(query).sort({ date: -1 })}`,
-      async () => await JournalTracking.find(query).sort({ date: -1 }).lean(),
+      `journal:bca:${JSON.stringify(query)}`,
+      async () => await JournalTracking.find(query).sort({ date: -1 }),
       { ttl: 120000, tags: ['journal'] }
     );
 

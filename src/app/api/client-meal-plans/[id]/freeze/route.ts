@@ -162,7 +162,7 @@ export async function POST(
     // Fetch the meal plan
     const mealPlan = await withCache(
       `client-meal-plans:id:freeze:${JSON.stringify(id)}`,
-      async () => await ClientMealPlan.findById(id).lean(),
+      async () => await ClientMealPlan.findById(id),
       { ttl: 120000, tags: ['client_meal_plans'] }
     );
 
@@ -371,7 +371,7 @@ export async function POST(
     if (purchaseId) {
       const purchase = await withCache(
       `client-meal-plans:id:freeze:${JSON.stringify(purchaseId)}`,
-      async () => await ClientPurchase.findById(purchaseId).lean(),
+      async () => await ClientPurchase.findById(purchaseId),
       { ttl: 120000, tags: ['client_meal_plans'] }
     );
       if (purchase && purchase.expectedEndDate) {
@@ -441,7 +441,7 @@ export async function DELETE(
     // Fetch the meal plan
     const mealPlan = await withCache(
       `client-meal-plans:id:freeze:${JSON.stringify(id)}`,
-      async () => await ClientMealPlan.findById(id).lean(),
+      async () => await ClientMealPlan.findById(id),
       { ttl: 120000, tags: ['client_meal_plans'] }
     );
 

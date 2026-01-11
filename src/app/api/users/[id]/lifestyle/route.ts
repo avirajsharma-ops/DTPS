@@ -22,7 +22,7 @@ export async function GET(
 
     const lifestyleInfo = await withCache(
       `users:id:lifestyle:${JSON.stringify({ userId: id })}`,
-      async () => await LifestyleInfo.findOne({ userId: id }).lean(),
+      async () => await LifestyleInfo.findOne({ userId: id }),
       { ttl: 120000, tags: ['users'] }
     );
 

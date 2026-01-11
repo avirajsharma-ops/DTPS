@@ -21,8 +21,8 @@ export async function GET(
 
     const { tagId } = await params;
     const tag = await withCache(
-      `tags:tagId:${JSON.stringify(tagId).lean()}`,
-      async () => await Tag.findById(tagId).lean().lean(),
+      `tags:tagId:${JSON.stringify(tagId)}`,
+      async () => await Tag.findById(tagId),
       { ttl: 120000, tags: ['tags'] }
     );
 
@@ -56,7 +56,7 @@ export async function PATCH(
 
     const tag = await withCache(
       `tags:tagId:${JSON.stringify(tagId)}`,
-      async () => await Tag.findById(tagId).lean(),
+      async () => await Tag.findById(tagId),
       { ttl: 120000, tags: ['tags'] }
     );
     if (!tag) {
@@ -67,7 +67,7 @@ export async function PATCH(
     if (name && name !== tag.name) {
       const existingTag = await withCache(
       `tags:tagId:${JSON.stringify({ name: name.trim() })}`,
-      async () => await Tag.findOne({ name: name.trim() }).lean(),
+      async () => await Tag.findOne({ name: name.trim() }),
       { ttl: 120000, tags: ['tags'] }
     );
       if (existingTag) {

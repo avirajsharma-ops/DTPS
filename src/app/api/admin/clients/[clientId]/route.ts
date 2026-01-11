@@ -28,20 +28,14 @@ export async function GET(
     const { clientId } = await params;
 
     const client = await withCache(
-      `admin:clients:clientId:${JSON.stringify(clientId)
-      .select('-password')
-      .populate('assignedDietitian', 'firstName lastName email avatar phone specializations')
-      .populate('assignedDietitians', 'firstName lastName email avatar phone specializations')
-      .populate('assignedHealthCounselor', 'firstName lastName email avatar phone')
-      .populate('assignedHealthCounselors', 'firstName lastName email avatar phone')
-      .populate('tags')}`,
+      `admin:clients:clientId:${JSON.stringify(clientId)}`,
       async () => await User.findById(clientId)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email avatar phone specializations')
       .populate('assignedDietitians', 'firstName lastName email avatar phone specializations')
       .populate('assignedHealthCounselor', 'firstName lastName email avatar phone')
       .populate('assignedHealthCounselors', 'firstName lastName email avatar phone')
-      .populate('tags').lean(),
+      .populate('tags'),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -51,27 +45,21 @@ export async function GET(
 
     // Get meal plans
     const mealPlans = await withCache(
-      `admin:clients:clientId:${JSON.stringify({ clientId })
-      .populate('templateId', 'name category')
-      .populate('assignedBy', 'firstName lastName')
-      .sort({ createdAt: -1 })
-      .limit(10)}`,
+      `admin:clients:clientId:${JSON.stringify({ clientId })}`,
       async () => await ClientMealPlan.find({ clientId })
       .populate('templateId', 'name category')
       .populate('assignedBy', 'firstName lastName')
       .sort({ createdAt: -1 })
-      .limit(10).lean(),
+      .limit(10),
       { ttl: 120000, tags: ['admin'] }
     );
 
     // Get payments
     const payments = await withCache(
-      `admin:clients:clientId:${JSON.stringify({ userId: clientId })
-      .sort({ createdAt: -1 })
-      .limit(20)}`,
+      `admin:clients:clientId:${JSON.stringify({ userId: clientId })}`,
       async () => await Payment.find({ userId: clientId })
       .sort({ createdAt: -1 })
-      .limit(20).lean(),
+      .limit(20),
       { ttl: 120000, tags: ['admin'] }
     );
 

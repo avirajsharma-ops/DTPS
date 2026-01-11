@@ -25,7 +25,7 @@ export async function GET(
     // Verify user exists
     const user = await withCache(
       `users:id:recall:${JSON.stringify(userId)}`,
-      async () => await User.findById(userId).lean(),
+      async () => await User.findById(userId),
       { ttl: 120000, tags: ['users'] }
     );
     if (!user) {
@@ -97,7 +97,7 @@ export async function POST(
     // Verify user exists
     const user = await withCache(
       `users:id:recall:${JSON.stringify(userId)}`,
-      async () => await User.findById(userId).lean(),
+      async () => await User.findById(userId),
       { ttl: 120000, tags: ['users'] }
     );
     if (!user) {

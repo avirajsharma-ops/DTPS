@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
     // Get SSE manager instance
     const sseManager = SSEManager.getInstance();
 
-
     // Create SSE stream
+    let cleanupFn: (() => void) | null = null;
     const stream = new ReadableStream({
       start(controller) {
         const encoder = new TextEncoder();
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         }, 30000); // Send heartbeat every 30 seconds
 
         // Store cleanup function for later use
-        (controller as any).cleanup = () => {
+        cleanupFn = () => {
           clearInterval(heartbeat);
           cleanup();
         };
@@ -112,9 +112,7 @@ export async function GET(request: NextRequest) {
       
       cancel() {
         // Cleanup when connection is closed
-        if ((this as any).cleanup) {
-          (this as any).cleanup();
-        }
+        cleanupFn?.();
       }
     });
 

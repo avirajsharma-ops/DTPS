@@ -65,7 +65,7 @@ export async function PUT(
 
     const recipe = await withCache(
       `recipes:id:${JSON.stringify(id)}`,
-      async () => await Recipe.findById(id).lean(),
+      async () => await Recipe.findById(id),
       { ttl: 120000, tags: ['recipes'] }
     );
     if (!recipe)
@@ -100,7 +100,7 @@ export async function DELETE(
     await connectDB();
     const recipe = await withCache(
       `recipes:id:${JSON.stringify(id)}`,
-      async () => await Recipe.findById(id).lean(),
+      async () => await Recipe.findById(id),
       { ttl: 120000, tags: ['recipes'] }
     );
     if (!recipe)

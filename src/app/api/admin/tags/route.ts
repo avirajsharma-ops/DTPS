@@ -9,8 +9,9 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || !session.user?.role?.toLowerCase().includes('admin')) {
-      return errorResponse('Unauthorized. Admin access required.', 403, 'ADMIN_REQUIRED');
+    // Allow admin, dietitian, and health_counselor to view tags
+    if (!session || !['admin', 'dietitian', 'health_counselor'].includes(session.user?.role || '')) {
+      return errorResponse('Unauthorized. Staff access required.', 403, 'STAFF_REQUIRED');
     }
 
     await connectDB();

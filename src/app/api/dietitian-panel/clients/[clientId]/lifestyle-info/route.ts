@@ -12,8 +12,8 @@ export const dynamic = 'force-dynamic';
 // Helper function to check if dietitian is assigned to client
 async function isDietitianAssigned(dietitianId: string, clientId: string): Promise<boolean> {
   const client = await withCache(
-      `dietitian-panel:clients:clientId:lifestyle-info:${JSON.stringify(clientId).select('assignedDietitian assignedDietitians')}`,
-      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians').lean(),
+      `dietitian-panel:clients:clientId:lifestyle-info:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
       { ttl: 120000, tags: ['dietitian_panel'] }
     );
   if (!client) return false;
@@ -52,7 +52,7 @@ export async function GET(
     // Verify the client exists
     const client = await withCache(
       `dietitian-panel:clients:clientId:lifestyle-info:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['dietitian_panel'] }
     );
     if (!client) {
@@ -61,7 +61,7 @@ export async function GET(
 
     const lifestyleInfo = await withCache(
       `dietitian-panel:clients:clientId:lifestyle-info:${JSON.stringify({ userId: clientId })}`,
-      async () => await LifestyleInfo.findOne({ userId: clientId }).lean(),
+      async () => await LifestyleInfo.findOne({ userId: clientId }),
       { ttl: 120000, tags: ['dietitian_panel'] }
     );
 
@@ -109,7 +109,7 @@ export async function PUT(
     // Verify the client exists
     const client = await withCache(
       `dietitian-panel:clients:clientId:lifestyle-info:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['dietitian_panel'] }
     );
     if (!client) {

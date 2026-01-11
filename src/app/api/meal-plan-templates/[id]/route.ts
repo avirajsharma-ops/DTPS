@@ -14,12 +14,10 @@ export async function GET(
     const { id } = await params;
     await connectDB();
     const template = await withCache(
-      `meal-plan-templates:id:${JSON.stringify(id)
-      .populate('createdBy', 'firstName lastName')
-      .lean()}`,
+      `meal-plan-templates:id:${JSON.stringify(id)}`,
       async () => await MealPlanTemplate.findById(id)
       .populate('createdBy', 'firstName lastName')
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['meal_plan_templates'] }
     );
     if (!template) {
@@ -55,7 +53,7 @@ export async function PUT(
     // Find existing template
     const existingTemplate = await withCache(
       `meal-plan-templates:id:${JSON.stringify(id)}`,
-      async () => await MealPlanTemplate.findById(id).lean(),
+      async () => await MealPlanTemplate.findById(id),
       { ttl: 120000, tags: ['meal_plan_templates'] }
     );
     if (!existingTemplate) {
@@ -118,7 +116,7 @@ export async function PATCH(
 
     const existingTemplate = await withCache(
       `meal-plan-templates:id:${JSON.stringify(id)}`,
-      async () => await MealPlanTemplate.findById(id).lean(),
+      async () => await MealPlanTemplate.findById(id),
       { ttl: 120000, tags: ['meal_plan_templates'] }
     );
     if (!existingTemplate) {
@@ -173,7 +171,7 @@ export async function DELETE(
 
     const existingTemplate = await withCache(
       `meal-plan-templates:id:${JSON.stringify(id)}`,
-      async () => await MealPlanTemplate.findById(id).lean(),
+      async () => await MealPlanTemplate.findById(id),
       { ttl: 120000, tags: ['meal_plan_templates'] }
     );
     if (!existingTemplate) {

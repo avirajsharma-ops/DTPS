@@ -26,12 +26,10 @@ export async function GET(req: NextRequest) {
 
   // Fetch minimal fields and compute level from customParams if not set
   const docs = await withCache(
-      `wati-contacts:${JSON.stringify(query)
-    .select('firstName fullName phone level customParams')
-    .lean()}`,
+      `wati-contacts:${JSON.stringify(query)}`,
       async () => await WatiContact.find(query)
     .select('firstName fullName phone level customParams')
-    .lean().lean(),
+    ,
       { ttl: 120000, tags: ['wati_contacts'] }
     );
 

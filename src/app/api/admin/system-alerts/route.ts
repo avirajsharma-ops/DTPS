@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
 
     // Load manually created alerts from DB first
     const savedDocs = await withCache(
-      `admin:system-alerts:${JSON.stringify().sort({ createdAt: -1 }).limit(50)}`,
-      async () => await SystemAlert.find().sort({ createdAt: -1 }).limit(50).lean(),
+      `admin:system-alerts:all`,
+      async () => await SystemAlert.find().sort({ createdAt: -1 }).limit(50),
       { ttl: 120000, tags: ['admin'] }
     );
     const savedAlerts = savedDocs.map((doc: any) => ({

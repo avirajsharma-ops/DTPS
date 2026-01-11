@@ -38,14 +38,14 @@ async function updateClientStatusBasedOnMealPlan(clientId: string): Promise<stri
       status: 'active',
       startDate: { $lte: today },
       endDate: { $gte: today }
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['client_purchases'] }
     );
     
     // Get current client status
     const client = await withCache(
-      `client-purchases:check:${JSON.stringify(clientId).select('clientStatus createdAt')}`,
-      async () => await User.findById(clientId).select('clientStatus createdAt').lean(),
+      `client-purchases:check:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).select('clientStatus createdAt'),
       { ttl: 120000, tags: ['client_purchases'] }
     );
     if (!client) return 'leading';
@@ -60,7 +60,7 @@ async function updateClientStatusBasedOnMealPlan(clientId: string): Promise<stri
       // Check if they ever had a meal plan
       const anyMealPlan = await withCache(
       `client-purchases:check:${JSON.stringify({ client: clientId })}`,
-      async () => await MealPlan.findOne({ client: clientId }).lean(),
+      async () => await MealPlan.findOne({ client: clientId }),
       { ttl: 120000, tags: ['client_purchases'] }
     );
       
@@ -98,7 +98,7 @@ async function createPaymentRecordFromLink(paymentLink: any): Promise<string | n
     })}`,
       async () => await Payment.findOne({
       paymentLink: paymentLink._id
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['client_purchases'] }
     );
     
@@ -196,12 +196,12 @@ export async function GET(request: NextRequest) {
         client: clientId,
         servicePlanId: { $exists: true, $ne: null },
         durationDays: { $exists: true, $gt: 0 }
-      }).sort({ createdAt: -1 }).limit(10)}`,
+      })}`,
       async () => await PaymentLink.find({
         client: clientId,
         servicePlanId: { $exists: true, $ne: null },
         durationDays: { $exists: true, $gt: 0 }
-      }).sort({ createdAt: -1 }).limit(10).lean(),
+      }).sort({ createdAt: -1 }).limit(10),
       { ttl: 120000, tags: ['client_purchases'] }
     ); // Check all recent links
 
@@ -223,7 +223,7 @@ export async function GET(request: NextRequest) {
             })}`,
       async () => await ClientPurchase.findOne({ 
               paymentLink: paymentLink._id 
-            }).lean(),
+            }),
       { ttl: 120000, tags: ['client_purchases'] }
     );
 
@@ -268,13 +268,13 @@ export async function GET(request: NextRequest) {
         status: { $in: ['pending', 'created'] },
         servicePlanId: { $exists: true, $ne: null },
         durationDays: { $exists: true, $gt: 0 }
-      }).sort({ createdAt: -1 }).limit(5)}`,
+      })}`,
       async () => await PaymentLink.find({
         client: clientId,
         status: { $in: ['pending', 'created'] },
         servicePlanId: { $exists: true, $ne: null },
         durationDays: { $exists: true, $gt: 0 }
-      }).sort({ createdAt: -1 }).limit(5).lean(),
+      }).sort({ createdAt: -1 }).limit(5),
       { ttl: 120000, tags: ['client_purchases'] }
     ); // Check last 5 pending links
 
@@ -284,7 +284,7 @@ export async function GET(request: NextRequest) {
           // Create ClientPurchase for newly synced paid payment
           const existingPurchase = await withCache(
       `client-purchases:check:${JSON.stringify({ paymentLink: pendingLink._id })}`,
-      async () => await ClientPurchase.findOne({ paymentLink: pendingLink._id }).lean(),
+      async () => await ClientPurchase.findOne({ paymentLink: pendingLink._id }),
       { ttl: 120000, tags: ['client_purchases'] }
     );
           if (!existingPurchase) {
@@ -324,20 +324,14 @@ export async function GET(request: NextRequest) {
     // STEP 2: Find ALL client's active purchases that haven't expired
     
     const allActivePurchases = await withCache(
-      `client-purchases:check:${JSON.stringify({
-      client: clientId,
-      status: 'active',
-      endDate: { $gte: new Date() }
-    })
-    .populate('servicePlan', 'name category')
-    .sort({ createdAt: 1 })}`,
+      `client-purchases:check:active:${clientId}`,
       async () => await ClientPurchase.find({
       client: clientId,
       status: 'active',
       endDate: { $gte: new Date() }
     })
     .populate('servicePlan', 'name category')
-    .sort({ createdAt: 1 }).lean(),
+    .sort({ createdAt: 1 }),
       { ttl: 120000, tags: ['client_purchases'] }
     ); // Sort by creation date (oldest first - FIFO)
 
@@ -398,13 +392,13 @@ export async function GET(request: NextRequest) {
         status: 'paid',
         servicePlanId: { $exists: true, $ne: null },
         durationDays: { $exists: true, $gt: 0 }
-      }).sort({ paidAt: -1 })}`,
+      })}`,
       async () => await PaymentLink.findOne({
         client: clientId,
         status: 'paid',
         servicePlanId: { $exists: true, $ne: null },
         durationDays: { $exists: true, $gt: 0 }
-      }).sort({ paidAt: -1 }).lean(),
+      }).sort({ paidAt: -1 }),
       { ttl: 120000, tags: ['client_purchases'] }
     );
 
@@ -419,7 +413,7 @@ export async function GET(request: NextRequest) {
         })}`,
       async () => await ClientPurchase.findOne({
           paymentLink: paidPaymentLink._id
-        }).lean(),
+        }),
       { ttl: 120000, tags: ['client_purchases'] }
     );
 
@@ -460,10 +454,9 @@ export async function GET(request: NextRequest) {
           
           // Use the newly created purchase
           const createdPurchase = await withCache(
-      `client-purchases:check:${JSON.stringify(newPurchase._id)
-            .populate('servicePlan', 'name category')}`,
+      `client-purchases:check:${JSON.stringify(newPurchase._id)}`,
       async () => await ClientPurchase.findById(newPurchase._id)
-            .populate('servicePlan', 'name category').lean(),
+            .populate('servicePlan', 'name category'),
       { ttl: 120000, tags: ['client_purchases'] }
     );
           if (createdPurchase) {

@@ -88,8 +88,8 @@ export async function GET(request: NextRequest) {
 
     // Fetch user's goals from the User database
     const user = await withCache(
-      `journal:meals:${JSON.stringify(clientId).select('goals firstName lastName')}`,
-      async () => await User.findById(clientId).select('goals firstName lastName').lean(),
+      `journal:meals:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).select('goals firstName lastName'),
       { ttl: 120000, tags: ['journal'] }
     );
     
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
       async () => await JournalTracking.findOne({
       client: clientId,
       date: date
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['journal'] }
     );
 
@@ -136,13 +136,13 @@ export async function GET(request: NextRequest) {
       status: 'active',
       startDate: { $lte: date },
       endDate: { $gte: date }
-    }).populate('templateId')}`,
+    })}`,
       async () => await ClientMealPlan.findOne({
       clientId: clientId,
       status: 'active',
       startDate: { $lte: date },
       endDate: { $gte: date }
-    }).populate('templateId').lean(),
+    }).populate('templateId'),
       { ttl: 120000, tags: ['journal'] }
     );
 
@@ -310,12 +310,7 @@ export async function GET(request: NextRequest) {
         isActive: true,
         startDate: { $lte: date },
         endDate: { $gte: date }
-      }).populate([
-        { path: 'meals.breakfast', model: 'Recipe', select: 'name calories protein carbs fat' },
-        { path: 'meals.lunch', model: 'Recipe', select: 'name calories protein carbs fat' },
-        { path: 'meals.dinner', model: 'Recipe', select: 'name calories protein carbs fat' },
-        { path: 'meals.snacks', model: 'Recipe', select: 'name calories protein carbs fat' }
-      ])}`,
+      })}`,
       async () => await MealPlan.findOne({
         client: clientId,
         isActive: true,
@@ -326,7 +321,7 @@ export async function GET(request: NextRequest) {
         { path: 'meals.lunch', model: 'Recipe', select: 'name calories protein carbs fat' },
         { path: 'meals.dinner', model: 'Recipe', select: 'name calories protein carbs fat' },
         { path: 'meals.snacks', model: 'Recipe', select: 'name calories protein carbs fat' }
-      ]).lean(),
+      ]),
       { ttl: 120000, tags: ['journal'] }
     );
 

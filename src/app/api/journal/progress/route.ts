@@ -62,8 +62,8 @@ export async function GET(request: NextRequest) {
 
     // Get journal entries for this client with progress data
     const journals = await withCache(
-      `journal:progress:${JSON.stringify(query).sort({ date: -1 })}`,
-      async () => await JournalTracking.find(query).sort({ date: -1 }).lean(),
+      `journal:progress:${JSON.stringify(query)}`,
+      async () => await JournalTracking.find(query).sort({ date: -1 }),
       { ttl: 120000, tags: ['journal'] }
     );
 

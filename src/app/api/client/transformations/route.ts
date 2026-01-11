@@ -9,14 +9,11 @@ export async function GET() {
     await dbConnect();
 
     const transformations = await withCache(
-      `client:transformations:${JSON.stringify({ isActive: true })
-      .select('uuid title description beforeImage afterImage clientName durationWeeks weightLoss displayOrder')
-      .sort({ displayOrder: 1, createdAt: -1 })
-      .lean()}`,
+      `client:transformations:${JSON.stringify({ isActive: true })}`,
       async () => await Transformation.find({ isActive: true })
       .select('uuid title description beforeImage afterImage clientName durationWeeks weightLoss displayOrder')
       .sort({ displayOrder: 1, createdAt: -1 })
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['client'] }
     );
 

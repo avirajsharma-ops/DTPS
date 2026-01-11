@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       async () => await WatchConnection.findOne({
       userId: new mongoose.Types.ObjectId(session.user.id),
       watchIsConnected: true,
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['watch'] }
     );
     
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
       async () => await WatchConnection.findOne({
       userId: new mongoose.Types.ObjectId(session.user.id),
       watchIsConnected: true,
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['watch'] }
     );
     

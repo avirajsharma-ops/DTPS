@@ -34,14 +34,11 @@ export async function GET(request: NextRequest) {
     }
 
     const payment = await withCache(
-      `client:payment-receipt:${JSON.stringify(query)
-      .populate('dietitian', 'firstName lastName email')
-      .populate('client', 'firstName lastName email phone')
-      .sort({ createdAt: -1 })}`,
+      `client:payment-receipt:${JSON.stringify(query)}`,
       async () => await Payment.findOne(query)
       .populate('dietitian', 'firstName lastName email')
       .populate('client', 'firstName lastName email phone')
-      .sort({ createdAt: -1 }).lean(),
+      .sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['client'] }
     );
 

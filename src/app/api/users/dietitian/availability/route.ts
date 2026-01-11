@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const dietitian = await withCache(
-      `users:dietitian:availability:${JSON.stringify(dietitianId).select('availability schedule')}`,
-      async () => await User.findById(dietitianId).select('availability schedule').lean(),
+      `users:dietitian:availability:${JSON.stringify(dietitianId)}`,
+      async () => await User.findById(dietitianId).select('availability schedule'),
       { ttl: 120000, tags: ['users'] }
     );
 

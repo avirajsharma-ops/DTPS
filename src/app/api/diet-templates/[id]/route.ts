@@ -74,33 +74,7 @@ export async function GET(
     await connectDB();
 
     const template = await withCache(
-      `diet-templates:id:${JSON.stringify({ _id: id, isActive: true })
-      .populate('createdBy', 'firstName lastName email')
-      .populate({
-        path: 'meals.breakfast.recipeId',
-        select: 'name description nutrition image category'
-      })
-      .populate({
-        path: 'meals.morningSnack.recipeId',
-        select: 'name description nutrition image category'
-      })
-      .populate({
-        path: 'meals.lunch.recipeId',
-        select: 'name description nutrition image category'
-      })
-      .populate({
-        path: 'meals.afternoonSnack.recipeId',
-        select: 'name description nutrition image category'
-      })
-      .populate({
-        path: 'meals.dinner.recipeId',
-        select: 'name description nutrition image category'
-      })
-      .populate({
-        path: 'meals.eveningSnack.recipeId',
-        select: 'name description nutrition image category'
-      })
-      .lean()}`,
+      `diet-templates:id:${JSON.stringify({ _id: id, isActive: true })}`,
       async () => await DietTemplate.findOne({ _id: id, isActive: true })
       .populate('createdBy', 'firstName lastName email')
       .populate({
@@ -127,7 +101,7 @@ export async function GET(
         path: 'meals.eveningSnack.recipeId',
         select: 'name description nutrition image category'
       })
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['diet_templates'] }
     );
 

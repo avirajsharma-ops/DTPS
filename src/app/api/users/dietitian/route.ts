@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     // Get current user to find assigned dietitian
     const currentUser = await withCache(
       `users:dietitian:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).lean(),
+      async () => await User.findById(session.user.id),
       { ttl: 120000, tags: ['users'] }
     );
     if (!currentUser) {
@@ -40,10 +40,9 @@ export async function GET(request: NextRequest) {
 
     // Get assigned dietitian details
     const dietitian = await withCache(
-      `users:dietitian:${JSON.stringify(currentUser.assignedDietitian)
-      .select('firstName lastName email phone avatar bio credentials specializations experience consultationFee')}`,
+      `users:dietitian:${JSON.stringify(currentUser.assignedDietitian)}`,
       async () => await User.findById(currentUser.assignedDietitian)
-      .select('firstName lastName email phone avatar bio credentials specializations experience consultationFee').lean(),
+      .select('firstName lastName email phone avatar bio credentials specializations experience consultationFee'),
       { ttl: 120000, tags: ['users'] }
     );
 

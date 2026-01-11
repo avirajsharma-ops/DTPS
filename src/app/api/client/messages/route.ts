@@ -47,18 +47,13 @@ export async function GET(request: NextRequest) {
     }
 
     const messages = await withCache(
-      `client:messages:${JSON.stringify(query)
-      .populate('sender', 'firstName lastName avatar role')
-      .populate('receiver', 'firstName lastName avatar role')
-      .sort({ createdAt: 1 })
-      .limit(limit)
-      .skip((page - 1) * limit)}`,
+      `client:messages:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await Message.find(query)
       .populate('sender', 'firstName lastName avatar role')
       .populate('receiver', 'firstName lastName avatar role')
       .sort({ createdAt: 1 })
       .limit(limit)
-      .skip((page - 1) * limit).lean(),
+      .skip((page - 1) * limit),
       { ttl: 30000, tags: ['client'] }
     );
 
@@ -127,8 +122,8 @@ export async function POST(request: NextRequest) {
 
     // Verify recipient exists
     const recipient = await withCache(
-      `client:messages:${JSON.stringify(recipientId).select('firstName lastName role')}`,
-      async () => await User.findById(recipientId).select('firstName lastName role').lean(),
+      `client:messages:${JSON.stringify(recipientId)}`,
+      async () => await User.findById(recipientId).select('firstName lastName role'),
       { ttl: 30000, tags: ['client'] }
     );
     if (!recipient) {
@@ -170,8 +165,8 @@ export async function POST(request: NextRequest) {
 
     // Send push notification to recipient (dietitian/health counselor)
     const sender = await withCache(
-      `client:messages:${JSON.stringify(session.user.id).select('firstName lastName')}`,
-      async () => await User.findById(session.user.id).select('firstName lastName').lean(),
+      `client:messages:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('firstName lastName'),
       { ttl: 30000, tags: ['client'] }
     );
     const senderName = sender ? `${sender.firstName} ${sender.lastName}` : 'A user';

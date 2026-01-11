@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
       // 1. Their assigned dietitians (from assignedDietitians array)
       // 2. Any dietitian if they don't have one assigned
       const currentUser = await withCache(
-      `users:available-for-chat:${JSON.stringify(session.user.id).select('assignedDietitian assignedDietitians')}`,
-      async () => await User.findById(session.user.id).select('assignedDietitian assignedDietitians').lean(),
+      `users:available-for-chat:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('assignedDietitian assignedDietitians'),
       { ttl: 120000, tags: ['users'] }
     );
       
@@ -80,14 +80,11 @@ export async function GET(request: NextRequest) {
 
     // Get users
     const users = await withCache(
-      `users:available-for-chat:${JSON.stringify(query)
-      .select('firstName lastName email avatar role assignedDietitian')
-      .sort({ firstName: 1, lastName: 1 })
-      .limit(limit)}`,
+      `users:available-for-chat:${JSON.stringify(query)}`,
       async () => await User.find(query)
       .select('firstName lastName email avatar role assignedDietitian')
       .sort({ firstName: 1, lastName: 1 })
-      .limit(limit).lean(),
+      .limit(limit),
       { ttl: 120000, tags: ['users'] }
     );
 

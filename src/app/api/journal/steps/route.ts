@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       async () => await JournalTracking.findOne({
       client: clientId,
       date: date
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['journal'] }
     );
 

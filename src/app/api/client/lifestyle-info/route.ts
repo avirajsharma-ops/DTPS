@@ -17,7 +17,7 @@ export async function GET() {
 
     const lifestyleInfo = await withCache(
       `client:lifestyle-info:${JSON.stringify({ userId: session.user.id })}`,
-      async () => await LifestyleInfo.findOne({ userId: session.user.id }).lean(),
+      async () => await LifestyleInfo.findOne({ userId: session.user.id }),
       { ttl: 120000, tags: ['client'] }
     );
     

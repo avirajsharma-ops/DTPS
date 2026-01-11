@@ -20,16 +20,13 @@ export async function GET(request: NextRequest) {
     const payments = await withCache(
       `client:billing:${JSON.stringify({
       client: session.user.id
-    })
-      .populate('dietitian', 'firstName lastName')
-      .sort({ createdAt: -1 })
-      .limit(50)}`,
+    })}`,
       async () => await Payment.find({
       client: session.user.id
     })
       .populate('dietitian', 'firstName lastName')
       .sort({ createdAt: -1 })
-      .limit(50).lean(),
+      .limit(50),
       { ttl: 120000, tags: ['client'] }
     );
 

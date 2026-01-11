@@ -22,7 +22,7 @@ export async function GET(
 
     const medicalInfo = await withCache(
       `users:id:medical:${JSON.stringify({ userId: id })}`,
-      async () => await MedicalInfo.findOne({ userId: id }).lean(),
+      async () => await MedicalInfo.findOne({ userId: id }),
       { ttl: 120000, tags: ['users'] }
     );
 

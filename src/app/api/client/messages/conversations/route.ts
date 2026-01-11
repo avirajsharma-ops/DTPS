@@ -171,14 +171,11 @@ export async function GET(request: NextRequest) {
     // If no conversations exist, get assigned dietitian as potential conversation
     if (conversations.length === 0) {
       const client = await withCache(
-      `client:messages:conversations:${JSON.stringify(session.user.id)
-        .select('assignedDietitian assignedDietitians')
-        .populate('assignedDietitian', 'firstName lastName avatar role')
-        .populate('assignedDietitians', 'firstName lastName avatar role')}`,
+      `client:messages:conversations:${JSON.stringify(session.user.id)}`,
       async () => await User.findById(session.user.id)
         .select('assignedDietitian assignedDietitians')
         .populate('assignedDietitian', 'firstName lastName avatar role')
-        .populate('assignedDietitians', 'firstName lastName avatar role').lean(),
+        .populate('assignedDietitians', 'firstName lastName avatar role'),
       { ttl: 30000, tags: ['client'] }
     );
 

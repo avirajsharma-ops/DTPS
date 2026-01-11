@@ -38,16 +38,13 @@ export async function GET(request: NextRequest) {
       const subscription = await withCache(
       `subscriptions:${JSON.stringify({
         razorpayPaymentId: paymentId
-      })
-        .populate('client', 'firstName lastName email phone')
-        .populate('dietitian', 'firstName lastName email')
-        .populate('plan')}`,
+      })}`,
       async () => await ClientSubscription.findOne({
         razorpayPaymentId: paymentId
       })
         .populate('client', 'firstName lastName email phone')
         .populate('dietitian', 'firstName lastName email')
-        .populate('plan').lean(),
+        .populate('plan'),
       { ttl: 120000, tags: ['subscriptions'] }
     );
 
@@ -94,16 +91,12 @@ export async function GET(request: NextRequest) {
     if (status) query.status = status;
 
     const subscriptions = await withCache(
-      `subscriptions:${JSON.stringify(query)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email')
-      .populate('plan')
-      .sort({ createdAt: -1 })}`,
+      `subscriptions:${JSON.stringify(query)}`,
       async () => await ClientSubscription.find(query)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName email')
       .populate('plan')
-      .sort({ createdAt: -1 }).lean(),
+      .sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['subscriptions'] }
     );
 
@@ -143,7 +136,7 @@ export async function POST(request: NextRequest) {
     // Get the plan details
     const plan = await withCache(
       `subscriptions:${JSON.stringify(validatedData.planId)}`,
-      async () => await SubscriptionPlan.findById(validatedData.planId).lean(),
+      async () => await SubscriptionPlan.findById(validatedData.planId),
       { ttl: 120000, tags: ['subscriptions'] }
     );
     if (!plan) {

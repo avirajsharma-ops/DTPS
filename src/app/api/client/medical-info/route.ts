@@ -18,15 +18,15 @@ export async function GET() {
 
     // Get user's gender
     const user = await withCache(
-      `client:medical-info:${JSON.stringify(session.user.id).select('gender')}`,
-      async () => await User.findById(session.user.id).select('gender').lean(),
+      `client:medical-info:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('gender'),
       { ttl: 120000, tags: ['client'] }
     );
     const gender = user?.gender || '';
 
     const medicalInfo = await withCache(
       `client:medical-info:${JSON.stringify({ userId: session.user.id })}`,
-      async () => await MedicalInfo.findOne({ userId: session.user.id }).lean(),
+      async () => await MedicalInfo.findOne({ userId: session.user.id }),
       { ttl: 120000, tags: ['client'] }
     );
     

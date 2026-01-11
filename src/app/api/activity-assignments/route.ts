@@ -62,12 +62,10 @@ export async function GET(request: NextRequest) {
     }
 
     const assignments = await withCache(
-      `activity-assignments:${JSON.stringify(query)
-      .populate('assignedBy', 'firstName lastName')
-      .sort({ date: -1, createdAt: -1 })}`,
+      `activity-assignments:${JSON.stringify(query)}`,
       async () => await ActivityAssignment.find(query)
       .populate('assignedBy', 'firstName lastName')
-      .sort({ date: -1, createdAt: -1 }).lean(),
+      .sort({ date: -1, createdAt: -1 }),
       { ttl: 120000, tags: ['activity_assignments'] }
     );
 
@@ -214,7 +212,7 @@ export async function PUT(request: NextRequest) {
 
     const assignment = await withCache(
       `activity-assignments:${JSON.stringify(assignmentId)}`,
-      async () => await ActivityAssignment.findById(assignmentId).lean(),
+      async () => await ActivityAssignment.findById(assignmentId),
       { ttl: 120000, tags: ['activity_assignments'] }
     );
     
@@ -321,7 +319,7 @@ export async function DELETE(request: NextRequest) {
       // Delete specific target
       const assignment = await withCache(
       `activity-assignments:${JSON.stringify(assignmentId)}`,
-      async () => await ActivityAssignment.findById(assignmentId).lean(),
+      async () => await ActivityAssignment.findById(assignmentId),
       { ttl: 120000, tags: ['activity_assignments'] }
     );
       if (!assignment) {

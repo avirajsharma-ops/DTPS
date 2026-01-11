@@ -197,18 +197,13 @@ export async function GET(request: NextRequest) {
     if (category) query.category = category;
 
     const reports = await withCache(
-      `support:bug-report:${JSON.stringify(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate('userId', 'name email')
-      .populate('assignedTo', 'name email')}`,
+      `support:bug-report:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await BugReport.find(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .populate('userId', 'name email')
-      .populate('assignedTo', 'name email').lean(),
+      .populate('assignedTo', 'name email'),
       { ttl: 120000, tags: ['support'] }
     );
 

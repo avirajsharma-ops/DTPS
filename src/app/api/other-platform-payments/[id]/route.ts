@@ -24,16 +24,12 @@ export async function GET(
     const { id } = await params;
 
     const payment = await withCache(
-      `other-platform-payments:id:${JSON.stringify(id)
-      .populate('client', 'firstName lastName email phone profilePicture')
-      .populate('dietitian', 'firstName lastName email phone')
-      .populate('paymentLink', 'planName planCategory durationDays amount finalAmount servicePlanId pricingTierId')
-      .populate('reviewedBy', 'firstName lastName email')}`,
+      `other-platform-payments:id:${JSON.stringify(id)}`,
       async () => await OtherPlatformPayment.findById(id)
       .populate('client', 'firstName lastName email phone profilePicture')
       .populate('dietitian', 'firstName lastName email phone')
       .populate('paymentLink', 'planName planCategory durationDays amount finalAmount servicePlanId pricingTierId')
-      .populate('reviewedBy', 'firstName lastName email').lean(),
+      .populate('reviewedBy', 'firstName lastName email'),
       { ttl: 120000, tags: ['other_platform_payments'] }
     );
 
@@ -77,10 +73,9 @@ export async function PUT(
     }
 
     const otherPayment = await withCache(
-      `other-platform-payments:id:${JSON.stringify(id)
-      .populate('paymentLink')}`,
+      `other-platform-payments:id:${JSON.stringify(id)}`,
       async () => await OtherPlatformPayment.findById(id)
-      .populate('paymentLink').lean(),
+      .populate('paymentLink'),
       { ttl: 120000, tags: ['other_platform_payments'] }
     );
 
@@ -180,16 +175,12 @@ export async function PUT(
     }
 
     const updatedPayment = await withCache(
-      `other-platform-payments:id:${JSON.stringify(id)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email phone')
-      .populate('paymentLink', 'planName planCategory durationDays amount finalAmount')
-      .populate('reviewedBy', 'firstName lastName email')}`,
+      `other-platform-payments:id:${JSON.stringify(id)}`,
       async () => await OtherPlatformPayment.findById(id)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName email phone')
       .populate('paymentLink', 'planName planCategory durationDays amount finalAmount')
-      .populate('reviewedBy', 'firstName lastName email').lean(),
+      .populate('reviewedBy', 'firstName lastName email'),
       { ttl: 120000, tags: ['other_platform_payments'] }
     );
 
@@ -223,7 +214,7 @@ export async function DELETE(
 
     const payment = await withCache(
       `other-platform-payments:id:${JSON.stringify(id)}`,
-      async () => await OtherPlatformPayment.findById(id).lean(),
+      async () => await OtherPlatformPayment.findById(id),
       { ttl: 120000, tags: ['other_platform_payments'] }
     );
     if (!payment) {

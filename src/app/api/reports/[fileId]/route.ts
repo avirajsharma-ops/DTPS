@@ -34,8 +34,8 @@ export async function GET(
 
     // Find file to get contentType
     const files = await withCache(
-      `reports:fileId:${JSON.stringify({ _id: id }).toArray()}`,
-      async () => await bucket.find({ _id: id }).toArray().lean(),
+      `reports:fileId:${fileId}`,
+      async () => await bucket.find({ _id: id }).toArray(),
       { ttl: 120000, tags: ['reports'] }
     );
     if (!files || files.length === 0) {
@@ -107,8 +107,8 @@ export async function DELETE(
 
     // Check if file exists
     const files = await withCache(
-      `reports:fileId:${JSON.stringify({ _id: id }).toArray()}`,
-      async () => await bucket.find({ _id: id }).toArray().lean(),
+      `reports:fileId:${fileId}`,
+      async () => await bucket.find({ _id: id }).toArray(),
       { ttl: 120000, tags: ['reports'] }
     );
     if (!files || files.length === 0) {

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     // Get user to find assigned dietitian
     const user = await withCache(
       `tracking:weight:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).lean(),
+      async () => await User.findById(session.user.id),
       { ttl: 120000, tags: ['tracking'] }
     );
     if (!user) {
@@ -60,17 +60,14 @@ export async function POST(request: NextRequest) {
       `tracking:weight:${JSON.stringify({
       user: session.user.id,
       type: 'weight'
-    })
-    .sort({ recordedAt: -1 })
-    .limit(7)
-    .select('value recordedAt')}`,
+    })}`,
       async () => await ProgressEntry.find({
       user: session.user.id,
       type: 'weight'
     })
     .sort({ recordedAt: -1 })
     .limit(7)
-    .select('value recordedAt').lean(),
+    .select('value recordedAt'),
       { ttl: 120000, tags: ['tracking'] }
     );
 
@@ -104,7 +101,7 @@ export async function GET(request: NextRequest) {
 
     const user = await withCache(
       `tracking:weight:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).lean(),
+      async () => await User.findById(session.user.id),
       { ttl: 120000, tags: ['tracking'] }
     );
 
@@ -117,17 +114,14 @@ export async function GET(request: NextRequest) {
       `tracking:weight:${JSON.stringify({
       user: session.user.id,
       type: 'weight'
-    })
-    .sort({ recordedAt: -1 })
-    .limit(30)
-    .select('value recordedAt')}`,
+    })}`,
       async () => await ProgressEntry.find({
       user: session.user.id,
       type: 'weight'
     })
     .sort({ recordedAt: -1 })
     .limit(30)
-    .select('value recordedAt').lean(),
+    .select('value recordedAt'),
       { ttl: 120000, tags: ['tracking'] }
     );
 

@@ -31,7 +31,7 @@ export async function GET(
     // Verify the client exists
     const client = await withCache(
       `admin:clients:clientId:lifestyle-info:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!client) {
@@ -40,7 +40,7 @@ export async function GET(
 
     const lifestyleInfo = await withCache(
       `admin:clients:clientId:lifestyle-info:${JSON.stringify({ userId: clientId })}`,
-      async () => await LifestyleInfo.findOne({ userId: clientId }).lean(),
+      async () => await LifestyleInfo.findOne({ userId: clientId }),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -83,7 +83,7 @@ export async function PUT(
     // Verify the client exists
     const client = await withCache(
       `admin:clients:clientId:lifestyle-info:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).lean(),
+      async () => await User.findById(clientId),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!client) {

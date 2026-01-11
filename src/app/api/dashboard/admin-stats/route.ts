@@ -182,11 +182,7 @@ export async function GET(request: NextRequest) {
       `dashboard:admin-stats:${JSON.stringify({
       role: 'client',
       'wooCommerceData.totalSpent': { $gt: 0 }
-    })
-    .sort({ 'wooCommerceData.totalSpent': -1 })
-    .limit(10)
-    .select('firstName lastName email wooCommerceData.totalSpent wooCommerceData.totalOrders')
-    .lean()}`,
+    })}`,
       async () => await User.find({
       role: 'client',
       'wooCommerceData.totalSpent': { $gt: 0 }
@@ -194,7 +190,7 @@ export async function GET(request: NextRequest) {
     .sort({ 'wooCommerceData.totalSpent': -1 })
     .limit(10)
     .select('firstName lastName email wooCommerceData.totalSpent wooCommerceData.totalOrders')
-    .lean().lean(),
+    ,
       { ttl: 120000, tags: ['dashboard'] }
     );
 

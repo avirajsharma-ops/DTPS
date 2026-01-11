@@ -31,14 +31,11 @@ export async function GET(
     }
 
     const user = await withCache(
-      `users:id:${JSON.stringify(id)
-      .select('-password')
-      .populate('assignedDietitian', 'firstName lastName email avatar')
-      .populate('tags', 'name description color icon')}`,
+      `users:id:${JSON.stringify(id)}`,
       async () => await User.findById(id)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email avatar')
-      .populate('tags', 'name description color icon').lean(),
+      .populate('tags', 'name description color icon'),
       { ttl: 120000, tags: ['users'] }
     );
 
@@ -162,7 +159,7 @@ export async function DELETE(
 
     const user = await withCache(
       `users:id:${JSON.stringify(id)}`,
-      async () => await User.findById(id).lean(),
+      async () => await User.findById(id),
       { ttl: 120000, tags: ['users'] }
     );
     if (!user) {
@@ -207,7 +204,7 @@ export async function PUT(
     // Fetch target user BEFORE permission check
     const targetUser = await withCache(
       `users:id:${JSON.stringify(id)}`,
-      async () => await User.findById(id).lean(),
+      async () => await User.findById(id),
       { ttl: 120000, tags: ['users'] }
     );
     if (!targetUser) {
@@ -331,7 +328,7 @@ export async function PUT(
       async () => await User.findOne({ 
         phone: normalizedPhone,
         _id: { $ne: id }  // Exclude current user
-      }).lean(),
+      }),
       { ttl: 120000, tags: ['users'] }
     );
       if (existingPhone) {
@@ -404,7 +401,7 @@ export async function POST(
     await connectDB();
     const user = await withCache(
       `users:id:${JSON.stringify(id)}`,
-      async () => await User.findById(id).lean(),
+      async () => await User.findById(id),
       { ttl: 120000, tags: ['users'] }
     );
 

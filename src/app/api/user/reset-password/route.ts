@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       role: 'client',
       passwordResetToken: hashedToken,
       passwordResetTokenExpiry: { $gt: new Date() }
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['user'] }
     );
 
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       role: 'client',
       passwordResetToken: hashedToken,
       passwordResetTokenExpiry: { $gt: new Date() }
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['user'] }
     );
 

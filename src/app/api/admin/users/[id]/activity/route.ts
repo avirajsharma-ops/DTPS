@@ -29,8 +29,8 @@ export async function GET(
     }
 
     const exists = await withCache(
-      `admin:users:id:activity:${JSON.stringify(id).select('_id')}`,
-      async () => await User.findById(id).select('_id').lean(),
+      `admin:users:id:activity:${JSON.stringify(id)}`,
+      async () => await User.findById(id).select('_id'),
       { ttl: 120000, tags: ['admin'] }
     );
     if (!exists) {

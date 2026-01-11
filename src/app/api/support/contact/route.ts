@@ -122,16 +122,12 @@ export async function GET(request: NextRequest) {
     if (status) query.status = status;
 
     const messages = await withCache(
-      `support:contact:${JSON.stringify(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate('userId', 'name email')}`,
+      `support:contact:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await ContactMessage.find(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate('userId', 'name email').lean(),
+      .populate('userId', 'name email'),
       { ttl: 120000, tags: ['support'] }
     );
 

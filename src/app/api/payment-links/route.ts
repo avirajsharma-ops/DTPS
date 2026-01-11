@@ -70,14 +70,14 @@ export async function GET(request: NextRequest) {
           { assignedDietitian: session.user.id },
           { assignedDietitians: session.user.id }
         ]
-      }).select('_id')}`,
+      })}`,
       async () => await User.find({
         role: UserRole.CLIENT,
         $or: [
           { assignedDietitian: session.user.id },
           { assignedDietitians: session.user.id }
         ]
-      }).select('_id').lean(),
+      }).select('_id'),
       { ttl: 120000, tags: ['payment_links'] }
     );
       const assignedClientIds = assignedClients.map(c => c._id);
@@ -96,11 +96,11 @@ export async function GET(request: NextRequest) {
       `payment-links:${JSON.stringify({
         role: UserRole.CLIENT,
         assignedHealthCounselor: session.user.id
-      }).select('_id')}`,
+      })}`,
       async () => await User.find({
         role: UserRole.CLIENT,
         assignedHealthCounselor: session.user.id
-      }).select('_id').lean(),
+      }).select('_id'),
       { ttl: 120000, tags: ['payment_links'] }
     );
       const assignedClientIds = assignedClients.map(c => c._id);
@@ -136,18 +136,13 @@ export async function GET(request: NextRequest) {
     );
 
     const paymentLinks = await withCache(
-      `payment-links:${JSON.stringify(query)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email')
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip(skip)}`,
+      `payment-links:${JSON.stringify(query)}:limit=${limit}:skip=${skip}`,
       async () => await PaymentLink.find(query)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName email')
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip(skip).lean(),
+      .skip(skip),
       { ttl: 120000, tags: ['payment_links'] }
     );
 
@@ -193,7 +188,7 @@ export async function POST(request: NextRequest) {
     // Verify client exists
     const client = await withCache(
       `payment-links:${JSON.stringify(validatedData.clientId)}`,
-      async () => await User.findById(validatedData.clientId).lean(),
+      async () => await User.findById(validatedData.clientId),
       { ttl: 120000, tags: ['payment_links'] }
     );
     if (!client) {
@@ -299,12 +294,10 @@ export async function POST(request: NextRequest) {
 
     // Populate and return
     const populatedPaymentLink = await withCache(
-      `payment-links:${JSON.stringify(paymentLink._id)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email')}`,
+      `payment-links:${JSON.stringify(paymentLink._id)}`,
       async () => await PaymentLink.findById(paymentLink._id)
       .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email').lean(),
+      .populate('dietitian', 'firstName lastName email'),
       { ttl: 120000, tags: ['payment_links'] }
     );
 
@@ -377,7 +370,7 @@ export async function DELETE(request: NextRequest) {
 
     const paymentLink = await withCache(
       `payment-links:${JSON.stringify(id)}`,
-      async () => await PaymentLink.findById(id).lean(),
+      async () => await PaymentLink.findById(id),
       { ttl: 120000, tags: ['payment_links'] }
     );
 

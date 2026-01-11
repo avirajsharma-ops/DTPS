@@ -76,7 +76,7 @@ export async function POST(
     // Update user document
     const user = await withCache(
       `users:id:documents:${JSON.stringify(id)}`,
-      async () => await User.findById(id).lean(),
+      async () => await User.findById(id),
       { ttl: 120000, tags: ['users'] }
     );
     if (!user) {
@@ -155,8 +155,8 @@ export async function GET(
     const { id } = await params;
 
     const user = await withCache(
-      `users:id:documents:${JSON.stringify(id).select('documents')}`,
-      async () => await User.findById(id).select('documents').lean(),
+      `users:id:documents:${JSON.stringify(id)}`,
+      async () => await User.findById(id).select('documents'),
       { ttl: 120000, tags: ['users'] }
     );
     if (!user) {
@@ -193,7 +193,7 @@ export async function DELETE(
 
     const user = await withCache(
       `users:id:documents:${JSON.stringify(id)}`,
-      async () => await User.findById(id).lean(),
+      async () => await User.findById(id),
       { ttl: 120000, tags: ['users'] }
     );
     if (!user) {
@@ -222,7 +222,7 @@ export async function DELETE(
     if (fileId) {
       const file = await withCache(
       `users:id:documents:${JSON.stringify(fileId)}`,
-      async () => await FileModel.findById(fileId).lean(),
+      async () => await FileModel.findById(fileId),
       { ttl: 120000, tags: ['users'] }
     );
       uploadedBy = file?.uploadedBy?.toString();

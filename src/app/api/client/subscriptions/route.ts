@@ -21,15 +21,13 @@ export async function GET(request: NextRequest) {
       `client:subscriptions:${JSON.stringify({
       client: session.user.id,
       type: { $in: ['service_plan', 'subscription', 'consultation'] }
-    })
-      .populate('dietitian', 'firstName lastName')
-      .sort({ createdAt: -1 })}`,
+    })}`,
       async () => await Payment.find({
       client: session.user.id,
       type: { $in: ['service_plan', 'subscription', 'consultation'] }
     })
       .populate('dietitian', 'firstName lastName')
-      .sort({ createdAt: -1 }).lean(),
+      .sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['client'] }
     );
 

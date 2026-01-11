@@ -21,14 +21,11 @@ export async function GET(
     const { id } = await params;
 
     const subscription = await withCache(
-      `subscriptions:id:${JSON.stringify(id)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email')
-      .populate('plan')}`,
+      `subscriptions:id:${JSON.stringify(id)}`,
       async () => await ClientSubscription.findById(id)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName email')
-      .populate('plan').lean(),
+      .populate('plan'),
       { ttl: 120000, tags: ['subscriptions'] }
     );
 
@@ -77,7 +74,7 @@ export async function PUT(
 
     const subscription = await withCache(
       `subscriptions:id:${JSON.stringify(id)}`,
-      async () => await ClientSubscription.findById(id).lean(),
+      async () => await ClientSubscription.findById(id),
       { ttl: 120000, tags: ['subscriptions'] }
     );
     if (!subscription) {

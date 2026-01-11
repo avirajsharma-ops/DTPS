@@ -189,7 +189,7 @@ export async function DELETE(request: NextRequest) {
       _id: photoId,
       user: session.user.id, // Use user ID instead of userEmail
       type: 'photo'
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['progress'] }
     );
 

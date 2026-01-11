@@ -29,12 +29,10 @@ export async function GET(request: NextRequest) {
     }
 
     const transformations = await withCache(
-      `admin:transformations:${JSON.stringify(query)
-      .sort({ displayOrder: 1, createdAt: -1 })
-      .lean()}`,
+      `admin:transformations:${JSON.stringify(query)}`,
       async () => await Transformation.find(query)
       .sort({ displayOrder: 1, createdAt: -1 })
-      .lean().lean(),
+      ,
       { ttl: 120000, tags: ['admin'] }
     );
 

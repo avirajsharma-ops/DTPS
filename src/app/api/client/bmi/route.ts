@@ -42,10 +42,9 @@ export async function GET(request: NextRequest) {
     await dbConnect();
     
     const user = await withCache(
-      `client:bmi:${JSON.stringify(session.user.id)
-      .select('weightKg heightCm bmi bmiCategory')}`,
+      `client:bmi:${JSON.stringify(session.user.id)}`,
       async () => await User.findById(session.user.id)
-      .select('weightKg heightCm bmi bmiCategory').lean(),
+      .select('weightKg heightCm bmi bmiCategory'),
       { ttl: 120000, tags: ['client'] }
     );
     
@@ -110,7 +109,7 @@ export async function PUT(request: NextRequest) {
     // Get current user data to calculate BMI
     const currentUser = await withCache(
       `client:bmi:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).lean(),
+      async () => await User.findById(session.user.id),
       { ttl: 120000, tags: ['client'] }
     );
     

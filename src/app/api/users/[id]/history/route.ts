@@ -24,8 +24,8 @@ export async function GET(
 
     // Check permissions
     const targetUser = await withCache(
-      `users:id:history:${JSON.stringify(id).select('assignedDietitian assignedDietitians')}`,
-      async () => await User.findById(id).select('assignedDietitian assignedDietitians').lean(),
+      `users:id:history:${JSON.stringify(id)}`,
+      async () => await User.findById(id).select('assignedDietitian assignedDietitians'),
       { ttl: 120000, tags: ['users'] }
     );
     if (!targetUser) {
@@ -58,18 +58,13 @@ export async function GET(
 
     // Fetch real history from database
     const history = await withCache(
-      `users:id:history:${JSON.stringify(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean()
-      .exec()}`,
+      `users:id:history:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await History.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean()
-      .exec().lean(),
+      .exec(),
       { ttl: 120000, tags: ['users'] }
     );
 
@@ -152,8 +147,8 @@ export async function POST(
 
     // Get current user details
     const currentUser = await withCache(
-      `users:id:history:${JSON.stringify(session.user.id).select('firstName lastName email role')}`,
-      async () => await User.findById(session.user.id).select('firstName lastName email role').lean(),
+      `users:id:history:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).select('firstName lastName email role'),
       { ttl: 120000, tags: ['users'] }
     );
 

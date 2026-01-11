@@ -39,11 +39,10 @@ export async function GET(request: Request) {
 
     // Get user data for current and target weight
     const user = await withCache(
-      `client:progress:${JSON.stringify(session.user.id).select(
-      "weightKg targetWeightKg heightCm goals")}`,
+      `client:progress:${JSON.stringify(session.user.id)}`,
       async () => await User.findById(session.user.id).select(
       "weightKg targetWeightKg heightCm goals"
-    ).lean(),
+    ),
       { ttl: 120000, tags: ['client'] }
     );
 
@@ -55,11 +54,11 @@ export async function GET(request: Request) {
       `client:progress:${JSON.stringify({
       user: session.user.id,
       recordedAt: { $gte: oneYearAgo }
-    }).sort({ recordedAt: -1 })}`,
+    })}`,
       async () => await ProgressEntry.find({
       user: session.user.id,
       recordedAt: { $gte: oneYearAgo }
-    }).sort({ recordedAt: -1 }).lean(),
+    }).sort({ recordedAt: -1 }),
       { ttl: 120000, tags: ['client'] }
     );
 
@@ -170,7 +169,7 @@ export async function GET(request: Request) {
       async () => await FoodLog.findOne({
       client: session.user.id,
       date: { $gte: today, $lt: todayEnd }
-    }).lean(),
+    }),
       { ttl: 120000, tags: ['client'] }
     );
 
@@ -361,11 +360,11 @@ export async function GET(request: Request) {
       `client:progress:${JSON.stringify({
       client: session.user.id,
       date: { $gte: oneYearAgo }
-    }).select('date totalNutrition entries').sort({ date: -1 })}`,
+    })}`,
       async () => await FoodLog.find({
       client: session.user.id,
       date: { $gte: oneYearAgo }
-    }).select('date totalNutrition entries').sort({ date: -1 }).lean(),
+    }).select('date totalNutrition entries').sort({ date: -1 }),
       { ttl: 120000, tags: ['client'] }
     );
 
