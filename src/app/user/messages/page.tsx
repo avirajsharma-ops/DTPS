@@ -203,10 +203,12 @@ export default function UserMessagesPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setMessages(prev => [...prev, data.message]);
+        // Don't add message locally - SSE will deliver it to avoid duplicates
+        // Message will appear via real-time SSE event
         setNewMessage('');
         inputRef.current?.focus();
+        // Refresh conversations to update last message preview
+        fetchConversations();
       } else {
         toast.error('Failed to send message');
       }

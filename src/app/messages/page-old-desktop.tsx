@@ -634,25 +634,10 @@ function MessagesContent() {
       });
 
       if (response.ok) {
-        const newMessage = await response.json();
-        // Ensure the message has proper sender data
-        if (newMessage.sender) {
-          setMessages(prev => [...prev, newMessage]); // Add to end for proper chat order
-        } else {
-          // If sender is not populated, add it manually
-          const messageWithSender = {
-            ...newMessage,
-            sender: {
-              _id: session?.user?.id,
-              firstName: session?.user?.firstName || 'You',
-              lastName: session?.user?.lastName || '',
-              avatar: session?.user?.avatar
-            }
-          };
-          setMessages(prev => [...prev, messageWithSender]); // Add to end for proper chat order
-        }
+        // Don't add message locally - SSE will deliver it to avoid duplicates
+        // Message will appear via real-time SSE event (sent to both sender and recipient)
         setNewMessage('');
-        scrollToBottom(); // Ensure chat scrolls to new message
+        // Refresh conversations list to update last message preview
         fetchConversations();
       }
     } catch (error) {

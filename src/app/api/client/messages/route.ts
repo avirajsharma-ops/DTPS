@@ -46,16 +46,13 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const messages = await withCache(
-      `client:messages:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
-      async () => await Message.find(query)
+    // NO CACHE for real-time messaging - always fetch fresh data
+    const messages = await Message.find(query)
       .populate('sender', 'firstName lastName avatar role')
       .populate('receiver', 'firstName lastName avatar role')
       .sort({ createdAt: 1 })
       .limit(limit)
-      .skip((page - 1) * limit),
-      { ttl: 30000, tags: ['client'] }
-    );
+      .skip((page - 1) * limit);
 
     const total = await Message.countDocuments(query);
 
