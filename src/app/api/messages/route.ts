@@ -80,24 +80,15 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Generate cache key based on user and conversation
-    const cacheKey = `messages:${session.user.id}:${conversationWith || 'all'}:${page}:${limit}`;
-    
-    const { messages, total } = await withCache(
-      cacheKey,
-      async () => {
-        const messages = await Message.find(query)
-          .populate('sender', 'firstName lastName avatar')
-          .populate('receiver', 'firstName lastName avatar')
-          .sort({ createdAt: 1 }) // Sort oldest first for proper chat order
-          .limit(limit)
-          .skip((page - 1) * limit);
+    // NO CACHE for real-time messaging - always fetch fresh data
+    const messages = await Message.find(query)
+      .populate('sender', 'firstName lastName avatar')
+      .populate('receiver', 'firstName lastName avatar')
+      .sort({ createdAt: 1 }) // Sort oldest first for proper chat order
+      .limit(limit)
+      .skip((page - 1) * limit);
 
-        const total = await Message.countDocuments(query);
-        return { messages, total };
-      },
-      { ttl: 30000, tags: ['messages', `messages:${session.user.id}`] } // 30 seconds TTL
-    );
+    const total = await Message.countDocuments(query);
 
     // Mark messages as read if viewing conversation
     if (conversationWith) {

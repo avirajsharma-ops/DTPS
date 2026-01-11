@@ -144,6 +144,10 @@ function MessagesContent() {
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const initialConversationsFetchedRef = useRef(false);
 
+  // Refs to hold latest state/functions for SSE callbacks (avoids stale closures)
+  const selectedConversationRef = useRef<string | null>(null);
+  const fetchConversationsRef = useRef<() => void>(() => {});
+
   // ICE buffering to avoid race where candidates arrive before remote description is set
   const pendingRemoteCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const remoteDescriptionSetRef = useRef(false);
@@ -175,6 +179,24 @@ function MessagesContent() {
     onMessage: (evt) => {
       try {
         const data = evt.data; // already parsed in hook
+
+        if (evt.type === 'new_message') {
+          const incoming = (data as any)?.message;
+          if (incoming?._id) {
+            // If this belongs to the currently open conversation, append it
+            const currentConv = selectedConversationRef.current;
+            if (
+              currentConv &&
+              (incoming.sender?._id === currentConv || incoming.receiver?._id === currentConv)
+            ) {
+              setMessages(prev => (prev.some(m => m._id === incoming._id) ? prev : [...prev, incoming]));
+              setTimeout(() => scrollToBottom(), 50);
+            }
+            // Always refresh conversations list (keeps last message + unread counts in sync)
+            fetchConversationsRef.current();
+          }
+          return;
+        }
 
         // Check connection health for critical call events (do not drop the event)
         // If we're temporarily disconnected, still handle the event and nudge a reconnect
@@ -531,6 +553,15 @@ function MessagesContent() {
       setLoading(false);
     }
   };
+
+  // Keep refs updated for SSE callbacks (avoids stale closures)
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
+
+  useEffect(() => {
+    fetchConversationsRef.current = fetchConversations;
+  });
 
   const fetchOnlineStatus = async (userIds: string[]) => {
     try {

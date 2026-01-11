@@ -7,6 +7,7 @@ import Link from 'next/link';
 import PageTransition from '@/components/animations/PageTransition';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
+import { useRealtime } from '@/hooks/useRealtime';
 import { ResponsiveLayout } from '@/components/client/layouts';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,6 +76,47 @@ export default function UserMessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Refs for SSE callbacks to avoid stale closures
+  const selectedConversationRef = useRef<Conversation | null>(null);
+  const fetchConversationsRef = useRef<() => void>(() => {});
+
+  // Real-time SSE connection for instant messaging
+  useRealtime({
+    onMessage: (evt) => {
+      try {
+        if (evt.type === 'new_message') {
+          const incoming = (evt.data as any)?.message;
+          if (incoming?._id) {
+            const currentConv = selectedConversationRef.current;
+            // If this belongs to the currently open conversation, append it
+            if (
+              currentConv &&
+              (incoming.sender?._id === currentConv._id || incoming.receiver?._id === currentConv._id)
+            ) {
+              setMessages(prev => (prev.some(m => m._id === incoming._id) ? prev : [...prev, incoming]));
+              setTimeout(() => scrollToBottom(), 50);
+            }
+            // Always refresh conversations list (keeps last message + unread counts in sync)
+            fetchConversationsRef.current();
+            // Refresh unread counts
+            refreshCounts();
+          }
+        }
+      } catch (e) {
+        console.error('Failed handling realtime message event', e);
+      }
+    }
+  });
+
+  // Keep refs updated for SSE callbacks
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
+
+  useEffect(() => {
+    fetchConversationsRef.current = fetchConversations;
+  });
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
@@ -96,26 +138,6 @@ export default function UserMessagesPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Poll for new messages when in a conversation
-  useEffect(() => {
-    if (selectedConversation) {
-      const interval = setInterval(() => {
-        fetchMessages(selectedConversation._id, false);
-      }, 3000); // Poll every 3 seconds for faster updates
-      return () => clearInterval(interval);
-    }
-  }, [selectedConversation]);
-
-  // Poll for conversation updates (new messages indicator)
-  useEffect(() => {
-    if (session?.user) {
-      const interval = setInterval(() => {
-        fetchConversationsQuiet();
-      }, 10000); // Poll every 10 seconds for conversation list
-      return () => clearInterval(interval);
-    }
-  }, [session]);
 
   const fetchConversationsQuiet = async () => {
     try {

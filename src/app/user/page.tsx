@@ -801,7 +801,7 @@ export default function UserHomePage() {
                         <p className="text-base font-semibold text-[#3AB1A0] mt-1">
                           {currentPurchase.dietitian?.name || 'Dietitian'}
                         </p>
-                        {currentPurchase.dietitian?.email && (
+                        {/* {currentPurchase.dietitian?.email && (
                           <div className={`flex items-center gap-1 mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             <Mail className="w-3 h-3" />
                             <span>{currentPurchase.dietitian.email}</span>
@@ -812,7 +812,7 @@ export default function UserHomePage() {
                             <Phone className="w-3 h-3" />
                             <span>{currentPurchase.dietitian.phone}</span>
                           </div>
-                        )}
+                        )} */}
                       </>
                     )}
                     {!currentPurchase.hasDietitian && (
@@ -923,7 +923,7 @@ export default function UserHomePage() {
                     <p className="text-base font-semibold text-[#3AB1A0] mt-1">
                       {currentPurchase.dietitian?.name || 'Dietitian'}
                     </p>
-                    {currentPurchase.dietitian?.email && (
+                    {/* {currentPurchase.dietitian?.email && (
                       <div className={`flex items-center gap-1 mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         <Mail className="w-3 h-3" />
                         <span>{currentPurchase.dietitian.email}</span>
@@ -934,7 +934,7 @@ export default function UserHomePage() {
                         <Phone className="w-3 h-3" />
                         <span>{currentPurchase.dietitian.phone}</span>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </div>
 

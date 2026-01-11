@@ -145,6 +145,10 @@ function ClientMessagesUI() {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Refs to avoid stale closures in SSE callbacks
+  const selectedChatRef = useRef<string | null>(null);
+  const fetchConversationsQuietRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
@@ -191,6 +195,11 @@ function ClientMessagesUI() {
     scrollToBottom();
   }, [messages]);
 
+  // Keep refs updated for SSE callbacks (avoids stale closures)
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
   // Handle incoming SSE messages for real-time updates
   const handleRealtimeMessage = useCallback((event: any) => {
     console.log('[Messages Page] SSE event received:', event.type, event.data);
@@ -200,9 +209,11 @@ function ClientMessagesUI() {
       console.log('[Messages Page] New message received:', newMsg);
       
       if (newMsg) {
+        // Use ref to get the current selected chat (avoids stale closure)
+        const currentChat = selectedChatRef.current;
         // Update messages if this is the active conversation
-        if (selectedChat && 
-            (newMsg.sender._id === selectedChat || newMsg.receiver._id === selectedChat)) {
+        if (currentChat && 
+            (newMsg.sender._id === currentChat || newMsg.receiver._id === currentChat)) {
           console.log('[Messages Page] Adding message to current conversation');
           setMessages(prev => {
             // Avoid duplicates
@@ -216,7 +227,7 @@ function ClientMessagesUI() {
           setTimeout(() => scrollToBottom(), 100);
         }
         // Update conversations list quietly (without loading state)
-        fetchConversationsQuiet();
+        fetchConversationsQuietRef.current();
       }
     } else if (event.type === 'incoming_call') {
       handleIncomingCall(event.data);
@@ -229,7 +240,7 @@ function ClientMessagesUI() {
     } else if (event.type === 'ice_candidate') {
       handleIceCandidate(event.data);
     }
-  }, [selectedChat]);
+  }, []); // No dependencies - using refs to avoid stale closures
 
   // Real-time event handling for calls and messages via SSE
   const { isConnected } = useRealtime({
@@ -268,6 +279,11 @@ function ClientMessagesUI() {
       // Silent fail for background updates
     }
   };
+
+  // Keep ref updated for SSE callback
+  useEffect(() => {
+    fetchConversationsQuietRef.current = fetchConversationsQuiet;
+  });
 
   const fetchConversations = async () => {
     try {

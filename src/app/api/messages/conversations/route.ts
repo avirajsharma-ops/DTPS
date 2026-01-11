@@ -5,7 +5,6 @@ import connectDB from '@/lib/db/connection';
 import Message from '@/lib/db/models/Message';
 import User from '@/lib/db/models/User';
 import mongoose from 'mongoose';
-import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/messages/conversations - Get conversation list
 export async function GET(request: NextRequest) {
@@ -15,14 +14,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const sessionRole = String((session.user as unknown as { role?: unknown })?.role || '').toLowerCase();
+
     await connectDB();
 
     // Convert session user ID to ObjectId for proper matching
     const userId = new mongoose.Types.ObjectId(session.user.id);
 
-    // Get all unique conversation partners
-    const conversations = await withCache(
-      `messages:conversations:${JSON.stringify([
+    // Get all unique conversation partners - NO CACHE for real-time updates
+    const conversations = await Message.aggregate([
       {
         $match: {
           $or: [
@@ -66,80 +66,57 @@ export async function GET(request: NextRequest) {
         }
       },
       {
-        $sort: { 'lastMessage.createdAt': -1 }
-      }
-    ])}`,
-      async () => await Message.aggregate([
+        $lookup: {
+          from: 'users',
+          let: { senderId: '$lastMessage.sender' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$_id', '$$senderId'] } } },
+            { $project: { firstName: 1, lastName: 1, avatar: 1, role: 1 } }
+          ],
+          as: 'senderUser'
+        }
+      },
       {
-        $match: {
-          $or: [
-            { sender: userId },
-            { receiver: userId }
-          ]
+        $lookup: {
+          from: 'users',
+          let: { receiverId: '$lastMessage.receiver' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$_id', '$$receiverId'] } } },
+            { $project: { firstName: 1, lastName: 1, avatar: 1, role: 1 } }
+          ],
+          as: 'receiverUser'
         }
       },
       {
         $addFields: {
-          conversationWith: {
-            $cond: {
-              if: { $eq: ['$sender', userId] },
-              then: '$receiver',
-              else: '$sender'
-            }
-          }
+          'lastMessage.sender': { $arrayElemAt: ['$senderUser', 0] },
+          'lastMessage.receiver': { $arrayElemAt: ['$receiverUser', 0] }
         }
       },
       {
-        $sort: { createdAt: -1 }
-      },
-      {
-        $group: {
-          _id: '$conversationWith',
-          lastMessage: { $first: '$$ROOT' },
-          unreadCount: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ['$receiver', userId] },
-                    { $eq: ['$isRead', false] }
-                  ]
-                },
-                1,
-                0
-              ]
-            }
-          }
+        $project: {
+          senderUser: 0,
+          receiverUser: 0
         }
       },
       {
         $sort: { 'lastMessage.createdAt': -1 }
       }
-    ]),
-      { ttl: 30000, tags: ['messages'] }
-    );
+    ]);
 
 
 
     // Populate user details for conversation partners
     const conversationList = await Promise.all(
       conversations.map(async (conv) => {
-        const user = await withCache(
-      `messages:conversations:${JSON.stringify(conv._id)}`,
-      async () => await User.findById(conv._id).select('firstName lastName avatar role'),
-      { ttl: 30000, tags: ['messages'] }
-    );
+        const user = await User.findById(conv._id).select('firstName lastName avatar role');
         if (!user) {
           return null;
         }
 
         // For clients, only show conversations with their assigned dietitians
-        if (session.user.role === 'client') {
-          const currentUser = await withCache(
-      `messages:conversations:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).select('assignedDietitian assignedDietitians'),
-      { ttl: 30000, tags: ['messages'] }
-    );
+        if (sessionRole === 'client') {
+          const currentUser = await User.findById(session.user.id).select('assignedDietitian assignedDietitians');
           const assignedIds = [
             ...(currentUser?.assignedDietitian ? [currentUser.assignedDietitian.toString()] : []),
             ...(currentUser?.assignedDietitians?.map((d: any) => d.toString()) || [])
@@ -149,14 +126,10 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // For dietitians, only show conversations with their assigned clients
-        if (session.user.role === 'dietitian' || session.user.role === 'health_counselor') {
+        // For dietitians/HC, only show conversations with their assigned clients
+        if (sessionRole === 'dietitian' || sessionRole === 'health_counselor') {
           if (user.role === 'client') {
-            const clientUser = await withCache(
-      `messages:conversations:${JSON.stringify(user._id)}`,
-      async () => await User.findById(user._id).select('assignedDietitian assignedDietitians assignedHealthCounselor'),
-      { ttl: 30000, tags: ['messages'] }
-    );
+            const clientUser = await User.findById(user._id).select('assignedDietitian assignedDietitians assignedHealthCounselor');
             const isAssignedAsDietitian = 
               clientUser?.assignedDietitian?.toString() === session.user.id ||
               clientUser?.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
