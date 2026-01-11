@@ -7,6 +7,7 @@ import Appointment from '@/lib/db/models/Appointment';
 import Payment from '@/lib/db/models/Payment';
 import { UserRole } from '@/types';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/dashboard/dietitian-stats - Get real dashboard statistics
 export async function GET(request: NextRequest) {
@@ -108,14 +109,23 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // Get recent clients (last 10 assigned to this dietitian or all for admin)
-    const recentClients = await User.find(clientQuery)
+    const recentClients = await withCache(
+      `dashboard:dietitian-stats:${JSON.stringify(clientQuery)
     .sort({ createdAt: -1 })
     .limit(10)
     .select('firstName lastName email phone wooCommerceData createdAt')
-    .lean();
+    .lean()}`,
+      async () => await User.find(clientQuery)
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .select('firstName lastName email phone wooCommerceData createdAt')
+    .lean().lean(),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     // Get today's schedule (for this dietitian or all for admin)
-    const todaysSchedule = await Appointment.find({
+    const todaysSchedule = await withCache(
+      `dashboard:dietitian-stats:${JSON.stringify({
       ...appointmentQuery,
       scheduledAt: {
         $gte: startOfToday,
@@ -124,7 +134,19 @@ export async function GET(request: NextRequest) {
     })
     .populate('client', 'firstName lastName email')
     .sort({ scheduledAt: 1 })
-    .lean();
+    .lean()}`,
+      async () => await Appointment.find({
+      ...appointmentQuery,
+      scheduledAt: {
+        $gte: startOfToday,
+        $lt: endOfToday
+      }
+    })
+    .populate('client', 'firstName lastName email')
+    .sort({ scheduledAt: 1 })
+    .lean().lean(),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     // Get payments ONLY from clients assigned to this dietitian
     let paymentQuery: any = {};
@@ -157,20 +179,38 @@ export async function GET(request: NextRequest) {
     // For admin, paymentQuery stays empty to show all payments
 
     // Get recent payments (last 10)
-    const recentPayments = await Payment.find(paymentQuery)
+    const recentPayments = await withCache(
+      `dashboard:dietitian-stats:${JSON.stringify(paymentQuery)
       .populate('client', 'firstName lastName email phone')
       .sort({ createdAt: -1 })
       .limit(10)
-      .lean();
+      .lean()}`,
+      async () => await Payment.find(paymentQuery)
+      .populate('client', 'firstName lastName email phone')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean().lean(),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     // Get total revenue for this dietitian
-    const totalRevenueResult = await Payment.aggregate([
+    const totalRevenueResult = await withCache(
+      `dashboard:dietitian-stats:${JSON.stringify([
       { $match: { 
         ...paymentQuery,
         status: 'completed'
       }},
       { $group: { _id: null, total: { $sum: '$amount' } }}
-    ]);
+    ])}`,
+      async () => await Payment.aggregate([
+      { $match: { 
+        ...paymentQuery,
+        status: 'completed'
+      }},
+      { $group: { _id: null, total: { $sum: '$amount' } }}
+    ]),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
     const totalRevenue = totalRevenueResult[0]?.total || 0;
 
     // Get pending payments count

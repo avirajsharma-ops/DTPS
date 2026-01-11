@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import ActivityLog from '@/lib/db/models/ActivityLog';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/activity-logs - Get activity logs
 export async function GET(request: NextRequest) {
@@ -99,7 +100,8 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Get activity stats
-    const stats = await ActivityLog.aggregate([
+    const stats = await withCache(
+      `activity-logs:${JSON.stringify([
       { $match: session.user.role === UserRole.ADMIN ? {} : query },
       {
         $facet: {
@@ -118,7 +120,29 @@ export async function GET(request: NextRequest) {
           ]
         }
       }
-    ]);
+    ])}`,
+      async () => await ActivityLog.aggregate([
+      { $match: session.user.role === UserRole.ADMIN ? {} : query },
+      {
+        $facet: {
+          byCategory: [
+            { $group: { _id: '$category', count: { $sum: 1 } } }
+          ],
+          byActionType: [
+            { $group: { _id: '$actionType', count: { $sum: 1 } } }
+          ],
+          byUserRole: [
+            { $group: { _id: '$userRole', count: { $sum: 1 } } }
+          ],
+          todayCount: [
+            { $match: { createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) } } },
+            { $count: 'count' }
+          ]
+        }
+      }
+    ]),
+      { ttl: 120000, tags: ['activity_logs'] }
+    );
 
     return NextResponse.json({
       activities,

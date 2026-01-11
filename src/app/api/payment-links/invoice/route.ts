@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import PaymentLink from '@/lib/db/models/PaymentLink';
 import { sendEmail, getInvoiceEmailTemplate } from '@/lib/services/email';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Generate invoice number
 function generateInvoiceNumber(paymentLinkId: string, createdAt: Date): string {
@@ -32,9 +33,15 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Find the payment link with populated data
-    const paymentLink = await PaymentLink.findById(paymentLinkId)
+    const paymentLink = await withCache(
+      `payment-links:invoice:${JSON.stringify(paymentLinkId)
       .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email');
+      .populate('dietitian', 'firstName lastName email')}`,
+      async () => await PaymentLink.findById(paymentLinkId)
+      .populate('client', 'firstName lastName email phone')
+      .populate('dietitian', 'firstName lastName email').lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
 
     if (!paymentLink) {
       return NextResponse.json({ error: 'Payment link not found' }, { status: 404 });
@@ -117,9 +124,15 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Find the payment link with populated data
-    const paymentLink = await PaymentLink.findById(paymentLinkId)
+    const paymentLink = await withCache(
+      `payment-links:invoice:${JSON.stringify(paymentLinkId)
       .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email');
+      .populate('dietitian', 'firstName lastName email')}`,
+      async () => await PaymentLink.findById(paymentLinkId)
+      .populate('client', 'firstName lastName email phone')
+      .populate('dietitian', 'firstName lastName email').lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
 
     if (!paymentLink) {
       return NextResponse.json({ error: 'Payment link not found' }, { status: 404 });

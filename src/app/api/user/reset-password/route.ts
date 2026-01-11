@@ -3,6 +3,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/user/reset-password - Validate reset token for clients
 export async function GET(request: NextRequest) {
@@ -28,12 +29,21 @@ export async function GET(request: NextRequest) {
       .digest('hex');
 
     // Find user with matching email, token, and unexpired token - only clients
-    const user = await User.findOne({
+    const user = await withCache(
+      `user:reset-password:${JSON.stringify({
       email: email.toLowerCase().trim(),
       role: 'client',
       passwordResetToken: hashedToken,
       passwordResetTokenExpiry: { $gt: new Date() }
-    });
+    })}`,
+      async () => await User.findOne({
+      email: email.toLowerCase().trim(),
+      role: 'client',
+      passwordResetToken: hashedToken,
+      passwordResetTokenExpiry: { $gt: new Date() }
+    }).lean(),
+      { ttl: 120000, tags: ['user'] }
+    );
 
     if (!user) {
       return NextResponse.json(
@@ -86,12 +96,21 @@ export async function POST(request: NextRequest) {
       .digest('hex');
 
     // Find user with matching email, token, and unexpired token - only clients
-    const user = await User.findOne({
+    const user = await withCache(
+      `user:reset-password:${JSON.stringify({
       email: email.toLowerCase().trim(),
       role: 'client',
       passwordResetToken: hashedToken,
       passwordResetTokenExpiry: { $gt: new Date() }
-    });
+    })}`,
+      async () => await User.findOne({
+      email: email.toLowerCase().trim(),
+      role: 'client',
+      passwordResetToken: hashedToken,
+      passwordResetTokenExpiry: { $gt: new Date() }
+    }).lean(),
+      { ttl: 120000, tags: ['user'] }
+    );
 
     if (!user) {
       return NextResponse.json(

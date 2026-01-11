@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 const WP_BASE = process.env.WP_BASE || 'https://your-wordpress-site.com';
 const WP_KEY = process.env.WP_API_KEY || 'dtps_live_7JpQ6QfE2w3r9T1L';

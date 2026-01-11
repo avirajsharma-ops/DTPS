@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import SubscriptionPlan from '@/lib/db/models/SubscriptionPlan';
 import { UserRole } from '@/types';
 import { z } from 'zod';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 const planSchema = z.object({
   name: z.string().min(1).max(200),
@@ -46,9 +47,15 @@ export async function GET(request: NextRequest) {
     if (category) query.category = category;
     if (isActive !== null) query.isActive = isActive === 'true';
 
-    const plans = await SubscriptionPlan.find(query)
+    const plans = await withCache(
+      `admin:subscription-plans:${JSON.stringify(query)
       .populate('createdBy', 'firstName lastName')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })}`,
+      async () => await SubscriptionPlan.find(query)
+      .populate('createdBy', 'firstName lastName')
+      .sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     return NextResponse.json({ 
       success: true,

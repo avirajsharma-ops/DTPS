@@ -8,6 +8,7 @@ import { UserRole } from '@/types';
 import Stripe from 'stripe';
 import { logHistoryServer } from '@/lib/server/history';
 import { logActivity, logPaymentFailure } from '@/lib/utils/activityLogger';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-07-30.basil',
@@ -43,13 +44,23 @@ export async function GET(request: NextRequest) {
       query.status = status;
     }
 
-    const payments = await Payment.find(query)
+    const payments = await withCache(
+      `payments:${JSON.stringify(query)
       .populate('client', 'firstName lastName email')
       .populate('dietitian', 'firstName lastName email')
       .populate('appointment', 'type scheduledAt')
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)}`,
+      async () => await Payment.find(query)
+      .populate('client', 'firstName lastName email')
+      .populate('dietitian', 'firstName lastName email')
+      .populate('appointment', 'type scheduledAt')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit).lean(),
+      { ttl: 120000, tags: ['payments'] }
+    );
 
     const total = await Payment.countDocuments(query);
 
@@ -186,7 +197,11 @@ export async function PUT(request: NextRequest) {
     await connectDB();
 
     // Find payment by Stripe payment intent ID
-    const payment = await Payment.findOne({ stripePaymentIntentId: paymentIntentId });
+    const payment = await withCache(
+      `payments:${JSON.stringify({ stripePaymentIntentId: paymentIntentId })}`,
+      async () => await Payment.findOne({ stripePaymentIntentId: paymentIntentId }).lean(),
+      { ttl: 120000, tags: ['payments'] }
+    );
     if (!payment) {
       return NextResponse.json(
         { error: 'Payment not found' },

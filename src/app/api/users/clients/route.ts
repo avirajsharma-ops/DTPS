@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/clients - Get clients for dietitians to book appointments
 export async function GET(request: NextRequest) {
@@ -59,7 +60,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const clients = await User.find(query)
+    const clients = await withCache(
+      `users:clients:${JSON.stringify(query)
       .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors status clientStatus createdAt createdBy')
       .populate('assignedDietitian', 'firstName lastName email avatar')
       .populate('assignedDietitians', 'firstName lastName email avatar')
@@ -72,7 +74,23 @@ export async function GET(request: NextRequest) {
       })
       .sort({ firstName: 1, lastName: 1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)}`,
+      async () => await User.find(query)
+      .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors status clientStatus createdAt createdBy')
+      .populate('assignedDietitian', 'firstName lastName email avatar')
+      .populate('assignedDietitians', 'firstName lastName email avatar')
+      .populate('assignedHealthCounselor', 'firstName lastName email avatar')
+      .populate('assignedHealthCounselors', 'firstName lastName email avatar')
+      .populate({
+        path: 'createdBy.userId',
+        select: 'firstName lastName role',
+        strictPopulate: false
+      })
+      .sort({ firstName: 1, lastName: 1 })
+      .limit(limit)
+      .skip((page - 1) * limit).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     const total = await User.countDocuments(query);
 

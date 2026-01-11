@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import { User, Appointment, Payment } from '@/lib/db/models';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,12 +19,21 @@ export async function GET(request: NextRequest) {
     const activities = [];
 
     // Get recent user registrations (last 24 hours)
-    const recentUsers = await User.find({
+    const recentUsers = await withCache(
+      `admin:recent-activity:${JSON.stringify({
       createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
     })
     .sort({ createdAt: -1 })
     .limit(5)
-    .select('firstName lastName email role createdAt');
+    .select('firstName lastName email role createdAt')}`,
+      async () => await User.find({
+      createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+    })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .select('firstName lastName email role createdAt').lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     recentUsers.forEach(user => {
       activities.push({
@@ -37,14 +47,25 @@ export async function GET(request: NextRequest) {
     });
 
     // Get recent completed appointments (last 24 hours)
-    const recentAppointments = await Appointment.find({
+    const recentAppointments = await withCache(
+      `admin:recent-activity:${JSON.stringify({
       status: 'confirmed',
       updatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
     })
     .populate('client', 'firstName lastName')
     .populate('dietitian', 'firstName lastName')
     .sort({ updatedAt: -1 })
-    .limit(5);
+    .limit(5)}`,
+      async () => await Appointment.find({
+      status: 'confirmed',
+      updatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+    })
+    .populate('client', 'firstName lastName')
+    .populate('dietitian', 'firstName lastName')
+    .sort({ updatedAt: -1 })
+    .limit(5).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     recentAppointments.forEach(appointment => {
       const dietitian = appointment.dietitian as any;
@@ -60,14 +81,25 @@ export async function GET(request: NextRequest) {
     });
 
     // Get recent payments/orders from WooCommerce data (simulate payment activity)
-    const recentPayments = await User.find({
+    const recentPayments = await withCache(
+      `admin:recent-activity:${JSON.stringify({
       role: 'client',
       'wooCommerceData.orders.0': { $exists: true },
       updatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
     })
     .sort({ updatedAt: -1 })
     .limit(3)
-    .select('firstName lastName wooCommerceData.totalSpent updatedAt');
+    .select('firstName lastName wooCommerceData.totalSpent updatedAt')}`,
+      async () => await User.find({
+      role: 'client',
+      'wooCommerceData.orders.0': { $exists: true },
+      updatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+    })
+    .sort({ updatedAt: -1 })
+    .limit(3)
+    .select('firstName lastName wooCommerceData.totalSpent updatedAt').lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     recentPayments.forEach(client => {
       activities.push({

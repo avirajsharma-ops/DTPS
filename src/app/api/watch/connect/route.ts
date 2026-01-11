@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import { WatchService } from '@/watchconnectivity/backend/services/WatchService';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // POST /api/watch/connect - Connect a watch
 export async function POST(req: NextRequest) {

@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import { User, Appointment, SystemAlert } from '@/lib/db/models';
 import { UserRole } from '@/types';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,11 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Load manually created alerts from DB first
-    const savedDocs = await SystemAlert.find().sort({ createdAt: -1 }).limit(50);
+    const savedDocs = await withCache(
+      `admin:system-alerts:${JSON.stringify().sort({ createdAt: -1 }).limit(50)}`,
+      async () => await SystemAlert.find().sort({ createdAt: -1 }).limit(50).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     const savedAlerts = savedDocs.map((doc: any) => ({
       id: String(doc._id),
       type: doc.type,

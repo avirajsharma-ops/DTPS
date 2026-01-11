@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/connection';
 import { File as FileModel } from '@/lib/db/models/File';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(
   request: NextRequest, 
@@ -9,7 +10,11 @@ export async function GET(
   try {
     await connectDB();
     const { id } = await params;
-    const fileDoc = await FileModel.findById(id);
+    const fileDoc = await withCache(
+      `files:id:${JSON.stringify(id)}`,
+      async () => await FileModel.findById(id).lean(),
+      { ttl: 120000, tags: ['files'] }
+    );
     if (!fileDoc) {
       return new NextResponse('File not found', { status: 404 });
     }

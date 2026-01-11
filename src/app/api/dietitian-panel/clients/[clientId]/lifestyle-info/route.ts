@@ -5,12 +5,17 @@ import connectDB from '@/lib/db/connection';
 import LifestyleInfo from '@/lib/db/models/LifestyleInfo';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export const dynamic = 'force-dynamic';
 
 // Helper function to check if dietitian is assigned to client
 async function isDietitianAssigned(dietitianId: string, clientId: string): Promise<boolean> {
-  const client = await User.findById(clientId).select('assignedDietitian assignedDietitians');
+  const client = await withCache(
+      `dietitian-panel:clients:clientId:lifestyle-info:${JSON.stringify(clientId).select('assignedDietitian assignedDietitians')}`,
+      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians').lean(),
+      { ttl: 120000, tags: ['dietitian_panel'] }
+    );
   if (!client) return false;
   
   return (
@@ -45,12 +50,20 @@ export async function GET(
     }
 
     // Verify the client exists
-    const client = await User.findById(clientId);
+    const client = await withCache(
+      `dietitian-panel:clients:clientId:lifestyle-info:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 120000, tags: ['dietitian_panel'] }
+    );
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    const lifestyleInfo = await LifestyleInfo.findOne({ userId: clientId });
+    const lifestyleInfo = await withCache(
+      `dietitian-panel:clients:clientId:lifestyle-info:${JSON.stringify({ userId: clientId })}`,
+      async () => await LifestyleInfo.findOne({ userId: clientId }).lean(),
+      { ttl: 120000, tags: ['dietitian_panel'] }
+    );
 
     return NextResponse.json({
       success: true,
@@ -94,7 +107,11 @@ export async function PUT(
     }
 
     // Verify the client exists
-    const client = await User.findById(clientId);
+    const client = await withCache(
+      `dietitian-panel:clients:clientId:lifestyle-info:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 120000, tags: ['dietitian_panel'] }
+    );
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }

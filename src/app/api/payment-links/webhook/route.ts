@@ -5,6 +5,7 @@ import PaymentLink from '@/lib/db/models/PaymentLink';
 import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import Payment from '@/lib/db/models/Payment';
 import { PaymentStatus, PaymentType } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Razorpay webhook secret
 const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
@@ -13,10 +14,17 @@ const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
 async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<any> {
   try {
     // Check if ClientPurchase already exists
-    const existingPurchase = await ClientPurchase.findOne({
+    const existingPurchase = await withCache(
+      `payment-links:webhook:${JSON.stringify({
       client: paymentLink.client,
       razorpayPaymentId: paymentLink.razorpayPaymentId
-    });
+    })}`,
+      async () => await ClientPurchase.findOne({
+      client: paymentLink.client,
+      razorpayPaymentId: paymentLink.razorpayPaymentId
+    }).lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
 
     if (existingPurchase) {
       return existingPurchase;
@@ -63,9 +71,15 @@ async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<an
 async function createPaymentRecordFromLink(paymentLink: any): Promise<any> {
   try {
     // Check if Payment record already exists
-    const existingPayment = await Payment.findOne({
+    const existingPayment = await withCache(
+      `payment-links:webhook:${JSON.stringify({
       paymentLink: paymentLink._id
-    });
+    })}`,
+      async () => await Payment.findOne({
+      paymentLink: paymentLink._id
+    }).lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
 
     if (existingPayment) {
       return existingPayment;
@@ -144,9 +158,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Find payment link by Razorpay ID
-        const paymentLink = await PaymentLink.findOne({
+        const paymentLink = await withCache(
+      `payment-links:webhook:${JSON.stringify({
           razorpayPaymentLinkId: paymentLinkEntity.id
-        });
+        })}`,
+      async () => await PaymentLink.findOne({
+          razorpayPaymentLinkId: paymentLinkEntity.id
+        }).lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
 
         if (!paymentLink) {
           console.error('Payment link not found:', paymentLinkEntity.id);
@@ -216,9 +236,15 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
         }
 
-        const paymentLink = await PaymentLink.findOne({
+        const paymentLink = await withCache(
+      `payment-links:webhook:${JSON.stringify({
           razorpayPaymentLinkId: paymentLinkEntity.id
-        });
+        })}`,
+      async () => await PaymentLink.findOne({
+          razorpayPaymentLinkId: paymentLinkEntity.id
+        }).lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
 
         if (paymentLink && paymentLink.status !== 'paid') {
           paymentLink.status = 'expired';
@@ -234,9 +260,15 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
         }
 
-        const paymentLink = await PaymentLink.findOne({
+        const paymentLink = await withCache(
+      `payment-links:webhook:${JSON.stringify({
           razorpayPaymentLinkId: paymentLinkEntity.id
-        });
+        })}`,
+      async () => await PaymentLink.findOne({
+          razorpayPaymentLinkId: paymentLinkEntity.id
+        }).lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
 
         if (paymentLink && paymentLink.status !== 'paid') {
           paymentLink.status = 'cancelled';

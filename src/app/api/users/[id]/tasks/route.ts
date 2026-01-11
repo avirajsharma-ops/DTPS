@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import Task from '@/lib/db/models/Task';
 import { logHistoryServer } from '@/lib/server/history';
 import { TASK_TYPES, TIME_OPTIONS } from '@/lib/constants/tasks';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/[id]/tasks - Get all tasks for a client
 export async function GET(
@@ -24,11 +25,19 @@ export async function GET(
     const clientObjectId = new mongoose.Types.ObjectId(id);
 
     // Get tasks for this client
-    const tasks = await Task.find({ client: clientObjectId })
+    const tasks = await withCache(
+      `users:id:tasks:${JSON.stringify({ client: clientObjectId })
       .populate('dietitian', 'firstName lastName email')
       .populate('tags', 'name color icon')
       .sort({ createdAt: -1 })
-      .lean();
+      .lean()}`,
+      async () => await Task.find({ client: clientObjectId })
+      .populate('dietitian', 'firstName lastName email')
+      .populate('tags', 'name color icon')
+      .sort({ createdAt: -1 })
+      .lean().lean(),
+      { ttl: 60000, tags: ['users'] }
+    );
 
     return NextResponse.json({ 
       tasks,
@@ -102,10 +111,17 @@ export async function POST(
     await newTask.save();
 
     // Populate the task for response
-    const populatedTask = await Task.findById(newTask._id)
+    const populatedTask = await withCache(
+      `users:id:tasks:${JSON.stringify(newTask._id)
       .populate('dietitian', 'firstName lastName email')
       .populate('tags', 'name color icon')
-      .lean();
+      .lean()}`,
+      async () => await Task.findById(newTask._id)
+      .populate('dietitian', 'firstName lastName email')
+      .populate('tags', 'name color icon')
+      .lean().lean(),
+      { ttl: 60000, tags: ['users'] }
+    );
 
     // Log history
     try {

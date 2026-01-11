@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connect';
 import Tag from '@/lib/db/models/Tag';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(
   req: NextRequest,
@@ -30,7 +31,11 @@ export async function GET(
 
     await connectDB();
 
-    const tag = await Tag.findById(tagId);
+    const tag = await withCache(
+      `admin:tags:tagId:${JSON.stringify(tagId)}`,
+      async () => await Tag.findById(tagId).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     if (!tag) {
       return NextResponse.json(
@@ -77,7 +82,11 @@ export async function PUT(
 
     await connectDB();
 
-    const tag = await Tag.findById(tagId);
+    const tag = await withCache(
+      `admin:tags:tagId:${JSON.stringify(tagId)}`,
+      async () => await Tag.findById(tagId).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     if (!tag) {
       return NextResponse.json(
@@ -88,7 +97,11 @@ export async function PUT(
 
     // Check if new name already exists (if name is being changed)
     if (name && name.trim() !== tag.name) {
-      const existingTag = await Tag.findOne({ name: name.trim() });
+      const existingTag = await withCache(
+      `admin:tags:tagId:${JSON.stringify({ name: name.trim() })}`,
+      async () => await Tag.findOne({ name: name.trim() }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
       if (existingTag) {
         return NextResponse.json(
           { error: 'Tag name already exists' },

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connect';
 import MealPlanTemplate from '@/lib/db/models/MealPlanTemplate';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(
   request: NextRequest, 
@@ -12,9 +13,15 @@ export async function GET(
   try {
     const { id } = await params;
     await connectDB();
-    const template = await MealPlanTemplate.findById(id)
+    const template = await withCache(
+      `meal-plan-templates:id:${JSON.stringify(id)
       .populate('createdBy', 'firstName lastName')
-      .lean();
+      .lean()}`,
+      async () => await MealPlanTemplate.findById(id)
+      .populate('createdBy', 'firstName lastName')
+      .lean().lean(),
+      { ttl: 120000, tags: ['meal_plan_templates'] }
+    );
     if (!template) {
       return NextResponse.json({ success: false, error: 'Template not found' }, { status: 404 });
     }
@@ -46,7 +53,11 @@ export async function PUT(
     const body = await request.json();
 
     // Find existing template
-    const existingTemplate = await MealPlanTemplate.findById(id);
+    const existingTemplate = await withCache(
+      `meal-plan-templates:id:${JSON.stringify(id)}`,
+      async () => await MealPlanTemplate.findById(id).lean(),
+      { ttl: 120000, tags: ['meal_plan_templates'] }
+    );
     if (!existingTemplate) {
       return NextResponse.json({ success: false, error: 'Template not found' }, { status: 404 });
     }
@@ -105,7 +116,11 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const existingTemplate = await MealPlanTemplate.findById(id);
+    const existingTemplate = await withCache(
+      `meal-plan-templates:id:${JSON.stringify(id)}`,
+      async () => await MealPlanTemplate.findById(id).lean(),
+      { ttl: 120000, tags: ['meal_plan_templates'] }
+    );
     if (!existingTemplate) {
       return NextResponse.json({ success: false, error: 'Template not found' }, { status: 404 });
     }
@@ -156,7 +171,11 @@ export async function DELETE(
     const { id } = await params;
     await connectDB();
 
-    const existingTemplate = await MealPlanTemplate.findById(id);
+    const existingTemplate = await withCache(
+      `meal-plan-templates:id:${JSON.stringify(id)}`,
+      async () => await MealPlanTemplate.findById(id).lean(),
+      { ttl: 120000, tags: ['meal_plan_templates'] }
+    );
     if (!existingTemplate) {
       return NextResponse.json({ success: false, error: 'Template not found' }, { status: 404 });
     }

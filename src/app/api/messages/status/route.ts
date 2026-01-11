@@ -6,6 +6,7 @@ import Message from '@/lib/db/models/Message';
 import { Notification } from '@/lib/db/models';
 import { SSEManager } from '@/lib/realtime/sse-manager';
 import { broadcastUnreadCounts } from '../../client/unread-counts/stream/route';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // PUT /api/messages/status - Update message status
 export async function PUT(request: NextRequest) {
@@ -21,7 +22,11 @@ export async function PUT(request: NextRequest) {
 
     if (messageId) {
       // Update specific message status
-      const message = await Message.findById(messageId);
+      const message = await withCache(
+      `messages:status:${JSON.stringify(messageId)}`,
+      async () => await Message.findById(messageId).lean(),
+      { ttl: 30000, tags: ['messages'] }
+    );
       if (!message) {
         return NextResponse.json({ error: 'Message not found' }, { status: 404 });
       }
@@ -122,7 +127,8 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Get delivery status for messages in conversation
-    const statusCounts = await Message.aggregate([
+    const statusCounts = await withCache(
+      `messages:status:${JSON.stringify([
       {
         $match: {
           $or: [
@@ -137,7 +143,25 @@ export async function GET(request: NextRequest) {
           count: { $sum: 1 }
         }
       }
-    ]);
+    ])}`,
+      async () => await Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { sender: session.user.id, receiver: conversationWith },
+            { sender: conversationWith, receiver: session.user.id }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]),
+      { ttl: 30000, tags: ['messages'] }
+    );
 
     // Get unread count for current user
     const unreadCount = await Message.countDocuments({
@@ -147,11 +171,19 @@ export async function GET(request: NextRequest) {
     });
 
     // Get last seen timestamps
-    const lastReadMessage = await Message.findOne({
+    const lastReadMessage = await withCache(
+      `messages:status:${JSON.stringify({
       sender: conversationWith,
       receiver: session.user.id,
       isRead: true
-    }).sort({ readAt: -1 });
+    }).sort({ readAt: -1 })}`,
+      async () => await Message.findOne({
+      sender: conversationWith,
+      receiver: session.user.id,
+      isRead: true
+    }).sort({ readAt: -1 }).lean(),
+      { ttl: 30000, tags: ['messages'] }
+    );
 
     return NextResponse.json({
       statusCounts: statusCounts.reduce((acc: any, item) => {

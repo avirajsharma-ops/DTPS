@@ -5,6 +5,7 @@ import dbConnect from "@/lib/db/connection";
 import JournalTracking from "@/lib/db/models/JournalTracking";
 import User from "@/lib/db/models/User";
 import mongoose from "mongoose";
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(request: Request) {
   try {
@@ -33,7 +34,11 @@ export async function GET(request: Request) {
     });
 
     // Get user's water goal from their profile
-    const user = await User.findById(session.user.id).select('goals');
+    const user = await withCache(
+      `client:hydration:${JSON.stringify(session.user.id).select('goals')}`,
+      async () => await User.findById(session.user.id).select('goals').lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
     const waterGoal = user?.goals?.water || 2500; // Default 2500ml
 
     // Calculate total water intake

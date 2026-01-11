@@ -6,6 +6,7 @@ import Transformation from '@/lib/db/models/Transformation';
 import { getImageKit } from '@/lib/imagekit';
 import { UserRole } from '@/types';
 import { compressBase64ImageServer } from '@/lib/imageCompressionServer';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Fetch all transformations
 export async function GET(request: NextRequest) {
@@ -27,9 +28,15 @@ export async function GET(request: NextRequest) {
       query.isActive = true;
     }
 
-    const transformations = await Transformation.find(query)
+    const transformations = await withCache(
+      `admin:transformations:${JSON.stringify(query)
       .sort({ displayOrder: 1, createdAt: -1 })
-      .lean();
+      .lean()}`,
+      async () => await Transformation.find(query)
+      .sort({ displayOrder: 1, createdAt: -1 })
+      .lean().lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     return NextResponse.json({ transformations });
   } catch (error) {

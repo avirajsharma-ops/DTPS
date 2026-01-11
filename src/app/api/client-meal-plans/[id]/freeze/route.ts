@@ -5,6 +5,7 @@ import dbConnect from '@/lib/db/connect';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import { addDays, format, differenceInDays, startOfDay, parseISO } from 'date-fns';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Helper function to calculate allowed freeze days based on plan duration in months
 function calculateAllowedFreezeDays(durationDays: number): number {
@@ -159,7 +160,11 @@ export async function POST(
     }
 
     // Fetch the meal plan
-    const mealPlan = await ClientMealPlan.findById(id);
+    const mealPlan = await withCache(
+      `client-meal-plans:id:freeze:${JSON.stringify(id)}`,
+      async () => await ClientMealPlan.findById(id).lean(),
+      { ttl: 120000, tags: ['client_meal_plans'] }
+    );
 
     if (!mealPlan) {
       return NextResponse.json({ error: 'Meal plan not found' }, { status: 404 });
@@ -364,7 +369,11 @@ export async function POST(
 
     // If this plan is linked to a purchase, also extend the purchase's expected end date
     if (purchaseId) {
-      const purchase = await ClientPurchase.findById(purchaseId);
+      const purchase = await withCache(
+      `client-meal-plans:id:freeze:${JSON.stringify(purchaseId)}`,
+      async () => await ClientPurchase.findById(purchaseId).lean(),
+      { ttl: 120000, tags: ['client_meal_plans'] }
+    );
       if (purchase && purchase.expectedEndDate) {
         const newExpectedEndDate = addDays(new Date(purchase.expectedEndDate), validFreezeDates.length);
         await ClientPurchase.updateOne(
@@ -430,7 +439,11 @@ export async function DELETE(
     }
 
     // Fetch the meal plan
-    const mealPlan = await ClientMealPlan.findById(id);
+    const mealPlan = await withCache(
+      `client-meal-plans:id:freeze:${JSON.stringify(id)}`,
+      async () => await ClientMealPlan.findById(id).lean(),
+      { ttl: 120000, tags: ['client_meal_plans'] }
+    );
 
     if (!mealPlan) {
       return NextResponse.json({ error: 'Meal plan not found' }, { status: 404 });

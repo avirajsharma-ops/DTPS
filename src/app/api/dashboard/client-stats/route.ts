@@ -8,6 +8,7 @@ import Appointment from '@/lib/db/models/Appointment';
 import User from '@/lib/db/models/User';
 import DailyTracking from '@/lib/db/models/DailyTracking';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/dashboard/client-stats - Get client dashboard statistics
 export async function GET(request: NextRequest) {
@@ -26,15 +27,28 @@ export async function GET(request: NextRequest) {
     endOfDay.setHours(23, 59, 59, 999);
 
     // Get user profile for goals and assigned dietitian
-    const user = await User.findById(userId)
+    const user = await withCache(
+      `dashboard:client-stats:${JSON.stringify(userId)
       .select('firstName lastName email goals assignedDietitian')
-      .populate('assignedDietitian', 'firstName lastName email avatar bio experience specializations');
+      .populate('assignedDietitian', 'firstName lastName email avatar bio experience specializations')}`,
+      async () => await User.findById(userId)
+      .select('firstName lastName email goals assignedDietitian')
+      .populate('assignedDietitian', 'firstName lastName email avatar bio experience specializations').lean(),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     // Get today's food logs (new structure)
-    const todayFoodLog = await FoodLog.findOne({
+    const todayFoodLog = await withCache(
+      `dashboard:client-stats:${JSON.stringify({
       client: userId,
       date: { $gte: today, $lte: endOfDay }
-    });
+    })}`,
+      async () => await FoodLog.findOne({
+      client: userId,
+      date: { $gte: today, $lte: endOfDay }
+    }).lean(),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     // Calculate today's totals from the new structure
     const todayTotals = todayFoodLog?.totalNutrition ? {
@@ -45,19 +59,34 @@ export async function GET(request: NextRequest) {
     } : { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
     // Get latest weight entry
-    const latestWeight = await ProgressEntry.findOne({
+    const latestWeight = await withCache(
+      `dashboard:client-stats:${JSON.stringify({
       user: userId,
       type: 'weight'
-    }).sort({ recordedAt: -1 });
+    }).sort({ recordedAt: -1 })}`,
+      async () => await ProgressEntry.findOne({
+      user: userId,
+      type: 'weight'
+    }).sort({ recordedAt: -1 }).lean(),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     // Get weight from 7 days ago for weekly change
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const weekAgoWeight = await ProgressEntry.findOne({
+    const weekAgoWeight = await withCache(
+      `dashboard:client-stats:${JSON.stringify({
       user: userId,
       type: 'weight',
       recordedAt: { $lte: sevenDaysAgo }
-    }).sort({ recordedAt: -1 });
+    }).sort({ recordedAt: -1 })}`,
+      async () => await ProgressEntry.findOne({
+      user: userId,
+      type: 'weight',
+      recordedAt: { $lte: sevenDaysAgo }
+    }).sort({ recordedAt: -1 }).lean(),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     // Calculate weight change
     const weightChange = latestWeight && weekAgoWeight 
@@ -65,22 +94,39 @@ export async function GET(request: NextRequest) {
       : '0.0';
 
     // Get first weight entry for start weight
-    const firstWeight = await ProgressEntry.findOne({
+    const firstWeight = await withCache(
+      `dashboard:client-stats:${JSON.stringify({
       user: userId,
       type: 'weight'
-    }).sort({ recordedAt: 1 });
+    }).sort({ recordedAt: 1 })}`,
+      async () => await ProgressEntry.findOne({
+      user: userId,
+      type: 'weight'
+    }).sort({ recordedAt: 1 }).lean(),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     // Get streak (consecutive days with food logs)
     const streak = await calculateStreak(userId);
 
     // Get next appointment
-    const nextAppointment = await Appointment.findOne({
+    const nextAppointment = await withCache(
+      `dashboard:client-stats:${JSON.stringify({
       client: userId,
       scheduledAt: { $gte: new Date() },
       status: { $in: ['scheduled', 'confirmed'] }
     })
     .populate('dietitian', 'firstName lastName')
-    .sort({ scheduledAt: 1 });
+    .sort({ scheduledAt: 1 })}`,
+      async () => await Appointment.findOne({
+      client: userId,
+      scheduledAt: { $gte: new Date() },
+      status: { $in: ['scheduled', 'confirmed'] }
+    })
+    .populate('dietitian', 'firstName lastName')
+    .sort({ scheduledAt: 1 }).lean(),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     // Get user's goals (default values if not set)
     const goals = user?.goals || {

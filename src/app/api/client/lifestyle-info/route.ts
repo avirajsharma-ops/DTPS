@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db/connection";
 import LifestyleInfo from "@/lib/db/models/LifestyleInfo";
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET() {
   try {
@@ -14,7 +15,11 @@ export async function GET() {
 
     await dbConnect();
 
-    const lifestyleInfo = await LifestyleInfo.findOne({ userId: session.user.id });
+    const lifestyleInfo = await withCache(
+      `client:lifestyle-info:${JSON.stringify({ userId: session.user.id })}`,
+      async () => await LifestyleInfo.findOne({ userId: session.user.id }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
     
     if (!lifestyleInfo) {
       return NextResponse.json({

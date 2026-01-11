@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import Payment from '@/lib/db/models/Payment';
 import User from '@/lib/db/models/User';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/client/subscriptions - Get client's subscriptions
 export async function GET(request: NextRequest) {
@@ -16,12 +17,21 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Get all payments for this client that are subscription-related
-    const payments = await Payment.find({
+    const payments = await withCache(
+      `client:subscriptions:${JSON.stringify({
       client: session.user.id,
       type: { $in: ['service_plan', 'subscription', 'consultation'] }
     })
       .populate('dietitian', 'firstName lastName')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })}`,
+      async () => await Payment.find({
+      client: session.user.id,
+      type: { $in: ['service_plan', 'subscription', 'consultation'] }
+    })
+      .populate('dietitian', 'firstName lastName')
+      .sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     // Transform payments to subscription format
     const subscriptions = payments.map((payment: any) => {

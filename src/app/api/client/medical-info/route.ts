@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db/connection";
 import MedicalInfo from "@/lib/db/models/MedicalInfo";
 import User from "@/lib/db/models/User";
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET() {
   try {
@@ -16,10 +17,18 @@ export async function GET() {
     await dbConnect();
 
     // Get user's gender
-    const user = await User.findById(session.user.id).select('gender');
+    const user = await withCache(
+      `client:medical-info:${JSON.stringify(session.user.id).select('gender')}`,
+      async () => await User.findById(session.user.id).select('gender').lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
     const gender = user?.gender || '';
 
-    const medicalInfo = await MedicalInfo.findOne({ userId: session.user.id });
+    const medicalInfo = await withCache(
+      `client:medical-info:${JSON.stringify({ userId: session.user.id })}`,
+      async () => await MedicalInfo.findOne({ userId: session.user.id }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
     
     if (!medicalInfo) {
       return NextResponse.json({

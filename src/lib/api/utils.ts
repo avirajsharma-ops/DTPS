@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import crypto from 'crypto';
 
+// Re-export memory cache utilities for easy access in all APIs
+export { serverCache, withCache, clearCacheByTag } from '@/lib/cache/memoryCache';
+
 /**
  * API Stability Utilities
  * 
@@ -71,7 +74,7 @@ export async function withAPIHandler<T>(
     timeoutMs?: number;
   } = {}
 ): Promise<NextResponse> {
-  const { requireAuth = true, requireAdmin = false, timeoutMs = 30000 } = options;
+  const { requireAuth = true, requireAdmin = false, timeoutMs = 15000 } = options;
 
   try {
     // Auth check if required
@@ -89,7 +92,7 @@ export async function withAPIHandler<T>(
       }
     }
 
-    // Ensure DB connection with timeout
+    // Ensure DB connection with timeout (fast fail)
     const dbPromise = connectDB();
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Database connection timeout')), timeoutMs)

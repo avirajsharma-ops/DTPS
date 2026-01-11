@@ -9,6 +9,7 @@ import { UserRole, AppointmentStatus } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
 import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
 import { SSEManager } from '@/lib/realtime/sse-manager';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/appointments/[id] - Get specific appointment
 export async function GET(
@@ -24,9 +25,15 @@ export async function GET(
     await connectDB();
     const { id } = await params;
 
-    const appointment = await Appointment.findById(id)
+    const appointment = await withCache(
+      `appointments:id:${JSON.stringify(id)
       .populate('dietitian', 'firstName lastName email avatar')
-      .populate('client', 'firstName lastName email avatar');
+      .populate('client', 'firstName lastName email avatar')}`,
+      async () => await Appointment.findById(id)
+      .populate('dietitian', 'firstName lastName email avatar')
+      .populate('client', 'firstName lastName email avatar').lean(),
+      { ttl: 60000, tags: ['appointments'] }
+    );
 
     if (!appointment) {
       return NextResponse.json(
@@ -48,7 +55,11 @@ export async function GET(
       hasAccess = true;
     } else if ((session.user.role as string) === UserRole.HEALTH_COUNSELOR || (session.user.role as string) === 'health_counselor') {
       // HC can access appointments for their assigned clients
-      const client = await User.findById(clientId);
+      const client = await withCache(
+      `appointments:id:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 60000, tags: ['appointments'] }
+    );
       if (client?.assignedHealthCounselor?.toString() === userId) {
         hasAccess = true;
       }
@@ -84,7 +95,11 @@ export async function PUT(
     await connectDB();
     const { id } = await params;
 
-    const appointment = await Appointment.findById(id);
+    const appointment = await withCache(
+      `appointments:id:${JSON.stringify(id)}`,
+      async () => await Appointment.findById(id).lean(),
+      { ttl: 60000, tags: ['appointments'] }
+    );
     if (!appointment) {
       return NextResponse.json(
         { error: 'Appointment not found' },
@@ -319,7 +334,11 @@ export async function DELETE(
     await connectDB();
     const { id } = await params;
 
-    const appointment = await Appointment.findById(id);
+    const appointment = await withCache(
+      `appointments:id:${JSON.stringify(id)}`,
+      async () => await Appointment.findById(id).lean(),
+      { ttl: 60000, tags: ['appointments'] }
+    );
     if (!appointment) {
       return NextResponse.json(
         { error: 'Appointment not found' },
@@ -391,8 +410,16 @@ export async function DELETE(
     await appointment.save();
 
     // Get user details for notifications
-    const dietitian = await User.findById(appointment.dietitian).select('firstName lastName avatar');
-    const client = await User.findById(appointment.client).select('firstName lastName avatar');
+    const dietitian = await withCache(
+      `appointments:id:${JSON.stringify(appointment.dietitian).select('firstName lastName avatar')}`,
+      async () => await User.findById(appointment.dietitian).select('firstName lastName avatar').lean(),
+      { ttl: 60000, tags: ['appointments'] }
+    );
+    const client = await withCache(
+      `appointments:id:${JSON.stringify(appointment.client).select('firstName lastName avatar')}`,
+      async () => await User.findById(appointment.client).select('firstName lastName avatar').lean(),
+      { ttl: 60000, tags: ['appointments'] }
+    );
 
     // Log history for appointment cancellation
     await logHistoryServer({

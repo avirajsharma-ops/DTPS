@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // POST /api/users/dietitian/availability/setup - Quick setup with default availability
 export async function POST(request: NextRequest) {
@@ -82,7 +83,11 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const dietitian = await User.findById(session.user.id).select('availability');
+    const dietitian = await withCache(
+      `users:dietitian:availability:setup:${JSON.stringify(session.user.id).select('availability')}`,
+      async () => await User.findById(session.user.id).select('availability').lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
     
     const hasAvailability = dietitian?.availability?.schedule && 
                            dietitian.availability.schedule.length > 0;

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import DailyTracking from '@/lib/db/models/DailyTracking';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,10 +78,17 @@ export async function GET(request: NextRequest) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const tracking = await DailyTracking.findOne({
+    const tracking = await withCache(
+      `tracking:sleep:${JSON.stringify({
       client: session.user.id,
       date: today
-    });
+    })}`,
+      async () => await DailyTracking.findOne({
+      client: session.user.id,
+      date: today
+    }).lean(),
+      { ttl: 120000, tags: ['tracking'] }
+    );
 
     return NextResponse.json({
       sleep: {

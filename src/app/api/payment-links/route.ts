@@ -9,6 +9,7 @@ import { z } from 'zod';
 import Razorpay from 'razorpay';
 import { getPaymentCallbackUrl, getPaymentLinkBaseUrl } from '@/lib/config';
 import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Initialize Razorpay
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
@@ -62,13 +63,23 @@ export async function GET(request: NextRequest) {
     // Dietitians can see payment links for their assigned clients
     else if (session.user.role === UserRole.DIETITIAN) {
       // Get all clients assigned to this dietitian
-      const assignedClients = await User.find({
+      const assignedClients = await withCache(
+      `payment-links:${JSON.stringify({
         role: UserRole.CLIENT,
         $or: [
           { assignedDietitian: session.user.id },
           { assignedDietitians: session.user.id }
         ]
-      }).select('_id');
+      }).select('_id')}`,
+      async () => await User.find({
+        role: UserRole.CLIENT,
+        $or: [
+          { assignedDietitian: session.user.id },
+          { assignedDietitians: session.user.id }
+        ]
+      }).select('_id').lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
       const assignedClientIds = assignedClients.map(c => c._id);
       
       // Dietitian can see payment links they created OR for their assigned clients
@@ -81,10 +92,17 @@ export async function GET(request: NextRequest) {
     // Health counselors can see payment links for their assigned clients
     else if (session.user.role === UserRole.HEALTH_COUNSELOR) {
       // Get all clients assigned to this health counselor
-      const assignedClients = await User.find({
+      const assignedClients = await withCache(
+      `payment-links:${JSON.stringify({
         role: UserRole.CLIENT,
         assignedHealthCounselor: session.user.id
-      }).select('_id');
+      }).select('_id')}`,
+      async () => await User.find({
+        role: UserRole.CLIENT,
+        assignedHealthCounselor: session.user.id
+      }).select('_id').lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
       const assignedClientIds = assignedClients.map(c => c._id);
       
       // Health counselor can see payment links they created OR for their assigned clients
@@ -117,12 +135,21 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    const paymentLinks = await PaymentLink.find(query)
+    const paymentLinks = await withCache(
+      `payment-links:${JSON.stringify(query)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName email')
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip(skip);
+      .skip(skip)}`,
+      async () => await PaymentLink.find(query)
+      .populate('client', 'firstName lastName email phone')
+      .populate('dietitian', 'firstName lastName email')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip(skip).lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
 
     const total = await PaymentLink.countDocuments(query);
 
@@ -164,7 +191,11 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Verify client exists
-    const client = await User.findById(validatedData.clientId);
+    const client = await withCache(
+      `payment-links:${JSON.stringify(validatedData.clientId)}`,
+      async () => await User.findById(validatedData.clientId).lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
@@ -267,9 +298,15 @@ export async function POST(request: NextRequest) {
     const paymentLink = await PaymentLink.create(paymentLinkData);
 
     // Populate and return
-    const populatedPaymentLink = await PaymentLink.findById(paymentLink._id)
+    const populatedPaymentLink = await withCache(
+      `payment-links:${JSON.stringify(paymentLink._id)
       .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email');
+      .populate('dietitian', 'firstName lastName email')}`,
+      async () => await PaymentLink.findById(paymentLink._id)
+      .populate('client', 'firstName lastName email phone')
+      .populate('dietitian', 'firstName lastName email').lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
 
     // Send push notification to client about new payment link
     try {
@@ -338,7 +375,11 @@ export async function DELETE(request: NextRequest) {
 
     await connectDB();
 
-    const paymentLink = await PaymentLink.findById(id);
+    const paymentLink = await withCache(
+      `payment-links:${JSON.stringify(id)}`,
+      async () => await PaymentLink.findById(id).lean(),
+      { ttl: 120000, tags: ['payment_links'] }
+    );
 
     if (!paymentLink) {
       return NextResponse.json({ error: 'Payment link not found' }, { status: 404 });

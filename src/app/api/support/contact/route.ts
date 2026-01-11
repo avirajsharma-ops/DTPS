@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Contact support message schema - we'll store these in MongoDB
 interface ContactMessage {
@@ -120,11 +121,19 @@ export async function GET(request: NextRequest) {
     const query: Record<string, unknown> = {};
     if (status) query.status = status;
 
-    const messages = await ContactMessage.find(query)
+    const messages = await withCache(
+      `support:contact:${JSON.stringify(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate('userId', 'name email');
+      .populate('userId', 'name email')}`,
+      async () => await ContactMessage.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('userId', 'name email').lean(),
+      { ttl: 120000, tags: ['support'] }
+    );
 
     const total = await ContactMessage.countDocuments(query);
 

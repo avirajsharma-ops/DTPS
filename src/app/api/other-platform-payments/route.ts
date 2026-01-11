@@ -8,6 +8,7 @@ import { UserRole } from '@/types';
 import User from '@/lib/db/models/User';
 import { getImageKit } from '@/lib/imagekit';
 import { compressImageServer } from '@/lib/imageCompressionServer';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - List other platform payments
 export async function GET(request: NextRequest) {
@@ -41,12 +42,21 @@ export async function GET(request: NextRequest) {
       filter.status = status;
     }
 
-    const payments = await OtherPlatformPayment.find(filter)
+    const payments = await withCache(
+      `other-platform-payments:${JSON.stringify(filter)
       .populate('client', 'firstName lastName email phone profilePicture')
       .populate('dietitian', 'firstName lastName email phone')
       .populate('paymentLink', 'planName planCategory durationDays amount finalAmount')
       .populate('reviewedBy', 'firstName lastName email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })}`,
+      async () => await OtherPlatformPayment.find(filter)
+      .populate('client', 'firstName lastName email phone profilePicture')
+      .populate('dietitian', 'firstName lastName email phone')
+      .populate('paymentLink', 'planName planCategory durationDays amount finalAmount')
+      .populate('reviewedBy', 'firstName lastName email')
+      .sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['other_platform_payments'] }
+    );
 
     return NextResponse.json({ payments });
   } catch (error) {
@@ -153,9 +163,15 @@ export async function POST(request: NextRequest) {
 
     await otherPlatformPayment.save();
 
-    const populatedPayment = await OtherPlatformPayment.findById(otherPlatformPayment._id)
+    const populatedPayment = await withCache(
+      `other-platform-payments:${JSON.stringify(otherPlatformPayment._id)
       .populate('client', 'firstName lastName email phone')
-      .populate('paymentLink', 'planName planCategory durationDays amount finalAmount');
+      .populate('paymentLink', 'planName planCategory durationDays amount finalAmount')}`,
+      async () => await OtherPlatformPayment.findById(otherPlatformPayment._id)
+      .populate('client', 'firstName lastName email phone')
+      .populate('paymentLink', 'planName planCategory durationDays amount finalAmount').lean(),
+      { ttl: 120000, tags: ['other_platform_payments'] }
+    );
 
     return NextResponse.json({ 
       success: true, 

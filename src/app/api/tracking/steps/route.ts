@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import DailyTracking from '@/lib/db/models/DailyTracking';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/tracking/steps - Get today's steps
 export async function GET(request: NextRequest) {

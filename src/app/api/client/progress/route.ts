@@ -7,6 +7,7 @@ import ProgressEntry from "@/lib/db/models/ProgressEntry";
 import FoodLog from "@/lib/db/models/FoodLog";
 import ClientMealPlan from "@/lib/db/models/ClientMealPlan";
 import { startOfDay, endOfDay, format } from 'date-fns';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Helper to get date range based on filter
 function getStartDate(range: string): Date {
@@ -37,18 +38,30 @@ export async function GET(request: Request) {
     const startDate = getStartDate(range);
 
     // Get user data for current and target weight
-    const user = await User.findById(session.user.id).select(
+    const user = await withCache(
+      `client:progress:${JSON.stringify(session.user.id).select(
+      "weightKg targetWeightKg heightCm goals")}`,
+      async () => await User.findById(session.user.id).select(
       "weightKg targetWeightKg heightCm goals"
+    ).lean(),
+      { ttl: 120000, tags: ['client'] }
     );
 
     // Get all progress entries (for overall stats) - last year
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-    const allProgressEntries = await ProgressEntry.find({
+    const allProgressEntries = await withCache(
+      `client:progress:${JSON.stringify({
       user: session.user.id,
       recordedAt: { $gte: oneYearAgo }
-    }).sort({ recordedAt: -1 });
+    }).sort({ recordedAt: -1 })}`,
+      async () => await ProgressEntry.find({
+      user: session.user.id,
+      recordedAt: { $gte: oneYearAgo }
+    }).sort({ recordedAt: -1 }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     // Get weight entries
     const weightEntries = allProgressEntries
@@ -149,10 +162,17 @@ export async function GET(request: Request) {
     let todayIntake = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
     // 1. Check FoodLog first (manual food logging)
-    const todayFoodLog = await FoodLog.findOne({
+    const todayFoodLog = await withCache(
+      `client:progress:${JSON.stringify({
       client: session.user.id,
       date: { $gte: today, $lt: todayEnd }
-    });
+    })}`,
+      async () => await FoodLog.findOne({
+      client: session.user.id,
+      date: { $gte: today, $lt: todayEnd }
+    }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     if (todayFoodLog?.totalNutrition) {
       todayIntake.calories += todayFoodLog.totalNutrition.calories || 0;
@@ -337,10 +357,17 @@ export async function GET(request: Request) {
     }
 
     // Get calorie history from food logs
-    const foodLogs = await FoodLog.find({
+    const foodLogs = await withCache(
+      `client:progress:${JSON.stringify({
       client: session.user.id,
       date: { $gte: oneYearAgo }
-    }).select('date totalNutrition entries').sort({ date: -1 });
+    }).select('date totalNutrition entries').sort({ date: -1 })}`,
+      async () => await FoodLog.find({
+      client: session.user.id,
+      date: { $gte: oneYearAgo }
+    }).select('date totalNutrition entries').sort({ date: -1 }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     // Build nutrition history with macros
     const nutritionHistoryMap = new Map<string, { calories: number; protein: number; carbs: number; fat: number }>();

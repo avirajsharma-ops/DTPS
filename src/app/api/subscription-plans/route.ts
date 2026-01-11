@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import SubscriptionPlan from '@/lib/db/models/SubscriptionPlan';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/subscription-plans - Get all active subscription plans
 export async function GET(request: NextRequest) {
@@ -23,9 +24,19 @@ export async function GET(request: NextRequest) {
       query.category = category;
     }
 
-    const plans = await SubscriptionPlan.find(query)
-      .sort({ price: 1 })
-      .lean();
+    // Generate cache key based on query params
+    const cacheKey = `subscription-plans:${isActive || ''}:${category || ''}`;
+    
+    const plans = await withCache(
+      cacheKey,
+      async () => {
+        const plans = await SubscriptionPlan.find(query)
+          .sort({ price: 1 })
+          .lean();
+        return plans;
+      },
+      { ttl: 300000, tags: ['subscription-plans'] } // 5 minutes TTL
+    );
 
     return NextResponse.json({ plans });
 
@@ -60,6 +71,9 @@ export async function POST(request: NextRequest) {
     });
 
     await plan.save();
+
+    // Clear subscription-plans cache after creation
+    clearCacheByTag('subscription-plans');
 
     return NextResponse.json({
       success: true,

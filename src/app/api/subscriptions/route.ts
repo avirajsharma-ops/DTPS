@@ -8,6 +8,7 @@ import { UserRole } from '@/types';
 import { z } from 'zod';
 import Razorpay from 'razorpay';
 import { getPaymentCallbackUrl } from '@/lib/config';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Initialize Razorpay
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
@@ -34,12 +35,21 @@ export async function GET(request: NextRequest) {
     // Allow public access for payment success page
     if (paymentId) {
       await connectDB();
-      const subscription = await ClientSubscription.findOne({
+      const subscription = await withCache(
+      `subscriptions:${JSON.stringify({
         razorpayPaymentId: paymentId
       })
         .populate('client', 'firstName lastName email phone')
         .populate('dietitian', 'firstName lastName email')
-        .populate('plan');
+        .populate('plan')}`,
+      async () => await ClientSubscription.findOne({
+        razorpayPaymentId: paymentId
+      })
+        .populate('client', 'firstName lastName email phone')
+        .populate('dietitian', 'firstName lastName email')
+        .populate('plan').lean(),
+      { ttl: 120000, tags: ['subscriptions'] }
+    );
 
       if (!subscription) {
         return NextResponse.json(
@@ -83,11 +93,19 @@ export async function GET(request: NextRequest) {
 
     if (status) query.status = status;
 
-    const subscriptions = await ClientSubscription.find(query)
+    const subscriptions = await withCache(
+      `subscriptions:${JSON.stringify(query)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName email')
       .populate('plan')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })}`,
+      async () => await ClientSubscription.find(query)
+      .populate('client', 'firstName lastName email phone')
+      .populate('dietitian', 'firstName lastName email')
+      .populate('plan')
+      .sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['subscriptions'] }
+    );
 
     return NextResponse.json({
       success: true,
@@ -123,7 +141,11 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Get the plan details
-    const plan = await SubscriptionPlan.findById(validatedData.planId);
+    const plan = await withCache(
+      `subscriptions:${JSON.stringify(validatedData.planId)}`,
+      async () => await SubscriptionPlan.findById(validatedData.planId).lean(),
+      { ttl: 120000, tags: ['subscriptions'] }
+    );
     if (!plan) {
       return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
     }

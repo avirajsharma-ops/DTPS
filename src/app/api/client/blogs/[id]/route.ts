@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db/connection';
 import Blog from '@/lib/db/models/Blog';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Get single blog by ID or slug for public display
 export async function GET(
@@ -30,7 +31,8 @@ export async function GET(
     await Blog.findByIdAndUpdate(blog._id, { $inc: { views: 1 } });
 
     // Get related blogs (same category, excluding current)
-    const relatedBlogs = await Blog.find({
+    const relatedBlogs = await withCache(
+      `client:blogs:id:${JSON.stringify({
       _id: { $ne: blog._id },
       category: blog.category,
       isActive: true
@@ -38,7 +40,18 @@ export async function GET(
       .select('uuid slug title description category thumbnailImage author readTime publishedAt')
       .sort({ publishedAt: -1 })
       .limit(3)
-      .lean();
+      .lean()}`,
+      async () => await Blog.find({
+      _id: { $ne: blog._id },
+      category: blog.category,
+      isActive: true
+    })
+      .select('uuid slug title description category thumbnailImage author readTime publishedAt')
+      .sort({ publishedAt: -1 })
+      .limit(3)
+      .lean().lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     return NextResponse.json({ 
       blog,
@@ -64,7 +77,11 @@ export async function POST(
     
     await dbConnect();
 
-    const blog = await Blog.findById(id);
+    const blog = await withCache(
+      `client:blogs:id:${JSON.stringify(id)}`,
+      async () => await Blog.findById(id).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
     if (!blog) {
       return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
     }

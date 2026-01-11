@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import mongoose from 'mongoose';
 import Task from '@/lib/db/models/Task';
 import { logHistoryServer } from '@/lib/server/history';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/[id]/tasks/[taskId] - Get a specific task
 export async function GET(
@@ -20,13 +21,23 @@ export async function GET(
     const { id, taskId } = await params;
     await connectDB();
 
-    const task = await Task.findOne({
+    const task = await withCache(
+      `users:id:tasks:taskId:${JSON.stringify({
       _id: new mongoose.Types.ObjectId(taskId),
       client: new mongoose.Types.ObjectId(id)
     })
       .populate('dietitian', 'firstName lastName email')
       .populate('tags', 'name color icon')
-      .lean();
+      .lean()}`,
+      async () => await Task.findOne({
+      _id: new mongoose.Types.ObjectId(taskId),
+      client: new mongoose.Types.ObjectId(id)
+    })
+      .populate('dietitian', 'firstName lastName email')
+      .populate('tags', 'name color icon')
+      .lean().lean(),
+      { ttl: 60000, tags: ['users'] }
+    );
 
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
@@ -55,10 +66,17 @@ export async function PATCH(
     
     await connectDB();
 
-    const task = await Task.findOne({
+    const task = await withCache(
+      `users:id:tasks:taskId:${JSON.stringify({
       _id: new mongoose.Types.ObjectId(taskId),
       client: new mongoose.Types.ObjectId(id)
-    });
+    })}`,
+      async () => await Task.findOne({
+      _id: new mongoose.Types.ObjectId(taskId),
+      client: new mongoose.Types.ObjectId(id)
+    }).lean(),
+      { ttl: 60000, tags: ['users'] }
+    );
 
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
@@ -84,10 +102,17 @@ export async function PATCH(
     await task.save();
 
     // Populate for response
-    const updatedTask = await Task.findById(task._id)
+    const updatedTask = await withCache(
+      `users:id:tasks:taskId:${JSON.stringify(task._id)
       .populate('dietitian', 'firstName lastName email')
       .populate('tags', 'name color icon')
-      .lean();
+      .lean()}`,
+      async () => await Task.findById(task._id)
+      .populate('dietitian', 'firstName lastName email')
+      .populate('tags', 'name color icon')
+      .lean().lean(),
+      { ttl: 60000, tags: ['users'] }
+    );
 
     // Log history
     await logHistoryServer({

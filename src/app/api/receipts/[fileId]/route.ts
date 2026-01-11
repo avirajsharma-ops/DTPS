@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db/connection";
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export const dynamic = "force-dynamic";
 

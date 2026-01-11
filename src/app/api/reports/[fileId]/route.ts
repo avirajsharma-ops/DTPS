@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { MedicalInfo } from '@/lib/db/models';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/reports/[fileId] - Stream a file from GridFS
 export async function GET(
@@ -32,7 +33,11 @@ export async function GET(
     }
 
     // Find file to get contentType
-    const files = await bucket.find({ _id: id }).toArray();
+    const files = await withCache(
+      `reports:fileId:${JSON.stringify({ _id: id }).toArray()}`,
+      async () => await bucket.find({ _id: id }).toArray().lean(),
+      { ttl: 120000, tags: ['reports'] }
+    );
     if (!files || files.length === 0) {
       console.error('File not found in GridFS:', fileId);
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
@@ -101,7 +106,11 @@ export async function DELETE(
     const id = new mongoose.Types.ObjectId(fileId);
 
     // Check if file exists
-    const files = await bucket.find({ _id: id }).toArray();
+    const files = await withCache(
+      `reports:fileId:${JSON.stringify({ _id: id }).toArray()}`,
+      async () => await bucket.find({ _id: id }).toArray().lean(),
+      { ttl: 120000, tags: ['reports'] }
+    );
     if (!files || files.length === 0) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import SystemAlert from '@/lib/db/models/SystemAlert';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/system-alerts/[id] - Get single system alert
 export async function GET(
@@ -19,10 +20,17 @@ export async function GET(
     const { id } = await params;
     await connectDB();
 
-    const alert = await SystemAlert.findById(id)
+    const alert = await withCache(
+      `system-alerts:id:${JSON.stringify(id)
       .populate('createdBy', 'firstName lastName email')
       .populate('resolvedBy', 'firstName lastName email')
-      .lean();
+      .lean()}`,
+      async () => await SystemAlert.findById(id)
+      .populate('createdBy', 'firstName lastName email')
+      .populate('resolvedBy', 'firstName lastName email')
+      .lean().lean(),
+      { ttl: 120000, tags: ['system_alerts'] }
+    );
 
     if (!alert) {
       return NextResponse.json({ error: 'Alert not found' }, { status: 404 });

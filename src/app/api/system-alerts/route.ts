@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import SystemAlert from '@/lib/db/models/SystemAlert';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/system-alerts - Get system alerts
 export async function GET(request: NextRequest) {
@@ -87,7 +88,8 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Get alert stats
-    const stats = await SystemAlert.aggregate([
+    const stats = await withCache(
+      `system-alerts:${JSON.stringify([
       {
         $facet: {
           byType: [
@@ -119,7 +121,42 @@ export async function GET(request: NextRequest) {
           ]
         }
       }
-    ]);
+    ])}`,
+      async () => await SystemAlert.aggregate([
+      {
+        $facet: {
+          byType: [
+            { $group: { _id: '$type', count: { $sum: 1 } } }
+          ],
+          bySource: [
+            { $group: { _id: '$source', count: { $sum: 1 } } }
+          ],
+          byPriority: [
+            { $group: { _id: '$priority', count: { $sum: 1 } } }
+          ],
+          byStatus: [
+            { $group: { _id: '$status', count: { $sum: 1 } } }
+          ],
+          byCategory: [
+            { $group: { _id: '$category', count: { $sum: 1 } } }
+          ],
+          unreadCount: [
+            { $match: { isRead: false } },
+            { $count: 'count' }
+          ],
+          criticalCount: [
+            { $match: { priority: 'critical', status: 'new' } },
+            { $count: 'count' }
+          ],
+          todayCount: [
+            { $match: { createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) } } },
+            { $count: 'count' }
+          ]
+        }
+      }
+    ]),
+      { ttl: 120000, tags: ['system_alerts'] }
+    );
 
     return NextResponse.json({
       alerts,

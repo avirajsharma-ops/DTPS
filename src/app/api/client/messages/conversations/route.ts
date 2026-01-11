@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import Message from '@/lib/db/models/Message';
 import User from '@/lib/db/models/User';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/client/messages/conversations - Get list of conversations for client
 export async function GET(request: NextRequest) {
@@ -19,7 +20,8 @@ export async function GET(request: NextRequest) {
     const userId = new mongoose.Types.ObjectId(session.user.id);
 
     // Get all unique conversations
-    const conversations = await Message.aggregate([
+    const conversations = await withCache(
+      `client:messages:conversations:${JSON.stringify([
       {
         $match: {
           $or: [
@@ -90,14 +92,95 @@ export async function GET(request: NextRequest) {
       {
         $sort: { 'lastMessage.createdAt': -1 }
       }
-    ]);
+    ])}`,
+      async () => await Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { sender: userId },
+            { receiver: userId }
+          ]
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $eq: ['$sender', userId] },
+              '$receiver',
+              '$sender'
+            ]
+          },
+          lastMessage: { $first: '$$ROOT' },
+          unreadCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$receiver', userId] },
+                    { $eq: ['$isRead', false] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      {
+        $unwind: '$user'
+      },
+      {
+        $project: {
+          _id: 1,
+          user: {
+            _id: '$user._id',
+            firstName: '$user.firstName',
+            lastName: '$user.lastName',
+            avatar: '$user.avatar',
+            role: '$user.role'
+          },
+          lastMessage: {
+            content: '$lastMessage.content',
+            type: '$lastMessage.type',
+            createdAt: '$lastMessage.createdAt',
+            isRead: '$lastMessage.isRead'
+          },
+          unreadCount: 1
+        }
+      },
+      {
+        $sort: { 'lastMessage.createdAt': -1 }
+      }
+    ]),
+      { ttl: 30000, tags: ['client'] }
+    );
 
     // If no conversations exist, get assigned dietitian as potential conversation
     if (conversations.length === 0) {
-      const client = await User.findById(session.user.id)
+      const client = await withCache(
+      `client:messages:conversations:${JSON.stringify(session.user.id)
         .select('assignedDietitian assignedDietitians')
         .populate('assignedDietitian', 'firstName lastName avatar role')
-        .populate('assignedDietitians', 'firstName lastName avatar role');
+        .populate('assignedDietitians', 'firstName lastName avatar role')}`,
+      async () => await User.findById(session.user.id)
+        .select('assignedDietitian assignedDietitians')
+        .populate('assignedDietitian', 'firstName lastName avatar role')
+        .populate('assignedDietitians', 'firstName lastName avatar role').lean(),
+      { ttl: 30000, tags: ['client'] }
+    );
 
       const dietitians: any[] = [];
       

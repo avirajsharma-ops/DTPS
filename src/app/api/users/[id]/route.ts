@@ -6,6 +6,7 @@ import User from '@/lib/db/models/User';
 import Tag from '@/lib/db/models/Tag'; // Ensure Tag model is registered
 import Task from '@/lib/db/models/Task'; // Ensure Task model is registered
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/[id] - Get specific user
 export async function GET(
@@ -29,10 +30,17 @@ export async function GET(
       );
     }
 
-    const user = await User.findById(id)
+    const user = await withCache(
+      `users:id:${JSON.stringify(id)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email avatar')
-      .populate('tags', 'name description color icon');
+      .populate('tags', 'name description color icon')}`,
+      async () => await User.findById(id)
+      .select('-password')
+      .populate('assignedDietitian', 'firstName lastName email avatar')
+      .populate('tags', 'name description color icon').lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     if (!user) {
       return NextResponse.json(
@@ -152,7 +160,11 @@ export async function DELETE(
     await connectDB();
     const { id } = await params;
 
-    const user = await User.findById(id);
+    const user = await withCache(
+      `users:id:${JSON.stringify(id)}`,
+      async () => await User.findById(id).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -193,7 +205,11 @@ export async function PUT(
     await connectDB();
 
     // Fetch target user BEFORE permission check
-    const targetUser = await User.findById(id);
+    const targetUser = await withCache(
+      `users:id:${JSON.stringify(id)}`,
+      async () => await User.findById(id).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
     if (!targetUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -307,10 +323,17 @@ export async function PUT(
       }
       
       // Check if phone is already used by another user
-      const existingPhone = await User.findOne({ 
+      const existingPhone = await withCache(
+      `users:id:${JSON.stringify({ 
         phone: normalizedPhone,
         _id: { $ne: id }  // Exclude current user
-      });
+      })}`,
+      async () => await User.findOne({ 
+        phone: normalizedPhone,
+        _id: { $ne: id }  // Exclude current user
+      }).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
       if (existingPhone) {
         return NextResponse.json({ error: 'This phone number is already registered' }, { status: 400 });
       }
@@ -379,7 +402,11 @@ export async function POST(
     }
 
     await connectDB();
-    const user = await User.findById(id);
+    const user = await withCache(
+      `users:id:${JSON.stringify(id)}`,
+      async () => await User.findById(id).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/dietitians - Get all dietitians
 export async function GET(request: NextRequest) {
@@ -28,7 +29,11 @@ export async function GET(request: NextRequest) {
 
     // For clients, only show their assigned dietitian
     if (session.user.role === UserRole.CLIENT) {
-      const currentUser = await User.findById(session.user.id).select('assignedDietitian');
+      const currentUser = await withCache(
+      `users:dietitians:${JSON.stringify(session.user.id).select('assignedDietitian')}`,
+      async () => await User.findById(session.user.id).select('assignedDietitian').lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
       if (currentUser?.assignedDietitian) {
         // Override query to show only assigned dietitian
@@ -66,10 +71,17 @@ export async function GET(request: NextRequest) {
       selectFields += ' availability';
     }
 
-    const dietitians = await User.find(query)
+    const dietitians = await withCache(
+      `users:dietitians:${JSON.stringify(query)
       .select(selectFields)
       .sort({ firstName: 1, lastName: 1 })
-      .lean();
+      .lean()}`,
+      async () => await User.find(query)
+      .select(selectFields)
+      .sort({ firstName: 1, lastName: 1 })
+      .lean().lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     // Format the response
     const formattedDietitians = dietitians.map(dietitian => ({

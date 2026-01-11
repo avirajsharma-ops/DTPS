@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import WooCommerceClient from '@/lib/db/models/WooCommerceClient';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // POST /api/clients/update-passwords - Add passwords to all existing clients
 export async function POST(request: NextRequest) {
@@ -21,13 +22,23 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Get all clients without passwords
-    const clientsWithoutPasswords = await WooCommerceClient.find({
+    const clientsWithoutPasswords = await withCache(
+      `clients:update-passwords:${JSON.stringify({
       $or: [
         { password: { $exists: false } },
         { password: null },
         { password: '' }
       ]
-    }).sort({ createdAt: 1 });
+    }).sort({ createdAt: 1 })}`,
+      async () => await WooCommerceClient.find({
+      $or: [
+        { password: { $exists: false } },
+        { password: null },
+        { password: '' }
+      ]
+    }).sort({ createdAt: 1 }).lean(),
+      { ttl: 120000, tags: ['clients'] }
+    );
 
 
     let updatedCount = 0;
@@ -46,9 +57,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Also update any clients that have the default password
-    const clientsWithDefaultPassword = await WooCommerceClient.find({
+    const clientsWithDefaultPassword = await withCache(
+      `clients:update-passwords:${JSON.stringify({
       password: 'Password123'
-    }).sort({ createdAt: 1 });
+    }).sort({ createdAt: 1 })}`,
+      async () => await WooCommerceClient.find({
+      password: 'Password123'
+    }).sort({ createdAt: 1 }).lean(),
+      { ttl: 120000, tags: ['clients'] }
+    );
 
     for (let i = 0; i < clientsWithDefaultPassword.length; i++) {
       const client = clientsWithDefaultPassword[i];
@@ -106,10 +123,17 @@ export async function GET(request: NextRequest) {
     const clientsWithoutPasswords = totalClients - clientsWithPasswords;
 
     // Get sample clients with their passwords (first 5)
-    const sampleClients = await WooCommerceClient.find(passwordQuery)
+    const sampleClients = await withCache(
+      `clients:update-passwords:${JSON.stringify(passwordQuery)
     .select('name email password')
     .limit(5)
-    .lean();
+    .lean()}`,
+      async () => await WooCommerceClient.find(passwordQuery)
+    .select('name email password')
+    .limit(5)
+    .lean().lean(),
+      { ttl: 120000, tags: ['clients'] }
+    );
 
     return NextResponse.json({
       totalClients,

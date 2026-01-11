@@ -7,6 +7,7 @@ import Payment from '@/lib/db/models/Payment';
 import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import PaymentLink from '@/lib/db/models/PaymentLink';
 import { PaymentStatus, PaymentType, UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Get single payment details
 export async function GET(
@@ -22,11 +23,19 @@ export async function GET(
     await dbConnect();
     const { id } = await params;
 
-    const payment = await OtherPlatformPayment.findById(id)
+    const payment = await withCache(
+      `other-platform-payments:id:${JSON.stringify(id)
       .populate('client', 'firstName lastName email phone profilePicture')
       .populate('dietitian', 'firstName lastName email phone')
       .populate('paymentLink', 'planName planCategory durationDays amount finalAmount servicePlanId pricingTierId')
-      .populate('reviewedBy', 'firstName lastName email');
+      .populate('reviewedBy', 'firstName lastName email')}`,
+      async () => await OtherPlatformPayment.findById(id)
+      .populate('client', 'firstName lastName email phone profilePicture')
+      .populate('dietitian', 'firstName lastName email phone')
+      .populate('paymentLink', 'planName planCategory durationDays amount finalAmount servicePlanId pricingTierId')
+      .populate('reviewedBy', 'firstName lastName email').lean(),
+      { ttl: 120000, tags: ['other_platform_payments'] }
+    );
 
     if (!payment) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
@@ -67,8 +76,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
-    const otherPayment = await OtherPlatformPayment.findById(id)
-      .populate('paymentLink');
+    const otherPayment = await withCache(
+      `other-platform-payments:id:${JSON.stringify(id)
+      .populate('paymentLink')}`,
+      async () => await OtherPlatformPayment.findById(id)
+      .populate('paymentLink').lean(),
+      { ttl: 120000, tags: ['other_platform_payments'] }
+    );
 
     if (!otherPayment) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
@@ -165,11 +179,19 @@ export async function PUT(
       }
     }
 
-    const updatedPayment = await OtherPlatformPayment.findById(id)
+    const updatedPayment = await withCache(
+      `other-platform-payments:id:${JSON.stringify(id)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName email phone')
       .populate('paymentLink', 'planName planCategory durationDays amount finalAmount')
-      .populate('reviewedBy', 'firstName lastName email');
+      .populate('reviewedBy', 'firstName lastName email')}`,
+      async () => await OtherPlatformPayment.findById(id)
+      .populate('client', 'firstName lastName email phone')
+      .populate('dietitian', 'firstName lastName email phone')
+      .populate('paymentLink', 'planName planCategory durationDays amount finalAmount')
+      .populate('reviewedBy', 'firstName lastName email').lean(),
+      { ttl: 120000, tags: ['other_platform_payments'] }
+    );
 
     return NextResponse.json({ 
       success: true, 
@@ -199,7 +221,11 @@ export async function DELETE(
     await dbConnect();
     const { id } = await params;
 
-    const payment = await OtherPlatformPayment.findById(id);
+    const payment = await withCache(
+      `other-platform-payments:id:${JSON.stringify(id)}`,
+      async () => await OtherPlatformPayment.findById(id).lean(),
+      { ttl: 120000, tags: ['other_platform_payments'] }
+    );
     if (!payment) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
     }

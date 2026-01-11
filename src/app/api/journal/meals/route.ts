@@ -10,6 +10,7 @@ import DietTemplate from '@/lib/db/models/DietTemplate';
 import { format, differenceInDays } from 'date-fns';
 import { UserRole } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Helper to get date without time
 const getDateOnly = (date: Date | string): Date => {
@@ -86,7 +87,11 @@ export async function GET(request: NextRequest) {
     const date = dateParam ? getDateOnly(dateParam) : getDateOnly(new Date());
 
     // Fetch user's goals from the User database
-    const user = await User.findById(clientId).select('goals firstName lastName');
+    const user = await withCache(
+      `journal:meals:${JSON.stringify(clientId).select('goals firstName lastName')}`,
+      async () => await User.findById(clientId).select('goals firstName lastName').lean(),
+      { ttl: 120000, tags: ['journal'] }
+    );
     
     // Fetch user's targets from their profile goals
     const userGoals = user?.goals || {};
@@ -98,10 +103,17 @@ export async function GET(request: NextRequest) {
     };
 
     // Get journal entries for tracking consumed meals
-    const journal = await JournalTracking.findOne({
+    const journal = await withCache(
+      `journal:meals:${JSON.stringify({
       client: clientId,
       date: date
-    });
+    })}`,
+      async () => await JournalTracking.findOne({
+      client: clientId,
+      date: date
+    }).lean(),
+      { ttl: 120000, tags: ['journal'] }
+    );
 
     // Create a map of consumed meals from journal (by mealPlanId)
     const journalMealsMap = new Map<string, any>();
@@ -118,12 +130,21 @@ export async function GET(request: NextRequest) {
 
     // Always check for assigned diet plans first
     // First check ClientMealPlan (assigned diet templates or direct meal plans)
-    const clientMealPlan = await ClientMealPlan.findOne({
+    const clientMealPlan = await withCache(
+      `journal:meals:${JSON.stringify({
       clientId: clientId,
       status: 'active',
       startDate: { $lte: date },
       endDate: { $gte: date }
-    }).populate('templateId');
+    }).populate('templateId')}`,
+      async () => await ClientMealPlan.findOne({
+      clientId: clientId,
+      status: 'active',
+      startDate: { $lte: date },
+      endDate: { $gte: date }
+    }).populate('templateId').lean(),
+      { ttl: 120000, tags: ['journal'] }
+    );
 
     if (clientMealPlan) {
       // Calculate which day of the plan this is
@@ -283,7 +304,8 @@ export async function GET(request: NextRequest) {
 
     // If still no meals, check legacy MealPlan model
     if (meals.length === 0) {
-      const activeMealPlan = await MealPlan.findOne({
+      const activeMealPlan = await withCache(
+      `journal:meals:${JSON.stringify({
         client: clientId,
         isActive: true,
         startDate: { $lte: date },
@@ -293,7 +315,20 @@ export async function GET(request: NextRequest) {
         { path: 'meals.lunch', model: 'Recipe', select: 'name calories protein carbs fat' },
         { path: 'meals.dinner', model: 'Recipe', select: 'name calories protein carbs fat' },
         { path: 'meals.snacks', model: 'Recipe', select: 'name calories protein carbs fat' }
-      ]);
+      ])}`,
+      async () => await MealPlan.findOne({
+        client: clientId,
+        isActive: true,
+        startDate: { $lte: date },
+        endDate: { $gte: date }
+      }).populate([
+        { path: 'meals.breakfast', model: 'Recipe', select: 'name calories protein carbs fat' },
+        { path: 'meals.lunch', model: 'Recipe', select: 'name calories protein carbs fat' },
+        { path: 'meals.dinner', model: 'Recipe', select: 'name calories protein carbs fat' },
+        { path: 'meals.snacks', model: 'Recipe', select: 'name calories protein carbs fat' }
+      ]).lean(),
+      { ttl: 120000, tags: ['journal'] }
+    );
 
       if (activeMealPlan) {
         // Calculate which day of the meal plan this is

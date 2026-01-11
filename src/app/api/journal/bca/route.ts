@@ -7,6 +7,7 @@ import { UserRole } from '@/types';
 import mongoose from 'mongoose';
 import { logHistoryServer } from '@/lib/server/history';
 import { format } from 'date-fns';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Helper to check if user has permission to access client data
 const checkPermission = (session: any, clientId?: string): boolean => {
@@ -57,7 +58,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Get journal entries for this client with BCA data
-    const journals = await JournalTracking.find(query).sort({ date: -1 });
+    const journals = await withCache(
+      `journal:bca:${JSON.stringify(query).sort({ date: -1 })}`,
+      async () => await JournalTracking.find(query).sort({ date: -1 }).lean(),
+      { ttl: 120000, tags: ['journal'] }
+    );
 
     // Flatten all BCA entries with their dates
     const allBCA: any[] = [];

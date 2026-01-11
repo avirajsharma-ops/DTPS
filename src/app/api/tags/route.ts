@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Tag from '@/lib/db/models/Tag';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/tags - Get all tags
 export async function GET(request: NextRequest) {
@@ -14,9 +15,15 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const tags = await Tag.find()
+    const tags = await withCache(
+      `tags:${JSON.stringify()
       .sort({ createdAt: -1 })
-      .lean();
+      .lean()}`,
+      async () => await Tag.find()
+      .sort({ createdAt: -1 })
+      .lean().lean(),
+      { ttl: 120000, tags: ['tags'] }
+    );
 
     return NextResponse.json({ 
       tags,
@@ -49,7 +56,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if tag already exists
-    const existingTag = await Tag.findOne({ name: name.trim() });
+    const existingTag = await withCache(
+      `tags:${JSON.stringify({ name: name.trim() })}`,
+      async () => await Tag.findOne({ name: name.trim() }).lean(),
+      { ttl: 120000, tags: ['tags'] }
+    );
     if (existingTag) {
       return NextResponse.json({ 
         error: 'Tag with this name already exists' 

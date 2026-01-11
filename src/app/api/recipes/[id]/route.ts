@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Recipe from '@/lib/db/models/Recipe';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 /* -------- GET SINGLE -------- */
 export async function GET(
@@ -62,7 +63,11 @@ export async function PUT(
     await connectDB();
     const data = await req.json();
 
-    const recipe = await Recipe.findById(id);
+    const recipe = await withCache(
+      `recipes:id:${JSON.stringify(id)}`,
+      async () => await Recipe.findById(id).lean(),
+      { ttl: 120000, tags: ['recipes'] }
+    );
     if (!recipe)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
@@ -93,7 +98,11 @@ export async function DELETE(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
-    const recipe = await Recipe.findById(id);
+    const recipe = await withCache(
+      `recipes:id:${JSON.stringify(id)}`,
+      async () => await Recipe.findById(id).lean(),
+      { ttl: 120000, tags: ['recipes'] }
+    );
     if (!recipe)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
 

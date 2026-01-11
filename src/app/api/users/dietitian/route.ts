@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/dietitian - Get assigned dietitian for current client
 export async function GET(request: NextRequest) {
@@ -21,7 +22,11 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Get current user to find assigned dietitian
-    const currentUser = await User.findById(session.user.id);
+    const currentUser = await withCache(
+      `users:dietitian:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
     if (!currentUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -34,8 +39,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get assigned dietitian details
-    const dietitian = await User.findById(currentUser.assignedDietitian)
-      .select('firstName lastName email phone avatar bio credentials specializations experience consultationFee');
+    const dietitian = await withCache(
+      `users:dietitian:${JSON.stringify(currentUser.assignedDietitian)
+      .select('firstName lastName email phone avatar bio credentials specializations experience consultationFee')}`,
+      async () => await User.findById(currentUser.assignedDietitian)
+      .select('firstName lastName email phone avatar bio credentials specializations experience consultationFee').lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     if (!dietitian) {
       return NextResponse.json({ 

@@ -36,50 +36,34 @@ export function GlobalFetchInterceptor() {
       // Get the URL string
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
       
-      // Only intercept API calls and same-origin requests
+      // Check if it's an API call
       const isApiCall = url.startsWith('/api') || url.startsWith(window.location.origin + '/api');
       const isAuthCall = url.includes('/api/auth');
+      const isSameOrigin = url.startsWith('/') || url.startsWith(window.location.origin);
       
-      // Skip interception for external URLs, auth calls, and non-API calls
-      if (!isApiCall || isAuthCall) {
+      // For external URLs, pass through without modification
+      if (!isSameOrigin) {
         return originalFetch(input, init);
       }
 
-      // Add cache-busting and credential headers for API calls
+      // Add cache-busting headers to ALL same-origin requests for maximum freshness
       const modifiedInit: RequestInit = {
         ...init,
         credentials: 'same-origin',
         headers: {
           ...init?.headers,
-          // Only add cache headers if not already set
-          ...(!(init?.headers as Record<string, string>)?.['Cache-Control'] && {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-          }),
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
         },
       };
 
       try {
         const response = await originalFetch(input, modifiedInit);
         
-        // Retry on 401 Unauthorized (session might not be ready)
-        if (response.status === 401 && retriesLeft > 0 && !isAuthCall) {
-          // Clone the response for reading (in case we need to return it)
-          const clonedResponse = response.clone();
-          
-          // Check if it's a session-related 401
-          try {
-            const data = await clonedResponse.json();
-            // If it's a "not authenticated" type error, retry
-            if (data?.error?.includes('authenticated') || data?.error?.includes('Unauthorized') || data?.message?.includes('authenticated')) {
-              await sleep(RETRY_DELAY * (MAX_RETRIES - retriesLeft + 1));
-              return fetchWithRetry(input, init, retriesLeft - 1);
-            }
-          } catch {
-            // If we can't parse JSON, still retry
-            await sleep(RETRY_DELAY * (MAX_RETRIES - retriesLeft + 1));
-            return fetchWithRetry(input, init, retriesLeft - 1);
-          }
+        // Retry on 401 Unauthorized (session might not be ready) - skip for auth calls
+        if (response.status === 401 && retriesLeft > 0 && isApiCall && !isAuthCall) {
+          await sleep(RETRY_DELAY * (MAX_RETRIES - retriesLeft + 1));
+          return fetchWithRetry(input, init, retriesLeft - 1);
         }
         
         // Retry on server errors

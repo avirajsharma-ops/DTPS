@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import { MedicalInfo } from '@/lib/db/models';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/[id]/medical - Get medical info for user
 export async function GET(
@@ -19,7 +20,11 @@ export async function GET(
     await connectDB();
     const { id } = await params;
 
-    const medicalInfo = await MedicalInfo.findOne({ userId: id });
+    const medicalInfo = await withCache(
+      `users:id:medical:${JSON.stringify({ userId: id })}`,
+      async () => await MedicalInfo.findOne({ userId: id }).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     if (!medicalInfo) {
       return NextResponse.json({ medicalInfo: null });

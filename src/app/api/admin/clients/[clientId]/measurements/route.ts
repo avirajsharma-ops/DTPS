@@ -5,6 +5,7 @@ import dbConnect from "@/lib/db/connection";
 import ProgressEntry from "@/lib/db/models/ProgressEntry";
 import JournalTracking from "@/lib/db/models/JournalTracking";
 import User from "@/lib/db/models/User";
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(
   request: Request,
@@ -26,16 +27,27 @@ export async function GET(
     await dbConnect();
 
     // Verify client exists
-    const client = await User.findById(clientId);
+    const client = await withCache(
+      `admin:clients:clientId:measurements:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!client) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
     // Get measurements from JournalTracking
-    const journalEntries = await JournalTracking.find({
+    const journalEntries = await withCache(
+      `admin:clients:clientId:measurements:${JSON.stringify({
       client: clientId,
       measurements: { $exists: true, $ne: [] }
-    }).sort({ date: -1 });
+    }).sort({ date: -1 })}`,
+      async () => await JournalTracking.find({
+      client: clientId,
+      measurements: { $exists: true, $ne: [] }
+    }).sort({ date: -1 }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     // Group by date from JournalTracking
     const measurementsByDate = new Map<string, any>();
@@ -62,10 +74,17 @@ export async function GET(
 
     // Also get from ProgressEntry for backward compatibility
     const measurementTypes = ['waist', 'hips', 'chest', 'arms', 'thighs'];
-    const progressEntries = await ProgressEntry.find({
+    const progressEntries = await withCache(
+      `admin:clients:clientId:measurements:${JSON.stringify({
       user: clientId,
       type: { $in: measurementTypes }
-    }).sort({ recordedAt: -1 });
+    }).sort({ recordedAt: -1 })}`,
+      async () => await ProgressEntry.find({
+      user: clientId,
+      type: { $in: measurementTypes }
+    }).sort({ recordedAt: -1 }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     for (const entry of progressEntries) {
       const dateKey = new Date(entry.recordedAt).toISOString().split('T')[0];
@@ -124,7 +143,11 @@ export async function POST(
     await dbConnect();
 
     // Verify client exists
-    const client = await User.findById(clientId);
+    const client = await withCache(
+      `admin:clients:clientId:measurements:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!client) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
@@ -244,7 +267,11 @@ export async function DELETE(
     await dbConnect();
 
     // Get the entry to find the date
-    const entry = await ProgressEntry.findById(measurementId);
+    const entry = await withCache(
+      `admin:clients:clientId:measurements:${JSON.stringify(measurementId)}`,
+      async () => await ProgressEntry.findById(measurementId).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!entry) {
       return NextResponse.json({ error: "Measurement not found" }, { status: 404 });
     }

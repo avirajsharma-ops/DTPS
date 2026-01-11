@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db/connection";
 import JournalTracking from "@/lib/db/models/JournalTracking";
 import User from "@/lib/db/models/User";
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Get all assigned tasks for a date
 export async function GET(request: Request) {
@@ -27,10 +28,17 @@ export async function GET(request: Request) {
         nextDay.setDate(nextDay.getDate() + 1);
 
         // Get today's journal
-        const journal = await JournalTracking.findOne({
+        const journal = await withCache(
+      `client:tasks:${JSON.stringify({
             client: session.user.id,
             date: { $gte: targetDate, $lt: nextDay }
-        });
+        })}`,
+      async () => await JournalTracking.findOne({
+            client: session.user.id,
+            date: { $gte: targetDate, $lt: nextDay }
+        }).lean(),
+      { ttl: 60000, tags: ['client'] }
+    );
 
         if (journal) {
         }
@@ -237,10 +245,17 @@ export async function PATCH(request: Request) {
                 }
 
                 // First get the journal to update the specific activity
-                const journal = await JournalTracking.findOne({
+                const journal = await withCache(
+      `client:tasks:${JSON.stringify({
                     client: session.user.id,
                     date: { $gte: targetDate, $lt: nextDay }
-                });
+                })}`,
+      async () => await JournalTracking.findOne({
+                    client: session.user.id,
+                    date: { $gte: targetDate, $lt: nextDay }
+                }).lean(),
+      { ttl: 60000, tags: ['client'] }
+    );
 
                 if (!journal || !journal.assignedActivities?.activities?.[activityIndex]) {
                     return NextResponse.json({ error: "Activity not found" }, { status: 404 });

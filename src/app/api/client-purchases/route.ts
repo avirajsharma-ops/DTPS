@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import dbConnect from '@/lib/db/connect';
 import { ClientPurchase } from '@/lib/db/models/ServicePlan';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Fetch client purchases
 export async function GET(request: NextRequest) {
@@ -38,12 +39,21 @@ export async function GET(request: NextRequest) {
       query.endDate = { $gte: new Date() };
     }
 
-    const purchases = await ClientPurchase.find(query)
+    const purchases = await withCache(
+      `client-purchases:${JSON.stringify(query)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName')
       .populate('servicePlan', 'name category')
       .populate('paymentLink', 'razorpayPaymentLinkId status paidAt')
-      .sort({ purchaseDate: -1 });
+      .sort({ purchaseDate: -1 })}`,
+      async () => await ClientPurchase.find(query)
+      .populate('client', 'firstName lastName email phone')
+      .populate('dietitian', 'firstName lastName')
+      .populate('servicePlan', 'name category')
+      .populate('paymentLink', 'razorpayPaymentLinkId status paidAt')
+      .sort({ purchaseDate: -1 }).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
 
     // Add remaining days to each purchase
     const purchasesWithInfo = purchases.map(purchase => {
@@ -164,7 +174,11 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get current purchase to check existing daysUsed
-    const currentPurchase = await ClientPurchase.findById(purchaseId);
+    const currentPurchase = await withCache(
+      `client-purchases:${JSON.stringify(purchaseId)}`,
+      async () => await ClientPurchase.findById(purchaseId).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
     if (!currentPurchase) {
       return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
     }

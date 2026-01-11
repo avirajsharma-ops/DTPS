@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import WooCommerceClient from '@/lib/db/models/WooCommerceClient';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,11 +30,19 @@ export async function GET(request: NextRequest) {
     if (type === 'clients' || type === 'all') {
       // Get clients with pagination
       const skip = (page - 1) * per_page;
-      const clients = await WooCommerceClient.find({})
+      const clients = await withCache(
+      `woocommerce:from-db:${JSON.stringify({})
         .sort({ totalSpent: -1 })
         .skip(skip)
         .limit(per_page)
-        .lean();
+        .lean()}`,
+      async () => await WooCommerceClient.find({})
+        .sort({ totalSpent: -1 })
+        .skip(skip)
+        .limit(per_page)
+        .lean().lean(),
+      { ttl: 120000, tags: ['woocommerce'] }
+    );
 
       // Get total count
       const totalClients = await WooCommerceClient.countDocuments({});
@@ -67,9 +76,15 @@ export async function GET(request: NextRequest) {
     if (type === 'orders' || type === 'all') {
       // Get orders from all clients
       const skip = (page - 1) * per_page;
-      const clientsWithOrders = await WooCommerceClient.find({})
+      const clientsWithOrders = await withCache(
+      `woocommerce:from-db:${JSON.stringify({})
         .sort({ lastOrderDate: -1 })
-        .lean();
+        .lean()}`,
+      async () => await WooCommerceClient.find({})
+        .sort({ lastOrderDate: -1 })
+        .lean().lean(),
+      { ttl: 120000, tags: ['woocommerce'] }
+    );
 
       // Flatten all orders from all clients
       let allOrders: any[] = [];
@@ -124,7 +139,8 @@ export async function GET(request: NextRequest) {
       const totalClients = await WooCommerceClient.countDocuments({});
 
       // Aggregate data
-      const aggregation = await WooCommerceClient.aggregate([
+      const aggregation = await withCache(
+      `woocommerce:from-db:${JSON.stringify([
         {
           $group: {
             _id: null,
@@ -137,7 +153,23 @@ export async function GET(request: NextRequest) {
             lastSync: { $max: '$lastSyncDate' }
           }
         }
-      ]);
+      ])}`,
+      async () => await WooCommerceClient.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalOrders: { $sum: '$totalOrders' },
+            processingOrders: { $sum: '$processingOrders' },
+            completedOrders: { $sum: '$completedOrders' },
+            totalRevenue: { $sum: '$totalSpent' },
+            processingRevenue: { $sum: '$processingAmount' },
+            completedRevenue: { $sum: '$completedAmount' },
+            lastSync: { $max: '$lastSyncDate' }
+          }
+        }
+      ]),
+      { ttl: 120000, tags: ['woocommerce'] }
+    );
 
       const stats = aggregation[0] || {};
 

@@ -6,6 +6,7 @@ import User from '@/lib/db/models/User';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import Appointment from '@/lib/db/models/Appointment';
 import { AppointmentStatus, UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/admin/dietitians/[dietitianId] - Get full dietitian details with client progress
 export async function GET(
@@ -26,8 +27,13 @@ export async function GET(
     await connectDB();
     const { dietitianId } = await params;
 
-    const dietitian = await User.findById(dietitianId)
-      .select('-password');
+    const dietitian = await withCache(
+      `admin:dietitians:dietitianId:${JSON.stringify(dietitianId)
+      .select('-password')}`,
+      async () => await User.findById(dietitianId)
+      .select('-password').lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     if (!dietitian) {
       return NextResponse.json({ error: 'Dietitian not found' }, { status: 404 });
@@ -38,7 +44,8 @@ export async function GET(
     }
 
     // Get assigned clients with their progress
-    const assignedClients = await User.find({
+    const assignedClients = await withCache(
+      `admin:dietitians:dietitianId:${JSON.stringify({
       role: UserRole.CLIENT,
       $or: [
         { assignedDietitian: dietitianId },
@@ -46,7 +53,18 @@ export async function GET(
       ]
     })
       .select('firstName lastName email avatar phone status createdAt weight height healthGoals generalGoal onboardingCompleted')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })}`,
+      async () => await User.find({
+      role: UserRole.CLIENT,
+      $or: [
+        { assignedDietitian: dietitianId },
+        { assignedDietitians: dietitianId }
+      ]
+    })
+      .select('firstName lastName email avatar phone status createdAt weight height healthGoals generalGoal onboardingCompleted')
+      .sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     // Get client progress stats
     const clientsWithProgress = await Promise.all(
@@ -58,11 +76,19 @@ export async function GET(
         });
 
         // Get latest meal plan
-        const latestMealPlan = await ClientMealPlan.findOne({
+        const latestMealPlan = await withCache(
+      `admin:dietitians:dietitianId:${JSON.stringify({
           clientId: client._id
         })
           .populate('templateId', 'name')
-          .sort({ createdAt: -1 });
+          .sort({ createdAt: -1 })}`,
+      async () => await ClientMealPlan.findOne({
+          clientId: client._id
+        })
+          .populate('templateId', 'name')
+          .sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
         // Get appointment count
         const appointmentCount = await Appointment.countDocuments({
@@ -71,12 +97,21 @@ export async function GET(
         });
 
         // Get upcoming appointment
-        const upcomingAppointment = await Appointment.findOne({
+        const upcomingAppointment = await withCache(
+      `admin:dietitians:dietitianId:${JSON.stringify({
           client: client._id,
           dietitian: dietitianId,
           scheduledAt: { $gte: new Date() },
           status: AppointmentStatus.SCHEDULED
-        }).sort({ scheduledAt: 1 });
+        }).sort({ scheduledAt: 1 })}`,
+      async () => await Appointment.findOne({
+          client: client._id,
+          dietitian: dietitianId,
+          scheduledAt: { $gte: new Date() },
+          status: AppointmentStatus.SCHEDULED
+        }).sort({ scheduledAt: 1 }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
         return {
           ...client.toObject(),

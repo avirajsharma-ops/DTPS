@@ -11,6 +11,7 @@ import { logHistoryServer } from '@/lib/server/history';
 import { logActivity, logApiError } from '@/lib/utils/activityLogger';
 import { SSEManager } from '@/lib/realtime/sse-manager';
 import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/appointments - Get appointments for current user
 export async function GET(request: NextRequest) {
@@ -107,14 +108,25 @@ export async function GET(request: NextRequest) {
       query.scheduledAt = { ...query.scheduledAt, $gte: todayStart };
     }
 
-    const appointments = await Appointment.find(query)
-      .populate('dietitian', 'firstName lastName email avatar')
-      .populate('client', 'firstName lastName email avatar')
-      .sort({ scheduledAt: 1 })
-      .limit(limit)
-      .skip((page - 1) * limit);
+    // Generate cache key based on user and query params
+    const cacheKey = `appointments:${session.user.id}:${session.user.role}:${status || ''}:${date || ''}:${search || ''}:${dietitianId || ''}:${page}:${limit}:${includeAll}`;
+    
+    const { appointments, total } = await withCache(
+      cacheKey,
+      async () => {
+        const appointments = await Appointment.find(query)
+          .populate('dietitian', 'firstName lastName email avatar')
+          .populate('client', 'firstName lastName email avatar')
+          .sort({ scheduledAt: 1 })
+          .limit(limit)
+          .skip((page - 1) * limit);
 
-    const total = await Appointment.countDocuments(query);
+        const total = await Appointment.countDocuments(query);
+        return { appointments, total };
+      },
+      { ttl: 60000, tags: ['appointments'] } // 1 minute TTL
+    );
+
     return NextResponse.json({
       appointments,
       pagination: {
@@ -276,6 +288,9 @@ export async function POST(request: NextRequest) {
     }
 
     await appointment.save();
+
+    // Clear appointments cache after creation
+    clearCacheByTag('appointments');
 
     // Populate the created appointment
     await appointment.populate('dietitian', 'firstName lastName email avatar');

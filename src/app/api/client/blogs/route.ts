@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db/connection';
 import Blog from '@/lib/db/models/Blog';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Fetch all active blogs for public display
 export async function GET(request: NextRequest) {
@@ -30,11 +31,19 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const blogs = await Blog.find(query)
+    const blogs = await withCache(
+      `client:blogs:${JSON.stringify(query)
       .select('uuid slug title description category featuredImage thumbnailImage author readTime tags isFeatured publishedAt createdAt views likes')
       .sort({ isFeatured: -1, displayOrder: 1, publishedAt: -1 })
       .limit(limit)
-      .lean();
+      .lean()}`,
+      async () => await Blog.find(query)
+      .select('uuid slug title description category featuredImage thumbnailImage author readTime tags isFeatured publishedAt createdAt views likes')
+      .sort({ isFeatured: -1, displayOrder: 1, publishedAt: -1 })
+      .limit(limit)
+      .lean().lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     // Get unique categories for filtering
     const categories = await Blog.distinct('category', { isActive: true });

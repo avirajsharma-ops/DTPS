@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import connectDB from '@/lib/db/connection';
 import { WatiContact } from '@/lib/db/models';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(req: NextRequest) {
   await connectDB();
@@ -24,9 +25,15 @@ export async function GET(req: NextRequest) {
   const total = await WatiContact.countDocuments(query);
 
   // Fetch minimal fields and compute level from customParams if not set
-  const docs = await WatiContact.find(query)
+  const docs = await withCache(
+      `wati-contacts:${JSON.stringify(query)
     .select('firstName fullName phone level customParams')
-    .lean();
+    .lean()}`,
+      async () => await WatiContact.find(query)
+    .select('firstName fullName phone level customParams')
+    .lean().lean(),
+      { ttl: 120000, tags: ['wati_contacts'] }
+    );
 
   const withLevel = docs.map((d: any) => {
     let derived = typeof d.level === 'number' ? d.level : undefined;

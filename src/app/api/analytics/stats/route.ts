@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import Appointment from '@/lib/db/models/Appointment';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/analytics/stats - Get real analytics data
 export async function GET(request: NextRequest) {
@@ -52,15 +53,23 @@ export async function GET(request: NextRequest) {
 
     if (isAdmin) {
       // Calculate total revenue from WooCommerce data
-      const revenueAggregation = await User.aggregate([
+      const revenueAggregation = await withCache(
+      `analytics:stats:${JSON.stringify([
         { $match: { role: 'client', 'wooCommerceData.totalSpent': { $exists: true } } },
         { $group: { _id: null, totalRevenue: { $sum: '$wooCommerceData.totalSpent' } } }
-      ]);
+      ])}`,
+      async () => await User.aggregate([
+        { $match: { role: 'client', 'wooCommerceData.totalSpent': { $exists: true } } },
+        { $group: { _id: null, totalRevenue: { $sum: '$wooCommerceData.totalSpent' } } }
+      ]),
+      { ttl: 120000, tags: ['analytics'] }
+    );
       totalRevenue = revenueAggregation[0]?.totalRevenue || 0;
 
       // Calculate monthly revenue (current month)
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const monthlyRevenueAgg = await User.aggregate([
+      const monthlyRevenueAgg = await withCache(
+      `analytics:stats:${JSON.stringify([
         { 
           $match: { 
             role: 'client', 
@@ -71,11 +80,26 @@ export async function GET(request: NextRequest) {
           } 
         },
         { $group: { _id: null, monthlyRevenue: { $sum: '$wooCommerceData.totalSpent' } } }
-      ]);
+      ])}`,
+      async () => await User.aggregate([
+        { 
+          $match: { 
+            role: 'client', 
+            'wooCommerceData.lastOrderDate': { 
+              $gte: startOfMonth,
+              $lt: new Date(today.getFullYear(), today.getMonth() + 1, 1)
+            }
+          } 
+        },
+        { $group: { _id: null, monthlyRevenue: { $sum: '$wooCommerceData.totalSpent' } } }
+      ]),
+      { ttl: 120000, tags: ['analytics'] }
+    );
       monthlyRevenue = monthlyRevenueAgg[0]?.monthlyRevenue || 0;
 
       // Calculate average order value
-      const avgOrderAgg = await User.aggregate([
+      const avgOrderAgg = await withCache(
+      `analytics:stats:${JSON.stringify([
         { $match: { role: 'client', 'wooCommerceData.totalOrders': { $gt: 0 } } },
         { 
           $group: { 
@@ -84,7 +108,19 @@ export async function GET(request: NextRequest) {
             totalRevenue: { $sum: '$wooCommerceData.totalSpent' }
           } 
         }
-      ]);
+      ])}`,
+      async () => await User.aggregate([
+        { $match: { role: 'client', 'wooCommerceData.totalOrders': { $gt: 0 } } },
+        { 
+          $group: { 
+            _id: null, 
+            totalOrders: { $sum: '$wooCommerceData.totalOrders' },
+            totalRevenue: { $sum: '$wooCommerceData.totalSpent' }
+          } 
+        }
+      ]),
+      { ttl: 120000, tags: ['analytics'] }
+    );
       avgOrderValue = avgOrderAgg[0] 
         ? avgOrderAgg[0].totalRevenue / avgOrderAgg[0].totalOrders 
         : 0;
@@ -95,7 +131,8 @@ export async function GET(request: NextRequest) {
         const monthStart = new Date(today.getFullYear(), today.getMonth() - i, 1);
         const monthEnd = new Date(today.getFullYear(), today.getMonth() - i + 1, 0);
         
-        const monthRevenue = await User.aggregate([
+        const monthRevenue = await withCache(
+      `analytics:stats:${JSON.stringify([
           { 
             $match: { 
               role: 'client', 
@@ -106,7 +143,21 @@ export async function GET(request: NextRequest) {
             } 
           },
           { $group: { _id: null, revenue: { $sum: '$wooCommerceData.totalSpent' } } }
-        ]);
+        ])}`,
+      async () => await User.aggregate([
+          { 
+            $match: { 
+              role: 'client', 
+              'wooCommerceData.lastOrderDate': { 
+                $gte: monthStart,
+                $lte: monthEnd
+              }
+            } 
+          },
+          { $group: { _id: null, revenue: { $sum: '$wooCommerceData.totalSpent' } } }
+        ]),
+      { ttl: 120000, tags: ['analytics'] }
+    );
 
         revenueByMonth.push({
           month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
@@ -137,10 +188,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Appointment types distribution
-    const appointmentTypes = await Appointment.aggregate([
+    const appointmentTypes = await withCache(
+      `analytics:stats:${JSON.stringify([
       { $group: { _id: '$type', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
-    ]);
+    ])}`,
+      async () => await Appointment.aggregate([
+      { $group: { _id: '$type', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]),
+      { ttl: 120000, tags: ['analytics'] }
+    );
 
     // Client progress (mock data for now)
     const clientProgress = [

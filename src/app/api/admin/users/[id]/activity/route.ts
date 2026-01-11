@@ -9,6 +9,7 @@ import Payment from '@/lib/db/models/Payment';
 import FoodLog from '@/lib/db/models/FoodLog';
 import MealPlan from '@/lib/db/models/MealPlan';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(
   request: NextRequest,
@@ -27,7 +28,11 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
     }
 
-    const exists = await User.findById(id).select('_id');
+    const exists = await withCache(
+      `admin:users:id:activity:${JSON.stringify(id).select('_id')}`,
+      async () => await User.findById(id).select('_id').lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!exists) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

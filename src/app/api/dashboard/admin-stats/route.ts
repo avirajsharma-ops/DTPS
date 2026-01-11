@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import Appointment from '@/lib/db/models/Appointment';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/dashboard/admin-stats - Get real admin dashboard statistics
 export async function GET(request: NextRequest) {
@@ -52,14 +53,22 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate total revenue from WooCommerce data
-    const revenueAggregation = await User.aggregate([
+    const revenueAggregation = await withCache(
+      `dashboard:admin-stats:${JSON.stringify([
       { $match: { role: 'client', 'wooCommerceData.totalSpent': { $exists: true } } },
       { $group: { _id: null, totalRevenue: { $sum: '$wooCommerceData.totalSpent' } } }
-    ]);
+    ])}`,
+      async () => await User.aggregate([
+      { $match: { role: 'client', 'wooCommerceData.totalSpent': { $exists: true } } },
+      { $group: { _id: null, totalRevenue: { $sum: '$wooCommerceData.totalSpent' } } }
+    ]),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
     const totalRevenue = revenueAggregation[0]?.totalRevenue || 0;
 
     // Calculate monthly revenue (current month)
-    const monthlyRevenueAggregation = await User.aggregate([
+    const monthlyRevenueAggregation = await withCache(
+      `dashboard:admin-stats:${JSON.stringify([
       { 
         $match: { 
           role: 'client', 
@@ -70,11 +79,26 @@ export async function GET(request: NextRequest) {
         } 
       },
       { $group: { _id: null, monthlyRevenue: { $sum: '$wooCommerceData.totalSpent' } } }
-    ]);
+    ])}`,
+      async () => await User.aggregate([
+      { 
+        $match: { 
+          role: 'client', 
+          'wooCommerceData.lastOrderDate': { 
+            $gte: startOfMonth,
+            $lt: endOfToday
+          }
+        } 
+      },
+      { $group: { _id: null, monthlyRevenue: { $sum: '$wooCommerceData.totalSpent' } } }
+    ]),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
     const monthlyRevenue = monthlyRevenueAggregation[0]?.monthlyRevenue || 0;
 
     // Get average order value
-    const avgOrderAggregation = await User.aggregate([
+    const avgOrderAggregation = await withCache(
+      `dashboard:admin-stats:${JSON.stringify([
       { $match: { role: 'client', 'wooCommerceData.totalOrders': { $gt: 0 } } },
       { 
         $group: { 
@@ -83,7 +107,19 @@ export async function GET(request: NextRequest) {
           totalRevenue: { $sum: '$wooCommerceData.totalSpent' }
         } 
       }
-    ]);
+    ])}`,
+      async () => await User.aggregate([
+      { $match: { role: 'client', 'wooCommerceData.totalOrders': { $gt: 0 } } },
+      { 
+        $group: { 
+          _id: null, 
+          totalOrders: { $sum: '$wooCommerceData.totalOrders' },
+          totalRevenue: { $sum: '$wooCommerceData.totalSpent' }
+        } 
+      }
+    ]),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
     const avgOrderValue = avgOrderAggregation[0] 
       ? avgOrderAggregation[0].totalRevenue / avgOrderAggregation[0].totalOrders 
       : 0;
@@ -106,7 +142,8 @@ export async function GET(request: NextRequest) {
       });
 
       // Calculate revenue for this month (estimate from WooCommerce data)
-      const monthRevenue = await User.aggregate([
+      const monthRevenue = await withCache(
+      `dashboard:admin-stats:${JSON.stringify([
         { 
           $match: { 
             role: 'client', 
@@ -117,7 +154,21 @@ export async function GET(request: NextRequest) {
           } 
         },
         { $group: { _id: null, revenue: { $sum: '$wooCommerceData.totalSpent' } } }
-      ]);
+      ])}`,
+      async () => await User.aggregate([
+        { 
+          $match: { 
+            role: 'client', 
+            'wooCommerceData.lastOrderDate': { 
+              $gte: monthStart,
+              $lte: monthEnd
+            }
+          } 
+        },
+        { $group: { _id: null, revenue: { $sum: '$wooCommerceData.totalSpent' } } }
+      ]),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
       appointmentsByMonth.push({
         month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
@@ -127,20 +178,38 @@ export async function GET(request: NextRequest) {
     }
 
     // Get top clients by spending
-    const topClients = await User.find({
+    const topClients = await withCache(
+      `dashboard:admin-stats:${JSON.stringify({
       role: 'client',
       'wooCommerceData.totalSpent': { $gt: 0 }
     })
     .sort({ 'wooCommerceData.totalSpent': -1 })
     .limit(10)
     .select('firstName lastName email wooCommerceData.totalSpent wooCommerceData.totalOrders')
-    .lean();
+    .lean()}`,
+      async () => await User.find({
+      role: 'client',
+      'wooCommerceData.totalSpent': { $gt: 0 }
+    })
+    .sort({ 'wooCommerceData.totalSpent': -1 })
+    .limit(10)
+    .select('firstName lastName email wooCommerceData.totalSpent wooCommerceData.totalOrders')
+    .lean().lean(),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     // Get appointment types distribution
-    const appointmentTypes = await Appointment.aggregate([
+    const appointmentTypes = await withCache(
+      `dashboard:admin-stats:${JSON.stringify([
       { $group: { _id: '$type', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
-    ]);
+    ])}`,
+      async () => await Appointment.aggregate([
+      { $group: { _id: '$type', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]),
+      { ttl: 120000, tags: ['dashboard'] }
+    );
 
     return NextResponse.json({
       totalClients,

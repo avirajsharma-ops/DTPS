@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import Appointment from '@/lib/db/models/Appointment';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/appointments/available-slots - Get available time slots for a dietitian
 export async function GET(request: NextRequest) {
@@ -29,7 +30,11 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Get dietitian's availability
-    const dietitian = await User.findById(dietitianId).select('availability role');
+    const dietitian = await withCache(
+      `appointments:available-slots:${JSON.stringify(dietitianId).select('availability role')}`,
+      async () => await User.findById(dietitianId).select('availability role').lean(),
+      { ttl: 60000, tags: ['appointments'] }
+    );
 
     if (!dietitian || dietitian.role !== UserRole.DIETITIAN) {
       return NextResponse.json({ error: 'Dietitian not found' }, { status: 404 });
@@ -61,14 +66,25 @@ export async function GET(request: NextRequest) {
     const endOfDay = new Date(requestedDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const existingAppointments = await Appointment.find({
+    const existingAppointments = await withCache(
+      `appointments:available-slots:${JSON.stringify({
       dietitian: dietitianId,
       scheduledAt: {
         $gte: startOfDay,
         $lte: endOfDay
       },
       status: { $in: ['scheduled', 'confirmed'] }
-    }).select('scheduledAt duration');
+    }).select('scheduledAt duration')}`,
+      async () => await Appointment.find({
+      dietitian: dietitianId,
+      scheduledAt: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      },
+      status: { $in: ['scheduled', 'confirmed'] }
+    }).select('scheduledAt duration').lean(),
+      { ttl: 60000, tags: ['appointments'] }
+    );
 
     // Generate available time slots from ALL day schedules
     const availableSlots: string[] = [];

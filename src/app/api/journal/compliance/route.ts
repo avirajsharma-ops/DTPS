@@ -7,6 +7,7 @@ import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import { UserRole } from '@/types';
 import { subDays, format, differenceInDays } from 'date-fns';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Helper to check if user has permission to access client data
 const checkPermission = (session: any, clientId?: string): boolean => {
@@ -51,18 +52,34 @@ export async function GET(request: NextRequest) {
     startDate.setHours(0, 0, 0, 0);
 
     // Get all journal entries in the date range
-    const journals = await JournalTracking.find({
+    const journals = await withCache(
+      `journal:compliance:${JSON.stringify({
       client: clientObjectId,
       date: { $gte: startDate, $lte: endDate }
-    }).sort({ date: 1 });
+    }).sort({ date: 1 })}`,
+      async () => await JournalTracking.find({
+      client: clientObjectId,
+      date: { $gte: startDate, $lte: endDate }
+    }).sort({ date: 1 }).lean(),
+      { ttl: 120000, tags: ['journal'] }
+    );
 
     // Get active meal plans for the date range to check mealCompletions
-    const mealPlans = await ClientMealPlan.find({
+    const mealPlans = await withCache(
+      `journal:compliance:${JSON.stringify({
       clientId: clientObjectId,
       status: 'active',
       startDate: { $lte: endDate },
       endDate: { $gte: startDate }
-    });
+    })}`,
+      async () => await ClientMealPlan.find({
+      clientId: clientObjectId,
+      status: 'active',
+      startDate: { $lte: endDate },
+      endDate: { $gte: startDate }
+    }).lean(),
+      { ttl: 120000, tags: ['journal'] }
+    );
 
     // Build a map of meal completions from ClientMealPlan
     const mealCompletionsMap = new Map<string, any[]>();

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import mongoose from 'mongoose';
 import Tag from '@/lib/db/models/Tag';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/tags/[tagId] - Get a specific tag
 export async function GET(
@@ -19,7 +20,11 @@ export async function GET(
     await connectDB();
 
     const { tagId } = await params;
-    const tag = await Tag.findById(tagId).lean();
+    const tag = await withCache(
+      `tags:tagId:${JSON.stringify(tagId).lean()}`,
+      async () => await Tag.findById(tagId).lean().lean(),
+      { ttl: 120000, tags: ['tags'] }
+    );
 
     if (!tag) {
       return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
@@ -49,14 +54,22 @@ export async function PATCH(
     const body = await request.json();
     const { name, description, color, icon } = body;
 
-    const tag = await Tag.findById(tagId);
+    const tag = await withCache(
+      `tags:tagId:${JSON.stringify(tagId)}`,
+      async () => await Tag.findById(tagId).lean(),
+      { ttl: 120000, tags: ['tags'] }
+    );
     if (!tag) {
       return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
     }
 
     // Check if new name is already taken by another tag
     if (name && name !== tag.name) {
-      const existingTag = await Tag.findOne({ name: name.trim() });
+      const existingTag = await withCache(
+      `tags:tagId:${JSON.stringify({ name: name.trim() })}`,
+      async () => await Tag.findOne({ name: name.trim() }).lean(),
+      { ttl: 120000, tags: ['tags'] }
+    );
       if (existingTag) {
         return NextResponse.json({ 
           error: 'Tag with this name already exists' 

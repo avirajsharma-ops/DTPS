@@ -21,7 +21,11 @@ export async function GET(
     const { id } = await params;
     await dbConnect();
 
-    const blog = await Blog.findById(id).lean();
+    const blog = await withCache(
+      `admin:blogs:id:${JSON.stringify(id).lean()}`,
+      async () => await Blog.findById(id).lean().lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!blog) {
       return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
     }
@@ -50,7 +54,11 @@ export async function PUT(
     const { id } = await params;
     await dbConnect();
 
-    const blog = await Blog.findById(id);
+    const blog = await withCache(
+      `admin:blogs:id:${JSON.stringify(id)}`,
+      async () => await Blog.findById(id).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!blog) {
       return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
     }
@@ -172,3 +180,4 @@ export async function DELETE(
 
 // Import IBlog type for category typing
 import { IBlog } from '@/lib/db/models/Blog';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';

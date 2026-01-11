@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db/connect';
 import { ServicePlan } from '@/lib/db/models/ServicePlan';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Fetch a single service plan by ID
 export async function GET(
@@ -12,7 +13,11 @@ export async function GET(
     
     await dbConnect();
 
-    const plan = await ServicePlan.findById(id).lean();
+    const plan = await withCache(
+      `service-plans:id:${JSON.stringify(id).lean()}`,
+      async () => await ServicePlan.findById(id).lean().lean(),
+      { ttl: 120000, tags: ['service_plans'] }
+    );
 
     if (!plan) {
       return NextResponse.json(

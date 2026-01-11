@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Bug report schema
 interface BugReport {
@@ -195,12 +196,21 @@ export async function GET(request: NextRequest) {
     if (priority) query.priority = priority;
     if (category) query.category = category;
 
-    const reports = await BugReport.find(query)
+    const reports = await withCache(
+      `support:bug-report:${JSON.stringify(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .populate('userId', 'name email')
-      .populate('assignedTo', 'name email');
+      .populate('assignedTo', 'name email')}`,
+      async () => await BugReport.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('userId', 'name email')
+      .populate('assignedTo', 'name email').lean(),
+      { ttl: 120000, tags: ['support'] }
+    );
 
     const total = await BugReport.countDocuments(query);
 

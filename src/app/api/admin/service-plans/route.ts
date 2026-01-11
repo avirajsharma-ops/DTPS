@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import dbConnect from '@/lib/db/connect';
 import { ServicePlan } from '@/lib/db/models/ServicePlan';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Fetch all service plans
 export async function GET(request: NextRequest) {
@@ -27,9 +28,15 @@ export async function GET(request: NextRequest) {
       query.category = category;
     }
 
-    const plans = await ServicePlan.find(query)
+    const plans = await withCache(
+      `admin:service-plans:${JSON.stringify(query)
       .populate('createdBy', 'firstName lastName')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })}`,
+      async () => await ServicePlan.find(query)
+      .populate('createdBy', 'firstName lastName')
+      .sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     return NextResponse.json({
       success: true,

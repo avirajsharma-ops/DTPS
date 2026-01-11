@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import Message from '@/lib/db/models/Message';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 /**
  * GET /api/client/messages/unread-count

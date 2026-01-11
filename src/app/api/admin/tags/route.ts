@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Tag from '@/lib/db/models/Tag';
-import { withConditionalCache, errorResponse } from '@/lib/api/utils';
+import { withConditionalCache, errorResponse, withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,8 +15,14 @@ export async function GET(req: NextRequest) {
 
     await connectDB();
 
-    // Get all tags with sorting
-    const tags = await Tag.find({}).sort({ name: 1 }).lean();
+    // Use server memory cache for tags (static data)
+    const tags = await withCache(
+      'admin:tags:all',
+      async () => {
+        return await Tag.find({}).sort({ name: 1 }).lean();
+      },
+      { ttl: 300000, tags: ['tags'] } // Cache for 5 minutes
+    );
 
     // Use conditional caching for tags (relatively static data)
     return withConditionalCache(tags, req, {
@@ -75,6 +81,9 @@ export async function POST(req: NextRequest) {
     });
 
     await newTag.save();
+    
+    // Clear tags cache on create
+    clearCacheByTag('tags');
 
     return NextResponse.json(newTag, { status: 201 });
   } catch (error) {

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import ProgressEntry from '@/lib/db/models/ProgressEntry';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Progress Photos API Routes
 
@@ -178,11 +179,19 @@ export async function DELETE(request: NextRequest) {
 
     await connectDB();
 
-    const photo = await ProgressEntry.findOne({
+    const photo = await withCache(
+      `progress:photos:${JSON.stringify({
       _id: photoId,
       user: session.user.id, // Use user ID instead of userEmail
       type: 'photo'
-    });
+    })}`,
+      async () => await ProgressEntry.findOne({
+      _id: photoId,
+      user: session.user.id, // Use user ID instead of userEmail
+      type: 'photo'
+    }).lean(),
+      { ttl: 120000, tags: ['progress'] }
+    );
 
     if (!photo) {
       return NextResponse.json({ error: 'Photo not found' }, { status: 404 });

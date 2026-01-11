@@ -5,6 +5,7 @@ import User from '@/lib/db/models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/config';
 import { logActivity } from '@/lib/utils/activityLogger';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(
   req: NextRequest,
@@ -39,12 +40,21 @@ export async function GET(
       if (endDate) query.startDate.$lte = new Date(endDate);
     }
 
-    const tasks = await Task.find(query)
+    const tasks = await withCache(
+      `clients:clientId:tasks:${JSON.stringify(query)
       .populate('client', 'firstName lastName email')
       .populate('dietitian', 'firstName lastName email')
       .populate('tags', 'name color icon')
       .sort({ startDate: 1 })
-      .lean();
+      .lean()}`,
+      async () => await Task.find(query)
+      .populate('client', 'firstName lastName email')
+      .populate('dietitian', 'firstName lastName email')
+      .populate('tags', 'name color icon')
+      .sort({ startDate: 1 })
+      .lean().lean(),
+      { ttl: 60000, tags: ['clients'] }
+    );
 
     return NextResponse.json({
       success: true,
@@ -113,7 +123,11 @@ export async function POST(
     await task.populate('tags', 'name color icon');
 
     // Log activity
-    const client = await User.findById(clientId).select('firstName lastName');
+    const client = await withCache(
+      `clients:clientId:tasks:${JSON.stringify(clientId).select('firstName lastName')}`,
+      async () => await User.findById(clientId).select('firstName lastName').lean(),
+      { ttl: 60000, tags: ['clients'] }
+    );
     await logActivity({
       userId: session.user?.id || '',
       userRole: (session.user?.role as any) || 'dietitian',

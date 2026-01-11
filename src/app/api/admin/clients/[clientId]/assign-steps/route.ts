@@ -6,6 +6,7 @@ import JournalTracking from "@/lib/db/models/JournalTracking";
 import User from "@/lib/db/models/User";
 import ClientMealPlan from "@/lib/db/models/ClientMealPlan";
 import { sendTaskAssignedNotification } from "@/lib/notifications/notificationService";
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Helper to check if client has active meal plan for a given date
 async function hasActiveMealPlan(clientId: string, targetDate: Date): Promise<boolean> {
@@ -14,12 +15,21 @@ async function hasActiveMealPlan(clientId: string, targetDate: Date): Promise<bo
     const planEndOfDay = new Date(targetDate);
     planEndOfDay.setHours(23, 59, 59, 999);
     
-    const activePlan = await ClientMealPlan.findOne({
+    const activePlan = await withCache(
+      `admin:clients:clientId:assign-steps:${JSON.stringify({
         clientId: clientId,
         status: 'active',
         startDate: { $lte: planEndOfDay },
         endDate: { $gte: planStartOfDay }
-    });
+    })}`,
+      async () => await ClientMealPlan.findOne({
+        clientId: clientId,
+        status: 'active',
+        startDate: { $lte: planEndOfDay },
+        endDate: { $gte: planStartOfDay }
+    }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     
     return !!activePlan;
 }
@@ -43,13 +53,21 @@ export async function GET(
         await dbConnect();
 
         // Verify the user is a dietitian/admin/health_counselor
-        const currentUser = await User.findById(session.user.id);
+        const currentUser = await withCache(
+      `admin:clients:clientId:assign-steps:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
         if (!currentUser || !['admin', 'dietitian', 'health_counselor'].includes(currentUser.role)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }
 
         // Verify the client exists
-        const client = await User.findById(clientId);
+        const client = await withCache(
+      `admin:clients:clientId:assign-steps:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
         if (!client) {
             return NextResponse.json({ error: "Client not found" }, { status: 404 });
         }
@@ -61,10 +79,17 @@ export async function GET(
         nextDay.setDate(nextDay.getDate() + 1);
 
         // Find journal for the date
-        const journal = await JournalTracking.findOne({
+        const journal = await withCache(
+      `admin:clients:clientId:assign-steps:${JSON.stringify({
             client: clientId,
             date: { $gte: targetDate, $lt: nextDay }
-        });
+        })}`,
+      async () => await JournalTracking.findOne({
+            client: clientId,
+            date: { $gte: targetDate, $lt: nextDay }
+        }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
         // Calculate current steps
         const currentSteps = journal?.steps?.reduce((sum: number, entry: any) => sum + entry.steps, 0) || 0;
@@ -105,13 +130,21 @@ export async function POST(
         const data = await request.json();
 
         // Verify the user is a dietitian/admin/health_counselor
-        const currentUser = await User.findById(session.user.id);
+        const currentUser = await withCache(
+      `admin:clients:clientId:assign-steps:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
         if (!currentUser || !['admin', 'dietitian', 'health_counselor'].includes(currentUser.role)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }
 
         // Verify the client exists
-        const client = await User.findById(clientId);
+        const client = await withCache(
+      `admin:clients:clientId:assign-steps:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
         if (!client) {
             return NextResponse.json({ error: "Client not found" }, { status: 404 });
         }
@@ -215,7 +248,11 @@ export async function DELETE(
         await dbConnect();
 
         // Verify the user is a dietitian/admin/health_counselor
-        const currentUser = await User.findById(session.user.id);
+        const currentUser = await withCache(
+      `admin:clients:clientId:assign-steps:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
         if (!currentUser || !['admin', 'dietitian', 'health_counselor'].includes(currentUser.role)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }

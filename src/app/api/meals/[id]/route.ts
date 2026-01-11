@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import MealPlan from '@/lib/db/models/MealPlan';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/meals/[id] - Get specific meal plan
 export async function GET(
@@ -19,10 +20,17 @@ export async function GET(
     await connectDB();
     const { id } = await params;
 
-    const mealPlan = await MealPlan.findById(id)
+    const mealPlan = await withCache(
+      `meals:id:${JSON.stringify(id)
       .populate('dietitian', 'firstName lastName email avatar')
       .populate('client', 'firstName lastName email avatar')
-      .populate('meals.recipe', 'name description calories macros ingredients instructions');
+      .populate('meals.recipe', 'name description calories macros ingredients instructions')}`,
+      async () => await MealPlan.findById(id)
+      .populate('dietitian', 'firstName lastName email avatar')
+      .populate('client', 'firstName lastName email avatar')
+      .populate('meals.recipe', 'name description calories macros ingredients instructions').lean(),
+      { ttl: 120000, tags: ['meals'] }
+    );
 
     if (!mealPlan) {
       return NextResponse.json(
@@ -67,7 +75,11 @@ export async function PUT(
     await connectDB();
     const { id } = await params;
 
-    const mealPlan = await MealPlan.findById(id);
+    const mealPlan = await withCache(
+      `meals:id:${JSON.stringify(id)}`,
+      async () => await MealPlan.findById(id).lean(),
+      { ttl: 120000, tags: ['meals'] }
+    );
     if (!mealPlan) {
       return NextResponse.json(
         { error: 'Meal plan not found' },
@@ -118,7 +130,11 @@ export async function DELETE(
     await connectDB();
     const { id } = await params;
 
-    const mealPlan = await MealPlan.findById(id);
+    const mealPlan = await withCache(
+      `meals:id:${JSON.stringify(id)}`,
+      async () => await MealPlan.findById(id).lean(),
+      { ttl: 120000, tags: ['meals'] }
+    );
     if (!mealPlan) {
       return NextResponse.json(
         { error: 'Meal plan not found' },

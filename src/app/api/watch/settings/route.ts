@@ -6,6 +6,7 @@ import connectDB from '@/lib/db/connection';
 import { WatchService } from '@/watchconnectivity/backend/services/WatchService';
 import WatchConnection from '@/watchconnectivity/backend/models/WatchConnection';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/watch/settings - Get watch settings
 export async function GET(req: NextRequest) {

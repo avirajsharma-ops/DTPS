@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,10 +27,17 @@ export async function GET(
     const { clientId } = await params;
     await connectDB();
 
-    const client = await User.findById(clientId)
+    const client = await withCache(
+      `admin:clients:clientId:profile:${JSON.stringify(clientId)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email')
-      .populate('assignedDietitians', 'firstName lastName email');
+      .populate('assignedDietitians', 'firstName lastName email')}`,
+      async () => await User.findById(clientId)
+      .select('-password')
+      .populate('assignedDietitian', 'firstName lastName email')
+      .populate('assignedDietitians', 'firstName lastName email').lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
@@ -66,7 +74,11 @@ export async function PUT(
     await connectDB();
 
     // Verify the client exists
-    const existingClient = await User.findById(clientId);
+    const existingClient = await withCache(
+      `admin:clients:clientId:profile:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!existingClient) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }

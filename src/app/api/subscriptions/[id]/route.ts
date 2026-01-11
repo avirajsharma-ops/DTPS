@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import ClientSubscription from '@/lib/db/models/ClientSubscription';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/subscriptions/[id] - Get specific subscription
 export async function GET(
@@ -19,10 +20,17 @@ export async function GET(
     await connectDB();
     const { id } = await params;
 
-    const subscription = await ClientSubscription.findById(id)
+    const subscription = await withCache(
+      `subscriptions:id:${JSON.stringify(id)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName email')
-      .populate('plan');
+      .populate('plan')}`,
+      async () => await ClientSubscription.findById(id)
+      .populate('client', 'firstName lastName email phone')
+      .populate('dietitian', 'firstName lastName email')
+      .populate('plan').lean(),
+      { ttl: 120000, tags: ['subscriptions'] }
+    );
 
     if (!subscription) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
@@ -67,7 +75,11 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const subscription = await ClientSubscription.findById(id);
+    const subscription = await withCache(
+      `subscriptions:id:${JSON.stringify(id)}`,
+      async () => await ClientSubscription.findById(id).lean(),
+      { ttl: 120000, tags: ['subscriptions'] }
+    );
     if (!subscription) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }

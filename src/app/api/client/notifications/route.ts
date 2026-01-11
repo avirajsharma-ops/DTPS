@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import Notification from '@/lib/db/models/Notification';
 import Message from '@/lib/db/models/Message';
 import { broadcastUnreadCounts } from '../unread-counts/stream/route';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/client/notifications - Get all notifications for the current user
 export async function GET(request: NextRequest) {

@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import FoodLog from '@/lib/db/models/FoodLog';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/food-logs - Get food logs
 export async function GET(request: NextRequest) {
@@ -32,7 +33,11 @@ export async function GET(request: NextRequest) {
     } else if (session.user.role === UserRole.DIETITIAN) {
       if (clientId) {
         // Verify the dietitian is assigned to this client
-        const client = await User.findById(clientId).select('assignedDietitian assignedDietitians');
+        const client = await withCache(
+      `food-logs:${JSON.stringify(clientId).select('assignedDietitian assignedDietitians')}`,
+      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians').lean(),
+      { ttl: 120000, tags: ['food_logs'] }
+    );
         const isAssigned = 
           client?.assignedDietitian?.toString() === session.user.id ||
           client?.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
@@ -71,11 +76,19 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const foodLogs = await FoodLog.find(query)
+    const foodLogs = await withCache(
+      `food-logs:${JSON.stringify(query)
       .populate('client', 'firstName lastName')
       .sort({ date: -1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)}`,
+      async () => await FoodLog.find(query)
+      .populate('client', 'firstName lastName')
+      .sort({ date: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit).lean(),
+      { ttl: 120000, tags: ['food_logs'] }
+    );
 
     const total = await FoodLog.countDocuments(query);
 

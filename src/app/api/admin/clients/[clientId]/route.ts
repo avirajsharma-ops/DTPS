@@ -6,6 +6,7 @@ import User from '@/lib/db/models/User';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import Payment from '@/lib/db/models/Payment';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/admin/clients/[clientId] - Get full client details
 export async function GET(
@@ -26,29 +27,53 @@ export async function GET(
     await connectDB();
     const { clientId } = await params;
 
-    const client = await User.findById(clientId)
+    const client = await withCache(
+      `admin:clients:clientId:${JSON.stringify(clientId)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email avatar phone specializations')
       .populate('assignedDietitians', 'firstName lastName email avatar phone specializations')
       .populate('assignedHealthCounselor', 'firstName lastName email avatar phone')
       .populate('assignedHealthCounselors', 'firstName lastName email avatar phone')
-      .populate('tags');
+      .populate('tags')}`,
+      async () => await User.findById(clientId)
+      .select('-password')
+      .populate('assignedDietitian', 'firstName lastName email avatar phone specializations')
+      .populate('assignedDietitians', 'firstName lastName email avatar phone specializations')
+      .populate('assignedHealthCounselor', 'firstName lastName email avatar phone')
+      .populate('assignedHealthCounselors', 'firstName lastName email avatar phone')
+      .populate('tags').lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
     // Get meal plans
-    const mealPlans = await ClientMealPlan.find({ clientId })
+    const mealPlans = await withCache(
+      `admin:clients:clientId:${JSON.stringify({ clientId })
       .populate('templateId', 'name category')
       .populate('assignedBy', 'firstName lastName')
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(10)}`,
+      async () => await ClientMealPlan.find({ clientId })
+      .populate('templateId', 'name category')
+      .populate('assignedBy', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .limit(10).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     // Get payments
-    const payments = await Payment.find({ userId: clientId })
+    const payments = await withCache(
+      `admin:clients:clientId:${JSON.stringify({ userId: clientId })
       .sort({ createdAt: -1 })
-      .limit(20);
+      .limit(20)}`,
+      async () => await Payment.find({ userId: clientId })
+      .sort({ createdAt: -1 })
+      .limit(20).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     return NextResponse.json({
       client,

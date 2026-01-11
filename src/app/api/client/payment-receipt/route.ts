@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import Payment from '@/lib/db/models/Payment';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/client/payment-receipt - Get payment receipt details
 export async function GET(request: NextRequest) {
@@ -32,10 +33,17 @@ export async function GET(request: NextRequest) {
       query.status = { $in: ['completed', 'paid'] };
     }
 
-    const payment = await Payment.findOne(query)
+    const payment = await withCache(
+      `client:payment-receipt:${JSON.stringify(query)
       .populate('dietitian', 'firstName lastName email')
       .populate('client', 'firstName lastName email phone')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })}`,
+      async () => await Payment.findOne(query)
+      .populate('dietitian', 'firstName lastName email')
+      .populate('client', 'firstName lastName email phone')
+      .sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     if (!payment) {
       return NextResponse.json(

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/available - Get available users for messaging/appointments
 export async function GET(request: NextRequest) {
@@ -18,12 +19,21 @@ export async function GET(request: NextRequest) {
 
     if (session.user.role === 'client') {
       // Clients can see their assigned dietitian and all dietitians
-      const currentUser = await User.findById(session.user.id);
+      const currentUser = await withCache(
+      `users:available:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
       
       if (currentUser?.assignedDietitian) {
         // Get assigned dietitian first
-        const assignedDietitian = await User.findById(currentUser.assignedDietitian)
-          .select('firstName lastName avatar role consultationFee specializations');
+        const assignedDietitian = await withCache(
+      `users:available:${JSON.stringify(currentUser.assignedDietitian)
+          .select('firstName lastName avatar role consultationFee specializations')}`,
+      async () => await User.findById(currentUser.assignedDietitian)
+          .select('firstName lastName avatar role consultationFee specializations').lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
         
         if (assignedDietitian) {
           users.push({
@@ -34,13 +44,23 @@ export async function GET(request: NextRequest) {
       }
       
       // Get other available dietitians
-      const otherDietitians = await User.find({
+      const otherDietitians = await withCache(
+      `users:available:${JSON.stringify({
         role: 'dietitian',
         _id: { $ne: currentUser?.assignedDietitian },
         status: 'active'
       })
       .select('firstName lastName avatar role consultationFee specializations')
-      .limit(10);
+      .limit(10)}`,
+      async () => await User.find({
+        role: 'dietitian',
+        _id: { $ne: currentUser?.assignedDietitian },
+        status: 'active'
+      })
+      .select('firstName lastName avatar role consultationFee specializations')
+      .limit(10).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
       
       users.push(...otherDietitians.map(d => ({
         ...d.toObject(),

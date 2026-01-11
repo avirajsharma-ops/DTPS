@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { adminSSEManager } from '@/lib/realtime/admin-sse-manager';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users - Get users (for dietitians to see clients, admins to see all)
 export async function GET(request: NextRequest) {
@@ -85,20 +86,31 @@ export async function GET(request: NextRequest) {
     // For admin users, include password field; for others, exclude it
     const selectFields = session.user.role === UserRole.ADMIN ? '' : '-password';
 
-    const users = await User.find(query)
-      .select(selectFields)
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit);
+    // Generate cache key based on role and query params
+    const cacheKey = `users:${session.user.role}:${role || 'all'}:${search || ''}:${page}:${limit}`;
+    
+    const { users, total, adminsCount, dietitiansCount, healthCounselorsCount, clientsCount } = await withCache(
+      cacheKey,
+      async () => {
+        const users = await User.find(query)
+          .select(selectFields)
+          .sort({ createdAt: -1 })
+          .limit(limit)
+          .skip((page - 1) * limit);
 
-    const total = await User.countDocuments(query);
+        const total = await User.countDocuments(query);
 
-    const [adminsCount, dietitiansCount, healthCounselorsCount, clientsCount] = await Promise.all([
-      User.countDocuments({ role: UserRole.ADMIN }),
-      User.countDocuments({ role: UserRole.DIETITIAN }),
-      User.countDocuments({ role: UserRole.HEALTH_COUNSELOR }),
-      User.countDocuments({ role: UserRole.CLIENT })
-    ]);
+        const [adminsCount, dietitiansCount, healthCounselorsCount, clientsCount] = await Promise.all([
+          User.countDocuments({ role: UserRole.ADMIN }),
+          User.countDocuments({ role: UserRole.DIETITIAN }),
+          User.countDocuments({ role: UserRole.HEALTH_COUNSELOR }),
+          User.countDocuments({ role: UserRole.CLIENT })
+        ]);
+
+        return { users, total, adminsCount, dietitiansCount, healthCounselorsCount, clientsCount };
+      },
+      { ttl: 120000, tags: ['users'] } // 2 minutes TTL
+    );
 
     // For admin users, we need to manually serialize to include passwords
     let serializedUsers;
@@ -270,6 +282,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Clear users cache after creation
+    clearCacheByTag('users');
+
     const created = user.toJSON();
     delete (created as any).password;
 
@@ -328,6 +343,9 @@ export async function PUT(request: NextRequest) {
 
     Object.assign(user, updateData);
     await user.save();
+
+    // Clear users cache after update
+    clearCacheByTag('users');
 
     // Return user without password
     const updatedUser = user.toJSON();

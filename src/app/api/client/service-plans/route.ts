@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import dbConnect from '@/lib/db/connect';
 import { ServicePlan, ClientPurchase } from '@/lib/db/models/ServicePlan';
 import Payment from '@/lib/db/models/Payment';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Fetch service plans visible to clients (for user dashboard)
 export async function GET(request: NextRequest) {
@@ -17,16 +18,30 @@ export async function GET(request: NextRequest) {
         await dbConnect();
 
         // Check if client has any purchases in ClientPurchase collection (active, pending, or on_hold status)
-        const allPurchases = await ClientPurchase.find({
+        const allPurchases = await withCache(
+      `client:service-plans:${JSON.stringify({
             client: session.user.id,
             status: { $in: ['active', 'pending', 'on_hold'] }
-        }).populate('dietitian', 'firstName lastName email phone avatar').sort({ createdAt: -1 });
+        }).populate('dietitian', 'firstName lastName email phone avatar').sort({ createdAt: -1 })}`,
+      async () => await ClientPurchase.find({
+            client: session.user.id,
+            status: { $in: ['active', 'pending', 'on_hold'] }
+        }).populate('dietitian', 'firstName lastName email phone avatar').sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
         // Also check Payment collection for any completed payments
-        const completedPayments = await Payment.find({
+        const completedPayments = await withCache(
+      `client:service-plans:${JSON.stringify({
             client: session.user.id,
             status: { $in: ['completed', 'captured', 'paid'] }
-        });
+        })}`,
+      async () => await Payment.find({
+            client: session.user.id,
+            status: { $in: ['completed', 'captured', 'paid'] }
+        }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
         // Check for active purchases specifically
         const activePurchases = allPurchases.filter(p => p.status === 'active');
@@ -39,10 +54,17 @@ export async function GET(request: NextRequest) {
         const hasPendingDietitianAssignment = allPurchases.some(p => !p.dietitian);
 
         // Fetch service plans that are active and visible to clients
-        const plans = await ServicePlan.find({
+        const plans = await withCache(
+      `client:service-plans:${JSON.stringify({
             isActive: true,
             showToClients: true
-        }).sort({ createdAt: -1 });
+        }).sort({ createdAt: -1 })}`,
+      async () => await ServicePlan.find({
+            isActive: true,
+            showToClients: true
+        }).sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
         return NextResponse.json({
             success: true,

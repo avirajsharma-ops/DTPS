@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import mongoose from 'mongoose';
 import { logHistoryServer } from '@/lib/server/history';
 import { NOTE_TOPIC_TYPES } from '@/lib/constants/notes';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Delete cached model to ensure schema updates are applied
 if (mongoose.models.ClientNote) {
@@ -87,10 +88,17 @@ export async function GET(
     }
     // HC and Dietitian can see ALL notes but can only delete their own (handled in DELETE)
 
-    const notes = await ClientNote.find(query)
+    const notes = await withCache(
+      `users:id:notes:${JSON.stringify(query)
       .populate('createdBy', 'firstName lastName')
       .sort({ createdAt: -1 })
-      .lean();
+      .lean()}`,
+      async () => await ClientNote.find(query)
+      .populate('createdBy', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .lean().lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     return NextResponse.json({
       success: true,

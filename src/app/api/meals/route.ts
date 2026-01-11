@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import MealPlan from '@/lib/db/models/MealPlan';
 import { UserRole } from '@/types';
 import { z } from 'zod';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Meal plan validation schema
 const mealPlanSchema = z.object({
@@ -67,7 +68,8 @@ export async function GET(request: NextRequest) {
       query.isActive = true;
     }
 
-    const mealPlans = await MealPlan.find(query)
+    const mealPlans = await withCache(
+      `meals:${JSON.stringify(query)
       .populate('dietitian', 'firstName lastName email avatar')
       .populate('client', 'firstName lastName email avatar')
       .populate('meals.breakfast', 'name description nutrition')
@@ -76,7 +78,19 @@ export async function GET(request: NextRequest) {
       .populate('meals.snacks', 'name description nutrition')
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)}`,
+      async () => await MealPlan.find(query)
+      .populate('dietitian', 'firstName lastName email avatar')
+      .populate('client', 'firstName lastName email avatar')
+      .populate('meals.breakfast', 'name description nutrition')
+      .populate('meals.lunch', 'name description nutrition')
+      .populate('meals.dinner', 'name description nutrition')
+      .populate('meals.snacks', 'name description nutrition')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit).lean(),
+      { ttl: 120000, tags: ['meals'] }
+    );
 
     const total = await MealPlan.countDocuments(query);
 

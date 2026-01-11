@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { History } from '@/lib/db/models/History';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/[id]/history - Get client activity history
 export async function GET(
@@ -22,7 +23,11 @@ export async function GET(
     await connectDB();
 
     // Check permissions
-    const targetUser = await User.findById(id).select('assignedDietitian assignedDietitians');
+    const targetUser = await withCache(
+      `users:id:history:${JSON.stringify(id).select('assignedDietitian assignedDietitians')}`,
+      async () => await User.findById(id).select('assignedDietitian assignedDietitians').lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
     if (!targetUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -52,12 +57,21 @@ export async function GET(
     }
 
     // Fetch real history from database
-    const history = await History.find(query)
+    const history = await withCache(
+      `users:id:history:${JSON.stringify(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean()
-      .exec();
+      .exec()}`,
+      async () => await History.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean()
+      .exec().lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     const total = await History.countDocuments(query);
 
@@ -137,7 +151,11 @@ export async function POST(
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Get current user details
-    const currentUser = await User.findById(session.user.id).select('firstName lastName email role');
+    const currentUser = await withCache(
+      `users:id:history:${JSON.stringify(session.user.id).select('firstName lastName email role')}`,
+      async () => await User.findById(session.user.id).select('firstName lastName email role').lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     const historyEntry = await History.create({
       userId: id,

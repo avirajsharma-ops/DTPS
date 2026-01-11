@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import WooCommerceClient from '@/lib/db/models/WooCommerceClient';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/clients/woocommerce - Get all WooCommerce clients
 export async function GET(request: NextRequest) {
@@ -47,17 +48,26 @@ export async function GET(request: NextRequest) {
 
     // Get clients with pagination
     const skip = (page - 1) * per_page;
-    const clients = await WooCommerceClient.find(query)
+    const clients = await withCache(
+      `clients:woocommerce:${JSON.stringify(query)
       .sort(sort)
       .skip(skip)
       .limit(per_page)
-      .lean();
+      .lean()}`,
+      async () => await WooCommerceClient.find(query)
+      .sort(sort)
+      .skip(skip)
+      .limit(per_page)
+      .lean().lean(),
+      { ttl: 120000, tags: ['clients'] }
+    );
 
     // Get total count
     const totalClients = await WooCommerceClient.countDocuments(query);
 
     // Calculate summary statistics
-    const summary = await WooCommerceClient.aggregate([
+    const summary = await withCache(
+      `clients:woocommerce:${JSON.stringify([
       { $match: query },
       {
         $group: {
@@ -69,7 +79,22 @@ export async function GET(request: NextRequest) {
           topSpender: { $max: '$totalSpent' }
         }
       }
-    ]);
+    ])}`,
+      async () => await WooCommerceClient.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalClients: { $sum: 1 },
+          totalOrders: { $sum: '$totalOrders' },
+          totalRevenue: { $sum: '$totalSpent' },
+          avgOrderValue: { $avg: '$totalSpent' },
+          topSpender: { $max: '$totalSpent' }
+        }
+      }
+    ]),
+      { ttl: 120000, tags: ['clients'] }
+    );
 
     const stats = summary[0] || {
       totalClients: 0,
@@ -149,7 +174,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Client ID is required' }, { status: 400 });
     }
 
-    const client = await WooCommerceClient.findById(clientId).lean();
+    const client = await withCache(
+      `clients:woocommerce:${JSON.stringify(clientId).lean()}`,
+      async () => await WooCommerceClient.findById(clientId).lean().lean(),
+      { ttl: 120000, tags: ['clients'] }
+    );
 
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });

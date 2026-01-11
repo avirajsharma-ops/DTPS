@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import WatchConnection from '@/watchconnectivity/backend/models/WatchConnection';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // POST /api/watch/flashlight - Toggle watch flashlight
 export async function POST(req: NextRequest) {
@@ -30,10 +31,17 @@ export async function POST(req: NextRequest) {
     await connectDB();
     
     // Get watch connection
-    const watchConnection = await WatchConnection.findOne({
+    const watchConnection = await withCache(
+      `watch:flashlight:${JSON.stringify({
       userId: new mongoose.Types.ObjectId(session.user.id),
       watchIsConnected: true,
-    });
+    })}`,
+      async () => await WatchConnection.findOne({
+      userId: new mongoose.Types.ObjectId(session.user.id),
+      watchIsConnected: true,
+    }).lean(),
+      { ttl: 120000, tags: ['watch'] }
+    );
     
     if (!watchConnection) {
       return NextResponse.json(
@@ -91,10 +99,17 @@ export async function GET(req: NextRequest) {
     
     await connectDB();
     
-    const watchConnection = await WatchConnection.findOne({
+    const watchConnection = await withCache(
+      `watch:flashlight:${JSON.stringify({
       userId: new mongoose.Types.ObjectId(session.user.id),
       watchIsConnected: true,
-    });
+    })}`,
+      async () => await WatchConnection.findOne({
+      userId: new mongoose.Types.ObjectId(session.user.id),
+      watchIsConnected: true,
+    }).lean(),
+      { ttl: 120000, tags: ['watch'] }
+    );
     
     if (!watchConnection) {
       return NextResponse.json({

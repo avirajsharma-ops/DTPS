@@ -6,6 +6,7 @@ import DietTemplate from '@/lib/db/models/DietTemplate';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Validation schema for meal type config
 const mealTypeConfigSchema = z.object({
@@ -72,7 +73,8 @@ export async function GET(
 
     await connectDB();
 
-    const template = await DietTemplate.findOne({ _id: id, isActive: true })
+    const template = await withCache(
+      `diet-templates:id:${JSON.stringify({ _id: id, isActive: true })
       .populate('createdBy', 'firstName lastName email')
       .populate({
         path: 'meals.breakfast.recipeId',
@@ -98,7 +100,36 @@ export async function GET(
         path: 'meals.eveningSnack.recipeId',
         select: 'name description nutrition image category'
       })
-      .lean();
+      .lean()}`,
+      async () => await DietTemplate.findOne({ _id: id, isActive: true })
+      .populate('createdBy', 'firstName lastName email')
+      .populate({
+        path: 'meals.breakfast.recipeId',
+        select: 'name description nutrition image category'
+      })
+      .populate({
+        path: 'meals.morningSnack.recipeId',
+        select: 'name description nutrition image category'
+      })
+      .populate({
+        path: 'meals.lunch.recipeId',
+        select: 'name description nutrition image category'
+      })
+      .populate({
+        path: 'meals.afternoonSnack.recipeId',
+        select: 'name description nutrition image category'
+      })
+      .populate({
+        path: 'meals.dinner.recipeId',
+        select: 'name description nutrition image category'
+      })
+      .populate({
+        path: 'meals.eveningSnack.recipeId',
+        select: 'name description nutrition image category'
+      })
+      .lean().lean(),
+      { ttl: 120000, tags: ['diet_templates'] }
+    );
 
     if (!template) {
       return NextResponse.json(

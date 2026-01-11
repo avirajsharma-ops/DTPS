@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import LifestyleInfo from '@/lib/db/models/LifestyleInfo';
 import MedicalInfo from '@/lib/db/models/MedicalInfo';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -157,7 +158,11 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const user = await User.findById(session.user.id).select('onboardingCompleted onboardingStep');
+    const user = await withCache(
+      `client:onboarding:${JSON.stringify(session.user.id).select('onboardingCompleted onboardingStep')}`,
+      async () => await User.findById(session.user.id).select('onboardingCompleted onboardingStep').lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     return NextResponse.json({
       onboardingCompleted: user?.onboardingCompleted || false,

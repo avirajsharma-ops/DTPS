@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { z } from 'zod';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Availability validation schema
 const availabilitySchema = z.object({
@@ -43,7 +44,11 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const dietitian = await User.findById(dietitianId).select('availability schedule');
+    const dietitian = await withCache(
+      `users:dietitian:availability:${JSON.stringify(dietitianId).select('availability schedule')}`,
+      async () => await User.findById(dietitianId).select('availability schedule').lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     if (!dietitian || (dietitian.role !== UserRole.DIETITIAN && dietitian.role !== UserRole.HEALTH_COUNSELOR)) {
       return NextResponse.json({ error: 'Dietitian/Health Counselor not found' }, { status: 404 });

@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import Message from '@/lib/db/models/Message';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/available-for-chat - Get users available for starting conversations
 export async function GET(request: NextRequest) {
@@ -31,7 +32,11 @@ export async function GET(request: NextRequest) {
       // Clients can chat with:
       // 1. Their assigned dietitians (from assignedDietitians array)
       // 2. Any dietitian if they don't have one assigned
-      const currentUser = await User.findById(session.user.id).select('assignedDietitian assignedDietitians');
+      const currentUser = await withCache(
+      `users:available-for-chat:${JSON.stringify(session.user.id).select('assignedDietitian assignedDietitians')}`,
+      async () => await User.findById(session.user.id).select('assignedDietitian assignedDietitians').lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
       
       if (currentUser?.assignedDietitians && currentUser.assignedDietitians.length > 0) {
         // Chat with all assigned dietitians
@@ -74,13 +79,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Get users
-    const users = await User.find(query)
+    const users = await withCache(
+      `users:available-for-chat:${JSON.stringify(query)
       .select('firstName lastName email avatar role assignedDietitian')
       .sort({ firstName: 1, lastName: 1 })
-      .limit(limit);
+      .limit(limit)}`,
+      async () => await User.find(query)
+      .select('firstName lastName email avatar role assignedDietitian')
+      .sort({ firstName: 1, lastName: 1 })
+      .limit(limit).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     // Get existing conversations to mark users we already have conversations with
-    const existingConversations = await Message.aggregate([
+    const existingConversations = await withCache(
+      `users:available-for-chat:${JSON.stringify([
       {
         $match: {
           $or: [
@@ -105,7 +118,35 @@ export async function GET(request: NextRequest) {
           _id: '$conversationWith'
         }
       }
-    ]);
+    ])}`,
+      async () => await Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { sender: session.user.id },
+            { receiver: session.user.id }
+          ]
+        }
+      },
+      {
+        $addFields: {
+          conversationWith: {
+            $cond: {
+              if: { $eq: ['$sender', session.user.id] },
+              then: '$receiver',
+              else: '$sender'
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: '$conversationWith'
+        }
+      }
+    ]),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     const existingConversationIds = existingConversations.map(conv => conv._id.toString());
 

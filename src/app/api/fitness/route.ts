@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import { User } from '@/lib/db/models';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,11 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Get user's fitness data
-    const user = await User.findById(session.user.id).select('fitnessData');
+    const user = await withCache(
+      `fitness:${JSON.stringify(session.user.id).select('fitnessData')}`,
+      async () => await User.findById(session.user.id).select('fitnessData').lean(),
+      { ttl: 120000, tags: ['fitness'] }
+    );
     
     return NextResponse.json({
       fitnessData: user?.fitnessData || null

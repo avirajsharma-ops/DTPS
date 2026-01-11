@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import DietaryRecall from '@/lib/db/models/DietaryRecall';
 import User from '@/lib/db/models/User';
 import { logHistoryServer } from '@/lib/server/history';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/[id]/recall - Fetch dietary recall for a user
 export async function GET(
@@ -22,7 +23,11 @@ export async function GET(
     const { id: userId } = await params;
 
     // Verify user exists
-    const user = await User.findById(userId);
+    const user = await withCache(
+      `users:id:recall:${JSON.stringify(userId)}`,
+      async () => await User.findById(userId).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -90,7 +95,11 @@ export async function POST(
     const mealsData = body.meals || body.entries || [];
 
     // Verify user exists
-    const user = await User.findById(userId);
+    const user = await withCache(
+      `users:id:recall:${JSON.stringify(userId)}`,
+      async () => await User.findById(userId).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

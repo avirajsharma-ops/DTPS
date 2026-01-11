@@ -6,6 +6,7 @@ import MealPlanTemplate from '@/lib/db/models/MealPlanTemplate';
 import Recipe from '@/lib/db/models/Recipe';
 import { UserRole } from '@/types';
 import { z } from 'zod';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Validation schema for meal plan template (no word limits)
 const mealPlanTemplateSchema = z.object({
@@ -131,17 +132,28 @@ export async function GET(request: NextRequest) {
         sortOptions = { createdAt: -1 };
     }
 
-    const templates = await MealPlanTemplate.find(query)
-      .populate('createdBy', 'firstName lastName')
-      .sort(sortOptions)
-      .limit(limit)
-      .skip(skip)
-      .lean();
+    // Generate cache key based on query params
+    const cacheKey = `meal-plan-templates:${templateType || ''}:${category || ''}:${createdBy || ''}:${search || ''}:${sortBy}:${skip}:${limit}`;
+    
+    const { templates, total, categories } = await withCache(
+      cacheKey,
+      async () => {
+        const templates = await MealPlanTemplate.find(query)
+          .populate('createdBy', 'firstName lastName')
+          .sort(sortOptions)
+          .limit(limit)
+          .skip(skip)
+          .lean();
 
-    const total = await MealPlanTemplate.countDocuments(query);
+        const total = await MealPlanTemplate.countDocuments(query);
 
-    // Get categories for filtering
-    const categories = await MealPlanTemplate.distinct('category', { isActive: true, isPublic: true });
+        // Get categories for filtering
+        const categories = await MealPlanTemplate.distinct('category', { isActive: true, isPublic: true });
+
+        return { templates, total, categories };
+      },
+      { ttl: 300000, tags: ['meal-plan-templates'] } // 5 minutes TTL
+    );
 
     return NextResponse.json({
       success: true,
@@ -193,6 +205,9 @@ export async function POST(request: NextRequest) {
     });
 
     await template.save();
+
+    // Clear meal-plan-templates cache after creation
+    clearCacheByTag('meal-plan-templates');
 
     // Populate creator info
     await template.populate('createdBy', 'firstName lastName');

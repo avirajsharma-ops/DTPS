@@ -6,6 +6,7 @@ import JournalTracking from '@/lib/db/models/JournalTracking';
 import { format } from 'date-fns';
 import { UserRole } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Helper to get date without time
 const getDateOnly = (date: Date | string): Date => {
@@ -42,10 +43,17 @@ export async function GET(request: NextRequest) {
     
     const date = dateParam ? getDateOnly(dateParam) : getDateOnly(new Date());
 
-    const journal = await JournalTracking.findOne({
+    const journal = await withCache(
+      `journal:sleep:${JSON.stringify({
       client: clientId,
       date: date
-    });
+    })}`,
+      async () => await JournalTracking.findOne({
+      client: clientId,
+      date: date
+    }).lean(),
+      { ttl: 120000, tags: ['journal'] }
+    );
 
     const sleep = journal?.sleep || [];
     const totalMinutes = sleep.reduce((sum: number, e: { hours: number; minutes: number }) => {

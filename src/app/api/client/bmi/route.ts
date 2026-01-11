@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { SSEManager } from '@/lib/realtime/sse-manager';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // BMI Calculation Helper
 function calculateBMI(weightKg: number, heightCm: number): { bmi: string; bmiCategory: string } {
@@ -40,8 +41,13 @@ export async function GET(request: NextRequest) {
     
     await dbConnect();
     
-    const user = await User.findById(session.user.id)
-      .select('weightKg heightCm bmi bmiCategory');
+    const user = await withCache(
+      `client:bmi:${JSON.stringify(session.user.id)
+      .select('weightKg heightCm bmi bmiCategory')}`,
+      async () => await User.findById(session.user.id)
+      .select('weightKg heightCm bmi bmiCategory').lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
     
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -102,7 +108,11 @@ export async function PUT(request: NextRequest) {
     }
     
     // Get current user data to calculate BMI
-    const currentUser = await User.findById(session.user.id);
+    const currentUser = await withCache(
+      `client:bmi:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
     
     const finalWeightKg = parseFloat(weightKg !== undefined ? String(weightKg) : currentUser?.weightKg || '0');
     const finalHeightCm = parseFloat(heightCm !== undefined ? String(heightCm) : currentUser?.heightCm || '0');

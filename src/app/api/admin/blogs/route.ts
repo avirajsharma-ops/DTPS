@@ -6,6 +6,7 @@ import Blog from '@/lib/db/models/Blog';
 import { getImageKit } from '@/lib/imagekit';
 import { UserRole } from '@/types';
 import { compressBase64ImageServer } from '@/lib/imageCompressionServer';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Fetch all blogs (admin)
 export async function GET(request: NextRequest) {
@@ -39,9 +40,15 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const blogs = await Blog.find(query)
+    const blogs = await withCache(
+      `admin:blogs:${JSON.stringify(query)
       .sort({ displayOrder: 1, publishedAt: -1, createdAt: -1 })
-      .lean();
+      .lean()}`,
+      async () => await Blog.find(query)
+      .sort({ displayOrder: 1, publishedAt: -1, createdAt: -1 })
+      .lean().lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     return NextResponse.json({ blogs });
   } catch (error) {

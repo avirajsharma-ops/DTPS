@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import ProgressEntry from '@/lib/db/models/ProgressEntry';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user to find assigned dietitian
-    const user = await User.findById(session.user.id);
+    const user = await withCache(
+      `tracking:weight:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).lean(),
+      { ttl: 120000, tags: ['tracking'] }
+    );
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -51,13 +56,23 @@ export async function POST(request: NextRequest) {
     );
 
     // Get recent weight entries for trend
-    const recentEntries = await ProgressEntry.find({
+    const recentEntries = await withCache(
+      `tracking:weight:${JSON.stringify({
       user: session.user.id,
       type: 'weight'
     })
     .sort({ recordedAt: -1 })
     .limit(7)
-    .select('value recordedAt');
+    .select('value recordedAt')}`,
+      async () => await ProgressEntry.find({
+      user: session.user.id,
+      type: 'weight'
+    })
+    .sort({ recordedAt: -1 })
+    .limit(7)
+    .select('value recordedAt').lean(),
+      { ttl: 120000, tags: ['tracking'] }
+    );
 
     return NextResponse.json({
       success: true,
@@ -87,20 +102,34 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const user = await User.findById(session.user.id);
+    const user = await withCache(
+      `tracking:weight:${JSON.stringify(session.user.id)}`,
+      async () => await User.findById(session.user.id).lean(),
+      { ttl: 120000, tags: ['tracking'] }
+    );
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Get recent weight entries for trend
-    const recentEntries = await ProgressEntry.find({
+    const recentEntries = await withCache(
+      `tracking:weight:${JSON.stringify({
       user: session.user.id,
       type: 'weight'
     })
     .sort({ recordedAt: -1 })
     .limit(30)
-    .select('value recordedAt');
+    .select('value recordedAt')}`,
+      async () => await ProgressEntry.find({
+      user: session.user.id,
+      type: 'weight'
+    })
+    .sort({ recordedAt: -1 })
+    .limit(30)
+    .select('value recordedAt').lean(),
+      { ttl: 120000, tags: ['tracking'] }
+    );
 
     return NextResponse.json({
       weight: {

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import MedicalInfo from '@/lib/db/models/MedicalInfo';
 import User from '@/lib/db/models/User';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,12 +29,20 @@ export async function GET(
     await connectDB();
 
     // Verify the client exists
-    const client = await User.findById(clientId);
+    const client = await withCache(
+      `admin:clients:clientId:medical-info:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    const medicalInfo = await MedicalInfo.findOne({ userId: clientId });
+    const medicalInfo = await withCache(
+      `admin:clients:clientId:medical-info:${JSON.stringify({ userId: clientId })}`,
+      async () => await MedicalInfo.findOne({ userId: clientId }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     return NextResponse.json({
       success: true,
@@ -72,7 +81,11 @@ export async function PUT(
     await connectDB();
 
     // Verify the client exists
-    const client = await User.findById(clientId);
+    const client = await withCache(
+      `admin:clients:clientId:medical-info:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }

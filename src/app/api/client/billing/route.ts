@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import Payment from '@/lib/db/models/Payment';
 import User from '@/lib/db/models/User';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/client/billing - Get billing information for the client
 export async function GET(request: NextRequest) {
@@ -16,12 +17,21 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Get all payments for this client
-    const payments = await Payment.find({
+    const payments = await withCache(
+      `client:billing:${JSON.stringify({
       client: session.user.id
     })
       .populate('dietitian', 'firstName lastName')
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(50)}`,
+      async () => await Payment.find({
+      client: session.user.id
+    })
+      .populate('dietitian', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .limit(50).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     // Find the most recent active subscription
     const activePayment = payments.find((p: any) => {

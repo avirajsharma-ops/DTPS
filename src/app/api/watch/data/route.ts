@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import { WatchService } from '@/watchconnectivity/backend/services/WatchService';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/watch/data - Get watch health data (optimized)
 export async function GET(req: NextRequest) {

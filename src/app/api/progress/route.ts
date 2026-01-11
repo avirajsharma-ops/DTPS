@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import ProgressEntry from '@/lib/db/models/ProgressEntry';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/progress - Get progress entries
 export async function GET(request: NextRequest) {
@@ -32,7 +33,11 @@ export async function GET(request: NextRequest) {
     } else if (session.user.role === UserRole.DIETITIAN) {
       if (clientId) {
         // Verify the dietitian is assigned to this client
-        const client = await User.findById(clientId).select('assignedDietitian assignedDietitians');
+        const client = await withCache(
+      `progress:${JSON.stringify(clientId).select('assignedDietitian assignedDietitians')}`,
+      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians').lean(),
+      { ttl: 120000, tags: ['progress'] }
+    );
         const isAssigned = 
           client?.assignedDietitian?.toString() === session.user.id ||
           client?.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
@@ -70,16 +75,25 @@ export async function GET(request: NextRequest) {
       query.type = type;
     }
 
-    const progressEntries = await ProgressEntry.find(query)
+    const progressEntries = await withCache(
+      `progress:${JSON.stringify(query)
       .populate('user', 'firstName lastName')
       .sort({ recordedAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)}`,
+      async () => await ProgressEntry.find(query)
+      .populate('user', 'firstName lastName')
+      .sort({ recordedAt: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit).lean(),
+      { ttl: 120000, tags: ['progress'] }
+    );
 
     const total = await ProgressEntry.countDocuments(query);
 
     // Get latest entry for each type for summary
-    const latestEntries = await ProgressEntry.aggregate([
+    const latestEntries = await withCache(
+      `progress:${JSON.stringify([
       { $match: query },
       { $sort: { recordedAt: -1 } },
       {
@@ -88,7 +102,19 @@ export async function GET(request: NextRequest) {
           latestEntry: { $first: '$$ROOT' }
         }
       }
-    ]);
+    ])}`,
+      async () => await ProgressEntry.aggregate([
+      { $match: query },
+      { $sort: { recordedAt: -1 } },
+      {
+        $group: {
+          _id: '$type',
+          latestEntry: { $first: '$$ROOT' }
+        }
+      }
+    ]),
+      { ttl: 120000, tags: ['progress'] }
+    );
 
     return NextResponse.json({
       progressEntries,

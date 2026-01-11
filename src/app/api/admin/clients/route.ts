@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/admin/clients - Get all clients for admin
 export async function GET(request: NextRequest) {
@@ -59,7 +60,8 @@ export async function GET(request: NextRequest) {
 
     console.log('Query:', JSON.stringify(query));
 
-    const clients = await User.find(query)
+    const clients = await withCache(
+      `admin:clients:${JSON.stringify(query)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email avatar')
       .populate('assignedDietitians', 'firstName lastName email avatar')
@@ -72,7 +74,23 @@ export async function GET(request: NextRequest) {
       })
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)}`,
+      async () => await User.find(query)
+      .select('-password')
+      .populate('assignedDietitian', 'firstName lastName email avatar')
+      .populate('assignedDietitians', 'firstName lastName email avatar')
+      .populate('assignedHealthCounselor', 'firstName lastName email avatar')
+      .populate('assignedHealthCounselors', 'firstName lastName email avatar')
+      .populate({
+        path: 'createdBy.userId',
+        select: 'firstName lastName role',
+        strictPopulate: false
+      })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     // Debug log for assigned dietitian
     const clientsWithDebug = JSON.parse(JSON.stringify(clients));

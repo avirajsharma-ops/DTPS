@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import { LifestyleInfo } from '@/lib/db/models';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/[id]/lifestyle - Get lifestyle info for user
 export async function GET(
@@ -19,7 +20,11 @@ export async function GET(
     await connectDB();
     const { id } = await params;
 
-    const lifestyleInfo = await LifestyleInfo.findOne({ userId: id });
+    const lifestyleInfo = await withCache(
+      `users:id:lifestyle:${JSON.stringify({ userId: id })}`,
+      async () => await LifestyleInfo.findOne({ userId: id }).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
 
     if (!lifestyleInfo) {
       return NextResponse.json({ lifestyleInfo: null });

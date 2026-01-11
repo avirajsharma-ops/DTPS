@@ -4,12 +4,17 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export const dynamic = 'force-dynamic';
 
 // Helper function to check if dietitian is assigned to client
 async function isDietitianAssigned(dietitianId: string, clientId: string): Promise<boolean> {
-  const client = await User.findById(clientId).select('assignedDietitian assignedDietitians');
+  const client = await withCache(
+      `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId).select('assignedDietitian assignedDietitians')}`,
+      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians').lean(),
+      { ttl: 120000, tags: ['dietitian_panel'] }
+    );
   if (!client) return false;
   
   return (
@@ -43,10 +48,17 @@ export async function GET(
       return NextResponse.json({ error: 'You are not assigned to this client' }, { status: 403 });
     }
 
-    const client = await User.findById(clientId)
+    const client = await withCache(
+      `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email')
-      .populate('assignedDietitians', 'firstName lastName email');
+      .populate('assignedDietitians', 'firstName lastName email')}`,
+      async () => await User.findById(clientId)
+      .select('-password')
+      .populate('assignedDietitian', 'firstName lastName email')
+      .populate('assignedDietitians', 'firstName lastName email').lean(),
+      { ttl: 120000, tags: ['dietitian_panel'] }
+    );
 
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
@@ -88,7 +100,11 @@ export async function PUT(
     }
 
     // Verify the client exists
-    const existingClient = await User.findById(clientId);
+    const existingClient = await withCache(
+      `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId)}`,
+      async () => await User.findById(clientId).lean(),
+      { ttl: 120000, tags: ['dietitian_panel'] }
+    );
     if (!existingClient) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }

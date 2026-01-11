@@ -6,6 +6,7 @@ import Transformation from '@/lib/db/models/Transformation';
 import { getImageKit } from '@/lib/imagekit';
 import { UserRole } from '@/types';
 import { compressBase64ImageServer } from '@/lib/imageCompressionServer';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Get single transformation
 export async function GET(
@@ -21,7 +22,11 @@ export async function GET(
     const { id } = await params;
     await dbConnect();
 
-    const transformation = await Transformation.findById(id).lean();
+    const transformation = await withCache(
+      `admin:transformations:id:${JSON.stringify(id).lean()}`,
+      async () => await Transformation.findById(id).lean().lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!transformation) {
       return NextResponse.json({ error: 'Transformation not found' }, { status: 404 });
     }
@@ -50,7 +55,11 @@ export async function PUT(
     const { id } = await params;
     await dbConnect();
 
-    const transformation = await Transformation.findById(id);
+    const transformation = await withCache(
+      `admin:transformations:id:${JSON.stringify(id)}`,
+      async () => await Transformation.findById(id).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
     if (!transformation) {
       return NextResponse.json({ error: 'Transformation not found' }, { status: 404 });
     }

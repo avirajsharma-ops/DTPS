@@ -10,6 +10,7 @@ import { createMessageWebhook } from '@/lib/webhooks/webhook-manager';
 import { z } from 'zod';
 import { logHistoryServer } from '@/lib/server/history';
 import { sendNewMessageNotification } from '@/lib/notifications/notificationService';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Message validation schema
 const messageSchema = z.object({
@@ -79,14 +80,24 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const messages = await Message.find(query)
-      .populate('sender', 'firstName lastName avatar')
-      .populate('receiver', 'firstName lastName avatar')
-      .sort({ createdAt: 1 }) // Sort oldest first for proper chat order
-      .limit(limit)
-      .skip((page - 1) * limit);
+    // Generate cache key based on user and conversation
+    const cacheKey = `messages:${session.user.id}:${conversationWith || 'all'}:${page}:${limit}`;
+    
+    const { messages, total } = await withCache(
+      cacheKey,
+      async () => {
+        const messages = await Message.find(query)
+          .populate('sender', 'firstName lastName avatar')
+          .populate('receiver', 'firstName lastName avatar')
+          .sort({ createdAt: 1 }) // Sort oldest first for proper chat order
+          .limit(limit)
+          .skip((page - 1) * limit);
 
-    const total = await Message.countDocuments(query);
+        const total = await Message.countDocuments(query);
+        return { messages, total };
+      },
+      { ttl: 30000, tags: ['messages', `messages:${session.user.id}`] } // 30 seconds TTL
+    );
 
     // Mark messages as read if viewing conversation
     if (conversationWith) {
@@ -173,6 +184,11 @@ export async function POST(request: NextRequest) {
     });
 
     await message.save();
+
+    // Clear messages cache for both sender and recipient
+    clearCacheByTag(`messages:${session.user.id}`);
+    clearCacheByTag(`messages:${validatedData.recipientId}`);
+    clearCacheByTag('messages');
 
     // Populate the created message
     await message.populate('sender', 'firstName lastName avatar');

@@ -5,6 +5,7 @@ import dbConnect from '@/lib/db/connect';
 import User from '@/lib/db/models/User';
 import { ServicePlan } from '@/lib/db/models/ServicePlan';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Schema for purchase requests
 const purchaseRequestSchema = new mongoose.Schema({
@@ -52,7 +53,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the service plan
-    const servicePlan = await ServicePlan.findById(servicePlanId);
+    const servicePlan = await withCache(
+      `client:purchase-request:${JSON.stringify(servicePlanId)}`,
+      async () => await ServicePlan.findById(servicePlanId).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
     if (!servicePlan || !servicePlan.isActive) {
       return NextResponse.json({ error: 'Service plan not found or inactive' }, { status: 404 });
     }
@@ -66,18 +71,32 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the client's assigned dietitian
-    const client = await User.findById(session.user.id)
-      .select('assignedDietitian assignedDietitians firstName lastName email');
+    const client = await withCache(
+      `client:purchase-request:${JSON.stringify(session.user.id)
+      .select('assignedDietitian assignedDietitians firstName lastName email')}`,
+      async () => await User.findById(session.user.id)
+      .select('assignedDietitian assignedDietitians firstName lastName email').lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
     
     const dietitianId = client?.assignedDietitian || client?.assignedDietitians?.[0];
 
     // Check if there's already a pending request for this plan
-    const existingRequest = await PurchaseRequest.findOne({
+    const existingRequest = await withCache(
+      `client:purchase-request:${JSON.stringify({
       client: session.user.id,
       servicePlan: servicePlanId,
       pricingTierId,
       status: 'pending'
-    });
+    })}`,
+      async () => await PurchaseRequest.findOne({
+      client: session.user.id,
+      servicePlan: servicePlanId,
+      pricingTierId,
+      status: 'pending'
+    }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     if (existingRequest) {
       return NextResponse.json({ 
@@ -132,11 +151,19 @@ export async function GET(request: NextRequest) {
 
     await dbConnect();
 
-    const purchaseRequests = await PurchaseRequest.find({
+    const purchaseRequests = await withCache(
+      `client:purchase-request:${JSON.stringify({
       client: session.user.id
     })
     .populate('servicePlan', 'name category description')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })}`,
+      async () => await PurchaseRequest.find({
+      client: session.user.id
+    })
+    .populate('servicePlan', 'name category description')
+    .sort({ createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
     return NextResponse.json({
       success: true,

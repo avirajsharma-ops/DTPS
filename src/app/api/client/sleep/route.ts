@@ -5,6 +5,7 @@ import JournalTracking from '@/lib/db/models/JournalTracking';
 import { authOptions } from '@/lib/auth';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(request: NextRequest) {
     try {
@@ -22,10 +23,17 @@ export async function GET(request: NextRequest) {
         const dayStart = startOfDay(targetDate);
         const dayEnd = endOfDay(targetDate);
 
-        const journal = await JournalTracking.findOne({
+        const journal = await withCache(
+      `client:sleep:${JSON.stringify({
             client: session.user.id,
             date: { $gte: dayStart, $lt: dayEnd }
-        });
+        })}`,
+      async () => await JournalTracking.findOne({
+            client: session.user.id,
+            date: { $gte: dayStart, $lt: dayEnd }
+        }).lean(),
+      { ttl: 120000, tags: ['client'] }
+    );
 
         if (!journal) {
             return NextResponse.json({

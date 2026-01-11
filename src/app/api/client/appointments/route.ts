@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import Appointment from '@/lib/db/models/Appointment';
 import User from '@/lib/db/models/User';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/client/appointments - Get appointments for current client user
 export async function GET(request: NextRequest) {
@@ -30,12 +31,21 @@ export async function GET(request: NextRequest) {
       query.status = status;
     }
 
-    const appointments = await Appointment.find(query)
+    const appointments = await withCache(
+      `client:appointments:${JSON.stringify(query)
       .populate('dietitian', 'firstName lastName email avatar')
       .populate('client', 'firstName lastName email avatar')
       .sort({ scheduledAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)}`,
+      async () => await Appointment.find(query)
+      .populate('dietitian', 'firstName lastName email avatar')
+      .populate('client', 'firstName lastName email avatar')
+      .sort({ scheduledAt: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit).lean(),
+      { ttl: 60000, tags: ['client'] }
+    );
 
     const total = await Appointment.countDocuments(query);
 
@@ -105,7 +115,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the dietitian exists and is assigned to this client
-    const client = await User.findById(session.user.id).select('assignedDietitian assignedDietitians');
+    const client = await withCache(
+      `client:appointments:${JSON.stringify(session.user.id).select('assignedDietitian assignedDietitians')}`,
+      async () => await User.findById(session.user.id).select('assignedDietitian assignedDietitians').lean(),
+      { ttl: 60000, tags: ['client'] }
+    );
     const assignedDietitians = [
       client?.assignedDietitian?.toString(),
       ...(client?.assignedDietitians?.map((d: any) => d.toString()) || [])

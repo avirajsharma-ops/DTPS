@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connect';
 import DietTemplate from '@/lib/db/models/DietTemplate';
 import { UserRole } from '@/types';
 import { z } from 'zod';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Validation schema for meal type config
 const mealTypeConfigSchema = z.object({
@@ -181,12 +182,21 @@ export async function GET(request: NextRequest) {
         sortOptions = { createdAt: -1 };
     }
 
-    const templates = await DietTemplate.find(query)
+    const templates = await withCache(
+      `diet-templates:${JSON.stringify(query)
       .populate('createdBy', 'firstName lastName')
       .sort(sortOptions)
       .limit(limit)
       .skip(skip)
-      .lean();
+      .lean()}`,
+      async () => await DietTemplate.find(query)
+      .populate('createdBy', 'firstName lastName')
+      .sort(sortOptions)
+      .limit(limit)
+      .skip(skip)
+      .lean().lean(),
+      { ttl: 120000, tags: ['diet_templates'] }
+    );
 
     const total = await DietTemplate.countDocuments(query);
 

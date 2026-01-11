@@ -3,6 +3,7 @@ import connectDB from '@/lib/db/connection';
 import Task from '@/lib/db/models/Task';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/config';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(
   req: NextRequest,
@@ -18,10 +19,17 @@ export async function GET(
 
     const { taskId } = await params;
 
-    const task = await Task.findById(taskId)
+    const task = await withCache(
+      `clients:clientId:tasks:taskId:${JSON.stringify(taskId)
       .populate('client', 'firstName lastName email')
       .populate('dietitian', 'firstName lastName email')
-      .populate('tags', 'name color icon');
+      .populate('tags', 'name color icon')}`,
+      async () => await Task.findById(taskId)
+      .populate('client', 'firstName lastName email')
+      .populate('dietitian', 'firstName lastName email')
+      .populate('tags', 'name color icon').lean(),
+      { ttl: 60000, tags: ['clients'] }
+    );
 
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
@@ -56,7 +64,11 @@ export async function PUT(
     const body = await req.json();
 
     // Find the task first to check ownership
-    const existingTask = await Task.findById(taskId);
+    const existingTask = await withCache(
+      `clients:clientId:tasks:taskId:${JSON.stringify(taskId)}`,
+      async () => await Task.findById(taskId).lean(),
+      { ttl: 60000, tags: ['clients'] }
+    );
     
     if (!existingTask) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
@@ -119,7 +131,11 @@ export async function DELETE(
     const { taskId } = await params;
 
     // Find the task first to check ownership
-    const task = await Task.findById(taskId);
+    const task = await withCache(
+      `clients:clientId:tasks:taskId:${JSON.stringify(taskId)}`,
+      async () => await Task.findById(taskId).lean(),
+      { ttl: 60000, tags: ['clients'] }
+    );
     
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });

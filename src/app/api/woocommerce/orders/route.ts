@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // WooCommerce API configuration
 const WOOCOMMERCE_API_URL = 'https://dtpoonamsagar.com/wp-json/wc/v3/orders';

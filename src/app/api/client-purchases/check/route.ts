@@ -9,6 +9,7 @@ import User from '@/lib/db/models/User';
 import MealPlan from '@/lib/db/models/MealPlan';
 import { PaymentStatus, PaymentType, ClientStatus } from '@/types';
 import Razorpay from 'razorpay';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Initialize Razorpay for syncing payment status
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
@@ -25,15 +26,28 @@ async function updateClientStatusBasedOnMealPlan(clientId: string): Promise<stri
     today.setHours(0, 0, 0, 0);
     
     // Check if client has any active meal plan (current date within plan date range)
-    const activeMealPlan = await MealPlan.findOne({
+    const activeMealPlan = await withCache(
+      `client-purchases:check:${JSON.stringify({
       client: clientId,
       status: 'active',
       startDate: { $lte: today },
       endDate: { $gte: today }
-    });
+    })}`,
+      async () => await MealPlan.findOne({
+      client: clientId,
+      status: 'active',
+      startDate: { $lte: today },
+      endDate: { $gte: today }
+    }).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
     
     // Get current client status
-    const client = await User.findById(clientId).select('clientStatus createdAt');
+    const client = await withCache(
+      `client-purchases:check:${JSON.stringify(clientId).select('clientStatus createdAt')}`,
+      async () => await User.findById(clientId).select('clientStatus createdAt').lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
     if (!client) return 'leading';
     
     let newStatus = client.clientStatus || 'leading';
@@ -44,7 +58,11 @@ async function updateClientStatusBasedOnMealPlan(clientId: string): Promise<stri
     } else {
       // No active meal plan
       // Check if they ever had a meal plan
-      const anyMealPlan = await MealPlan.findOne({ client: clientId });
+      const anyMealPlan = await withCache(
+      `client-purchases:check:${JSON.stringify({ client: clientId })}`,
+      async () => await MealPlan.findOne({ client: clientId }).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
       
       if (anyMealPlan) {
         // Had a meal plan before but not active now - set to inactive
@@ -74,9 +92,15 @@ async function updateClientStatusBasedOnMealPlan(clientId: string): Promise<stri
 async function createPaymentRecordFromLink(paymentLink: any): Promise<string | null> {
   try {
     // Check if Payment record already exists
-    const existingPayment = await Payment.findOne({
+    const existingPayment = await withCache(
+      `client-purchases:check:${JSON.stringify({
       paymentLink: paymentLink._id
-    });
+    })}`,
+      async () => await Payment.findOne({
+      paymentLink: paymentLink._id
+    }).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
     
     if (existingPayment) {
       return existingPayment._id.toString();
@@ -167,11 +191,19 @@ export async function GET(request: NextRequest) {
     if (forceSync) {
 
       // Aggressively sync ALL payment links for this client
-      const allPaymentLinks = await PaymentLink.find({
+      const allPaymentLinks = await withCache(
+      `client-purchases:check:${JSON.stringify({
         client: clientId,
         servicePlanId: { $exists: true, $ne: null },
         durationDays: { $exists: true, $gt: 0 }
-      }).sort({ createdAt: -1 }).limit(10); // Check all recent links
+      }).sort({ createdAt: -1 }).limit(10)}`,
+      async () => await PaymentLink.find({
+        client: clientId,
+        servicePlanId: { $exists: true, $ne: null },
+        durationDays: { $exists: true, $gt: 0 }
+      }).sort({ createdAt: -1 }).limit(10).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    ); // Check all recent links
 
 
       let syncedCount = 0;
@@ -185,9 +217,15 @@ export async function GET(request: NextRequest) {
             await createPaymentRecordFromLink(paymentLink);
 
             // Create ClientPurchase for newly synced paid payment
-            const existingPurchase = await ClientPurchase.findOne({ 
+            const existingPurchase = await withCache(
+      `client-purchases:check:${JSON.stringify({ 
               paymentLink: paymentLink._id 
-            });
+            })}`,
+      async () => await ClientPurchase.findOne({ 
+              paymentLink: paymentLink._id 
+            }).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
 
             if (!existingPurchase) {
               const startDate = paymentLink.paidAt || new Date();
@@ -224,18 +262,31 @@ export async function GET(request: NextRequest) {
     } else {
       // STEP 1: Try to sync any pending payment links with Razorpay
       // This ensures we catch payments that webhook might have missed
-      const pendingPaymentLinks = await PaymentLink.find({
+      const pendingPaymentLinks = await withCache(
+      `client-purchases:check:${JSON.stringify({
         client: clientId,
         status: { $in: ['pending', 'created'] },
         servicePlanId: { $exists: true, $ne: null },
         durationDays: { $exists: true, $gt: 0 }
-      }).sort({ createdAt: -1 }).limit(5); // Check last 5 pending links
+      }).sort({ createdAt: -1 }).limit(5)}`,
+      async () => await PaymentLink.find({
+        client: clientId,
+        status: { $in: ['pending', 'created'] },
+        servicePlanId: { $exists: true, $ne: null },
+        durationDays: { $exists: true, $gt: 0 }
+      }).sort({ createdAt: -1 }).limit(5).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    ); // Check last 5 pending links
 
       for (const pendingLink of pendingPaymentLinks) {
         const wasPaid = await syncPaymentLinkWithRazorpay(pendingLink);
         if (wasPaid) {
           // Create ClientPurchase for newly synced paid payment
-          const existingPurchase = await ClientPurchase.findOne({ paymentLink: pendingLink._id });
+          const existingPurchase = await withCache(
+      `client-purchases:check:${JSON.stringify({ paymentLink: pendingLink._id })}`,
+      async () => await ClientPurchase.findOne({ paymentLink: pendingLink._id }).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
           if (!existingPurchase) {
             const startDate = pendingLink.paidAt || new Date();
             const endDate = new Date(startDate);
@@ -272,13 +323,23 @@ export async function GET(request: NextRequest) {
 
     // STEP 2: Find ALL client's active purchases that haven't expired
     
-    const allActivePurchases = await ClientPurchase.find({
+    const allActivePurchases = await withCache(
+      `client-purchases:check:${JSON.stringify({
       client: clientId,
       status: 'active',
       endDate: { $gte: new Date() }
     })
     .populate('servicePlan', 'name category')
-    .sort({ createdAt: 1 }); // Sort by creation date (oldest first - FIFO)
+    .sort({ createdAt: 1 })}`,
+      async () => await ClientPurchase.find({
+      client: clientId,
+      status: 'active',
+      endDate: { $gte: new Date() }
+    })
+    .populate('servicePlan', 'name category')
+    .sort({ createdAt: 1 }).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    ); // Sort by creation date (oldest first - FIFO)
 
     // PRIORITY ORDER FOR MEAL PLAN CREATION:
     // 1. FIRST: Complete any partially used purchase (daysUsed > 0 but still has remaining days)
@@ -331,21 +392,36 @@ export async function GET(request: NextRequest) {
 
     // STEP 3: If no active purchase found, check for paid payment links without ClientPurchase
     if (!activePurchase) {
-      const paidPaymentLink = await PaymentLink.findOne({
+      const paidPaymentLink = await withCache(
+      `client-purchases:check:${JSON.stringify({
         client: clientId,
         status: 'paid',
         servicePlanId: { $exists: true, $ne: null },
         durationDays: { $exists: true, $gt: 0 }
-      }).sort({ paidAt: -1 });
+      }).sort({ paidAt: -1 })}`,
+      async () => await PaymentLink.findOne({
+        client: clientId,
+        status: 'paid',
+        servicePlanId: { $exists: true, $ne: null },
+        durationDays: { $exists: true, $gt: 0 }
+      }).sort({ paidAt: -1 }).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
 
       if (paidPaymentLink) {
         // Ensure Payment record exists for this paid link
         await createPaymentRecordFromLink(paidPaymentLink);
         
         // Check if ClientPurchase already exists for this payment link
-        const existingPurchase = await ClientPurchase.findOne({
+        const existingPurchase = await withCache(
+      `client-purchases:check:${JSON.stringify({
           paymentLink: paidPaymentLink._id
-        });
+        })}`,
+      async () => await ClientPurchase.findOne({
+          paymentLink: paidPaymentLink._id
+        }).lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
 
         if (!existingPurchase) {
           // Create ClientPurchase from paid payment link
@@ -383,8 +459,13 @@ export async function GET(request: NextRequest) {
           );
           
           // Use the newly created purchase
-          const createdPurchase = await ClientPurchase.findById(newPurchase._id)
-            .populate('servicePlan', 'name category');
+          const createdPurchase = await withCache(
+      `client-purchases:check:${JSON.stringify(newPurchase._id)
+            .populate('servicePlan', 'name category')}`,
+      async () => await ClientPurchase.findById(newPurchase._id)
+            .populate('servicePlan', 'name category').lean(),
+      { ttl: 120000, tags: ['client_purchases'] }
+    );
           if (createdPurchase) {
             activePurchase = createdPurchase;
           }

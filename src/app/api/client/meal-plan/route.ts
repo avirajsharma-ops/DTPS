@@ -6,6 +6,7 @@ import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import Recipe from '@/lib/db/models/Recipe';
 import { UserRole } from '@/types';
 import { startOfDay, endOfDay, parseISO, format } from 'date-fns';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/client/meal-plan - Get client's meal plan for a specific date
 export async function GET(request: NextRequest) {

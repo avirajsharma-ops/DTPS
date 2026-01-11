@@ -7,6 +7,7 @@ import { UserRole } from '@/types';
 import mongoose from 'mongoose';
 import { format } from 'date-fns';
 import { logHistoryServer } from '@/lib/server/history';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Helper to get date without time
 const getDateOnly = (date: Date | string): Date => {
@@ -60,9 +61,15 @@ export async function GET(request: NextRequest) {
       query.status = status;
     }
 
-    const assignments = await ActivityAssignment.find(query)
+    const assignments = await withCache(
+      `activity-assignments:${JSON.stringify(query)
       .populate('assignedBy', 'firstName lastName')
-      .sort({ date: -1, createdAt: -1 });
+      .sort({ date: -1, createdAt: -1 })}`,
+      async () => await ActivityAssignment.find(query)
+      .populate('assignedBy', 'firstName lastName')
+      .sort({ date: -1, createdAt: -1 }).lean(),
+      { ttl: 120000, tags: ['activity_assignments'] }
+    );
 
     return NextResponse.json({
       success: true,
@@ -205,7 +212,11 @@ export async function PUT(request: NextRequest) {
 
     await connectDB();
 
-    const assignment = await ActivityAssignment.findById(assignmentId);
+    const assignment = await withCache(
+      `activity-assignments:${JSON.stringify(assignmentId)}`,
+      async () => await ActivityAssignment.findById(assignmentId).lean(),
+      { ttl: 120000, tags: ['activity_assignments'] }
+    );
     
     if (!assignment) {
       return NextResponse.json({ error: 'Assignment not found' }, { status: 404 });
@@ -308,7 +319,11 @@ export async function DELETE(request: NextRequest) {
 
     if (targetId) {
       // Delete specific target
-      const assignment = await ActivityAssignment.findById(assignmentId);
+      const assignment = await withCache(
+      `activity-assignments:${JSON.stringify(assignmentId)}`,
+      async () => await ActivityAssignment.findById(assignmentId).lean(),
+      { ttl: 120000, tags: ['activity_assignments'] }
+    );
       if (!assignment) {
         return NextResponse.json({ error: 'Assignment not found' }, { status: 404 });
       }

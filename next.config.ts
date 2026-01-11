@@ -382,6 +382,15 @@ const nextConfig: NextConfig = {
           { key: 'Expires', value: '0' },
         ],
       },
+      // GLOBAL: Disable caching for ALL APIs - ensures fresh data always
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate' },
+          { key: 'Pragma', value: 'no-cache' },
+          { key: 'Expires', value: '0' },
+        ],
+      },
 
       {
         source: '/:path*',

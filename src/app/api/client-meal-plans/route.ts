@@ -10,6 +10,7 @@ import { UserRole } from '@/types';
 import { z } from 'zod';
 import { logHistoryServer } from '@/lib/server/history';
 import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Validation schema for client meal plan assignment
 const clientMealPlanSchema = z.object({
@@ -77,7 +78,11 @@ export async function GET(request: NextRequest) {
       // If clientId is specified, filter by that client
       if (clientId) {
         // Check if dietitian has access to this client
-        const client = await User.findById(clientId).select('assignedDietitian assignedDietitians');
+        const client = await withCache(
+      `client-meal-plans:${JSON.stringify(clientId).select('assignedDietitian assignedDietitians')}`,
+      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians').lean(),
+      { ttl: 120000, tags: ['client_meal_plans'] }
+    );
         if (!client) {
           return NextResponse.json({ 
             success: true,
@@ -108,13 +113,23 @@ export async function GET(request: NextRequest) {
         query.clientId = clientId;
       } else {
         // No clientId specified - get all clients assigned to this dietitian
-        const assignedClients = await User.find({
+        const assignedClients = await withCache(
+      `client-meal-plans:${JSON.stringify({
           role: UserRole.CLIENT,
           $or: [
             { assignedDietitian: session.user.id },
             { assignedDietitians: session.user.id }
           ]
-        }).select('_id');
+        }).select('_id')}`,
+      async () => await User.find({
+          role: UserRole.CLIENT,
+          $or: [
+            { assignedDietitian: session.user.id },
+            { assignedDietitians: session.user.id }
+          ]
+        }).select('_id').lean(),
+      { ttl: 120000, tags: ['client_meal_plans'] }
+    );
         const assignedClientIds = assignedClients.map(c => c._id);
         
         // Dietitian can see meal plans they created OR for their assigned clients
@@ -132,7 +147,11 @@ export async function GET(request: NextRequest) {
       // Health counselors can see meal plans for their assigned clients
       if (clientId) {
         // Check if HC has access to this client
-        const client = await User.findById(clientId).select('assignedHealthCounselor');
+        const client = await withCache(
+      `client-meal-plans:${JSON.stringify(clientId).select('assignedHealthCounselor')}`,
+      async () => await User.findById(clientId).select('assignedHealthCounselor').lean(),
+      { ttl: 120000, tags: ['client_meal_plans'] }
+    );
         if (!client) {
           return NextResponse.json({ 
             success: true,
@@ -154,10 +173,17 @@ export async function GET(request: NextRequest) {
         query.clientId = clientId;
       } else {
         // No clientId specified - get all clients assigned to this HC
-        const assignedClients = await User.find({
+        const assignedClients = await withCache(
+      `client-meal-plans:${JSON.stringify({
           role: UserRole.CLIENT,
           assignedHealthCounselor: session.user.id
-        }).select('_id');
+        }).select('_id')}`,
+      async () => await User.find({
+          role: UserRole.CLIENT,
+          assignedHealthCounselor: session.user.id
+        }).select('_id').lean(),
+      { ttl: 120000, tags: ['client_meal_plans'] }
+    );
         const assignedClientIds = assignedClients.map(c => c._id);
         
         query.clientId = { $in: assignedClientIds };
@@ -247,7 +273,11 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Validate that the client exists and is a client
-    const client = await User.findById(validatedData.clientId);
+    const client = await withCache(
+      `client-meal-plans:${JSON.stringify(validatedData.clientId)}`,
+      async () => await User.findById(validatedData.clientId).lean(),
+      { ttl: 120000, tags: ['client_meal_plans'] }
+    );
     if (!client || client.role !== UserRole.CLIENT) {
       return NextResponse.json({
         error: 'Invalid client',
@@ -292,7 +322,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for overlapping active meal plans for the same client
-    const overlappingPlan = await ClientMealPlan.findOne({
+    const overlappingPlan = await withCache(
+      `client-meal-plans:${JSON.stringify({
       clientId: validatedData.clientId,
       status: 'active',
       $or: [
@@ -301,7 +332,19 @@ export async function POST(request: NextRequest) {
           endDate: { $gte: startDate }
         }
       ]
-    });
+    })}`,
+      async () => await ClientMealPlan.findOne({
+      clientId: validatedData.clientId,
+      status: 'active',
+      $or: [
+        {
+          startDate: { $lte: endDate },
+          endDate: { $gte: startDate }
+        }
+      ]
+    }).lean(),
+      { ttl: 120000, tags: ['client_meal_plans'] }
+    );
 
     if (overlappingPlan) {
       return NextResponse.json({

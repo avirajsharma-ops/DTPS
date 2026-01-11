@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { withConditionalCache, errorResponse } from '@/lib/api/utils';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/admin/dietitians - Get all dietitians for admin
 export async function GET(request: NextRequest) {
@@ -38,9 +39,15 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const dietitians = await User.find(query)
+    const dietitians = await withCache(
+      `admin:dietitians:${JSON.stringify(query)
       .select('firstName lastName email avatar phone specialization status updatedAt')
-      .sort({ firstName: 1, lastName: 1 });
+      .sort({ firstName: 1, lastName: 1 })}`,
+      async () => await User.find(query)
+      .select('firstName lastName email avatar phone specialization status updatedAt')
+      .sort({ firstName: 1, lastName: 1 }).lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     // Get client count for each dietitian
     const dietitiansWithCounts = await Promise.all(

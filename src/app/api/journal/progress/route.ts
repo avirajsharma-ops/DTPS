@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { UserRole } from '@/types';
 import mongoose from 'mongoose';
 import { logHistoryServer } from '@/lib/server/history';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Helper to check if user has permission to access client data
 const checkPermission = (session: any, clientId?: string): boolean => {
@@ -60,7 +61,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Get journal entries for this client with progress data
-    const journals = await JournalTracking.find(query).sort({ date: -1 });
+    const journals = await withCache(
+      `journal:progress:${JSON.stringify(query).sort({ date: -1 })}`,
+      async () => await JournalTracking.find(query).sort({ date: -1 }).lean(),
+      { ttl: 120000, tags: ['journal'] }
+    );
 
     // Flatten all progress entries with their dates
     const allProgress: any[] = [];

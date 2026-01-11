@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // This endpoint provides Firebase configuration for the service worker
 // The service worker cannot access process.env directly, so it fetches config from here

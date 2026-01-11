@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { getImageKit } from '@/lib/imagekit';
 import { compressImageServer } from '@/lib/imageCompressionServer';
 import mongoose from 'mongoose';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // Recipe validation schema - flexible to handle both old and new formats (no word limits)
 const recipeSchema = z.object({
@@ -187,61 +188,72 @@ export async function GET(request: NextRequest) {
         sortOptions = { name: 1, _id: 1 };
     }
 
-    let recipesQuery = Recipe.find(query)
-      .populate({
-        path: 'createdBy',
-        select: 'firstName lastName',
-        options: { strictPopulate: false }
-      })
-      .sort(sortOptions);
+    // Generate cache key based on query params
+    const cacheKey = `recipes:${search || ''}:${category || ''}:${cuisine || ''}:${difficulty || ''}:${sortBy}:${page}:${limit}`;
+    
+    const { recipes, total, cuisines, tags } = await withCache(
+      cacheKey,
+      async () => {
+        let recipesQuery = Recipe.find(query)
+          .populate({
+            path: 'createdBy',
+            select: 'firstName lastName',
+            options: { strictPopulate: false }
+          })
+          .sort(sortOptions);
 
-    // For numeric UUID sorting, don't use limit/skip yet - we'll do it after sorting
-    if (!isNumericUuidSort && limit > 0) {
-      recipesQuery = recipesQuery.limit(limit).skip((page - 1) * limit);
-    }
-
-    const recipesRaw = await recipesQuery.lean(); // Use lean() for better performance
-
-    // Sanitize recipes to ensure nutrition object exists with default values
-    let recipes = recipesRaw.map((recipe: any) => {
-      return {
-        ...recipe,
-        nutrition: recipe.nutrition || {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0
-        },
-        createdBy: recipe.createdBy || { firstName: 'Unknown', lastName: 'User' }
-      };
-    });
-
-    // Post-process sorting for UUID (numeric sort for string numbers)
-    // This handles all records before pagination
-    if (isNumericUuidSort) {
-      recipes.sort((a, b) => {
-        const aUuid = parseInt(a.uuid || '0') || 0;
-        const bUuid = parseInt(b.uuid || '0') || 0;
-        if (sortBy === 'uuid') {
-          return aUuid - bUuid;
-        } else {
-          return bUuid - aUuid;
+        // For numeric UUID sorting, don't use limit/skip yet - we'll do it after sorting
+        if (!isNumericUuidSort && limit > 0) {
+          recipesQuery = recipesQuery.limit(limit).skip((page - 1) * limit);
         }
-      });
-      
-      // Apply pagination after sorting
-      if (limit > 0) {
-        const startIdx = (page - 1) * limit;
-        const endIdx = startIdx + limit;
-        recipes = recipes.slice(startIdx, endIdx);
-      }
-    }
 
-    const total = await Recipe.countDocuments(query);
+        const recipesRaw = await recipesQuery.lean(); // Use lean() for better performance
 
-    // Get unique values for filtering
-    const cuisines = await Recipe.distinct('cuisine');
-    const tags = await Recipe.distinct('tags');
+        // Sanitize recipes to ensure nutrition object exists with default values
+        let recipes = recipesRaw.map((recipe: any) => {
+          return {
+            ...recipe,
+            nutrition: recipe.nutrition || {
+              calories: 0,
+              protein: 0,
+              carbs: 0,
+              fat: 0
+            },
+            createdBy: recipe.createdBy || { firstName: 'Unknown', lastName: 'User' }
+          };
+        });
+
+        // Post-process sorting for UUID (numeric sort for string numbers)
+        // This handles all records before pagination
+        if (isNumericUuidSort) {
+          recipes.sort((a: any, b: any) => {
+            const aUuid = parseInt(a.uuid || '0') || 0;
+            const bUuid = parseInt(b.uuid || '0') || 0;
+            if (sortBy === 'uuid') {
+              return aUuid - bUuid;
+            } else {
+              return bUuid - aUuid;
+            }
+          });
+          
+          // Apply pagination after sorting
+          if (limit > 0) {
+            const startIdx = (page - 1) * limit;
+            const endIdx = startIdx + limit;
+            recipes = recipes.slice(startIdx, endIdx);
+          }
+        }
+
+        const total = await Recipe.countDocuments(query);
+
+        // Get unique values for filtering
+        const cuisines = await Recipe.distinct('cuisine');
+        const tags = await Recipe.distinct('tags');
+
+        return { recipes, total, cuisines, tags };
+      },
+      { ttl: 300000, tags: ['recipes'] } // 5 minutes TTL
+    );
 
     return NextResponse.json({
       success: true,
@@ -414,6 +426,9 @@ export async function POST(request: NextRequest) {
     // Create recipe
     const recipe = new Recipe(recipeData);
     await recipe.save();
+
+    // Clear recipes cache after creation
+    clearCacheByTag('recipes');
 
     // Populate the created recipe
     await recipe.populate('createdBy', 'firstName lastName');

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import { User, Appointment } from '@/lib/db/models';
 import { UserRole } from '@/types';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,10 +22,17 @@ export async function GET(request: NextRequest) {
     const limit = limitParam === 'all' ? null : parseInt(limitParam || '10');
 
     // Get all dietitians with their client counts and appointment stats
-    const dietitians = await User.find({
+    const dietitians = await withCache(
+      `admin:top-dietitians:${JSON.stringify({
       role: { $in: [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR] },
       status: 'active'
-    }).select('firstName lastName email avatar createdAt');
+    }).select('firstName lastName email avatar createdAt')}`,
+      async () => await User.find({
+      role: { $in: [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR] },
+      status: 'active'
+    }).select('firstName lastName email avatar createdAt').lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
     const topDietitians = [];
 
@@ -55,11 +63,19 @@ export async function GET(request: NextRequest) {
       const rating = Math.min(4.9, 3.5 + (completionRate * 1.4) + (Math.min(clientCount, 50) / 100));
 
       // Get recent client activity
-      const recentClients = await User.find({
+      const recentClients = await withCache(
+      `admin:top-dietitians:${JSON.stringify({
         role: 'client',
         assignedDietitian: dietitian._id,
         updatedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-      }).countDocuments();
+      }).countDocuments()}`,
+      async () => await User.find({
+        role: 'client',
+        assignedDietitian: dietitian._id,
+        updatedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+      }).countDocuments().lean(),
+      { ttl: 120000, tags: ['admin'] }
+    );
 
       topDietitians.push({
         id: dietitian._id,

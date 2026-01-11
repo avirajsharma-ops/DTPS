@@ -6,6 +6,7 @@ import User from '@/lib/db/models/User';
 import { File as FileModel } from '@/lib/db/models/File';
 import { UserRole } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // POST /api/users/[id]/documents - Upload document
 export async function POST(
@@ -73,7 +74,11 @@ export async function POST(
     const fileUrl = `/api/files/${savedFile._id}`;
 
     // Update user document
-    const user = await User.findById(id);
+    const user = await withCache(
+      `users:id:documents:${JSON.stringify(id)}`,
+      async () => await User.findById(id).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
     if (!user) {
       // Clean up the saved file if user not found
       await FileModel.findByIdAndDelete(savedFile._id);
@@ -149,7 +154,11 @@ export async function GET(
     await connectDB();
     const { id } = await params;
 
-    const user = await User.findById(id).select('documents');
+    const user = await withCache(
+      `users:id:documents:${JSON.stringify(id).select('documents')}`,
+      async () => await User.findById(id).select('documents').lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -182,7 +191,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Document index or filePath required' }, { status: 400 });
     }
 
-    const user = await User.findById(id);
+    const user = await withCache(
+      `users:id:documents:${JSON.stringify(id)}`,
+      async () => await User.findById(id).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -207,7 +220,11 @@ export async function DELETE(
     const fileId = document.filePath?.split('/').pop();
     let uploadedBy = null;
     if (fileId) {
-      const file = await FileModel.findById(fileId);
+      const file = await withCache(
+      `users:id:documents:${JSON.stringify(fileId)}`,
+      async () => await FileModel.findById(fileId).lean(),
+      { ttl: 120000, tags: ['users'] }
+    );
       uploadedBy = file?.uploadedBy?.toString();
     }
 

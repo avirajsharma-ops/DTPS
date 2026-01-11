@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 import { broadcastUnreadCounts } from '../unread-counts/stream/route';
 import { SSEManager } from '@/lib/realtime/sse-manager';
 import { sendNewMessageNotification } from '@/lib/notifications/notificationService';
+import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/client/messages - Get messages for current client
 export async function GET(request: NextRequest) {
@@ -45,12 +46,21 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const messages = await Message.find(query)
+    const messages = await withCache(
+      `client:messages:${JSON.stringify(query)
       .populate('sender', 'firstName lastName avatar role')
       .populate('receiver', 'firstName lastName avatar role')
       .sort({ createdAt: 1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)}`,
+      async () => await Message.find(query)
+      .populate('sender', 'firstName lastName avatar role')
+      .populate('receiver', 'firstName lastName avatar role')
+      .sort({ createdAt: 1 })
+      .limit(limit)
+      .skip((page - 1) * limit).lean(),
+      { ttl: 30000, tags: ['client'] }
+    );
 
     const total = await Message.countDocuments(query);
 
@@ -116,7 +126,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify recipient exists
-    const recipient = await User.findById(recipientId).select('firstName lastName role');
+    const recipient = await withCache(
+      `client:messages:${JSON.stringify(recipientId).select('firstName lastName role')}`,
+      async () => await User.findById(recipientId).select('firstName lastName role').lean(),
+      { ttl: 30000, tags: ['client'] }
+    );
     if (!recipient) {
       return NextResponse.json(
         { error: 'Recipient not found' },
@@ -155,7 +169,11 @@ export async function POST(request: NextRequest) {
     sseManager.sendToUser(session.user.id, 'new_message', messagePayload);
 
     // Send push notification to recipient (dietitian/health counselor)
-    const sender = await User.findById(session.user.id).select('firstName lastName');
+    const sender = await withCache(
+      `client:messages:${JSON.stringify(session.user.id).select('firstName lastName')}`,
+      async () => await User.findById(session.user.id).select('firstName lastName').lean(),
+      { ttl: 30000, tags: ['client'] }
+    );
     const senderName = sender ? `${sender.firstName} ${sender.lastName}` : 'A user';
     try {
       await sendNewMessageNotification(
@@ -192,7 +210,8 @@ export async function POST(request: NextRequest) {
 
 // Helper function to get conversations list (not exported as route handler)
 async function getConversations(userId: string) {
-  const conversations = await Message.aggregate([
+  const conversations = await withCache(
+      `client:messages:${JSON.stringify([
     {
       $match: {
         $or: [
@@ -263,7 +282,81 @@ async function getConversations(userId: string) {
     {
       $sort: { 'lastMessage.createdAt': -1 }
     }
-  ]);
+  ])}`,
+      async () => await Message.aggregate([
+    {
+      $match: {
+        $or: [
+          { sender: new mongoose.Types.ObjectId(userId) },
+          { receiver: new mongoose.Types.ObjectId(userId) }
+        ]
+      }
+    },
+    {
+      $sort: { createdAt: -1 }
+    },
+    {
+      $group: {
+        _id: {
+          $cond: [
+            { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+            '$receiver',
+            '$sender'
+          ]
+        },
+        lastMessage: { $first: '$$ROOT' },
+        unreadCount: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ['$receiver', new mongoose.Types.ObjectId(userId)] },
+                  { $eq: ['$isRead', false] }
+                ]
+              },
+              1,
+              0
+            ]
+          }
+        }
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    {
+      $unwind: '$user'
+    },
+    {
+      $project: {
+        _id: 1,
+        user: {
+          _id: '$user._id',
+          firstName: '$user.firstName',
+          lastName: '$user.lastName',
+          avatar: '$user.avatar',
+          role: '$user.role'
+        },
+        lastMessage: {
+          content: '$lastMessage.content',
+          type: '$lastMessage.type',
+          createdAt: '$lastMessage.createdAt',
+          isRead: '$lastMessage.isRead'
+        },
+        unreadCount: 1
+      }
+    },
+    {
+      $sort: { 'lastMessage.createdAt': -1 }
+    }
+  ]),
+      { ttl: 30000, tags: ['client'] }
+    );
 
   return conversations;
 }
