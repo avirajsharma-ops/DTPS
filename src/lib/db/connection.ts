@@ -46,14 +46,12 @@ const connectionOptions = {
   serverSelectionTimeoutMS: 5000, // 5 second timeout (fast fail)
   socketTimeoutMS: 30000, // 30 second socket timeout
   family: 4, // Force IPv4 to avoid DNS issues
-  maxPoolSize: 0, // 0 = unlimited connections (no boundary for random users)
-  minPoolSize: 10, // Keep minimum connections warm
   maxIdleTimeMS: 120000, // Keep idle connections for 2 minutes
   retryWrites: true,
   retryReads: true,
   heartbeatFrequencyMS: 5000, // Check connection health every 5s (faster recovery)
   connectTimeoutMS: 10000, // 10 second connect timeout
-  waitQueueTimeoutMS: 10000, // Wait max 10s for a connection from pool
+  waitQueueTimeoutMS: 30000, // Wait max 30s for a connection from pool
 };
 
 // Retry configuration - fast retries
