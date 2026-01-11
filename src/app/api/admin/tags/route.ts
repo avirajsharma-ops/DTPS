@@ -1,31 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
-import connectDB from '@/lib/db/connect';
+import connectDB from '@/lib/db/connection';
 import Tag from '@/lib/db/models/Tag';
+import { withConditionalCache, errorResponse } from '@/lib/api/utils';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 403 }
-      );
+    if (!session || !session.user?.role?.toLowerCase().includes('admin')) {
+      return errorResponse('Unauthorized. Admin access required.', 403, 'ADMIN_REQUIRED');
     }
 
     await connectDB();
 
     // Get all tags with sorting
-    const tags = await Tag.find({}).sort({ name: 1 });
+    const tags = await Tag.find({}).sort({ name: 1 }).lean();
 
-    return NextResponse.json(tags, { status: 200 });
-  } catch (error) {
+    // Use conditional caching for tags (relatively static data)
+    return withConditionalCache(tags, req, {
+      maxAge: 60, // Cache for 60 seconds
+      private: true,
+    });
+  } catch (error: any) {
     console.error('Error fetching tags:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch tags' },
-      { status: 500 }
+    return errorResponse(
+      error.message || 'Failed to fetch tags',
+      500,
+      'FETCH_ERROR'
     );
   }
 }

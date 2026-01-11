@@ -4,23 +4,21 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
+import { withConditionalCache, errorResponse } from '@/lib/api/utils';
 
 // GET /api/admin/dietitians - Get all dietitians for admin
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponse('Unauthorized', 401, 'AUTH_REQUIRED');
     }
 
     // Check if user has admin role (case-insensitive and flexible)
     const userRole = session.user.role?.toLowerCase();
     
     if (!userRole || (!userRole.includes('admin') && userRole !== 'admin')) {
-      return NextResponse.json({ 
-        error: 'Forbidden - Admin access required', 
-        userRole: session.user.role 
-      }, { status: 403 });
+      return errorResponse('Forbidden - Admin access required', 403, 'ADMIN_REQUIRED');
     }
 
     await connectDB();
@@ -41,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     const dietitians = await User.find(query)
-      .select('firstName lastName email avatar phone specialization status')
+      .select('firstName lastName email avatar phone specialization status updatedAt')
       .sort({ firstName: 1, lastName: 1 });
 
     // Get client count for each dietitian
@@ -58,15 +56,22 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    return NextResponse.json({
+    const responseData = {
       dietitians: dietitiansWithCounts
+    };
+
+    // Use conditional caching for admin API (returns 304 if unchanged)
+    return withConditionalCache(responseData, request, {
+      maxAge: 30, // Cache for 30 seconds
+      private: true, // Admin-only, private cache
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching dietitians:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch dietitians' },
-      { status: 500 }
+    return errorResponse(
+      error.message || 'Failed to fetch dietitians',
+      500,
+      'FETCH_ERROR'
     );
   }
 }

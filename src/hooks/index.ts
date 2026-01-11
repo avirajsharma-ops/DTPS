@@ -20,3 +20,4 @@ export { useCallManager } from './useCallManager';
 export { useSimpleWebRTC } from './useSimpleWebRTC';
 export { default as useBodyScrollLock } from './useBodyScrollLock';
 export { useScrollRestoration, saveScrollPosition, getScrollPosition } from './useScrollRestoration';
+export { useAuthenticatedFetch, authenticatedFetch } from './useAuthenticatedFetch';

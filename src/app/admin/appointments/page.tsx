@@ -84,14 +84,39 @@ export default function AdminAppointmentsPage() {
       params.set('page', String(page));
       if (search.trim()) params.set('search', search.trim());
       if (statusFilter !== 'all') params.set('status', statusFilter);
-      const res = await fetch(`/api/appointments?${params.toString()}`);
-      if (!res.ok) throw new Error(await res.text());
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      
+      const res = await fetch(`/api/appointments?${params.toString()}`, {
+        signal: controller.signal,
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        // Check if response is HTML (nginx error page)
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('text/html')) {
+          throw new Error(`Server error (${res.status}). Please try again.`);
+        }
+        const errorText = await res.text();
+        throw new Error(errorText || `Request failed with status ${res.status}`);
+      }
+      
       const data = await res.json();
       setAppointments(data.appointments || []);
       setPages(data.pagination?.pages || 1);
       setTotal(data.pagination?.total || 0);
     } catch (e: any) {
-      setError(e?.message || "Failed to load appointments");
+      if (e.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(e?.message || "Failed to load appointments");
+      }
     } finally {
       setLoading(false);
     }
@@ -100,18 +125,24 @@ export default function AdminAppointmentsPage() {
   async function fetchDietitiansAndClients() {
     try {
       const [dietitiansRes, clientsRes] = await Promise.all([
-        fetch('/api/users/dietitians'),
-        fetch('/api/users/clients')
+        fetch('/api/users/dietitians', { cache: 'no-store' }),
+        fetch('/api/users/clients', { cache: 'no-store' })
       ]);
       
       if (dietitiansRes.ok) {
-        const dietitiansData = await dietitiansRes.json();
-        setDietitians(dietitiansData.dietitians || []);
+        const contentType = dietitiansRes.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const dietitiansData = await dietitiansRes.json();
+          setDietitians(dietitiansData.dietitians || []);
+        }
       }
       
       if (clientsRes.ok) {
-        const clientsData = await clientsRes.json();
-        setClients(clientsData.clients || []);
+        const contentType = clientsRes.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const clientsData = await clientsRes.json();
+          setClients(clientsData.clients || []);
+        }
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -226,7 +257,16 @@ export default function AdminAppointmentsPage() {
                 <LoadingSpinner />
               </div>
             ) : error ? (
-              <div className="text-red-600 text-sm">{error}</div>
+              <div className="py-8 flex flex-col items-center justify-center gap-4">
+                <div className="text-red-600 text-sm text-center max-w-md">{error}</div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => fetchAppointments()}
+                  className="flex items-center gap-2"
+                >
+                  Try Again
+                </Button>
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">

@@ -6,6 +6,7 @@ import { ClientAppLayout } from "@/components/layout/ClientAppLayout";
 import { Toaster } from "@/components/ui/sonner";
 import PushNotificationProvider from "@/components/providers/PushNotificationProvider";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import GlobalFetchInterceptor from "@/components/providers/GlobalFetchInterceptor";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -71,6 +72,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>
+          <GlobalFetchInterceptor />
           <ThemeProvider>
             <PushNotificationProvider autoRegister={true}>
               <ClientAppLayout>
