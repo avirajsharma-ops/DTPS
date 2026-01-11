@@ -912,6 +912,7 @@ export default function UserHomePage() {
                     ) : (
                       <UserCheck className="h-8 w-8 text-[#3AB1A0]" />
                     )}
+                    
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
