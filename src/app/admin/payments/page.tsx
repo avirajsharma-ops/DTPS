@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useRealtime } from '@/hooks/useRealtime';
 
 interface Payment {
   _id: string;
@@ -96,6 +97,32 @@ export default function AdminPaymentsPage() {
     }
     fetchPayments();
   }, [session, status, router]);
+
+  const fetchPaymentsQuiet = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/payments');
+      if (!response.ok) return;
+      const data = await response.json();
+      setPayments(data.payments || []);
+      setStats(data.stats || {
+        totalPayments: 0,
+        totalRevenue: 0,
+        completedPayments: 0,
+        pendingPayments: 0,
+        failedPayments: 0,
+      });
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useRealtime({
+    onMessage: (event) => {
+      if (event.type === 'payment_updated' || event.type === 'payment_link_updated') {
+        fetchPaymentsQuiet();
+      }
+    },
+  });
 
   const fetchPayments = async () => {
     try {

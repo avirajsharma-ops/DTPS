@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import Payment from '@/lib/db/models/Payment';
-import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/admin/payments - Get all payments for admin
 export async function GET(request: NextRequest) {
@@ -30,17 +29,13 @@ export async function GET(request: NextRequest) {
       query.type = type;
     }
 
-    // Fetch payments
-    const payments = await withCache(
-      `admin:payments:${JSON.stringify(query)}:limit=${limit}:skip=${skip}`,
-      async () => await Payment.find(query)
+    // Fetch payments (no cache; admin expects live data)
+    const payments = await Payment.find(query)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName')
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip(skip),
-      { ttl: 120000, tags: ['admin'] }
-    );
+      .skip(skip);
 
     // Get stats
     const [totalPayments, completedPayments, pendingPayments, failedPayments, revenueResult] = await Promise.all([

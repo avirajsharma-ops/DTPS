@@ -5,6 +5,10 @@ import PaymentLink from '@/lib/db/models/PaymentLink';
 import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import Payment from '@/lib/db/models/Payment';
 import { PaymentStatus, PaymentType } from '@/types';
+import User from '@/lib/db/models/User';
+import { UserRole } from '@/types';
+import { clearCacheByTag } from '@/lib/api/utils';
+import { SSEManager } from '@/lib/realtime/sse-manager';
 
 // Helper function to create ClientPurchase from PaymentLink
 async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<any> {
@@ -106,7 +110,9 @@ export async function POST(request: NextRequest) {
     const { paymentLinkId, paymentId, signature } = body;
 
     if (!paymentLinkId) {
-      return NextResponse.json({ error: 'Payment link ID is required' }, { status: 400 });
+      const response = NextResponse.json({ error: 'Payment link ID is required' }, { status: 400 });
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
     }
 
     await connectDB();
@@ -117,16 +123,20 @@ export async function POST(request: NextRequest) {
     }).populate('client', 'firstName lastName email');
 
     if (!paymentLink) {
-      return NextResponse.json({ error: 'Payment link not found' }, { status: 404 });
+      const response = NextResponse.json({ error: 'Payment link not found' }, { status: 404 });
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
     }
 
     // If already paid, just return the details
     if (paymentLink.status === 'paid') {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         paymentLink,
         message: 'Payment already verified'
       });
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
     }
 
     // Verify signature if provided
@@ -153,20 +163,54 @@ export async function POST(request: NextRequest) {
       
       // Create Payment record for accounting
       const payment = await createPaymentRecordFromLink(paymentLink);
+
+      // Invalidate caches so payment sections update without manual refresh.
+      clearCacheByTag('payment_links');
+      clearCacheByTag('payments');
+
+      // Realtime notify: admin + involved client + involved dietitian
+      try {
+        const admins = await User.find({ role: UserRole.ADMIN }).select('_id');
+        const sse = SSEManager.getInstance();
+        const notifyUserIds = new Set<string>([
+          ...admins.map(a => String(a._id)),
+          String(paymentLink.client),
+          String(paymentLink.dietitian),
+        ]);
+        sse.sendToUsers(Array.from(notifyUserIds), 'payment_link_updated', {
+          paymentLinkId: String(paymentLink._id),
+          status: paymentLink.status,
+          paidAt: paymentLink.paidAt,
+        });
+        if (payment) {
+          sse.sendToUsers(Array.from(notifyUserIds), 'payment_updated', {
+            paymentId: String(payment._id),
+            status: payment.status,
+            paidAt: payment.paidAt,
+            paymentLinkId: String(paymentLink._id),
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to emit payment SSE events (verify):', e);
+      }
       
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       paymentLink,
       message: 'Payment verified successfully'
     });
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
 
   } catch (error) {
     console.error('Payment verification error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to verify payment' },
       { status: 500 }
     );
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
   }
 }

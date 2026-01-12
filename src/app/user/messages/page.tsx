@@ -354,6 +354,7 @@ export default function UserMessagesPage() {
                     className="p-2 -ml-2 md:hidden hover:bg-white/10 rounded-full"
                     onClick={() => setSelectedConversation(null)}
                   >
+                    
                     <ArrowLeft className="w-5 h-5 text-white" />
                   </button>
                   <div className="h-10 w-10 rounded-full bg-white/20 md:bg-[#075E54]/10 flex items-center justify-center overflow-hidden">
@@ -449,7 +450,7 @@ export default function UserMessagesPage() {
               {/* Input Area - WhatsApp Style - Fixed at bottom */}
               <div
                 className={`p-2 sm:p-3 md:border-t md:rounded-b-xl shrink-0 ${
-                  isDarkMode ? 'bg-gray-900 md:bg-gray-900 md:border-gray-800' : 'bg-[#F0F0F0] md:bg-white md:border-gray-100'
+                  isDarkMode ? 'bg-gray-900 md:bg-gray-900 md:border-gray-800' : 'bg-[#F0F0F0]md:bg-white md:border-gray-100'
                 }`}
               >
                 <div className="flex items-center gap-2">

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Copy, Plus, RefreshCw, MoreVertical, Trash2, ExternalLink, Eye, FileText, Bell, Loader2, Mail, Printer, Package, ChevronDown, Wallet, Upload, Calendar } from "lucide-react";
+import { useRealtime } from "@/hooks/useRealtime";
 
 // Service Plan interfaces
 interface PricingTier {
@@ -217,7 +218,7 @@ export default function PaymentsSection({
     
     setLoading(true);
     try {
-      const response = await fetch(`/api/payment-links?clientId=${client._id}`);
+      const response = await fetch(`/api/payment-links?clientId=${client._id}`, { cache: 'no-store' });
       const data = await response.json();
       
       if (data.success) {
@@ -236,6 +237,14 @@ export default function PaymentsSection({
   useEffect(() => {
     fetchPaymentLinks();
   }, [fetchPaymentLinks]);
+
+  useRealtime({
+    onMessage: (event) => {
+      if (event.type === 'payment_link_updated' || event.type === 'payment_updated') {
+        fetchPaymentLinks();
+      }
+    },
+  });
 
   // Load service plans when modal opens
   useEffect(() => {

@@ -57,6 +57,7 @@ import {
   ImageIcon,
 } from 'lucide-react';
 import { UserRole } from '@/types';
+import { useRealtime } from '@/hooks/useRealtime';
 
 interface OtherPlatformPayment {
   _id: string;
@@ -158,6 +159,25 @@ export default function OtherPlatformPaymentsPage() {
       setLoading(false);
     }
   }, []);
+
+  const fetchPaymentsQuiet = useCallback(async () => {
+    try {
+      const res = await fetch('/api/other-platform-payments');
+      if (!res.ok) return;
+      const data = await res.json();
+      setPayments(data.payments || []);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useRealtime({
+    onMessage: (event) => {
+      if (event.type === 'other_platform_payment_updated') {
+        fetchPaymentsQuiet();
+      }
+    },
+  });
 
   useEffect(() => {
     if (sessionStatus === 'loading') return;
@@ -359,7 +379,7 @@ export default function OtherPlatformPaymentsPage() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search payments..."
-                  className="pl-8 w-[250px]"
+                  className="pl-8 w-62.5"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />

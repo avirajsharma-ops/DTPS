@@ -17,6 +17,7 @@ import {
   Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useRealtime } from '@/hooks/useRealtime';
 
 interface Payment {
   _id: string;
@@ -46,6 +47,14 @@ export default function BillingPage() {
   useEffect(() => {
     fetchPayments();
   }, []);
+
+  useRealtime({
+    onMessage: (event) => {
+      if (event.type === 'payment_updated' || event.type === 'payment_link_updated') {
+        fetchPayments();
+      }
+    },
+  });
 
   const fetchPayments = async () => {
     try {

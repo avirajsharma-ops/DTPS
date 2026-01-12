@@ -107,6 +107,18 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
 
+        // Allow unauthenticated access to payment callbacks/public payment-link endpoints.
+        // These are hit by external providers (Razorpay) or on redirect back from payment.
+        if (
+          pathname.startsWith('/api/payment-links/webhook') ||
+          pathname.startsWith('/api/payment-links/verify') ||
+          pathname.startsWith('/api/payment-links/public') ||
+          pathname.startsWith('/payment/success') ||
+          pathname.startsWith('/payment/manual')
+        ) {
+          return true;
+        }
+
         // Allow public read-only access to blogs endpoints (list + detail).
         // This prevents WebView cookie/session flakiness from hiding blogs UI.
         if (pathname.startsWith('/api/client/blogs')) {

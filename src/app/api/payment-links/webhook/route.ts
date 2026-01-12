@@ -5,7 +5,10 @@ import PaymentLink from '@/lib/db/models/PaymentLink';
 import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import Payment from '@/lib/db/models/Payment';
 import { PaymentStatus, PaymentType } from '@/types';
-import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { clearCacheByTag } from '@/lib/api/utils';
+import User from '@/lib/db/models/User';
+import { UserRole } from '@/types';
+import { SSEManager } from '@/lib/realtime/sse-manager';
 
 // Razorpay webhook secret
 const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
@@ -14,17 +17,10 @@ const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
 async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<any> {
   try {
     // Check if ClientPurchase already exists
-    const existingPurchase = await withCache(
-      `payment-links:webhook:${JSON.stringify({
+    const existingPurchase = await ClientPurchase.findOne({
       client: paymentLink.client,
       razorpayPaymentId: paymentLink.razorpayPaymentId
-    })}`,
-      async () => await ClientPurchase.findOne({
-      client: paymentLink.client,
-      razorpayPaymentId: paymentLink.razorpayPaymentId
-    }),
-      { ttl: 120000, tags: ['payment_links'] }
-    );
+    });
 
     if (existingPurchase) {
       return existingPurchase;
@@ -71,15 +67,9 @@ async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<an
 async function createPaymentRecordFromLink(paymentLink: any): Promise<any> {
   try {
     // Check if Payment record already exists
-    const existingPayment = await withCache(
-      `payment-links:webhook:${JSON.stringify({
+    const existingPayment = await Payment.findOne({
       paymentLink: paymentLink._id
-    })}`,
-      async () => await Payment.findOne({
-      paymentLink: paymentLink._id
-    }),
-      { ttl: 120000, tags: ['payment_links'] }
-    );
+    });
 
     if (existingPayment) {
       return existingPayment;
@@ -158,15 +148,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Find payment link by Razorpay ID
-        const paymentLink = await withCache(
-      `payment-links:webhook:${JSON.stringify({
+        const paymentLink = await PaymentLink.findOne({
           razorpayPaymentLinkId: paymentLinkEntity.id
-        })}`,
-      async () => await PaymentLink.findOne({
-          razorpayPaymentLinkId: paymentLinkEntity.id
-        }),
-      { ttl: 120000, tags: ['payment_links'] }
-    );
+        });
 
         if (!paymentLink) {
           console.error('Payment link not found:', paymentLinkEntity.id);
@@ -226,6 +210,34 @@ export async function POST(request: NextRequest) {
         // Create Payment record for accounting
         const payment = await createPaymentRecordFromLink(paymentLink);
 
+        clearCacheByTag('payment_links');
+        clearCacheByTag('payments');
+
+        try {
+          const admins = await User.find({ role: UserRole.ADMIN }).select('_id');
+          const sse = SSEManager.getInstance();
+          const notifyUserIds = new Set<string>([
+            ...admins.map(a => String(a._id)),
+            String(paymentLink.client),
+            String(paymentLink.dietitian),
+          ]);
+          sse.sendToUsers(Array.from(notifyUserIds), 'payment_link_updated', {
+            paymentLinkId: String(paymentLink._id),
+            status: paymentLink.status,
+            paidAt: paymentLink.paidAt,
+          });
+          if (payment) {
+            sse.sendToUsers(Array.from(notifyUserIds), 'payment_updated', {
+              paymentId: String(payment._id),
+              status: payment.status,
+              paidAt: payment.paidAt,
+              paymentLinkId: String(paymentLink._id),
+            });
+          }
+        } catch (e) {
+          console.warn('Failed to emit payment SSE events (webhook paid):', e);
+        }
+
         break;
       }
 
@@ -236,19 +248,30 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
         }
 
-        const paymentLink = await withCache(
-      `payment-links:webhook:${JSON.stringify({
+        const paymentLink = await PaymentLink.findOne({
           razorpayPaymentLinkId: paymentLinkEntity.id
-        })}`,
-      async () => await PaymentLink.findOne({
-          razorpayPaymentLinkId: paymentLinkEntity.id
-        }),
-      { ttl: 120000, tags: ['payment_links'] }
-    );
+        });
 
         if (paymentLink && paymentLink.status !== 'paid') {
           paymentLink.status = 'expired';
           await paymentLink.save();
+
+          clearCacheByTag('payment_links');
+          try {
+            const admins = await User.find({ role: UserRole.ADMIN }).select('_id');
+            const sse = SSEManager.getInstance();
+            const notifyUserIds = new Set<string>([
+              ...admins.map(a => String(a._id)),
+              String(paymentLink.client),
+              String(paymentLink.dietitian),
+            ]);
+            sse.sendToUsers(Array.from(notifyUserIds), 'payment_link_updated', {
+              paymentLinkId: String(paymentLink._id),
+              status: paymentLink.status,
+            });
+          } catch (e) {
+            console.warn('Failed to emit payment_link_updated (expired):', e);
+          }
         }
         break;
       }
@@ -260,19 +283,30 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
         }
 
-        const paymentLink = await withCache(
-      `payment-links:webhook:${JSON.stringify({
+        const paymentLink = await PaymentLink.findOne({
           razorpayPaymentLinkId: paymentLinkEntity.id
-        })}`,
-      async () => await PaymentLink.findOne({
-          razorpayPaymentLinkId: paymentLinkEntity.id
-        }),
-      { ttl: 120000, tags: ['payment_links'] }
-    );
+        });
 
         if (paymentLink && paymentLink.status !== 'paid') {
           paymentLink.status = 'cancelled';
           await paymentLink.save();
+
+          clearCacheByTag('payment_links');
+          try {
+            const admins = await User.find({ role: UserRole.ADMIN }).select('_id');
+            const sse = SSEManager.getInstance();
+            const notifyUserIds = new Set<string>([
+              ...admins.map(a => String(a._id)),
+              String(paymentLink.client),
+              String(paymentLink.dietitian),
+            ]);
+            sse.sendToUsers(Array.from(notifyUserIds), 'payment_link_updated', {
+              paymentLinkId: String(paymentLink._id),
+              status: paymentLink.status,
+            });
+          } catch (e) {
+            console.warn('Failed to emit payment_link_updated (cancelled):', e);
+          }
         }
         break;
       }
@@ -320,6 +354,33 @@ export async function POST(request: NextRequest) {
           
           // Create Payment record for accounting
           const payment = await createPaymentRecordFromLink(paymentLink);
+
+          clearCacheByTag('payment_links');
+          clearCacheByTag('payments');
+          try {
+            const admins = await User.find({ role: UserRole.ADMIN }).select('_id');
+            const sse = SSEManager.getInstance();
+            const notifyUserIds = new Set<string>([
+              ...admins.map(a => String(a._id)),
+              String(paymentLink.client),
+              String(paymentLink.dietitian),
+            ]);
+            sse.sendToUsers(Array.from(notifyUserIds), 'payment_link_updated', {
+              paymentLinkId: String(paymentLink._id),
+              status: paymentLink.status,
+              paidAt: paymentLink.paidAt,
+            });
+            if (payment) {
+              sse.sendToUsers(Array.from(notifyUserIds), 'payment_updated', {
+                paymentId: String(payment._id),
+                status: payment.status,
+                paidAt: payment.paidAt,
+                paymentLinkId: String(paymentLink._id),
+              });
+            }
+          } catch (e) {
+            console.warn('Failed to emit payment SSE events (captured):', e);
+          }
           
         }
         break;
@@ -328,22 +389,28 @@ export async function POST(request: NextRequest) {
       default:
     }
 
-    return NextResponse.json({ success: true, received: true });
+    const response = NextResponse.json({ success: true, received: true });
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
 
   } catch (error) {
     console.error('Webhook error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }
     );
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
   }
 }
 
 // GET endpoint to check webhook status (for debugging)
 export async function GET() {
-  return NextResponse.json({
+  const response = NextResponse.json({
     status: 'active',
     webhookSecretConfigured: !!webhookSecret,
     message: 'Razorpay webhook endpoint is active'
   });
+  response.headers.set('Cache-Control', 'no-store');
+  return response;
 }

@@ -8,10 +8,11 @@ import { UserRole } from '@/types';
 import Stripe from 'stripe';
 import { logHistoryServer } from '@/lib/server/history';
 import { logActivity, logPaymentFailure } from '@/lib/utils/activityLogger';
-import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { clearCacheByTag } from '@/lib/api/utils';
+import { SSEManager } from '@/lib/realtime/sse-manager';
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-07-30.basil',
+  apiVersion: '2025-08-27.basil',
 }) : null;
 
 // GET /api/payments - Get payments for current user
@@ -44,21 +45,17 @@ export async function GET(request: NextRequest) {
       query.status = status;
     }
 
-    const payments = await withCache(
-      `payments:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
-      async () => await Payment.find(query)
+    const payments = await Payment.find(query)
       .populate('client', 'firstName lastName email')
       .populate('dietitian', 'firstName lastName email')
       .populate('appointment', 'type scheduledAt')
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit),
-      { ttl: 120000, tags: ['payments'] }
-    );
+      .skip((page - 1) * limit);
 
     const total = await Payment.countDocuments(query);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       payments,
       pagination: {
         page,
@@ -67,13 +64,17 @@ export async function GET(request: NextRequest) {
         pages: Math.ceil(total / limit)
       }
     });
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
 
   } catch (error) {
     console.error('Error fetching payments:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to fetch payments' },
       { status: 500 }
     );
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
   }
 }
 
@@ -115,6 +116,9 @@ export async function POST(request: NextRequest) {
     });
 
     await payment.save();
+
+    // Newly created payments should show up immediately in payment lists.
+    clearCacheByTag('payments');
 
     // Record payment creation in history
     await logHistoryServer({
@@ -168,6 +172,22 @@ export async function POST(request: NextRequest) {
     payment.stripePaymentIntentId = paymentIntent.id;
     await payment.save();
 
+    clearCacheByTag('payments');
+
+    // Best-effort realtime notify involved users.
+    try {
+      const sse = SSEManager.getInstance();
+      const notifyUserIds = new Set<string>([
+        String(payment.client),
+        payment.dietitian ? String(payment.dietitian) : '',
+      ].filter(Boolean));
+      sse.sendToUsers(Array.from(notifyUserIds), 'payment_updated', {
+        paymentId: String(payment._id),
+        status: payment.status,
+        createdAt: payment.createdAt,
+      });
+    } catch {}
+
     return NextResponse.json({
       payment,
       paymentIntent
@@ -191,11 +211,7 @@ export async function PUT(request: NextRequest) {
     await connectDB();
 
     // Find payment by Stripe payment intent ID
-    const payment = await withCache(
-      `payments:${JSON.stringify({ stripePaymentIntentId: paymentIntentId })}`,
-      async () => await Payment.findOne({ stripePaymentIntentId: paymentIntentId }),
-      { ttl: 120000, tags: ['payments'] }
-    );
+    const payment = await Payment.findOne({ stripePaymentIntentId: paymentIntentId });
     if (!payment) {
       return NextResponse.json(
         { error: 'Payment not found' },
@@ -214,6 +230,22 @@ export async function PUT(request: NextRequest) {
     }
 
     await payment.save();
+
+    clearCacheByTag('payments');
+
+    // Best-effort realtime notify involved users.
+    try {
+      const sse = SSEManager.getInstance();
+      const notifyUserIds = new Set<string>([
+        payment.client ? String(payment.client) : '',
+        payment.dietitian ? String(payment.dietitian) : '',
+      ].filter(Boolean));
+      sse.sendToUsers(Array.from(notifyUserIds), 'payment_updated', {
+        paymentId: String(payment._id),
+        status: payment.status,
+        paidAt: payment.paidAt,
+      });
+    } catch {}
 
     // Record status update in history for the client
     await logHistoryServer({

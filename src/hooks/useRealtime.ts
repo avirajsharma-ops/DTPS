@@ -115,7 +115,12 @@ class GlobalSSEManager {
 
           // App domain events
           'appointment_booked','appointment_cancelled','appointment_updated',
-          'task_created','task_updated','task_deleted'
+          'task_created','task_updated','task_deleted',
+
+          // Admin domain events
+          'other_platform_payment_updated',
+          'payment_updated',
+          'payment_link_updated'
         ].forEach(eventType => {
           eventSource.addEventListener(eventType, (event) => {
             const subscribers = this.subscribers.get(userId);

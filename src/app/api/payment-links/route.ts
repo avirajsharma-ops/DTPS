@@ -10,6 +10,7 @@ import Razorpay from 'razorpay';
 import { getPaymentCallbackUrl, getPaymentLinkBaseUrl } from '@/lib/config';
 import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { SSEManager } from '@/lib/realtime/sse-manager';
 
 // Initialize Razorpay
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
@@ -148,20 +149,24 @@ export async function GET(request: NextRequest) {
 
     const total = await PaymentLink.countDocuments(query);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       paymentLinks,
       total,
       limit,
       skip
     });
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
 
   } catch (error) {
     console.error('Error fetching payment links:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to fetch payment links' },
       { status: 500 }
     );
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
   }
 }
 
@@ -301,6 +306,34 @@ export async function POST(request: NextRequest) {
       { ttl: 120000, tags: ['payment_links'] }
     );
 
+    // Ensure list/detail caches reflect the newly created link.
+    clearCacheByTag('payment_links');
+
+    // Realtime update for client/dietitian/admin lists
+    try {
+      const adminUsers = await User.find({ role: UserRole.ADMIN }).select('_id');
+      const adminIds = adminUsers.map((u: any) => u._id.toString());
+
+      const sseManager = SSEManager.getInstance();
+      const recipientIds = Array.from(
+        new Set([
+          ...adminIds,
+          validatedData.clientId,
+          session.user.id,
+        ])
+      );
+
+      for (const recipientId of recipientIds) {
+        sseManager.sendToUser(recipientId, 'payment_link_updated', {
+          action: 'created',
+          id: paymentLink._id.toString(),
+          clientId: validatedData.clientId,
+        });
+      }
+    } catch (sseError) {
+      console.error('Failed to emit payment_link_updated SSE:', sseError);
+    }
+
     // Send push notification to client about new payment link
     try {
       const amountFormatted = new Intl.NumberFormat('en-IN', {
@@ -368,11 +401,7 @@ export async function DELETE(request: NextRequest) {
 
     await connectDB();
 
-    const paymentLink = await withCache(
-      `payment-links:${JSON.stringify(id)}`,
-      async () => await PaymentLink.findById(id),
-      { ttl: 120000, tags: ['payment_links'] }
-    );
+    const paymentLink = await PaymentLink.findById(id);
 
     if (!paymentLink) {
       return NextResponse.json({ error: 'Payment link not found' }, { status: 404 });
@@ -402,6 +431,32 @@ export async function DELETE(request: NextRequest) {
     // Mark as cancelled instead of deleting
     paymentLink.status = 'cancelled';
     await paymentLink.save();
+
+    clearCacheByTag('payment_links');
+
+    // Realtime update for client/dietitian/admin lists
+    try {
+      const adminUsers = await User.find({ role: UserRole.ADMIN }).select('_id');
+      const adminIds = adminUsers.map((u: any) => u._id.toString());
+
+      const sseManager = SSEManager.getInstance();
+      const recipientIds = Array.from(
+        new Set([
+          ...adminIds,
+          paymentLink.client?.toString?.() || '',
+          paymentLink.dietitian?.toString?.() || '',
+        ].filter(Boolean))
+      );
+
+      for (const recipientId of recipientIds) {
+        sseManager.sendToUser(recipientId, 'payment_link_updated', {
+          action: 'cancelled',
+          id: paymentLink._id.toString(),
+        });
+      }
+    } catch (sseError) {
+      console.error('Failed to emit payment_link_updated SSE:', sseError);
+    }
 
     return NextResponse.json({
       success: true,

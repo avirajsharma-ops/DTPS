@@ -8,6 +8,8 @@ import { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import PaymentLink from '@/lib/db/models/PaymentLink';
 import { PaymentStatus, PaymentType, UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import User from '@/lib/db/models/User';
+import { SSEManager } from '@/lib/realtime/sse-manager';
 
 // GET - Get single payment details
 export async function GET(
@@ -72,12 +74,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
-    const otherPayment = await withCache(
-      `other-platform-payments:id:${JSON.stringify(id)}`,
-      async () => await OtherPlatformPayment.findById(id)
-      .populate('paymentLink'),
-      { ttl: 120000, tags: ['other_platform_payments'] }
-    );
+    const otherPayment = await OtherPlatformPayment.findById(id).populate('paymentLink');
 
     if (!otherPayment) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
@@ -174,15 +171,33 @@ export async function PUT(
       }
     }
 
-    const updatedPayment = await withCache(
-      `other-platform-payments:id:${JSON.stringify(id)}`,
-      async () => await OtherPlatformPayment.findById(id)
+    // Invalidate cached lists/details so subsequent fetches reflect the new status.
+    clearCacheByTag('other_platform_payments');
+
+    // Notify online admins so their list updates in real-time.
+    try {
+      const admins = await User.find({ role: UserRole.ADMIN }).select('_id');
+      const sse = SSEManager.getInstance();
+      sse.sendToUsers(
+        admins.map(a => String(a._id)),
+        'other_platform_payment_updated',
+        {
+          paymentId: id,
+          status,
+          reviewedAt: otherPayment.reviewedAt,
+          reviewedBy: session.user.id,
+        }
+      );
+    } catch (e) {
+      // Best-effort; do not fail the request if SSE notification fails.
+      console.warn('Failed to emit SSE other_platform_payment_updated:', e);
+    }
+
+    const updatedPayment = await OtherPlatformPayment.findById(id)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName email phone')
       .populate('paymentLink', 'planName planCategory durationDays amount finalAmount')
-      .populate('reviewedBy', 'firstName lastName email'),
-      { ttl: 120000, tags: ['other_platform_payments'] }
-    );
+      .populate('reviewedBy', 'firstName lastName email');
 
     return NextResponse.json({ 
       success: true, 
@@ -212,11 +227,7 @@ export async function DELETE(
     await dbConnect();
     const { id } = await params;
 
-    const payment = await withCache(
-      `other-platform-payments:id:${JSON.stringify(id)}`,
-      async () => await OtherPlatformPayment.findById(id),
-      { ttl: 120000, tags: ['other_platform_payments'] }
-    );
+    const payment = await OtherPlatformPayment.findById(id);
     if (!payment) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
     }
@@ -229,6 +240,20 @@ export async function DELETE(
     }
 
     await OtherPlatformPayment.findByIdAndDelete(id);
+
+    clearCacheByTag('other_platform_payments');
+
+    try {
+      const admins = await User.find({ role: UserRole.ADMIN }).select('_id');
+      const sse = SSEManager.getInstance();
+      sse.sendToUsers(
+        admins.map(a => String(a._id)),
+        'other_platform_payment_updated',
+        { paymentId: id, status: 'deleted' }
+      );
+    } catch (e) {
+      console.warn('Failed to emit SSE other_platform_payment_updated (delete):', e);
+    }
 
     return NextResponse.json({ success: true, message: 'Payment deleted' });
   } catch (error) {

@@ -63,19 +63,21 @@ export async function GET(request: NextRequest) {
       const rating = Math.min(4.9, 3.5 + (completionRate * 1.4) + (Math.min(clientCount, 50) / 100));
 
       // Get recent client activity
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const recentClients = await withCache(
-      `admin:top-dietitians:${JSON.stringify({
-        role: 'client',
-        assignedDietitian: dietitian._id,
-        updatedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-      }).countDocuments()}`,
-      async () => await User.find({
-        role: 'client',
-        assignedDietitian: dietitian._id,
-        updatedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-      }).countDocuments(),
-      { ttl: 120000, tags: ['admin'] }
-    );
+        `admin:top-dietitians:recent-clients:${String(dietitian._id)}:${JSON.stringify({
+          role: 'client',
+          assignedDietitian: dietitian._id,
+          updatedAtGte: thirtyDaysAgo.toISOString(),
+        })}`,
+        async () =>
+          await User.countDocuments({
+            role: 'client',
+            assignedDietitian: dietitian._id,
+            updatedAt: { $gte: thirtyDaysAgo },
+          }),
+        { ttl: 120000, tags: ['admin'] }
+      );
 
       topDietitians.push({
         id: dietitian._id,

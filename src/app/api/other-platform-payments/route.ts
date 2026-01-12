@@ -9,6 +9,7 @@ import User from '@/lib/db/models/User';
 import { getImageKit } from '@/lib/imagekit';
 import { compressImageServer } from '@/lib/imageCompressionServer';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { SSEManager } from '@/lib/realtime/sse-manager';
 
 // GET - List other platform payments
 export async function GET(request: NextRequest) {
@@ -158,6 +159,9 @@ export async function POST(request: NextRequest) {
 
     await otherPlatformPayment.save();
 
+    // Invalidate list caches so it appears immediately.
+    clearCacheByTag('other_platform_payments');
+
     const populatedPayment = await withCache(
       `other-platform-payments:${JSON.stringify(otherPlatformPayment._id)}`,
       async () => await OtherPlatformPayment.findById(otherPlatformPayment._id)
@@ -165,6 +169,23 @@ export async function POST(request: NextRequest) {
       .populate('paymentLink', 'planName planCategory durationDays amount finalAmount'),
       { ttl: 120000, tags: ['other_platform_payments'] }
     );
+
+    // Notify admins (and creator) for real-time list updates.
+    try {
+      const admins = await User.find({ role: UserRole.ADMIN }).select('_id');
+      const sse = SSEManager.getInstance();
+      const notifyUserIds = new Set<string>([
+        ...admins.map(a => String(a._id)),
+        String(session.user.id),
+      ]);
+      sse.sendToUsers(Array.from(notifyUserIds), 'other_platform_payment_updated', {
+        paymentId: String(otherPlatformPayment._id),
+        status: otherPlatformPayment.status,
+        createdAt: otherPlatformPayment.createdAt,
+      });
+    } catch (e) {
+      console.warn('Failed to emit SSE other_platform_payment_updated (create):', e);
+    }
 
     return NextResponse.json({ 
       success: true, 

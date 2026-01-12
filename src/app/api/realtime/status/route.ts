@@ -56,7 +56,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { action } = await request.json();
+    let action: string | undefined;
+    try {
+      const body = await request.json();
+      action = body?.action;
+    } catch {
+      // Some callers occasionally send an empty body; treat it as a heartbeat.
+      action = 'heartbeat';
+    }
+
+    if (!action) action = 'heartbeat';
 
     switch (action) {
       case 'heartbeat':
