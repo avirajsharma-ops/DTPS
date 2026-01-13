@@ -175,10 +175,13 @@ export default function EditDietTemplatePage() {
         router.push(`/meal-plan-templates/diet/${id}`);
       } else {
         const data = await res.json();
-        setError(data.error || 'Failed to update template');
+        const errorMsg = data.error || 'Failed to update template';
+        setError(errorMsg);
+        toast.error('Failed to update template', { description: errorMsg });
       }
     } catch (e) {
       setError('Failed to update template');
+      toast.error('Failed to update template', { description: 'Please try again.' });
     } finally {
       setSaving(false);
     }

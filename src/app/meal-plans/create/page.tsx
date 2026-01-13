@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -20,13 +20,16 @@ import {
   ChefHat,
   Target,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { DietPlanDashboard } from '@/components/dietplandashboard/DietPlanDashboard';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { LifestyleForm } from '@/components/clients/LifestyleForm';
 import { MedicalForm } from '@/components/clients/MedicalForm';
 import { RecallForm, RecallEntry } from '@/components/clients/RecallForm';
+import { toast } from 'sonner';
+import { useMealPlanAutoSave, type MealPlanFormData } from '@/hooks/useAutoSave';
 
 interface Client {
   _id: string;
@@ -111,9 +114,86 @@ function CreateMealPlanPageContent() {
   const [showRecipeSearch, setShowRecipeSearch] = useState(false);
   const [selectedDay, setSelectedDay] = useState(1);
   const [selectedMealType, setSelectedMealType] = useState('breakfast');
+  const [draftRestored, setDraftRestored] = useState(false);
 
   const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
   const planDuration = 7; // 7-day meal plan
+
+  // Memoize form data for auto-save
+  const formData: MealPlanFormData = useMemo(() => ({
+    clientId: selectedClient,
+    planName,
+    description,
+    startDate,
+    endDate,
+    targetCalories,
+    targetProtein,
+    targetCarbs,
+    targetFat,
+    meals,
+    medicalHistory,
+    notes,
+  }), [selectedClient, planName, description, startDate, endDate, targetCalories, targetProtein, targetCarbs, targetFat, meals, medicalHistory, notes]);
+
+  // Auto-save hook (saves draft every 2 seconds, expires after 24 hours)
+  const { 
+    isSaving, 
+    lastSaved, 
+    hasDraft, 
+    clearDraft, 
+    restoreDraft 
+  } = useMealPlanAutoSave('new-meal-plan', formData, {
+    debounceMs: 2000,
+    enabled: !!session?.user?.id,
+  });
+
+  // Restore draft on mount
+  useEffect(() => {
+    if (!draftRestored && session?.user?.id) {
+      const restored = restoreDraft();
+      if (restored) {
+        // Restore all form fields
+        setSelectedClient(restored.clientId || '');
+        setPlanName(restored.planName || '');
+        setDescription(restored.description || '');
+        setStartDate(restored.startDate || '');
+        setEndDate(restored.endDate || '');
+        setTargetCalories(restored.targetCalories || '');
+        setTargetProtein(restored.targetProtein || '');
+        setTargetCarbs(restored.targetCarbs || '');
+        setTargetFat(restored.targetFat || '');
+        setMeals(restored.meals?.length ? restored.meals : []);
+        setMedicalHistory(restored.medicalHistory || '');
+        setNotes(restored.notes || '');
+        
+        toast.success('Draft restored', { 
+          description: 'Your previous meal plan draft has been restored. Draft expires in 24 hours.',
+          duration: 4000 
+        });
+      }
+      setDraftRestored(true);
+    }
+  }, [session?.user?.id, draftRestored, restoreDraft]);
+
+  // Handle clear draft
+  const handleClearDraft = useCallback(() => {
+    clearDraft();
+    // Reset all form fields
+    setSelectedClient('');
+    setPlanName('');
+    setDescription('');
+    setStartDate('');
+    setEndDate('');
+    setTargetCalories('');
+    setTargetProtein('');
+    setTargetCarbs('');
+    setTargetFat('');
+    setMeals([]);
+    setMedicalHistory('');
+    setNotes('');
+    setError('');
+    toast.success('Draft cleared', { description: 'Starting fresh.' });
+  }, [clearDraft]);
 
   useEffect(() => {
     fetchClients();
@@ -206,6 +286,7 @@ function CreateMealPlanPageContent() {
   const handleSubmit = async () => {
     if (!selectedClient || !planName || !startDate || !endDate) {
       setError('Fill required fields first');
+      toast.error('Missing required fields', { description: 'Please fill in all required fields.' });
       return;
     }
     setLoading(true);
@@ -230,14 +311,20 @@ function CreateMealPlanPageContent() {
         })
       });
       if (response.ok) {
+        // Clear draft after successful save
+        clearDraft();
+        toast.success('Meal plan created successfully!');
         router.push('/meal-plans?success=created');
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to create meal plan');
+        const errorMsg = data.error || 'Failed to create meal plan';
+        setError(errorMsg);
+        toast.error('Failed to create meal plan', { description: errorMsg });
       }
     } catch (err) {
       console.error('Error creating meal plan:', err);
       setError('Failed to create meal plan');
+      toast.error('Network error', { description: 'Please check your connection and try again.' });
     } finally {
       setLoading(false);
     }
@@ -247,9 +334,36 @@ function CreateMealPlanPageContent() {
     <DashboardLayout>
       <div className="p-6 space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Meal Plan</h1>
-          <p className="text-gray-600 mt-1">Design a personalized nutrition plan for your client</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Create Meal Plan</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Design a personalized nutrition plan for your client</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Auto-save indicator */}
+            {isSaving && (
+              <span className="text-xs text-gray-500 flex items-center gap-1">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                Saving...
+              </span>
+            )}
+            {!isSaving && lastSaved && (
+              <span className="text-xs text-green-600 dark:text-green-400">
+                Saved {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
+            {hasDraft && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleClearDraft}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Clear Draft
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Summary Header & Controls */}
@@ -259,7 +373,7 @@ function CreateMealPlanPageContent() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <Card className="border border-slate-300 shadow-sm">
+        <Card className="border border-slate-300 shadow-sm dark:border-slate-700">
           <CardContent className="p-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>

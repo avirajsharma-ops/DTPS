@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -32,10 +32,13 @@ import {
   Utensils,
   Apple,
   Zap,
-  Heart
+  Heart,
+  RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
 import { UserRole } from '@/types';
+import { useMealPlanAutoSave } from '@/hooks/useAutoSave';
+import { toast } from 'sonner';
 
 interface Recipe {
   _id: string;
@@ -181,9 +184,10 @@ export default function CreateMealPlanTemplatePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<any>({});
   const [selectedDay, setSelectedDay] = useState(1);
+  const [draftRestored, setDraftRestored] = useState(false);
 
-  // Form state
-  const [template, setTemplate] = useState<MealPlanTemplate>({
+  // Default template state
+  const defaultTemplate: MealPlanTemplate = {
     name: '',
     description: '',
     category: '',
@@ -210,7 +214,59 @@ export default function CreateMealPlanTemplatePage() {
       healthConditions: [],
       goals: []
     }
+  };
+
+  // Form state
+  const [template, setTemplate] = useState<MealPlanTemplate>(defaultTemplate);
+
+  // Auto-save hook for meal plan templates
+  const { 
+    isSaving, 
+    lastSaved, 
+    hasDraft, 
+    clearDraft, 
+    saveDraft,
+    restoreDraft 
+  } = useMealPlanAutoSave('new-template', template, {
+    debounceMs: 2000,
+    enabled: !!session?.user?.id,
+    onSaveSuccess: () => {
+      // Optional: show subtle indicator
+    },
+    onSaveError: (error) => {
+      console.error('Auto-save error:', error);
+    }
   });
+
+  // Restore draft on mount
+  useEffect(() => {
+    if (!draftRestored && session?.user?.id) {
+      const restored = restoreDraft();
+      if (restored && Object.keys(restored).length > 0) {
+        // Validate the restored data
+        if (restored.name !== undefined) {
+          setTemplate(prev => ({
+            ...prev,
+            ...restored,
+          }));
+          toast.success('Draft restored', { 
+            description: 'Your previous work has been restored.',
+            duration: 3000 
+          });
+        }
+      }
+      setDraftRestored(true);
+    }
+  }, [session?.user?.id, draftRestored, restoreDraft]);
+
+  // Handle clear draft
+  const handleClearDraft = useCallback(() => {
+    clearDraft();
+    setTemplate(defaultTemplate);
+    setCurrentStep(1);
+    setSelectedDay(1);
+    toast.success('Draft cleared', { description: 'Starting fresh.' });
+  }, [clearDraft]);
 
   // Check authentication and role
   useEffect(() => {
@@ -339,15 +395,20 @@ export default function CreateMealPlanTemplatePage() {
         body: JSON.stringify(template)
       });
       if (res.ok) {
-        setSuccess('Template saved');
+        // Clear draft after successful save
+        clearDraft();
+        toast.success('Template saved successfully!');
         router.push('/meal-plan-templates?success=created');
       } else {
         const data = await res.json();
-        setError(data.error || 'Failed to save template');
+        const errorMsg = data.error || 'Failed to save template';
+        setError(errorMsg);
+        toast.error('Failed to save template', { description: errorMsg });
       }
     } catch (e:any) {
       console.error(e);
       setError('Failed to save template');
+      toast.error('Failed to save template', { description: 'Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -377,22 +438,24 @@ export default function CreateMealPlanTemplatePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Auto-save indicator */}
+            {isSaving && (
+              <span className="text-xs text-gray-500 flex items-center gap-1">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                Saving...
+              </span>
+            )}
+            {!isSaving && lastSaved && (
+              <span className="text-xs text-gray-500">
+                Saved {new Date(lastSaved).toLocaleTimeString()}
+              </span>
+            )}
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setTemplate({
-                  name: '', description: '', category: '', duration: 7,
-                  targetCalories: { min: 1200, max: 2500 },
-                  targetMacros: { protein: { min: 50, max: 150 }, carbs: { min: 100, max: 300 }, fat: { min: 30, max: 100 } },
-                  dietaryRestrictions: [], tags: [], meals: [], isPublic: false, isPremium: false,
-                  difficulty: 'intermediate', prepTime: { daily: 30, weekly: 210 },
-                  targetAudience: { ageGroup: [], activityLevel: [], healthConditions: [], goals: [] }
-                });
-                setCurrentStep(1);
-                setSelectedDay(1);
-              }}
+              onClick={handleClearDraft}
             >
+              <Trash2 className="h-4 w-4 mr-1" />
               Clear draft
             </Button>
           </div>

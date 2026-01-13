@@ -20,6 +20,18 @@ export interface UseRealtimeOptions {
   reconnectInterval?: number;
 }
 
+// Exponential backoff configuration
+const INITIAL_DELAY = 1000;
+const MAX_DELAY = 30000;
+const MAX_RETRIES = 15;
+const BACKOFF_MULTIPLIER = 1.5;
+
+function calculateBackoff(attempt: number): number {
+  const delay = INITIAL_DELAY * Math.pow(BACKOFF_MULTIPLIER, attempt);
+  const jitter = Math.random() * 0.3 * delay;
+  return Math.min(delay + jitter, MAX_DELAY);
+}
+
 // Global connection manager to prevent multiple connections
 class GlobalSSEManager {
   private static instance: GlobalSSEManager;
@@ -28,6 +40,7 @@ class GlobalSSEManager {
   private subscribers = new Map<string, Set<(event: any) => void>>();
   private connectionPromises = new Map<string, Promise<EventSource>>();
   private closeTimers = new Map<string, any>();
+  private retryAttempts = new Map<string, number>();
 
   static getInstance(): GlobalSSEManager {
     if (!GlobalSSEManager.instance) {
@@ -42,6 +55,20 @@ class GlobalSSEManager {
 
   isConnecting(userId: string): boolean {
     return this.connectionStates.get(userId) === 'connecting';
+  }
+  
+  private resetRetries(userId: string): void {
+    this.retryAttempts.set(userId, 0);
+  }
+  
+  private getRetryCount(userId: string): number {
+    return this.retryAttempts.get(userId) || 0;
+  }
+  
+  private incrementRetries(userId: string): number {
+    const current = this.getRetryCount(userId);
+    this.retryAttempts.set(userId, current + 1);
+    return current + 1;
   }
 
   async getOrCreateConnection(userId: string): Promise<EventSource> {
@@ -66,23 +93,38 @@ class GlobalSSEManager {
           this.connections.set(userId, eventSource);
           this.connectionStates.set(userId, 'connected');
           this.connectionPromises.delete(userId);
+          this.resetRetries(userId); // Reset retry count on successful connection
 
           // Set up heartbeat to keep connection alive
           const heartbeatInterval = setInterval(() => {
             if (eventSource.readyState === EventSource.CLOSED) {
               clearInterval(heartbeatInterval);
             }
-            // Silently keep connection alive - no need to log every heartbeat
-          }, 30000); // Check every 30 seconds
+          }, 30000);
 
           resolve(eventSource);
         };
 
         eventSource.onerror = () => {
           // EventSource automatically attempts to reconnect on error
-          // Only log if connection is permanently closed (readyState 2 = CLOSED)
           if (eventSource.readyState === EventSource.CLOSED) {
-            console.warn('SSE connection closed for user:', userId, '- Will attempt to reconnect');
+            const retryCount = this.getRetryCount(userId);
+            
+            // Only attempt reconnection if under max retries
+            if (retryCount < MAX_RETRIES) {
+              const delay = calculateBackoff(retryCount);
+              console.info(`[SSE] Connection closed. Reconnecting in ${Math.round(delay)}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+              this.incrementRetries(userId);
+              
+              setTimeout(() => {
+                if (this.subscribers.has(userId) && (this.subscribers.get(userId)?.size || 0) > 0) {
+                  this.getOrCreateConnection(userId).catch(() => {});
+                }
+              }, delay);
+            } else {
+              console.warn('[SSE] Max retries exceeded, stopping reconnection');
+            }
+            
             this.connectionStates.set(userId, 'disconnected');
             this.connectionPromises.delete(userId);
             this.connections.delete(userId);
@@ -95,8 +137,6 @@ class GlobalSSEManager {
             
             reject(new Error('SSE connection closed'));
           }
-          // If readyState is CONNECTING (0), EventSource is automatically reconnecting
-          // No need to log - this is normal behavior
         };
 
         // Set up message forwarding to subscribers

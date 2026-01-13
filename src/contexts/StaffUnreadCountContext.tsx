@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 
 interface UnreadCounts {
@@ -19,71 +19,108 @@ interface StaffUnreadCountProviderProps {
   children: ReactNode;
 }
 
+// Exponential backoff configuration
+const INITIAL_DELAY = 1000;
+const MAX_DELAY = 30000;
+const MAX_RETRIES = 10;
+const BACKOFF_MULTIPLIER = 2;
+
+function calculateBackoff(attempt: number): number {
+  const delay = INITIAL_DELAY * Math.pow(BACKOFF_MULTIPLIER, attempt);
+  const jitter = Math.random() * 0.3 * delay;
+  return Math.min(delay + jitter, MAX_DELAY);
+}
+
 export function StaffUnreadCountProvider({ children }: StaffUnreadCountProviderProps) {
   const { data: session, status } = useSession();
   const [counts, setCounts] = useState<UnreadCounts>({ messages: 0 });
   const [isConnected, setIsConnected] = useState(false);
+  const reconnectAttemptsRef = useRef(0);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Connect to SSE stream for unread counts
+  // Connect to SSE stream for unread counts with resilient reconnection
   useEffect(() => {
     if (status !== 'authenticated' || !session?.user) {
       return;
     }
 
-    let es: EventSource | null = null;
-    let reconnectTimeout: NodeJS.Timeout | null = null;
-    let reconnectAttempts = 0;
-    const maxReconnectAttempts = 5;
-
     const connect = () => {
-      if (es) {
-        es.close();
+      // Clean up existing connection
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
       }
 
-      es = new EventSource('/api/staff/unread-counts/stream');
+      const es = new EventSource('/api/staff/unread-counts/stream');
+      eventSourceRef.current = es;
 
       es.onopen = () => {
         console.log('[StaffUnreadCountProvider] SSE connected');
         setIsConnected(true);
-        reconnectAttempts = 0;
+        reconnectAttemptsRef.current = 0; // Reset on successful connection
       };
 
       es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('[StaffUnreadCountProvider] Received SSE update:', data);
           setCounts({
             messages: data.messages || 0
           });
         } catch (error) {
-          // Ignore heartbeat messages
+          // Ignore heartbeat or malformed messages
         }
       };
 
       es.onerror = () => {
         setIsConnected(false);
-        es?.close();
+        es.close();
+        eventSourceRef.current = null;
 
-        // Reconnect with exponential backoff
-        if (reconnectAttempts < maxReconnectAttempts) {
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-          reconnectTimeout = setTimeout(() => {
-            reconnectAttempts++;
+        // Implement exponential backoff for reconnection
+        if (reconnectAttemptsRef.current < MAX_RETRIES) {
+          const delay = calculateBackoff(reconnectAttemptsRef.current);
+          console.log(`[StaffUnreadCountProvider] Reconnecting in ${Math.round(delay)}ms (attempt ${reconnectAttemptsRef.current + 1}/${MAX_RETRIES})`);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectAttemptsRef.current++;
             connect();
           }, delay);
+        } else {
+          console.warn('[StaffUnreadCountProvider] Max retries exceeded, stopping reconnection');
         }
       };
     };
 
     connect();
 
+    // Handle visibility change - reconnect when tab becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !eventSourceRef.current) {
+        console.log('[StaffUnreadCountProvider] Tab visible, reconnecting...');
+        reconnectAttemptsRef.current = 0;
+        connect();
+      }
+    };
+
+    // Handle online event - reconnect when network is restored
+    const handleOnline = () => {
+      console.log('[StaffUnreadCountProvider] Network online, reconnecting...');
+      reconnectAttemptsRef.current = 0;
+      connect();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+
     return () => {
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
       }
-      if (es) {
-        es.close();
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
       }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
       setIsConnected(false);
     };
   }, [status, session?.user]);

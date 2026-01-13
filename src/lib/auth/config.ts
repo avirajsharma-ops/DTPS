@@ -168,6 +168,21 @@ export const authOptions: NextAuthOptions = {
         token.lastName = user.lastName;
         token.avatar = user.avatar;
         token.emailVerified = !!user.emailVerified;
+        
+        // For client users, fetch onboardingCompleted from database on initial sign in
+        if (user.role === UserRole.CLIENT && !user.isWooCommerceClient) {
+          try {
+            await connectDB();
+            const dbUser = await User.findById(user.id).select('onboardingCompleted').lean();
+            token.onboardingCompleted = dbUser?.onboardingCompleted ?? false;
+          } catch (error) {
+            console.error('Error fetching onboarding status:', error);
+            token.onboardingCompleted = false;
+          }
+        } else if (user.isWooCommerceClient) {
+          // WooCommerce clients don't need onboarding
+          token.onboardingCompleted = true;
+        }
 
         // Store WooCommerce client specific data
         if (user.isWooCommerceClient) {
@@ -201,8 +216,13 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // Handle session update
+      // Handle session update - allows refreshing onboardingCompleted after onboarding completion
       if (trigger === 'update' && session) {
+        // If onboardingCompleted is explicitly set in the update, use it
+        if (typeof session.onboardingCompleted === 'boolean') {
+          token.onboardingCompleted = session.onboardingCompleted;
+        }
+        // Merge other session updates
         token = { ...token, ...session };
       }
 
@@ -217,6 +237,9 @@ export const authOptions: NextAuthOptions = {
         session.user.lastName = token.lastName as string;
         session.user.avatar = token.avatar as string;
         session.user.emailVerified = token.emailVerified as boolean;
+        
+        // Include onboardingCompleted for client users
+        session.user.onboardingCompleted = token.onboardingCompleted as boolean ?? true;
 
         // Include WooCommerce client specific data
         if (token.isWooCommerceClient) {

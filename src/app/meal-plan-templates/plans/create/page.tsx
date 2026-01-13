@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -14,9 +14,28 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingPage, LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { ArrowLeft, Save, ChefHat, Target, FileText } from 'lucide-react';
+import { ArrowLeft, Save, ChefHat, Target, FileText, Trash2, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { UserRole } from '@/types';
+import { toast } from 'sonner';
+import { useMealPlanAutoSave } from '@/hooks/useAutoSave';
+
+// Plan template form data interface
+interface PlanTemplateFormData {
+  name: string;
+  description: string;
+  category: string;
+  duration: number;
+  difficulty: string;
+  calMin: number;
+  calMax: number;
+  proteinMin: number;
+  proteinMax: number;
+  carbMin: number;
+  carbMax: number;
+  fatMin: number;
+  fatMax: number;
+}
 
 const categories = [
   { value: 'weight-loss', label: 'Weight Loss' },
@@ -57,6 +76,84 @@ export default function CreatePlanTemplateBasicPage() {
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [success, setSuccess] = useState('');
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  // Memoize form data for auto-save
+  const formData: PlanTemplateFormData = useMemo(() => ({
+    name,
+    description,
+    category,
+    duration,
+    difficulty,
+    calMin,
+    calMax,
+    proteinMin,
+    proteinMax,
+    carbMin,
+    carbMax,
+    fatMin,
+    fatMax,
+  }), [name, description, category, duration, difficulty, calMin, calMax, proteinMin, proteinMax, carbMin, carbMax, fatMin, fatMax]);
+
+  // Auto-save hook (saves draft every 2 seconds, expires after 24 hours)
+  const { 
+    isSaving, 
+    lastSaved, 
+    hasDraft, 
+    clearDraft, 
+    restoreDraft 
+  } = useMealPlanAutoSave<PlanTemplateFormData>('new-plan-template', formData, {
+    debounceMs: 2000,
+    enabled: !!session?.user?.id,
+  });
+
+  // Restore draft on mount
+  useEffect(() => {
+    if (!draftRestored && session?.user?.id) {
+      const restored = restoreDraft();
+      if (restored && restored.name) {
+        setName(restored.name || '');
+        setDescription(restored.description || '');
+        setCategory(restored.category || '');
+        setDuration(restored.duration || 7);
+        setDifficulty((restored.difficulty as 'beginner' | 'intermediate' | 'advanced') || 'intermediate');
+        setCalMin(restored.calMin || 1200);
+        setCalMax(restored.calMax || 2500);
+        setProteinMin(restored.proteinMin || 50);
+        setProteinMax(restored.proteinMax || 150);
+        setCarbMin(restored.carbMin || 100);
+        setCarbMax(restored.carbMax || 300);
+        setFatMin(restored.fatMin || 30);
+        setFatMax(restored.fatMax || 100);
+        
+        toast.success('Draft restored', { 
+          description: 'Your previous work has been restored. Draft expires in 24 hours.',
+          duration: 4000 
+        });
+      }
+      setDraftRestored(true);
+    }
+  }, [session?.user?.id, draftRestored, restoreDraft]);
+
+  // Handle clear draft
+  const handleClearDraft = useCallback(() => {
+    clearDraft();
+    setName('');
+    setDescription('');
+    setCategory('');
+    setDuration(7);
+    setDifficulty('intermediate');
+    setCalMin(1200);
+    setCalMax(2500);
+    setProteinMin(50);
+    setProteinMax(150);
+    setCarbMin(100);
+    setCarbMax(300);
+    setFatMin(30);
+    setFatMax(100);
+    setError('');
+    toast.success('Draft cleared', { description: 'Starting fresh.' });
+  }, [clearDraft]);
 
   useEffect(() => {
     if (!session) return;
@@ -155,6 +252,9 @@ export default function CreatePlanTemplateBasicPage() {
         body: JSON.stringify(body)
       });
       if (res.ok) {
+        // Clear draft after successful save
+        clearDraft();
+        toast.success('Plan template created successfully!');
         router.push('/meal-plan-templates?success=created');
       } else {
         let errMsg = 'Failed to create plan template';
@@ -171,10 +271,12 @@ export default function CreatePlanTemplateBasicPage() {
           // ignore JSON parse errors
         }
         setError(errMsg);
+        toast.error('Failed to create template', { description: errMsg });
       }
     } catch (e) {
       console.error('Create template unexpected error:', e);
       setError('Failed to create plan template (network or unexpected error)');
+      toast.error('Network error', { description: 'Please check your connection and try again.' });
     } finally {
       setLoading(false);
     }
@@ -194,18 +296,29 @@ export default function CreatePlanTemplateBasicPage() {
               Back to Templates
             </Link>
           </Button>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setName(''); setDescription(''); setCategory(''); setDuration(7); setDifficulty('intermediate');
-                setCalMin(1200); setCalMax(2500); setProteinMin(50); setProteinMax(150);
-                setCarbMin(100); setCarbMax(300); setFatMin(30); setFatMax(100);
-              }}
-            >
-              Clear draft
-            </Button>
+          <div className="flex items-center gap-3">
+            {/* Auto-save indicator */}
+            {isSaving && (
+              <span className="text-xs text-gray-500 flex items-center gap-1">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                Saving...
+              </span>
+            )}
+            {!isSaving && lastSaved && (
+              <span className="text-xs text-green-600 dark:text-green-400">
+                Saved {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
+            {hasDraft && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearDraft}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Clear Draft
+              </Button>
+            )}
           </div>
         </div>
 

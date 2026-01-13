@@ -135,10 +135,13 @@ export default function EditTemplatePage() {
         router.push('/meal-plan-templates');
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to update template');
+        const errorMsg = data.error || 'Failed to update template';
+        setError(errorMsg);
+        toast.error('Failed to update template', { description: errorMsg });
       }
     } catch (err) {
       setError('Failed to update template');
+      toast.error('Failed to update template', { description: 'Please try again.' });
     } finally {
       setSaving(false);
     }

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 // Fixed imports to use existing UI component files
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MealGridTable } from './MealGridTable';
-import { Save, User, Download } from 'lucide-react';
+import { Save, User, Download, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 
@@ -230,16 +230,173 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
     }
   }, [initialMealTypes]);
 
-  // Persist changes to localStorage (only in edit mode)
-  useEffect(() => {
-    if (readOnly) return; // Don't persist in view mode
+  // ============ AUTO-SAVE FUNCTIONALITY ============
+  // Draft key for this specific diet plan
+  const draftKey = useMemo(() => {
+    const identifier = clientId || 'new';
+    return `dietPlan_draft_${identifier}_${duration}`;
+  }, [clientId, duration]);
+  
+  // Auto-save state
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousDataRef = useRef<string>('');
+  const isInitializedRef = useRef(false);
+  
+  const DRAFT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+  const DEBOUNCE_MS = 2000; // 2 seconds
+  
+  // Memoized data for auto-save comparison
+  const draftData = useMemo(() => ({
+    weekPlan,
+    mealTypeConfigs,
+    lastSaved: Date.now(),
+    expiresAt: Date.now() + DRAFT_EXPIRY_MS,
+  }), [weekPlan, mealTypeConfigs]);
+  
+  // Save to localStorage (no server calls - zero DB load)
+  const saveToStorage = useCallback(() => {
+    if (typeof window === 'undefined' || readOnly) return;
+    
     try {
-      if (typeof window !== 'undefined') {
-        const key = `dietPlan_week_${duration}`;
-        localStorage.setItem(key, JSON.stringify(weekPlan));
+      localStorage.setItem(draftKey, JSON.stringify(draftData));
+      setHasDraft(true);
+      setLastSaved(new Date());
+      setIsSaving(false);
+    } catch (error) {
+      console.error('Failed to save diet plan draft:', error);
+      setIsSaving(false);
+    }
+  }, [draftKey, draftData, readOnly]);
+  
+  // Debounced auto-save effect (2 second delay)
+  useEffect(() => {
+    if (readOnly || !session?.user?.id) return;
+    
+    const currentDataStr = JSON.stringify({ weekPlan, mealTypeConfigs });
+    
+    // Skip if no changes
+    if (previousDataRef.current === currentDataStr) return;
+    
+    // Skip initial state
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      previousDataRef.current = currentDataStr;
+      return;
+    }
+    
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    setIsSaving(true);
+    
+    // Debounced save - only saves after 2 seconds of no changes
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToStorage();
+      previousDataRef.current = currentDataStr;
+    }, DEBOUNCE_MS);
+    
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
-    } catch {/* ignore */}
-  }, [weekPlan, duration, readOnly]);
+    };
+  }, [weekPlan, mealTypeConfigs, readOnly, session?.user?.id, saveToStorage]);
+  
+  // Restore draft on mount
+  useEffect(() => {
+    if (draftRestored || readOnly || !session?.user?.id) return;
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const stored = localStorage.getItem(draftKey);
+      if (!stored) {
+        setDraftRestored(true);
+        return;
+      }
+      
+      const draft = JSON.parse(stored);
+      
+      // Check if expired
+      if (draft.expiresAt && Date.now() > draft.expiresAt) {
+        localStorage.removeItem(draftKey);
+        setDraftRestored(true);
+        return;
+      }
+      
+      // Only restore if we have actual data and it's different from initialMeals
+      if (draft.weekPlan && draft.weekPlan.length > 0) {
+        const hasData = draft.weekPlan.some((day: DayPlan) => 
+          Object.keys(day.meals).length > 0 || day.note
+        );
+        
+        if (hasData && !initialMeals?.length) {
+          setWeekPlan(draft.weekPlan);
+          if (draft.mealTypeConfigs) {
+            setMealTypeConfigs(draft.mealTypeConfigs);
+          }
+          setHasDraft(true);
+          setLastSaved(draft.lastSaved ? new Date(draft.lastSaved) : null);
+          
+          toast.success('Draft restored', {
+            description: 'Your previous diet plan work has been restored. Draft expires in 24 hours.',
+            duration: 4000
+          });
+        }
+      }
+      
+      setDraftRestored(true);
+    } catch (error) {
+      console.error('Failed to restore diet plan draft:', error);
+      setDraftRestored(true);
+    }
+  }, [draftKey, draftRestored, readOnly, session?.user?.id, initialMeals]);
+  
+  // Clear draft function
+  const handleClearDraft = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      localStorage.removeItem(draftKey);
+      setHasDraft(false);
+      setLastSaved(null);
+      previousDataRef.current = '';
+      isInitializedRef.current = false;
+      
+      // Reset to initial state
+      const newDays = buildDays(duration);
+      if (initialMeals && initialMeals.length > 0) {
+        setWeekPlan(newDays.map((d, i) => ({
+          ...d,
+          ...(initialMeals[i] || {}),
+          meals: initialMeals[i]?.meals || {},
+          note: initialMeals[i]?.note || ''
+        })));
+      } else {
+        setWeekPlan(newDays);
+      }
+      setMealTypeConfigs(initialMealTypes || defaultMealTypes);
+      
+      toast.success('Draft cleared', { description: 'Starting fresh.' });
+    } catch (error) {
+      console.error('Failed to clear diet plan draft:', error);
+    }
+  }, [draftKey, duration, initialMeals, initialMealTypes]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+  // ============ END AUTO-SAVE FUNCTIONALITY ============
 
   const handleAddMealType = (newMealType: string, position?: number) => {
     if (newMealType && !mealTypes.includes(newMealType)) {
@@ -259,6 +416,16 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   };
 
   const handleSavePlan = () => {
+    // Clear draft after save (draft will be deleted from localStorage)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(draftKey);
+        setHasDraft(false);
+        setLastSaved(null);
+        previousDataRef.current = '';
+      } catch {/* ignore */}
+    }
+    
     if (onSave) {
       // New simple callback for PlanningSection
       onSave(weekPlan);
@@ -307,42 +474,75 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Header */}
-      <div className="bg-white border-b-2 border-gray-200 shadow-sm">
+      <div className="bg-white dark:bg-slate-800 border-b-2 border-gray-200 dark:border-slate-700 shadow-sm">
         <div className="max-w-450 mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-5">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
+              <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                 {clientName ? `Diet Plan for ${clientName}` : 'Diet Plan Manager'}
               </h1>
               {clientId && (
-                <span className="text-sm text-slate-500">({duration} days)</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">({duration} days)</span>
               )}
               {readOnly && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">View Only</span>
+                <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-1 rounded font-medium">View Only</span>
               )}
             </div>
-            {!readOnly && (
-              <div className="flex items-center space-x-3">
-                {canExport && (
-                  <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 font-medium">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export PDF
+            
+            {/* Right side - Auto-save indicator + Actions */}
+            <div className="flex items-center space-x-3">
+              {/* Auto-save indicator */}
+              {!readOnly && (
+                <>
+                  {isSaving && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      Saving...
+                    </span>
+                  )}
+                  {!isSaving && lastSaved && (
+                    <span className="text-xs text-green-600 dark:text-green-400">
+                      Saved {lastSaved.toLocaleTimeString()}
+                    </span>
+                  )}
+                  {hasDraft && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearDraft}
+                      className="border-gray-300 dark:border-gray-600"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Clear Draft
+                    </Button>
+                  )}
+                </>
+              )}
+              
+              {/* Action buttons */}
+              {!readOnly && (
+                <>
+                  {canExport && (
+                    <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-slate-700 font-medium">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export PDF
+                    </Button>
+                  )}
+                  <Button onClick={handleSavePlan} className="bg-green-600 hover:bg-green-700 shadow font-medium">
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Plan
                   </Button>
-                )}
-                <Button onClick={handleSavePlan} className="bg-green-600 hover:bg-green-700 shadow font-medium">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Plan
+                </>
+              )}
+              {readOnly && canExport && (
+                <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-slate-700 font-medium">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export PDF
                 </Button>
-              </div>
-            )}
-            {readOnly && canExport && (
-              <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 font-medium">
-                <Download className="w-4 h-4 mr-2" />
-                Export PDF
-              </Button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -23,9 +23,26 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB();
+    
+    const userId = session.user.id;
+    
+    // CRITICAL: Check if onboarding is already completed to prevent duplicate submissions
+    const existingUser = await User.findById(userId).select('onboardingCompleted').lean() as { onboardingCompleted?: boolean } | null;
+    if (existingUser?.onboardingCompleted) {
+      // Already completed - return success without re-processing
+      return NextResponse.json({
+        success: true,
+        message: 'Onboarding already completed',
+        alreadyCompleted: true,
+        onboardingCompleted: true,
+        user: {
+          id: userId,
+          onboardingCompleted: true,
+        }
+      });
+    }
 
     const data = await request.json();
-    const userId = session.user.id;
 
     // Calculate BMI from height and weight
     let bmi = '';
@@ -127,15 +144,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Clear any cached onboarding status to prevent stale data
+    try {
+      await clearCacheByTag('client');
+    } catch (cacheError) {
+      console.error('Error clearing cache:', cacheError);
+      // Non-blocking - continue even if cache clear fails
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Onboarding completed successfully',
+      onboardingCompleted: true, // Explicit flag for client-side session update
+      requireSessionRefresh: true, // Signal to client to refresh session
       user: {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        onboardingCompleted: user.onboardingCompleted,
+        onboardingCompleted: true, // Always true after successful save
       }
     });
 
@@ -158,16 +185,25 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const user = await withCache(
-      `client:onboarding:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).select('onboardingCompleted onboardingStep'),
-      { ttl: 120000, tags: ['client'] }
-    );
+    // CRITICAL: Always fetch fresh from database to prevent stale cached data
+    // Don't use withCache here as onboarding status must be accurate
+    const user = await User.findById(session.user.id)
+      .select('onboardingCompleted onboardingStep')
+      .lean() as { onboardingCompleted?: boolean; onboardingStep?: number } | null;
 
-    return NextResponse.json({
-      onboardingCompleted: user?.onboardingCompleted || false,
-      onboardingStep: user?.onboardingStep || 0,
+    const onboardingCompleted = user?.onboardingCompleted ?? false;
+    const onboardingStep = user?.onboardingStep ?? 0;
+
+    // Set cache-control headers to prevent browser caching
+    const response = NextResponse.json({
+      onboardingCompleted,
+      onboardingStep,
     });
+    
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    
+    return response;
 
   } catch (error) {
     console.error('Error checking onboarding status:', error);

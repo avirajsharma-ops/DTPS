@@ -16,8 +16,19 @@ export {
 export { useMobileDetection } from './useMobileDetection';
 export { useNotifications } from './useNotifications';
 export { useRealtime } from './useRealtime';
+export { useResilientSSE } from './useResilientSSE';
 export { useCallManager } from './useCallManager';
 export { useSimpleWebRTC } from './useSimpleWebRTC';
 export { default as useBodyScrollLock } from './useBodyScrollLock';
 export { useScrollRestoration, saveScrollPosition, getScrollPosition } from './useScrollRestoration';
 export { useAuthenticatedFetch, authenticatedFetch } from './useAuthenticatedFetch';
+export { 
+  useAutoSave, 
+  useMealPlanAutoSave, 
+  useDietTemplateAutoSave, 
+  useFormAutoSave,
+  useRecipeAutoSave,
+  type RecipeFormData,
+  type MealPlanFormData,
+  type DraftType,
+} from './useAutoSave';

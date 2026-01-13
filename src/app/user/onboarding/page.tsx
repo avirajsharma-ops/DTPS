@@ -770,7 +770,7 @@ function Step5Summary({ onNext, onBack, data, isDarkMode }: StepProps) {
 
 // Main Onboarding Component
 export default function OnboardingPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const { isDarkMode } = useTheme();
   const [currentStep, setCurrentStep] = useState(1);
@@ -780,9 +780,15 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
+      // First check session for onboardingCompleted (fast path)
+      if (session?.user?.onboardingCompleted === true) {
+        router.replace('/user');
+        return;
+      }
+      // If not in session, check API as fallback
       checkOnboardingStatus();
     } else if (status === 'unauthenticated') {
-      router.replace('/login');
+      router.replace('/client-auth/signin');
     }
   }, [status, session, router]);
 
@@ -823,6 +829,9 @@ export default function OnboardingPage() {
   };
 
   const completeOnboarding = async () => {
+    // Prevent duplicate submissions
+    if (saving) return;
+    
     try {
       setSaving(true);
 
@@ -845,12 +854,21 @@ export default function OnboardingPage() {
         }),
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // CRITICAL: Update the session to include onboardingCompleted = true
+        // This refreshes the JWT token so middleware won't redirect back to onboarding
+        await updateSession({ onboardingCompleted: true });
+        
         toast.success('Welcome! Your profile has been set up.');
+        
+        // Small delay to ensure session is updated before navigation
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         router.replace('/user');
       } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to save profile');
+        toast.error(result.error || result.message || 'Failed to save profile');
       }
     } catch (error) {
       console.error('Error completing onboarding:', error);

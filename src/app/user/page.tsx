@@ -384,6 +384,37 @@ export default function UserHomePage() {
   // Listen for data changes and refresh
   useDataChangeListener(refreshAllData);
 
+  // Helper to load service plans (used by onboarding check fast path)
+  const loadServicePlans = async () => {
+    try {
+      const planRes = await fetchWithTimeout('/api/client/service-plans', undefined, 6000);
+      if (planRes.ok) {
+        const planData = await planRes.json();
+        setHasActivePlan(planData.hasActivePlan || false);
+        setHasAnyPurchase(planData.hasAnyPurchase || false);
+        setHasPendingDietitianAssignment(planData.hasPendingDietitianAssignment || false);
+        setActivePurchases(planData.activePurchases || []);
+      }
+      
+      // Also load profile and health data
+      fetchHealthData();
+      
+      const profileRes = await fetchWithTimeout('/api/client/profile', undefined, 6000);
+      if (profileRes.ok && !unmountedRef.current) {
+        const profileData = await profileRes.json();
+        setUserProfile({
+          bmi: profileData.bmi || '',
+          bmiCategory: profileData.bmiCategory || '',
+          weightKg: profileData.weightKg || '',
+          heightCm: profileData.heightCm || '',
+          generalGoal: profileData.generalGoal || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error loading service plans:', error);
+    }
+  };
+
   // Refresh data when page becomes visible (user switches back to tab)
   // useEffect(() => {
   //   const handleVisibilityChange = () => {
@@ -462,6 +493,23 @@ export default function UserHomePage() {
       return;
     }
 
+    // FAST PATH: Check session first for onboarding status (from JWT)
+    // This avoids an API call in most cases and prevents redirect loops
+    if (session?.user?.onboardingCompleted === false) {
+      setCheckingOnboarding(false);
+      router.replace('/user/onboarding');
+      return;
+    }
+    
+    // If session says onboarding is complete, trust it and continue
+    if (session?.user?.onboardingCompleted === true) {
+      setCheckingOnboarding(false);
+      // Continue to load the page - no API check needed
+      loadServicePlans();
+      return;
+    }
+
+    // Fallback: If session doesn't have onboardingCompleted (legacy users), check API
     const checkOnboarding = async () => {
       // Hard stop: never block the UI forever on slow networks/proxy issues
       const hardStop = setTimeout(() => {

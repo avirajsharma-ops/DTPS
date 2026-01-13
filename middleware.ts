@@ -2,10 +2,20 @@ import { withAuth } from 'next-auth/middleware';
 import { NextResponse, NextRequest } from 'next/server';
 import { UserRole } from '@/types';
 
+// App version for cache busting
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || process.env.npm_package_version || '1.0.0';
+
 // Public routes that should completely bypass middleware auth
 const publicUserRoutes = [
   '/user/forget-password',
   '/user/reset-password',
+];
+
+// Routes that should skip onboarding check (onboarding page itself and its API)
+const onboardingExemptRoutes = [
+  '/user/onboarding',
+  '/api/client/onboarding',
+  '/api/auth', // Auth routes must be exempt
 ];
 
 // Check if the path is a public user route
@@ -13,23 +23,46 @@ function isPublicUserRoute(pathname: string): boolean {
   return publicUserRoutes.some(route => pathname.startsWith(route));
 }
 
+// Check if the path should skip onboarding redirect
+function isOnboardingExemptRoute(pathname: string): boolean {
+  return onboardingExemptRoutes.some(route => pathname.startsWith(route));
+}
+
+// Add cache control headers to response
+function addCacheControlHeaders(response: NextResponse, isApiRoute: boolean): NextResponse {
+  // Always add app version header
+  response.headers.set('X-App-Version', APP_VERSION);
+  
+  if (isApiRoute) {
+    // For authenticated API routes, prevent caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
+  }
+  
+  return response;
+}
+
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
     const fullUrl = req.nextUrl.href;
+    const isApiRoute = pathname.startsWith('/api');
 
     // If it's a public user route, just pass through with pathname and URL headers
     if (isPublicUserRoute(pathname)) {
       const response = NextResponse.next();
       response.headers.set('x-pathname', pathname);
       response.headers.set('x-url', fullUrl);
-      return response;
+      return addCacheControlHeaders(response, isApiRoute);
     }
 
     // If no token and not a public route, the authorized callback will handle redirect
     if (!token) {
-      return NextResponse.next();
+      const response = NextResponse.next();
+      return addCacheControlHeaders(response, isApiRoute);
     }
 
     // Normalize role to lowercase for comparison
@@ -95,12 +128,34 @@ export default withAuth(
           : '/client-auth/signin';
         return NextResponse.redirect(new URL(redirectPath, req.url));
       }
+      
+      // CRITICAL: Onboarding redirect logic for clients
+      // Check if user has completed onboarding (from JWT token)
+      // Skip check for onboarding-exempt routes (onboarding page itself, auth routes)
+      if (!isOnboardingExemptRoute(pathname)) {
+        const onboardingCompleted = token?.onboardingCompleted;
+        
+        // If onboardingCompleted is explicitly false, redirect to onboarding
+        // Note: undefined or true means allow access (backward compatibility)
+        if (onboardingCompleted === false) {
+          console.log('Client onboarding incomplete, redirecting to /user/onboarding');
+          return NextResponse.redirect(new URL('/user/onboarding', req.url));
+        }
+      }
+    }
+    
+    // If client is on onboarding page but has already completed onboarding, redirect to /user
+    if (pathname === '/user/onboarding' || pathname.startsWith('/user/onboarding')) {
+      if (userRole === 'client' && token?.onboardingCompleted === true) {
+        console.log('Client onboarding already complete, redirecting to /user');
+        return NextResponse.redirect(new URL('/user', req.url));
+      }
     }
 
     // Allow access to the route - add pathname header for layout detection
     const response = NextResponse.next();
     response.headers.set('x-pathname', pathname);
-    return response;
+    return addCacheControlHeaders(response, pathname.startsWith('/api'));
   },
   {
     callbacks: {

@@ -2,8 +2,19 @@ import { NextResponse } from 'next/server';
 import connectDB, { checkDBHealth, getConnectionStats } from '@/lib/db/connection';
 import mongoose from 'mongoose';
 
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || process.env.npm_package_version || '1.0.0';
+
 export async function GET() {
   const startTime = Date.now();
+  
+  // Memory stats for monitoring
+  const memoryUsage = process.memoryUsage();
+  const memory = {
+    heapUsedMB: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+    heapTotalMB: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+    rssMB: Math.round(memoryUsage.rss / 1024 / 1024),
+    externalMB: Math.round(memoryUsage.external / 1024 / 1024),
+  };
   
   try {
     // Check database connection with health utility
@@ -11,6 +22,11 @@ export async function GET() {
     const stats = getConnectionStats();
     
     const responseTime = Date.now() - startTime;
+    
+    const baseHeaders = {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'X-App-Version': APP_VERSION,
+    };
     
     if (!dbHealth.healthy) {
       return NextResponse.json({
@@ -20,8 +36,16 @@ export async function GET() {
         error: dbHealth.error,
         connectionStats: stats,
         responseTimeMs: responseTime,
-        version: process.env.npm_package_version || '1.0.0'
-      }, { status: 503 });
+        version: APP_VERSION,
+        uptime: process.uptime(),
+        memory,
+      }, { 
+        status: 503,
+        headers: {
+          ...baseHeaders,
+          'Retry-After': '5',
+        },
+      });
     }
     
     return NextResponse.json({
@@ -33,8 +57,10 @@ export async function GET() {
         poolSize: mongoose.connection.db ? 'active' : 'initializing',
       },
       responseTimeMs: responseTime,
-      version: process.env.npm_package_version || '1.0.0'
-    });
+      version: APP_VERSION,
+      uptime: process.uptime(),
+      memory,
+    }, { headers: baseHeaders });
   } catch (error: any) {
     const responseTime = Date.now() - startTime;
     
@@ -44,7 +70,16 @@ export async function GET() {
       database: 'error',
       error: error.message || 'Database connection failed',
       responseTimeMs: responseTime,
-      version: process.env.npm_package_version || '1.0.0'
-    }, { status: 500 });
+      version: APP_VERSION,
+      uptime: process.uptime(),
+      memory,
+    }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-store',
+        'X-App-Version': APP_VERSION,
+        'Retry-After': '5',
+      },
+    });
   }
 }

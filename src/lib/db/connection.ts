@@ -40,23 +40,26 @@ if (!cached) {
   cached = (global as any).mongoose = { conn: null, promise: null, lastError: null, retryCount: 0 };
 }
 
-// Connection options optimized for fast response and unlimited users
+// Connection options optimized for production - never disconnect, large pool
 const connectionOptions = {
   bufferCommands: true, // Buffer commands when disconnected (auto-reconnect)
-  serverSelectionTimeoutMS: 5000, // 5 second timeout (fast fail)
-  socketTimeoutMS: 30000, // 30 second socket timeout
+  serverSelectionTimeoutMS: 30000, // 30 second timeout (more patient)
+  socketTimeoutMS: 60000, // 60 second socket timeout
   family: 4, // Force IPv4 to avoid DNS issues
-  maxIdleTimeMS: 120000, // Keep idle connections for 2 minutes
+  maxIdleTimeMS: 300000, // Keep idle connections for 5 minutes
   retryWrites: true,
   retryReads: true,
-  heartbeatFrequencyMS: 5000, // Check connection health every 5s (faster recovery)
-  connectTimeoutMS: 10000, // 10 second connect timeout
-  waitQueueTimeoutMS: 30000, // Wait max 30s for a connection from pool
+  heartbeatFrequencyMS: 10000, // Check connection health every 10s
+  connectTimeoutMS: 30000, // 30 second connect timeout
+  waitQueueTimeoutMS: 60000, // Wait max 60s for a connection from pool
+  maxPoolSize: 100, // Large connection pool for high concurrency
+  minPoolSize: 10, // Keep minimum connections ready
+  maxConnecting: 10, // Allow up to 10 connections to be established concurrently
 };
 
-// Retry configuration - fast retries
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 500;
+// Retry configuration - more patient retries
+const MAX_RETRIES = 5;
+const RETRY_DELAY_MS = 1000;
 
 /**
  * Sleep utility for retry delays

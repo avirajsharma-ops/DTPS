@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -22,8 +22,11 @@ import {
   Target,
   AlertCircle,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  RefreshCw
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useRecipeAutoSave, type RecipeFormData } from '@/hooks/useAutoSave';
 
 interface Ingredient {
   name: string;
@@ -32,6 +35,26 @@ interface Ingredient {
   remarks?: string;
 }
 
+// Default empty form data
+const defaultFormData: RecipeFormData = {
+  name: '',
+  description: '',
+  prepTime: '',
+  cookTime: '',
+  servings: '',
+  calories: '',
+  protein: '',
+  carbs: '',
+  fat: '',
+  image: '',
+  imagePreview: '',
+  isActive: true,
+  ingredients: [{ name: '', quantity: 0, unit: '', remarks: '' }],
+  instructions: [''],
+  dietaryRestrictions: [],
+  medicalContraindications: [],
+};
+
 export default function CreateRecipePage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -39,6 +62,7 @@ export default function CreateRecipePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   // Form state
   const [name, setName] = useState('');
@@ -58,7 +82,93 @@ export default function CreateRecipePage() {
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [medicalContraindications, setMedicalContraindications] = useState<string[]>([]);
 
+  // Memoize form data for auto-save
+  const formData: RecipeFormData = useMemo(() => ({
+    name,
+    description,
+    prepTime,
+    cookTime,
+    servings,
+    calories,
+    protein,
+    carbs,
+    fat,
+    image,
+    imagePreview,
+    isActive,
+    ingredients,
+    instructions,
+    dietaryRestrictions,
+    medicalContraindications,
+  }), [name, description, prepTime, cookTime, servings, calories, protein, carbs, fat, image, imagePreview, isActive, ingredients, instructions, dietaryRestrictions, medicalContraindications]);
 
+  // Auto-save hook (saves draft every 2 seconds, expires after 24 hours)
+  const { 
+    isSaving, 
+    lastSaved, 
+    hasDraft, 
+    clearDraft, 
+    restoreDraft 
+  } = useRecipeAutoSave('new-recipe', formData, {
+    debounceMs: 2000,
+    enabled: !!session?.user?.id,
+  });
+
+  // Restore draft on mount
+  useEffect(() => {
+    if (!draftRestored && session?.user?.id) {
+      const restored = restoreDraft();
+      if (restored) {
+        // Restore all form fields
+        setName(restored.name || '');
+        setDescription(restored.description || '');
+        setPrepTime(restored.prepTime || '');
+        setCookTime(restored.cookTime || '');
+        setServings(restored.servings || '');
+        setCalories(restored.calories || '');
+        setProtein(restored.protein || '');
+        setCarbs(restored.carbs || '');
+        setFat(restored.fat || '');
+        setImage(restored.image || '');
+        setImagePreview(restored.imagePreview || '');
+        setIsActive(restored.isActive ?? true);
+        setIngredients(restored.ingredients?.length ? restored.ingredients : [{ name: '', quantity: 0, unit: '', remarks: '' }]);
+        setInstructions(restored.instructions?.length ? restored.instructions : ['']);
+        setDietaryRestrictions(restored.dietaryRestrictions || []);
+        setMedicalContraindications(restored.medicalContraindications || []);
+        
+        toast.success('Draft restored', { 
+          description: 'Your previous work has been restored. Draft expires in 24 hours.',
+          duration: 4000 
+        });
+      }
+      setDraftRestored(true);
+    }
+  }, [session?.user?.id, draftRestored, restoreDraft]);
+
+  // Handle clear draft
+  const handleClearDraft = useCallback(() => {
+    clearDraft();
+    // Reset all form fields
+    setName('');
+    setDescription('');
+    setPrepTime('');
+    setCookTime('');
+    setServings('');
+    setCalories('');
+    setProtein('');
+    setCarbs('');
+    setFat('');
+    setImage('');
+    setImagePreview('');
+    setIsActive(true);
+    setIngredients([{ name: '', quantity: 0, unit: '', remarks: '' }]);
+    setInstructions(['']);
+    setDietaryRestrictions([]);
+    setMedicalContraindications([]);
+    setError('');
+    toast.success('Draft cleared', { description: 'Starting fresh.' });
+  }, [clearDraft]);
 
   const availableDietaryRestrictions = [
      'Vegetarian','Vegan','Gluten-Free','Non-Vegetarian','Dairy-Free','Keto','Low-Carb','Low-Fat','High-Protein','Paleo','Mediterranean'
@@ -284,7 +394,9 @@ export default function CreateRecipePage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        // Clear draft after successful save
+        clearDraft();
+        toast.success('Recipe created successfully!');
         router.push('/recipes?success=created');
       } else {
         const data = await response.json();
@@ -296,13 +408,17 @@ export default function CreateRecipePage() {
             `${detail.field}: ${detail.message}`
           ).join(', ');
           setError(`${data.message || 'Validation failed'}: ${errorMessages}`);
+          toast.error('Failed to create recipe', { description: errorMessages });
         } else {
-          setError(data.message || data.error || 'Failed to create recipe');
+          const errorMsg = data.message || data.error || 'Failed to create recipe';
+          setError(errorMsg);
+          toast.error('Failed to create recipe', { description: errorMsg });
         }
       }
     } catch (error) {
       console.error('Error creating recipe:', error);
       setError('Network error: Please check your connection and try again');
+      toast.error('Network error', { description: 'Please check your connection and try again.' });
     } finally {
       setLoading(false);
     }
@@ -311,9 +427,36 @@ export default function CreateRecipePage() {
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Recipe</h1>
-          <p className="text-gray-600 mt-1">Add a new recipe to your database</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Create Recipe</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Add a new recipe to your database</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Auto-save indicator */}
+            {isSaving && (
+              <span className="text-xs text-gray-500 flex items-center gap-1">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                Saving...
+              </span>
+            )}
+            {!isSaving && lastSaved && (
+              <span className="text-xs text-green-600 dark:text-green-400">
+                Saved {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
+            {hasDraft && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleClearDraft}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Clear Draft
+              </Button>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

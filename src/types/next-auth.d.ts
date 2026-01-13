@@ -11,6 +11,8 @@ declare module 'next-auth' {
       lastName: string;
       avatar?: string;
       emailVerified: boolean;
+      // Onboarding status for client users
+      onboardingCompleted?: boolean;
       // WooCommerce client specific fields
       isWooCommerceClient?: boolean;
       phone?: string;
@@ -30,6 +32,8 @@ declare module 'next-auth' {
     lastName: string;
     avatar?: string;
     emailVerified: boolean;
+    // Onboarding status for client users
+    onboardingCompleted?: boolean;
     // WooCommerce client specific fields
     isWooCommerceClient?: boolean;
     phone?: string;
@@ -47,6 +51,8 @@ declare module 'next-auth/jwt' {
     lastName: string;
     avatar?: string;
     emailVerified: boolean;
+    // Onboarding status for client users
+    onboardingCompleted?: boolean;
     // WooCommerce client specific fields
     isWooCommerceClient?: boolean;
     phone?: string;
