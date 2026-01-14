@@ -98,7 +98,7 @@ interface WooCommerceData {
 }
 
 export default function AnalyticsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
 
   // Check if user is admin to show revenue data
@@ -120,10 +120,15 @@ export default function AnalyticsPage() {
   const [dbLastSync, setDbLastSync] = useState<string | null>(null);
   const ordersPerPage = 10;
 
+  // Only fetch when session is authenticated
   useEffect(() => {
-    fetchAnalytics();
-    loadDataFromDatabase(); // Load from MongoDB instead of WooCommerce
-  }, [timeRange]);
+    if (status === 'authenticated' && session?.user?.id) {
+      fetchAnalytics();
+      loadDataFromDatabase(); // Load from MongoDB instead of WooCommerce
+    } else if (status === 'unauthenticated') {
+      setLoading(false);
+    }
+  }, [status, session?.user?.id, timeRange]);
 
   const fetchAnalytics = async () => {
     try {

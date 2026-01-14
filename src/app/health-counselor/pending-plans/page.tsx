@@ -54,7 +54,7 @@ interface PendingPlan {
 }
 
 export default function HealthCounselorPendingPlansPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [pendingPlans, setPendingPlans] = useState<PendingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,9 +103,14 @@ export default function HealthCounselorPendingPlansPage() {
     }
   };
 
+  // Only fetch when session is authenticated
   useEffect(() => {
-    fetchPendingPlans();
-  }, []);
+    if (status === 'authenticated' && session?.user?.id) {
+      fetchPendingPlans();
+    } else if (status === 'unauthenticated') {
+      setLoading(false);
+    }
+  }, [status, session?.user?.id]);
 
   const filteredPlans = pendingPlans.filter(plan => 
     plan.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||

@@ -73,7 +73,7 @@ export default function CreateMealPlanPage() {
 }
 
 function CreateMealPlanPageContent() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -195,10 +195,13 @@ function CreateMealPlanPageContent() {
     toast.success('Draft cleared', { description: 'Starting fresh.' });
   }, [clearDraft]);
 
+  // Only fetch when session is authenticated
   useEffect(() => {
-    fetchClients();
-    fetchRecipes();
-  }, []);
+    if (status === 'authenticated' && session?.user?.id) {
+      fetchClients();
+      fetchRecipes();
+    }
+  }, [status, session?.user?.id]);
 
   // When clients load, if client query param present, auto-select
   useEffect(() => {

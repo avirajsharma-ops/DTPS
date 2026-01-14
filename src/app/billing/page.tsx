@@ -39,14 +39,19 @@ interface Payment {
 }
 
 export default function BillingPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
 
+  // Only fetch when session is authenticated
   useEffect(() => {
-    fetchPayments();
-  }, []);
+    if (status === 'authenticated' && session?.user?.id) {
+      fetchPayments();
+    } else if (status === 'unauthenticated') {
+      setLoading(false);
+    }
+  }, [status, session?.user?.id]);
 
   useRealtime({
     onMessage: (event) => {

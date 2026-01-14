@@ -61,14 +61,19 @@ interface MealPlan {
 }
 
 export default function MyPlanPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [mealPlan, setMealPlan] = useState<MealPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState(1);
 
+  // Only fetch when session is authenticated
   useEffect(() => {
-    fetchMealPlan();
-  }, []);
+    if (status === 'authenticated' && session?.user?.id) {
+      fetchMealPlan();
+    } else if (status === 'unauthenticated') {
+      setLoading(false);
+    }
+  }, [status, session?.user?.id]);
 
   const fetchMealPlan = async () => {
     try {

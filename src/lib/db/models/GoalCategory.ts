@@ -1,7 +1,7 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
 
 export interface IGoalCategory extends Document {
-  _id: string;
+  _id: mongoose.Types.ObjectId;
   name: string;        // Display name e.g., "Weight Loss"
   value: string;       // Value for forms e.g., "weight-loss"
   description?: string;

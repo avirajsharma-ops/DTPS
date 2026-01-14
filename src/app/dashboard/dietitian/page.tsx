@@ -72,7 +72,7 @@ interface PendingPlan {
 }
 
 export default function DietitianDashboard() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   // Dynamic data state
   const [stats, setStats] = useState({
@@ -178,11 +178,16 @@ export default function DietitianDashboard() {
     }
   };
 
-  // Initial data fetch
+  // Initial data fetch - only when session is ready
   useEffect(() => {
-    fetchDashboardData();
-    fetchPendingPlans();
-  }, []);
+    if (status === 'authenticated' && session?.user?.id) {
+      fetchDashboardData();
+      fetchPendingPlans();
+    } else if (status === 'unauthenticated') {
+      setLoading(false);
+      setLoadingPendingPlans(false);
+    }
+  }, [status, session?.user?.id]);
 
   const pendingTasks = [
     { id: 1, task: 'Review Sarah\'s food log', priority: 'high' },

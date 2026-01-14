@@ -78,7 +78,7 @@ const clientStatusColors: Record<string, { bg: string; text: string }> = {
 };
 
 export default function HealthCounselorClientsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -99,9 +99,15 @@ export default function HealthCounselorClientsPage() {
     dateOfBirth: '',
   });
 
+  // Only fetch when session is authenticated and user ID is available
   useEffect(() => {
-    fetchMyClients();
-  }, []);
+    if (status === 'authenticated' && session?.user?.id) {
+      fetchMyClients();
+    } else if (status === 'unauthenticated') {
+      setLoading(false);
+    }
+    // While loading session, keep loading state true
+  }, [status, session?.user?.id]);
 
   const fetchMyClients = async () => {
     try {

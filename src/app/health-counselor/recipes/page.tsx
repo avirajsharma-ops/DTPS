@@ -47,7 +47,7 @@ interface Recipe {
 }
 
 export default function HealthCounselorRecipesPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,9 +56,14 @@ export default function HealthCounselorRecipesPage() {
   const [sortBy, setSortBy] = useState('newest');
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Only fetch when session is authenticated
   useEffect(() => {
-    fetchRecipes();
-  }, [searchTerm, selectedCategory, sortBy]);
+    if (status === 'authenticated' && session?.user?.id) {
+      fetchRecipes();
+    } else if (status === 'unauthenticated') {
+      setLoading(false);
+    }
+  }, [status, session?.user?.id, searchTerm, selectedCategory, sortBy]);
 
   const fetchRecipes = async () => {
     try {

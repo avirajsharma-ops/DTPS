@@ -6,6 +6,7 @@ import GoalCategory from '@/lib/db/models/GoalCategory';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/admin/goal-categories - Get all goal categories
+// This endpoint allows read access for all authenticated users (needed for client forms)
 export async function GET(req: NextRequest) {
   try {
     await connectDB();

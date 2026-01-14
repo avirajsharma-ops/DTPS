@@ -74,7 +74,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
-  const { data: session, update } = useSession();
+  const { data: session, update, status } = useSession();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,14 +85,24 @@ export default function ProfilePage() {
 
   const isClient = session?.user?.role === 'client';
 
+  // Only fetch when session is authenticated and user ID is available
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (status === 'authenticated' && session?.user?.id) {
+      fetchProfile();
+    } else if (status === 'unauthenticated') {
+      setLoading(false);
+    }
+  }, [status, session?.user?.id]);
 
   const fetchProfile = async () => {
+    // Double-check user ID exists before making API call
+    if (!session?.user?.id) {
+      console.warn('Profile fetch skipped: user ID not available');
+      return;
+    }
     try {
       setLoading(true);
-      const response = await fetch(`/api/users/${session?.user?.id}`);
+      const response = await fetch(`/api/users/${session.user.id}`);
       if (response.ok) {
         const data = await response.json();
         setProfile(data.user || data);
