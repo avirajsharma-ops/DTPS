@@ -13,6 +13,7 @@ export interface IGoalCategory extends Document {
   updatedAt: Date;
 }
 
+
 const goalCategorySchema = new Schema<IGoalCategory>(
   {
     name: {
