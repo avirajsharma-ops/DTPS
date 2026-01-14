@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Plus, X, Minus, Copy, ChevronLeft, ChevronRight, Check, Maximize2, Minimize2, Trash2 } from 'lucide-react';
+import { Plus, X, Minus, Copy, ChevronLeft, ChevronRight, Check, Maximize2, Minimize2, Trash2, Download } from 'lucide-react';
 import { DayPlan, Meal, FoodOption } from './DietPlanDashboard';
 import { FoodDatabasePanel } from './FoodSheet';
 // Define FoodItem shape to type foods parameter from FoodDatabasePanel selection
@@ -33,6 +33,7 @@ type MealGridTableProps = {
   onAddMealType?: (mealType: string, position?: number) => void;
   onRemoveMealType?: (mealType: string) => void;
   onRemoveDay?: (dayIndex: number) => void;
+  onExport?: () => void; // Callback to trigger export dialog
   readOnly?: boolean;
   clientDietaryRestrictions?: string;
   clientMedicalConditions?: string;
@@ -80,7 +81,7 @@ function formatNotesDisplay(note: string): string[] {
   return note.split('.').map(s => s.trim()).filter(s => s.length > 0);
 }
 
-export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
+export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, onExport, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
   // Debug logging
   if (weekPlan[0]?.meals) {
     const firstMealType = Object.keys(weekPlan[0].meals)[0];
@@ -714,6 +715,18 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         >
           {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </Button>
+        {/* Download/Export Button */}
+        {onExport && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className="h-9 w-9 p-0 rounded-full shadow-md border-gray-300 hover:bg-emerald-100 hover:border-emerald-500 hover:text-emerald-700 bg-white"
+            title="Download Diet Plan"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        )}
    </div>
     </div>
       </div>

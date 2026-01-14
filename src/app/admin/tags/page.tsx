@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ interface Tag {
   description?: string;
   color?: string;
   icon?: string;
+  tagType: 'dietitian' | 'health_counselor' | 'general';
   createdAt: string;
   updatedAt: string;
 }
@@ -48,6 +50,7 @@ export default function TagsManagement() {
     description: '',
     color: '#3B82F6',
     icon: 'tag',
+    tagType: 'general' as 'dietitian' | 'health_counselor' | 'general',
   });
 
   useEffect(() => {
@@ -79,6 +82,7 @@ export default function TagsManagement() {
         description: tag.description || '',
         color: tag.color || '#3B82F6',
         icon: tag.icon || 'tag',
+        tagType: tag.tagType || 'general',
       });
     } else {
       setEditingTag(null);
@@ -87,6 +91,7 @@ export default function TagsManagement() {
         description: '',
         color: '#3B82F6',
         icon: 'tag',
+        tagType: 'general',
       });
     }
     setIsDialogOpen(true);
@@ -171,11 +176,12 @@ export default function TagsManagement() {
   };
 
   return (
-    <div className="space-y-6">
+    <DashboardLayout>
+    <div className="space-y-6 p-4">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Task Tags Management</h1>
-          <p className="text-gray-600 mt-1">Create and manage tags for task categorization</p>
+          <h1 className="text-3xl font-bold">Client Tags Management</h1>
+          <p className="text-gray-600 mt-1">Create and manage tags for dietitians and health counselors to categorize clients</p>
         </div>
         <Button onClick={() => handleOpenDialog()} className="gap-2">
           <Plus className="w-4 h-4" />
@@ -206,6 +212,13 @@ export default function TagsManagement() {
                       style={{ backgroundColor: tag.color }}
                     />
                     <CardTitle className="text-lg">{tag.name}</CardTitle>
+                    <Badge variant="outline" className={
+                      tag.tagType === 'dietitian' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      tag.tagType === 'health_counselor' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                      'bg-gray-50 text-gray-700 border-gray-200'
+                    }>
+                      {tag.tagType === 'dietitian' ? 'Dietitian' : tag.tagType === 'health_counselor' ? 'Health Counselor' : 'General'}
+                    </Badge>
                   </div>
                   <div className="flex gap-1">
                     <Button
@@ -250,12 +263,33 @@ export default function TagsManagement() {
             <div>
               <label className="block text-sm font-medium mb-1">Tag Name *</label>
               <Input
-                placeholder="e.g., High Priority, Urgent, Follow-up"
+                placeholder="e.g., VIP Client, Follow-up Required, Premium"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
               />
+            </div>
+
+            {/* Tag Type */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Tag Type *</label>
+              <select
+                className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formData.tagType}
+                onChange={(e) =>
+                  setFormData({ ...formData, tagType: e.target.value as 'dietitian' | 'health_counselor' | 'general' })
+                }
+              >
+                <option value="general">General (Both can use)</option>
+                <option value="dietitian">Dietitian Tags Only</option>
+                <option value="health_counselor">Health Counselor Tags Only</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.tagType === 'dietitian' ? 'Only dietitians can add this tag to clients' :
+                 formData.tagType === 'health_counselor' ? 'Only health counselors can add this tag to clients' :
+                 'Both dietitians and health counselors can use this tag'}
+              </p>
             </div>
 
             {/* Description */}
@@ -330,5 +364,6 @@ export default function TagsManagement() {
         </DialogContent>
       </Dialog>
     </div>
+    </DashboardLayout>
   );
 }

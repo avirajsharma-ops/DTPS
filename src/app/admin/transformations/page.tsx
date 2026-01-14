@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -282,6 +283,7 @@ export default function TransformationsManagement() {
   };
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -575,5 +577,6 @@ export default function TransformationsManagement() {
         </DialogContent>
       </Dialog>
     </div>
+    </DashboardLayout>
   );
 }

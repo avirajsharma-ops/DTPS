@@ -103,6 +103,11 @@ interface ClientData {
     firstName: string;
     lastName: string;
   };
+  assignedHealthCounselor?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
   // Lifestyle fields
   sleepHours?: number | string;
   stressLevel?: string;
@@ -1413,10 +1418,11 @@ export default function ClientDetailPage() {
   const fetchAllTags = async () => {
     try {
       setLoadingTags(true);
-      const response = await fetch(`/api/tags`);
+      // Fetch tags filtered by role - dietitian sees dietitian tags
+      const response = await fetch(`/api/admin/tags?tagType=dietitian`);
       if (response.ok) {
         const data = await response.json();
-        setAllTags(data?.tags || []);
+        setAllTags(data || []);
       }
     } catch (error) {
       console.error('Error fetching tags:', error);
@@ -1630,7 +1636,9 @@ export default function ClientDetailPage() {
                           <span className="capitalize">{activePlan?.status === 'active' || activePlan?.status === 'upcoming' ? 'Active' : 'Inactive'}</span>
                         </div>
                         <span className="text-gray-300">•</span>
-                        <span>Practitioner: {client.assignedDietitian ? `${client.assignedDietitian.firstName} ${client.assignedDietitian.lastName}` : 'Not Assigned'}</span>
+                        <span>Dietitian: {client.assignedDietitian ? `${client.assignedDietitian.firstName} ${client.assignedDietitian.lastName}` : 'Not Assigned'}</span>
+                        <span className="text-gray-300">•</span>
+                        <span>HC: {client.assignedHealthCounselor ? `${client.assignedHealthCounselor.firstName} ${client.assignedHealthCounselor.lastName}` : 'Not Assigned'}</span>
                         <span className="text-gray-300">•</span>
                         <span className="whitespace-nowrap">Last seen: {formatLastSeen(client?.lastLoginAt || client?.createdAt)}</span>
                       </div>

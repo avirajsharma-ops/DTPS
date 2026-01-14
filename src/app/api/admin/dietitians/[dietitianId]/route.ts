@@ -5,8 +5,32 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import Appointment from '@/lib/db/models/Appointment';
-import { AppointmentStatus, UserRole } from '@/types';
+import Payment from '@/lib/db/models/Payment';
+import Task from '@/lib/db/models/Task';
+import mongoose from 'mongoose';
+import { AppointmentStatus, UserRole, PaymentStatus } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+
+// Get the ClientNote model dynamically
+const getClientNoteModel = (): mongoose.Model<any> => {
+  if (mongoose.models.ClientNote) {
+    return mongoose.models.ClientNote;
+  }
+  
+  const noteSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    content: { type: String, required: true },
+    category: { type: String, default: 'general' },
+    priority: { type: String, default: 'normal' },
+    isEscalation: { type: Boolean, default: false },
+    attachments: [{ name: String, url: String, type: String }],
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+  });
+  
+  return mongoose.model('ClientNote', noteSchema);
+};
 
 // GET /api/admin/dietitians/[dietitianId] - Get full dietitian details with client progress
 export async function GET(
@@ -38,8 +62,10 @@ export async function GET(
       return NextResponse.json({ error: 'Dietitian not found' }, { status: 404 });
     }
 
-    if (dietitian.role !== UserRole.DIETITIAN) {
-      return NextResponse.json({ error: 'User is not a dietitian' }, { status: 400 });
+    // Allow both dietitian and health_counselor roles (case-insensitive check)
+    const dietitianRole = dietitian.role?.toLowerCase();
+    if (dietitianRole !== 'dietitian' && dietitianRole !== 'health_counselor') {
+      return NextResponse.json({ error: 'User is not a dietitian or health counselor' }, { status: 400 });
     }
 
     // Get assigned clients with their progress
@@ -93,12 +119,7 @@ export async function GET(
 
         // Get upcoming appointment
         const upcomingAppointment = await withCache(
-      `admin:dietitians:dietitianId:${JSON.stringify({
-          client: client._id,
-          dietitian: dietitianId,
-          scheduledAt: { $gte: new Date() },
-          status: AppointmentStatus.SCHEDULED
-        }).sort({ scheduledAt: 1 })}`,
+      `admin:dietitians:dietitianId:upcoming-appointment:${client._id}:${dietitianId}`,
       async () => await Appointment.findOne({
           client: client._id,
           dietitian: dietitianId,
@@ -141,15 +162,87 @@ export async function GET(
       assignedBy: dietitianId
     });
 
+    // Get recent appointments (last 30 + upcoming)
+    const appointments = await Appointment.find({
+      dietitian: dietitianId
+    })
+      .populate('client', 'firstName lastName email avatar')
+      .sort({ scheduledAt: -1 })
+      .limit(50);
+
+    // Get payments associated with this dietitian
+    const payments = await Payment.find({
+      dietitian: dietitianId
+    })
+      .populate('client', 'firstName lastName email')
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    // Get notes created by this dietitian
+    const ClientNote = getClientNoteModel();
+    const notes = await ClientNote.find({
+      createdBy: dietitianId
+    })
+      .populate('userId', 'firstName lastName email avatar')
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    // Get tasks assigned by/to this dietitian
+    const tasks = await Task.find({
+      $or: [
+        { dietitian: dietitianId },
+        { assignedBy: dietitianId }
+      ]
+    })
+      .populate('client', 'firstName lastName email avatar')
+      .sort({ startDate: -1 })
+      .limit(50);
+
+    // Get all meal plans created by this dietitian
+    const mealPlans = await ClientMealPlan.find({
+      assignedBy: dietitianId
+    })
+      .populate('clientId', 'firstName lastName email avatar')
+      .populate('templateId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    // Calculate payment stats
+    const paymentStats = {
+      totalPayments: payments.length,
+      completedPayments: payments.filter(p => p.status === PaymentStatus.COMPLETED).length,
+      pendingPayments: payments.filter(p => p.status === PaymentStatus.PENDING).length,
+      totalRevenue: payments
+        .filter(p => p.status === PaymentStatus.COMPLETED)
+        .reduce((sum, p) => sum + (p.amount || 0), 0)
+    };
+
+    // Calculate task stats
+    const taskStats = {
+      totalTasks: tasks.length,
+      completedTasks: tasks.filter(t => t.status === 'completed').length,
+      pendingTasks: tasks.filter(t => t.status === 'pending').length,
+      overdueTasks: tasks.filter(t => 
+        t.status !== 'completed' && t.endDate && new Date(t.endDate) < new Date()
+      ).length
+    };
+
     return NextResponse.json({
       dietitian,
       clients: clientsWithProgress,
+      appointments,
+      payments,
+      notes,
+      tasks,
+      mealPlans,
       stats: {
         totalClients,
         activeClients,
         totalAppointments,
         completedAppointments,
-        totalMealPlans
+        totalMealPlans,
+        ...paymentStats,
+        ...taskStats
       }
     });
 

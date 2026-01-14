@@ -1,11 +1,29 @@
 // Updated BasicInfoForm where generalGoal is NOT saved and NOT shown as selected
 "use client";
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Save } from 'lucide-react';
+
+// Goal category interface for dynamic loading
+interface GoalCategory {
+  _id: string;
+  name: string;
+  value: string;
+  isActive: boolean;
+}
+
+// Default fallback goals if API fails
+const defaultGoals: GoalCategory[] = [
+  { _id: '1', name: 'Weight Loss', value: 'weight-loss', isActive: true },
+  { _id: '2', name: 'Weight Gain', value: 'weight-gain', isActive: true },
+  { _id: '3', name: 'Muscle Gain', value: 'muscle-gain', isActive: true },
+  { _id: '4', name: 'Maintain Weight', value: 'maintain-weight', isActive: true },
+  { _id: '5', name: 'Disease Management', value: 'disease-management', isActive: true },
+];
 
 export interface BasicInfoData {
   firstName: string;
@@ -44,6 +62,27 @@ interface BasicInfoFormProps extends BasicInfoData {
 }
 
 export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, gender, parentAccount, altPhone, altEmails, anniversary, source, referralSource, generalGoal, maritalStatus, occupation, goalsList, targetWeightBucket, sharePhotoConsent, heightFeet, heightInch, heightCm, weightKg, targetWeightKg, idealWeightKg, bmi, activityLevel, onChange, onSave, loading }: BasicInfoFormProps) {
+  const [goalCategories, setGoalCategories] = useState<GoalCategory[]>(defaultGoals);
+  
+  // Fetch dynamic goal categories
+  useEffect(() => {
+    const fetchGoalCategories = async () => {
+      try {
+        const response = await fetch('/api/admin/goal-categories?active=true');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            setGoalCategories(data);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching goal categories:', error);
+        // Keep using default goals on error
+      }
+    };
+    fetchGoalCategories();
+  }, []);
+  
   const formattedDOB = dateOfBirth ? new Date(dateOfBirth).toISOString().split("T")[0] : "";
 
   const formattedAN = anniversary ? new Date(anniversary).toISOString().split("T")[0] : "";
@@ -130,12 +169,13 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
               <SelectTrigger>
                 <SelectValue placeholder="Select gender" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-                <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-              </SelectContent>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                </SelectContent>
             </Select>
           </div>
         </div>
@@ -249,10 +289,13 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
                   <SelectValue placeholder="Not Specified" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
                   <SelectItem value="not-specified">Not Specified</SelectItem>
-                  <SelectItem value="weight-loss">Weight Loss</SelectItem>
-                  <SelectItem value="weight-gain">Weight Gain</SelectItem>
-                  <SelectItem value="disease-management">Disease Management</SelectItem>
+                  {goalCategories.map((category) => (
+                    <SelectItem key={category._id} value={category.value}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -264,8 +307,11 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
                   <SelectItem value="single">Single</SelectItem>
                   <SelectItem value="married">Married</SelectItem>
+                  <SelectItem value="divorced">Divorced</SelectItem>
+                  <SelectItem value="widowed">Widowed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -284,6 +330,7 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
                   <SelectValue placeholder="Select range" />
                 </SelectTrigger>
                 <SelectContent className="max-h-72 overflow-auto">
+                  <SelectItem value="none">None</SelectItem>
                   <SelectItem value="below-5">Below 5 Kgs</SelectItem>
                   <SelectItem value="5-10">5 to 10 Kgs</SelectItem>
                   <SelectItem value="10-15">10 to 15 Kgs</SelectItem>

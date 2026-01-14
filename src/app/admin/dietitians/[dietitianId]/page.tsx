@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,7 +57,11 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
-  Target
+  Target,
+  FileText,
+  ClipboardList,
+  CreditCard,
+  StickyNote
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -87,6 +92,92 @@ interface ClientProgress {
   };
 }
 
+interface AppointmentData {
+  _id: string;
+  client: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+  };
+  scheduledAt: string;
+  type: string;
+  status: string;
+  duration?: number;
+  notes?: string;
+}
+
+interface PaymentData {
+  _id: string;
+  client: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  amount: number;
+  currency: string;
+  status: string;
+  type: string;
+  planName?: string;
+  transactionId?: string;
+  createdAt: string;
+}
+
+interface NoteData {
+  _id: string;
+  userId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+  };
+  content: string;
+  category: string;
+  priority: string;
+  isEscalation: boolean;
+  createdAt: string;
+}
+
+interface TaskData {
+  _id: string;
+  client: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+  };
+  title: string;
+  taskType: string;
+  status: string;
+  priority: string;
+  startDate: string;
+  endDate?: string;
+  description?: string;
+}
+
+interface MealPlanData {
+  _id: string;
+  clientId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+  };
+  templateId?: {
+    name: string;
+  };
+  name?: string;
+  startDate: string;
+  endDate?: string;
+  status: string;
+  createdAt: string;
+}
+
 interface Dietitian {
   _id: string;
   firstName: string;
@@ -114,6 +205,14 @@ interface Stats {
   totalAppointments: number;
   completedAppointments: number;
   totalMealPlans: number;
+  totalPayments: number;
+  completedPayments: number;
+  pendingPayments: number;
+  totalRevenue: number;
+  totalTasks: number;
+  completedTasks: number;
+  pendingTasks: number;
+  overdueTasks: number;
 }
 
 export default function AdminDietitianDetailPage() {
@@ -123,6 +222,11 @@ export default function AdminDietitianDetailPage() {
 
   const [dietitian, setDietitian] = useState<Dietitian | null>(null);
   const [clients, setClients] = useState<ClientProgress[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentData[]>([]);
+  const [payments, setPayments] = useState<PaymentData[]>([]);
+  const [notes, setNotes] = useState<NoteData[]>([]);
+  const [tasks, setTasks] = useState<TaskData[]>([]);
+  const [mealPlans, setMealPlans] = useState<MealPlanData[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -146,6 +250,11 @@ export default function AdminDietitianDetailPage() {
       const data = await response.json();
       setDietitian(data.dietitian);
       setClients(data.clients || []);
+      setAppointments(data.appointments || []);
+      setPayments(data.payments || []);
+      setNotes(data.notes || []);
+      setTasks(data.tasks || []);
+      setMealPlans(data.mealPlans || []);
       setStats(data.stats);
     } catch (error) {
       console.error('Error fetching dietitian:', error);
@@ -248,14 +357,17 @@ export default function AdminDietitianDetailPage() {
 
   if (loading) {
     return (
+      <DashboardLayout>
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="lg" />
       </div>
+      </DashboardLayout>
     );
   }
 
   if (!dietitian) {
     return (
+      <DashboardLayout>
       <div className="flex flex-col items-center justify-center min-h-screen">
         <AlertCircle className="h-16 w-16 text-gray-400 mb-4" />
         <h2 className="text-xl font-semibold text-gray-600">Dietitian not found</h2>
@@ -263,10 +375,12 @@ export default function AdminDietitianDetailPage() {
           Back to Dietitians
         </Button>
       </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="container mx-auto py-6 px-4 max-w-7xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -320,7 +434,7 @@ export default function AdminDietitianDetailPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
           <Card>
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
@@ -349,18 +463,7 @@ export default function AdminDietitianDetailPage() {
                 <Calendar className="h-5 w-5 text-purple-500" />
                 <div>
                   <p className="text-2xl font-bold">{stats.totalAppointments}</p>
-                  <p className="text-xs text-gray-500">Total Appointments</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-teal-500" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.completedAppointments}</p>
-                  <p className="text-xs text-gray-500">Completed</p>
+                  <p className="text-xs text-gray-500">Appointments</p>
                 </div>
               </div>
             </CardContent>
@@ -372,6 +475,50 @@ export default function AdminDietitianDetailPage() {
                 <div>
                   <p className="text-2xl font-bold">{stats.totalMealPlans}</p>
                   <p className="text-xs text-gray-500">Meal Plans</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5 text-indigo-500" />
+                <div>
+                  <p className="text-2xl font-bold">{stats.totalTasks}</p>
+                  <p className="text-xs text-gray-500">Total Tasks</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-red-500" />
+                <div>
+                  <p className="text-2xl font-bold">{stats.overdueTasks}</p>
+                  <p className="text-xs text-gray-500">Overdue Tasks</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-teal-500" />
+                <div>
+                  <p className="text-2xl font-bold">{stats.completedPayments}</p>
+                  <p className="text-xs text-gray-500">Payments</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-emerald-500" />
+                <div>
+                  <p className="text-2xl font-bold">₹{stats.totalRevenue?.toLocaleString() || 0}</p>
+                  <p className="text-xs text-gray-500">Revenue</p>
                 </div>
               </div>
             </CardContent>
@@ -472,14 +619,34 @@ export default function AdminDietitianDetailPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="profile">
             <User className="h-4 w-4 mr-2" />
             Profile
           </TabsTrigger>
           <TabsTrigger value="clients">
             <Users className="h-4 w-4 mr-2" />
-            Assigned Clients ({clients.length})
+            Clients ({clients.length})
+          </TabsTrigger>
+          <TabsTrigger value="appointments">
+            <Calendar className="h-4 w-4 mr-2" />
+            Appointments ({appointments.length})
+          </TabsTrigger>
+          <TabsTrigger value="mealplans">
+            <Target className="h-4 w-4 mr-2" />
+            Meal Plans ({mealPlans.length})
+          </TabsTrigger>
+          <TabsTrigger value="tasks">
+            <ClipboardList className="h-4 w-4 mr-2" />
+            Tasks ({tasks.length})
+          </TabsTrigger>
+          <TabsTrigger value="notes">
+            <StickyNote className="h-4 w-4 mr-2" />
+            Notes ({notes.length})
+          </TabsTrigger>
+          <TabsTrigger value="payments">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Payments ({payments.length})
           </TabsTrigger>
         </TabsList>
 
@@ -650,6 +817,339 @@ export default function AdminDietitianDetailPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Appointments Tab */}
+        <TabsContent value="appointments">
+          <Card>
+            <CardHeader>
+              <CardTitle>Appointments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {appointments.length ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {appointments.map((appointment) => (
+                      <TableRow key={appointment._id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={appointment.client?.avatar} />
+                              <AvatarFallback className="text-xs">
+                                {appointment.client?.firstName?.[0]}{appointment.client?.lastName?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{appointment.client?.firstName} {appointment.client?.lastName}</p>
+                              <p className="text-xs text-gray-500">{appointment.client?.email}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(appointment.scheduledAt), 'MMM dd, yyyy HH:mm')}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">{appointment.type}</Badge>
+                        </TableCell>
+                        <TableCell>{appointment.duration || 30} min</TableCell>
+                        <TableCell>
+                          <Badge className={
+                            appointment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                            appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {appointment.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No appointments</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Meal Plans Tab */}
+        <TabsContent value="mealplans">
+          <Card>
+            <CardHeader>
+              <CardTitle>Meal Plans Created</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {mealPlans.length ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Plan Name</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>End Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Created</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mealPlans.map((plan) => (
+                      <TableRow key={plan._id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={plan.clientId?.avatar} />
+                              <AvatarFallback className="text-xs">
+                                {plan.clientId?.firstName?.[0]}{plan.clientId?.lastName?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{plan.clientId?.firstName} {plan.clientId?.lastName}</p>
+                              <p className="text-xs text-gray-500">{plan.clientId?.email}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {plan.templateId?.name || plan.name || 'Custom Plan'}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(plan.startDate), 'MMM dd, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          {plan.endDate ? format(new Date(plan.endDate), 'MMM dd, yyyy') : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={
+                            plan.status === 'active' ? 'bg-green-100 text-green-800' :
+                            plan.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {plan.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-gray-500 text-sm">
+                          {format(new Date(plan.createdAt), 'MMM dd, yyyy')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Target className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No meal plans created</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tasks Tab */}
+        <TabsContent value="tasks">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tasks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {tasks.length ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Task Type</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tasks.map((task) => (
+                      <TableRow key={task._id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={task.client?.avatar} />
+                              <AvatarFallback className="text-xs">
+                                {task.client?.firstName?.[0]}{task.client?.lastName?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{task.client?.firstName} {task.client?.lastName}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{task.taskType}</Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{task.title}</TableCell>
+                        <TableCell>
+                          <span className={task.endDate && new Date(task.endDate) < new Date() && task.status !== 'completed' ? 'text-red-500' : ''}>
+                            {task.endDate ? format(new Date(task.endDate), 'MMM dd, yyyy') : '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={
+                            task.priority === 'high' ? 'bg-red-100 text-red-800' :
+                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {task.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={
+                            task.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                            task.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {task.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <ClipboardList className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No tasks</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Notes Tab */}
+        <TabsContent value="notes">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notes Created</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {notes.length ? (
+                <div className="space-y-4">
+                  {notes.map((note) => (
+                    <div key={note._id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={note.userId?.avatar} />
+                            <AvatarFallback className="text-xs">
+                              {note.userId?.firstName?.[0]}{note.userId?.lastName?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">For: {note.userId?.firstName} {note.userId?.lastName}</p>
+                            <p className="text-xs text-gray-500">{note.userId?.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge variant="outline">{note.category}</Badge>
+                          {note.isEscalation && <Badge className="bg-red-100 text-red-800">Escalation</Badge>}
+                          <Badge className={
+                            note.priority === 'high' ? 'bg-red-100 text-red-800' :
+                            note.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {note.priority}
+                          </Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{note.content}</p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        {format(new Date(note.createdAt), 'MMM dd, yyyy HH:mm')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <StickyNote className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No notes created</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Payments Tab */}
+        <TabsContent value="payments">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {payments.length ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Transaction ID</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payments.map((payment) => (
+                      <TableRow key={payment._id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{payment.client?.firstName} {payment.client?.lastName}</p>
+                            <p className="text-xs text-gray-500">{payment.client?.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{payment.planName || '-'}</TableCell>
+                        <TableCell className="font-medium">
+                          {payment.currency} {payment.amount?.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{payment.type}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={
+                            payment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            payment.status === 'failed' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {payment.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-500">
+                          {payment.transactionId || '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-500">
+                          {format(new Date(payment.createdAt), 'MMM dd, yyyy')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <CreditCard className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No payments</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Deactivate Dialog */}
@@ -707,5 +1207,6 @@ export default function AdminDietitianDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </DashboardLayout>
   );
 }

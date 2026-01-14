@@ -430,6 +430,14 @@ export default function AdminClientDetailPage() {
                     : 'Not assigned'}
                 </p>
               </div>
+              <div>
+                <Label className="text-gray-500">Health Counselor</Label>
+                <p className="font-medium">
+                  {client.assignedHealthCounselor 
+                    ? `${client.assignedHealthCounselor.firstName} ${client.assignedHealthCounselor.lastName}`
+                    : 'Not assigned'}
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>

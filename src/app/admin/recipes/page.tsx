@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Trash2, Eye } from "lucide-react";
+import { Trash2, Eye, Plus, Edit } from "lucide-react";
 import Link from "next/link";
 
 interface Recipe {
@@ -149,6 +149,12 @@ export default function AdminRecipesPage() {
               </p>
             )}
           </div>
+          <Link href="/recipes/create">
+            <Button className="bg-green-600 hover:bg-green-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Recipe
+            </Button>
+          </Link>
         </div>
 
         {/* Error message */}
@@ -245,6 +251,13 @@ export default function AdminRecipesPage() {
                           >
                             <Eye className="h-4 w-4" />
                             <span className="text-xs font-medium">View</span>
+                          </Link>
+                          <Link
+                            href={`/recipes/${recipe._id}/edit`}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="text-xs font-medium">Edit</span>
                           </Link>
                           <Button
                             variant="destructive"

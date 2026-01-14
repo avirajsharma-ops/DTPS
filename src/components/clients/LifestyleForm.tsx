@@ -61,6 +61,7 @@ export function LifestyleForm(props: LifestyleFormProps) {
             <Select value={foodPreference} onValueChange={val => onChange("foodPreference", val)}>
               <SelectTrigger className="h-10"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">None</SelectItem>
                 <SelectItem value="veg">Vegetarian</SelectItem>
                 <SelectItem value="non-veg">Non-Vegetarian</SelectItem>
                 <SelectItem value="eggetarian">Eggetarian</SelectItem>
@@ -206,6 +207,7 @@ export function LifestyleForm(props: LifestyleFormProps) {
               <Select value={eatOutFrequency} onValueChange={val => onChange("eatOutFrequency", val)}>
                 <SelectTrigger className="h-10"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
                   <SelectItem value="rare">Rare</SelectItem>
                   <SelectItem value="weekly">Weekly</SelectItem>
                   <SelectItem value="multiple-week">Multiple/Week</SelectItem>
@@ -245,6 +247,7 @@ export function LifestyleForm(props: LifestyleFormProps) {
             <Select value={activityRate} onValueChange={val => onChange("activityRate", val)}>
               <SelectTrigger className="h-10"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">None</SelectItem>
                 <SelectItem value="low">Low</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="high">High</SelectItem>
@@ -261,7 +264,7 @@ export function LifestyleForm(props: LifestyleFormProps) {
           <div className="space-y-3">
             <Label className="text-sm font-medium">Which Oil Do You Use?</Label>
             <div className="flex flex-wrap gap-2.5">
-              {["Olive Oil", "Mustard Oil", "Refined Oil", "Peanut Oil", "Coconut Oil", "Other"].map(o => {
+              {["None", "Ghee", "Olive Oil", "Mustard Oil", "Refined Oil", "Sunflower Oil", "Peanut Oil", "Groundnut Oil", "Coconut Oil", "Rice Bran Oil", "Sesame Oil", "Butter", "Other"].map(o => {
                 const v = o.toLowerCase().replace(/\s+/g, "-");
                 const active = cookingOil.includes(v);
 
@@ -271,9 +274,15 @@ export function LifestyleForm(props: LifestyleFormProps) {
                     size="sm"
                     variant={active ? "default" : "outline"}
                     onClick={() => {
+                      // Handle "None" selection
+                      if (o === "None") {
+                        onChange("cookingOil", ["none"]);
+                        return;
+                      }
+                      // Remove "none" if selecting another option
                       const next = active
                         ? cookingOil.filter(x => x !== v)
-                        : [...cookingOil, v];
+                        : [...cookingOil.filter(x => x !== "none"), v];
                       onChange("cookingOil", next);
                     }}
                     className="text-xs"
@@ -295,6 +304,7 @@ export function LifestyleForm(props: LifestyleFormProps) {
               >
                 <SelectTrigger className="h-10"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
                   <SelectItem value="500ml">500 ml</SelectItem>
                   <SelectItem value="1l">1 Litre</SelectItem>
                   <SelectItem value="2l">2 Litre</SelectItem>
@@ -313,6 +323,7 @@ export function LifestyleForm(props: LifestyleFormProps) {
               >
                 <SelectTrigger className="h-10"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
                   <SelectItem value="tata-white">TATA Iodised White Salt</SelectItem>
                   <SelectItem value="rock-salt">Rock Salt</SelectItem>
                   <SelectItem value="black-salt">Black Salt</SelectItem>

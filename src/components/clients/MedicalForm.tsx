@@ -73,19 +73,29 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
   }, [dietaryRestrictions]);
   const [dietaryOpen, setDietaryOpen] = React.useState(false);
   const dietaryOptions = [
-    'Vegetarian','Vegan','Gluten-Free','Non-Vegetarian','Dairy-Free','Keto','Low-Carb','Low-Fat','High-Protein','Paleo','Mediterranean'
+    'None', 'Vegetarian', 'Vegan', 'Eggitarian', 'Gluten-Free', 'Non-Vegetarian', 'Dairy-Free', 'Keto', 'Low-Carb', 'Low-Fat', 'High-Protein', 'Paleo', 'Mediterranean', 'Jain', 'Halal', 'Kosher'
   ];
   
   // Medical conditions multi-select
   const [selectedMedical, setSelectedMedical] = React.useState<string[]>(() => (medicalConditions ? medicalConditions.split(',').map(s => s.trim()).filter(Boolean) : []));
+  const [otherMedicalCondition, setOtherMedicalCondition] = React.useState('');
   React.useEffect(() => {
     setSelectedMedical(medicalConditions ? medicalConditions.split(',').map(s => s.trim()).filter(Boolean) : []);
   }, [medicalConditions]);
   const medicalConditionOptions = [
-    'Diabetes', 'High Blood Pressure', 'Heart Disease', 'Kidney Disease', 'Liver Disease',
-    'High Cholesterol', 'Thyroid Disorders', 'Gout', 'Acid Reflux/GERD', 'IBS (Irritable Bowel Syndrome)',
-    'Celiac Disease', 'Lactose Intolerance', 'Gallbladder Disease', 'Osteoporosis', 'Anemia',
-    'Food Allergies', 'Pregnancy', 'Breastfeeding'
+    'None', 'Diabetes', 'Type 1 Diabetes', 'Type 2 Diabetes', 'Prediabetes', 'Gestational Diabetes',
+    'High Blood Pressure', 'Low Blood Pressure', 'Heart Disease', 'Coronary Artery Disease', 'Heart Failure',
+    'Kidney Disease', 'Chronic Kidney Disease', 'Kidney Stones', 'Liver Disease', 'Fatty Liver', 'Hepatitis',
+    'High Cholesterol', 'High Triglycerides', 'Thyroid Disorders', 'Hypothyroidism', 'Hyperthyroidism', 'PCOS',
+    'Gout', 'Acid Reflux/GERD', 'IBS (Irritable Bowel Syndrome)', 'IBD', 'Crohns Disease', 'Ulcerative Colitis',
+    'Celiac Disease', 'Lactose Intolerance', 'Gluten Sensitivity', 'Gallbladder Disease', 'Pancreatitis',
+    'Osteoporosis', 'Osteoarthritis', 'Rheumatoid Arthritis', 'Anemia', 'Iron Deficiency', 'B12 Deficiency',
+    'Food Allergies', 'Nut Allergy', 'Seafood Allergy', 'Egg Allergy', 'Milk Allergy',
+    'Pregnancy', 'Breastfeeding', 'Menopause', 'Endometriosis',
+    'Obesity', 'Underweight', 'Eating Disorder', 'Anorexia', 'Bulimia',
+    'Anxiety', 'Depression', 'Insomnia', 'Sleep Apnea',
+    'Cancer', 'Autoimmune Disease', 'HIV/AIDS', 'Tuberculosis',
+    'Asthma', 'COPD', 'Other'
   ];
   
   
@@ -236,7 +246,16 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                     key={opt}
                     type="button"
                     onClick={() => {
-                      const next = isSelected ? selectedMedical.filter(s => s !== opt) : [...selectedMedical, opt];
+                      // Handle "None" selection - clears other selections
+                      if (opt === 'None') {
+                        setSelectedMedical(['None']);
+                        onChange('medicalConditions', 'None');
+                        return;
+                      }
+                      // Remove "None" if selecting another option
+                      let next = isSelected 
+                        ? selectedMedical.filter(s => s !== opt) 
+                        : [...selectedMedical.filter(s => s !== 'None'), opt];
                       setSelectedMedical(next);
                       onChange('medicalConditions', next.join(', '));
                     }}
@@ -247,9 +266,28 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                 );
               })}
             </div>
+            {/* Other medical condition input */}
+            {selectedMedical.includes('Other') && (
+              <div className="mt-3 pt-2 border-t">
+                <Input
+                  placeholder="Please specify other medical condition..."
+                  value={otherMedicalCondition}
+                  onChange={e => {
+                    setOtherMedicalCondition(e.target.value);
+                    const otherConditions = selectedMedical.filter(s => s !== 'Other' && !s.startsWith('Other: '));
+                    if (e.target.value.trim()) {
+                      onChange('medicalConditions', [...otherConditions, `Other: ${e.target.value}`].join(', '));
+                    } else {
+                      onChange('medicalConditions', [...otherConditions, 'Other'].join(', '));
+                    }
+                  }}
+                  className="mt-2"
+                />
+              </div>
+            )}
             {selectedMedical.length > 0 && (
               <div className="mt-3 pt-2 border-t text-xs text-gray-500">
-                Selected: <span className="font-medium text-gray-700">{selectedMedical.join(', ')}</span>
+                Selected: <span className="font-medium text-gray-700">{selectedMedical.join(', ')}{otherMedicalCondition && selectedMedical.includes('Other') ? ` (${otherMedicalCondition})` : ''}</span>
               </div>
             )}
           </div>

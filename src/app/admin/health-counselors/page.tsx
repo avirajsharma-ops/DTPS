@@ -207,15 +207,27 @@ export default function AdminHealthCounselorsPage() {
                 </thead>
                 <tbody>
                   {filtered.map(hc => (
-                    <tr key={hc._id} className="border-b hover:bg-gray-50">
+                    <tr 
+                      key={hc._id} 
+                      className="border-b hover:bg-gray-50 cursor-pointer"
+                      onClick={() => router.push(`/admin/health-counselors/${hc._id}`)}
+                    >
                       <td className="p-3">{hc.firstName} {hc.lastName}</td>
                       <td className="p-3">{hc.email}</td>
                       <td className="p-3">{hc.phone || '-'}</td>
                       <td className="p-3 capitalize">{hc.status}</td>
                       <td className="p-3">${hc.consultationFee || 0}</td>
                       <td className="p-3">{hc.createdAt ? new Date(hc.createdAt).toLocaleString() : '-'}</td>
-                      <td className="p-3 flex gap-2">
+                      <td className="p-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button variant="outline" size="sm" onClick={() => router.push(`/admin/health-counselors/${hc._id}`)}>View</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
+                          onClick={() => router.push(`/health-counselor/clients?viewAs=${hc._id}`)}
+                        >
+                          Dashboard
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => openEdit(hc)}>Edit</Button>
                         <Button
                           variant={hc.status === 'active' ? 'destructive' : 'default'}

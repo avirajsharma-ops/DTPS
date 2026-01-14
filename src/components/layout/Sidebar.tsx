@@ -15,6 +15,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   User,
   FileText,
   TrendingUp,
@@ -26,7 +27,11 @@ import {
   Package,
   Wallet,
   AlertTriangle,
-  Bell
+  Bell,
+  FolderOpen,
+  Tags,
+  Sparkles,
+  BookOpen
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -39,6 +44,15 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
   const { data: session } = useSession();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedFolders, setExpandedFolders] = useState<string[]>(['Content Management']);
+
+  const toggleFolder = (label: string) => {
+    setExpandedFolders(prev => 
+      prev.includes(label) 
+        ? prev.filter(f => f !== label) 
+        : [...prev, label]
+    );
+  };
 
   const getNavigationItems = (role: UserRole) => {
     switch (role) {
@@ -276,7 +290,51 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
             icon: Wallet,
             description: 'Review external payments'
           },
-
+          // Content Management Section
+          {
+            href: '/admin/content',
+            label: 'Content Management',
+            icon: FolderOpen,
+            description: 'Manage content',
+            children: [
+              {
+                href: '/admin/blogs',
+                label: 'Blogs',
+                icon: BookOpen,
+                description: 'Manage blog posts'
+              },
+              {
+                href: '/admin/tags',
+                label: 'Tags',
+                icon: Tags,
+                description: 'Manage tags'
+              },
+              {
+                href: '/admin/goal-categories',
+                label: 'Goal Categories',
+                icon: FileText,
+                description: 'Manage goal categories'
+              },
+              {
+                href: '/admin/transformations',
+                label: 'Transformations',
+                icon: Sparkles,
+                description: 'Manage transformations'
+              },
+            ]
+          },
+          {
+            href: '/admin/dietitians',
+            label: 'Dietitians',
+            icon: Users,
+            description: 'Manage dietitians'
+          },
+          {
+            href: '/admin/health-counselors',
+            label: 'Health Counselors',
+            icon: Users,
+            description: 'Manage health counselors'
+          },
           {
             href: '/profile',
             label: 'Profile',
@@ -351,11 +409,75 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col gap-2">
-        {filteredNavItems.map((item) => {
+      <nav className="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col gap-1">
+        {filteredNavItems.map((item: any) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+          const hasChildren = item.children && item.children.length > 0;
+          const isExpanded = expandedFolders.includes(item.label);
 
+          // If has children, render as collapsible folder
+          if (hasChildren) {
+            return (
+              <div key={item.label}>
+                <button
+                  onClick={() => toggleFolder(item.label)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    isExpanded 
+                      ? isDarkMode 
+                        ? "bg-gray-800 text-white"
+                        : "bg-gray-100 text-gray-900"
+                      : isDarkMode
+                        ? "text-gray-300 hover:bg-gray-800 hover:text-white"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                    isCollapsed && "justify-center"
+                  )}
+                >
+                  <div className="flex items-center space-x-3">
+                    <Icon className={cn("h-5 w-5", isDarkMode ? "text-gray-400" : "text-gray-500")} />
+                    {!isCollapsed && <span>{item.label}</span>}
+                  </div>
+                  {!isCollapsed && (
+                    <ChevronDown className={cn(
+                      "h-4 w-4 transition-transform",
+                      isExpanded && "rotate-180"
+                    )} />
+                  )}
+                </button>
+                {/* Children items */}
+                {isExpanded && !isCollapsed && (
+                  <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                    {item.children.map((child: any) => {
+                      const ChildIcon = child.icon;
+                      const isChildActive = pathname === child.href || pathname?.startsWith(child.href + '/');
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={cn(
+                            "flex items-center space-x-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                            isChildActive
+                              ? isDarkMode 
+                                ? "bg-green-900/50 text-green-400"
+                                : "bg-green-100 text-green-700"
+                              : isDarkMode
+                                ? "text-gray-400 hover:bg-gray-800 hover:text-white"
+                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          )}
+                        >
+                          <ChildIcon className="h-4 w-4" />
+                          <span>{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Regular link item
           return (
             <Link
               key={item.href}
@@ -378,7 +500,6 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
                 {!isCollapsed && (
                   <div className="flex flex-col">
                     <span>{item.label}</span>
-                    <span className={cn("text-xs", isDarkMode ? "text-gray-500" : "text-gray-500")}>{item.description}</span>
                   </div>
                 )}
               </div>

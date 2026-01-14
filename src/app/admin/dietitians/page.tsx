@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -160,7 +161,8 @@ export default function AdminDietitiansPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <DashboardLayout>
+    <div className="space-y-6 p-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Manage Dietitians</h1>
         <div className="flex gap-2">
@@ -193,14 +195,26 @@ export default function AdminDietitiansPage() {
                 </thead>
                 <tbody>
                   {filtered.map(u => (
-                    <tr key={u._id} className="border-b hover:bg-gray-50">
+                    <tr 
+                      key={u._id} 
+                      className="border-b hover:bg-gray-50 cursor-pointer"
+                      onClick={() => router.push(`/admin/dietitians/${u._id}`)}
+                    >
                       <td className="p-3">{u.firstName} {u.lastName}</td>
                       <td className="p-3">{u.email}</td>
                       <td className="p-3">{u.experience || 0} yrs</td>
                       <td className="p-3">{u.consultationFee ? `₹${u.consultationFee}` : '-'}</td>
                       <td className="p-3 truncate max-w-xs">{(u.specializations || []).join(', ')}</td>
-                      <td className="p-3 flex gap-2">
+                      <td className="p-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button variant="outline" size="sm" onClick={() => router.push(`/admin/dietitians/${u._id}`)}>View</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
+                          onClick={() => router.push(`/dashboard/dietitian?viewAs=${u._id}`)}
+                        >
+                          Dashboard
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => openEdit(u)}>Edit</Button>
                         <Button
                           variant={u.status === 'active' ? 'destructive' : 'default'}
@@ -288,6 +302,7 @@ export default function AdminDietitiansPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </DashboardLayout>
   );
 }
 

@@ -393,49 +393,33 @@ export default function DieticianClientsPage() {
                                     </Badge>
                                   ))}
                                 </div>
-                              ) : '-'}
+                              ) : (
+                                <span className="text-gray-400 text-xs">-</span>
+                              )}
                             </TableCell>
                             <TableCell className="px-3">
-                              <Select
-                                value={client.clientStatus || 'leading'}
-                                onValueChange={(value) => handleClientStatusChange(client._id, value)}
+                              {/* Status is now automatically managed based on meal plan */}
+                              <Badge 
+                                variant="outline"
+                                className={`text-xs px-2 py-0.5 ${
+                                  client.clientStatus === 'active' ? 'bg-green-100 text-green-700 border-green-300' :
+                                  client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                                  client.clientStatus === 'onboarding' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
+                                  client.clientStatus === 'paused' ? 'bg-orange-100 text-orange-700 border-orange-300' :
+                                  'bg-blue-100 text-blue-700 border-blue-300'
+                                }`}
                               >
-                                <SelectTrigger className="h-7 w-27.5 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="leading">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                      Leading
-                                    </span>
-                                  </SelectItem>
-                                  <SelectItem value="active">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                                      Active
-                                    </span>
-                                  </SelectItem>
-                                  <SelectItem value="inactive">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-gray-500"></span>
-                                      Inactive
-                                    </span>
-                                  </SelectItem>
-                                  <SelectItem value="onboarding">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-                                      Onboarding
-                                    </span>
-                                  </SelectItem>
-                                  <SelectItem value="paused">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                                      Paused
-                                    </span>
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
+                                <span className="flex items-center gap-1.5">
+                                  <span className={`w-2 h-2 rounded-full ${
+                                    client.clientStatus === 'active' ? 'bg-green-500' :
+                                    client.clientStatus === 'inactive' ? 'bg-gray-500' :
+                                    client.clientStatus === 'onboarding' ? 'bg-yellow-500' :
+                                    client.clientStatus === 'paused' ? 'bg-orange-500' :
+                                    'bg-blue-500'
+                                  }`}></span>
+                                  {(client.clientStatus || 'leading').charAt(0).toUpperCase() + (client.clientStatus || 'leading').slice(1)}
+                                </span>
+                              </Badge>
                             </TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.programStart ? formatDate(client.programStart) : '-'}</TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.programEnd ? formatDate(client.programEnd) : '-'}</TableCell>

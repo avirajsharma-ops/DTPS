@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MealGridTable } from './MealGridTable';
+import { DietPlanExport } from './DietPlanExport';
 import { Save, User, Download, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
@@ -108,8 +109,8 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   // Get session for role-based export visibility
   const { data: session } = useSession();
   const userRole = session?.user?.role as string | undefined;
-  // Only show export for admin and health_counselor
-  const canExport = userRole === 'admin' || userRole === 'health_counselor';
+  // Allow export for admin, health_counselor, and dietitian
+  const canExport = userRole === 'admin' || userRole === 'health_counselor' || userRole === 'dietitian';
   
   // Combine props with clientData for restrictions
   const dietaryRestrictions = clientDietaryRestrictions || clientData?.dietaryRestrictions || '';
@@ -242,6 +243,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasDraft, setHasDraft] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false); // Export dialog state for MealGridTable
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousDataRef = useRef<string>('');
   const isInitializedRef = useRef(false);
@@ -525,10 +527,18 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
               {!readOnly && (
                 <>
                   {canExport && (
-                    <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-slate-700 font-medium">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export PDF
-                    </Button>
+                    <DietPlanExport
+                      weekPlan={weekPlan}
+                      mealTypes={mealTypes}
+                      clientName={clientName}
+                      clientInfo={{
+                        dietaryRestrictions,
+                        medicalConditions,
+                        allergies
+                      }}
+                      duration={duration}
+                      startDate={startDate}
+                    />
                   )}
                   <Button onClick={handleSavePlan} className="bg-green-600 hover:bg-green-700 shadow font-medium">
                     <Save className="w-4 h-4 mr-2" />
@@ -537,10 +547,18 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
                 </>
               )}
               {readOnly && canExport && (
-                <Button variant="outline" onClick={handleExport} className="border-gray-300 hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-slate-700 font-medium">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export PDF
-                </Button>
+                <DietPlanExport
+                  weekPlan={weekPlan}
+                  mealTypes={mealTypes}
+                  clientName={clientName}
+                  clientInfo={{
+                    dietaryRestrictions,
+                    medicalConditions,
+                    allergies
+                  }}
+                  duration={duration}
+                  startDate={startDate}
+                />
               )}
             </div>
           </div>
@@ -556,6 +574,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
           onAddMealType={readOnly ? undefined : handleAddMealType}
           onRemoveMealType={readOnly ? undefined : handleRemoveMealType}
           onRemoveDay={readOnly ? undefined : handleRemoveDay}
+          onExport={canExport ? () => setExportDialogOpen(true) : undefined}
           readOnly={readOnly}
           clientDietaryRestrictions={dietaryRestrictions}
           clientMedicalConditions={medicalConditions}
@@ -563,6 +582,23 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
           holdDays={holdDays}
           totalHeldDays={totalHeldDays}
         />
+        {/* Export dialog triggered from MealGridTable */}
+        {canExport && (
+          <DietPlanExport
+            weekPlan={weekPlan}
+            mealTypes={mealTypes}
+            clientName={clientName}
+            clientInfo={{
+              dietaryRestrictions,
+              medicalConditions,
+              allergies
+            }}
+            duration={duration}
+            startDate={startDate}
+            externalOpen={exportDialogOpen}
+            onExternalOpenChange={setExportDialogOpen}
+          />
+        )}
       </div>
     </div>
   );

@@ -6,6 +6,8 @@ export interface ITag extends Document {
   description?: string;
   color?: string; // Hex color code for UI display
   icon?: string; // Icon name for UI
+  tagType: 'dietitian' | 'health_counselor' | 'general'; // Who can use this tag
+  createdBy?: mongoose.Types.ObjectId; // Admin who created
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,7 +17,6 @@ const tagSchema = new Schema<ITag>(
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       maxlength: 50,
       minlength: 1
@@ -33,13 +34,23 @@ const tagSchema = new Schema<ITag>(
     icon: {
       type: String,
       default: 'tag' // Default icon name
+    },
+    tagType: {
+      type: String,
+      required: true,
+      enum: ['dietitian', 'health_counselor', 'general'],
+      default: 'general'
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
     }
   },
   { timestamps: true }
 );
 
-// Unique constraint on name creates index automatically, so we don't need to call schema.index()
-// The unique: true constraint handles the indexing
+// Compound unique constraint on name + tagType (same name can exist for different types)
+tagSchema.index({ name: 1, tagType: 1 }, { unique: true });
 
 const Tag: Model<ITag> = mongoose.models.Tag || mongoose.model('Tag', tagSchema);
 

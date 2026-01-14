@@ -43,19 +43,20 @@ interface LifestyleData {
   cravingType: string;
 }
 
-const foodPreferences = ["Veg", "Non-Veg", "Eggetarian", "Vegan"];
-const cuisines = ["Indian", "South Indian", "North Indian", "Chinese", "Italian", "Mexican", "Thai", "Continental", "Mediterranean"];
-const oils = ["Mustard Oil", "Sunflower Oil", "Olive Oil", "Coconut Oil", "Groundnut Oil", "Rice Bran Oil", "Ghee", "Butter"];
-const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const foodPreferences = ["None", "Veg", "Non-Veg", "Eggetarian", "Vegan", "Pescatarian", "Flexitarian"];
+const cuisines = ["None", "Indian", "South Indian", "North Indian", "Chinese", "Italian", "Mexican", "Thai", "Continental", "Mediterranean", "Japanese", "Korean", "Middle Eastern"];
+const oils = ["None", "Ghee", "Mustard Oil", "Sunflower Oil", "Olive Oil", "Coconut Oil", "Groundnut Oil", "Rice Bran Oil", "Sesame Oil", "Butter", "Other"];
+const days = ["None", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const activityLevels = [
+  { value: "none", label: "None", desc: "Not specified" },
   { value: "sedentary", label: "Sedentary", desc: "Little or no exercise" },
   { value: "lightly_active", label: "Lightly Active", desc: "Light exercise 1-3 days/week" },
   { value: "moderately_active", label: "Moderately Active", desc: "Moderate exercise 3-5 days/week" },
   { value: "very_active", label: "Very Active", desc: "Hard exercise 6-7 days/week" },
   { value: "extremely_active", label: "Extremely Active", desc: "Very hard exercise & physical job" }
 ];
-const frequencies = ["Never", "Rarely", "Occasionally", "Sometimes", "Frequently", "Daily"];
-const cravings = ["Sweet", "Salty", "Spicy", "Sour", "Fried", "Crunchy"];
+const frequencies = ["None", "Never", "Rarely", "Occasionally", "Sometimes", "Frequently", "Daily"];
+const cravings = ["None", "Sweet", "Salty", "Spicy", "Sour", "Fried", "Crunchy"];
 
 export default function LifestyleInfoPage() {
   const { data: session, status } = useSession();

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -233,14 +234,17 @@ export default function AdminHealthCounselorDetailPage() {
 
   if (loading) {
     return (
+      <DashboardLayout>
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="lg" />
       </div>
+      </DashboardLayout>
     );
   }
 
   if (!counselor) {
     return (
+      <DashboardLayout>
       <div className="flex flex-col items-center justify-center min-h-screen">
         <AlertCircle className="h-16 w-16 text-gray-400 mb-4" />
         <h2 className="text-xl font-semibold text-gray-600">Health Counselor not found</h2>
@@ -248,10 +252,12 @@ export default function AdminHealthCounselorDetailPage() {
           Back to Health Counselors
         </Button>
       </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="container mx-auto py-6 px-4 max-w-7xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -672,5 +678,6 @@ export default function AdminHealthCounselorDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </DashboardLayout>
   );
 }

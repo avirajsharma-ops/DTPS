@@ -115,7 +115,18 @@ export default function TasksSection({
 
   const fetchAvailableTags = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/tags');
+      // Get user role from session to filter tags appropriately
+      const userRole = (session?.user as any)?.role;
+      let tagType = 'general';
+      
+      if (userRole === 'dietitian') {
+        tagType = 'dietitian';
+      } else if (userRole === 'health_counselor') {
+        tagType = 'health_counselor';
+      }
+      
+      // Fetch tags filtered by role type
+      const response = await fetch(`/api/admin/tags?tagType=${tagType}`);
       if (response.ok) {
         const data = await response.json();
         setAvailableTags(data);
@@ -123,7 +134,7 @@ export default function TasksSection({
     } catch (error) {
       console.error('Error fetching tags:', error);
     }
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     fetchTasks();

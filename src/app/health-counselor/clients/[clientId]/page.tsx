@@ -91,6 +91,11 @@ interface ClientData {
     firstName: string;
     lastName: string;
   };
+  assignedHealthCounselor?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
   sleepHours?: number | string;
   stressLevel?: string;
   smokingStatus?: string;
@@ -933,6 +938,11 @@ export default function HealthCounselorClientDetailPage() {
                         <span className="capitalize">{activePlan?.status === 'active' ? 'Active' : 'Inactive'}</span>
                         <span className="text-gray-300">•</span>
                         <span>Last seen: {formatLastSeen(client?.lastLoginAt || client?.createdAt)}</span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                        <span>Dietitian: {client.assignedDietitian ? `${client.assignedDietitian.firstName} ${client.assignedDietitian.lastName}` : 'Not Assigned'}</span>
+                        <span className="text-gray-300">•</span>
+                        <span>Health Counselor: {client.assignedHealthCounselor ? `${client.assignedHealthCounselor.firstName} ${client.assignedHealthCounselor.lastName}` : 'Not Assigned'}</span>
                       </div>
                     </div>
                   </div>

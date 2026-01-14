@@ -16,11 +16,31 @@ export async function GET(req: NextRequest) {
 
     await connectDB();
 
+    // Get query params to filter by tag type
+    const { searchParams } = new URL(req.url);
+    const tagType = searchParams.get('tagType');
+    const userRole = session.user.role;
+
+    // Build query - filter by tag type if provided
+    let query: any = {};
+    if (tagType && ['dietitian', 'health_counselor', 'general'].includes(tagType)) {
+      query.tagType = tagType;
+    } else if (userRole === 'dietitian') {
+      // Dietitians see their tags and general tags
+      query.tagType = { $in: ['dietitian', 'general'] };
+    } else if (userRole === 'health_counselor') {
+      // Health counselors see their tags and general tags
+      query.tagType = { $in: ['health_counselor', 'general'] };
+    }
+    // Admin sees all tags
+
+    const cacheKey = `admin:tags:${userRole}:${tagType || 'all'}`;
+    
     // Use server memory cache for tags (static data)
     const tags = await withCache(
-      'admin:tags:all',
+      cacheKey,
       async () => {
-        return await Tag.find({}).sort({ name: 1 }).lean();
+        return await Tag.find(query).sort({ tagType: 1, name: 1 }).lean();
       },
       { ttl: 300000, tags: ['tags'] } // Cache for 5 minutes
     );
@@ -52,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, description = '', color = '#3B82F6', icon = 'tag' } = body;
+    const { name, description = '', color = '#3B82F6', icon = 'tag', tagType = 'general' } = body;
 
     // Validate required fields
     if (!name || name.trim().length === 0) {
@@ -62,13 +82,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate tagType
+    if (!['dietitian', 'health_counselor', 'general'].includes(tagType)) {
+      return NextResponse.json(
+        { error: 'Invalid tag type. Must be dietitian, health_counselor, or general' },
+        { status: 400 }
+      );
+    }
+
     await connectDB();
 
-    // Check if tag already exists
-    const existingTag = await Tag.findOne({ name: name.trim() });
+    // Check if tag already exists with same name and type
+    const existingTag = await Tag.findOne({ name: name.trim(), tagType });
     if (existingTag) {
       return NextResponse.json(
-        { error: 'Tag already exists' },
+        { error: `Tag "${name}" already exists for ${tagType === 'general' ? 'general use' : tagType + 's'}` },
         { status: 409 }
       );
     }
@@ -78,7 +106,9 @@ export async function POST(req: NextRequest) {
       name: name.trim(),
       description: description.trim(),
       color,
-      icon
+      icon,
+      tagType,
+      createdBy: session.user.id
     });
 
     await newTag.save();
