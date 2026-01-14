@@ -179,13 +179,17 @@ class MainActivity : AppCompatActivity() {
         // All permissions handled
     }
 
+    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
         // Set up white status bar with dark icons
         WindowCompat.setDecorFitsSystemWindows(window, true)
-        window.statusBarColor = ContextCompat.getColor(this, android.R.color.white)
-        window.navigationBarColor = ContextCompat.getColor(this, android.R.color.white)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            // For Android 14 and below, use deprecated methods
+            window.statusBarColor = ContextCompat.getColor(this, android.R.color.white)
+            window.navigationBarColor = ContextCompat.getColor(this, android.R.color.white)
+        }
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = true
             isAppearanceLightNavigationBars = true
@@ -370,11 +374,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
+    @Suppress("DEPRECATION")
     private fun setupWebView() {
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
-            databaseEnabled = true
+            @Suppress("DEPRECATION")
+            databaseEnabled = true  // Deprecated but still works
             cacheMode = WebSettings.LOAD_DEFAULT
             allowFileAccess = true
             allowContentAccess = true
@@ -549,7 +555,12 @@ class MainActivity : AppCompatActivity() {
                 "${packageName}.fileprovider",
                 photoFile
             )
-            cameraLauncher.launch(cameraPhotoUri)
+            cameraPhotoUri?.let { uri ->
+                cameraLauncher.launch(uri)
+            } ?: run {
+                fileUploadCallback?.onReceiveValue(null)
+                fileUploadCallback = null
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             fileUploadCallback?.onReceiveValue(null)

@@ -54,7 +54,7 @@
     <string msgid="7215213145546190223" name="common_google_play_services_install_title">Installer les services Google Play</string>
     <string name="common_google_play_services_notification_channel_name">Disponibilité des services Google Play</string>
     <string name="common_google_play_services_notification_ticker">Erreur liée aux services Google Play</string>
-    <string name="common_google_play_services_unknown_issue">L\'application %1$s éprouve un problème avec les services Google Play. Veuillez réessayer.</string>
+    <string name="common_google_play_services_unknown_issue">L\'appli %1$s éprouve un problème avec les services Google Play. Veuillez réessayer.</string>
     <string name="common_google_play_services_unsupported_text">L\'application %1$s ne fonctionnera pas sans les services Google Play, qui ne sont pas pris en charge par votre appareil.</string>
     <string msgid="6556509956452265614" name="common_google_play_services_update_button">Mettre à jour</string>
     <string msgid="9053896323427875356" name="common_google_play_services_update_text">%1$s ne fonctionnera pas tant que vous n\'aurez pas mis à jour les services Google Play.</string>
@@ -62,8 +62,9 @@
     <string name="common_google_play_services_updating_text">%1$s ne fonctionnera pas sans les services Google Play, qui sont actuellement mis à jour.</string>
     <string name="common_google_play_services_wear_update_text">La nouvelle version des services Google Play est nécessaire. Elle sera bientôt installée automatiquement.</string>
     <string name="common_open_on_phone">Ouvrir sur le téléphone</string>
-    <string name="common_signin_button_text">Connexion</string>
+    <string name="common_signin_button_text">Se connecter</string>
     <string name="common_signin_button_text_long">Se connecter avec Google</string>
+    <string name="error_a11y_label">Erreur : incorrecte</string>
     <string name="error_icon_content_description">Erreur</string>
     <string name="exposed_dropdown_menu_content_description">Afficher le menu déroulant</string>
     <string name="icon_content_description">Icône de boîte de dialogue</string>
@@ -82,6 +83,9 @@
     <string name="material_timepicker_select_time">Sélectionner l\'heure</string>
     <string name="material_timepicker_text_input_mode_description">Passer au mode Entrée de texte pour entrer l\'heure.</string>
     <string name="mtrl_badge_numberless_content_description">Nouvelle notification</string>
+    <string name="mtrl_checkbox_state_description_checked">Cochée</string>
+    <string name="mtrl_checkbox_state_description_indeterminate">Partiellement cochée</string>
+    <string name="mtrl_checkbox_state_description_unchecked">Non cochée</string>
     <string name="mtrl_chip_close_icon_content_description">Supprimer %1$s</string>
     <string name="mtrl_exceed_max_badge_number_content_description" ns2:ignore="PluralsCandidate">Plus de %1$d nouvelles notifications</string>
     <string name="mtrl_picker_a11y_next_month">Passer au mois suivant</string>
@@ -94,7 +98,7 @@
     <string name="mtrl_picker_date_header_selected">%1$s</string>
     <string name="mtrl_picker_date_header_title">Sélectionnez la date</string>
     <string name="mtrl_picker_date_header_unselected">Date sélectionnée</string>
-    <string name="mtrl_picker_day_of_week_column_header">Colonne des jours : %1$s</string>
+    <string name="mtrl_picker_day_of_week_column_header">%1$s</string>
     <string name="mtrl_picker_end_date_description">Date de fin : %1$s</string>
     <string name="mtrl_picker_invalid_format">Format incorrect</string>
     <string name="mtrl_picker_invalid_format_example">Exemple : %1$s</string>
@@ -125,5 +129,8 @@
     <string name="mtrl_timepicker_confirm">OK</string>
     <string name="password_toggle_content_description">Afficher le mot de passe</string>
     <string msgid="6264217191555673260" name="search_menu_title">"Rechercher"</string>
+    <string name="searchview_clear_text_content_description">Effacez le texte</string>
+    <string name="searchview_navigation_content_description">Retour</string>
+    <string name="side_sheet_accessibility_pane_title">Feuille latérale</string>
     <string msgid="6277540029070332960" name="status_bar_notification_info_overflow">"999+"</string>
 </resources>
