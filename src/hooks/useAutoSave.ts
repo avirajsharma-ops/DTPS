@@ -754,6 +754,339 @@ export function useMealPlanAutoSave<T = MealPlanFormData>(
 }
 
 /**
+ * Auto-save hook specifically for Diet Template creation/editing
+ * Generic type T allows it to work with any diet template structure
+ * Drafts expire after 24 hours
+ */
+export function useDietTemplateAutoSave<T = any>(
+  id: string,
+  data: T,
+  options: {
+    debounceMs?: number;
+    enabled?: boolean;
+    onSaveSuccess?: () => void;
+    onSaveError?: (error: Error) => void;
+  } = {}
+) {
+  const { debounceMs = 2000, enabled = true, onSaveSuccess, onSaveError } = options;
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [hasDraft, setHasDraft] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousDataRef = useRef<string>('');
+  const isInitializedRef = useRef(false);
+
+  const storageKey = `draft_diet-template_${id}`;
+
+  // Save to localStorage
+  const saveToStorage = useCallback((formData: T) => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const draft = {
+        id,
+        type: 'diet-template',
+        data: formData,
+        lastSaved: Date.now(),
+        expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+      };
+      localStorage.setItem(storageKey, JSON.stringify(draft));
+      setHasDraft(true);
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Failed to save diet template draft:', error);
+    }
+  }, [id, storageKey]);
+
+  // Debounced save effect
+  useEffect(() => {
+    if (!enabled) return;
+
+    const currentDataStr = JSON.stringify(data);
+    
+    // Skip if no changes
+    if (previousDataRef.current === currentDataStr) return;
+    
+    // Skip initial empty state
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      previousDataRef.current = currentDataStr;
+      return;
+    }
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    setIsSaving(true);
+
+    // Debounced save
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToStorage(data);
+      previousDataRef.current = currentDataStr;
+      setIsSaving(false);
+      onSaveSuccess?.();
+    }, debounceMs);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [data, enabled, debounceMs, saveToStorage, onSaveSuccess]);
+
+  // Restore draft from localStorage
+  const restoreDraft = useCallback((): T | null => {
+    if (typeof window === 'undefined') return null;
+    
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return null;
+      
+      const draft = JSON.parse(stored);
+      
+      // Check if expired
+      if (draft.expiresAt && Date.now() > draft.expiresAt) {
+        localStorage.removeItem(storageKey);
+        return null;
+      }
+      
+      setHasDraft(true);
+      setLastSaved(draft.lastSaved ? new Date(draft.lastSaved) : null);
+      previousDataRef.current = JSON.stringify(draft.data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return draft.data as any;
+    } catch (error) {
+      console.error('Failed to restore diet template draft:', error);
+      return null;
+    }
+  }, [storageKey]);
+
+  // Clear draft
+  const clearDraft = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      localStorage.removeItem(storageKey);
+      setHasDraft(false);
+      setLastSaved(null);
+      previousDataRef.current = '';
+      isInitializedRef.current = false;
+    } catch (error) {
+      console.error('Failed to clear diet template draft:', error);
+    }
+  }, [storageKey]);
+
+  // Check if draft exists
+  const checkDraft = useCallback((): boolean => {
+    if (typeof window === 'undefined') return false;
+    
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return false;
+      
+      const draft = JSON.parse(stored);
+      if (draft.expiresAt && Date.now() > draft.expiresAt) {
+        localStorage.removeItem(storageKey);
+        return false;
+      }
+      
+      setHasDraft(true);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [storageKey]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return {
+    isSaving,
+    lastSaved,
+    hasDraft,
+    clearDraft,
+    restoreDraft,
+    checkDraft,
+    saveDraft: () => saveToStorage(data),
+  };
+}
+
+/**
+ * Generic form auto-save hook
+ * Works with any form data structure
+ * Drafts expire after 24 hours
+ */
+export function useFormAutoSave<T = any>(
+  formType: string,
+  id: string,
+  data: T,
+  options: {
+    debounceMs?: number;
+    enabled?: boolean;
+    onSaveSuccess?: () => void;
+    onSaveError?: (error: Error) => void;
+  } = {}
+) {
+  const { debounceMs = 2000, enabled = true, onSaveSuccess, onSaveError } = options;
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [hasDraft, setHasDraft] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousDataRef = useRef<string>('');
+  const isInitializedRef = useRef(false);
+
+  const storageKey = `draft_${formType}_${id}`;
+
+  // Save to localStorage
+  const saveToStorage = useCallback((formData: T) => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const draft = {
+        id,
+        type: formType,
+        data: formData,
+        lastSaved: Date.now(),
+        expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+      };
+      localStorage.setItem(storageKey, JSON.stringify(draft));
+      setHasDraft(true);
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error(`Failed to save ${formType} draft:`, error);
+    }
+  }, [id, formType, storageKey]);
+
+  // Debounced save effect
+  useEffect(() => {
+    if (!enabled) return;
+
+    const currentDataStr = JSON.stringify(data);
+    
+    // Skip if no changes
+    if (previousDataRef.current === currentDataStr) return;
+    
+    // Skip initial empty state
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      previousDataRef.current = currentDataStr;
+      return;
+    }
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    setIsSaving(true);
+
+    // Debounced save
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToStorage(data);
+      previousDataRef.current = currentDataStr;
+      setIsSaving(false);
+      onSaveSuccess?.();
+    }, debounceMs);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [data, enabled, debounceMs, saveToStorage, onSaveSuccess]);
+
+  // Restore draft from localStorage
+  const restoreDraft = useCallback((): T | null => {
+    if (typeof window === 'undefined') return null;
+    
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return null;
+      
+      const draft = JSON.parse(stored);
+      
+      // Check if expired
+      if (draft.expiresAt && Date.now() > draft.expiresAt) {
+        localStorage.removeItem(storageKey);
+        return null;
+      }
+      
+      setHasDraft(true);
+      setLastSaved(draft.lastSaved ? new Date(draft.lastSaved) : null);
+      previousDataRef.current = JSON.stringify(draft.data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return draft.data as any;
+    } catch (error) {
+      console.error(`Failed to restore ${formType} draft:`, error);
+      return null;
+    }
+  }, [storageKey, formType]);
+
+  // Clear draft
+  const clearDraft = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      localStorage.removeItem(storageKey);
+      setHasDraft(false);
+      setLastSaved(null);
+      previousDataRef.current = '';
+      isInitializedRef.current = false;
+    } catch (error) {
+      console.error(`Failed to clear ${formType} draft:`, error);
+    }
+  }, [storageKey, formType]);
+
+  // Check if draft exists
+  const checkDraft = useCallback((): boolean => {
+    if (typeof window === 'undefined') return false;
+    
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return false;
+      
+      const draft = JSON.parse(stored);
+      if (draft.expiresAt && Date.now() > draft.expiresAt) {
+        localStorage.removeItem(storageKey);
+        return false;
+      }
+      
+      setHasDraft(true);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [storageKey]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return {
+    isSaving,
+    lastSaved,
+    hasDraft,
+    clearDraft,
+    restoreDraft,
+    checkDraft,
+    saveDraft: () => saveToStorage(data),
+  };
+}
+
+/**
  * Auto-save status indicator component
  */
 export function AutoSaveIndicator({ 
