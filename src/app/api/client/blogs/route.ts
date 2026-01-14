@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db/connection';
 import Blog from '@/lib/db/models/Blog';
-import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { withCache } from '@/lib/api/utils';
 
 // GET - Fetch all active blogs for public display
 export async function GET(request: NextRequest) {
@@ -31,14 +31,17 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // Include limit in cache key to differentiate between homepage (limit=5) and full page
+    const cacheKey = `client:blogs:${limit}:${JSON.stringify(query)}`;
+    
     const blogs = await withCache(
-      `client:blogs:${JSON.stringify(query)}`,
+      cacheKey,
       async () => await Blog.find(query)
       .select('uuid slug title description category featuredImage thumbnailImage author readTime tags isFeatured publishedAt createdAt views likes')
       .sort({ isFeatured: -1, displayOrder: 1, publishedAt: -1 })
       .limit(limit)
       ,
-      { ttl: 120000, tags: ['client'] }
+      { ttl: 60000, tags: ['client', 'blogs'] }  // Reduced TTL to 60 seconds for fresher data
     );
 
     // Get unique categories for filtering

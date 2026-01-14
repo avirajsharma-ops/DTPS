@@ -241,11 +241,13 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
 
-    // Only dietitians and admins can assign meal plans
-    if (session.user.role !== UserRole.DIETITIAN && session.user.role !== UserRole.ADMIN) {
+    // Only dietitians, health counselors, and admins can assign meal plans
+    const userRole = session.user.role?.toString().toLowerCase();
+    const allowedRoles = ['dietitian', 'health_counselor', 'admin'];
+    if (!userRole || !allowedRoles.includes(userRole)) {
       return NextResponse.json({ 
         error: 'Forbidden', 
-        message: 'Only dietitians and admins can assign meal plans to clients' 
+        message: 'Only dietitians, health counselors, and admins can assign meal plans to clients' 
       }, { status: 403 });
     }
 
@@ -272,12 +274,8 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Validate that the client exists and is a client
-    const client = await withCache(
-      `client-meal-plans:${JSON.stringify(validatedData.clientId)}`,
-      async () => await User.findById(validatedData.clientId),
-      { ttl: 120000, tags: ['client_meal_plans'] }
-    );
+    // Validate that the client exists and is a client (no cache for write operations)
+    const client = await User.findById(validatedData.clientId);
     if (!client || client.role !== UserRole.CLIENT) {
       return NextResponse.json({
         error: 'Invalid client',
@@ -321,9 +319,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check for overlapping active meal plans for the same client
-    const overlappingPlan = await withCache(
-      `client-meal-plans:${JSON.stringify({
+    // Check for overlapping active meal plans for the same client (no cache for write operations)
+    const overlappingPlan = await ClientMealPlan.findOne({
       clientId: validatedData.clientId,
       status: 'active',
       $or: [
@@ -332,19 +329,7 @@ export async function POST(request: NextRequest) {
           endDate: { $gte: startDate }
         }
       ]
-    })}`,
-      async () => await ClientMealPlan.findOne({
-      clientId: validatedData.clientId,
-      status: 'active',
-      $or: [
-        {
-          startDate: { $lte: endDate },
-          endDate: { $gte: startDate }
-        }
-      ]
-    }),
-      { ttl: 120000, tags: ['client_meal_plans'] }
-    );
+    });
 
     if (overlappingPlan) {
       return NextResponse.json({

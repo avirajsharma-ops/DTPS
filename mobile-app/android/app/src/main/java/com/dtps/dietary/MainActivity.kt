@@ -181,15 +181,15 @@ class MainActivity : AppCompatActivity() {
 
     @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
+        // MUST be called before super.onCreate() to disable edge-to-edge enforcement on Android 15+
+        WindowCompat.setDecorFitsSystemWindows(window, true)
+        
         super.onCreate(savedInstanceState)
         
-        // Set up white status bar with dark icons
-        WindowCompat.setDecorFitsSystemWindows(window, true)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            // For Android 14 and below, use deprecated methods
-            window.statusBarColor = ContextCompat.getColor(this, android.R.color.white)
-            window.navigationBarColor = ContextCompat.getColor(this, android.R.color.white)
-        }
+        // Set up white status bar with dark icons - apply to all Android versions
+        window.statusBarColor = ContextCompat.getColor(this, android.R.color.white)
+        window.navigationBarColor = ContextCompat.getColor(this, android.R.color.white)
+        
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = true
             isAppearanceLightNavigationBars = true

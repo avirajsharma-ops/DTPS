@@ -6446,6 +6446,9 @@
         <item name="android:navigationBarColor">@android:color/white</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
+        
+        <item name="android:fitsSystemWindows">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
     <style name="Theme.DTPS.Splash" parent="Theme.DTPS">
         <item name="android:windowBackground">@android:color/white</item>
