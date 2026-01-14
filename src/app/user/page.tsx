@@ -568,37 +568,8 @@ export default function UserHomePage() {
         // Fetch real-time health data (water, sleep, activity, steps)
         fetchHealthData();
 
-        (async () => {
-          try {
-            if (!unmountedRef.current) {
-              setBlogsLoading(true);
-              setBlogsError('');
-            }
-            const blogsRes = await fetchWithTimeout('/api/client/blogs?limit=5', undefined, 6000);
-            if (!blogsRes.ok) {
-              throw new Error(`Failed to fetch blogs (${blogsRes.status})`);
-            }
-
-            const contentType = blogsRes.headers.get('content-type') || '';
-            if (!contentType.includes('application/json')) {
-              throw new Error('Blogs response was not JSON');
-            }
-
-            const blogsData = await blogsRes.json();
-            if (!unmountedRef.current) {
-              setBlogs(blogsData.blogs || []);
-            }
-          } catch (blogsError) {
-            console.error('Error fetching blogs:', blogsError);
-            if (!unmountedRef.current) {
-              setBlogsError('Unable to load blogs right now.');
-            }
-          } finally {
-            if (!unmountedRef.current) {
-              setBlogsLoading(false);
-            }
-          }
-        })();
+        // Note: Blogs are fetched in a separate useEffect to ensure they load
+        // even when the fast path (onboardingCompleted === true) is taken
       } catch (error) {
         console.error('Error checking onboarding:', error);
         // If there's an error, assume no active plan so user can see available plans
@@ -610,6 +581,52 @@ export default function UserHomePage() {
 
     checkOnboarding();
   }, [status, router, fetchHealthData, fetchWithTimeout]);
+
+  // Fetch blogs independently - this should run as soon as the user is authenticated
+  // Blogs don't depend on onboarding status
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    
+    const fetchBlogs = async () => {
+      try {
+        if (!unmountedRef.current) {
+          setBlogsLoading(true);
+          setBlogsError('');
+        }
+        const blogsRes = await fetchWithTimeout('/api/client/blogs?limit=5', undefined, 6000);
+        if (!blogsRes.ok) {
+          throw new Error(`Failed to fetch blogs (${blogsRes.status})`);
+        }
+
+        const contentType = blogsRes.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error('Blogs response was not JSON');
+        }
+
+        const blogsData = await blogsRes.json();
+        console.log('Blogs API response:', blogsData); // Debug log
+        
+        // Handle both response formats: { blogs: [...] } and direct array
+        const blogsList = Array.isArray(blogsData) ? blogsData : (blogsData.blogs || []);
+        
+        if (!unmountedRef.current) {
+          setBlogs(blogsList);
+          console.log('Blogs set:', blogsList); // Debug log
+        }
+      } catch (blogsError) {
+        console.error('Error fetching blogs:', blogsError);
+        if (!unmountedRef.current) {
+          setBlogsError('Unable to load blogs right now.');
+        }
+      } finally {
+        if (!unmountedRef.current) {
+          setBlogsLoading(false);
+        }
+      }
+    };
+
+    fetchBlogs();
+  }, [status, fetchWithTimeout]);
 
   // Handle scroll to update active card indicator
   const handleCardsScroll = () => {

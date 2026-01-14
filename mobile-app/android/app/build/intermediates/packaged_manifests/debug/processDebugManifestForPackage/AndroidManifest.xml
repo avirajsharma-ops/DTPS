@@ -17,10 +17,6 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <!-- Features -->
     <uses-feature
@@ -32,7 +28,8 @@
     <uses-feature
         android:name="android.hardware.microphone"
         android:required="false" />
-    <!-- Required by older versions of Google Play services to create IID tokens -->
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- Required by older versions of Google Play services to create IID tokens -->
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" />
@@ -116,18 +113,8 @@
             </intent-filter>
         </service>
 
-        <!-- Boot completed receiver for maintaining notification connection -->
-        <receiver
-            android:name="com.dtps.dietary.BootCompletedReceiver"
-            android:directBootAware="true"
-            android:enabled="true"
-            android:exported="true" >
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
+        <!-- Boot completed receiver disabled - app is user-initiated only -->
+
 
         <!-- Default notification channel -->
         <meta-data

@@ -41428,6 +41428,7 @@ com.google.android.gms.tasks.zzae
 com.google.android.gms.tasks.zzg
 com.google.android.gms.tasks.zzw:
     public final com.google.android.gms.tasks.zzw addOnCanceledListener(com.google.android.gms.tasks.zzt,com.google.android.gms.tasks.OnCanceledListener)
+    public final com.google.android.gms.tasks.zzw addOnCompleteListener(com.google.android.gms.tasks.OnCompleteListener)
     public final com.google.android.gms.tasks.Task addOnFailureListener()
     public final java.lang.Object getResult$1()
     public final boolean isCanceled()
@@ -44164,6 +44165,7 @@ com.google.firebase.messaging.FirebaseMessaging:
     public static synthetic com.google.android.datatransport.TransportFactory $r8$lambda$LFn9_qtEIJ6bEv_Ds1y45k5yLjU()
     public static android.content.Context getApplicationContext()
     public final java.lang.String getSubtype()
+    public static com.google.android.gms.tasks.Task getToken()
     public static void initializeProxyNotifications()
     public static void invokeOnTokenRefresh()
     public static boolean isAutoInitEnabled()
@@ -44624,6 +44626,7 @@ kotlin.text.CharsKt__CharJVMKt
 kotlin.text.CharsKt__CharKt
 kotlin.text.DelimitedRangesSequence$iterator$1:
     public static kotlin.ranges.IntRange next()
+kotlin.text.StringsKt
 kotlin.text.StringsKt__IndentKt$getIndentFunction$1
 kotlin.text.StringsKt__IndentKt$getIndentFunction$2
 kotlin.text.StringsKt__StringsJVMKt:
@@ -44636,6 +44639,7 @@ kotlin.text.StringsKt__StringsKt:
     public static synthetic int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.String,int,int,boolean)
     public static final boolean isBlank(java.lang.String)
     public static java.lang.String substringAfter$default(java.lang.String,java.lang.String)
+kotlin.text.StringsKt___StringsJvmKt
 kotlin.text.StringsKt___StringsKt
 kotlinx.coroutines.AbstractCoroutine:
     public final kotlin.coroutines.CoroutineContext getCoroutineContext()

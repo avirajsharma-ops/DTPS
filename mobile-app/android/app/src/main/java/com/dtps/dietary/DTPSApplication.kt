@@ -20,14 +20,15 @@ class DTPSApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        // Initialize Firebase
+        // Initialize Firebase - will be used when app is open
         FirebaseApp.initializeApp(this)
         
         // Create notification channel
         createNotificationChannel()
         
-        // Get and store FCM token
-        getFCMToken()
+        // Don't automatically get FCM token on app startup
+        // FCM token will be fetched on-demand when needed by MainActivity
+        Log.d(TAG, "Application initialized - Firebase ready for on-demand use")
     }
     
     private fun createNotificationChannel() {
@@ -44,22 +45,6 @@ class DTPSApplication : Application() {
             
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
-        }
-    }
-    
-    private fun getFCMToken() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w(TAG, "Fetching FCM token failed", task.exception)
-                return@addOnCompleteListener
-            }
-            
-            val token = task.result
-            Log.d(TAG, "FCM Token: $token")
-            
-            // Store token in shared preferences for WebView to access
-            val prefs = getSharedPreferences("dtps_prefs", Context.MODE_PRIVATE)
-            prefs.edit().putString("fcm_token", token).apply()
         }
     }
 }
