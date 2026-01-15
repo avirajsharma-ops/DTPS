@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingPage, LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChefHat, Target, Calendar, AlertCircle, ArrowLeft, Heart, Leaf, Stethoscope, LayoutGrid, User, RefreshCw, Trash2 } from 'lucide-react';
+import { ChefHat, Target, Calendar, AlertCircle, ArrowLeft, RefreshCw, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DietPlanDashboard } from '@/components/dietplandashboard/DietPlanDashboard';
 import Link from 'next/link';
@@ -161,12 +161,6 @@ export default function CreateDietTemplatePage() {
   const [selectedFilters, setSelectedFilters] = useState<any>({});
   const [selectedDay, setSelectedDay] = useState(1);
   const [draftRestored, setDraftRestored] = useState(false);
-
-  // Panel dialogs for basic/lifestyle/dietary/medical info
-  const [showBasicPanel, setShowBasicPanel] = useState(false);
-  const [showLifestylePanel, setShowLifestylePanel] = useState(false);
-  const [showDietaryPanel, setShowDietaryPanel] = useState(false);
-  const [showMedicalPanel, setShowMedicalPanel] = useState(false);
 
   // Template loading states
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
@@ -515,21 +509,7 @@ export default function CreateDietTemplatePage() {
         {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
         {success && <Alert><AlertDescription>{success}</AlertDescription></Alert>}
 
-        {/* Quick section buttons */}
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" size="sm" className="gap-1" onClick={()=>setShowBasicPanel(true)}>
-            <LayoutGrid className="h-4 w-4" /> Basic
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1" onClick={()=>setShowLifestylePanel(true)}>
-            <Heart className="h-4 w-4" /> Lifestyle
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1" onClick={()=>setShowDietaryPanel(true)}>
-            <Leaf className="h-4 w-4" /> Dietary
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1" onClick={()=>setShowMedicalPanel(true)}>
-            <Stethoscope className="h-4 w-4" /> Medical
-          </Button>
-        </div>
+
 
         {/* Steps indicator (3 steps) */}
         <Card>
@@ -675,39 +655,6 @@ export default function CreateDietTemplatePage() {
           </Card>
         )}
 
-        {/* Basic Info Dialog */}
-        <Dialog open={showBasicPanel} onOpenChange={setShowBasicPanel}>
-          <DialogContent className="max-w-sm p-4 space-y-3 overflow-y-auto max-h-[70vh]">
-            <CardTitle className="text-sm flex items-center gap-2"><User className="h-4 w-4" />Basic Info</CardTitle>
-            <div className="grid grid-cols-1 gap-2 text-xs">
-              <div className="border rounded p-2"><span className="text-gray-500">Name:</span> <span className="font-medium">{template?.name || '—'}</span></div>
-              <div className="border rounded p-2"><span className="text-gray-500">Email:</span> <span className="font-medium">—</span></div>
-              <div className="border rounded p-2"><span className="text-gray-500">Phone:</span> <span className="font-medium">—</span></div>
-              <div className="border rounded p-2"><span className="text-gray-500">Gender / DOB:</span> <span className="font-medium">—</span></div>
-              <div className="border rounded p-2"><span className="text-gray-500">Address / Notes:</span>
-                <div className="text-[11px] mt-1">{template.description || 'No details'}</div>
-              </div>
-            </div>
-            <div className="flex justify-end"><Button size="sm" onClick={()=>setShowBasicPanel(false)}>Close</Button></div>
-          </DialogContent>
-        </Dialog>
-        {/* Lifestyle Dialog */}
-        <Dialog open={showLifestylePanel} onOpenChange={setShowLifestylePanel}>
-          <DialogContent className="max-w-sm p-4 space-y-3 overflow-y-auto max-h-[70vh]">
-            <CardTitle className="text-sm flex items-center gap-2"><Heart className="h-4 w-4" />Lifestyle Info</CardTitle>
-            <p className="text-xs text-gray-600 mt-2">No lifestyle data available for templates. Use client profile to view user-specific lifestyle details.</p>
-            <div className="flex justify-end mt-4"><Button size="sm" onClick={()=>setShowLifestylePanel(false)}>Close</Button></div>
-          </DialogContent>
-        </Dialog>
-        {/* Recall entries removed (client-loader feature was reverted) */}
-        {/* Medical Dialog */}
-        <Dialog open={showMedicalPanel} onOpenChange={setShowMedicalPanel}>
-          <DialogContent className="max-w-sm p-4 space-y-3 overflow-y-auto max-h-[70vh]">
-            <CardTitle className="text-sm flex items-center gap-2"><Stethoscope className="h-4 w-4" />Medical Info</CardTitle>
-            <p className="text-xs text-gray-600 mt-2">No medical data available for templates. Use client profile to view user-specific medical details.</p>
-            <div className="flex justify-end mt-4"><Button size="sm" onClick={()=>setShowMedicalPanel(false)}>Close</Button></div>
-          </DialogContent>
-        </Dialog>
       </div>
     </DashboardLayout>
   );

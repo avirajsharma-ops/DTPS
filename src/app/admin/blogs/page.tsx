@@ -52,6 +52,7 @@ import {
 } from '@/components/ui/select';
 import { compressImage } from '@/lib/imageCompression';
 import { useBodyScrollLock } from '@/hooks';
+import { useDataRefresh, emitDataChange, DataEventTypes } from '@/lib/events/useDataRefresh';
 
 interface Blog {
   _id: string;
@@ -254,6 +255,9 @@ export default function BlogsManagement() {
     fetchBlogs();
   }, [fetchBlogs]);
 
+  // Subscribe to real-time blog updates
+  useDataRefresh(DataEventTypes.BLOGS_UPDATED, fetchBlogs, [fetchBlogs]);
+
   const handleOpenDialog = (blog?: Blog) => {
     if (blog) {
       setEditingBlog(blog);
@@ -374,6 +378,7 @@ export default function BlogsManagement() {
         }
 
         toast.success('Blog updated successfully');
+        emitDataChange(DataEventTypes.BLOGS_UPDATED);
       } else {
         // For new blog, always append the image
         submitData.append('featuredImage', formData.featuredImage);
@@ -389,6 +394,7 @@ export default function BlogsManagement() {
         }
 
         toast.success('Blog created successfully');
+        emitDataChange(DataEventTypes.BLOGS_UPDATED);
       }
 
       handleCloseDialog();
@@ -414,6 +420,7 @@ export default function BlogsManagement() {
       }
 
       toast.success('Blog deleted successfully');
+      emitDataChange(DataEventTypes.BLOGS_UPDATED);
       fetchBlogs();
     } catch (error) {
       console.error('Error deleting blog:', error);
@@ -442,6 +449,7 @@ export default function BlogsManagement() {
       }
 
       toast.success(`Blog ${blog.isActive ? 'deactivated' : 'activated'}`);
+      emitDataChange(DataEventTypes.BLOGS_UPDATED);
       fetchBlogs();
     } catch (error) {
       console.error('Error toggling blog:', error);
@@ -471,6 +479,7 @@ export default function BlogsManagement() {
       }
 
       toast.success(`Blog ${blog.isFeatured ? 'unfeatured' : 'featured'}`);
+      emitDataChange(DataEventTypes.BLOGS_UPDATED);
       fetchBlogs();
     } catch (error) {
       console.error('Error toggling featured:', error);

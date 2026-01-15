@@ -357,10 +357,13 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
 
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)} className="border-gray-300 hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-slate-700 font-medium">
-        <Download className="w-4 h-4 mr-2" />
-        Export Diet Plan
-      </Button>
+      {/* Only show button if not externally controlled */}
+      {externalOpen === undefined && (
+        <Button variant="outline" onClick={() => setOpen(true)} className="border-gray-300 hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-slate-700 font-medium">
+          <Download className="w-4 h-4 mr-2" />
+          Export Diet Plan
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">

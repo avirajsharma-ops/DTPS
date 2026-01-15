@@ -1415,11 +1415,12 @@ export default function ClientDetailPage() {
   };
 
   // Fetch all tags
-  const fetchAllTags = async () => {
+  const fetchAllTags = useCallback(async () => {
     try {
       setLoadingTags(true);
-      // Fetch tags filtered by role - dietitian sees dietitian tags
-      const response = await fetch(`/api/admin/tags?tagType=dietitian`);
+      // Fetch tags filtered by role - API automatically filters based on session user role
+      // Dietitians see dietitian + general tags, health counselors see health_counselor + general tags, admins see all
+      const response = await fetch(`/api/admin/tags`);
       if (response.ok) {
         const data = await response.json();
         setAllTags(data || []);
@@ -1429,7 +1430,7 @@ export default function ClientDetailPage() {
     } finally {
       setLoadingTags(false);
     }
-  };
+  }, []);
 
   // Toggle tag for client
   const handleToggleClientTag = async (tagId: string) => {
@@ -1467,6 +1468,9 @@ export default function ClientDetailPage() {
       fetchAllTags();
     }
   }, [isTagsOpen]);
+
+  // Subscribe to real-time tag updates
+  useDataRefresh(DataEventTypes.TAGS_UPDATED, fetchAllTags, [fetchAllTags]);
 
   if (loading) {
     return (

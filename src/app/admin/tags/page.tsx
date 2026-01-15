@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { useDataRefresh, emitDataChange, DataEventTypes } from '@/lib/events/useDataRefresh';
 
 interface Tag {
   _id: string;
@@ -53,11 +54,7 @@ export default function TagsManagement() {
     tagType: 'general' as 'dietitian' | 'health_counselor' | 'general',
   });
 
-  useEffect(() => {
-    fetchTags();
-  }, []);
-
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/admin/tags');
@@ -72,7 +69,15 @@ export default function TagsManagement() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Initial fetch and real-time updates
+  useEffect(() => {
+    fetchTags();
+  }, [fetchTags]);
+
+  // Subscribe to real-time tag updates
+  useDataRefresh(DataEventTypes.TAGS_UPDATED, fetchTags, [fetchTags]);
 
   const handleOpenDialog = (tag?: Tag) => {
     if (tag) {
@@ -120,12 +125,15 @@ export default function TagsManagement() {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to update tag');
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to update tag');
         }
 
         const updatedTag = await response.json();
         setTags(tags.map(t => (t._id === updatedTag._id ? updatedTag : t)));
         toast.success('Tag updated successfully');
+        // Emit event for real-time updates
+        emitDataChange(DataEventTypes.TAGS_UPDATED);
       } else {
         // Create new tag
         const response = await fetch('/api/admin/tags', {
@@ -142,6 +150,8 @@ export default function TagsManagement() {
         const newTag = await response.json();
         setTags([...tags, newTag]);
         toast.success('Tag created successfully');
+        // Emit event for real-time updates
+        emitDataChange(DataEventTypes.TAGS_UPDATED);
       }
 
       handleCloseDialog();
@@ -169,6 +179,8 @@ export default function TagsManagement() {
 
       setTags(tags.filter(t => t._id !== tagId));
       toast.success('Tag deleted successfully');
+      // Emit event for real-time updates
+      emitDataChange(DataEventTypes.TAGS_UPDATED);
     } catch (error) {
       console.error('Error deleting tag:', error);
       toast.error('Failed to delete tag');

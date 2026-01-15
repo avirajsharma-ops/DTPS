@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { compressImage, extractBase64Data } from '@/lib/imageCompression';
 import { useBodyScrollLock } from '@/hooks';
+import { useDataRefresh, emitDataChange, DataEventTypes } from '@/lib/events/useDataRefresh';
 
 interface Transformation {
   _id: string;
@@ -92,6 +93,9 @@ export default function TransformationsManagement() {
   useEffect(() => {
     fetchTransformations();
   }, [fetchTransformations]);
+
+  // Subscribe to real-time transformation updates
+  useDataRefresh(DataEventTypes.TRANSFORMATIONS_UPDATED, fetchTransformations, [fetchTransformations]);
 
   const handleOpenDialog = (transformation?: Transformation) => {
     if (transformation) {
@@ -212,6 +216,7 @@ export default function TransformationsManagement() {
         }
 
         toast.success('Transformation updated successfully');
+        emitDataChange(DataEventTypes.TRANSFORMATIONS_UPDATED);
       } else {
         submitData.append('beforeImage', formData.beforeImage);
         submitData.append('afterImage', formData.afterImage);
@@ -226,6 +231,7 @@ export default function TransformationsManagement() {
         }
 
         toast.success('Transformation created successfully');
+        emitDataChange(DataEventTypes.TRANSFORMATIONS_UPDATED);
       }
 
       handleCloseDialog();
@@ -251,6 +257,7 @@ export default function TransformationsManagement() {
       }
 
       toast.success('Transformation deleted successfully');
+      emitDataChange(DataEventTypes.TRANSFORMATIONS_UPDATED);
       fetchTransformations();
     } catch (error) {
       console.error('Error deleting transformation:', error);
@@ -275,6 +282,7 @@ export default function TransformationsManagement() {
       }
 
       toast.success(`Transformation ${transformation.isActive ? 'deactivated' : 'activated'}`);
+      emitDataChange(DataEventTypes.TRANSFORMATIONS_UPDATED);
       fetchTransformations();
     } catch (error) {
       console.error('Error toggling transformation:', error);

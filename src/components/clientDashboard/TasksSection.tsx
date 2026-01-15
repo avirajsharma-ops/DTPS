@@ -14,8 +14,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useRealtime } from '@/hooks/useRealtime';
+import { useDataRefresh, DataEventTypes } from '@/lib/events/useDataRefresh';
 
-interface Tag {
+interface TagType {
   _id: string;
   name: string;
   color?: string;
@@ -34,7 +35,7 @@ interface Task {
   notifyClientOnChat: boolean;
   notifyDieticianOnCompletion: string;
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
-  tags?: Tag[];
+  tags?: TagType[];
   googleCalendarEventId?: string;
   createdAt: string;
   creatorRole?: 'dietitian' | 'health_counselor' | 'admin';
@@ -61,7 +62,7 @@ export default function TasksSection({
 }: TasksSectionProps) {
   const { data: session } = useSession();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [availableTags, setAvailableTags] = useState<TagType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -115,18 +116,9 @@ export default function TasksSection({
 
   const fetchAvailableTags = useCallback(async () => {
     try {
-      // Get user role from session to filter tags appropriately
-      const userRole = (session?.user as any)?.role;
-      let tagType = 'general';
-      
-      if (userRole === 'dietitian') {
-        tagType = 'dietitian';
-      } else if (userRole === 'health_counselor') {
-        tagType = 'health_counselor';
-      }
-      
-      // Fetch tags filtered by role type
-      const response = await fetch(`/api/admin/tags?tagType=${tagType}`);
+      // Fetch tags - API automatically filters based on session user role
+      // Dietitians see dietitian + general tags, health counselors see health_counselor + general tags, admins see all
+      const response = await fetch(`/api/admin/tags`);
       if (response.ok) {
         const data = await response.json();
         setAvailableTags(data);
@@ -134,12 +126,15 @@ export default function TasksSection({
     } catch (error) {
       console.error('Error fetching tags:', error);
     }
-  }, [session]);
+  }, []);
 
   useEffect(() => {
     fetchTasks();
     fetchAvailableTags();
   }, [fetchTasks, fetchAvailableTags]);
+
+  // Subscribe to real-time tag updates
+  useDataRefresh(DataEventTypes.TAGS_UPDATED, fetchAvailableTags, [fetchAvailableTags]);
 
   const handleRealtimeMessage = useCallback(
     (event: { type: string; data: string }) => {

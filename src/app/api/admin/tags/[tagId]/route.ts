@@ -78,15 +78,12 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, description, color, icon } = body;
+    const { name, description, color, icon, tagType } = body;
 
     await connectDB();
 
-    const tag = await withCache(
-      `admin:tags:tagId:${JSON.stringify(tagId)}`,
-      async () => await Tag.findById(tagId),
-      { ttl: 120000, tags: ['admin'] }
-    );
+    // Fetch fresh from DB (not cached) since we need to update
+    const tag = await Tag.findById(tagId);
 
     if (!tag) {
       return NextResponse.json(
@@ -97,11 +94,7 @@ export async function PUT(
 
     // Check if new name already exists (if name is being changed)
     if (name && name.trim() !== tag.name) {
-      const existingTag = await withCache(
-      `admin:tags:tagId:${JSON.stringify({ name: name.trim() })}`,
-      async () => await Tag.findOne({ name: name.trim() }),
-      { ttl: 120000, tags: ['admin'] }
-    );
+      const existingTag = await Tag.findOne({ name: name.trim(), _id: { $ne: tagId } });
       if (existingTag) {
         return NextResponse.json(
           { error: 'Tag name already exists' },
@@ -115,8 +108,14 @@ export async function PUT(
     if (description !== undefined) tag.description = description.trim();
     if (color) tag.color = color;
     if (icon) tag.icon = icon;
+    if (tagType && ['dietitian', 'health_counselor', 'general'].includes(tagType)) {
+      tag.tagType = tagType;
+    }
 
     await tag.save();
+    
+    // Clear cache to reflect changes
+    await clearCacheByTag('tags');
 
     return NextResponse.json(tag, { status: 200 });
   } catch (error) {
@@ -161,6 +160,9 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Clear cache to reflect deletion
+    await clearCacheByTag('tags');
 
     // TODO: Remove this tag from all tasks that reference it
     // await Task.updateMany({ tags: tagId }, { $pull: { tags: tagId } });

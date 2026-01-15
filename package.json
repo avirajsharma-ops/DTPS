@@ -46,6 +46,7 @@
     "html2canvas": "^1.4.1",
     "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^4.0.0",
     "lucide-react": "^0.541.0",
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.0",

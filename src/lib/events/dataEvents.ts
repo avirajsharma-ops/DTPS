@@ -16,6 +16,10 @@ type EventType =
   | 'purchase-updated'
   | 'notes-updated'
   | 'tasks-updated'
+  | 'tags-updated'
+  | 'transformations-updated'
+  | 'blogs-updated'
+  | 'goal-categories-updated'
   | 'data-changed'; // Generic event for any data change
 
 class DataEventEmitter {
@@ -87,5 +91,9 @@ export const DataEventTypes = {
   PURCHASE_UPDATED: 'purchase-updated' as EventType,
   NOTES_UPDATED: 'notes-updated' as EventType,
   TASKS_UPDATED: 'tasks-updated' as EventType,
+  TAGS_UPDATED: 'tags-updated' as EventType,
+  TRANSFORMATIONS_UPDATED: 'transformations-updated' as EventType,
+  BLOGS_UPDATED: 'blogs-updated' as EventType,
+  GOAL_CATEGORIES_UPDATED: 'goal-categories-updated' as EventType,
   DATA_CHANGED: 'data-changed' as EventType,
 };

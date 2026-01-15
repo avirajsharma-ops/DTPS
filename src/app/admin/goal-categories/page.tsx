@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { useDataRefresh, emitDataChange, DataEventTypes } from '@/lib/events/useDataRefresh';
 
 interface GoalCategory {
   _id: string;
@@ -45,11 +46,7 @@ export default function GoalCategoriesPage() {
     order: 0,
   });
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/admin/goal-categories?active=false');
@@ -62,7 +59,14 @@ export default function GoalCategoriesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Subscribe to real-time goal categories updates
+  useDataRefresh(DataEventTypes.GOAL_CATEGORIES_UPDATED, fetchCategories, [fetchCategories]);
 
   const handleOpenDialog = (category?: GoalCategory) => {
     if (category) {
@@ -128,6 +132,9 @@ export default function GoalCategoriesPage() {
         setCategories([...categories, savedCategory]);
         toast.success('Goal category created');
       }
+      
+      // Emit event for real-time updates
+      emitDataChange(DataEventTypes.GOAL_CATEGORIES_UPDATED);
 
       handleCloseDialog();
     } catch (error: any) {
@@ -150,6 +157,7 @@ export default function GoalCategoriesPage() {
 
       setCategories(categories.filter(c => c._id !== id));
       toast.success('Goal category deleted');
+      emitDataChange(DataEventTypes.GOAL_CATEGORIES_UPDATED);
     } catch (error) {
       console.error('Error deleting category:', error);
       toast.error('Failed to delete');
@@ -169,6 +177,7 @@ export default function GoalCategoriesPage() {
       const updated = await response.json();
       setCategories(categories.map(c => c._id === updated._id ? updated : c));
       toast.success(`Goal category ${updated.isActive ? 'activated' : 'deactivated'}`);
+      emitDataChange(DataEventTypes.GOAL_CATEGORIES_UPDATED);
     } catch (error) {
       console.error('Error toggling category:', error);
       toast.error('Failed to update');
