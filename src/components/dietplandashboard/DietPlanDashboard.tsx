@@ -57,9 +57,8 @@ type DietPlanDashboardProps = {
   totalHeldDays?: number;
 };
 
-export type FoodOption = {
+export type FoodItem = {
   id: string;
-  label: string;
   food: string;
   unit: string;
   cal: string;
@@ -67,7 +66,21 @@ export type FoodOption = {
   fats: string;
   protein: string;
   fiber: string;
-  recipeUuid?: string; // UUID of the recipe if added from recipe database
+  recipeUuid?: string;
+};
+
+export type FoodOption = {
+  id: string;
+  label: string;
+  food: string;         // Primary food (for backwards compatibility)
+  unit: string;
+  cal: string;
+  carbs: string;
+  fats: string;
+  protein: string;
+  fiber: string;
+  recipeUuid?: string;  // UUID of the recipe if added from recipe database
+  foods?: FoodItem[];   // Multiple foods array for stacking foods in same meal slot
 };
 
 export type Meal = {

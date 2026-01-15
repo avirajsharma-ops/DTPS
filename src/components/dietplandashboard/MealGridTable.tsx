@@ -6,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Plus, X, Minus, Copy, ChevronLeft, ChevronRight, Check, Maximize2, Minimize2, Trash2, Download } from 'lucide-react';
-import { DayPlan, Meal, FoodOption } from './DietPlanDashboard';
+import { DayPlan, Meal, FoodOption, FoodItem as MealFoodItem } from './DietPlanDashboard';
 import { FoodDatabasePanel } from './FoodSheet';
-// Define FoodItem shape to type foods parameter from FoodDatabasePanel selection
-type FoodItem = {
+// Define FoodDatabaseItem shape to type foods parameter from FoodDatabasePanel selection
+type FoodDatabaseItem = {
   id: string;
   date: string;
   time: string;
@@ -62,6 +62,8 @@ function calculateDayMacros(day: DayPlan): { cal: number; carbs: number; fats: n
       // Only count the first food option (A option) for totals
       const primaryOption = meal.foodOptions[0];
       if (primaryOption) {
+        // If option has multiple foods array, use those values (already summed)
+        // Otherwise use the primary fields
         totals.cal += parseFloat(primaryOption.cal) || 0;
         totals.carbs += parseFloat(primaryOption.carbs) || 0;
         totals.fats += parseFloat(primaryOption.fats) || 0;
@@ -256,14 +258,14 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     dayIndex: number,
     mealType: string,
     optionIndex: number,
-    field: keyof FoodOption,
+    field: keyof Omit<FoodOption, 'foods'>,
     value: string
   ) => {
     if (readOnly || !onUpdate) return;
     const newWeekPlan = [...weekPlan];
     const meal = newWeekPlan[dayIndex].meals[mealType];
     if (meal && meal.foodOptions[optionIndex]) {
-      meal.foodOptions[optionIndex][field] = value;
+      (meal.foodOptions[optionIndex] as Record<string, unknown>)[field] = value;
       onUpdate(newWeekPlan);
     }
   };
@@ -957,6 +959,18 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                       <Button
                                         variant="ghost"
                                         size="sm"
+                                        onClick={() => {
+                                          setCurrentFoodContext({ dayIndex: actualDayIndex, mealType, optionIndex });
+                                          setFoodDatabaseOpen(true);
+                                        }}
+                                        className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                        title="Add more foods to this meal"
+                                      >
+                                        <Plus className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
                                         onClick={() => removeFoodOption(actualDayIndex, mealType, optionIndex)}
                                         className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                         title="Remove this food option"
@@ -966,72 +980,246 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                     </div>
                                   </div>
 
-                                  <div className='flex gap-1 items-center justify-between'>
-                                    <Input
-                                    value={option.food}
-                                    onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'food', e.target.value)}
-                                    placeholder="Food item"
-                                    className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium"
-                                  />
-                                 <Plus  
-                                    className="w-4 h-4 cursor-pointer hover:text-blue-600 transition-colors" 
-                                    onClick={() => {
-                                      setCurrentFoodContext({ dayIndex: actualDayIndex, mealType, optionIndex });
-                                      setFoodDatabaseOpen(true);
-                                    }}
-                                  />
-                                  </div>
+                                  {/* Multiple Foods Display */}
+                                  {option.foods && option.foods.length > 0 ? (
+                                    <div className="space-y-3">
+                                      {option.foods.map((foodItem, foodIndex) => (
+                                        <div key={foodItem.id} className="bg-white border border-gray-300 rounded-lg p-3 space-y-2 shadow-sm">
+                                          {/* Food Name Row */}
+                                          <div className="flex items-center justify-between gap-2">
+                                            <Input
+                                              value={foodItem.food}
+                                              onChange={(e) => {
+                                                if (readOnly || !onUpdate) return;
+                                                const newWeekPlan = [...weekPlan];
+                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                  meal.foodOptions[optionIndex].foods![foodIndex].food = e.target.value;
+                                                  // Update combined food name
+                                                  meal.foodOptions[optionIndex].food = meal.foodOptions[optionIndex].foods!.map(f => f.food).join(' + ');
+                                                  onUpdate(newWeekPlan);
+                                                }
+                                              }}
+                                              placeholder="Food item"
+                                              className="h-9 text-sm bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium flex-1"
+                                            />
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => {
+                                                if (readOnly || !onUpdate) return;
+                                                const newWeekPlan = [...weekPlan];
+                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                if (meal?.foodOptions[optionIndex]?.foods) {
+                                                  meal.foodOptions[optionIndex].foods!.splice(foodIndex, 1);
+                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                  if (allFoods.length === 0) {
+                                                    // Clear all fields if no foods left
+                                                    meal.foodOptions[optionIndex].food = '';
+                                                    meal.foodOptions[optionIndex].unit = '';
+                                                    meal.foodOptions[optionIndex].cal = '';
+                                                    meal.foodOptions[optionIndex].carbs = '';
+                                                    meal.foodOptions[optionIndex].fats = '';
+                                                    meal.foodOptions[optionIndex].protein = '';
+                                                    meal.foodOptions[optionIndex].fiber = '';
+                                                    meal.foodOptions[optionIndex].foods = undefined;
+                                                  } else {
+                                                    // Recalculate totals
+                                                    meal.foodOptions[optionIndex].food = allFoods.map(f => f.food).join(' + ');
+                                                    meal.foodOptions[optionIndex].unit = allFoods.length > 1 ? 'Multiple' : allFoods[0]?.unit || '';
+                                                    meal.foodOptions[optionIndex].cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
+                                                    meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
+                                                    meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
+                                                    meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
+                                                    meal.foodOptions[optionIndex].fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
+                                                  }
+                                                  onUpdate(newWeekPlan);
+                                                }
+                                              }}
+                                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                              title="Remove this food"
+                                            >
+                                              <Minus className="w-4 h-4" />
+                                            </Button>
+                                          </div>
+                                          
+                                          {/* Unit and Calories Row */}
+                                          <div className="grid grid-cols-2 gap-2">
+                                            <Input
+                                              value={foodItem.unit}
+                                              onChange={(e) => {
+                                                if (readOnly || !onUpdate) return;
+                                                const newWeekPlan = [...weekPlan];
+                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                  meal.foodOptions[optionIndex].foods![foodIndex].unit = e.target.value;
+                                                  onUpdate(newWeekPlan);
+                                                }
+                                              }}
+                                              placeholder="Unit (e.g., 100g)"
+                                              className="h-9 text-xs bg-gray-50 border-gray-300"
+                                            />
+                                            <Input
+                                              value={foodItem.cal}
+                                              onChange={(e) => {
+                                                if (readOnly || !onUpdate) return;
+                                                const newWeekPlan = [...weekPlan];
+                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                  meal.foodOptions[optionIndex].foods![foodIndex].cal = e.target.value;
+                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                  meal.foodOptions[optionIndex].cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
+                                                  onUpdate(newWeekPlan);
+                                                }
+                                              }}
+                                              placeholder="Calories"
+                                              type="number"
+                                              className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
+                                            />
+                                          </div>
+                                          
+                                          {/* Carbs and Fats Row */}
+                                          <div className="grid grid-cols-2 gap-2">
+                                            <Input
+                                              value={foodItem.carbs}
+                                              onChange={(e) => {
+                                                if (readOnly || !onUpdate) return;
+                                                const newWeekPlan = [...weekPlan];
+                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                  meal.foodOptions[optionIndex].foods![foodIndex].carbs = e.target.value;
+                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                  meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
+                                                  onUpdate(newWeekPlan);
+                                                }
+                                              }}
+                                              placeholder="Carbs (g)"
+                                              type="number"
+                                              className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
+                                            />
+                                            <Input
+                                              value={foodItem.fats}
+                                              onChange={(e) => {
+                                                if (readOnly || !onUpdate) return;
+                                                const newWeekPlan = [...weekPlan];
+                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                  meal.foodOptions[optionIndex].foods![foodIndex].fats = e.target.value;
+                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                  meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
+                                                  onUpdate(newWeekPlan);
+                                                }
+                                              }}
+                                              placeholder="Fats (g)"
+                                              type="number"
+                                              className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
+                                            />
+                                          </div>
+                                          
+                                          {/* Protein and Fiber Row */}
+                                          <div className="grid grid-cols-2 gap-2">
+                                            <Input
+                                              value={foodItem.protein}
+                                              onChange={(e) => {
+                                                if (readOnly || !onUpdate) return;
+                                                const newWeekPlan = [...weekPlan];
+                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                  meal.foodOptions[optionIndex].foods![foodIndex].protein = e.target.value;
+                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                  meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
+                                                  onUpdate(newWeekPlan);
+                                                }
+                                              }}
+                                              placeholder="Protein (g)"
+                                              type="number"
+                                              className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
+                                            />
+                                            <Input
+                                              value={foodItem.fiber}
+                                              onChange={(e) => {
+                                                if (readOnly || !onUpdate) return;
+                                                const newWeekPlan = [...weekPlan];
+                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                  meal.foodOptions[optionIndex].foods![foodIndex].fiber = e.target.value;
+                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                  meal.foodOptions[optionIndex].fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
+                                                  onUpdate(newWeekPlan);
+                                                }
+                                              }}
+                                              placeholder="Fiber (g)"
+                                              type="number"
+                                              className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
+                                            />
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    /* Single Food Display (backward compatible) */
+                                    <>
+                                      <div className='flex gap-1 items-center justify-between'>
+                                        <Input
+                                        value={option.food}
+                                        onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'food', e.target.value)}
+                                        placeholder="Food item"
+                                        className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium"
+                                      />
+                                      </div>
 
-                                  
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <Input
-                                      value={option.unit}
-                                      onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'unit', e.target.value)}
-                                      placeholder="Unit (e.g., 100g)"
-                                      className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500"
-                                    />
-                                    <Input
-                                      value={option.cal}
-                                      onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'cal', e.target.value)}
-                                      placeholder="Calories"
-                                      type="number"
-                                      className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                    />
-                                  </div>
+                                      
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <Input
+                                          value={option.unit}
+                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'unit', e.target.value)}
+                                          placeholder="Unit (e.g., 100g)"
+                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500"
+                                        />
+                                        <Input
+                                          value={option.cal}
+                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'cal', e.target.value)}
+                                          placeholder="Calories"
+                                          type="number"
+                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                        />
+                                      </div>
 
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <Input
-                                      value={option.carbs}
-                                      onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'carbs', e.target.value)}
-                                      placeholder="Carbs (g)"
-                                      type="number"
-                                      className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                    />
-                                    <Input
-                                      value={option.fats}
-                                      onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'fats', e.target.value)}
-                                      placeholder="Fats (g)"
-                                      type="number"
-                                      className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                    />
-                                  </div>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <Input
+                                          value={option.carbs}
+                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'carbs', e.target.value)}
+                                          placeholder="Carbs (g)"
+                                          type="number"
+                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                        />
+                                        <Input
+                                          value={option.fats}
+                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'fats', e.target.value)}
+                                          placeholder="Fats (g)"
+                                          type="number"
+                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                        />
+                                      </div>
 
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <Input
-                                      value={option.protein}
-                                      onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'protein', e.target.value)}
-                                      placeholder="Protein (g)"
-                                      type="number"
-                                      className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                    />
-                                    <Input
-                                      value={option.fiber}
-                                      onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'fiber', e.target.value)}
-                                      placeholder="Fiber (g)"
-                                      type="number"
-                                      className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                    />
-                                  </div>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <Input
+                                          value={option.protein}
+                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'protein', e.target.value)}
+                                          placeholder="Protein (g)"
+                                          type="number"
+                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                        />
+                                        <Input
+                                          value={option.fiber}
+                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'fiber', e.target.value)}
+                                          placeholder="Fiber (g)"
+                                          type="number"
+                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                        />
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -1654,54 +1842,63 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         clientDietaryRestrictions={clientDietaryRestrictions}
         clientMedicalConditions={clientMedicalConditions}
         clientAllergies={clientAllergies}
-  onSelectFood={(foods: FoodItem[]) => {
-          if (currentFoodContext) {
+  onSelectFood={(foods: FoodDatabaseItem[]) => {
+          if (currentFoodContext && foods.length > 0) {
             const { dayIndex, mealType, optionIndex } = currentFoodContext;
             
-            // Update the first food in the current option
-            if (foods.length > 0) {
-              const firstFood = foods[0];
-              updateFoodOption(dayIndex, mealType, optionIndex, 'food', firstFood.menu);
-              updateFoodOption(dayIndex, mealType, optionIndex, 'unit', firstFood.amount);
-              updateFoodOption(dayIndex, mealType, optionIndex, 'cal', firstFood.cals.toString());
-              updateFoodOption(dayIndex, mealType, optionIndex, 'carbs', firstFood.carbs.toString());
-              updateFoodOption(dayIndex, mealType, optionIndex, 'fats', firstFood.fats.toString());
-              updateFoodOption(dayIndex, mealType, optionIndex, 'protein', firstFood.protein.toString());
-              // Add recipeUuid if available
-              if (firstFood.recipeUuid) {
-                const newWeekPlan = [...weekPlan];
-                const meal = newWeekPlan[dayIndex].meals[mealType];
-                if (meal && meal.foodOptions[optionIndex]) {
-                  meal.foodOptions[optionIndex].recipeUuid = firstFood.recipeUuid;
-                  onUpdate?.(newWeekPlan);
-                }
-              }
-            }
+            if (readOnly || !onUpdate) return;
             
-            // Create new boxes for additional selected foods
-            if (foods.length > 1 && onUpdate && !readOnly) {
-              const newWeekPlan = [...weekPlan];
-              const meal = newWeekPlan[dayIndex].meals[mealType];
+            const newWeekPlan = [...weekPlan];
+            const meal = newWeekPlan[dayIndex].meals[mealType];
+            
+            if (meal && meal.foodOptions[optionIndex]) {
+              const option = meal.foodOptions[optionIndex];
               
-              if (meal) {
-                for (let i = 1; i < foods.length; i++) {
-                  const food = foods[i];
-                  const nextLetter = String.fromCharCode(65 + meal.foodOptions.length);
-                  meal.foodOptions.push({
+              // Initialize foods array if not present
+              if (!option.foods) {
+                option.foods = [];
+                // If there's existing primary food, add it to the array first
+                if (option.food && option.food.trim()) {
+                  option.foods.push({
                     id: Math.random().toString(36).substr(2, 9),
-                    label: `${nextLetter} Food`,
-                    food: food.menu,
-                    unit: food.amount,
-                    cal: food.cals.toString(),
-                    carbs: food.carbs.toString(),
-                    fats: food.fats.toString(),
-                    protein: food.protein.toString(),
-                    fiber: '',
-                    recipeUuid: food.recipeUuid // Include recipe UUID
+                    food: option.food,
+                    unit: option.unit,
+                    cal: option.cal,
+                    carbs: option.carbs,
+                    fats: option.fats,
+                    protein: option.protein,
+                    fiber: option.fiber,
+                    recipeUuid: option.recipeUuid
                   });
                 }
-                onUpdate(newWeekPlan);
               }
+              
+              // Add all selected foods to the foods array
+              foods.forEach((food) => {
+                option.foods!.push({
+                  id: Math.random().toString(36).substr(2, 9),
+                  food: food.menu,
+                  unit: food.amount,
+                  cal: food.cals.toString(),
+                  carbs: food.carbs.toString(),
+                  fats: food.fats.toString(),
+                  protein: food.protein.toString(),
+                  fiber: '',
+                  recipeUuid: food.recipeUuid
+                });
+              });
+              
+              // Update the primary fields to show combined info
+              const allFoods = option.foods!;
+              option.food = allFoods.map(f => f.food).join(' + ');
+              option.unit = allFoods.length > 1 ? 'Multiple' : allFoods[0]?.unit || '';
+              option.cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
+              option.carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
+              option.fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
+              option.protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
+              option.fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
+              
+              onUpdate(newWeekPlan);
             }
           }
         }}
