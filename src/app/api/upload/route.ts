@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
       'progress': ['image/jpeg', 'image/png', 'image/webp'],
       'progress-photo': ['image/jpeg', 'image/png', 'image/webp'],
       'medical-report': ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
-      'bug': ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+      'bug': ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+      'ecommerce': ['image/jpeg', 'image/png', 'image/webp']
     };
 
     const maxSizes = {
@@ -47,7 +48,8 @@ export async function POST(request: NextRequest) {
       'progress': 10 * 1024 * 1024, // 10MB for progress photos
       'progress-photo': 10 * 1024 * 1024, // 10MB for progress photos
       'medical-report': 10 * 1024 * 1024, // 10MB for medical reports
-      'bug': 10 * 1024 * 1024 // 10MB for bug screenshots
+      'bug': 10 * 1024 * 1024, // 10MB for bug screenshots
+      'ecommerce': 10 * 1024 * 1024 // 10MB for ecommerce images
     };
 
     const fileType = type as keyof typeof allowedTypes;
@@ -115,6 +117,47 @@ export async function POST(request: NextRequest) {
       } catch (imagekitError) {
         console.error('Error uploading to ImageKit:', imagekitError);
         // Fall through to local storage if ImageKit fails
+      }
+    }
+
+    // For ecommerce uploads, use ImageKit with compression
+    if (fileType === 'ecommerce') {
+      try {
+        const ik = getImageKit();
+
+        const compressedBase64 = await compressImageServer(buffer, serverCompressionPresets.recipe);
+        const uploadFileName = `ecommerce-${session.user.id}-${timestamp}.webp`;
+
+        const uploadResponse = await ik.upload({
+          file: compressedBase64,
+          fileName: uploadFileName,
+          folder: '/ecommerce',
+        });
+
+        const savedFile = await File.create({
+          filename: uploadFileName,
+          originalName: file.name,
+          mimeType: 'image/webp',
+          size: file.size,
+          data: '',
+          type: fileType,
+          localPath: uploadResponse.url,
+          imageKitFileId: uploadResponse.fileId,
+          uploadedBy: session.user.id
+        });
+
+        return NextResponse.json({
+          url: uploadResponse.url,
+          dbUrl: `/api/files/${savedFile._id}`,
+          localUrl: uploadResponse.url,
+          filename: uploadFileName,
+          size: file.size,
+          type: 'image/webp',
+          fileId: savedFile._id,
+          imageKitFileId: uploadResponse.fileId
+        });
+      } catch (imagekitError) {
+        console.error('Error uploading ecommerce image to ImageKit:', imagekitError);
       }
     }
 

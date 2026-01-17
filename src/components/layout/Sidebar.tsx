@@ -31,7 +31,9 @@ import {
   FolderOpen,
   Tags,
   Sparkles,
-  BookOpen
+  BookOpen,
+  ShoppingBag,
+  Star
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -47,11 +49,9 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['Content Management']);
 
   const toggleFolder = (label: string) => {
-    setExpandedFolders(prev => 
-      prev.includes(label) 
-        ? prev.filter(f => f !== label) 
-        : [...prev, label]
-    );
+    setExpandedFolders(prev => (
+      prev.includes(label) ? prev.filter(item => item !== label) : [...prev, label]
+    ));
   };
 
   const getNavigationItems = (role: UserRole) => {
@@ -324,6 +324,56 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
             ]
           },
           {
+            href: '/admin/ecommerce',
+            label: 'DTPSecommerce',
+            icon: ShoppingBag,
+            description: 'Ecommerce management',
+            children: [
+              {
+                href: '/admin/ecommerce/orders',
+                label: 'Ecommerce Orders',
+                icon: Package,
+                description: 'Manage ecommerce orders'
+              },
+              {
+                href: '/admin/ecommerce/payments',
+                label: 'Ecommerce Payments',
+                icon: Wallet,
+                description: 'View ecommerce payments'
+              },
+              {
+                href: '/admin/ecommerce/blogs',
+                label: 'Ecommerce Blogs',
+                icon: BookOpen,
+                description: 'Manage ecommerce blogs'
+              },
+              {
+                href: '/admin/ecommerce/transformations',
+                label: 'Ecommerce Transformations',
+                icon: Sparkles,
+                description: 'Manage ecommerce transformations'
+              },
+              {
+                href: '/admin/ecommerce/plans',
+                label: 'Ecommerce Plans',
+                icon: FileText,
+                description: 'Manage ecommerce plans'
+              },
+              {
+                href: '/admin/ecommerce/ratings',
+                label: 'Ecommerce Ratings',
+                icon: Star,
+                description: 'Manage ecommerce ratings'
+              }
+            ]
+          },
+          {
+            href: '/admin/leads',
+            label: 'Leads',
+            icon: Users,
+            description: 'Manage leads'
+          },
+          {
             href: '/admin/dietitians',
             label: 'Dietitians',
             icon: Users,
@@ -414,7 +464,10 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
           const hasChildren = item.children && item.children.length > 0;
-          const isExpanded = expandedFolders.includes(item.label);
+          const isChildActive = hasChildren && item.children.some((child: any) => (
+            pathname === child.href || pathname?.startsWith(child.href + '/')
+          ));
+          const isExpanded = expandedFolders.includes(item.label) || isChildActive;
 
           // If has children, render as collapsible folder
           if (hasChildren) {
