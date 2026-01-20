@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -17,7 +17,8 @@ import {
   Apple,
   Sandwich,
   Moon,
-  Sunrise
+  Sunrise,
+  RotateCcw
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -31,6 +32,8 @@ interface MealEntry {
   food: string;
 }
 
+const DRAFT_KEY = 'dtps-dietary-recall-draft';
+
 const mealTypes = [
   { value: "Early Morning", label: "Early Morning", icon: Sunrise },
   { value: "BreakFast", label: "Breakfast", icon: Coffee },
@@ -43,6 +46,50 @@ const mealTypes = [
 const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0"));
 const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"));
 
+// Helper functions for local storage draft management
+const saveDraftToLocalStorage = (meals: MealEntry[], userId: string) => {
+  try {
+    const draftData = {
+      meals,
+      userId,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours expiry
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+  } catch (error) {
+    console.error('Error saving draft to localStorage:', error);
+  }
+};
+
+const loadDraftFromLocalStorage = (userId: string): MealEntry[] | null => {
+  try {
+    const draftStr = localStorage.getItem(DRAFT_KEY);
+    if (!draftStr) return null;
+    
+    const draft = JSON.parse(draftStr);
+    
+    // Check if draft belongs to current user and hasn't expired
+    if (draft.userId !== userId) return null;
+    if (draft.expiresAt && Date.now() > draft.expiresAt) {
+      localStorage.removeItem(DRAFT_KEY);
+      return null;
+    }
+    
+    return draft.meals;
+  } catch (error) {
+    console.error('Error loading draft from localStorage:', error);
+    return null;
+  }
+};
+
+const clearDraftFromLocalStorage = () => {
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch (error) {
+    console.error('Error clearing draft from localStorage:', error);
+  }
+};
+
 export default function DietaryRecallPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -50,17 +97,54 @@ export default function DietaryRecallPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [meals, setMeals] = useState<MealEntry[]>([]);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login");
+      router.push("/client-auth/signin");
     }
   }, [status, router]);
+
+  // Auto-save to draft when meals change (debounced)
+  useEffect(() => {
+    if (!session?.user?.id || loading || !draftRestored) return;
+    
+    // Check if any meals have content
+    const hasContent = meals.some(m => m.food.trim() !== '' || m.hour !== '' || m.minute !== '');
+    if (!hasContent) return;
+    
+    const timeoutId = setTimeout(() => {
+      saveDraftToLocalStorage(meals, session.user.id);
+      setHasDraft(true);
+    }, 1000); // Debounce 1 second
+    
+    return () => clearTimeout(timeoutId);
+  }, [meals, session?.user?.id, loading, draftRestored]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        
+        // First, check for local draft
+        if (session?.user?.id) {
+          const draftMeals = loadDraftFromLocalStorage(session.user.id);
+          if (draftMeals && draftMeals.length > 0) {
+            // Check if draft has meaningful content
+            const draftHasContent = draftMeals.some(m => m.food.trim() !== '');
+            if (draftHasContent) {
+              setMeals(draftMeals);
+              setHasDraft(true);
+              setDraftRestored(true);
+              setLoading(false);
+              toast.info('Restored your unsaved draft', { duration: 3000 });
+              return;
+            }
+          }
+        }
+        
+        // If no draft, fetch from server
         const res = await fetch("/api/client/dietary-recall");
         if (res.ok) {
           const result = await res.json();
@@ -87,8 +171,27 @@ export default function DietaryRecallPage() {
             })));
           }
         }
+        setDraftRestored(true);
       } catch (error) {
         console.error("Error fetching dietary recall:", error);
+        // If fetch fails, try to load from draft
+        if (session?.user?.id) {
+          const draftMeals = loadDraftFromLocalStorage(session.user.id);
+          if (draftMeals && draftMeals.length > 0) {
+            setMeals(draftMeals);
+            setHasDraft(true);
+            toast.info('Loaded from local draft (offline mode)', { duration: 3000 });
+          } else {
+            setMeals(mealTypes.map(type => ({
+              mealType: type.value,
+              hour: "",
+              minute: "",
+              meridian: "AM" as "AM" | "PM",
+              food: ""
+            })));
+          }
+        }
+        setDraftRestored(true);
       } finally {
         setLoading(false);
       }
@@ -111,6 +214,9 @@ export default function DietaryRecallPage() {
       });
 
       if (res.ok) {
+        // Clear the draft after successful save
+        clearDraftFromLocalStorage();
+        setHasDraft(false);
         toast.success("Dietary recall saved successfully");
         router.push("/user/profile");
       } else {
@@ -118,11 +224,25 @@ export default function DietaryRecallPage() {
       }
     } catch (error) {
       console.error("Error saving dietary recall:", error);
-      toast.error("Something went wrong");
+      toast.error("Something went wrong. Your data is saved locally.");
     } finally {
       setSaving(false);
     }
   };
+
+  // Function to clear draft and reset
+  const handleClearDraft = useCallback(() => {
+    clearDraftFromLocalStorage();
+    setHasDraft(false);
+    setMeals(mealTypes.map(type => ({
+      mealType: type.value,
+      hour: "",
+      minute: "",
+      meridian: "AM" as "AM" | "PM",
+      food: ""
+    })));
+    toast.success("Draft cleared");
+  }, []);
 
   const updateMeal = (index: number, field: keyof MealEntry, value: string) => {
     const newMeals = [...meals];
@@ -169,16 +289,34 @@ export default function DietaryRecallPage() {
             <Link href="/user/profile" className={isDarkMode ? "p-2 -ml-2 rounded-xl hover:bg-white/10 transition-colors" : "p-2 -ml-2 rounded-xl hover:bg-green-50 transition-colors"}>
               <ArrowLeft className={isDarkMode ? "w-5 h-5 text-gray-200" : "w-5 h-5 text-gray-600"} />
             </Link>
-            <h1 className={isDarkMode ? "text-lg font-bold text-white" : "text-lg font-bold text-gray-900"}>Dietary Recall</h1>
+            <div>
+              <h1 className={isDarkMode ? "text-lg font-bold text-white" : "text-lg font-bold text-gray-900"}>Dietary Recall</h1>
+              {hasDraft && (
+                <span className="text-xs text-orange-500">Draft saved locally</span>
+              )}
+            </div>
           </div>
-          <button 
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg shadow-green-500/25"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save
-          </button>
+          <div className="flex items-center gap-2">
+            {hasDraft && (
+              <button
+                onClick={handleClearDraft}
+                className={isDarkMode
+                  ? "p-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-white/10 transition-colors"
+                  : "p-2 rounded-xl text-gray-500 hover:text-red-500 hover:bg-gray-100 transition-colors"}
+                title="Clear draft"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
+            <button 
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg shadow-green-500/25"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Save
+            </button>
+          </div>
         </div>
       </div>
 

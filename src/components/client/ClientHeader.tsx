@@ -49,7 +49,7 @@ export default function ClientHeader({ title, showBack, onBack }: ClientHeaderPr
       // First clear cookies via our custom logout API
       await fetch('/api/auth/logout', { method: 'POST' });
       
-      // Clear local storage
+      // Clear local storage (but preserve meal drafts for later)
       if (typeof window !== 'undefined') {
         localStorage.removeItem('user-preferences');
         localStorage.removeItem('theme');
@@ -57,11 +57,12 @@ export default function ClientHeader({ title, showBack, onBack }: ClientHeaderPr
         sessionStorage.clear();
       }
       
-      // Then call NextAuth signOut
-      await signOut({ callbackUrl: '/auth/signin' });
+      // Then call NextAuth signOut - redirect to client auth login page
+      await signOut({ callbackUrl: '/client-auth/signin', redirect: true });
     } catch (error) {
       console.error('Error during logout:', error);
-      await signOut({ callbackUrl: '/auth/signin' });
+      // Force redirect even on error
+      await signOut({ callbackUrl: '/client-auth/signin', redirect: true });
     }
   }, []);
 

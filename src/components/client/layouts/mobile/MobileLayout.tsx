@@ -263,7 +263,15 @@ export function MobileLayout({
           <Button 
             variant="ghost" 
             className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+            onClick={() => {
+              // Clear local storage
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('user-preferences');
+                localStorage.removeItem('dtps-theme');
+                sessionStorage.clear();
+              }
+              signOut({ callbackUrl: '/client-auth/signin', redirect: true });
+            }}
           >
             <LogOut className="h-5 w-5 mr-3" />
             Sign Out

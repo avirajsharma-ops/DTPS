@@ -79,7 +79,13 @@ export default function MobileSettingsPage() {
 
   const handleLogout = async () => {
     if (confirm('Are you sure you want to logout?')) {
-      await signOut({ callbackUrl: '/auth/signin' });
+      // Clear local storage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user-preferences');
+        localStorage.removeItem('dtps-theme');
+        sessionStorage.clear();
+      }
+      await signOut({ callbackUrl: '/client-auth/signin', redirect: true });
     }
   };
 
