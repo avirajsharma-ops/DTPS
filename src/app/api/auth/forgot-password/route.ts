@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { sendEmail, getPasswordResetTemplate } from '@/lib/services/email';
+import { getBaseUrl } from '@/lib/config';
 import crypto from 'crypto';
 
 // POST /api/auth/forgot-password - Send password reset email
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     await user.save({ validateBeforeSave: false });
 
     // Determine the base URL for the reset link based on user role
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = getBaseUrl();
     
     // Route to appropriate reset page based on user role
     let resetPath = '/auth/reset-password'; // Default for admin/dietitian/health_counselor

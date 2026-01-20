@@ -4,7 +4,7 @@
             "outputFile": "com.dtps.dietary.app-mergeReleaseResources-43:/values-watch-v20/values-watch-v20.xml",
             "map": [
                 {
-                    "source": "/Users/lokeshdhote/.gradle/caches/8.11.1/transforms/746360d87f52895ea8b68142c07ae745/transformed/appcompat-1.7.0/res/values-watch-v20/values-watch-v20.xml",
+                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/746360d87f52895ea8b68142c07ae745/transformed/appcompat-1.7.0/res/values-watch-v20/values-watch-v20.xml",
                     "from": {
                         "startLines": "2,5,8",
                         "startColumns": "4,4,4",
@@ -23,7 +23,7 @@
                     }
                 },
                 {
-                    "source": "/Users/lokeshdhote/.gradle/caches/8.11.1/transforms/9057b88b4308496b69c7a2171c2ccc6c/transformed/core-splashscreen-1.2.0/res/values-watch-v20/values-watch-v20.xml",
+                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/9057b88b4308496b69c7a2171c2ccc6c/transformed/core-splashscreen-1.2.0/res/values-watch-v20/values-watch-v20.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",

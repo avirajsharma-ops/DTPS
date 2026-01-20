@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { sendEmail, getPasswordResetTemplate } from '@/lib/services/email';
+import { getBaseUrl } from '@/lib/config';
 import crypto from 'crypto';
 
 // POST /api/user/forget-password - Send password reset email for clients only
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
 
 
     // Generate reset link - use client-auth route which doesn't require authentication
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = getBaseUrl();
     const resetLink = `${baseUrl}/client-auth/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
 

@@ -4,15 +4,15 @@
     "type": "OPTIMIZED_PROCESSED_RES",
     "kind": "Directory"
   },
-  "applicationId": "first.dtps.com",
+  "applicationId": "app.dtps.com",
   "variantName": "release",
   "elements": [
     {
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 3,
-      "versionName": "1.2.0",
+      "versionCode": 6,
+      "versionName": "1.5.0",
       "outputFile": "resources-release-optimize.ap_"
     }
   ],

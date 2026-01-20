@@ -4,7 +4,7 @@
     "type": "BUNDLE",
     "kind": "RegularFile"
   },
-  "applicationId": "first.dtps.com",
+  "applicationId": "app.dtps.com",
   "variantName": "release",
   "elements": [
     {
