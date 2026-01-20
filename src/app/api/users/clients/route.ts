@@ -6,7 +6,7 @@ import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
-// GET /api/users/clients - Get clients for dietitians to book appointments
+// GET /api/users/clients - Get clients for dietitians to book appointments 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,8 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only dietitians,
-    //  health counselors, and admins can access client list
+    // Only dietitians, health counselors, and admins can access client list
     const userRole = session.user.role?.toLowerCase();
     if (userRole !== 'dietitian' && userRole !== 'health_counselor' && userRole !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
