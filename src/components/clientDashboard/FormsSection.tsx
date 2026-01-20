@@ -128,7 +128,7 @@ export default function FormsSection({
         <TabsList className="flex w-full gap-2 sm:gap-3 bg-slate-100 p-1.5 rounded-xl h-auto flex-wrap sm:flex-nowrap">
           <TabsTrigger 
             value="basic-details"
-            className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-medium transition-all
+            className={`flex-1 min-w-30 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-medium transition-all
               data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-md
               data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-white/50
               ${!isBasicInfoFilled ? 'data-[state=inactive]:text-amber-600' : ''}`}
@@ -139,7 +139,7 @@ export default function FormsSection({
           </TabsTrigger>
           <TabsTrigger 
             value="medical-info"
-            className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-medium transition-all
+            className={`flex-1 min-w-25 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-medium transition-all
               data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-md
               data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-white/50
               ${!isMedicalFilled ? 'data-[state=inactive]:text-amber-600' : ''}`}
@@ -150,7 +150,7 @@ export default function FormsSection({
           </TabsTrigger>
           <TabsTrigger 
             value="lifestyle"
-            className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-medium transition-all
+            className={`flex-1 min-w-25 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-medium transition-all
               data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-md
               data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-white/50
               ${!isLifestyleFilled ? 'data-[state=inactive]:text-amber-600' : ''}`}
@@ -161,7 +161,7 @@ export default function FormsSection({
           </TabsTrigger>
           <TabsTrigger 
             value="recall"
-            className={`flex-1 min-w-[80px] flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-medium transition-all
+            className={`flex-1 min-w-20 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-medium transition-all
               data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-md
               data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-white/50
               ${!isRecallFilled ? 'data-[state=inactive]:text-amber-600' : ''}`}
@@ -179,6 +179,8 @@ export default function FormsSection({
             onChange={(field, value) => setBasicInfo(prev => ({ ...prev, [field]: value }))}
             onSave={handleSaveWithCheck}
             loading={loading}
+            disableEmail
+            disablePhone
           />
         </TabsContent>
 

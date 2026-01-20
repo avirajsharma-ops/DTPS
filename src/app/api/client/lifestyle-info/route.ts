@@ -18,7 +18,7 @@ export async function GET() {
     const lifestyleInfo = await withCache(
       `client:lifestyle-info:${JSON.stringify({ userId: session.user.id })}`,
       async () => await LifestyleInfo.findOne({ userId: session.user.id }),
-      { ttl: 120000, tags: ['client'] }
+      { ttl: 120000, tags: ['client', `client:lifestyle-info:${session.user.id}`] }
     );
     
     if (!lifestyleInfo) {
@@ -91,6 +91,9 @@ export async function POST(request: Request) {
         runValidators: true
       }
     );
+
+    clearCacheByTag('client');
+    clearCacheByTag(`client:lifestyle-info:${session.user.id}`);
 
     return NextResponse.json({ success: true, data: lifestyleInfo });
   } catch (error) {

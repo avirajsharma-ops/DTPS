@@ -50,7 +50,12 @@ interface Client {
   clientStatus?: 'leading' | 'active' | 'inactive' | 'onboarding' | 'paused';
   createdAt: string;
   healthGoals?: string[];
-  tags?: string[];
+  tags?: Array<{
+    _id: string;
+    name: string;
+    color?: string;
+    icon?: string;
+  }>;
   programStart?: string;
   programEnd?: string;
   lastDiet?: string;
@@ -393,10 +398,10 @@ console.log('Render DieticianClientsPage with clients:', clients);
                             <TableCell className="px-3 max-w-37.5 truncate text-sm">{client.email}</TableCell>
                             <TableCell className="px-3">
                               {client.tags && client.tags.length > 0 ? (
-                                <div className="flex gap-1">
+                                <div className="flex gap-1 flex-wrap">
                                   {client.tags.slice(0, 2).map((tag, idx) => (
-                                    <Badge key={idx} variant="outline" className="text-xs px-1.5 py-0">
-                                      {tag}
+                                    <Badge key={tag._id || idx} variant="outline" className="text-xs px-1.5 py-0">
+                                      {tag.name || '-'}
                                     </Badge>
                                   ))}
                                 </div>

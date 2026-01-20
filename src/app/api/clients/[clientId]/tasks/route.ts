@@ -80,6 +80,10 @@ export async function POST(
     const { clientId } = await params;
     const body = await req.json();
 
+    if (Array.isArray(body.tags)) {
+      body.tags = body.tags.slice(0, 1);
+    }
+
     // Validate required fields
     if (!body.taskType || !body.startDate || !body.endDate) {
       return NextResponse.json(
@@ -108,7 +112,8 @@ export async function POST(
       dietitian: session.user?.id,
       creatorRole: creatorRole,
       startDate: new Date(body.startDate),
-      endDate: new Date(body.endDate)
+      endDate: new Date(body.endDate),
+      tags: Array.isArray(body.tags) ? body.tags.slice(0, 1) : []
     });
 
     await task.save();

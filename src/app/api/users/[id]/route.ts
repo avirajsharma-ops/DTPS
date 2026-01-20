@@ -36,7 +36,12 @@ export async function GET(
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email avatar')
       .populate('assignedHealthCounselor', 'firstName lastName email avatar')
-      .populate('tags', 'name description color icon'),
+      .populate('tags', 'name description color icon')
+      .populate({
+        path: 'createdBy.userId',
+        select: 'firstName lastName role',
+        strictPopulate: false
+      }),
       { ttl: 120000, tags: ['users'] }
     );
 
@@ -233,11 +238,9 @@ export async function PUT(
 
     // Allowed fields to update (only User model fields)
     let allowedFields = [
-      // Basic Info
+      // Basic Info (email/phone are immutable)
       "firstName",
       "lastName",
-      "phone",
-      "email",
       "avatar",
       "bio",
       "status",
@@ -255,46 +258,6 @@ export async function PUT(
       "sharePhotoConsent",
       "generalGoal",
       "healthGoals",
-      // Lifestyle Data
-      "height",
-      "weight",
-      "heightFeet",
-      "heightInch",
-      "heightCm",
-      "weightKg",
-      "targetWeightKg",
-      "idealWeightKg",
-      "bmi",
-      "activityLevel",
-      "activityRate",
-      "foodPreference",
-      "preferredCuisine",
-      "allergiesFood",
-      "fastDays",
-      "nonVegExemptDays",
-      "foodLikes",
-      "foodDislikes",
-      "eatOutFrequency",
-      "smokingFrequency",
-      "alcoholFrequency",
-      "cookingOil",
-      "monthlyOilConsumption",
-      "cookingSalt",
-      "carbonatedBeverageFrequency",
-      "cravingType",
-      // Medical Data
-      "medicalConditions",
-      "allergies",
-      "dietaryRestrictions",
-      "notes",
-      "diseaseHistory",
-      "medicalHistory",
-      "familyHistory",
-      "medication",
-      "bloodGroup",
-      "gutIssues",
-      "reports",
-      "isPregnant",
       // Professional fields (for dietitians)
       "credentials",
       "specializations",
@@ -310,32 +273,6 @@ export async function PUT(
 
     if (session.user.role === UserRole.ADMIN) {
       allowedFields.push("role");
-    }
-
-    // Check phone uniqueness if phone is being updated
-    if (body.phone && body.phone !== targetUser.phone) {
-      // Normalize phone number
-      let normalizedPhone = String(body.phone).replace(/[\s\-\(\)]/g, '');
-      if (!normalizedPhone.startsWith('+')) {
-        normalizedPhone = '+91' + normalizedPhone;
-      }
-      
-      // Check if phone is already used by another user
-      const existingPhone = await withCache(
-      `users:id:${JSON.stringify({ 
-        phone: normalizedPhone,
-        _id: { $ne: id }  // Exclude current user
-      })}`,
-      async () => await User.findOne({ 
-        phone: normalizedPhone,
-        _id: { $ne: id }  // Exclude current user
-      }),
-      { ttl: 120000, tags: ['users'] }
-    );
-      if (existingPhone) {
-        return NextResponse.json({ error: 'This phone number is already registered' }, { status: 400 });
-      }
-      body.phone = normalizedPhone;
     }
 
     // FIX: Skip empty values (especially enums)

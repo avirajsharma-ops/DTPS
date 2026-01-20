@@ -58,6 +58,10 @@ export async function POST(
 
     const { id } = await params;
     const body = await request.json();
+
+    if (Array.isArray(body.tags)) {
+      body.tags = body.tags.slice(0, 1);
+    }
     
     await connectDB();
 
@@ -101,7 +105,7 @@ export async function POST(
       notifyClientOnChat: notifyClientOnChat || false,
       notifyDieticianOnCompletion: notifyDieticianOnCompletion || '',
       status: 'pending',
-      tags: tags || []
+      tags: Array.isArray(tags) ? tags.slice(0, 1) : []
     });
 
     await newTask.save();

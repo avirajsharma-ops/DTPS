@@ -113,7 +113,7 @@ export async function PUT(request: Request) {
 
     // Only allow certain fields to be updated
     const allowedFields = [
-      "name", "firstName", "lastName", "phone", "dateOfBirth", "gender",
+      "name", "firstName", "lastName", "dateOfBirth", "gender",
       "address", "city", "state", "pincode", "profileImage", "avatar",
       "heightCm", "weightKg", "targetWeightKg", "activityLevel", "generalGoal", "dietType",
       "alternativeEmail", "alternativePhone", "anniversary", "source", "referralSource"

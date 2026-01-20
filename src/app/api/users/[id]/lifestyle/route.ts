@@ -23,7 +23,7 @@ export async function GET(
     const lifestyleInfo = await withCache(
       `users:id:lifestyle:${JSON.stringify({ userId: id })}`,
       async () => await LifestyleInfo.findOne({ userId: id }),
-      { ttl: 120000, tags: ['users'] }
+      { ttl: 120000, tags: ['users', `users:id:${id}`, `users:id:lifestyle:${id}`] }
     );
 
     if (!lifestyleInfo) {
@@ -55,20 +55,15 @@ export async function POST(
     const { id } = await params;
     const body = await request.json();
 
-    // Find existing or create new
-    let lifestyleInfo = await LifestyleInfo.findOne({ userId: id });
+    const lifestyleInfo = await LifestyleInfo.findOneAndUpdate(
+      { userId: id },
+      { $set: { ...body, userId: id } },
+      { upsert: true, new: true, runValidators: true }
+    );
 
-    if (lifestyleInfo) {
-      // Update existing
-      Object.assign(lifestyleInfo, body);
-      await lifestyleInfo.save();
-    } else {
-      // Create new
-      lifestyleInfo = await LifestyleInfo.create({
-        userId: id,
-        ...body
-      });
-    }
+    clearCacheByTag('users');
+    clearCacheByTag(`users:id:${id}`);
+    clearCacheByTag(`users:id:lifestyle:${id}`);
 
     return NextResponse.json({ lifestyleInfo });
   } catch (error) {

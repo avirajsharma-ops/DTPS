@@ -59,16 +59,14 @@ export function TaskDetailModal({
 
   useEffect(() => {
     if (task) {
-      setSelectedTags(task.tags?.map(t => t._id) || []);
+      setSelectedTags(task.tags?.slice(0, 1).map(t => t._id) || []);
       setHasChanges(false);
     }
   }, [task, isOpen]);
 
   const handleTagToggle = (tagId: string) => {
     setSelectedTags(prev => {
-      const newTags = prev.includes(tagId)
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId];
+      const newTags = prev.includes(tagId) ? [] : [tagId];
       setHasChanges(true);
       return newTags;
     });
@@ -114,7 +112,7 @@ export function TaskDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+  <DialogContent className="sm:max-w-150">
         <DialogHeader>
           <DialogTitle className="text-xl">{task.title}</DialogTitle>
         </DialogHeader>
@@ -196,14 +194,15 @@ export function TaskDetailModal({
             {availableTags.length === 0 ? (
               <p className="text-sm text-gray-500">No tags available</p>
             ) : (
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              <div className="space-y-2 max-h-50 overflow-y-auto">
+                <p className="text-xs text-gray-500">Select only one tag.</p>
                 {availableTags.map(tag => (
                   <label
                     key={tag._id}
                     className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
                   >
                     <Checkbox
-                      checked={selectedTags.includes(tag._id)}
+                      checked={selectedTags[0] === tag._id}
                       onCheckedChange={() => handleTagToggle(tag._id)}
                     />
                     <div className="flex items-center gap-2 flex-1">

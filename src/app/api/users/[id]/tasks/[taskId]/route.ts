@@ -57,6 +57,10 @@ export async function PATCH(
 
     const { id, taskId } = await params;
     const body = await request.json();
+
+    if (Array.isArray(body.tags)) {
+      body.tags = body.tags.slice(0, 1);
+    }
     
     await connectDB();
 
@@ -87,6 +91,8 @@ export async function PATCH(
       if (body[field] !== undefined) {
         if (field === 'startDate' || field === 'endDate') {
           (task as any)[field] = new Date(body[field]);
+        } else if (field === 'tags' && Array.isArray(body[field])) {
+          (task as any)[field] = body[field].slice(0, 1);
         } else {
           (task as any)[field] = body[field];
         }

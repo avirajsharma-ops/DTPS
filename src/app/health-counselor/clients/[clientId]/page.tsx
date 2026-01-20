@@ -601,6 +601,59 @@ export default function HealthCounselorClientDetailPage() {
           bmi: data?.user?.bmi || '',
           activityLevel: data?.user?.activityLevel || ''
         });
+
+        // Fetch lifestyle data from separate API
+        const lifestyleResponse = await fetch(`/api/users/${params.clientId}/lifestyle`);
+        let lifestyleInfo = null;
+        if (lifestyleResponse.ok) {
+          const lifestyleDataResponse = await lifestyleResponse.json();
+          lifestyleInfo = lifestyleDataResponse?.lifestyleInfo;
+        }
+
+        setLifestyleData({
+          foodPreference: lifestyleInfo?.foodPreference || data?.user?.foodPreference || '',
+          preferredCuisine: lifestyleInfo?.preferredCuisine || data?.user?.preferredCuisine || [],
+          allergiesFood: lifestyleInfo?.allergiesFood || data?.user?.allergiesFood || [],
+          fastDays: lifestyleInfo?.fastDays || data?.user?.fastDays || [],
+          nonVegExemptDays: lifestyleInfo?.nonVegExemptDays || data?.user?.nonVegExemptDays || [],
+          foodLikes: lifestyleInfo?.foodLikes || data?.user?.foodLikes || '',
+          foodDislikes: lifestyleInfo?.foodDislikes || data?.user?.foodDislikes || '',
+          eatOutFrequency: lifestyleInfo?.eatOutFrequency || data?.user?.eatOutFrequency || '',
+          smokingFrequency: lifestyleInfo?.smokingFrequency || data?.user?.smokingStatus || data?.user?.smokingFrequency || '',
+          alcoholFrequency: lifestyleInfo?.alcoholFrequency || data?.user?.alcoholConsumption || data?.user?.alcoholFrequency || '',
+          activityRate: lifestyleInfo?.activityRate || data?.user?.activityRate || '',
+          cookingOil: lifestyleInfo?.cookingOil || data?.user?.cookingOil || [],
+          monthlyOilConsumption: lifestyleInfo?.monthlyOilConsumption || data?.user?.monthlyOilConsumption || '',
+          cookingSalt: lifestyleInfo?.cookingSalt || data?.user?.cookingSalt || '',
+          carbonatedBeverageFrequency: lifestyleInfo?.carbonatedBeverageFrequency || data?.user?.carbonatedBeverageFrequency || '',
+          cravingType: lifestyleInfo?.cravingType || data?.user?.cravingType || ''
+        });
+
+        // Fetch medical data from separate API
+        const medicalResponse = await fetch(`/api/users/${params.clientId}/medical`);
+        let medicalInfo = null;
+        if (medicalResponse.ok) {
+          const medicalData = await medicalResponse.json();
+          medicalInfo = medicalData?.medicalInfo;
+        }
+
+        setMedicalData({
+          medicalConditions: (medicalInfo?.medicalConditions || data?.user?.medicalConditions || []).join(', '),
+          allergies: (medicalInfo?.allergies || data?.user?.allergies || []).join(', '),
+          dietaryRestrictions: (medicalInfo?.dietaryRestrictions || data?.user?.dietaryRestrictions || []).join(', '),
+          notes: medicalInfo?.notes || data?.user?.notes || '',
+          diseaseHistory: medicalInfo?.diseaseHistory || data?.user?.diseaseHistory || [],
+          medicalHistory: medicalInfo?.medicalHistory || data?.user?.medicalHistory || '',
+          familyHistory: medicalInfo?.familyHistory || data?.user?.familyHistory || '',
+          medication: medicalInfo?.medication || data?.user?.medication || '',
+          bloodGroup: medicalInfo?.bloodGroup || data?.user?.bloodGroup || '',
+          gutIssues: medicalInfo?.gutIssues || data?.user?.gutIssues || [],
+          reports: medicalInfo?.reports || data?.user?.reports || [],
+          isPregnant: medicalInfo?.isPregnant || data?.user?.isPregnant || false,
+          isLactating: medicalInfo?.isLactating || data?.user?.isLactating || false,
+          menstrualCycle: medicalInfo?.menstrualCycle || data?.user?.menstrualCycle || '',
+          bloodFlow: medicalInfo?.bloodFlow || data?.user?.bloodFlow || ''
+        });
       }
     } catch (error) {
       console.error('Error fetching client:', error);
@@ -614,11 +667,9 @@ export default function HealthCounselorClientDetailPage() {
     try {
       // Prepare the data to save
       const updateData = {
-        // Basic Info
+        // Basic Info (email/phone are immutable)
         firstName: basicInfo.firstName,
         lastName: basicInfo.lastName,
-        email: basicInfo.email,
-        phone: basicInfo.phone,
         dateOfBirth: basicInfo.dateOfBirth,
         gender: basicInfo.gender,
         parentAccount: basicInfo.parentAccount,
@@ -633,32 +684,33 @@ export default function HealthCounselorClientDetailPage() {
         healthGoals: basicInfo.goalsList,
         targetWeightBucket: basicInfo.targetWeightBucket,
         sharePhotoConsent: basicInfo.sharePhotoConsent,
+        // Summary values
+        height: basicInfo.heightCm,
+        weight: basicInfo.weightKg,
+      };
+
+      const response = await fetch(`/api/users/${params.clientId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to save client data');
+        return;
+      }
+
+      const lifestylePayload = {
         heightFeet: basicInfo.heightFeet,
         heightInch: basicInfo.heightInch,
         heightCm: basicInfo.heightCm,
-        height: basicInfo.heightCm,
         weightKg: basicInfo.weightKg,
-        weight: basicInfo.weightKg,
         targetWeightKg: basicInfo.targetWeightKg,
         idealWeightKg: basicInfo.idealWeightKg,
         bmi: basicInfo.bmi,
         activityLevel: basicInfo.activityLevel,
-        // Medical Data
-        medicalConditions: medicalData.medicalConditions,
-        allergies: medicalData.allergies,
-        dietaryRestrictions: medicalData.dietaryRestrictions,
-        medicalNotes: medicalData.notes,
-        diseaseHistory: medicalData.diseaseHistory,
-        medicalHistory: medicalData.medicalHistory,
-        familyHistory: medicalData.familyHistory,
-        medication: medicalData.medication,
-        bloodGroup: medicalData.bloodGroup,
-        gutIssues: medicalData.gutIssues,
-        isPregnant: medicalData.isPregnant,
-        isLactating: medicalData.isLactating,
-        menstrualCycle: medicalData.menstrualCycle,
-        bloodFlow: medicalData.bloodFlow,
-        // Lifestyle Data
+        activityRate: lifestyleData.activityRate,
         foodPreference: lifestyleData.foodPreference,
         preferredCuisine: lifestyleData.preferredCuisine,
         allergiesFood: lifestyleData.allergiesFood,
@@ -669,7 +721,6 @@ export default function HealthCounselorClientDetailPage() {
         eatOutFrequency: lifestyleData.eatOutFrequency,
         smokingFrequency: lifestyleData.smokingFrequency,
         alcoholFrequency: lifestyleData.alcoholFrequency,
-        activityRate: lifestyleData.activityRate,
         cookingOil: lifestyleData.cookingOil,
         monthlyOilConsumption: lifestyleData.monthlyOilConsumption,
         cookingSalt: lifestyleData.cookingSalt,
@@ -677,19 +728,46 @@ export default function HealthCounselorClientDetailPage() {
         cravingType: lifestyleData.cravingType,
       };
 
-      const response = await fetch(`/api/users/${params.clientId}`, {
-        method: 'PUT',
+      const lifestyleResponse = await fetch(`/api/users/${params.clientId}/lifestyle`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData)
+        body: JSON.stringify(lifestylePayload)
       });
 
-      if (response.ok) {
-        toast.success('Client data saved successfully');
-        fetchClientDetails();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to save client data');
+      if (!lifestyleResponse.ok) {
+        console.error('Failed to save lifestyle data');
       }
+
+      const medicalPayload = {
+        medicalConditions: medicalData.medicalConditions.split(',').map(s => s.trim()).filter(Boolean),
+        allergies: medicalData.allergies.split(',').map(s => s.trim()).filter(Boolean),
+        dietaryRestrictions: medicalData.dietaryRestrictions.split(',').map(s => s.trim()).filter(Boolean),
+        notes: medicalData.notes,
+        diseaseHistory: medicalData.diseaseHistory,
+        medicalHistory: medicalData.medicalHistory,
+        familyHistory: medicalData.familyHistory,
+        medication: medicalData.medication,
+        bloodGroup: medicalData.bloodGroup,
+        gutIssues: medicalData.gutIssues,
+        reports: medicalData.reports,
+        isPregnant: medicalData.isPregnant,
+        isLactating: medicalData.isLactating,
+        menstrualCycle: medicalData.menstrualCycle,
+        bloodFlow: medicalData.bloodFlow,
+      };
+
+      const medicalResponse = await fetch(`/api/users/${params.clientId}/medical`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(medicalPayload)
+      });
+
+      if (!medicalResponse.ok) {
+        console.error('Failed to save medical data');
+      }
+
+      toast.success('Client data saved successfully');
+      fetchClientDetails();
     } catch (error) {
       console.error('Error saving client data:', error);
       toast.error('Error saving client data');

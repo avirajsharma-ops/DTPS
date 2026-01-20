@@ -103,6 +103,15 @@ interface ClientData {
     firstName: string;
     lastName: string;
   };
+  createdBy?: {
+    userId?: {
+      _id: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+    };
+    role: string;
+  };
   assignedHealthCounselor?: {
     _id: string;
     firstName: string;
@@ -304,6 +313,18 @@ export default function ClientDetailPage() {
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [recordingTime, setRecordingTime] = useState(0);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const getDietitianDisplayName = () => {
+    const assigned = client?.assignedDietitian;
+    if (assigned?.firstName || assigned?.lastName) {
+      return `${assigned?.firstName || ''} ${assigned?.lastName || ''}`.trim();
+    }
+    const createdByDietitian = client?.createdBy?.role === 'dietitian' ? client?.createdBy?.userId : null;
+    if (createdByDietitian?.firstName || createdByDietitian?.lastName) {
+      return `${createdByDietitian?.firstName || ''} ${createdByDietitian?.lastName || ''}`.trim();
+    }
+    return 'Not Assigned';
+  };
   
   // Note detail/edit state
   const [selectedNote, setSelectedNote] = useState<ClientNote | null>(null);
@@ -993,8 +1014,6 @@ export default function ClientDetailPage() {
       const basicUserData = {
         firstName: basicInfo?.firstName,
         lastName: basicInfo?.lastName,
-        email: basicInfo?.email,
-        phone: basicInfo?.phone,
         dateOfBirth: basicInfo?.dateOfBirth,
         gender: basicInfo?.gender,
         parentAccount: basicInfo?.parentAccount,
@@ -1009,21 +1028,9 @@ export default function ClientDetailPage() {
         sharePhotoConsent: basicInfo?.sharePhotoConsent,
         generalGoal: basicInfo?.generalGoal,
         healthGoals: basicInfo?.goalsList,
-        // Physical measurements (now in basicInfo)
-        heightFeet: basicInfo?.heightFeet,
-        heightInch: basicInfo?.heightInch,
-        heightCm: basicInfo?.heightCm,
-        weightKg: basicInfo?.weightKg,
-        targetWeightKg: basicInfo?.targetWeightKg,
-        idealWeightKg: basicInfo?.idealWeightKg,
-        bmi: basicInfo?.bmi,
-        activityLevel: basicInfo?.activityLevel,
-        // Also set height/weight for backward compatibility
+        // Summary fields only
         height: parseFloat(basicInfo?.heightCm as string) || undefined,
         weight: parseFloat(basicInfo?.weightKg as string) || undefined,
-        medicalConditions: medicalData.medicalConditions.split(',').map(s => s.trim()).filter(Boolean),
-        allergies: medicalData.allergies.split(',').map(s => s.trim()).filter(Boolean),
-        dietaryRestrictions: medicalData.dietaryRestrictions.split(',').map(s => s.trim()).filter(Boolean),
       };
 
       const response = await fetch(`/api/users/${params.clientId}`, {
@@ -1039,6 +1046,16 @@ export default function ClientDetailPage() {
 
       // 2. Save lifestyle data to separate endpoint (food preferences only)
       const lifestylePayload = {
+        // Measurements (stored in LifestyleInfo)
+        heightFeet: basicInfo?.heightFeet,
+        heightInch: basicInfo?.heightInch,
+        heightCm: basicInfo?.heightCm,
+        weightKg: basicInfo?.weightKg,
+        targetWeightKg: basicInfo?.targetWeightKg,
+        idealWeightKg: basicInfo?.idealWeightKg,
+        bmi: basicInfo?.bmi,
+        activityLevel: basicInfo?.activityLevel,
+        // Lifestyle data
         activityRate: lifestyleData?.activityRate,
         foodPreference: lifestyleData?.foodPreference,
         preferredCuisine: lifestyleData?.preferredCuisine,
@@ -1640,7 +1657,7 @@ export default function ClientDetailPage() {
                           <span className="capitalize">{activePlan?.status === 'active' || activePlan?.status === 'upcoming' ? 'Active' : 'Inactive'}</span>
                         </div>
                         <span className="text-gray-300">•</span>
-                        <span>Dietitian: {client.assignedDietitian ? `${client.assignedDietitian.firstName} ${client.assignedDietitian.lastName}` : 'Not Assigned'}</span>
+                        <span>Dietitian: {getDietitianDisplayName()}</span>
                         <span className="text-gray-300">•</span>
                         <span>HC: {client.assignedHealthCounselor ? `${client.assignedHealthCounselor.firstName} ${client.assignedHealthCounselor.lastName}` : 'Not Assigned'}</span>
                         <span className="text-gray-300">•</span>

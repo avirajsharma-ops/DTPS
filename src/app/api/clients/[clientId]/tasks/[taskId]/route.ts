@@ -60,6 +60,10 @@ export async function PUT(
     const { taskId } = await params;
     const body = await req.json();
 
+    if (Array.isArray(body.tags)) {
+      body.tags = body.tags.slice(0, 1);
+    }
+
     // Find the task first to check ownership
     const existingTask = await withCache(
       `clients:clientId:tasks:taskId:${JSON.stringify(taskId)}`,

@@ -59,9 +59,11 @@ interface BasicInfoFormProps extends BasicInfoData {
   onChange: (field: keyof BasicInfoData, value: any) => void;
   onSave: () => void;
   loading?: boolean;
+  disableEmail?: boolean;
+  disablePhone?: boolean;
 }
 
-export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, gender, parentAccount, altPhone, altEmails, anniversary, source, referralSource, generalGoal, maritalStatus, occupation, goalsList, targetWeightBucket, sharePhotoConsent, heightFeet, heightInch, heightCm, weightKg, targetWeightKg, idealWeightKg, bmi, activityLevel, onChange, onSave, loading }: BasicInfoFormProps) {
+export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, gender, parentAccount, altPhone, altEmails, anniversary, source, referralSource, generalGoal, maritalStatus, occupation, goalsList, targetWeightBucket, sharePhotoConsent, heightFeet, heightInch, heightCm, weightKg, targetWeightKg, idealWeightKg, bmi, activityLevel, onChange, onSave, loading, disableEmail = false, disablePhone = false }: BasicInfoFormProps) {
   const [goalCategories, setGoalCategories] = useState<GoalCategory[]>(defaultGoals);
   
   // Fetch dynamic goal categories
@@ -116,7 +118,7 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
 
         <div className="space-y-1.5">
           <Label htmlFor="email">Email *</Label>
-          <Input id="email" type="email" value={email} onChange={e => onChange('email', e.target.value)} required />
+          <Input id="email" type="email" value={email} onChange={e => onChange('email', e.target.value)} required disabled={disableEmail} />
         </div>
 
         <div className="space-y-1.5">
@@ -125,11 +127,13 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
             <Select 
               value={phone?.startsWith('+91') ? '+91' : phone?.startsWith('+1') ? '+1' : phone?.startsWith('+44') ? '+44' : phone?.startsWith('+971') ? '+971' : '+91'}
               onValueChange={(code) => {
+                if (disablePhone) return;
                 const currentNumber = phone?.replace(/^\+\d+\s*/, '') || '';
                 onChange('phone', `${code} ${currentNumber}`);
               }}
+              disabled={disablePhone}
             >
-              <SelectTrigger className="w-[100px]">
+              <SelectTrigger className="w-25">
                 <SelectValue placeholder="Code" />
               </SelectTrigger>
               <SelectContent>
@@ -148,11 +152,13 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
               className="flex-1"
               value={phone?.replace(/^\+\d+\s*/, '') || ''} 
               onChange={e => {
+                if (disablePhone) return;
                 const code = phone?.match(/^\+\d+/)?.[0] || '+91';
                 onChange('phone', `${code} ${e.target.value}`);
               }} 
               placeholder="90000 00000"
               required
+              disabled={disablePhone}
             />
           </div>
         </div>
@@ -196,7 +202,7 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
                   onChange('altPhone', `${code} ${currentNumber}`);
                 }}
               >
-                <SelectTrigger className="w-[100px]">
+                <SelectTrigger className="w-25">
                   <SelectValue placeholder="Code" />
                 </SelectTrigger>
                 <SelectContent>

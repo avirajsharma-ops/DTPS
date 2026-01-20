@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
         .populate('assignedDietitians', 'firstName lastName email avatar')
         .populate('assignedHealthCounselor', 'firstName lastName email avatar')
         .populate('assignedHealthCounselors', 'firstName lastName email avatar')
+        .populate('tags', 'name color icon')
         .populate({
           path: 'createdBy.userId',
           select: 'firstName lastName role',
