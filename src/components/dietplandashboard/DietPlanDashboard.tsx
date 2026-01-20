@@ -110,13 +110,27 @@ export type DayPlan = {
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const defaultMealTypes: MealTypeConfig[] = [
-  { name: 'Breakfast', time: '08:00' },
-  { name: 'Mid Morning', time: '10:30' },
+  { name: 'Breakfast', time: '07:00' },
+  { name: 'Mid Morning', time: '10:00' },
   { name: 'Lunch', time: '13:00' },
   { name: 'Evening Snack', time: '16:00' },
-  { name: 'Dinner', time: '19:30' },
-  { name: 'Bedtime', time: '21:30' }
+  { name: 'Dinner', time: '19:00' },
+  { name: 'Bedtime', time: '21:00' }
 ];
+
+const to24HourTime = (value?: string): string | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (/^\d{2}:\d{2}$/.test(trimmed)) return trimmed;
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+  if (!match) return null;
+  let hour = parseInt(match[1], 10);
+  const minute = match[2];
+  const meridiem = match[3].toLowerCase();
+  if (meridiem === 'pm' && hour !== 12) hour += 12;
+  if (meridiem === 'am' && hour === 12) hour = 0;
+  return `${String(hour).padStart(2, '0')}:${minute}`;
+};
 
 export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, duration = 7, startDate, initialMeals, initialMealTypes, clientId, clientName, readOnly = false, clientDietaryRestrictions, clientMedicalConditions, clientAllergies, holdDays = [], totalHeldDays = 0 }: DietPlanDashboardProps) {
   // Get session for role-based export visibility
@@ -231,16 +245,19 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         meals: initialMeals[i]?.meals || {},
         note: initialMeals[i]?.note || ''
       })));
-    } else {
-      // Reset to empty days
-      setWeekPlan(newDays);
     }
+    // Note: Don't reset to empty days here - let the draft restore handle empty state
+    // This prevents overwriting draft data that may have been restored
   }, [initialMealsKey, duration]);
 
   // Update mealTypeConfigs when initialMealTypes changes
   useEffect(() => {
     if (initialMealTypes && initialMealTypes.length > 0) {
-      setMealTypeConfigs(initialMealTypes);
+      const normalized = initialMealTypes.map((meal) => ({
+        ...meal,
+        time: to24HourTime(meal.time) || meal.time
+      }));
+      setMealTypeConfigs(normalized);
     }
   }, [initialMealTypes]);
 
@@ -351,10 +368,30 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         );
         
         if (hasData && !initialMeals?.length) {
-          setWeekPlan(draft.weekPlan);
-          if (draft.mealTypeConfigs) {
-            setMealTypeConfigs(draft.mealTypeConfigs);
-          }
+          const normalizedMealTypes = (draft.mealTypeConfigs || defaultMealTypes).map((meal: MealTypeConfig) => ({
+            ...meal,
+            time: to24HourTime(meal.time) || meal.time
+          }));
+
+          const mealTimeMap = new Map(normalizedMealTypes.map((meal: MealTypeConfig) => [meal.name, meal.time]));
+          const normalizedWeekPlan = draft.weekPlan.map((day: DayPlan) => {
+            const meals = { ...day.meals } as Record<string, Meal>;
+            Object.keys(meals).forEach((mealName) => {
+              const current = meals[mealName];
+              if (!current) return;
+              const normalizedTime = to24HourTime(current.time) ?? current.time;
+              const fallbackTime = mealTimeMap.get(mealName) || '12:00';
+              const resolvedTime = (normalizedTime || fallbackTime) as string;
+              meals[mealName] = {
+                ...current,
+                time: resolvedTime
+              };
+            });
+            return { ...day, meals };
+          });
+
+          setWeekPlan(normalizedWeekPlan);
+          setMealTypeConfigs(normalizedMealTypes);
           setHasDraft(true);
           setLastSaved(draft.lastSaved ? new Date(draft.lastSaved) : null);
           

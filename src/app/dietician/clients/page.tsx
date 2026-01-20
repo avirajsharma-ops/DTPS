@@ -37,6 +37,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { getClientId } from '@/lib/utils';
+import { log } from 'console';
 
 interface Client {
   _id: string;
@@ -99,7 +100,7 @@ export default function DieticianClientsPage() {
     gender: '',
     dateOfBirth: '',
   });
-
+console.log('Render DieticianClientsPage with clients:', clients);
   // Only fetch when session is authenticated and user ID is available
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {

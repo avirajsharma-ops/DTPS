@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
+import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
@@ -60,10 +61,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const clients = await withCache(
+    const clientsData = await withCache(
       `users:clients:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await User.find(query)
-        .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors status clientStatus createdAt createdBy')
+        .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors status clientStatus createdAt createdBy tags')
         .populate('assignedDietitian', 'firstName lastName email avatar')
         .populate('assignedDietitians', 'firstName lastName email avatar')
         .populate('assignedHealthCounselor', 'firstName lastName email avatar')
@@ -78,6 +79,50 @@ export async function GET(request: NextRequest) {
         .skip((page - 1) * limit),
       { ttl: 120000, tags: ['users'] }
     );
+
+    // Fetch meal plan data for all clients to get programStart, programEnd, lastDiet
+    const clientIds = clientsData.map((c: any) => c._id);
+    
+    // Get meal plan info for each client
+    const mealPlanData = await ClientMealPlan.aggregate([
+      { $match: { clientId: { $in: clientIds } } },
+      { $sort: { startDate: 1 } },
+      {
+        $group: {
+          _id: '$clientId',
+          // First meal plan start date (earliest)
+          programStart: { $first: '$startDate' },
+          // Last meal plan end date (latest)
+          programEnd: { $last: '$endDate' },
+          // Last meal plan info for lastDiet display
+          lastPlanDate: { $last: '$updatedAt' },
+          lastPlanName: { $last: '$name' },
+          lastPlanStatus: { $last: '$status' }
+        }
+      }
+    ]);
+
+    // Create a map of clientId to meal plan data
+    const mealPlanMap = new Map();
+    mealPlanData.forEach((mp: any) => {
+      mealPlanMap.set(mp._id.toString(), {
+        programStart: mp.programStart,
+        programEnd: mp.programEnd,
+        lastDiet: mp.lastPlanDate ? `${mp.lastPlanName || 'Diet Plan'}` : null
+      });
+    });
+
+    // Merge meal plan data into clients
+    const clients = clientsData.map((client: any) => {
+      const clientObj = client.toObject ? client.toObject() : client;
+      const mealData = mealPlanMap.get(clientObj._id.toString());
+      return {
+        ...clientObj,
+        programStart: mealData?.programStart || null,
+        programEnd: mealData?.programEnd || null,
+        lastDiet: mealData?.lastDiet || null
+      };
+    });
 
     const total = await User.countDocuments(query);
 
@@ -99,4 +144,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
- 

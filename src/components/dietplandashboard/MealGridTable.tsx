@@ -84,12 +84,6 @@ function formatNotesDisplay(note: string): string[] {
 }
 
 export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, onExport, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
-  // Debug logging
-  if (weekPlan[0]?.meals) {
-    const firstMealType = Object.keys(weekPlan[0].meals)[0];
-    if (firstMealType) {
-    }
-  }
   
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copySource, setCopySource] = useState<{ dayIndex: number; mealType: string } | null>(null);
@@ -159,7 +153,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     foodOptions: [
       {
         id: Math.random().toString(36).substr(2, 9),
-        label: 'A Food',
+        label: '',
         food: '',
         unit: '',
         cal: '',
@@ -184,14 +178,14 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     const newWeekPlan = [...weekPlan];
     const existingMeal = newWeekPlan[dayIndex].meals[mealType];
     if (!existingMeal) {
-      // Create brand new meal with initial A option
+      // Create brand new meal with initial option
       newWeekPlan[dayIndex].meals[mealType] = createNewMeal(mealType);
       onUpdate(newWeekPlan);
     } else if (existingMeal.foodOptions.length === 0) {
       // Re-initialize empty meal with first option
       existingMeal.foodOptions.push({
         id: Math.random().toString(36).substr(2, 9),
-        label: 'A Food',
+        label: '',
         food: '',
         unit: '',
         cal: '',
@@ -228,10 +222,9 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     const newWeekPlan = [...weekPlan];
     const meal = newWeekPlan[dayIndex].meals[mealType];
     if (meal) {
-      const nextLetter = String.fromCharCode(65 + meal.foodOptions.length);
       meal.foodOptions.push({
         id: Math.random().toString(36).substr(2, 9),
-        label: `${nextLetter} Food`,
+        label: '',
         food: '',
         unit: '',
         cal: '',
@@ -407,7 +400,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
           foodOptions: [
             {
               id: Math.random().toString(36).substr(2, 9),
-              label: 'A Food',
+              label: '',
               food: '',
               unit: '',
               cal: '',
@@ -425,8 +418,16 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
 
     // Store custom time and compute position based on time ordering
     setCustomMealTimes(prev => ({ ...prev, [name]: time }));
-    const timeFor = (mt: string) => (mt === name ? time : (customMealTimes[mt] || mealTimeSuggestions[mt] || '12:00'));
-    const sorted = [...mealTypes, name].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=> timeFor(a).localeCompare(timeFor(b)));
+    
+    // Use getMealTypeTime for consistent sorting
+    const getMealTime = (mt: string) => {
+      if (mt === name) return time;
+      for (const day of weekPlan) {
+        if (day.meals[mt]?.time) return day.meals[mt].time;
+      }
+      return customMealTimes[mt] || mealTimeSuggestions[mt] || '12:00';
+    };
+    const sorted = [...mealTypes, name].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=> getMealTime(a).localeCompare(getMealTime(b)));
     const position = sorted.indexOf(name);
     onAddMealType(name, position);
 
@@ -451,9 +452,20 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     : null;
   const selectedDay = activeFoodDetail ? weekPlan[activeFoodDetail.dayIndex] : null;
 
-  // Sort header meal types by time
-  const timeForHeader = (mt: string) => customMealTimes[mt] || mealTimeSuggestions[mt] || '12:00';
-  const displayMealTypes = [...mealTypes].sort((a,b)=> timeForHeader(a).localeCompare(timeForHeader(b)));
+  // Build time map from meal cells - use the first occurrence of each meal type's time
+  const getMealTypeTime = (mealType: string): string => {
+    // First check if there's a time set in any day's meal
+    for (const day of weekPlan) {
+      if (day.meals[mealType]?.time) {
+        return day.meals[mealType].time;
+      }
+    }
+    // Fall back to custom times or suggestions
+    return customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00';
+  };
+
+  // Sort header meal types by time (from meal cells)
+  const displayMealTypes = [...mealTypes].sort((a, b) => getMealTypeTime(a).localeCompare(getMealTypeTime(b)));
 
   // Collect unique food names across plan for find options
   const availableFoods: string[] = Array.from(new Set(
@@ -492,9 +504,9 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
           meal.foodOptions = meal.foodOptions.filter(opt =>
             opt.food.trim().toLowerCase() !== findValue.toLowerCase()
           );
-          // Relabel remaining options
+          // Clear labels for remaining options
           meal.foodOptions.forEach((opt, i) => {
-            opt.label = `${String.fromCharCode(65 + i)} Food`;
+            opt.label = '';
           });
         } else {
           // Replace matching food options
@@ -527,10 +539,10 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     setShowReplaceDropdown(false);
   };
 
-  // Helper to relabel options sequentially A, B, C ...
+  // Helper to clear labels on options
   const relabelOptions = (meal: Meal) => {
     meal.foodOptions.forEach((opt, idx) => {
-      opt.label = `${String.fromCharCode(65 + idx)} Food`;
+      opt.label = '';
     });
   };
 
@@ -749,28 +761,19 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               {displayMealTypes.map((mealType, index) => (
                 <React.Fragment key={mealType}>
                   <th className="border-r border-b-2 border-gray-300 p-5 bg-slate-50 min-w-70">
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs">{mealType}</div>
-                        {!readOnly && onRemoveMealType && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onRemoveMealType(mealType)}
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                            title={`Delete ${mealType}`}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <Input
-                        type="time"
-                        value={customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00'}
-                        onChange={(e) => updateMealTypeTime(mealType, e.target.value)}
-                        className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                        title="Default time for this meal type"
-                      />
+                    <div className="flex items-center justify-between">
+                      <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs">{mealType}</div>
+                      {!readOnly && onRemoveMealType && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onRemoveMealType(mealType)}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          title={`Delete ${mealType}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </th>
                 </React.Fragment>
@@ -953,8 +956,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                   onDragStart={(e) => handleDragStart(e, actualDayIndex, mealType, optionIndex, !!option.food)}
                                   style={{ display: !meal.showAlternatives && optionIndex > 0 ? 'none' : 'block' }}
                                 >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-semibold text-slate-700 px-2.5 py-1 bg-white rounded border border-slate-300 uppercase tracking-wider">{option.label}</span>
+                                  <div className="flex items-center justify-end mb-2">
                                     <div className="flex space-x-1">
                                       <Button
                                         variant="ghost"

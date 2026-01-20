@@ -1,4 +1,4 @@
-# DTPS Database Schema Documentation
+`# DTPS Database Schema Documentation
 
 **Complete MongoDB Collections & Schema Reference**
 
@@ -740,3 +740,4 @@ Common status patterns:
 
 **Last Updated:** January 19, 2026  
 **Total Collections:** 17+
+`
