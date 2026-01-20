@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only dietitians, health counselors, and admins can access client list
+    // Only dietitians,
+    //  health counselors, and admins can access client list
     const userRole = session.user.role?.toLowerCase();
     if (userRole !== 'dietitian' && userRole !== 'health_counselor' && userRole !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
