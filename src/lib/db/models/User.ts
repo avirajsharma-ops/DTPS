@@ -161,13 +161,15 @@ const userSchema = new Schema({
   anniversary: { type: Date },
   source: {
     type: String,
-    enum: ['google_ads', 'facebook_ads', 'instagram', 'referral', 'other', '']
+    // enum: ['google_ads', 'facebook_ads', 'instagram', 'referral', 'other', '']
   },
   referralSource: { type: String },
   maritalStatus: { type: String },
   occupation: { type: String },
   targetWeightBucket: { type: String },
   sharePhotoConsent: { type: Boolean, default: false },
+  // NOTE: Physical measurements (height, weight, BMI) are stored in LifestyleInfo model
+  // NOTE: Medical data (conditions, allergies, restrictions) are stored in MedicalInfo model
   height: {
     type: Number,
     min: 0
@@ -176,22 +178,13 @@ const userSchema = new Schema({
     type: Number,
     min: 0
   },
-  // Physical measurement fields (moved from lifestyle)
-  heightFeet: { type: String },
-  heightInch: { type: String },
-  heightCm: { type: String },
-  weightKg: { type: String },
-  targetWeightKg: { type: String },
-  idealWeightKg: { type: String },
-  bmi: { type: String },
+  // DEPRECATED: These fields moved to LifestyleInfo - keeping for backward compatibility
+  // Use LifestyleInfo model for new data
+  // heightFeet, heightInch, heightCm, weightKg, targetWeightKg, idealWeightKg, bmi - see LifestyleInfo
   bmiCategory: {
     type: String,
     enum: ['', 'Underweight', 'Normal', 'Overweight', 'Obese'],
     default: ''
-  },
-  activityLevel: {
-    type: String,
-    enum: ['', 'sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active']
   },
   healthGoals: [{
     type: String
@@ -226,15 +219,9 @@ const userSchema = new Schema({
     targetWeight: { type: Number },
     currentWeight: { type: Number }
   },
-  medicalConditions: [{
-    type: String
-  }],
-  allergies: [{
-    type: String
-  }],
-  dietaryRestrictions: [{
-    type: String
-  }],
+  // DEPRECATED: These fields moved to MedicalInfo - keeping for backward compatibility
+  // Use MedicalInfo model for new data
+  // medicalConditions, allergies, dietaryRestrictions - see MedicalInfo
   assignedDietitian: {
     type: Schema.Types.ObjectId,
     ref: 'User'
