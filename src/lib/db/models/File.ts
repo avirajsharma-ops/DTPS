@@ -22,16 +22,30 @@ const FileSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  // DEPRECATED: No longer store base64 data in MongoDB to save space
+  // All files should be uploaded to ImageKit instead
+  // Keeping field for backward compatibility with old records
   data: {
-    type: String, // Base64 encoded file data
-    required: false // Make optional for ImageKit uploads
+    type: String,
+    default: '' // Empty by default - don't store file content in MongoDB
   },
   type: {
     type: String,
-    enum: ['avatar', 'document', 'recipe-image', 'message', 'progress-photo', 'progress', 'note-attachment', 'medical-report'],
+    enum: ['avatar', 'document', 'recipe-image', 'message', 'progress-photo', 'progress', 'note-attachment', 'medical-report', 'ecommerce', 'bug', 'transformation'],
     required: true
   },
+  // Primary storage location - prefer ImageKit URL
   localPath: {
+    type: String,
+    default: null
+  },
+  // ImageKit file ID for management (delete, update)
+  imageKitFileId: {
+    type: String,
+    default: null
+  },
+  // ImageKit URL for direct access
+  imageKitUrl: {
     type: String,
     default: null
   },
@@ -55,5 +69,15 @@ const FileSchema = new mongoose.Schema({
 // Index for faster queries
 FileSchema.index({ uploadedBy: 1, type: 1 });
 FileSchema.index({ filename: 1 });
+FileSchema.index({ imageKitFileId: 1 });
+
+// Virtual to get the best available URL
+FileSchema.virtual('url').get(function() {
+  return this.imageKitUrl || this.localPath || (this.data ? `/api/files/${this._id}` : null);
+});
+
+// Ensure virtuals are included when converting to JSON
+FileSchema.set('toJSON', { virtuals: true });
+FileSchema.set('toObject', { virtuals: true });
 
 export const File = mongoose.model('File', FileSchema);
