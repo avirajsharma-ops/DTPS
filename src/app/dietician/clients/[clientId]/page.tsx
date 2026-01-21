@@ -1449,13 +1449,14 @@ export default function ClientDetailPage() {
     }
   }, []);
 
-  // Toggle tag for client
+  // Toggle tag for client (single tag mode - only one tag allowed)
   const handleToggleClientTag = async (tagId: string) => {
     try {
       const isSelected = clientTagIds.includes(tagId);
+      // Single tag mode: If clicking the same tag, remove it. If clicking a different tag, replace it.
       const newTagIds = isSelected 
-        ? clientTagIds.filter(id => id !== tagId)
-        : [...clientTagIds, tagId];
+        ? [] // Remove if already selected
+        : [tagId]; // Replace with new tag (single tag only)
       
       setClientTagIds(newTagIds);
 
@@ -1471,7 +1472,16 @@ export default function ClientDetailPage() {
         setClientTagIds(clientTagIds);
         toast.error('Failed to update tags');
       } else {
-        toast.success(isSelected ? 'Tag removed' : 'Tag added');
+        if (isSelected) {
+          toast.success('Tag removed');
+        } else {
+          // If a tag was already assigned, show replacement message
+          if (clientTagIds.length > 0) {
+            toast.success('Tag replaced successfully');
+          } else {
+            toast.success('Tag assigned');
+          }
+        }
       }
     } catch (error) {
       console.error('Error updating tags:', error);
@@ -2949,7 +2959,7 @@ export default function ClientDetailPage() {
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-gray-900">Manage Tags</h2>
-                <p className="text-xs text-gray-500">{clientTagIds.length} tags assigned</p>
+                <p className="text-xs text-gray-500">{clientTagIds.length > 0 ? '1 tag assigned' : 'No tag assigned'}</p>
               </div>
             </div>
             <Button 
@@ -2964,6 +2974,14 @@ export default function ClientDetailPage() {
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4">
+            {/* Info Message */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-700 flex items-start gap-2">
+                <span className="mt-0.5 font-semibold">ℹ</span>
+                <span><strong>Single tag only:</strong> You can assign only one tag at a time. To use a different tag, remove the current one first.</span>
+              </p>
+            </div>
+
             {loadingTags ? (
               <div className="flex items-center justify-center py-8">
                 <LoadingSpinner className="h-6 w-6" />
