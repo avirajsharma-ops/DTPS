@@ -4,7 +4,7 @@
             "outputFile": "com.dtps.dietary.app-mergeReleaseResources-43:/values-v33/values-v33.xml",
             "map": [
                 {
-                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/9057b88b4308496b69c7a2171c2ccc6c/transformed/core-splashscreen-1.2.0/res/values-v33/values-v33.xml",
+                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/207942bb1927d0d0e584496804346d22/transformed/core-splashscreen-1.2.0-alpha02/res/values-v33/values-v33.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

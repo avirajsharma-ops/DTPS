@@ -4,7 +4,7 @@
             "outputFile": "com.dtps.dietary.app-mergeDebugResources-43:/values-v35/values-v35.xml",
             "map": [
                 {
-                    "source": "/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/res/values-v35/themes.xml",
+                    "source": "/Users/apple/Desktop/DTPS/mobile-app/android/app/src/main/res/values-v35/themes.xml",
                     "from": {
                         "startLines": "5,19",
                         "startColumns": "4,4",

@@ -4,7 +4,7 @@
             "outputFile": "com.dtps.dietary.app-mergeReleaseResources-43:/values-ldrtl-v17/values-ldrtl-v17.xml",
             "map": [
                 {
-                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/e12e6121c60bb016a37e431ff0e25c65/transformed/material-1.12.0/res/values-ldrtl-v17/values-ldrtl-v17.xml",
+                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/922e8ec765320ee27533f8625155af65/transformed/material-1.12.0/res/values-ldrtl-v17/values-ldrtl-v17.xml",
                     "from": {
                         "startLines": "2,3",
                         "startColumns": "4,4",

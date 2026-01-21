@@ -4,15 +4,15 @@
     "type": "LINKED_RESOURCES_BINARY_FORMAT",
     "kind": "Directory"
   },
-  "applicationId": "first.dtps.com",
+  "applicationId": "app.dtps.com",
   "variantName": "debug",
   "elements": [
     {
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 3,
-      "versionName": "1.2.0",
+      "versionCode": 1,
+      "versionName": "2.0.0",
       "outputFile": "linked-resources-binary-format-debug.ap_"
     }
   ],

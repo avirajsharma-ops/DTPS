@@ -1,24 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="first.dtps.com"
-    android:versionCode="3"
-    android:versionName="1.2.0" >
+    package="app.dtps.com"
+    android:versionCode="1"
+    android:versionName="2.0.0" >
 
     <uses-sdk
         android:minSdkVersion="24"
         android:targetSdkVersion="35" />
 
-    <!-- Permissions -->
+    <!-- Core Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
-    <!-- Features -->
+    <!-- Camera Permission - For uploading meal photos and profile pictures -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Media Permissions - For selecting photos from gallery for meal tracking -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!-- Audio Permission - For video consultations with dietitian -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- Hardware Features (all optional) -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -37,10 +46,10 @@
     <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" />
 
     <permission
-        android:name="first.dtps.com.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:name="app.dtps.com.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
         android:protectionLevel="signature" />
 
-    <uses-permission android:name="first.dtps.com.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+    <uses-permission android:name="app.dtps.com.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 
     <application
         android:name="com.dtps.dietary.DTPSApplication"
@@ -95,7 +104,7 @@
         <!-- FileProvider for camera photos -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="first.dtps.com.fileprovider"
+            android:authorities="app.dtps.com.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true" >
             <meta-data
@@ -133,7 +142,7 @@
 
         <provider
             android:name="androidx.startup.InitializationProvider"
-            android:authorities="first.dtps.com.androidx-startup"
+            android:authorities="app.dtps.com.androidx-startup"
             android:exported="false" >
             <meta-data
                 android:name="androidx.emoji2.text.EmojiCompatInitializer"
@@ -209,7 +218,7 @@
 
         <provider
             android:name="com.google.firebase.provider.FirebaseInitProvider"
-            android:authorities="first.dtps.com.firebaseinitprovider"
+            android:authorities="app.dtps.com.firebaseinitprovider"
             android:directBootAware="true"
             android:exported="false"
             android:initOrder="100" />

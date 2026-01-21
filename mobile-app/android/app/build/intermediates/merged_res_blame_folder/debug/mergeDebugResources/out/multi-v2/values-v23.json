@@ -4,18 +4,7 @@
             "outputFile": "com.dtps.dietary.app-mergeDebugResources-43:/values-v23/values-v23.xml",
             "map": [
                 {
-                    "source": "/Users/lokeshdhote/.gradle/caches/8.11.1/transforms/746360d87f52895ea8b68142c07ae745/transformed/appcompat-1.7.0/res/values-v23/values-v23.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,20,34,35,36,39,43,44,45,46",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,190,325,400,487,1225,1975,2094,2221,2443,2667,2782,2889,3002",
-                        "endLines": "2,3,4,5,19,33,34,35,38,42,43,44,45,49",
-                        "endColumns": "134,134,74,86,12,12,118,126,12,12,114,106,112,12",
-                        "endOffsets": "185,320,395,482,1220,1970,2089,2216,2438,2662,2777,2884,2997,3227"
-                    }
-                },
-                {
-                    "source": "/Users/lokeshdhote/.gradle/caches/8.11.1/transforms/e12e6121c60bb016a37e431ff0e25c65/transformed/material-1.12.0/res/values-v23/values-v23.xml",
+                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/922e8ec765320ee27533f8625155af65/transformed/material-1.12.0/res/values-v23/values-v23.xml",
                     "from": {
                         "startLines": "2,5,9,13,16,19,22,25,28,32",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4",
@@ -34,7 +23,18 @@
                     }
                 },
                 {
-                    "source": "/Users/lokeshdhote/.gradle/caches/8.11.1/transforms/477d899c28349f45deba782f12c4a143/transformed/cardview-1.0.0/res/values-v23/values-v23.xml",
+                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/1544b4c080d325fcc765e5ed11aa8b94/transformed/appcompat-1.7.0/res/values-v23/values-v23.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,20,34,35,36,39,43,44,45,46",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,190,325,400,487,1225,1975,2094,2221,2443,2667,2782,2889,3002",
+                        "endLines": "2,3,4,5,19,33,34,35,38,42,43,44,45,49",
+                        "endColumns": "134,134,74,86,12,12,118,126,12,12,114,106,112,12",
+                        "endOffsets": "185,320,395,482,1220,1970,2089,2216,2438,2662,2777,2884,2997,3227"
+                    }
+                },
+                {
+                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/6bbf899afb43bca22330707b82583f3f/transformed/cardview-1.0.0/res/values-v23/values-v23.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

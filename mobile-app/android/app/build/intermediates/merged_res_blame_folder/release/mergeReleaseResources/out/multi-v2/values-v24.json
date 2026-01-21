@@ -4,7 +4,7 @@
             "outputFile": "com.dtps.dietary.app-mergeReleaseResources-43:/values-v24/values-v24.xml",
             "map": [
                 {
-                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/e12e6121c60bb016a37e431ff0e25c65/transformed/material-1.12.0/res/values-v24/values-v24.xml",
+                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/922e8ec765320ee27533f8625155af65/transformed/material-1.12.0/res/values-v24/values-v24.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,9,12,15",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -23,7 +23,7 @@
                     }
                 },
                 {
-                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/746360d87f52895ea8b68142c07ae745/transformed/appcompat-1.7.0/res/values-v24/values-v24.xml",
+                    "source": "/Users/apple/.gradle/caches/8.11.1/transforms/1544b4c080d325fcc765e5ed11aa8b94/transformed/appcompat-1.7.0/res/values-v24/values-v24.xml",
                     "from": {
                         "startLines": "2,3",
                         "startColumns": "4,4",
