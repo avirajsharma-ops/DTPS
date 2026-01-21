@@ -111,11 +111,11 @@ const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Sat
 
 const defaultMealTypes: MealTypeConfig[] = [
   { name: 'Breakfast', time: '07:00' },
-  { name: 'Mid Morning', time: '10:00' },
+  { name: 'Mid Morning', time: '09:00' },
   { name: 'Lunch', time: '13:00' },
-  { name: 'Evening Snack', time: '16:00' },
-  { name: 'Dinner', time: '19:00' },
-  { name: 'Bedtime', time: '21:00' }
+  { name: 'Evening Snack', time: '17:00' },
+  { name: 'Dinner', time: '21:00' },
+  { name: 'Bedtime', time: '23:00' }
 ];
 
 const to24HourTime = (value?: string): string | null => {
@@ -361,13 +361,14 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         return;
       }
       
-      // Only restore if we have actual data and it's different from initialMeals
+      // Always restore draft if it exists and has data, regardless of initialMeals
+      // This allows users to recover work in progress even when editing existing meals
       if (draft.weekPlan && draft.weekPlan.length > 0) {
         const hasData = draft.weekPlan.some((day: DayPlan) => 
           Object.keys(day.meals).length > 0 || day.note
         );
         
-        if (hasData && !initialMeals?.length) {
+        if (hasData) {
           const normalizedMealTypes = (draft.mealTypeConfigs || defaultMealTypes).map((meal: MealTypeConfig) => ({
             ...meal,
             time: to24HourTime(meal.time) || meal.time
@@ -407,7 +408,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       console.error('Failed to restore diet plan draft:', error);
       setDraftRestored(true);
     }
-  }, [draftKey, draftRestored, readOnly, session?.user?.id, initialMeals]);
+  }, [draftKey, draftRestored, readOnly, session?.user?.id]);
   
   // Clear draft function
   const handleClearDraft = useCallback(() => {
@@ -626,6 +627,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
           onRemoveDay={readOnly ? undefined : handleRemoveDay}
           onExport={canExport ? () => setExportDialogOpen(true) : undefined}
           readOnly={readOnly}
+          clientName={clientName}
           clientDietaryRestrictions={dietaryRestrictions}
           clientMedicalConditions={medicalConditions}
           clientAllergies={allergies}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -226,6 +226,80 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
   useEffect(() => {
     checkPaymentStatus();
   }, [client._id]);
+
+  // Draft key and auto-save for plan creation/editing
+  const planFormDraftKey = useMemo(() => {
+    return `dietPlan_formDraft_${client._id}_${isEditMode && editingPlan?._id ? editingPlan._id : 'new'}`;
+  }, [client._id, isEditMode, editingPlan?._id]);
+
+  const FORM_DRAFT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+  // Auto-save form data to localStorage (runs every 2 seconds when data changes)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined' && (step === 'form' || step === 'meals') && planTitle.trim()) {
+        try {
+          const formDraftData = {
+            step,
+            planTitle,
+            description,
+            duration,
+            startDate,
+            endDate,
+            primaryGoal,
+            initialMeals,
+            initialMealTypes,
+            selectedTemplate: selectedTemplate ? {
+              _id: selectedTemplate._id,
+              name: selectedTemplate.name
+            } : null,
+            expiresAt: Date.now() + FORM_DRAFT_EXPIRY_MS,
+            lastSaved: new Date().toISOString()
+          };
+          localStorage.setItem(planFormDraftKey, JSON.stringify(formDraftData));
+        } catch (error) {
+          console.error('Failed to save plan form draft:', error);
+        }
+      }
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [planTitle, description, duration, startDate, endDate, primaryGoal, initialMeals, initialMealTypes, selectedTemplate, step, planFormDraftKey]);
+
+  // Restore form draft on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !isEditMode) {
+      try {
+        const saved = localStorage.getItem(planFormDraftKey);
+        if (saved) {
+          const draftData = JSON.parse(saved);
+          // Check if draft hasn't expired
+          if (draftData.expiresAt && Date.now() < draftData.expiresAt) {
+            if (draftData.planTitle) {
+              setPlanTitle(draftData.planTitle);
+              setDescription(draftData.description || '');
+              setDuration(draftData.duration || 7);
+              setStartDate(draftData.startDate || format(new Date(), 'yyyy-MM-dd'));
+              setEndDate(draftData.endDate || format(addDays(new Date(), 6), 'yyyy-MM-dd'));
+              setPrimaryGoal(draftData.primaryGoal || 'weight-loss');
+              if (draftData.initialMeals?.length > 0) {
+                setInitialMeals(draftData.initialMeals);
+              }
+              if (draftData.initialMealTypes?.length > 0) {
+                setInitialMealTypes(draftData.initialMealTypes);
+              }
+              // Move to last saved step
+              if (draftData.step) {
+                setStep(draftData.step);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to restore plan form draft:', error);
+      }
+    }
+  }, [planFormDraftKey, isEditMode]);
 
   // Calculate end date when duration or start date changes
   useEffect(() => {

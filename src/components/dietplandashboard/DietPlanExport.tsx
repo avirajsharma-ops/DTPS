@@ -28,6 +28,7 @@ interface DietPlanExportProps {
 
 export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, duration, startDate, externalOpen, onExternalOpenChange }: DietPlanExportProps) {
   const [internalOpen, setInternalOpen] = useState(false);
+  const [exportFor, setExportFor] = useState<'dietitian' | 'client'>('dietitian');
   
   // Support both internal and external open state
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
@@ -40,6 +41,46 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
   };
   
   const [exportFormat, setExportFormat] = useState<'html' | 'csv' | 'pdf' | 'print'>('pdf');
+
+  // Helper function to get meal time from first occurrence
+  const getMealTime = (mealType: string): string => {
+    for (const day of weekPlan) {
+      if (day.meals[mealType]?.time) {
+        return day.meals[mealType].time;
+      }
+    }
+    return '12:00';
+  };
+
+  // Helper function to convert time string to numeric for sorting
+  const getTimeNumericValue = (timeStr: string): number => {
+    if (!timeStr) return 1200;
+    if (timeStr.includes(':')) {
+      const [hours, minutes] = timeStr.split(':');
+      return parseInt(hours, 10) * 100 + parseInt(minutes, 10);
+    }
+    return 1200;
+  };
+
+  // Get all unique meal types from weekPlan and sort by time
+  const getAllMealTypesSorted = (): string[] => {
+    const allMealTypes = new Set<string>();
+    weekPlan.forEach(day => {
+      Object.keys(day.meals).forEach(mt => {
+        const meal = day.meals[mt];
+        // Only include if it has food
+        if (meal?.foodOptions?.some(opt => opt.food?.trim())) {
+          allMealTypes.add(mt);
+        }
+      });
+    });
+    
+    return Array.from(allMealTypes).sort((a, b) => {
+      const timeA = getMealTime(a);
+      const timeB = getMealTime(b);
+      return getTimeNumericValue(timeA) - getTimeNumericValue(timeB);
+    });
+  };
 
   // Calculate daily totals
   const calculateDayTotals = (day: DayPlan) => {
@@ -60,8 +101,21 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
   };
 
   // Generate HTML table structure
-  const generateHTMLContent = useCallback(() => {
+  const generateHTMLContent = useCallback((showMacros: boolean = true) => {
     const today = format(new Date(), 'dd MMM yyyy');
+    const includeMacrosStyle = showMacros ? '' : `
+    .macro-cell { display: none !important; }
+    thead tr th:nth-child(3),
+    thead tr th:nth-child(4),
+    thead tr th:nth-child(5),
+    thead tr th:nth-child(6),
+    thead tr th:nth-child(7),
+    tbody tr td:nth-child(3),
+    tbody tr td:nth-child(4),
+    tbody tr td:nth-child(5),
+    tbody tr td:nth-child(6),
+    tbody tr td:nth-child(7) { display: none !important; }
+    `;
     
     return `
 <!DOCTYPE html>
@@ -77,6 +131,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #16a34a; padding-bottom: 20px; }
     .header h1 { color: #16a34a; font-size: 28px; margin-bottom: 10px; }
     .header p { color: #666; font-size: 14px; }
+    .export-type { font-size: 12px; color: #16a34a; font-weight: 600; margin-top: 5px; }
     .client-info { background: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
     .client-info-item { font-size: 13px; }
     .client-info-item strong { color: #16a34a; }
@@ -106,6 +161,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     .summary-value { font-size: 24px; font-weight: 700; color: #16a34a; }
     .summary-label { font-size: 12px; color: #6b7280; }
     .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; }
+    ${includeMacrosStyle}
     @media print {
       body { padding: 0; background: white; }
       .container { box-shadow: none; padding: 10px; }
@@ -118,6 +174,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     <div class="header">
       <h1>🥗 Personalized Diet Plan</h1>
       <p><strong>${clientName || 'Client'}</strong> | Generated on ${today} | ${duration} Days Plan</p>
+      <div class="export-type">${showMacros ? '📋 Dietitian Version (with nutritional info)' : '👤 Client Version (meal plan only)'}</div>
     </div>
 
     ${clientInfo ? `
@@ -166,41 +223,44 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
             </tr>
           </thead>
           <tbody>
-            ${mealTypes.map(mealType => {
-              const meal = day.meals[mealType];
-              if (!meal) return '';
-              
-              const primaryFood = meal.foodOptions?.[0];
-              const alternatives = meal.foodOptions?.slice(1) || [];
-              
-              if (!primaryFood) return '';
-              
-              return `
-              <tr>
-                <td>
-                  <div class="meal-name">${mealType}</div>
-                  <div class="meal-time">${meal.time || ''}</div>
-                </td>
-                <td>
-                  <div class="food-item">
-                    <span class="food-name">${primaryFood.food || '-'}</span>
-                    ${primaryFood.unit ? `<span class="food-qty">(${primaryFood.unit})</span>` : ''}
-                  </div>
-                  ${alternatives.length > 0 ? `
-                  <div class="alternatives">
-                    <span class="alternatives-label">Alternatives:</span>
-                    ${alternatives.map((alt, i) => `${alt.food || '-'}${alt.unit ? ` (${alt.unit})` : ''}`).join(' | ')}
-                  </div>
-                  ` : ''}
-                </td>
-                <td class="macro-cell"><div class="macro-value">${primaryFood.cal || '0'}</div></td>
-                <td class="macro-cell"><div class="macro-value">${primaryFood.carbs || '0'}</div></td>
-                <td class="macro-cell"><div class="macro-value">${primaryFood.protein || '0'}</div></td>
-                <td class="macro-cell"><div class="macro-value">${primaryFood.fats || '0'}</div></td>
-                <td class="macro-cell"><div class="macro-value">${primaryFood.fiber || '0'}</div></td>
-              </tr>
-              `;
-            }).join('')}
+            ${(() => {
+              const allMealTypes = getAllMealTypesSorted();
+              return allMealTypes.map(mealType => {
+                const meal = day.meals[mealType];
+                if (!meal) return '';
+                
+                const primaryFood = meal.foodOptions?.[0];
+                const alternatives = meal.foodOptions?.slice(1) || [];
+                
+                if (!primaryFood) return '';
+                
+                return `
+                <tr>
+                  <td>
+                    <div class="meal-name">${mealType}</div>
+                    <div class="meal-time">${meal.time || ''}</div>
+                  </td>
+                  <td>
+                    <div class="food-item">
+                      <span class="food-name">${primaryFood.food || '-'}</span>
+                      ${primaryFood.unit ? `<span class="food-qty">(${primaryFood.unit})</span>` : ''}
+                    </div>
+                    ${alternatives.length > 0 ? `
+                    <div class="alternatives">
+                      <span class="alternatives-label">Alternatives:</span>
+                      ${alternatives.map((alt, i) => `${alt.food || '-'}${alt.unit ? ` (${alt.unit})` : ''}`).join(' | ')}
+                    </div>
+                    ` : ''}
+                  </td>
+                  <td class="macro-cell"><div class="macro-value">${primaryFood.cal || '0'}</div></td>
+                  <td class="macro-cell"><div class="macro-value">${primaryFood.carbs || '0'}</div></td>
+                  <td class="macro-cell"><div class="macro-value">${primaryFood.protein || '0'}</div></td>
+                  <td class="macro-cell"><div class="macro-value">${primaryFood.fats || '0'}</div></td>
+                  <td class="macro-cell"><div class="macro-value">${primaryFood.fiber || '0'}</div></td>
+                </tr>
+                `;
+              }).join('');
+            })()}
             ${hasData ? `
             <tr class="totals-row">
               <td colspan="2" style="text-align: right;"><strong>Daily Total</strong></td>
@@ -259,7 +319,8 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     csv += 'Day,Date,Meal,Time,Food,Quantity,Calories,Carbs(g),Protein(g),Fats(g),Fiber(g),Notes\n';
     
     weekPlan.forEach(day => {
-      mealTypes.forEach(mealType => {
+      const allMealTypes = getAllMealTypesSorted();
+      allMealTypes.forEach(mealType => {
         const meal = day.meals[mealType];
         if (meal?.foodOptions?.[0]) {
           const opt = meal.foodOptions[0];
@@ -269,21 +330,23 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     });
     
     return csv;
-  }, [weekPlan, mealTypes, clientName, duration]);
+  }, [weekPlan, clientName, duration]);
 
   // Export handlers
   const handleExportHTML = useCallback(() => {
-    const html = generateHTMLContent();
+    const showMacros = exportFor === 'dietitian';
+    const html = generateHTMLContent(showMacros);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `diet-plan-${clientName?.replace(/\s+/g, '-') || 'export'}-${format(new Date(), 'yyyy-MM-dd')}.html`;
+    const suffix = exportFor === 'dietitian' ? 'dietitian' : 'client';
+    link.download = `diet-plan-${clientName?.replace(/\s+/g, '-') || 'export'}-${suffix}-${format(new Date(), 'yyyy-MM-dd')}.html`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success('Diet plan exported as HTML');
+    toast.success(`Diet plan exported as HTML (${exportFor} version)`);
     setOpen(false);
-  }, [generateHTMLContent, clientName]);
+  }, [generateHTMLContent, clientName, exportFor]);
 
   const handleExportCSV = useCallback(() => {
     const csv = generateCSVContent();
@@ -299,7 +362,8 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
   }, [generateCSVContent, clientName]);
 
   const handleExportPDF = useCallback(() => {
-    const html = generateHTMLContent();
+    const showMacros = exportFor === 'dietitian';
+    const html = generateHTMLContent(showMacros);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       // Add print-to-PDF optimized styles
@@ -317,15 +381,16 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
       printWindow.document.close();
       printWindow.onload = () => {
         // Show instructions for saving as PDF
-        toast.info('Use "Save as PDF" in the print dialog to download as PDF');
+        toast.info(`Use "Save as PDF" in the print dialog to download as PDF (${exportFor} version)`);
         printWindow.print();
       };
     }
     setOpen(false);
-  }, [generateHTMLContent]);
+  }, [generateHTMLContent, exportFor]);
 
   const handlePrint = useCallback(() => {
-    const html = generateHTMLContent();
+    const showMacros = exportFor === 'dietitian';
+    const html = generateHTMLContent(showMacros);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(html);
@@ -334,9 +399,9 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
         printWindow.print();
       };
     }
-    toast.success('Print dialog opened');
+    toast.success(`Print dialog opened (${exportFor} version)`);
     setOpen(false);
-  }, [generateHTMLContent]);
+  }, [generateHTMLContent, exportFor]);
 
   const handleExport = () => {
     switch (exportFormat) {
@@ -375,6 +440,33 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Export For</label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={exportFor === 'dietitian' ? 'default' : 'outline'}
+                  className={`flex-1 ${exportFor === 'dietitian' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                  onClick={() => setExportFor('dietitian')}
+                >
+                  📋 Dietitian
+                </Button>
+                <Button
+                  type="button"
+                  variant={exportFor === 'client' ? 'default' : 'outline'}
+                  className={`flex-1 ${exportFor === 'client' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                  onClick={() => setExportFor('client')}
+                >
+                  👤 Client
+                </Button>
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                {exportFor === 'dietitian' 
+                  ? '✓ Includes all nutritional data (calories, macros, fiber)' 
+                  : '✓ Meal plan only (no nutritional information)'}
+              </p>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Export Format</label>
               <Select value={exportFormat} onValueChange={(v: any) => setExportFormat(v)}>

@@ -194,8 +194,12 @@ export function TaskDetailModal({
             {availableTags.length === 0 ? (
               <p className="text-sm text-gray-500">No tags available</p>
             ) : (
-              <div className="space-y-2 max-h-50 overflow-y-auto">
-                <p className="text-xs text-gray-500">Select only one tag.</p>
+              <div className="space-y-3 max-h-50 overflow-y-auto">
+                <div className="bg-blue-50 border border-blue-200 p-2.5 rounded-md">
+                  <p className="text-xs text-blue-700 font-medium">
+                    ℹ️ Select one tag at a time. To use a different tag, remove the current one first.
+                  </p>
+                </div>
                 {availableTags.map(tag => (
                   <label
                     key={tag._id}

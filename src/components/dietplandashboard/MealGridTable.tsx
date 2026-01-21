@@ -38,17 +38,18 @@ type MealGridTableProps = {
   clientDietaryRestrictions?: string;
   clientMedicalConditions?: string;
   clientAllergies?: string;
+  clientName?: string; // Client name for display
   holdDays?: { originalDate: Date; holdStartDate: Date; holdDays: number; reason?: string }[];
   totalHeldDays?: number;
 };
 
 const mealTimeSuggestions: { [key: string]: string } = {
   'Breakfast': '07:00',
-  'Mid Morning': '10:00',
+  'Mid Morning': '09:00',
   'Lunch': '13:00',
-  'Evening Snack': '16:00',
-  'Dinner': '19:00',
-  'Bedtime': '21:00'
+  'Evening Snack': '17:00',
+  'Dinner': '21:00',
+  'Bedtime': '23:00'
 };
 
 const DAYS_PER_PAGE = 14;
@@ -83,7 +84,7 @@ function formatNotesDisplay(note: string): string[] {
   return note.split('.').map(s => s.trim()).filter(s => s.length > 0);
 }
 
-export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, onExport, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
+export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, onExport, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', clientName = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
   
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copySource, setCopySource] = useState<{ dayIndex: number; mealType: string } | null>(null);
@@ -125,6 +126,12 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   const [replaceSearchFilter, setReplaceSearchFilter] = useState('');
   const [showFindDropdown, setShowFindDropdown] = useState(false);
   const [showReplaceDropdown, setShowReplaceDropdown] = useState(false);
+  // Bulk time editor state
+  const [bulkTimeEditorOpen, setBulkTimeEditorOpen] = useState(false);
+  const [mealTimesForBulkEdit, setMealTimesForBulkEdit] = useState<{ [key: string]: string }>({});
+  // Remove meal type confirmation state
+  const [removeMealTypeDialogOpen, setRemoveMealTypeDialogOpen] = useState(false);
+  const [mealTypeToRemove, setMealTypeToRemove] = useState<string | null>(null);
 
   const totalPages = Math.ceil(weekPlan.length / DAYS_PER_PAGE);
   const startIndex = currentPage * DAYS_PER_PAGE;
@@ -464,8 +471,42 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     return customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00';
   };
 
-  // Sort header meal types by time (from meal cells)
-  const displayMealTypes = [...mealTypes].sort((a, b) => getMealTypeTime(a).localeCompare(getMealTypeTime(b)));
+  // Convert time string to numeric for proper sorting
+  const getTimeNumericValue = (timeStr: string): number => {
+    if (!timeStr) return 1200;
+    if (timeStr.includes(':')) {
+      const [hours, minutes] = timeStr.split(':');
+      return parseInt(hours, 10) * 100 + parseInt(minutes, 10);
+    }
+    return 1200;
+  };
+
+  // Get all unique meal types (default + custom) that have food, sorted by time
+  const displayMealTypes = (() => {
+    const allMealTypes = new Set<string>();
+    
+    // Add all default meal types
+    mealTypes.forEach(mt => allMealTypes.add(mt));
+    
+    // Add all custom meal types that have food
+    weekPlan.forEach(day => {
+      Object.keys(day.meals).forEach(mt => {
+        if (!mealTypes.includes(mt)) {
+          const meal = day.meals[mt];
+          if (meal?.foodOptions?.some(opt => opt.food?.trim())) {
+            allMealTypes.add(mt);
+          }
+        }
+      });
+    });
+    
+    // Sort by time
+    return Array.from(allMealTypes).sort((a, b) => {
+      const timeA = getMealTypeTime(a);
+      const timeB = getMealTypeTime(b);
+      return getTimeNumericValue(timeA) - getTimeNumericValue(timeB);
+    });
+  })();
 
   // Collect unique food names across plan for find options
   const availableFoods: string[] = Array.from(new Set(
@@ -537,6 +578,53 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     setReplaceSearchFilter('');
     setShowFindDropdown(false);
     setShowReplaceDropdown(false);
+  };
+
+  // Bulk time editor functions
+  const openBulkTimeEditor = () => {
+    const timesMap: { [key: string]: string } = {};
+    mealTypes.forEach(mealType => {
+      timesMap[mealType] = customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00';
+    });
+    setMealTimesForBulkEdit(timesMap);
+    setBulkTimeEditorOpen(true);
+  };
+
+  const handleBulkTimeUpdate = () => {
+    if (!onUpdate) return;
+    
+    // Update all days with new meal times
+    const newWeekPlan = weekPlan.map(day => {
+      const newMeals = { ...day.meals };
+      Object.keys(newMeals).forEach(mealType => {
+        if (mealTimesForBulkEdit[mealType]) {
+          newMeals[mealType] = {
+            ...newMeals[mealType],
+            time: mealTimesForBulkEdit[mealType]
+          };
+        }
+      });
+      return { ...day, meals: newMeals };
+    });
+    
+    // Update customMealTimes for display
+    setCustomMealTimes(mealTimesForBulkEdit);
+    
+    // Trigger update
+    onUpdate(newWeekPlan);
+    setBulkTimeEditorOpen(false);
+  };
+
+  const applyDefaultMealTimes = () => {
+    const defaults = {
+      'Breakfast': '07:00',
+      'Mid Morning': '09:00',
+      'Lunch': '13:00',
+      'Evening Snack': '17:00',
+      'Dinner': '21:00',
+      'Bedtime': '23:00'
+    };
+    setMealTimesForBulkEdit(prev => ({ ...prev, ...defaults }));
   };
 
   // Helper to clear labels on options
@@ -658,6 +746,13 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               </Button>
               <Button
                 variant="outline"
+                onClick={openBulkTimeEditor}
+                className="h-10 px-4 ml-2 border-gray-300 bg-white hover:bg-slate-100 font-medium shadow-md"
+              >
+                ⏰ Edit Meal Times
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => setFindReplaceDialogOpen(true)}
                 className="h-10 px-4 ml-2 border-gray-300 bg-white hover:bg-slate-100 font-medium shadow-md"
               >
@@ -761,17 +856,20 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               {displayMealTypes.map((mealType, index) => (
                 <React.Fragment key={mealType}>
                   <th className="border-r border-b-2 border-gray-300 p-5 bg-slate-50 min-w-70">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs">{mealType}</div>
                       {!readOnly && onRemoveMealType && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onRemoveMealType(mealType)}
-                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                          title={`Delete ${mealType}`}
+                          onClick={() => {
+                            setMealTypeToRemove(mealType);
+                            setRemoveMealTypeDialogOpen(true);
+                          }}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
+                          title={`Delete entire "${mealType}" row from all days`}
                         >
-                          <X className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       )}
                     </div>
@@ -779,7 +877,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                 </React.Fragment>
               ))}
               {/* Add Meal Type Column at the end */}
-              <th className="border-b-2 border-gray-300 p-5 bg-slate-100/50 min-w-70">
+              <th className="border-l border-b-2 border-gray-300 p-5 bg-slate-50 min-w-70">
                 <div className="space-y-2.5">
                   <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs flex items-center justify-center gap-2">
                     <Plus className="w-3.5 h-3.5" />
@@ -805,7 +903,15 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               const rowColor = '#BCEBCB';
               // Get all meal types for this day (standard ones + any custom ones)
               const dayMealTypes = [...displayMealTypes];
-              const customMeals = Object.keys(day.meals).filter(mt => !displayMealTypes.includes(mt));
+              // Only include custom meals that have food in them
+              const customMeals = Object.keys(day.meals).filter(mt => {
+                if (!mealTypes.includes(mt) && !displayMealTypes.includes(mt)) {
+                  // Check if this custom meal has any food
+                  const meal = day.meals[mt];
+                  return meal?.foodOptions?.some(opt => opt.food?.trim());
+                }
+                return false;
+              });
               const allMealTypesForDay = [...dayMealTypes, ...customMeals];
               
               // Format day label to show date + day number + day name
@@ -1266,8 +1372,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                       </React.Fragment>
                     );
                   })}
-                  {/* Empty cell for Add Meal Type column (match row background) */}
-                  <td className="border-b border-gray-300" style={{ backgroundColor: rowColor }}></td>
+
                 </tr>
               );
             })}
@@ -1486,6 +1591,64 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               className="hover:opacity-90 shadow font-medium"
             >
               Add Meal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Time Editor Dialog */}
+      <Dialog open={bulkTimeEditorOpen} onOpenChange={setBulkTimeEditorOpen}>
+        <DialogContent className="sm:max-w-md border-gray-300 shadow-xl" style={{ zIndex: 200 }}>
+          <DialogHeader>
+            <DialogTitle className="text-slate-900 font-semibold">Edit Meal Times</DialogTitle>
+            <DialogDescription className="text-slate-600">
+              Update times for all meal types across all days at once. Click "Apply Defaults" to use standard times.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              {mealTypes.map(mealType => (
+                <div key={mealType} className="flex items-center justify-between gap-3">
+                  <Label className="text-slate-700 font-medium text-sm w-32 shrink-0">
+                    {mealType}
+                  </Label>
+                  <Input
+                    type="time"
+                    value={mealTimesForBulkEdit[mealType] || '12:00'}
+                    onChange={(e) => setMealTimesForBulkEdit(prev => ({
+                      ...prev,
+                      [mealType]: e.target.value
+                    }))}
+                    className="h-8 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500"
+                  />
+                </div>
+              ))}
+            </div>
+            
+            {/* Apply Defaults Button */}
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+              <Button
+                variant="outline"
+                onClick={applyDefaultMealTimes}
+                className="w-full h-9 text-xs border-blue-300 bg-white hover:bg-blue-50 text-blue-700 font-medium"
+              >
+                📋 Apply Default Times
+              </Button>
+              <p className="text-xs text-blue-600 mt-2 text-center">
+                Breakfast: 7 AM, Mid Morning: 9 AM, Lunch: 1 PM, Snack: 5 PM, Dinner: 9 PM, Bedtime: 11 PM
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkTimeEditorOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBulkTimeUpdate}
+              style={{ backgroundColor: '#00A63E', color: 'white' }}
+              className="hover:opacity-90 shadow font-medium"
+            >
+              Update All Times
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1940,6 +2103,49 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               }}
             >
               Save Notes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Meal Type Confirmation Dialog */}
+      <Dialog open={removeMealTypeDialogOpen} onOpenChange={setRemoveMealTypeDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="w-5 h-5" />
+              Delete Meal Type
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the entire <strong>{mealTypeToRemove}</strong> row?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">
+                <strong>⚠️ Warning:</strong> This will remove <strong>{mealTypeToRemove}</strong> from <strong>ALL days</strong> in this diet plan. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setRemoveMealTypeDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (mealTypeToRemove && onRemoveMealType) {
+                  onRemoveMealType(mealTypeToRemove);
+                  setRemoveMealTypeDialogOpen(false);
+                  setMealTypeToRemove(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Row
             </Button>
           </DialogFooter>
         </DialogContent>
