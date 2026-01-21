@@ -4,7 +4,7 @@
     "type": "COMPATIBLE_SCREEN_MANIFEST",
     "kind": "Directory"
   },
-  "applicationId": "app.dtps.com",
+  "applicationId": "com.dtps.app",
   "variantName": "release",
   "elements": []
 }
