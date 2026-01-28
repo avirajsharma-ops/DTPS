@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.dtps.dietary.app-mergeReleaseResources-43:/values-ar/values-ar.xml",
+            "outputFile": "mw.dtps.app-mergeReleaseResources-43:/values-ar/values-ar.xml",
             "map": [
                 {
                     "source": "/Users/lokeshdhote/.gradle/caches/8.11.1/transforms/e1a616d522da422273d3161590d7a9a6/transformed/play-services-base-18.5.0/res/values-ar/values.xml",

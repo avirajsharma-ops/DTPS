@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.dtps.dietary.app-mergeReleaseResources-43:/values-zh-rCN/values-zh-rCN.xml",
+            "outputFile": "mw.dtps.app-mergeReleaseResources-43:/values-zh-rCN/values-zh-rCN.xml",
             "map": [
                 {
                     "source": "/Users/lokeshdhote/.gradle/caches/8.11.1/transforms/922e8ec765320ee27533f8625155af65/transformed/material-1.12.0/res/values-zh-rCN/values-zh-rCN.xml",

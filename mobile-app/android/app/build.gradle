@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace 'com.dtps.dietary'
+    namespace 'mw.dtps.app'
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.dtps.app"
+        applicationId "mw.dtps.app"
         minSdk 24
         targetSdk 35
         versionCode 7

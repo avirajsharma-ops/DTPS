@@ -4,7 +4,7 @@
     "type": "SHRUNK_RESOURCES_PROTO_FORMAT",
     "kind": "Directory"
   },
-  "applicationId": "com.dtps.app",
+  "applicationId": "mw.dtps.app",
   "variantName": "release",
   "elements": [
     {

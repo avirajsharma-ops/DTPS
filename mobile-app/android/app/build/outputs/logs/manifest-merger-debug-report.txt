@@ -282,7 +282,7 @@ MERGED from [com.google.android.datatransport:transport-runtime:3.1.9] /Users/lo
 		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:37:9-45
 	android:name
 		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:29:9-40
-activity#com.dtps.dietary.MainActivity
+activity#mw.dtps.app.MainActivity
 ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:40:9-67:20
 	android:launchMode
 		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:44:13-44
@@ -332,7 +332,7 @@ ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/Andro
 		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:58:71-97
 intent-filter#action:name:android.intent.action.VIEW+category:name:android.intent.category.BROWSABLE+category:name:android.intent.category.DEFAULT+data:host:user+data:scheme:dtps
 ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:61:13-66:29
-service#com.dtps.dietary.DTPSFirebaseMessagingService
+service#mw.dtps.app.DTPSFirebaseMessagingService
 ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:81:9-88:19
 	android:exported
 		ADDED from /Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/src/main/AndroidManifest.xml:83:13-37
@@ -780,7 +780,7 @@ ADDED from [androidx.core:core:1.15.0] /Users/lokeshdhote/.gradle/caches/8.11.1/
 		ADDED from [androidx.core:core:1.15.0] /Users/lokeshdhote/.gradle/caches/8.11.1/transforms/8b0f42dbb9573f9a7cc089411efec8a5/transformed/core-1.15.0/AndroidManifest.xml:24:9-44
 	android:name
 		ADDED from [androidx.core:core:1.15.0] /Users/lokeshdhote/.gradle/caches/8.11.1/transforms/8b0f42dbb9573f9a7cc089411efec8a5/transformed/core-1.15.0/AndroidManifest.xml:23:9-81
-permission#com.dtps.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+permission#mw.dtps.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
 ADDED from [androidx.core:core:1.15.0] /Users/lokeshdhote/.gradle/caches/8.11.1/transforms/8b0f42dbb9573f9a7cc089411efec8a5/transformed/core-1.15.0/AndroidManifest.xml:22:5-24:47
 	android:protectionLevel
 		ADDED from [androidx.core:core:1.15.0] /Users/lokeshdhote/.gradle/caches/8.11.1/transforms/8b0f42dbb9573f9a7cc089411efec8a5/transformed/core-1.15.0/AndroidManifest.xml:24:9-44
@@ -790,7 +790,7 @@ uses-permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
 ADDED from [androidx.core:core:1.15.0] /Users/lokeshdhote/.gradle/caches/8.11.1/transforms/8b0f42dbb9573f9a7cc089411efec8a5/transformed/core-1.15.0/AndroidManifest.xml:26:5-97
 	android:name
 		ADDED from [androidx.core:core:1.15.0] /Users/lokeshdhote/.gradle/caches/8.11.1/transforms/8b0f42dbb9573f9a7cc089411efec8a5/transformed/core-1.15.0/AndroidManifest.xml:26:22-94
-uses-permission#com.dtps.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+uses-permission#mw.dtps.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
 ADDED from [androidx.core:core:1.15.0] /Users/lokeshdhote/.gradle/caches/8.11.1/transforms/8b0f42dbb9573f9a7cc089411efec8a5/transformed/core-1.15.0/AndroidManifest.xml:26:5-97
 	android:name
 		ADDED from [androidx.core:core:1.15.0] /Users/lokeshdhote/.gradle/caches/8.11.1/transforms/8b0f42dbb9573f9a7cc089411efec8a5/transformed/core-1.15.0/AndroidManifest.xml:26:22-94

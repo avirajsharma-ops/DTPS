@@ -4,7 +4,7 @@
     "type": "LINKED_RESOURCES_BINARY_FORMAT",
     "kind": "Directory"
   },
-  "applicationId": "com.dtps.app",
+  "applicationId": "mw.dtps.app",
   "variantName": "debug",
   "elements": [
     {

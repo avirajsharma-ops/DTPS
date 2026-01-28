@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.dtps.dietary.app-mergeDebugResources-43:/values-nl/values-nl.xml",
+            "outputFile": "mw.dtps.app-mergeDebugResources-43:/values-nl/values-nl.xml",
             "map": [
                 {
                     "source": "/Users/lokeshdhote/.gradle/caches/8.11.1/transforms/8b0f42dbb9573f9a7cc089411efec8a5/transformed/core-1.15.0/res/values-nl/values-nl.xml",

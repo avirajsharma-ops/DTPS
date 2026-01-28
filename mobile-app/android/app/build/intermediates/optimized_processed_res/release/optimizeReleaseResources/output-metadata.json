@@ -4,7 +4,7 @@
     "type": "OPTIMIZED_PROCESSED_RES",
     "kind": "Directory"
   },
-  "applicationId": "com.dtps.app",
+  "applicationId": "mw.dtps.app",
   "variantName": "release",
   "elements": [
     {

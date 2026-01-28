@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.dtps.app"
+    package="mw.dtps.app"
     android:versionCode="7"
     android:versionName="1.5.1" >
 
@@ -46,13 +46,13 @@
     <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" />
 
     <permission
-        android:name="com.dtps.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:name="mw.dtps.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
         android:protectionLevel="signature" />
 
-    <uses-permission android:name="com.dtps.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+    <uses-permission android:name="mw.dtps.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 
     <application
-        android:name="com.dtps.dietary.DTPSApplication"
+        android:name="mw.dtps.app.DTPSApplication"
         android:allowBackup="true"
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:debuggable="true"
@@ -65,7 +65,7 @@
         android:theme="@style/Theme.DTPS"
         android:usesCleartextTraffic="false" >
         <activity
-            android:name="com.dtps.dietary.MainActivity"
+            android:name="mw.dtps.app.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:exported="true"
             android:launchMode="singleTask"
@@ -104,7 +104,7 @@
         <!-- FileProvider for camera photos -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.dtps.app.fileprovider"
+            android:authorities="mw.dtps.app.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true" >
             <meta-data
@@ -114,7 +114,7 @@
 
         <!-- Firebase Messaging Service -->
         <service
-            android:name="com.dtps.dietary.DTPSFirebaseMessagingService"
+            android:name="mw.dtps.app.DTPSFirebaseMessagingService"
             android:directBootAware="true"
             android:exported="false" >
             <intent-filter>
@@ -142,7 +142,7 @@
 
         <provider
             android:name="androidx.startup.InitializationProvider"
-            android:authorities="com.dtps.app.androidx-startup"
+            android:authorities="mw.dtps.app.androidx-startup"
             android:exported="false" >
             <meta-data
                 android:name="androidx.emoji2.text.EmojiCompatInitializer"
@@ -218,7 +218,7 @@
 
         <provider
             android:name="com.google.firebase.provider.FirebaseInitProvider"
-            android:authorities="com.dtps.app.firebaseinitprovider"
+            android:authorities="mw.dtps.app.firebaseinitprovider"
             android:directBootAware="true"
             android:exported="false"
             android:initOrder="100" />
