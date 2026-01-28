@@ -1,0 +1,4 @@
+#Wed Jan 28 17:36:40 IST 2026
+base.0=/Users/lokeshdhote/Desktop/DTPS/mobile-app/android/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+renamed.0=classes.dex
+path.0=classes.dex
