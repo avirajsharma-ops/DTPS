@@ -74,6 +74,12 @@ const userSchema = new Schema({
     lowercase: true,
     trim: true
   },
+  zoconut_id: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true
+  },
   password: {
     type: String,
     required: true,

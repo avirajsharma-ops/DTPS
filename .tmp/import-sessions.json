@@ -1,0 +1,1026 @@
+{
+  "import_1769769709759_yumyqmaxd": {
+    "id": "import_1769769709759_yumyqmaxd",
+    "fileName": "4 clients basic details (1).xlsx",
+    "uploadedAt": "2026-01-30T10:41:49.759Z",
+    "status": "saved",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-36540",
+              "email": "kajolkhairnar1605@gmail.com",
+              "password": "DTPS@1234",
+              "firstName": "Kajol",
+              "lastName": "Khairnar",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 919579093103,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "2001-05-16T00:00:00.000Z",
+              "gender": "female",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Overweight",
+              "generalGoal": "weight-loss",
+              "onboardingStep": 0,
+              "dietType": null,
+              "pushNotificationEnabled": false,
+              "passwordResetToken": null,
+              "passwordResetTokenExpiry": null,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "__v": null,
+              "alternativeEmail": null,
+              "alternativePhone": null,
+              "anniversary": null,
+              "maritalStatus": "single",
+              "occupation": "software engineer",
+              "source": null,
+              "targetWeightBucket": "10 to 15 kgs",
+              "weight": 78
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "zoconut_id": "P-36543",
+              "email": "imtiazkhan2k@gmail.com",
+              "password": "DTPS@1234",
+              "firstName": "Saquib",
+              "lastName": "khan",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 919031023268,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1970-01-01T00:00:00.000Z",
+              "gender": "male",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Obese",
+              "generalGoal": "weight-loss",
+              "onboardingStep": 0,
+              "dietType": null,
+              "pushNotificationEnabled": false,
+              "passwordResetToken": null,
+              "passwordResetTokenExpiry": null,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "__v": null,
+              "alternativeEmail": null,
+              "alternativePhone": null,
+              "anniversary": null,
+              "maritalStatus": "married",
+              "occupation": "teacher",
+              "source": null,
+              "targetWeightBucket": "more than 30 kgs",
+              "weight": 126
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "zoconut_id": "P-36547",
+              "email": "bhupeshpant704@gmail.com",
+              "password": "DTPS@1234",
+              "firstName": "bhupesh",
+              "lastName": "Pant",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 917206373533,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1995-01-01T00:00:00.000Z",
+              "gender": "male",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Overweight",
+              "generalGoal": "weight-loss",
+              "onboardingStep": 0,
+              "dietType": null,
+              "pushNotificationEnabled": false,
+              "passwordResetToken": null,
+              "passwordResetTokenExpiry": null,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "__v": null,
+              "alternativeEmail": null,
+              "alternativePhone": null,
+              "anniversary": null,
+              "maritalStatus": "single",
+              "occupation": "govt job",
+              "source": null,
+              "targetWeightBucket": "10 to 15 kgs",
+              "weight": 86.5
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "zoconut_id": "P-36544",
+              "email": "amanbharti0302@gmail.com",
+              "password": "DTPS@1234",
+              "firstName": "aman",
+              "lastName": "bharti",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 918298188635,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1998-11-26T00:00:00.000Z",
+              "gender": "male",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Overweight",
+              "generalGoal": "weight-loss",
+              "onboardingStep": 0,
+              "dietType": null,
+              "pushNotificationEnabled": false,
+              "passwordResetToken": null,
+              "passwordResetTokenExpiry": null,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "__v": null,
+              "alternativeEmail": null,
+              "alternativePhone": null,
+              "anniversary": null,
+              "maritalStatus": "single",
+              "occupation": "software engineer",
+              "source": null,
+              "targetWeightBucket": "10 to 15 kgs",
+              "weight": 82
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 4,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true,
+    "savedAt": "2026-01-30T10:42:01.031Z",
+    "savedCounts": {
+      "User": 4
+    }
+  },
+  "import_1769770391040_6lxbivtwm": {
+    "id": "import_1769770391040_6lxbivtwm",
+    "fileName": "Contact Details.xlsx zoco.xlsx",
+    "uploadedAt": "2026-01-30T10:53:11.040Z",
+    "status": "saved",
+    "modelGroups": [
+      {
+        "modelName": "Lead",
+        "displayName": "Leads",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "email": "007hahanotsomuch@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "email": "012monukashyap@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "email": "05.herabeg@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "email": "07aarti08@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 6,
+            "data": {
+              "email": "099amitguptamobile@gmail.com",
+              "source": "Android",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 7,
+            "data": {
+              "email": "09himanshituteja@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 8,
+            "data": {
+              "email": "09sidhantgupta@gmail.com",
+              "source": "Mobile App",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 9,
+            "data": {
+              "email": "0anuragkumar0@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 10,
+            "data": {
+              "email": "100crmoney@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 11,
+            "data": {
+              "email": "10ritusawhney@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 12,
+            "data": {
+              "email": "1193pujaa@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 13,
+            "data": {
+              "email": "123.urvashi@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 14,
+            "data": {
+              "email": "123meenugoel@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 15,
+            "data": {
+              "email": "1320parivansh@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 14,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true,
+    "savedAt": "2026-01-30T10:53:25.056Z",
+    "savedCounts": {
+      "Lead": 14
+    }
+  },
+  "import_1769771060211_iqv2e18d2": {
+    "id": "import_1769771060211_iqv2e18d2",
+    "fileName": "Contact Details.xlsx (zoco 4).xlsx",
+    "uploadedAt": "2026-01-30T11:04:20.211Z",
+    "status": "saved",
+    "modelGroups": [
+      {
+        "modelName": "Lead",
+        "displayName": "Leads",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "email": "123.urvashi@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "email": "123meenugoel@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "email": "007hahanotsomuch@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "email": "012monukashyap@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 4,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true,
+    "savedAt": "2026-01-30T11:04:30.739Z",
+    "savedCounts": {
+      "Lead": 4
+    }
+  },
+  "import_1769771176324_lkamapgy8": {
+    "id": "import_1769771176324_lkamapgy8",
+    "fileName": "Contact Details.xlsx zoco.xlsx",
+    "uploadedAt": "2026-01-30T11:06:16.324Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "Lead",
+        "displayName": "Leads",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "email": "007hahanotsomuch@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "email": "012monukashyap@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "email": "05.herabeg@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "email": "07aarti08@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 6,
+            "data": {
+              "email": "099amitguptamobile@gmail.com",
+              "source": "Android",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 7,
+            "data": {
+              "email": "09himanshituteja@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 8,
+            "data": {
+              "email": "09sidhantgupta@gmail.com",
+              "source": "Mobile App",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 9,
+            "data": {
+              "email": "0anuragkumar0@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 10,
+            "data": {
+              "email": "100crmoney@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 11,
+            "data": {
+              "email": "10ritusawhney@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 12,
+            "data": {
+              "email": "1193pujaa@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 13,
+            "data": {
+              "email": "123.urvashi@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 14,
+            "data": {
+              "email": "123meenugoel@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 15,
+            "data": {
+              "email": "1320parivansh@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 14,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1769771246942_setbr1v2e": {
+    "id": "import_1769771246942_setbr1v2e",
+    "fileName": "Contact Details.xlsx (zoco 4).xlsx",
+    "uploadedAt": "2026-01-30T11:07:26.942Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "Lead",
+        "displayName": "Leads",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "email": "123.urvashi@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "email": "123meenugoel@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "email": "007hahanotsomuch@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "email": "012monukashyap@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 4,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1769771347190_yzpdndj4s": {
+    "id": "import_1769771347190_yzpdndj4s",
+    "fileName": "Contact Details.xlsx (zoco 4).xlsx",
+    "uploadedAt": "2026-01-30T11:09:07.190Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "firstName": "Urvashi",
+              "lastName": "Gupta",
+              "email": "123.urvashi@gmail.com",
+              "password": "Dtps@123",
+              "anniversary": null,
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Married",
+              "occupation": "Service"
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ]
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "firstName": "Priya",
+              "lastName": "Goel",
+              "email": "123meenugoel@gmail.com",
+              "password": "Dtps@123",
+              "anniversary": null,
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Married",
+              "occupation": "Business"
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 3,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 3,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 3,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ]
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "firstName": "Lavanya",
+              "lastName": "Jhamtani",
+              "email": "007hahanotsomuch@gmail.com",
+              "password": "Dtps@123",
+              "anniversary": null,
+              "gender": "Female",
+              "source": "Custom API",
+              "maritalStatus": "Single",
+              "occupation": "student"
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 4,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 4,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 4,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ]
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "firstName": "Monika",
+              "lastName": "Kashyap",
+              "email": "012monukashyap@gmail.com",
+              "password": "Dtps@123",
+              "anniversary": null,
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Married",
+              "occupation": "Working"
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 5,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 5,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 5,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ]
+          }
+        ],
+        "validCount": 0,
+        "invalidCount": 4
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": false
+  },
+  "import_1769771616939_lrlyurbvl": {
+    "id": "import_1769771616939_lrlyurbvl",
+    "fileName": "Contact Details.xlsx (zoco 4).xlsx",
+    "uploadedAt": "2026-01-30T11:13:36.939Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "Lead",
+        "displayName": "Leads",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "email": "123.urvashi@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "email": "123meenugoel@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "email": "007hahanotsomuch@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "email": "012monukashyap@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 4,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1769771651295_jlgh5h5za": {
+    "id": "import_1769771651295_jlgh5h5za",
+    "fileName": "Contact Details.xlsx (zoco 4).xlsx",
+    "uploadedAt": "2026-01-30T11:14:11.295Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "firstName": "Urvashi",
+              "lastName": "Gupta",
+              "email": "123.urvashi@gmail.com",
+              "password": "Dtps@123",
+              "anniversary": null,
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Married",
+              "occupation": "Service"
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ]
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "firstName": "Priya",
+              "lastName": "Goel",
+              "email": "123meenugoel@gmail.com",
+              "password": "Dtps@123",
+              "anniversary": null,
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Married",
+              "occupation": "Business"
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 3,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 3,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 3,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ]
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "firstName": "Lavanya",
+              "lastName": "Jhamtani",
+              "email": "007hahanotsomuch@gmail.com",
+              "password": "Dtps@123",
+              "anniversary": null,
+              "gender": "Female",
+              "source": "Custom API",
+              "maritalStatus": "Single",
+              "occupation": "student"
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 4,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 4,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 4,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ]
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "firstName": "Monika",
+              "lastName": "Kashyap",
+              "email": "012monukashyap@gmail.com",
+              "password": "Dtps@123",
+              "anniversary": null,
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Married",
+              "occupation": "Working"
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 5,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 5,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 5,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ]
+          }
+        ],
+        "validCount": 0,
+        "invalidCount": 4
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": false
+  }
+}
