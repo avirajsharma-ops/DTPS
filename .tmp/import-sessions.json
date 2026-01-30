@@ -1022,5 +1022,237 @@
     ],
     "unmatchedRows": [],
     "canSave": false
+  },
+  "import_1769772879273_pnq3j3ain": {
+    "id": "import_1769772879273_pnq3j3ain",
+    "fileName": "Contact Details.xlsx (zoco 4).xlsx",
+    "uploadedAt": "2026-01-30T11:34:39.273Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "Lead",
+        "displayName": "Leads",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "email": "123.urvashi@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "email": "123meenugoel@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "email": "007hahanotsomuch@gmail.com",
+              "source": "Custom API",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "email": "012monukashyap@gmail.com",
+              "source": "Zoconut Platform (P)",
+              "notes": null
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 4,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1769773880140_j8azutq6u": {
+    "id": "import_1769773880140_j8azutq6u",
+    "fileName": "4 clients basic details (1).xlsx",
+    "uploadedAt": "2026-01-30T11:51:20.140Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-36540",
+              "email": "kajolkhairnar1605@gmail.com",
+              "password": "DTPS@1234",
+              "firstName": "Kajol",
+              "lastName": "Khairnar",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 919579093103,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "2001-05-16T00:00:00.000Z",
+              "gender": "female",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Overweight",
+              "generalGoal": "weight-loss",
+              "onboardingStep": 0,
+              "dietType": null,
+              "pushNotificationEnabled": false,
+              "passwordResetToken": null,
+              "passwordResetTokenExpiry": null,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "__v": null,
+              "alternativeEmail": null,
+              "alternativePhone": null,
+              "anniversary": null,
+              "maritalStatus": "single",
+              "occupation": "software engineer",
+              "source": null,
+              "targetWeightBucket": "10 to 15 kgs",
+              "weight": 78
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "zoconut_id": "P-36543",
+              "email": "imtiazkhan2k@gmail.com",
+              "password": "DTPS@1234",
+              "firstName": "Saquib",
+              "lastName": "khan",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 919031023268,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1970-01-01T00:00:00.000Z",
+              "gender": "male",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Obese",
+              "generalGoal": "weight-loss",
+              "onboardingStep": 0,
+              "dietType": null,
+              "pushNotificationEnabled": false,
+              "passwordResetToken": null,
+              "passwordResetTokenExpiry": null,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "__v": null,
+              "alternativeEmail": null,
+              "alternativePhone": null,
+              "anniversary": null,
+              "maritalStatus": "married",
+              "occupation": "teacher",
+              "source": null,
+              "targetWeightBucket": "more than 30 kgs",
+              "weight": 126
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "zoconut_id": "P-36547",
+              "email": "bhupeshpant704@gmail.com",
+              "password": "DTPS@1234",
+              "firstName": "bhupesh",
+              "lastName": "Pant",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 917206373533,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1995-01-01T00:00:00.000Z",
+              "gender": "male",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Overweight",
+              "generalGoal": "weight-loss",
+              "onboardingStep": 0,
+              "dietType": null,
+              "pushNotificationEnabled": false,
+              "passwordResetToken": null,
+              "passwordResetTokenExpiry": null,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "__v": null,
+              "alternativeEmail": null,
+              "alternativePhone": null,
+              "anniversary": null,
+              "maritalStatus": "single",
+              "occupation": "govt job",
+              "source": null,
+              "targetWeightBucket": "10 to 15 kgs",
+              "weight": 86.5
+            },
+            "isValid": true,
+            "errors": []
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "zoconut_id": "P-36544",
+              "email": "amanbharti0302@gmail.com",
+              "password": "DTPS@1234",
+              "firstName": "aman",
+              "lastName": "bharti",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 918298188635,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1998-11-26T00:00:00.000Z",
+              "gender": "male",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Overweight",
+              "generalGoal": "weight-loss",
+              "onboardingStep": 0,
+              "dietType": null,
+              "pushNotificationEnabled": false,
+              "passwordResetToken": null,
+              "passwordResetTokenExpiry": null,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "__v": null,
+              "alternativeEmail": null,
+              "alternativePhone": null,
+              "anniversary": null,
+              "maritalStatus": "single",
+              "occupation": "software engineer",
+              "source": null,
+              "targetWeightBucket": "10 to 15 kgs",
+              "weight": 82
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 4,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
   }
 }

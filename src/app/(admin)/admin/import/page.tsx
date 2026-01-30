@@ -118,6 +118,8 @@ export default function DataImportPage() {
     data: Record<string, any>;
   } | null>(null);
   const [showErrorsOnly, setShowErrorsOnly] = useState(false);
+  const [showMatchDetails, setShowMatchDetails] = useState<number | null>(null);
+  const [showAllErrors, setShowAllErrors] = useState(false);
 
   // Load available models on mount
   useEffect(() => {
@@ -460,22 +462,29 @@ export default function DataImportPage() {
       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
           <Info className="w-4 h-4" />
-          Supported Models
+          Supported Models ({availableModels.length})
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-          {availableModels.map(m => (
-            <div key={m.name} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg text-sm">
-              <span className="font-medium">{m.displayName}</span>
-              <button
-                onClick={() => handleDownloadTemplate(m.name)}
-                className="text-primary hover:text-primary/80"
-                title="Download template"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+        {availableModels.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading models...</p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {availableModels.map(m => (
+              <div key={m.name} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg text-sm hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-gray-900 dark:text-white truncate">{m.displayName}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{m.fieldCount} fields</div>
+                </div>
+                <button
+                  onClick={() => handleDownloadTemplate(m.name)}
+                  className="ml-2 text-primary hover:text-primary/80 flex-shrink-0"
+                  title="Download template"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -723,53 +732,138 @@ export default function DataImportPage() {
     const headers = Object.keys(state.unmatchedData[0]?.data || {});
 
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-yellow-200 dark:border-yellow-800 overflow-hidden">
-        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800">
-          <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
-            <AlertTriangle className="w-5 h-5" />
-            <span className="font-medium">These rows could not be matched to any model schema</span>
+      <div className="space-y-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-yellow-200 dark:border-yellow-800 overflow-hidden">
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800">
+            <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
+              <AlertTriangle className="w-5 h-5" />
+              <span className="font-medium">These {state.unmatchedData.length} rows could not be matched to any model</span>
+            </div>
+            <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-1">
+              Click "Why?" to see model match attempts, or remove these rows to proceed with saving.
+            </p>
           </div>
-          <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-1">
-            Remove these rows or assign them to a specific model before saving.
-          </p>
+
+          <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 w-16">Row</th>
+                  {headers.slice(0, 6).map(h => (
+                    <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {h}
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 w-32">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {state.unmatchedData.map(row => (
+                  <tr key={row.rowIndex} className="bg-yellow-50/50 dark:bg-yellow-900/5">
+                    <td className="px-4 py-3 font-mono text-gray-500">{row.rowIndex}</td>
+                    {headers.slice(0, 6).map(h => (
+                      <td key={h} className="px-4 py-3 max-w-[150px] truncate">
+                        {formatCellValue(row.data[h])}
+                      </td>
+                    ))}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setShowMatchDetails(showMatchDetails === row.rowIndex ? null : row.rowIndex)}
+                          className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                          title="See why this row didn't match any model"
+                        >
+                          Why?
+                        </button>
+                        <button
+                          onClick={() => handleRemoveRow(null, row.rowIndex)}
+                          className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                          title="Remove this row"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 w-16">Row</th>
-                {headers.slice(0, 8).map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-                <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 w-24">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {state.unmatchedData.map(row => (
-                <tr key={row.rowIndex} className="bg-yellow-50/50 dark:bg-yellow-900/5">
-                  <td className="px-4 py-3 font-mono text-gray-500">{row.rowIndex}</td>
-                  {headers.slice(0, 8).map(h => (
-                    <td key={h} className="px-4 py-3 max-w-[200px] truncate">
-                      {formatCellValue(row.data[h])}
-                    </td>
-                  ))}
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleRemoveRow(null, row.rowIndex)}
-                      className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                      title="Remove"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Model match details panel */}
+        {showMatchDetails !== null && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-blue-200 dark:border-blue-800 overflow-hidden">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 flex justify-between items-center">
+              <div>
+                <h3 className="font-medium text-blue-700 dark:text-blue-400">
+                  Why Row {showMatchDetails} Didn't Match Any Model
+                </h3>
+                <p className="text-sm text-blue-600 dark:text-blue-500 mt-1">
+                  A row needs at least 60% confidence to match a model. All attempts below:
+                </p>
+              </div>
+              <button
+                onClick={() => setShowMatchDetails(null)}
+                className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800 rounded"
+              >
+                <X className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto">
+              {state.unmatchedData
+                .find(r => r.rowIndex === showMatchDetails)
+                ?.matchAttempts?.sort((a, b) => b.confidence - a.confidence)
+                .map((attempt, idx) => (
+                  <div
+                    key={attempt.modelName}
+                    className={`p-3 rounded-lg border ${
+                      attempt.confidence >= 60
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                        : attempt.confidence >= 40
+                        ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        {idx + 1}. {attempt.modelName}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 bg-gray-200 dark:bg-gray-600 rounded-full h-2 overflow-hidden">
+                          <div
+                            className={`h-full transition-all ${
+                              attempt.confidence >= 60
+                                ? 'bg-green-500'
+                                : attempt.confidence >= 40
+                                ? 'bg-yellow-500'
+                                : 'bg-red-500'
+                            }`}
+                            style={{ width: `${attempt.confidence}%` }}
+                          />
+                        </div>
+                        <span className={`font-mono text-sm font-semibold ${
+                          attempt.confidence >= 60 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {attempt.confidence.toFixed(1)}%
+                        </span>
+                        {attempt.confidence >= 60 ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )) || (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                  No match attempt data available for this row
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -916,14 +1010,60 @@ export default function DataImportPage() {
           {/* Cannot save warning */}
           {!state.validation?.canSave && state.status === 'validated' && (
             <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-              <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
-                <XCircle className="w-5 h-5" />
-                <span className="font-medium">Cannot save: Fix all validation errors first</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+                  <XCircle className="w-5 h-5" />
+                  <span className="font-medium">Cannot save: Fix all validation errors first</span>
+                </div>
+                {state.allErrors.length > 0 && (
+                  <button
+                    onClick={() => setShowAllErrors(!showAllErrors)}
+                    className="px-3 py-1 text-xs bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-700 flex items-center gap-1"
+                  >
+                    {showAllErrors ? 'Hide' : 'Show'} All Errors ({state.allErrors.length})
+                    {showAllErrors ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                  </button>
+                )}
               </div>
               <p className="text-sm text-red-600 dark:text-red-500 mt-1">
                 You have {state.validation?.invalidRows || 0} invalid rows and {state.validation?.unmatchedRows || 0} unmatched rows. 
                 Edit or remove them to enable saving.
               </p>
+              
+              {/* All errors list */}
+              {showAllErrors && state.allErrors.length > 0 && (
+                <div className="mt-4 max-h-60 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg border border-red-200 dark:border-red-700">
+                  <table className="w-full text-sm">
+                    <thead className="bg-red-50 dark:bg-red-900/30 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-red-700 dark:text-red-300">Row</th>
+                        <th className="px-3 py-2 text-left font-medium text-red-700 dark:text-red-300">Model</th>
+                        <th className="px-3 py-2 text-left font-medium text-red-700 dark:text-red-300">Field</th>
+                        <th className="px-3 py-2 text-left font-medium text-red-700 dark:text-red-300">Error</th>
+                        <th className="px-3 py-2 text-left font-medium text-red-700 dark:text-red-300">Value</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-red-100 dark:divide-red-800">
+                      {state.allErrors.slice(0, 50).map((error, idx) => (
+                        <tr key={idx} className="hover:bg-red-50 dark:hover:bg-red-900/20">
+                          <td className="px-3 py-2 font-mono">{error.row}</td>
+                          <td className="px-3 py-2">{error.modelName}</td>
+                          <td className="px-3 py-2 font-medium">{error.field}</td>
+                          <td className="px-3 py-2 text-red-600 dark:text-red-400">{error.message}</td>
+                          <td className="px-3 py-2 text-gray-500 max-w-[100px] truncate">
+                            {formatCellValue(error.value)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {state.allErrors.length > 50 && (
+                    <p className="text-center text-xs text-red-500 py-2 bg-red-50 dark:bg-red-900/30">
+                      Showing first 50 of {state.allErrors.length} errors
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

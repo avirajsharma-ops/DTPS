@@ -20,6 +20,34 @@ import ServicePlan from '@/lib/db/models/ServicePlan';
 import Notification from '@/lib/db/models/Notification';
 import DietTemplate from '@/lib/db/models/DietTemplate';
 import Transformation from '@/lib/db/models/Transformation';
+import ActivityAssignment from '@/lib/db/models/ActivityAssignment';
+import ActivityLog from '@/lib/db/models/ActivityLog';
+import Blog from '@/lib/db/models/Blog';
+import ClientDocuments from '@/lib/db/models/ClientDocuments';
+import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
+import ClientSubscription from '@/lib/db/models/ClientSubscription';
+import DailyTracking from '@/lib/db/models/DailyTracking';
+import DietaryRecall from '@/lib/db/models/DietaryRecall';
+import EcommerceBlog from '@/lib/db/models/EcommerceBlog';
+import EcommerceOrder from '@/lib/db/models/EcommerceOrder';
+import EcommercePayment from '@/lib/db/models/EcommercePayment';
+import EcommercePlan from '@/lib/db/models/EcommercePlan';
+import EcommerceRating from '@/lib/db/models/EcommerceRating';
+import EcommerceTransformation from '@/lib/db/models/EcommerceTransformation';
+import File from '@/lib/db/models/File';
+import GoalCategory from '@/lib/db/models/GoalCategory';
+import History from '@/lib/db/models/History';
+import JournalTracking from '@/lib/db/models/JournalTracking';
+import LifestyleInfo from '@/lib/db/models/LifestyleInfo';
+import MealPlanTemplate from '@/lib/db/models/MealPlanTemplate';
+import MedicalInfo from '@/lib/db/models/MedicalInfo';
+import Message from '@/lib/db/models/Message';
+import OtherPlatformPayment from '@/lib/db/models/OtherPlatformPayment';
+import PaymentLink from '@/lib/db/models/PaymentLink';
+import SubscriptionPlan from '@/lib/db/models/SubscriptionPlan';
+import SystemAlert from '@/lib/db/models/SystemAlert';
+import WatiContact from '@/lib/db/models/WatiContact';
+import WooCommerceClient from '@/lib/db/models/WooCommerceClient';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -198,6 +226,259 @@ class ModelRegistry {
       uniqueIdentifiers: []
     });
 
+    // Register all additional models
+    this.registerModel({
+      name: 'ActivityAssignment',
+      model: ActivityAssignment,
+      importable: true,
+      displayName: 'Activity Assignments',
+      description: 'Assigned activities',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'ActivityLog',
+      model: ActivityLog,
+      importable: true,
+      displayName: 'Activity Logs',
+      description: 'Activity tracking logs',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'Blog',
+      model: Blog,
+      importable: true,
+      displayName: 'Blogs',
+      description: 'Blog posts',
+      uniqueIdentifiers: ['slug']
+    });
+
+    this.registerModel({
+      name: 'ClientDocuments',
+      model: ClientDocuments,
+      importable: true,
+      displayName: 'Client Documents',
+      description: 'Client documents',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'ClientMealPlan',
+      model: ClientMealPlan,
+      importable: true,
+      displayName: 'Client Meal Plans',
+      description: 'Client specific meal plans',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'ClientSubscription',
+      model: ClientSubscription,
+      importable: true,
+      displayName: 'Client Subscriptions',
+      description: 'Client subscription records',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'DailyTracking',
+      model: DailyTracking,
+      importable: true,
+      displayName: 'Daily Tracking',
+      description: 'Daily tracking data',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'DietaryRecall',
+      model: DietaryRecall,
+      importable: true,
+      displayName: 'Dietary Recalls',
+      description: 'Dietary recall data',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'EcommerceBlog',
+      model: EcommerceBlog,
+      importable: true,
+      displayName: 'Ecommerce Blogs',
+      description: 'Ecommerce blog posts',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'EcommerceOrder',
+      model: EcommerceOrder,
+      importable: true,
+      displayName: 'Ecommerce Orders',
+      description: 'Ecommerce orders',
+      uniqueIdentifiers: ['orderId']
+    });
+
+    this.registerModel({
+      name: 'EcommercePayment',
+      model: EcommercePayment,
+      importable: true,
+      displayName: 'Ecommerce Payments',
+      description: 'Ecommerce payment records',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'EcommercePlan',
+      model: EcommercePlan,
+      importable: true,
+      displayName: 'Ecommerce Plans',
+      description: 'Ecommerce plans',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'EcommerceRating',
+      model: EcommerceRating,
+      importable: true,
+      displayName: 'Ecommerce Ratings',
+      description: 'Product/service ratings',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'EcommerceTransformation',
+      model: EcommerceTransformation,
+      importable: true,
+      displayName: 'Ecommerce Transformations',
+      description: 'Transformation stories for ecommerce',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'File',
+      model: File,
+      importable: true,
+      displayName: 'Files',
+      description: 'Uploaded files',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'GoalCategory',
+      model: GoalCategory,
+      importable: true,
+      displayName: 'Goal Categories',
+      description: 'Goal categories',
+      uniqueIdentifiers: ['name']
+    });
+
+    this.registerModel({
+      name: 'History',
+      model: History,
+      importable: true,
+      displayName: 'History',
+      description: 'Historical records',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'JournalTracking',
+      model: JournalTracking,
+      importable: true,
+      displayName: 'Journal Tracking',
+      description: 'Journal entries and tracking',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'LifestyleInfo',
+      model: LifestyleInfo,
+      importable: true,
+      displayName: 'Lifestyle Info',
+      description: 'Lifestyle information',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'MealPlanTemplate',
+      model: MealPlanTemplate,
+      importable: true,
+      displayName: 'Meal Plan Templates',
+      description: 'Meal plan templates',
+      uniqueIdentifiers: ['name']
+    });
+
+    this.registerModel({
+      name: 'MedicalInfo',
+      model: MedicalInfo,
+      importable: true,
+      displayName: 'Medical Info',
+      description: 'Medical information',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'Message',
+      model: Message,
+      importable: true,
+      displayName: 'Messages',
+      description: 'Chat messages',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'OtherPlatformPayment',
+      model: OtherPlatformPayment,
+      importable: true,
+      displayName: 'Other Platform Payments',
+      description: 'Payments from other platforms',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'PaymentLink',
+      model: PaymentLink,
+      importable: true,
+      displayName: 'Payment Links',
+      description: 'Payment links',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'SubscriptionPlan',
+      model: SubscriptionPlan,
+      importable: true,
+      displayName: 'Subscription Plans',
+      description: 'Subscription plans',
+      uniqueIdentifiers: ['name']
+    });
+
+    this.registerModel({
+      name: 'SystemAlert',
+      model: SystemAlert,
+      importable: true,
+      displayName: 'System Alerts',
+      description: 'System alerts and notifications',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'WatiContact',
+      model: WatiContact,
+      importable: true,
+      displayName: 'Wati Contacts',
+      description: 'Wati platform contacts',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'WooCommerceClient',
+      model: WooCommerceClient,
+      importable: true,
+      displayName: 'WooCommerce Clients',
+      description: 'WooCommerce client data',
+      uniqueIdentifiers: []
+    });
+
     this.initialized = true;
   }
 
@@ -212,6 +493,11 @@ class ModelRegistry {
     description: string;
     uniqueIdentifiers: string[];
   }): void {
+    if (!config.model || !config.model.schema) {
+      console.error(`[ModelRegistry] Invalid model: ${config.name}. Model or schema is undefined.`, config.model);
+      return;
+    }
+
     const schema = config.model.schema;
     const fields = this.extractSchemaFields(schema);
     const requiredFields = fields
@@ -478,6 +764,12 @@ class ModelRegistry {
       return 0;
     });
 
+    // Log all models ranked by confidence
+    console.log(`[ModelDetection] ===== ALL ${results.length} MODELS RANKED =====`);
+    results.forEach((r, idx) => {
+      const status = r.confidence >= 60 ? '✓' : '✗';
+      console.log(`  ${status} ${idx + 1}. ${r.modelName.padEnd(18)} ${r.confidence.toFixed(1).padStart(5)}% (matched: ${r.matchedFields.length}, missing: ${r.missingRequired.length}, extra: ${r.extraFields.length})`);
+    });
     console.log(`[ModelDetection] TOP RESULT: ${results[0]?.modelName}(${results[0]?.confidence.toFixed(1)}) vs threshold 60`);
     console.log(`[ModelDetection] ===== END ROW DETECTION =====\n`);
     return results;

@@ -192,6 +192,7 @@ export class ValidationEngine {
       // Detect model automatically
       matchResults = modelRegistry.detectModel(row.data);
       
+      console.log(`[ValidateRow] Row ${row.rowIndex} - Checked ${matchResults.length} models`);
       console.log(`[ValidateRow] Row ${row.rowIndex} detection results:`, {
         totalModels: matchResults.length,
         topModel: matchResults[0]?.modelName,
@@ -203,13 +204,23 @@ export class ValidationEngine {
         rowFieldsCount: Object.keys(row.data).length
       });
       
+      // Log all model attempts for debugging
+      console.log(`[ValidateRow] All model match attempts for row ${row.rowIndex}:`);
+      matchResults.slice(0, 5).forEach((m, i) => {
+        const status = m.confidence >= this.modelConfidenceThreshold ? '✓' : '✗';
+        console.log(`  ${status} ${i+1}. ${m.modelName}: ${m.confidence.toFixed(1)}%`);
+      });
+      if (matchResults.length > 5) {
+        console.log(`  ... and ${matchResults.length - 5} more models`);
+      }
+      
       if (matchResults.length > 0 && 
           matchResults[0].confidence >= this.modelConfidenceThreshold) {
         detectedModel = matchResults[0].modelName;
         modelConfidence = matchResults[0].confidence;
-        console.log(`[ValidateRow] ✅ Row ${row.rowIndex} MATCHED to ${detectedModel} with confidence ${modelConfidence}`);
+        console.log(`[ValidateRow] ✅ Row ${row.rowIndex} MATCHED to ${detectedModel} with confidence ${modelConfidence.toFixed(1)}%`);
       } else {
-        console.log(`[ValidateRow] ❌ Row ${row.rowIndex} FAILED - confidence ${matchResults[0]?.confidence || 0} < threshold ${this.modelConfidenceThreshold}`);
+        console.log(`[ValidateRow] ❌ Row ${row.rowIndex} UNMATCHED - best: ${matchResults[0]?.modelName}(${matchResults[0]?.confidence.toFixed(1)}%) < threshold ${this.modelConfidenceThreshold}%`);
       }
     }
 

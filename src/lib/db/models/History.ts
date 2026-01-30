@@ -100,3 +100,5 @@ historySchema.virtual('formattedDate').get(function () {
 historySchema.set('toJSON', { virtuals: true });
 
 export const History = mongoose.models.History || mongoose.model<IHistory>('History', historySchema);
+
+export default History;
