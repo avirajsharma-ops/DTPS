@@ -184,6 +184,29 @@ const userSchema = new Schema({
     type: Number,
     min: 0
   },
+  // Health metrics
+  bmr: {
+    type: Number,
+    min: 0,
+    description: 'Basal Metabolic Rate (calories)'
+  },
+  bodyFat: {
+    type: Number,
+    min: 0,
+    max: 100,
+    description: 'Body fat percentage'
+  },
+  idealWeight: {
+    type: Number,
+    min: 0,
+    description: 'Ideal weight target (kg)'
+  },
+  targetBmi: {
+    type: Number,
+    min: 0,
+    max: 60,
+    description: 'Target BMI'
+  },
   // DEPRECATED: These fields moved to LifestyleInfo - keeping for backward compatibility
   // Use LifestyleInfo model for new data
   // heightFeet, heightInch, heightCm, weightKg, targetWeightKg, idealWeightKg, bmi - see LifestyleInfo

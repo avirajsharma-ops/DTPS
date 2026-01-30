@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -36,7 +36,9 @@ import {
   Calendar,
   ArrowRightLeft,
   Wifi,
-  WifiOff
+  WifiOff,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
@@ -136,6 +138,14 @@ export default function AdminAllClientsPage() {
   const [filterAssigned, setFilterAssigned] = useState('all');
   const [stats, setStats] = useState({ total: 0, assigned: 0, unassigned: 0 });
   const [isSSEConnected, setIsSSEConnected] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20); // Show 20 items per page
+  
+  // Debounce search term
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // SSE connection ref
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -280,6 +290,24 @@ export default function AdminAllClientsPage() {
     }
   }, [status, connectSSE]);
 
+  // Debounce search term - only update every 500ms
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to first page when search changes
+    }, 500);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm]);
+
   // Fetch clients with filters (for when filters change)
   const fetchClients = async () => {
     try {
@@ -293,6 +321,7 @@ export default function AdminAllClientsPage() {
         const data = await response.json();
         setClients(data.clients || []);
         setStats(data.stats || { total: 0, assigned: 0, unassigned: 0 });
+        setCurrentPage(1); // Reset pagination when filters change
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -540,12 +569,28 @@ export default function AdminAllClientsPage() {
     }
   };
 
-  const filteredClients = clients.filter(client =>
-    client.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Optimized filtering with memoization
+  const filteredClients = useMemo(() => {
+    return clients.filter(client => {
+      const searchLower = debouncedSearchTerm.toLowerCase();
+      if (!searchLower) return true;
+      
+      return (
+        client.firstName?.toLowerCase().includes(searchLower) ||
+        client.lastName?.toLowerCase().includes(searchLower) ||
+        client.email?.toLowerCase().includes(searchLower) ||
+        client.phone?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [clients, debouncedSearchTerm]);
+
+  // Pagination calculation
+  const totalPages = Math.ceil(filteredClients.length / pageSize);
+  const paginatedClients = useMemo(() => {
+    const startIdx = (currentPage - 1) * pageSize;
+    const endIdx = startIdx + pageSize;
+    return filteredClients.slice(startIdx, endIdx);
+  }, [filteredClients, currentPage, pageSize]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -721,10 +766,10 @@ export default function AdminAllClientsPage() {
             <CardContent className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchTerm ? 'No clients found' : 'No clients yet'}
+                {debouncedSearchTerm ? 'No clients found' : 'No clients yet'}
               </h3>
               <p className="text-gray-600">
-                {searchTerm 
+                {debouncedSearchTerm 
                   ? 'Try adjusting your search terms or filters'
                   : 'Clients will appear here once they register'
                 }
@@ -732,27 +777,28 @@ export default function AdminAllClientsPage() {
             </CardContent>
           </Card>
         ) : (
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="px-3 sm:px-6 py-3 text-left">
-                        <Checkbox
-                          checked={selectedClients.length === filteredClients.length && filteredClients.length > 0}
-                          onCheckedChange={selectAllClients}
-                          aria-label="Select all"
-                        />
-                      </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Client
-                      </th>
-                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Contact
-                      </th>
-                      <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Health Info
+          <>
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="px-3 sm:px-6 py-3 text-left">
+                          <Checkbox
+                            checked={selectedClients.length === paginatedClients.length && paginatedClients.length > 0}
+                            onCheckedChange={selectAllClients}
+                            aria-label="Select all"
+                          />
+                        </th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Client
+                        </th>
+                        <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Contact
+                        </th>
+                        <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Health Info
                       </th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Dietitian
@@ -775,7 +821,7 @@ export default function AdminAllClientsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredClients.map((client) => (
+                    {paginatedClients.map((client) => (
                       <tr key={client._id} className={`hover:bg-gray-50 ${selectedClients.includes(client._id) ? 'bg-blue-50' : ''}`}>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <Checkbox
@@ -1014,7 +1060,52 @@ export default function AdminAllClientsPage() {
                 </table>
               </div>
             </CardContent>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between border-t px-4 py-4">
+              <div className="text-sm text-gray-600">
+                Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredClients.length)} of {filteredClients.length} clients
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const pageNum = currentPage <= 3 ? i + 1 : Math.max(currentPage - 2, 1) + i;
+                    if (pageNum > totalPages) return null;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-10 h-10 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
           </Card>
+          </>
         )}
 
         {/* Assignment Dialog */}

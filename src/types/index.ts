@@ -55,6 +55,10 @@ export interface IUser extends Document {
   gender?: 'male' | 'female' | 'other';
   height?: number; // in cm
   weight?: number; // in kg
+  bmr?: number; // Basal Metabolic Rate (calories)
+  bodyFat?: number; // Body fat percentage (0-100)
+  idealWeight?: number; // Ideal weight target (kg)
+  targetBmi?: number; // Target BMI
   activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
   healthGoals?: string[];
   medicalConditions?: string[];

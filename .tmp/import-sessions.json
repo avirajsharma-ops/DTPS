@@ -1092,45 +1092,6 @@
         "displayName": "Users",
         "rows": [
           {
-            "rowIndex": 2,
-            "data": {
-              "zoconut_id": "P-36540",
-              "email": "kajolkhairnar1605@gmail.com",
-              "password": "DTPS@1234",
-              "firstName": "Kajol",
-              "lastName": "Khairnar",
-              "role": "client",
-              "status": "active",
-              "clientStatus": "active",
-              "phone": 919579093103,
-              "emailVerified": false,
-              "timezone": "UTC",
-              "dateOfBirth": "2001-05-16T00:00:00.000Z",
-              "gender": "female",
-              "sharePhotoConsent": true,
-              "bmiCategory": "Overweight",
-              "generalGoal": "weight-loss",
-              "onboardingStep": 0,
-              "dietType": null,
-              "pushNotificationEnabled": false,
-              "passwordResetToken": null,
-              "passwordResetTokenExpiry": null,
-              "createdAt": "2026-01-20T12:10:53.768Z",
-              "updatedAt": "2026-01-20T12:33:50.697Z",
-              "__v": null,
-              "alternativeEmail": null,
-              "alternativePhone": null,
-              "anniversary": null,
-              "maritalStatus": "single",
-              "occupation": "software engineer",
-              "source": null,
-              "targetWeightBucket": "10 to 15 kgs",
-              "weight": 78
-            },
-            "isValid": true,
-            "errors": []
-          },
-          {
             "rowIndex": 3,
             "data": {
               "zoconut_id": "P-36543",
@@ -1138,7 +1099,7 @@
               "password": "DTPS@1234",
               "firstName": "Saquib",
               "lastName": "khan",
-              "role": "client",
+              "role": "dietitian",
               "status": "active",
               "clientStatus": "active",
               "phone": 919031023268,
@@ -1248,7 +1209,7 @@
             "errors": []
           }
         ],
-        "validCount": 4,
+        "validCount": 3,
         "invalidCount": 0
       }
     ],
