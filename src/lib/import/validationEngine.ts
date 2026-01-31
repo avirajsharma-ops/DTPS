@@ -21,6 +21,13 @@ export interface ValidationError {
   errorType: 'required' | 'type' | 'format' | 'enum' | 'range' | 'extra' | 'unknown';
 }
 
+export interface FieldMappingInfo {
+  originalField: string;
+  mappedField: string | null;
+  value: any;
+  status: 'mapped' | 'unmapped' | 'empty';
+}
+
 export interface RowValidationResult {
   rowIndex: number;
   data: Record<string, any>;
@@ -29,6 +36,9 @@ export interface RowValidationResult {
   isValid: boolean;
   errors: ValidationError[];
   matchResults: ModelMatchResult[];
+  fieldMapping: FieldMappingInfo[];
+  unmappedFields: string[];
+  emptyFields: string[];
 }
 
 export interface ModelGroupedData {
@@ -39,6 +49,9 @@ export interface ModelGroupedData {
     data: Record<string, any>;
     isValid: boolean;
     errors: ValidationError[];
+    fieldMapping?: FieldMappingInfo[];
+    unmappedFields?: string[];
+    emptyFields?: string[];
   }>;
   validCount: number;
   invalidCount: number;
@@ -107,7 +120,10 @@ export class ValidationEngine {
             rowIndex: result.rowIndex,
             data: result.data,
             isValid: result.isValid,
-            errors: result.errors
+            errors: result.errors,
+            fieldMapping: result.fieldMapping,
+            unmappedFields: result.unmappedFields,
+            emptyFields: result.emptyFields
           });
           group.totalCount++;
           if (result.isValid) {
@@ -233,20 +249,23 @@ export class ValidationEngine {
         modelConfidence: 0,
         isValid: false,
         errors: [],
-        matchResults
+        matchResults,
+        fieldMapping: [],
+        unmappedFields: [],
+        emptyFields: []
       };
     }
 
-    // Clean the row data (remove fields not in schema)
-    let cleanedData = this.cleanRowData(detectedModel, row.data);
+    // Clean the row data (remove fields not in schema) and track field mapping
+    const { cleaned: cleanedData, fieldMapping, unmappedFields, emptyFields } = this.cleanRowData(detectedModel, row.data);
 
     // Transform data (convert values to correct formats/enums)
-    cleanedData = this.transformRowData(detectedModel, cleanedData);
+    const transformedData = this.transformRowData(detectedModel, cleanedData);
 
     // Validate against detected model
     const validationResult = await modelRegistry.validateRow(
       detectedModel,
-      cleanedData,
+      transformedData,
       row.rowIndex
     );
 
@@ -260,24 +279,43 @@ export class ValidationEngine {
       errorType: this.categorizeError(e.message)
     }));
 
+    // Add warnings for unmapped fields if any
+    if (unmappedFields.length > 0) {
+      console.log(`[ValidateRow] Row ${row.rowIndex} has ${unmappedFields.length} unmapped fields: ${unmappedFields.join(', ')}`);
+    }
+
     return {
       rowIndex: row.rowIndex,
-      data: cleanedData,
+      data: transformedData,
       detectedModel,
       modelConfidence,
       isValid: validationResult.isValid,
       errors,
-      matchResults
+      matchResults,
+      fieldMapping,
+      unmappedFields,
+      emptyFields
     };
   }
 
   /**
    * Clean row data by removing fields not in the schema
    * and properly handling nested objects/arrays
+   * Also tracks field mapping for reporting
    */
-  private cleanRowData(modelName: string, data: Record<string, any>): Record<string, any> {
+  private cleanRowData(modelName: string, data: Record<string, any>): {
+    cleaned: Record<string, any>;
+    fieldMapping: FieldMappingInfo[];
+    unmappedFields: string[];
+    emptyFields: string[];
+  } {
     const model = modelRegistry.get(modelName);
-    if (!model) return data;
+    if (!model) return { 
+      cleaned: data, 
+      fieldMapping: [], 
+      unmappedFields: [], 
+      emptyFields: [] 
+    };
 
     const schemaFields = model.fields.map(f => f.path);
     const allowedFields = new Set([
@@ -288,23 +326,103 @@ export class ValidationEngine {
       '__v'
     ]);
 
+    // Common field aliases for better matching
+    const fieldAliases: Record<string, string[]> = {
+      'firstName': ['first_name', 'firstname', 'fname', 'first'],
+      'lastName': ['last_name', 'lastname', 'lname', 'last', 'surname'],
+      'email': ['email_address', 'emailaddress', 'mail', 'e-mail'],
+      'phone': ['phone_number', 'phonenumber', 'mobile', 'mobile_number', 'contact', 'contact_number'],
+      'dateOfBirth': ['date_of_birth', 'dob', 'birth_date', 'birthdate', 'birthday'],
+      'height': ['height_cm', 'heightcm', 'height_in_cm', 'user_height'],
+      'weight': ['weight_kg', 'weightkg', 'weight_in_kg', 'user_weight', 'current_weight'],
+      'heightFeet': ['height_feet', 'heightfeet', 'feet', 'height_ft', 'ht_feet'],
+      'heightInch': ['height_inch', 'heightinch', 'inch', 'inches', 'height_in', 'ht_inch'],
+      'heightCm': ['height_cm_str', 'cm', 'centimeters'],
+      'weightKg': ['weight_kg_str', 'wt_kg', 'weight_kgs'],
+      'targetWeightKg': ['target_weight_kg', 'targetweight', 'goal_weight_kg'],
+      'activityLevel': ['activity_level', 'activitylevel', 'activity', 'physical_activity', 'exercise_level'],
+      'activityRate': ['activity_rate', 'activityrate'],
+      'gender': ['sex'],
+      'role': ['user_role', 'userrole', 'account_type'],
+      'status': ['user_status', 'userstatus', 'account_status'],
+      'clientStatus': ['client_status', 'engagement_status'],
+      'healthGoals': ['health_goals', 'goals', 'fitness_goals'],
+      'generalGoal': ['general_goal', 'main_goal', 'primary_goal'],
+      'bmiCategory': ['bmi_category', 'bmi_status'],
+      'bmr': ['basal_metabolic_rate'],
+      'bodyFat': ['body_fat', 'bodyfat', 'body_fat_percentage', 'fat_percentage'],
+      'idealWeight': ['ideal_weight', 'target_weight', 'goal_weight'],
+      'targetBmi': ['target_bmi', 'goal_bmi'],
+      'occupation': ['job', 'profession', 'work'],
+      'maritalStatus': ['marital_status', 'married'],
+      'anniversary': ['wedding_anniversary', 'anniversary_date'],
+      'source': ['lead_source', 'how_found', 'referral'],
+      'referralSource': ['referral_source', 'referred_by'],
+      'alternativePhone': ['alternative_phone', 'alt_phone', 'secondary_phone'],
+      'alternativeEmail': ['alternative_email', 'alt_email', 'secondary_email'],
+      'zoconut_id': ['zoconutid', 'zoconut'],
+      'avatar': ['profile_image', 'profile_picture', 'photo'],
+      'bio': ['biography', 'about', 'description'],
+      'experience': ['years_experience', 'exp', 'work_experience'],
+      'consultationFee': ['consultation_fee', 'fee', 'price'],
+      'dietType': ['diet_type', 'dietary_preference', 'food_preference'],
+      'onboardingCompleted': ['onboarding_completed', 'onboarded'],
+    };
+
+    // Create reverse lookup for aliases
+    const aliasToField: Record<string, string> = {};
+    for (const [field, aliases] of Object.entries(fieldAliases)) {
+      for (const alias of aliases) {
+        aliasToField[alias.toLowerCase()] = field;
+      }
+    }
+
     // Get root-level schema field names (for nested object matching)
     const rootFields = new Set(
       schemaFields.map(f => f.split('.')[0])
     );
 
     const normalizeFieldName = (field: string) => {
-      return field.toLowerCase().replace(/_/g, '');
+      return field.toLowerCase().replace(/_/g, '').replace(/-/g, '');
     };
 
     const cleaned: Record<string, any> = {};
+    const fieldMapping: FieldMappingInfo[] = [];
+    const unmappedFields: string[] = [];
+    const emptyFields: string[] = [];
+
     for (const [key, value] of Object.entries(data)) {
-      // Skip null/undefined values
-      if (value === null || value === undefined) continue;
+      // Check if value is empty
+      const isEmpty = value === null || value === undefined || value === '' || 
+        (typeof value === 'string' && value.trim() === '');
+      
+      // Track empty fields even if they're valid schema fields
+      if (isEmpty) {
+        // Check if it maps to a schema field
+        const schemaMatch = Array.from(allowedFields).find(af => 
+          af.toLowerCase() === key.toLowerCase() || normalizeFieldName(af) === normalizeFieldName(key)
+        );
+        if (schemaMatch) {
+          emptyFields.push(schemaMatch);
+          fieldMapping.push({
+            originalField: key,
+            mappedField: schemaMatch,
+            value: value,
+            status: 'empty'
+          });
+        }
+        continue; // Skip empty values
+      }
 
       // Try exact match first
       if (allowedFields.has(key)) {
         cleaned[key] = value;
+        fieldMapping.push({
+          originalField: key,
+          mappedField: key,
+          value: value,
+          status: 'mapped'
+        });
         continue;
       }
 
@@ -314,34 +432,69 @@ export class ValidationEngine {
       );
       if (matchedField) {
         cleaned[matchedField] = value;
+        fieldMapping.push({
+          originalField: key,
+          mappedField: matchedField,
+          value: value,
+          status: 'mapped'
+        });
         continue;
       }
 
-      // Try normalized match (ignore underscores and case)
+      // Try normalized match (ignore underscores, hyphens, and case)
       const keyNormalized = normalizeFieldName(key);
       matchedField = Array.from(allowedFields).find(af => 
         normalizeFieldName(af) === keyNormalized
       );
       if (matchedField) {
         cleaned[matchedField] = value;
+        fieldMapping.push({
+          originalField: key,
+          mappedField: matchedField,
+          value: value,
+          status: 'mapped'
+        });
+        continue;
+      }
+
+      // Try alias matching
+      const aliasMatch = aliasToField[key.toLowerCase()];
+      if (aliasMatch && allowedFields.has(aliasMatch)) {
+        cleaned[aliasMatch] = value;
+        fieldMapping.push({
+          originalField: key,
+          mappedField: aliasMatch,
+          value: value,
+          status: 'mapped'
+        });
         continue;
       }
 
       // Check if this is a nested object that matches a root schema field
-      // e.g., key = "goals" and schemaFields has "goals.calories", "goals.protein"
       if (typeof value === 'object' && !Array.isArray(value) && rootFields.has(key)) {
         cleaned[key] = value;
+        fieldMapping.push({
+          originalField: key,
+          mappedField: key,
+          value: value,
+          status: 'mapped'
+        });
         continue;
       }
 
-      // Check if this is an array field (like assignedDietitians, healthGoals)
+      // Check if this is an array field
       if (Array.isArray(value)) {
-        // Check if this field exists in schema (as array type)
         const arrayField = schemaFields.find(f => 
           f === key || f.toLowerCase() === key.toLowerCase()
         );
         if (arrayField) {
           cleaned[arrayField] = value;
+          fieldMapping.push({
+            originalField: key,
+            mappedField: arrayField,
+            value: value,
+            status: 'mapped'
+          });
           continue;
         }
         
@@ -351,6 +504,12 @@ export class ValidationEngine {
         );
         if (matchedArrayField) {
           cleaned[matchedArrayField] = value;
+          fieldMapping.push({
+            originalField: key,
+            mappedField: matchedArrayField,
+            value: value,
+            status: 'mapped'
+          });
           continue;
         }
       }
@@ -361,10 +520,26 @@ export class ValidationEngine {
       );
       if (isNested) {
         cleaned[key] = value;
+        fieldMapping.push({
+          originalField: key,
+          mappedField: key,
+          value: value,
+          status: 'mapped'
+        });
+        continue;
       }
+
+      // Field could not be mapped
+      unmappedFields.push(key);
+      fieldMapping.push({
+        originalField: key,
+        mappedField: null,
+        value: value,
+        status: 'unmapped'
+      });
     }
 
-    return cleaned;
+    return { cleaned, fieldMapping, unmappedFields, emptyFields };
   }
 
   /**
@@ -426,6 +601,280 @@ export class ValidationEngine {
         }
 
         transformed.generalGoal = mappedGoal;
+      }
+
+      // Convert activity level to enum values
+      if (transformed.activityLevel && typeof transformed.activityLevel === 'string') {
+        const activity = transformed.activityLevel.toLowerCase().trim().replace(/\s+/g, '_');
+        let mappedActivity = '';
+
+        // Map common variations to enum values
+        if (activity.includes('sedentary') || activity.includes('inactive') || activity.includes('none')) {
+          mappedActivity = 'sedentary';
+        } else if (activity.includes('lightly') || activity.includes('light') || activity.includes('low')) {
+          mappedActivity = 'lightly_active';
+        } else if (activity.includes('moderately') || activity.includes('moderate') || activity.includes('medium')) {
+          mappedActivity = 'moderately_active';
+        } else if (activity.includes('very') || activity.includes('high') || activity.includes('intense')) {
+          mappedActivity = 'very_active';
+        } else if (activity.includes('extremely') || activity.includes('athlete') || activity.includes('professional')) {
+          mappedActivity = 'extremely_active';
+        } else if (['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active'].includes(activity)) {
+          mappedActivity = activity;
+        }
+
+        transformed.activityLevel = mappedActivity;
+      }
+
+      // Ensure heightFeet and heightInch are strings
+      if (transformed.heightFeet !== undefined && transformed.heightFeet !== null) {
+        transformed.heightFeet = String(transformed.heightFeet);
+      }
+      if (transformed.heightInch !== undefined && transformed.heightInch !== null) {
+        transformed.heightInch = String(transformed.heightInch);
+      }
+      if (transformed.heightCm !== undefined && transformed.heightCm !== null) {
+        transformed.heightCm = String(transformed.heightCm);
+      }
+      if (transformed.weightKg !== undefined && transformed.weightKg !== null) {
+        transformed.weightKg = String(transformed.weightKg);
+      }
+      if (transformed.targetWeightKg !== undefined && transformed.targetWeightKg !== null) {
+        transformed.targetWeightKg = String(transformed.targetWeightKg);
+      }
+
+      // Handle healthGoals - must be array of strings
+      if (transformed.healthGoals !== undefined) {
+        let goals = transformed.healthGoals;
+        
+        // If it's a string that looks like JSON, try to parse it
+        if (typeof goals === 'string') {
+          try {
+            // Try to parse as JSON
+            const parsed = JSON.parse(goals.replace(/'/g, '"'));
+            if (Array.isArray(parsed)) {
+              // If it's an array of objects (like goals with calories, protein, etc.), skip it
+              if (parsed.length > 0 && typeof parsed[0] === 'object') {
+                // This is probably a "goals" object, not healthGoals strings
+                // Move to the goals field if it exists, otherwise remove
+                if (!transformed.goals) {
+                  transformed.goals = parsed[0];
+                }
+                delete transformed.healthGoals;
+              } else {
+                // It's an array of strings/primitives, convert to strings
+                transformed.healthGoals = parsed.map((g: any) => String(g));
+              }
+            } else if (typeof parsed === 'object') {
+              // Single object - move to goals
+              if (!transformed.goals) {
+                transformed.goals = parsed;
+              }
+              delete transformed.healthGoals;
+            } else {
+              // Single value - wrap in array
+              transformed.healthGoals = [String(parsed)];
+            }
+          } catch (e) {
+            // Not valid JSON - could be comma-separated string
+            if (goals.includes(',')) {
+              transformed.healthGoals = goals.split(',').map((g: string) => g.trim()).filter(Boolean);
+            } else if (goals.trim()) {
+              transformed.healthGoals = [goals.trim()];
+            } else {
+              delete transformed.healthGoals;
+            }
+          }
+        } else if (Array.isArray(goals)) {
+          // Filter out objects (like {calories: 1800, ...}) and keep only strings
+          const stringGoals = goals.filter((g: any) => typeof g === 'string' || typeof g === 'number');
+          if (stringGoals.length > 0) {
+            transformed.healthGoals = stringGoals.map((g: any) => String(g));
+          } else if (goals.length > 0 && typeof goals[0] === 'object') {
+            // Array of goal objects - move first one to goals
+            if (!transformed.goals) {
+              transformed.goals = goals[0];
+            }
+            delete transformed.healthGoals;
+          } else {
+            delete transformed.healthGoals;
+          }
+        } else if (typeof goals === 'object' && goals !== null) {
+          // Single object - move to goals
+          if (!transformed.goals) {
+            transformed.goals = goals;
+          }
+          delete transformed.healthGoals;
+        }
+      }
+
+      // Handle assignedDietitians - validate ObjectIds
+      if (transformed.assignedDietitians !== undefined) {
+        let dietitians = transformed.assignedDietitians;
+        
+        // Helper function to validate ObjectId format (24 hex chars)
+        const isValidObjectId = (id: string): boolean => {
+          if (typeof id !== 'string') return false;
+          // Remove any ObjectId wrapper text
+          const cleanId = id.replace(/new ObjectId\(['"]?|['"]?\)/g, '').trim();
+          return /^[0-9a-fA-F]{24}$/.test(cleanId);
+        };
+
+        // Helper to clean ObjectId string
+        const cleanObjectId = (id: string): string => {
+          if (typeof id !== 'string') return '';
+          return id.replace(/new ObjectId\(['"]?|['"]?\)/g, '').trim();
+        };
+
+        if (typeof dietitians === 'string') {
+          try {
+            // Try to parse as JSON
+            const parsed = JSON.parse(dietitians.replace(/'/g, '"').replace(/new ObjectId\(/g, '"').replace(/\)/g, '"'));
+            if (Array.isArray(parsed)) {
+              dietitians = parsed;
+            } else {
+              dietitians = [parsed];
+            }
+          } catch (e) {
+            // Could be comma-separated
+            if (dietitians.includes(',')) {
+              dietitians = dietitians.split(',').map((d: string) => d.trim());
+            } else if (dietitians.trim()) {
+              dietitians = [dietitians.trim()];
+            } else {
+              dietitians = [];
+            }
+          }
+        }
+
+        if (Array.isArray(dietitians)) {
+          // Filter to only valid ObjectIds
+          const validIds = dietitians
+            .map((d: any) => {
+              if (typeof d === 'object' && d !== null) {
+                // Could be ObjectId object
+                return d.toString ? d.toString() : String(d);
+              }
+              return cleanObjectId(String(d));
+            })
+            .filter((id: string) => isValidObjectId(id));
+          
+          if (validIds.length > 0) {
+            transformed.assignedDietitians = validIds;
+          } else {
+            delete transformed.assignedDietitians;
+          }
+        } else {
+          delete transformed.assignedDietitians;
+        }
+      }
+
+      // Handle assignedHealthCounselors - same logic as dietitians
+      if (transformed.assignedHealthCounselors !== undefined) {
+        let counselors = transformed.assignedHealthCounselors;
+        
+        const isValidObjectId = (id: string): boolean => {
+          if (typeof id !== 'string') return false;
+          const cleanId = id.replace(/new ObjectId\(['"]?|['"]?\)/g, '').trim();
+          return /^[0-9a-fA-F]{24}$/.test(cleanId);
+        };
+
+        const cleanObjectId = (id: string): string => {
+          if (typeof id !== 'string') return '';
+          return id.replace(/new ObjectId\(['"]?|['"]?\)/g, '').trim();
+        };
+
+        if (typeof counselors === 'string') {
+          try {
+            const parsed = JSON.parse(counselors.replace(/'/g, '"').replace(/new ObjectId\(/g, '"').replace(/\)/g, '"'));
+            if (Array.isArray(parsed)) {
+              counselors = parsed;
+            } else {
+              counselors = [parsed];
+            }
+          } catch (e) {
+            if (counselors.includes(',')) {
+              counselors = counselors.split(',').map((c: string) => c.trim());
+            } else if (counselors.trim()) {
+              counselors = [counselors.trim()];
+            } else {
+              counselors = [];
+            }
+          }
+        }
+
+        if (Array.isArray(counselors)) {
+          const validIds = counselors
+            .map((c: any) => {
+              if (typeof c === 'object' && c !== null) {
+                return c.toString ? c.toString() : String(c);
+              }
+              return cleanObjectId(String(c));
+            })
+            .filter((id: string) => isValidObjectId(id));
+          
+          if (validIds.length > 0) {
+            transformed.assignedHealthCounselors = validIds;
+          } else {
+            delete transformed.assignedHealthCounselors;
+          }
+        } else {
+          delete transformed.assignedHealthCounselors;
+        }
+      }
+
+      // Handle tags - validate ObjectIds
+      if (transformed.tags !== undefined) {
+        let tags = transformed.tags;
+        
+        const isValidObjectId = (id: string): boolean => {
+          if (typeof id !== 'string') return false;
+          const cleanId = id.replace(/new ObjectId\(['"]?|['"]?\)/g, '').trim();
+          return /^[0-9a-fA-F]{24}$/.test(cleanId);
+        };
+
+        const cleanObjectId = (id: string): string => {
+          if (typeof id !== 'string') return '';
+          return id.replace(/new ObjectId\(['"]?|['"]?\)/g, '').trim();
+        };
+
+        if (typeof tags === 'string') {
+          try {
+            const parsed = JSON.parse(tags.replace(/'/g, '"').replace(/new ObjectId\(/g, '"').replace(/\)/g, '"'));
+            if (Array.isArray(parsed)) {
+              tags = parsed;
+            } else {
+              tags = [parsed];
+            }
+          } catch (e) {
+            if (tags.includes(',')) {
+              tags = tags.split(',').map((t: string) => t.trim());
+            } else if (tags.trim()) {
+              tags = [tags.trim()];
+            } else {
+              tags = [];
+            }
+          }
+        }
+
+        if (Array.isArray(tags)) {
+          const validIds = tags
+            .map((t: any) => {
+              if (typeof t === 'object' && t !== null) {
+                return t.toString ? t.toString() : String(t);
+              }
+              return cleanObjectId(String(t));
+            })
+            .filter((id: string) => isValidObjectId(id));
+          
+          if (validIds.length > 0) {
+            transformed.tags = validIds;
+          } else {
+            delete transformed.tags;
+          }
+        } else {
+          delete transformed.tags;
+        }
       }
     }
 

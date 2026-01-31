@@ -184,6 +184,38 @@ const userSchema = new Schema({
     type: Number,
     min: 0
   },
+  // Height in feet/inches for import compatibility
+  heightFeet: {
+    type: String,
+    description: 'Height in feet (for import compatibility)'
+  },
+  heightInch: {
+    type: String,
+    description: 'Height in inches (for import compatibility)'
+  },
+  heightCm: {
+    type: String,
+    description: 'Height in centimeters'
+  },
+  weightKg: {
+    type: String,
+    description: 'Weight in kg (string format)'
+  },
+  targetWeightKg: {
+    type: String,
+    description: 'Target weight in kg'
+  },
+  // Activity level
+  activityLevel: {
+    type: String,
+    enum: ['', 'sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active'],
+    default: '',
+    description: 'Physical activity level'
+  },
+  activityRate: {
+    type: String,
+    description: 'Activity rate description'
+  },
   // Health metrics
   bmr: {
     type: Number,
@@ -207,9 +239,8 @@ const userSchema = new Schema({
     max: 60,
     description: 'Target BMI'
   },
-  // DEPRECATED: These fields moved to LifestyleInfo - keeping for backward compatibility
-  // Use LifestyleInfo model for new data
-  // heightFeet, heightInch, heightCm, weightKg, targetWeightKg, idealWeightKg, bmi - see LifestyleInfo
+  // These fields are also stored in LifestyleInfo for detailed tracking
+  // The User model fields are for quick access and import compatibility
   bmiCategory: {
     type: String,
     enum: ['', 'Underweight', 'Normal', 'Overweight', 'Obese'],

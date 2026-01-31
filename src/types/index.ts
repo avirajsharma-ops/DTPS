@@ -53,13 +53,19 @@ export interface IUser extends Document {
   // Client specific fields
   dateOfBirth?: Date;
   gender?: 'male' | 'female' | 'other';
-  height?: number; // in cm
-  weight?: number; // in kg
+  height?: number; // in cm (numeric)
+  weight?: number; // in kg (numeric)
+  heightFeet?: string; // Height in feet (for import)
+  heightInch?: string; // Height in inches (for import)
+  heightCm?: string; // Height in cm (string format)
+  weightKg?: string; // Weight in kg (string format)
+  targetWeightKg?: string; // Target weight in kg
   bmr?: number; // Basal Metabolic Rate (calories)
   bodyFat?: number; // Body fat percentage (0-100)
   idealWeight?: number; // Ideal weight target (kg)
   targetBmi?: number; // Target BMI
-  activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+  activityLevel?: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active' | '';
+  activityRate?: string;
   healthGoals?: string[];
   medicalConditions?: string[];
   allergies?: string[];

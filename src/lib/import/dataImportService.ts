@@ -26,6 +26,13 @@ export interface SaveResult {
   message: string;
 }
 
+export interface FieldMappingInfo {
+  originalField: string;
+  mappedField: string | null;
+  value: any;
+  status: 'mapped' | 'unmapped' | 'empty';
+}
+
 export interface ImportSession {
   id: string;
   fileName: string;
@@ -39,6 +46,9 @@ export interface ImportSession {
       data: Record<string, any>;
       isValid: boolean;
       errors: ValidationError[];
+      fieldMapping?: FieldMappingInfo[];
+      unmappedFields?: string[];
+      emptyFields?: string[];
     }>;
     validCount: number;
     invalidCount: number;
@@ -158,6 +168,9 @@ export class DataImportService {
           data: Record<string, any>;
           isValid: boolean;
           errors: ValidationError[];
+          fieldMapping?: FieldMappingInfo[];
+          unmappedFields?: string[];
+          emptyFields?: string[];
         }>;
         validCount: number;
         invalidCount: number;

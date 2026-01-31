@@ -44,11 +44,21 @@ interface ValidationError {
   errorType: string;
 }
 
+interface FieldMappingInfo {
+  originalField: string;
+  mappedField: string | null;
+  value: any;
+  status: 'mapped' | 'unmapped' | 'empty';
+}
+
 interface RowData {
   rowIndex: number;
   data: Record<string, any>;
   isValid: boolean;
   errors: ValidationError[];
+  fieldMapping?: FieldMappingInfo[];
+  unmappedFields?: string[];
+  emptyFields?: string[];
 }
 
 interface ModelGroup {
@@ -128,6 +138,9 @@ export default function DataImportPage() {
     modelName?: string;
     isValid?: boolean;
     errors?: ValidationError[];
+    fieldMapping?: FieldMappingInfo[];
+    unmappedFields?: string[];
+    emptyFields?: string[];
   } | null>(null);
 
   // Load available models on mount
@@ -502,45 +515,83 @@ export default function DataImportPage() {
   const renderValidationSummary = () => {
     if (!state.validation) return null;
 
+    // Calculate total unmapped fields across all rows
+    let totalUnmappedFields = 0;
+    let totalEmptyFields = 0;
+    let rowsWithUnmappedFields = 0;
+    
+    state.modelGroups.forEach(group => {
+      group.rows.forEach(row => {
+        if (row.unmappedFields && row.unmappedFields.length > 0) {
+          totalUnmappedFields += row.unmappedFields.length;
+          rowsWithUnmappedFields++;
+        }
+        if (row.emptyFields && row.emptyFields.length > 0) {
+          totalEmptyFields += row.emptyFields.length;
+        }
+      });
+    });
+
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-1">
-            <FileSpreadsheet className="w-4 h-4" />
-            <span className="text-sm">Total Rows</span>
+      <div className="space-y-4 mb-6">
+        {/* Main stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-1">
+              <FileSpreadsheet className="w-4 h-4" />
+              <span className="text-sm">Total Rows</span>
+            </div>
+            <p className="text-2xl font-bold">{state.totalRows}</p>
           </div>
-          <p className="text-2xl font-bold">{state.totalRows}</p>
+
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
+            <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-1">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-sm">Valid</span>
+            </div>
+            <p className="text-2xl font-bold text-green-700 dark:text-green-400">
+              {state.validation.validRows}
+            </p>
+          </div>
+
+          <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-200 dark:border-red-800">
+            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-1">
+              <XCircle className="w-4 h-4" />
+              <span className="text-sm">Invalid</span>
+            </div>
+            <p className="text-2xl font-bold text-red-700 dark:text-red-400">
+              {state.validation.invalidRows}
+            </p>
+          </div>
+
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 border border-yellow-200 dark:border-yellow-800">
+            <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 mb-1">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-sm">Unmatched</span>
+            </div>
+            <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+              {state.validation.unmatchedRows}
+            </p>
+          </div>
         </div>
 
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
-          <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-1">
-            <CheckCircle2 className="w-4 h-4" />
-            <span className="text-sm">Valid</span>
+        {/* Field mapping warning */}
+        {totalUnmappedFields > 0 && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-yellow-800 dark:text-yellow-300">
+                  Field Mapping Warning
+                </h4>
+                <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                  {totalUnmappedFields} fields in {rowsWithUnmappedFields} rows could not be mapped to database fields and will NOT be saved.
+                  Click the <Eye className="w-4 h-4 inline mx-1" /> button on any row to see detailed field mapping information.
+                </p>
+              </div>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-green-700 dark:text-green-400">
-            {state.validation.validRows}
-          </p>
-        </div>
-
-        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-200 dark:border-red-800">
-          <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-1">
-            <XCircle className="w-4 h-4" />
-            <span className="text-sm">Invalid</span>
-          </div>
-          <p className="text-2xl font-bold text-red-700 dark:text-red-400">
-            {state.validation.invalidRows}
-          </p>
-        </div>
-
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 border border-yellow-200 dark:border-yellow-800">
-          <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 mb-1">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="text-sm">Unmatched</span>
-          </div>
-          <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
-            {state.validation.unmatchedRows}
-          </p>
-        </div>
+        )}
       </div>
     );
   };
@@ -601,15 +652,15 @@ export default function DataImportPage() {
   const renderFieldViewer = () => {
     if (!viewingRowData) return null;
 
-    const { data, modelName, isValid, errors = [] } = viewingRowData;
+    const { data, modelName, isValid, errors = [], fieldMapping = [], unmappedFields = [], emptyFields = [] } = viewingRowData;
     const allFields = Object.entries(data);
     const filledFields = allFields.filter(([, value]) => 
       value !== null && value !== undefined && value !== '' && value !== 0
     ).length;
     const totalFields = allFields.length;
-    const emptyFields = allFields.filter(([, value]) => 
-      value === null || value === undefined || value === ''
-    );
+    const mappedFieldsList = fieldMapping?.filter(f => f.status === 'mapped') || [];
+    const unmappedFieldsList = fieldMapping?.filter(f => f.status === 'unmapped') || [];
+    const emptyFieldsList = fieldMapping?.filter(f => f.status === 'empty') || [];
 
     const errorsByField = new Map<string, string[]>();
     errors?.forEach(err => {
@@ -621,14 +672,14 @@ export default function DataImportPage() {
 
     return (
       <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-4xl my-8">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-5xl my-8">
           {/* Header */}
           <div className="border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-10">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {modelName || 'Row Data'} - All Fields
+                {modelName || 'Row Data'} - Field Mapping Details
               </h3>
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${
                   isValid 
                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
@@ -637,9 +688,19 @@ export default function DataImportPage() {
                   {isValid ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                   {isValid ? 'Valid' : 'Invalid'}
                 </span>
-                <span className="text-gray-600 dark:text-gray-400">
-                  {filledFields} of {totalFields} fields filled
+                <span className="text-green-600 dark:text-green-400">
+                  ✓ {mappedFieldsList.length} mapped
                 </span>
+                {unmappedFieldsList.length > 0 && (
+                  <span className="text-red-600 dark:text-red-400">
+                    ✗ {unmappedFieldsList.length} unmapped
+                  </span>
+                )}
+                {emptyFieldsList.length > 0 && (
+                  <span className="text-orange-600 dark:text-orange-400">
+                    ○ {emptyFieldsList.length} empty
+                  </span>
+                )}
               </div>
             </div>
             <button
@@ -652,70 +713,111 @@ export default function DataImportPage() {
 
           {/* Content */}
           <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-            {/* Filled Fields Section */}
-            {filledFields > 0 && (
+            {/* Unmapped Fields Section - Show First as Warning */}
+            {unmappedFieldsList.length > 0 && (
               <div className="mb-8">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  Filled Fields ({filledFields})
+                <h4 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-4 flex items-center gap-2">
+                  <XCircle className="w-4 h-4" />
+                  Unmapped Fields ({unmappedFieldsList.length}) - These fields will NOT be saved!
+                </h4>
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                  <p className="text-sm text-red-600 dark:text-red-400 mb-3">
+                    The following fields from your import file could not be matched to any database field:
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {unmappedFieldsList.map((field, i) => (
+                      <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-red-300 dark:border-red-700">
+                        <div className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wide">
+                          {field.originalField}
+                        </div>
+                        <p className="text-sm text-gray-900 dark:text-white mt-1 break-words">
+                          {typeof field.value === 'object' ? JSON.stringify(field.value) : String(field.value)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mapped Fields Section */}
+            {mappedFieldsList.length > 0 && (
+              <div className="mb-8">
+                <h4 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-4 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Mapped Fields ({mappedFieldsList.length}) - These fields will be saved
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {allFields
-                    .filter(([, value]) => value !== null && value !== undefined && value !== '' && value !== 0)
-                    .map(([key, value]) => {
-                      const fieldErrors = errorsByField.get(key);
-                      return (
-                        <div key={key} className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                              {key}
-                            </label>
-                            {fieldErrors && (
-                              <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                  {mappedFieldsList.map((field, i) => {
+                    const fieldErrors = errorsByField.get(field.mappedField || '');
+                    const wasMapped = field.originalField !== field.mappedField;
+                    return (
+                      <div key={i} className={`rounded-lg p-4 border ${
+                        fieldErrors 
+                          ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                          : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      }`}>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            {wasMapped ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500 dark:text-gray-400 line-through">
+                                  {field.originalField}
+                                </span>
+                                <span className="text-xs text-green-600">→</span>
+                                <span className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide">
+                                  {field.mappedField}
+                                </span>
+                              </div>
+                            ) : (
+                              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                                {field.mappedField}
+                              </label>
                             )}
                           </div>
-                          <p className="text-sm text-gray-900 dark:text-white break-words">
-                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                          </p>
                           {fieldErrors && (
-                            <div className="mt-2 pt-2 border-t border-yellow-200 dark:border-yellow-700">
-                              <div className="text-xs text-yellow-700 dark:text-yellow-400 space-y-1">
-                                {fieldErrors.map((err, i) => (
-                                  <div key={i}>• {err}</div>
-                                ))}
-                              </div>
-                            </div>
+                            <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                           )}
                         </div>
-                      );
-                    })}
+                        <p className="text-sm text-gray-900 dark:text-white break-words">
+                          {typeof field.value === 'object' ? JSON.stringify(field.value) : String(field.value)}
+                        </p>
+                        {fieldErrors && (
+                          <div className="mt-2 pt-2 border-t border-yellow-200 dark:border-yellow-700">
+                            <div className="text-xs text-yellow-700 dark:text-yellow-400 space-y-1">
+                              {fieldErrors.map((err, j) => (
+                                <div key={j}>• {err}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Empty Fields Section */}
-            {emptyFields.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                  Empty Fields ({emptyFields.length})
+            {emptyFieldsList.length > 0 && (
+              <div className="mb-8">
+                <h4 className="text-sm font-semibold text-orange-700 dark:text-orange-400 mb-4 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Empty Fields ({emptyFieldsList.length}) - No data provided
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {emptyFields.map(([key]) => (
-                    <div key={key} className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-dashed border-orange-300 dark:border-orange-700">
-                      <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                        {key}
-                      </label>
-                      <p className="text-sm text-orange-600 dark:text-orange-400 mt-2 italic">
-                        No data
-                      </p>
-                    </div>
-                  ))}
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+                  <div className="flex flex-wrap gap-2">
+                    {emptyFieldsList.map((field, i) => (
+                      <span key={i} className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-orange-100 dark:bg-orange-800/30 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-700">
+                        {field.mappedField || field.originalField}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Errors Section */}
+            {/* Validation Errors Section */}
             {errors && errors.length > 0 && (
               <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <h4 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-4 flex items-center gap-2">
@@ -736,6 +838,19 @@ export default function DataImportPage() {
                 </div>
               </div>
             )}
+
+            {/* All Saved Data Preview */}
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+                <Table className="w-4 h-4" />
+                Final Data to be Saved ({Object.keys(data).length} fields)
+              </h4>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                <pre className="text-xs text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap">
+                  {JSON.stringify(data, null, 2)}
+                </pre>
+              </div>
+            </div>
           </div>
 
           {/* Footer */}
@@ -820,23 +935,33 @@ export default function DataImportPage() {
                 <React.Fragment key={row.rowIndex}>
                   <tr className={`
                     ${row.isValid 
-                      ? 'bg-white dark:bg-gray-800' 
+                      ? (row.unmappedFields && row.unmappedFields.length > 0 
+                          ? 'bg-yellow-50 dark:bg-yellow-900/10'
+                          : 'bg-white dark:bg-gray-800')
                       : 'bg-red-50 dark:bg-red-900/10'
                     }
                   `}>
                     <td className="px-4 py-3 font-mono text-gray-500">{row.rowIndex}</td>
                     <td className="px-4 py-3">
-                      {row.isValid ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Valid
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
-                          <XCircle className="w-3 h-3" />
-                          {row.errors.length} error(s)
-                        </span>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {row.isValid ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Valid
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                            <XCircle className="w-3 h-3" />
+                            {row.errors.length} error(s)
+                          </span>
+                        )}
+                        {row.unmappedFields && row.unmappedFields.length > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
+                            <AlertTriangle className="w-3 h-3" />
+                            {row.unmappedFields.length} unmapped
+                          </span>
+                        )}
+                      </div>
                     </td>
                     {headers.slice(0, 8).map(h => (
                       <td key={h} className="px-4 py-3 max-w-[200px] truncate">
@@ -851,7 +976,10 @@ export default function DataImportPage() {
                             data: row.data,
                             modelName: group.modelName,
                             isValid: row.isValid,
-                            errors: row.errors
+                            errors: row.errors,
+                            fieldMapping: row.fieldMapping,
+                            unmappedFields: row.unmappedFields,
+                            emptyFields: row.emptyFields
                           })}
                           className="p-1 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded"
                           title="View all fields"

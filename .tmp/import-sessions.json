@@ -1529,5 +1529,1533 @@
     "savedCounts": {
       "User": 1
     }
+  },
+  "import_1769857781740_jxzr1xrzz": {
+    "id": "import_1769857781740_jxzr1xrzz",
+    "fileName": "Contact Details.xlsx (zoco 1).xlsx",
+    "uploadedAt": "2026-01-31T11:09:41.740Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-236",
+              "email": 0,
+              "password": "DTps@123",
+              "firstName": "Preet",
+              "lastName": "Dhillon",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 919761713013,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1995-07-07T00:00:00.000Z",
+              "gender": "female",
+              "bmiCategory": "Overweight",
+              "generalGoal": "not-specified",
+              "assignedDietitian": "694b8cfad1360ee7bdb7f7c1",
+              "onboardingStep": 0,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "maritalStatus": "married",
+              "occupation": "housewife",
+              "targetWeightBucket": "-",
+              "weight": 73.85,
+              "bmr": 1520.2,
+              "bodyFat": 34,
+              "idealWeight": 59.1,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "697c9524e3c269be7dce24c3",
+              "healthGoals": {
+                "calories": 1800,
+                "protein": 120,
+                "carbs": 200,
+                "fat": 60,
+                "water": 8,
+                "steps": 10000
+              },
+              "assignedDietitians": [
+                "694a5fe0d1360ee7bdb7eb18",
+                "694a6b12d1360ee7bdb7ef0d",
+                "97dd2566800165e353c484c",
+                "697dd1a36800165e353c482d",
+                "694a6fbdd1360ee7bdb7f194"
+              ],
+              "assignedHealthCounselors": [
+                "697c96dce3c269be7dce2564"
+              ],
+              "dailyGoals": {
+                "calories": 2000,
+                "steps": 8000,
+                "water": 2500,
+                "sleep": 7.5
+              },
+              "createdBy": {
+                "userId": "694b8cfad1360ee7bdb7f7c1",
+                "role": "dietitian"
+              }
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "healthGoals.0",
+                "message": "Cast to [string] failed for value \"[\\n' +\n  '  {\\n' +\n  '    calories: 1800,\\n' +\n  '    protein: 120,\\n' +\n  '    carbs: 200,\\n' +\n  '    fat: 60,\\n' +\n  '    water: 8,\\n' +\n  '    steps: 10000\\n' +\n  '  }\\n' +\n  ']\" (type string) at path \"healthGoals.0\" because of \"CastError\"",
+                "errorType": "type"
+              },
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "assignedDietitians.2",
+                "message": "Cast to [ObjectId] failed for value \"[\\n' +\n  \"  new ObjectId('694a5fe0d1360ee7bdb7eb18'),\\n\" +\n  \"  new ObjectId('694a6b12d1360ee7bdb7ef0d'),\\n\" +\n  \"  '97dd2566800165e353c484c',\\n\" +\n  \"  '697dd1a36800165e353c482d',\\n\" +\n  \"  '694a6fbdd1360ee7bdb7f194'\\n\" +\n  ']\" (type string) at path \"assignedDietitians.2\" because of \"CastError\"",
+                "errorType": "type"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "zoconutId",
+                "mappedField": "zoconut_id",
+                "value": "P-236",
+                "status": "mapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "password",
+                "mappedField": "password",
+                "value": "DTps@123",
+                "status": "mapped"
+              },
+              {
+                "originalField": "firstname",
+                "mappedField": "firstName",
+                "value": "Preet",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastname",
+                "mappedField": "lastName",
+                "value": "Dhillon",
+                "status": "mapped"
+              },
+              {
+                "originalField": "role",
+                "mappedField": "role",
+                "value": "client",
+                "status": "mapped"
+              },
+              {
+                "originalField": "status",
+                "mappedField": "status",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "clientstatus",
+                "mappedField": "clientStatus",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "phone",
+                "mappedField": "phone",
+                "value": 919761713013,
+                "status": "mapped"
+              },
+              {
+                "originalField": "emailverified",
+                "mappedField": "emailVerified",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "timezone",
+                "mappedField": "timezone",
+                "value": "UTC",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dateofbirth",
+                "mappedField": "dateOfBirth",
+                "value": "1995-07-07T00:00:0000Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmicategory",
+                "mappedField": "bmiCategory",
+                "value": 27.1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "generalgoal",
+                "mappedField": "generalGoal",
+                "value": "-",
+                "status": "mapped"
+              },
+              {
+                "originalField": "assigneddietitian",
+                "mappedField": "assignedDietitian",
+                "value": "694b8cfad1360ee7bdb7f7c1",
+                "status": "mapped"
+              },
+              {
+                "originalField": "onboardingstep",
+                "mappedField": "onboardingStep",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "diettype",
+                "mappedField": "dietType",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-01-20T12:10:53.768Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-01-20T12:33:50.697Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "activitylevel",
+                "mappedField": null,
+                "value": "lightly_active",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "alternativeemail",
+                "mappedField": "alternativeEmail",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "alternativephone",
+                "mappedField": "alternativePhone",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "heightfeet",
+                "mappedField": null,
+                "value": 5.3,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightinch",
+                "mappedField": null,
+                "value": 65,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalstatus",
+                "mappedField": "maritalStatus",
+                "value": "married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "housewife",
+                "status": "mapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "targetweightbucket",
+                "mappedField": "targetWeightBucket",
+                "value": "-",
+                "status": "mapped"
+              },
+              {
+                "originalField": "weight",
+                "mappedField": "weight",
+                "value": 73.85,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1520.2,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyfat",
+                "mappedField": "bodyFat",
+                "value": 34,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealweight",
+                "mappedField": "idealWeight",
+                "value": 59.1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetbmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedhealthcounselor",
+                "mappedField": "assignedHealthCounselor",
+                "value": "697c9524e3c269be7dce24c3",
+                "status": "mapped"
+              },
+              {
+                "originalField": "healthGoals",
+                "mappedField": "healthGoals",
+                "value": [
+                  "weight loss"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedDietitians",
+                "mappedField": "assignedDietitians",
+                "value": [
+                  "694a5fe0d1360ee7bdb7eb18",
+                  "694a6b12d1360ee7bdb7ef0d",
+                  "97dd2566800165e353c484c",
+                  "697dd1a36800165e353c482d",
+                  "694a6fbdd1360ee7bdb7f194"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedHealthCounselors",
+                "mappedField": "assignedHealthCounselors",
+                "value": [
+                  "697c96dce3c269be7dce2564"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "goals",
+                "mappedField": "healthGoals",
+                "value": {
+                  "calories": 1800,
+                  "protein": 120,
+                  "carbs": 200,
+                  "fat": 60,
+                  "water": 8,
+                  "steps": 10000
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "dailyGoals",
+                "mappedField": "dailyGoals",
+                "value": {
+                  "calories": 2000,
+                  "steps": 8000,
+                  "water": 2500,
+                  "sleep": 7.5
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdBy",
+                "mappedField": "createdBy",
+                "value": {
+                  "userId": "694b8cfad1360ee7bdb7f7c1",
+                  "role": "dietitian"
+                },
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "activitylevel",
+              "heightfeet",
+              "heightinch"
+            ],
+            "emptyFields": [
+              "dietType",
+              "alternativeEmail",
+              "alternativePhone",
+              "anniversary",
+              "source"
+            ]
+          }
+        ],
+        "validCount": 0,
+        "invalidCount": 1
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": false
+  },
+  "import_1769858205362_ciqvj2oip": {
+    "id": "import_1769858205362_ciqvj2oip",
+    "fileName": "Contact Details.xlsx (zoco 1).xlsx",
+    "uploadedAt": "2026-01-31T11:16:45.362Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-236",
+              "email": 0,
+              "password": "DTps@123",
+              "firstName": "Preet",
+              "lastName": "Dhillon",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 919761713013,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1995-07-07T00:00:00.000Z",
+              "gender": "female",
+              "bmiCategory": "Overweight",
+              "generalGoal": "not-specified",
+              "assignedDietitian": "694b8cfad1360ee7bdb7f7c1",
+              "onboardingStep": 0,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "maritalStatus": "married",
+              "occupation": "housewife",
+              "targetWeightBucket": "-",
+              "weight": 73.85,
+              "bmr": 1520.2,
+              "bodyFat": 34,
+              "idealWeight": 59.1,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "697c9524e3c269be7dce24c3",
+              "healthGoals": {
+                "calories": 1800,
+                "protein": 120,
+                "carbs": 200,
+                "fat": 60,
+                "water": 8,
+                "steps": 10000
+              },
+              "assignedDietitians": [
+                "694a5fe0d1360ee7bdb7eb18",
+                "694a6b12d1360ee7bdb7ef0d",
+                "97dd2566800165e353c484c",
+                "697dd1a36800165e353c482d",
+                "694a6fbdd1360ee7bdb7f194"
+              ],
+              "assignedHealthCounselors": [
+                "697c96dce3c269be7dce2564"
+              ],
+              "dailyGoals": {
+                "calories": 2000,
+                "steps": 8000,
+                "water": 2500,
+                "sleep": 7.5
+              },
+              "createdBy": {
+                "userId": "694b8cfad1360ee7bdb7f7c1",
+                "role": "dietitian"
+              }
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "healthGoals.0",
+                "message": "Cast to [string] failed for value \"[\\n' +\n  '  {\\n' +\n  '    calories: 1800,\\n' +\n  '    protein: 120,\\n' +\n  '    carbs: 200,\\n' +\n  '    fat: 60,\\n' +\n  '    water: 8,\\n' +\n  '    steps: 10000\\n' +\n  '  }\\n' +\n  ']\" (type string) at path \"healthGoals.0\" because of \"CastError\"",
+                "errorType": "type"
+              },
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "assignedDietitians.2",
+                "message": "Cast to [ObjectId] failed for value \"[\\n' +\n  \"  new ObjectId('694a5fe0d1360ee7bdb7eb18'),\\n\" +\n  \"  new ObjectId('694a6b12d1360ee7bdb7ef0d'),\\n\" +\n  \"  '97dd2566800165e353c484c',\\n\" +\n  \"  '697dd1a36800165e353c482d',\\n\" +\n  \"  '694a6fbdd1360ee7bdb7f194'\\n\" +\n  ']\" (type string) at path \"assignedDietitians.2\" because of \"CastError\"",
+                "errorType": "type"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "zoconutId",
+                "mappedField": "zoconut_id",
+                "value": "P-236",
+                "status": "mapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "password",
+                "mappedField": "password",
+                "value": "DTps@123",
+                "status": "mapped"
+              },
+              {
+                "originalField": "firstname",
+                "mappedField": "firstName",
+                "value": "Preet",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastname",
+                "mappedField": "lastName",
+                "value": "Dhillon",
+                "status": "mapped"
+              },
+              {
+                "originalField": "role",
+                "mappedField": "role",
+                "value": "client",
+                "status": "mapped"
+              },
+              {
+                "originalField": "status",
+                "mappedField": "status",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "clientstatus",
+                "mappedField": "clientStatus",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "phone",
+                "mappedField": "phone",
+                "value": 919761713013,
+                "status": "mapped"
+              },
+              {
+                "originalField": "emailverified",
+                "mappedField": "emailVerified",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "timezone",
+                "mappedField": "timezone",
+                "value": "UTC",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dateofbirth",
+                "mappedField": "dateOfBirth",
+                "value": "1995-07-07T00:00:0000Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmicategory",
+                "mappedField": "bmiCategory",
+                "value": 27.1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "generalgoal",
+                "mappedField": "generalGoal",
+                "value": "-",
+                "status": "mapped"
+              },
+              {
+                "originalField": "assigneddietitian",
+                "mappedField": "assignedDietitian",
+                "value": "694b8cfad1360ee7bdb7f7c1",
+                "status": "mapped"
+              },
+              {
+                "originalField": "onboardingstep",
+                "mappedField": "onboardingStep",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "diettype",
+                "mappedField": "dietType",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-01-20T12:10:53.768Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-01-20T12:33:50.697Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "activitylevel",
+                "mappedField": null,
+                "value": "lightly_active",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "alternativeemail",
+                "mappedField": "alternativeEmail",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "alternativephone",
+                "mappedField": "alternativePhone",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "heightfeet",
+                "mappedField": null,
+                "value": 5.3,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightinch",
+                "mappedField": null,
+                "value": 65,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalstatus",
+                "mappedField": "maritalStatus",
+                "value": "married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "housewife",
+                "status": "mapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "targetweightbucket",
+                "mappedField": "targetWeightBucket",
+                "value": "-",
+                "status": "mapped"
+              },
+              {
+                "originalField": "weight",
+                "mappedField": "weight",
+                "value": 73.85,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1520.2,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyfat",
+                "mappedField": "bodyFat",
+                "value": 34,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealweight",
+                "mappedField": "idealWeight",
+                "value": 59.1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetbmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedhealthcounselor",
+                "mappedField": "assignedHealthCounselor",
+                "value": "697c9524e3c269be7dce24c3",
+                "status": "mapped"
+              },
+              {
+                "originalField": "healthGoals",
+                "mappedField": "healthGoals",
+                "value": [
+                  "weight loss"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedDietitians",
+                "mappedField": "assignedDietitians",
+                "value": [
+                  "694a5fe0d1360ee7bdb7eb18",
+                  "694a6b12d1360ee7bdb7ef0d",
+                  "97dd2566800165e353c484c",
+                  "697dd1a36800165e353c482d",
+                  "694a6fbdd1360ee7bdb7f194"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedHealthCounselors",
+                "mappedField": "assignedHealthCounselors",
+                "value": [
+                  "697c96dce3c269be7dce2564"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "goals",
+                "mappedField": "healthGoals",
+                "value": {
+                  "calories": 1800,
+                  "protein": 120,
+                  "carbs": 200,
+                  "fat": 60,
+                  "water": 8,
+                  "steps": 10000
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "dailyGoals",
+                "mappedField": "dailyGoals",
+                "value": {
+                  "calories": 2000,
+                  "steps": 8000,
+                  "water": 2500,
+                  "sleep": 7.5
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdBy",
+                "mappedField": "createdBy",
+                "value": {
+                  "userId": "694b8cfad1360ee7bdb7f7c1",
+                  "role": "dietitian"
+                },
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "activitylevel",
+              "heightfeet",
+              "heightinch"
+            ],
+            "emptyFields": [
+              "dietType",
+              "alternativeEmail",
+              "alternativePhone",
+              "anniversary",
+              "source"
+            ]
+          }
+        ],
+        "validCount": 0,
+        "invalidCount": 1
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": false
+  },
+  "import_1769858381225_d4sc6a0i5": {
+    "id": "import_1769858381225_d4sc6a0i5",
+    "fileName": "Contact Details.xlsx (zoco 1).xlsx",
+    "uploadedAt": "2026-01-31T11:19:41.225Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-236",
+              "email": 0,
+              "password": "DTps@123",
+              "firstName": "Preet",
+              "lastName": "Dhillon",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 919761713013,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1995-07-07T00:00:00.000Z",
+              "gender": "female",
+              "bmiCategory": "Overweight",
+              "generalGoal": "not-specified",
+              "assignedDietitian": "694b8cfad1360ee7bdb7f7c1",
+              "onboardingStep": 0,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "maritalStatus": "married",
+              "occupation": "housewife",
+              "targetWeightBucket": "-",
+              "weight": 73.85,
+              "bmr": 1520.2,
+              "bodyFat": 34,
+              "idealWeight": 59.1,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "697c9524e3c269be7dce24c3",
+              "assignedDietitians": [
+                "694a5fe0d1360ee7bdb7eb18",
+                "694a6b12d1360ee7bdb7ef0d",
+                "697dd1a36800165e353c482d",
+                "694a6fbdd1360ee7bdb7f194"
+              ],
+              "assignedHealthCounselors": [
+                "697c96dce3c269be7dce2564"
+              ],
+              "dailyGoals": {
+                "calories": 2000,
+                "steps": 8000,
+                "water": 2500,
+                "sleep": 7.5
+              },
+              "createdBy": {
+                "userId": "694b8cfad1360ee7bdb7f7c1",
+                "role": "dietitian"
+              },
+              "goals": {
+                "calories": 1800,
+                "protein": 120,
+                "carbs": 200,
+                "fat": 60,
+                "water": 8,
+                "steps": 10000
+              }
+            },
+            "isValid": true,
+            "errors": [],
+            "fieldMapping": [
+              {
+                "originalField": "zoconutId",
+                "mappedField": "zoconut_id",
+                "value": "P-236",
+                "status": "mapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "password",
+                "mappedField": "password",
+                "value": "DTps@123",
+                "status": "mapped"
+              },
+              {
+                "originalField": "firstname",
+                "mappedField": "firstName",
+                "value": "Preet",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastname",
+                "mappedField": "lastName",
+                "value": "Dhillon",
+                "status": "mapped"
+              },
+              {
+                "originalField": "role",
+                "mappedField": "role",
+                "value": "client",
+                "status": "mapped"
+              },
+              {
+                "originalField": "status",
+                "mappedField": "status",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "clientstatus",
+                "mappedField": "clientStatus",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "phone",
+                "mappedField": "phone",
+                "value": 919761713013,
+                "status": "mapped"
+              },
+              {
+                "originalField": "emailverified",
+                "mappedField": "emailVerified",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "timezone",
+                "mappedField": "timezone",
+                "value": "UTC",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dateofbirth",
+                "mappedField": "dateOfBirth",
+                "value": "1995-07-07T00:00:0000Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmicategory",
+                "mappedField": "bmiCategory",
+                "value": 27.1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "generalgoal",
+                "mappedField": "generalGoal",
+                "value": "-",
+                "status": "mapped"
+              },
+              {
+                "originalField": "assigneddietitian",
+                "mappedField": "assignedDietitian",
+                "value": "694b8cfad1360ee7bdb7f7c1",
+                "status": "mapped"
+              },
+              {
+                "originalField": "onboardingstep",
+                "mappedField": "onboardingStep",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "diettype",
+                "mappedField": "dietType",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-01-20T12:10:53.768Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-01-20T12:33:50.697Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "activitylevel",
+                "mappedField": null,
+                "value": "lightly_active",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "alternativeemail",
+                "mappedField": "alternativeEmail",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "alternativephone",
+                "mappedField": "alternativePhone",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "heightfeet",
+                "mappedField": null,
+                "value": 5.3,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightinch",
+                "mappedField": null,
+                "value": 65,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalstatus",
+                "mappedField": "maritalStatus",
+                "value": "married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "housewife",
+                "status": "mapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "targetweightbucket",
+                "mappedField": "targetWeightBucket",
+                "value": "-",
+                "status": "mapped"
+              },
+              {
+                "originalField": "weight",
+                "mappedField": "weight",
+                "value": 73.85,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1520.2,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyfat",
+                "mappedField": "bodyFat",
+                "value": 34,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealweight",
+                "mappedField": "idealWeight",
+                "value": 59.1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetbmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedhealthcounselor",
+                "mappedField": "assignedHealthCounselor",
+                "value": "697c9524e3c269be7dce24c3",
+                "status": "mapped"
+              },
+              {
+                "originalField": "healthGoals",
+                "mappedField": "healthGoals",
+                "value": [
+                  "weight loss"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedDietitians",
+                "mappedField": "assignedDietitians",
+                "value": [
+                  "694a5fe0d1360ee7bdb7eb18",
+                  "694a6b12d1360ee7bdb7ef0d",
+                  "97dd2566800165e353c484c",
+                  "697dd1a36800165e353c482d",
+                  "694a6fbdd1360ee7bdb7f194"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedHealthCounselors",
+                "mappedField": "assignedHealthCounselors",
+                "value": [
+                  "697c96dce3c269be7dce2564"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "goals",
+                "mappedField": "healthGoals",
+                "value": {
+                  "calories": 1800,
+                  "protein": 120,
+                  "carbs": 200,
+                  "fat": 60,
+                  "water": 8,
+                  "steps": 10000
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "dailyGoals",
+                "mappedField": "dailyGoals",
+                "value": {
+                  "calories": 2000,
+                  "steps": 8000,
+                  "water": 2500,
+                  "sleep": 7.5
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdBy",
+                "mappedField": "createdBy",
+                "value": {
+                  "userId": "694b8cfad1360ee7bdb7f7c1",
+                  "role": "dietitian"
+                },
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "activitylevel",
+              "heightfeet",
+              "heightinch"
+            ],
+            "emptyFields": [
+              "dietType",
+              "alternativeEmail",
+              "alternativePhone",
+              "anniversary",
+              "source"
+            ]
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1769858890046_fjj40fyqo": {
+    "id": "import_1769858890046_fjj40fyqo",
+    "fileName": "Contact Details.xlsx (zoco 1) (1).xlsx",
+    "uploadedAt": "2026-01-31T11:28:10.046Z",
+    "status": "saved",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-37213",
+              "email": "rishitamritbhatia@gmail.com",
+              "password": "DTps@123",
+              "firstName": "Avneet",
+              "lastName": "Kaur",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 917742522892,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1997-09-04T00:00:00.000Z",
+              "gender": "female",
+              "bmiCategory": "Obese",
+              "generalGoal": "weight-loss",
+              "assignedDietitian": "694b9b51d1360ee7bdb7fb99",
+              "onboardingStep": 0,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "activityLevel": "lightly_active",
+              "heightFeet": "5.4",
+              "heightInch": "64",
+              "maritalStatus": "single",
+              "occupation": "doctor",
+              "targetWeightBucket": "10 to 15 kgs",
+              "targetWeightKg": "74",
+              "weight": 84,
+              "bmr": 1622.5,
+              "bodyFat": 39.2,
+              "idealWeight": 57.3,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "697c9638e3c269be7dce252a",
+              "assignedDietitians": [
+                "694a69c2d1360ee7bdb7ee4a",
+                "694a6b12d1360ee7bdb7ef0d",
+                "697dd1a36800165e353c482d",
+                "694a6fbdd1360ee7bdb7f194"
+              ],
+              "assignedHealthCounselors": [
+                "695ba0f6ec751b66299eef58",
+                "695c9400ec751b66299ef1bf"
+              ],
+              "dailyGoals": {
+                "calories": 2000,
+                "steps": 8000,
+                "water": 2500,
+                "sleep": 7.5
+              },
+              "createdBy": {
+                "userId": "694b9b51d1360ee7bdb7fb99",
+                "role": "dietitian"
+              },
+              "goals": {
+                "calories": 1800,
+                "protein": 120,
+                "carbs": 200,
+                "fat": 60,
+                "water": 8,
+                "steps": 10000
+              }
+            },
+            "isValid": true,
+            "errors": [],
+            "fieldMapping": [
+              {
+                "originalField": "zoconutId",
+                "mappedField": "zoconut_id",
+                "value": "P-37213",
+                "status": "mapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "rishitamritbhatia@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "password",
+                "mappedField": "password",
+                "value": "DTps@123",
+                "status": "mapped"
+              },
+              {
+                "originalField": "firstname",
+                "mappedField": "firstName",
+                "value": "Avneet",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastname",
+                "mappedField": "lastName",
+                "value": "Kaur",
+                "status": "mapped"
+              },
+              {
+                "originalField": "role",
+                "mappedField": "role",
+                "value": "client",
+                "status": "mapped"
+              },
+              {
+                "originalField": "status",
+                "mappedField": "status",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "clientstatus",
+                "mappedField": "clientStatus",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "phone",
+                "mappedField": "phone",
+                "value": 917742522892,
+                "status": "mapped"
+              },
+              {
+                "originalField": "emailverified",
+                "mappedField": "emailVerified",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "timezone",
+                "mappedField": "timezone",
+                "value": "UTC",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dateofbirth",
+                "mappedField": "dateOfBirth",
+                "value": "1997-09-04T00:00:0000Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmicategory",
+                "mappedField": "bmiCategory",
+                "value": 31.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "generalgoal",
+                "mappedField": "generalGoal",
+                "value": "10 to 15 kgs",
+                "status": "mapped"
+              },
+              {
+                "originalField": "assigneddietitian",
+                "mappedField": "assignedDietitian",
+                "value": "694b9b51d1360ee7bdb7fb99",
+                "status": "mapped"
+              },
+              {
+                "originalField": "onboardingstep",
+                "mappedField": "onboardingStep",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "diettype",
+                "mappedField": "dietType",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-01-20T12:10:53.768Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-01-20T12:33:50.697Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "activitylevel",
+                "mappedField": "activityLevel",
+                "value": "lightly_active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "alternativeemail",
+                "mappedField": "alternativeEmail",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "alternativephone",
+                "mappedField": "alternativePhone",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "heightfeet",
+                "mappedField": "heightFeet",
+                "value": 5.4,
+                "status": "mapped"
+              },
+              {
+                "originalField": "heightinch",
+                "mappedField": "heightInch",
+                "value": 64,
+                "status": "mapped"
+              },
+              {
+                "originalField": "maritalstatus",
+                "mappedField": "maritalStatus",
+                "value": "single",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "doctor",
+                "status": "mapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "targetweightbucket",
+                "mappedField": "targetWeightBucket",
+                "value": "10 to 15 kgs",
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetweightkg",
+                "mappedField": "targetWeightKg",
+                "value": 74,
+                "status": "mapped"
+              },
+              {
+                "originalField": "weight",
+                "mappedField": "weight",
+                "value": 84,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1622.5,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyfat",
+                "mappedField": "bodyFat",
+                "value": 39.2,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealweight",
+                "mappedField": "idealWeight",
+                "value": 57.3,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetbmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedhealthcounselor",
+                "mappedField": "assignedHealthCounselor",
+                "value": "697c9638e3c269be7dce252a",
+                "status": "mapped"
+              },
+              {
+                "originalField": "healthGoals",
+                "mappedField": "healthGoals",
+                "value": [
+                  "weight loss + disease management"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedDietitians",
+                "mappedField": "assignedDietitians",
+                "value": [
+                  "694a69c2d1360ee7bdb7ee4a",
+                  "694a6b12d1360ee7bdb7ef0d",
+                  "97dd2566800165e353c484c",
+                  "697dd1a36800165e353c482d",
+                  "694a6fbdd1360ee7bdb7f194"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedHealthCounselors",
+                "mappedField": "assignedHealthCounselors",
+                "value": [
+                  "695ba0f6ec751b66299eef58",
+                  "695c9400ec751b66299ef1bf"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "goals",
+                "mappedField": "healthGoals",
+                "value": {
+                  "calories": 1800,
+                  "protein": 120,
+                  "carbs": 200,
+                  "fat": 60,
+                  "water": 8,
+                  "steps": 10000
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "dailyGoals",
+                "mappedField": "dailyGoals",
+                "value": {
+                  "calories": 2000,
+                  "steps": 8000,
+                  "water": 2500,
+                  "sleep": 7.5
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdBy",
+                "mappedField": "createdBy",
+                "value": {
+                  "userId": "694b9b51d1360ee7bdb7fb99",
+                  "role": "dietitian"
+                },
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [],
+            "emptyFields": [
+              "dietType",
+              "alternativeEmail",
+              "alternativePhone",
+              "anniversary",
+              "source"
+            ]
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true,
+    "savedAt": "2026-01-31T11:29:51.938Z",
+    "savedCounts": {
+      "User": 1
+    }
   }
 }
