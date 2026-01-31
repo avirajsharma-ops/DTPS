@@ -34,6 +34,7 @@ interface PersonalData {
   heightCm: string;
   weightKg: string;
   targetWeightKg: string;
+  targetWeightBucket: string;
   activityLevel: string;
   generalGoal: string;
   dietType: string;
@@ -87,6 +88,7 @@ export default function PersonalInfoPage() {
     heightCm: "",
     weightKg: "",
     targetWeightKg: "",
+    targetWeightBucket: "",
     activityLevel: "",
     generalGoal: "",
     dietType: "",
@@ -128,6 +130,7 @@ export default function PersonalInfoPage() {
             heightCm: user.heightCm || "",
             weightKg: user.weightKg || "",
             targetWeightKg: user.targetWeightKg || "",
+            targetWeightBucket: user.targetWeightBucket || "",
             activityLevel: user.activityLevel || "",
             generalGoal: user.generalGoal || "",
             dietType: user.dietType || "",
@@ -483,6 +486,25 @@ export default function PersonalInfoPage() {
                   placeholder="Target"
                   className={fieldClassName}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className={labelClassName}>What is Your Target Weight?</label>
+                <select
+                  value={data.targetWeightBucket}
+                  onChange={(e) => setData({ ...data, targetWeightBucket: e.target.value })}
+                  className={fieldClassName}
+                >
+                  <option value="">Select range</option>
+                  <option value="none">None</option>
+                  <option value="below-5">Below 5 Kgs</option>
+                  <option value="5-10">5 to 10 Kgs</option>
+                  <option value="10-15">10 to 15 Kgs</option>
+                  <option value="15-20">15 to 20 Kgs</option>
+                  <option value="20-25">20 to 25 Kgs</option>
+                  <option value="25-30">25 to 30 Kgs</option>
+                  <option value="more-30">More than 30 Kgs</option>
+                </select>
               </div>
             </div>
           </div>

@@ -340,6 +340,7 @@ export class ValidationEngine {
       'heightCm': ['height_cm_str', 'cm', 'centimeters'],
       'weightKg': ['weight_kg_str', 'wt_kg', 'weight_kgs'],
       'targetWeightKg': ['target_weight_kg', 'targetweight', 'goal_weight_kg'],
+      'targetWeightBucket': ['target_weight_bucket', 'weight_bucket', 'target_bucket', 'your_target_weight', 'what_is_your_target_weight'],
       'activityLevel': ['activity_level', 'activitylevel', 'activity', 'physical_activity', 'exercise_level'],
       'activityRate': ['activity_rate', 'activityrate'],
       'gender': ['sex'],
