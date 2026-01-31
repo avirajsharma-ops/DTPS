@@ -358,7 +358,10 @@ export class FileParser {
       processed[header] = value;
     }
 
-    return processed;
+    // Convert indexed fields (like field[0]) to arrays and dot notation to nested objects
+    const converted = this.convertIndexedFieldsToArrays(processed);
+
+    return converted;
   }
 
   /**
@@ -455,16 +458,23 @@ export class FileParser {
   }
 
   /**
-   * Clean a header string and convert to camelCase
+   * Clean a header string and preserve array notation and dot notation
    */
   private cleanHeader(header: string): string {
-    // First, normalize the header
+    // Preserve brackets and dots - they're important for array and nested fields
     let cleaned = header
       .trim()
       .replace(/\s+/g, '_')
-      .replace(/[^a-zA-Z0-9_]/g, '');
+      // Remove invalid characters but KEEP [ ] . for array/nested notation
+      .replace(/[^a-zA-Z0-9_\[\]\.]/g, '');
 
-    // Convert snake_case to camelCase
+    // Don't convert to camelCase if it has brackets or dots (preserve original structure)
+    if (cleaned.includes('[') || cleaned.includes('.')) {
+      console.log(`[cleanHeader] "${header}" -> "${cleaned}" (preserved notation)`);
+      return cleaned;
+    }
+
+    // Convert snake_case to camelCase only for simple fields
     let camelCased = this.snakeToCamelCase(cleaned);
     
     console.log(`[cleanHeader] "${header}" -> "${cleaned}" -> "${camelCased}"`);
@@ -483,6 +493,82 @@ export class FileParser {
     });
     
     return result;
+  }
+
+  /**
+   * Convert indexed fields (like field[0], field[1]) into proper arrays
+   * and dot notation (like goals.calories) into nested objects
+   */
+  private convertIndexedFieldsToArrays(data: Record<string, any>): Record<string, any> {
+    const result: Record<string, any> = {};
+    const arrayFields: Map<string, any[]> = new Map();
+    const nestedFields: Map<string, Record<string, any>> = new Map();
+
+    for (const [key, value] of Object.entries(data)) {
+      // Check for array notation like field[0], field[1]
+      const arrayMatch = key.match(/^(.+)\[(\d+)\]$/);
+      if (arrayMatch) {
+        const fieldName = arrayMatch[1];
+        const index = parseInt(arrayMatch[2], 10);
+        
+        if (!arrayFields.has(fieldName)) {
+          arrayFields.set(fieldName, []);
+        }
+        const arr = arrayFields.get(fieldName)!;
+        // Ensure array is big enough
+        while (arr.length <= index) {
+          arr.push(null);
+        }
+        arr[index] = value;
+        continue;
+      }
+
+      // Check for dot notation like goals.calories, settings.darkMode
+      if (key.includes('.')) {
+        const parts = key.split('.');
+        const rootField = parts[0];
+        const nestedPath = parts.slice(1).join('.');
+        
+        if (!nestedFields.has(rootField)) {
+          nestedFields.set(rootField, {});
+        }
+        this.setNestedValue(nestedFields.get(rootField)!, nestedPath, value);
+        continue;
+      }
+
+      // Regular field
+      result[key] = value;
+    }
+
+    // Add array fields to result (filter out null values)
+    for (const [fieldName, arr] of arrayFields) {
+      result[fieldName] = arr.filter(v => v !== null && v !== undefined && v !== '');
+    }
+
+    // Add nested fields to result
+    for (const [fieldName, nested] of nestedFields) {
+      result[fieldName] = nested;
+    }
+
+    return result;
+  }
+
+  /**
+   * Set a nested value in an object using dot notation path
+   */
+  private setNestedValue(obj: Record<string, any>, path: string, value: any): void {
+    const parts = path.split('.');
+    let current = obj;
+    
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (!current[part] || typeof current[part] !== 'object') {
+        current[part] = {};
+      }
+      current = current[part];
+    }
+    
+    current[parts[parts.length - 1]] = value;
   }
 
   /**

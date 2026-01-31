@@ -1215,5 +1215,319 @@
     ],
     "unmatchedRows": [],
     "canSave": true
+  },
+  "import_1769844298748_idqxdbo0g": {
+    "id": "import_1769844298748_idqxdbo0g",
+    "fileName": "DTPS6.users (1 client).csv",
+    "uploadedAt": "2026-01-31T07:24:58.748Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-24628",
+              "email": "zakiahmed1042@gmail.com",
+              "password": "Dtps@123",
+              "firstName": "Zaki",
+              "lastName": "Ahmed",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 918962016348,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "2006-05-16T00:00:00.000Z",
+              "gender": "male",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Obese",
+              "generalGoal": "weight-loss",
+              "assignedDietitian": "694b9af2d1360ee7bdb7fb34",
+              "onboardingStep": 0,
+              "dietType": null,
+              "pushNotificationEnabled": false,
+              "passwordResetToken": null,
+              "passwordResetTokenExpiry": null,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "__v": null,
+              "alternativeEmail": null,
+              "alternativePhone": null,
+              "anniversary": null,
+              "maritalStatus": "single",
+              "occupation": "job",
+              "source": null,
+              "targetWeightBucket": "25 to 30 kgs",
+              "weight": 108,
+              "bmr": 2435.1,
+              "bodyFat": 24.8,
+              "idealWeight": 68.6,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "695bad7dec751b66299ef09c"
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1769844475006_i51kmb4hl": {
+    "id": "import_1769844475006_i51kmb4hl",
+    "fileName": "DTPS6.users (1 client).csv",
+    "uploadedAt": "2026-01-31T07:27:55.006Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-24628",
+              "email": "zakiahmed1042@gmail.com",
+              "password": "Dtps@123",
+              "firstName": "Zaki",
+              "lastName": "Ahmed",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 918962016348,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "2006-05-16T00:00:00.000Z",
+              "gender": "male",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Obese",
+              "generalGoal": "weight-loss",
+              "assignedDietitian": "694b9af2d1360ee7bdb7fb34",
+              "onboardingStep": 0,
+              "dietType": null,
+              "pushNotificationEnabled": false,
+              "passwordResetToken": null,
+              "passwordResetTokenExpiry": null,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "__v": null,
+              "alternativeEmail": null,
+              "alternativePhone": null,
+              "anniversary": null,
+              "maritalStatus": "single",
+              "occupation": "job",
+              "source": null,
+              "targetWeightBucket": "25 to 30 kgs",
+              "weight": 108,
+              "bmr": 2435.1,
+              "bodyFat": 24.8,
+              "idealWeight": 68.6,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "695bad7dec751b66299ef09c"
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1769845003926_ezm7yow1p": {
+    "id": "import_1769845003926_ezm7yow1p",
+    "fileName": "DTPS6.users (1 client).csv",
+    "uploadedAt": "2026-01-31T07:36:43.926Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-24628",
+              "email": "zakiahmed1042@gmail.com",
+              "password": "Dtps@123",
+              "firstName": "Zaki",
+              "lastName": "Ahmed",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 918962016348,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "2006-05-16T00:00:00.000Z",
+              "gender": "male",
+              "sharePhotoConsent": true,
+              "bmiCategory": "Obese",
+              "generalGoal": "weight-loss",
+              "assignedDietitian": "694b9af2d1360ee7bdb7fb34",
+              "onboardingStep": 0,
+              "pushNotificationEnabled": false,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "maritalStatus": "single",
+              "occupation": "job",
+              "targetWeightBucket": "25 to 30 kgs",
+              "weight": 108,
+              "bmr": 2435.1,
+              "bodyFat": 24.8,
+              "idealWeight": 68.6,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "695bad7dec751b66299ef09c",
+              "healthGoals": [
+                "weight loss"
+              ],
+              "assignedDietitians": [
+                "694b9af2d1360ee7bdb7fb34",
+                "694b9a72d1360ee7bdb7fad8",
+                "694a6b12d1360ee7bdb7ef0d"
+              ],
+              "assignedHealthCounselors": [
+                "697c9638e3c269be7dce252a"
+              ],
+              "goals": {
+                "calories": 1800,
+                "protein": 120,
+                "carbs": 200,
+                "fat": 60,
+                "water": 8,
+                "steps": 10000
+              },
+              "dailyGoals": {
+                "calories": 2000,
+                "steps": 8000,
+                "water": 2500,
+                "sleep": 7.5
+              },
+              "specificExclusions": {
+                "alcoholFree": false,
+                "porkFree": false
+              },
+              "settings": {
+                "pushNotifications": true,
+                "emailNotifications": true,
+                "mealReminders": true,
+                "appointmentReminders": true,
+                "progressUpdates": false,
+                "darkMode": false,
+                "soundEnabled": true
+              },
+              "reminderPreferences": {
+                "mealReminders": true,
+                "appointmentReminders": true,
+                "reminderBefore": 30
+              },
+              "createdBy": {
+                "userId": "694b9af2d1360ee7bdb7fb34",
+                "role": "dietitian"
+              }
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1769845679119_03f9gir38": {
+    "id": "import_1769845679119_03f9gir38",
+    "fileName": "DTPS6.users (1 client).csv",
+    "uploadedAt": "2026-01-31T07:47:59.119Z",
+    "status": "saved",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-24628",
+              "email": "zakiahmed1042@gmail.com",
+              "password": "Dtps@123",
+              "firstName": "Zaki",
+              "lastName": "Ahmed",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 918962016348,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "2006-05-16T00:00:00.000Z",
+              "gender": "male",
+              "bmiCategory": "Obese",
+              "generalGoal": "weight-loss",
+              "assignedDietitian": "694b9af2d1360ee7bdb7fb34",
+              "onboardingStep": 0,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "maritalStatus": "single",
+              "occupation": "job",
+              "targetWeightBucket": "25 to 30 kgs",
+              "weight": 108,
+              "bmr": 2435.1,
+              "bodyFat": 24.8,
+              "idealWeight": 68.6,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "695bad7dec751b66299ef09c",
+              "healthGoals": [
+                "weight loss"
+              ],
+              "assignedDietitians": [
+                "694b9af2d1360ee7bdb7fb34",
+                "694b9a72d1360ee7bdb7fad8",
+                "694a6b12d1360ee7bdb7ef0d"
+              ],
+              "assignedHealthCounselors": [
+                "697c9638e3c269be7dce252a"
+              ],
+              "goals": {
+                "calories": 1800,
+                "protein": 120,
+                "carbs": 200,
+                "fat": 60,
+                "water": 8,
+                "steps": 10000
+              },
+              "dailyGoals": {
+                "calories": 2000,
+                "steps": 8000,
+                "water": 2500,
+                "sleep": 7.5
+              },
+              "createdBy": {
+                "userId": "694b9af2d1360ee7bdb7fb34",
+                "role": "dietitian"
+              }
+            },
+            "isValid": true,
+            "errors": []
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true,
+    "savedAt": "2026-01-31T07:48:24.979Z",
+    "savedCounts": {
+      "User": 1
+    }
   }
 }

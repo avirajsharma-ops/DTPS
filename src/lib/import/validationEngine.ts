@@ -273,6 +273,7 @@ export class ValidationEngine {
 
   /**
    * Clean row data by removing fields not in the schema
+   * and properly handling nested objects/arrays
    */
   private cleanRowData(modelName: string, data: Record<string, any>): Record<string, any> {
     const model = modelRegistry.get(modelName);
@@ -287,12 +288,20 @@ export class ValidationEngine {
       '__v'
     ]);
 
+    // Get root-level schema field names (for nested object matching)
+    const rootFields = new Set(
+      schemaFields.map(f => f.split('.')[0])
+    );
+
     const normalizeFieldName = (field: string) => {
       return field.toLowerCase().replace(/_/g, '');
     };
 
     const cleaned: Record<string, any> = {};
     for (const [key, value] of Object.entries(data)) {
+      // Skip null/undefined values
+      if (value === null || value === undefined) continue;
+
       // Try exact match first
       if (allowedFields.has(key)) {
         cleaned[key] = value;
@@ -318,7 +327,35 @@ export class ValidationEngine {
         continue;
       }
 
-      // Check nested fields
+      // Check if this is a nested object that matches a root schema field
+      // e.g., key = "goals" and schemaFields has "goals.calories", "goals.protein"
+      if (typeof value === 'object' && !Array.isArray(value) && rootFields.has(key)) {
+        cleaned[key] = value;
+        continue;
+      }
+
+      // Check if this is an array field (like assignedDietitians, healthGoals)
+      if (Array.isArray(value)) {
+        // Check if this field exists in schema (as array type)
+        const arrayField = schemaFields.find(f => 
+          f === key || f.toLowerCase() === key.toLowerCase()
+        );
+        if (arrayField) {
+          cleaned[arrayField] = value;
+          continue;
+        }
+        
+        // Also check without case sensitivity
+        const matchedArrayField = Array.from(allowedFields).find(af => 
+          af.toLowerCase() === key.toLowerCase()
+        );
+        if (matchedArrayField) {
+          cleaned[matchedArrayField] = value;
+          continue;
+        }
+      }
+
+      // Check nested fields (dot notation)
       const isNested = Array.from(allowedFields).some(af => 
         key.startsWith(af + '.') || af.startsWith(key + '.')
       );

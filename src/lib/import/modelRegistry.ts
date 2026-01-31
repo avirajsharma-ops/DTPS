@@ -571,6 +571,29 @@ class ModelRegistry {
   }
 
   /**
+   * Flatten nested object field names to get all field paths
+   * E.g., { goals: { calories: 1800 }, assignedDietitians: [id1, id2] }
+   * becomes [goals, goals.calories, assignedDietitians]
+   */
+  private flattenFieldNames(obj: Record<string, any>, prefix = ''): string[] {
+    const fields: string[] = [];
+    
+    for (const [key, value] of Object.entries(obj)) {
+      const fullPath = prefix ? `${prefix}.${key}` : key;
+      fields.push(fullPath);
+      
+      // Only flatten one level for nested objects to avoid too many fields
+      if (typeof value === 'object' && value !== null && !Array.isArray(value) && !prefix) {
+        for (const nestedKey of Object.keys(value)) {
+          fields.push(`${fullPath}.${nestedKey}`);
+        }
+      }
+    }
+    
+    return fields;
+  }
+
+  /**
    * Get the field type as a string
    */
   private getFieldType(schemaType: any): string {
@@ -626,10 +649,11 @@ class ModelRegistry {
    */
   detectModel(row: Record<string, any>): ModelMatchResult[] {
     // Include ALL fields, even if empty - we need to check if required fields are PRESENT
-    const rowFields = Object.keys(row);
+    // Also flatten nested objects to get all field paths
+    const rowFields = this.flattenFieldNames(row);
     
     console.log(`\n[ModelDetection] ===== NEW ROW DETECTION =====`);
-    console.log(`[ModelDetection] Row fields (${rowFields.length}): ${rowFields.join(', ')}`);
+    console.log(`[ModelDetection] Row fields (${rowFields.length}): ${rowFields.slice(0, 20).join(', ')}${rowFields.length > 20 ? '...' : ''}`);
     
     const results: ModelMatchResult[] = [];
 
@@ -646,7 +670,7 @@ class ModelRegistry {
       };
 
       // Match fields with normalized comparison
-      const matchedFields = rowFields.filter(f => {
+      const matchedFields = rowFields.filter((f: string) => {
         const fNormalized = normalizeFieldName(f);
         
         // Exact match
@@ -664,7 +688,7 @@ class ModelRegistry {
         return false;
       });
 
-      const missingRequired = registeredModel.requiredFields.filter(rf => {
+      const missingRequired = registeredModel.requiredFields.filter((rf: string) => {
         const rfNormalized = normalizeFieldName(rf);
         
         // Check exact match
@@ -682,7 +706,7 @@ class ModelRegistry {
         return true;
       });
 
-      const extraFields = rowFields.filter(f => {
+      const extraFields = rowFields.filter((f: string) => {
         const fNormalized = normalizeFieldName(f);
         
         // Check if matches any model field
