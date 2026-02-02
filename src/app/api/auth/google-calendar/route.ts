@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/config';
+import { getBaseUrl } from '@/lib/config';
 import { google } from 'googleapis';
 
 /**
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get the base URL - remove trailing slash if present
-    let baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    let baseUrl = getBaseUrl();
     baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
     
     const redirectUri = `${baseUrl}/api/auth/google-calendar/callback`;

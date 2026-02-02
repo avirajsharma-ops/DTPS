@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getBaseUrl } from '@/lib/config';
 import connectDB from '@/lib/db/connection';
 import WatchConnection from '@/watchconnectivity/backend/models/WatchConnection';
 import mongoose from 'mongoose';
@@ -37,7 +38,7 @@ const GOOGLE_FIT_CONFIG = {
  * Handles the OAuth callback from Google after user grants permission
  */
 export async function GET(req: NextRequest) {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const baseUrl = getBaseUrl();
   
   try {
     const { searchParams } = new URL(req.url);

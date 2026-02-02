@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { getBaseUrl } from '@/lib/config';
 
 // POST /api/auth/logout - Clear all auth cookies and session data
 export async function POST() {
@@ -59,7 +60,7 @@ export async function POST() {
 
 // GET /api/auth/logout - Redirect-based logout
 export async function GET() {
-  const response = NextResponse.redirect(new URL('/auth/signin', process.env.NEXTAUTH_URL || 'http://localhost:3000'));
+  const response = NextResponse.redirect(new URL('/auth/signin', getBaseUrl()));
   
   const authCookies = [
     'next-auth.session-token',

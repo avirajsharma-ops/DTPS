@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getBaseUrl } from '@/lib/config';
 import connectDB from '@/lib/db/connection';
 import Payment from '@/lib/db/models/Payment';
 import User from '@/lib/db/models/User';
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
       
       <!-- CTA Button -->
       <div style="text-align: center; margin-bottom: 20px;">
-        <a href="${process.env.NEXTAUTH_URL}/user/subscriptions" 
+        <a href="${getBaseUrl()}/user/subscriptions" 
            style="display: inline-block; background: linear-gradient(135deg, #E06A26, #DB9C6E); color: white; padding: 14px 30px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px;">
           View My Subscriptions
         </a>

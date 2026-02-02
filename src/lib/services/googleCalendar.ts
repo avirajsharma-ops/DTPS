@@ -1,5 +1,6 @@
 import { google, calendar_v3 } from 'googleapis';
 import User from '@/lib/db/models/User';
+import { getBaseUrl } from '@/lib/config';
 
 /**
  * Google Calendar Service for managing calendar events
@@ -30,7 +31,7 @@ async function getOAuth2ClientForUser(userId: string) {
     return null;
   }
 
-  let baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  let baseUrl = getBaseUrl();
   baseUrl = baseUrl.replace(/\/$/, '');
 
   const oauth2Client = new google.auth.OAuth2(

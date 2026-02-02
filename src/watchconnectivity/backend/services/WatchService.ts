@@ -1,6 +1,7 @@
 // Watch Service - Handles all watch-related business logic
 import WatchConnection, { IWatchConnection } from '../models/WatchConnection';
 import WatchHealthData, { IWatchHealthData } from '../models/WatchHealthData';
+import { getBaseUrl } from '@/lib/config';
 import mongoose from 'mongoose';
 
 export interface WatchSyncResult {
@@ -18,19 +19,8 @@ export interface WatchProviderConfig {
 
 // Watch Provider Configurations (from environment variables)
 // Using existing Google credentials for Google Fit
-// Google OAuth doesn't allow private IPs (192.168.x.x), only localhost or public domains
 const getWatchBaseUrl = () => {
-  const envUrl = process.env.NEXTAUTH_URL?.trim() || 'http://localhost:3000';
-  
-  // If it's a private IP, convert to localhost for OAuth (Google requirement)
-  if (envUrl.includes('192.168.') || envUrl.includes('10.0.') || envUrl.includes('172.16.')) {
-    // Extract port if any
-    const portMatch = envUrl.match(/:(\d+)$/);
-    const port = portMatch ? portMatch[1] : '3000';
-    return `http://localhost:${port}`;
-  }
-  
-  return envUrl;
+  return getBaseUrl();
 };
 
 const WATCH_BASE_URL = getWatchBaseUrl();

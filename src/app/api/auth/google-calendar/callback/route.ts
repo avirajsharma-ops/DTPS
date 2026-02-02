@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/config';
+import { getBaseUrl } from '@/lib/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { google } from 'googleapis';
@@ -15,18 +16,18 @@ export async function GET(req: NextRequest) {
     const code = searchParams.get('code');
     const error = searchParams.get('error');
 
+    // Get base URL without trailing slash
+    let baseUrl = getBaseUrl();
+    baseUrl = baseUrl.replace(/\/$/, '');
+    
     // Handle user denial of permissions
     if (error) {
-      let baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-      baseUrl = baseUrl.replace(/\/$/, '');
       return NextResponse.redirect(
         new URL('/settings?calendar=denied', baseUrl)
       );
     }
 
     if (!code) {
-      let baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-      baseUrl = baseUrl.replace(/\/$/, '');
       return NextResponse.redirect(
         new URL('/settings?calendar=error&message=no-code', baseUrl)
       );
@@ -35,16 +36,10 @@ export async function GET(req: NextRequest) {
     // Get the stored session to authenticate the user
     const session = await getServerSession(authOptions);
     if (!session) {
-      let baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-      baseUrl = baseUrl.replace(/\/$/, '');
       return NextResponse.redirect(
         new URL('/auth/signin?error=session-expired', baseUrl)
       );
     }
-
-    // Get base URL without trailing slash
-    let baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    baseUrl = baseUrl.replace(/\/$/, '');
     
     const redirectUri = `${baseUrl}/api/auth/google-calendar/callback`;
 
