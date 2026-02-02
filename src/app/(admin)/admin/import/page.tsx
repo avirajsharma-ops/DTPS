@@ -132,6 +132,7 @@ export default function DataImportPage() {
   const [showErrorsOnly, setShowErrorsOnly] = useState(false);
   const [showMatchDetails, setShowMatchDetails] = useState<number | null>(null);
   const [showAllErrors, setShowAllErrors] = useState(false);
+  const [showErrorsModal, setShowErrorsModal] = useState(false);
   const [viewingRowData, setViewingRowData] = useState<{
     rowIndex: number;
     data: Record<string, any>;
@@ -1332,11 +1333,11 @@ export default function DataImportPage() {
                 </div>
                 {state.allErrors.length > 0 && (
                   <button
-                    onClick={() => setShowAllErrors(!showAllErrors)}
-                    className="px-3 py-1 text-xs bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-700 flex items-center gap-1"
+                    onClick={() => setShowErrorsModal(true)}
+                    className="px-3 py-1 text-xs bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-700 flex items-center gap-1 font-semibold transition-colors"
                   >
-                    {showAllErrors ? 'Hide' : 'Show'} All Errors ({state.allErrors.length})
-                    {showAllErrors ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                    <AlertTriangle className="w-4 h-4" />
+                    View All Errors ({state.allErrors.length})
                   </button>
                 )}
               </div>
@@ -1344,41 +1345,6 @@ export default function DataImportPage() {
                 You have {state.validation?.invalidRows || 0} invalid rows and {state.validation?.unmatchedRows || 0} unmatched rows. 
                 Edit or remove them to enable saving.
               </p>
-              
-              {/* All errors list */}
-              {showAllErrors && state.allErrors.length > 0 && (
-                <div className="mt-4 max-h-60 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg border border-red-200 dark:border-red-700">
-                  <table className="w-full text-sm">
-                    <thead className="bg-red-50 dark:bg-red-900/30 sticky top-0">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium text-red-700 dark:text-red-300">Row</th>
-                        <th className="px-3 py-2 text-left font-medium text-red-700 dark:text-red-300">Model</th>
-                        <th className="px-3 py-2 text-left font-medium text-red-700 dark:text-red-300">Field</th>
-                        <th className="px-3 py-2 text-left font-medium text-red-700 dark:text-red-300">Error</th>
-                        <th className="px-3 py-2 text-left font-medium text-red-700 dark:text-red-300">Value</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-red-100 dark:divide-red-800">
-                      {state.allErrors.slice(0, 50).map((error, idx) => (
-                        <tr key={idx} className="hover:bg-red-50 dark:hover:bg-red-900/20">
-                          <td className="px-3 py-2 font-mono">{error.row}</td>
-                          <td className="px-3 py-2">{error.modelName}</td>
-                          <td className="px-3 py-2 font-medium">{error.field}</td>
-                          <td className="px-3 py-2 text-red-600 dark:text-red-400">{error.message}</td>
-                          <td className="px-3 py-2 text-gray-500 max-w-[100px] truncate">
-                            {formatCellValue(error.value)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {state.allErrors.length > 50 && (
-                    <p className="text-center text-xs text-red-500 py-2 bg-red-50 dark:bg-red-900/30">
-                      Showing first 50 of {state.allErrors.length} errors
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           )}
 
@@ -1407,6 +1373,165 @@ export default function DataImportPage() {
 
       {/* Field viewer modal */}
       {renderFieldViewer()}
+
+      {/* Errors & Duplicates Modal */}
+      {showErrorsModal && state.allErrors.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-red-50 dark:bg-red-900/30 border-b border-red-200 dark:border-red-700 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Validation Errors & Issues
+                  </h2>
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                    Fix these errors before saving your data
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowErrorsModal(false)}
+                className="p-2 hover:bg-red-100 dark:hover:bg-red-800/50 rounded-lg transition-colors"
+                title="Close"
+              >
+                <X className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Error Summary */}
+              <div className="mb-6 grid grid-cols-3 gap-4">
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
+                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold uppercase tracking-wide mb-1">
+                    Total Errors
+                  </p>
+                  <p className="text-2xl font-bold text-red-700 dark:text-red-400">
+                    {state.allErrors.length}
+                  </p>
+                </div>
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-700">
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400 font-semibold uppercase tracking-wide mb-1">
+                    Invalid Rows
+                  </p>
+                  <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+                    {state.validation?.invalidRows || 0}
+                  </p>
+                </div>
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
+                  <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold uppercase tracking-wide mb-1">
+                    Unmatched Rows
+                  </p>
+                  <p className="text-2xl font-bold text-orange-700 dark:text-orange-400">
+                    {state.validation?.unmatchedRows || 0}
+                  </p>
+                </div>
+              </div>
+
+              {/* Errors Table */}
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-red-100 dark:bg-red-900/50 sticky top-0">
+                      <tr className="border-b border-gray-200 dark:border-gray-700">
+                        <th className="px-4 py-3 text-left font-semibold text-red-700 dark:text-red-400">Row</th>
+                        <th className="px-4 py-3 text-left font-semibold text-red-700 dark:text-red-400">Model</th>
+                        <th className="px-4 py-3 text-left font-semibold text-red-700 dark:text-red-400">Field</th>
+                        <th className="px-4 py-3 text-left font-semibold text-red-700 dark:text-red-400">Issue</th>
+                        <th className="px-4 py-3 text-left font-semibold text-red-700 dark:text-red-400">Type</th>
+                        <th className="px-4 py-3 text-left font-semibold text-red-700 dark:text-red-400">Value</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {state.allErrors.map((error, idx) => (
+                        <tr key={idx} className="hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+                          <td className="px-4 py-3 font-mono text-gray-600 dark:text-gray-400">
+                            <span className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">
+                              {error.row}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
+                            {error.modelName}
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-blue-600 dark:text-blue-400">
+                            {error.field}
+                          </td>
+                          <td className="px-4 py-3 text-red-700 dark:text-red-400 max-w-xs truncate" title={error.message}>
+                            {error.message}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                              error.errorType === 'duplicate' 
+                                ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400'
+                                : error.errorType === 'required'
+                                ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400'
+                                : error.errorType === 'enum'
+                                ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
+                            }`}>
+                              {error.errorType === 'duplicate' && '⚠️ '}
+                              {error.errorType}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-xs truncate" title={formatCellValue(error.value)}>
+                            {formatCellValue(error.value)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination info */}
+                {state.allErrors.length > 50 && (
+                  <div className="bg-gray-100 dark:bg-gray-800 px-4 py-3 text-center text-xs text-gray-600 dark:text-gray-400">
+                    Showing all {state.allErrors.length} errors
+                  </div>
+                )}
+              </div>
+
+              {/* Error Type Legend */}
+              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3 text-sm">Error Types:</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full bg-red-500"></span>
+                    <span className="text-gray-700 dark:text-gray-300"><strong>Duplicate</strong> - Data exists in DB</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full bg-orange-500"></span>
+                    <span className="text-gray-700 dark:text-gray-300"><strong>Required</strong> - Missing required field</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full bg-yellow-500"></span>
+                    <span className="text-gray-700 dark:text-gray-300"><strong>Enum</strong> - Invalid option value</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full bg-gray-500"></span>
+                    <span className="text-gray-700 dark:text-gray-300"><strong>Other</strong> - Other validation error</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Review and fix errors before proceeding with import
+              </p>
+              <button
+                onClick={() => setShowErrorsModal(false)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

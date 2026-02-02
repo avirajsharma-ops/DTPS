@@ -51,15 +51,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'User is not a client' }, { status: 400 });
     }
 
-    // Initialize assignedDietitians array if it doesn't exist
-    if (!client.assignedDietitians) {
-      client.assignedDietitians = [];
-    }
-    
-    // Initialize assignedHealthCounselors array if it doesn't exist
-    if (!client.assignedHealthCounselors) {
-      client.assignedHealthCounselors = [];
-    }
+    // Build update object for MongoDB
+    const updateObj: any = {};
 
     // Handle multiple health counselors assignment
     if (healthCounselorIds && Array.isArray(healthCounselorIds)) {
@@ -73,15 +66,12 @@ export async function PATCH(
           if (hc.role !== UserRole.HEALTH_COUNSELOR) {
             return NextResponse.json({ error: `User ${hcId} is not a health counselor` }, { status: 400 });
           }
-          // Add to array if not already present
-          if (!client.assignedHealthCounselors.includes(hcId)) {
-            client.assignedHealthCounselors.push(hcId);
-          }
         }
       }
-      // Set primary if not set
-      if (!client.assignedHealthCounselor && healthCounselorIds.length > 0) {
-        client.assignedHealthCounselor = healthCounselorIds[0];
+      // Set primary and array
+      if (healthCounselorIds.length > 0) {
+        updateObj.assignedHealthCounselor = healthCounselorIds[0];
+        updateObj.assignedHealthCounselors = healthCounselorIds;
       }
     } else if (healthCounselorId !== undefined) {
       // Handle single health counselor assignment (legacy)
@@ -93,36 +83,34 @@ export async function PATCH(
         if (healthCounselor.role !== UserRole.HEALTH_COUNSELOR) {
           return NextResponse.json({ error: 'User is not a health counselor' }, { status: 400 });
         }
-        client.assignedHealthCounselor = healthCounselorId;
-        // Also add to array if not already present
-        if (!client.assignedHealthCounselors.includes(healthCounselorId)) {
-          client.assignedHealthCounselors.push(healthCounselorId);
-        }
+        updateObj.assignedHealthCounselor = healthCounselorId;
+        updateObj.assignedHealthCounselors = [healthCounselorId];
       } else {
         // Unassign health counselor if empty string or null
-        client.assignedHealthCounselor = null;
+        updateObj.assignedHealthCounselor = null;
+        updateObj.assignedHealthCounselors = [];
       }
     }
 
-    // Handle different actions
+    // Handle different actions for dietitians
     if (assignAction === 'add' && dietitianIds && Array.isArray(dietitianIds)) {
-      // Add multiple dietitians
+      // Validate and add multiple dietitians
+      const validDietitianIds = [];
       for (const dId of dietitianIds) {
         const dietitian = await User.findById(dId);
-        if (!dietitian || dietitian.role !== UserRole.DIETITIAN) {
-          continue; // Skip invalid dietitians
-        }
-        // Add to array if not already present
-        if (!client.assignedDietitians.includes(dId)) {
-          client.assignedDietitians.push(dId);
+        if (dietitian && dietitian.role === UserRole.DIETITIAN) {
+          validDietitianIds.push(dId);
         }
       }
-      // Set primary if not set
-      if (!client.assignedDietitian && dietitianIds.length > 0) {
-        client.assignedDietitian = dietitianIds[0];
+      if (validDietitianIds.length > 0) {
+        if (!updateObj.$addToSet) updateObj.$addToSet = {};
+        updateObj.$addToSet.assignedDietitians = { $each: validDietitianIds };
+        if (!client.assignedDietitian) {
+          updateObj.assignedDietitian = validDietitianIds[0];
+        }
       }
     } else if (assignAction === 'add' && dietitianId) {
-      // Add single dietitian to the array
+      // Add single dietitian
       const dietitian = await User.findById(dietitianId);
       if (!dietitian) {
         return NextResponse.json({ error: 'Dietitian not found' }, { status: 404 });
@@ -130,22 +118,21 @@ export async function PATCH(
       if (dietitian.role !== UserRole.DIETITIAN) {
         return NextResponse.json({ error: 'User is not a dietitian' }, { status: 400 });
       }
-      // Add to array if not already present
-      if (!client.assignedDietitians.includes(dietitianId)) {
-        client.assignedDietitians.push(dietitianId);
-      }
-      // Set as primary if no primary exists
+      if (!updateObj.$addToSet) updateObj.$addToSet = {};
+      updateObj.$addToSet.assignedDietitians = dietitianId;
       if (!client.assignedDietitian) {
-        client.assignedDietitian = dietitianId;
+        updateObj.assignedDietitian = dietitianId;
       }
     } else if (assignAction === 'remove' && dietitianId) {
-      // Remove dietitian from the array
-      client.assignedDietitians = client.assignedDietitians.filter(
-        (d: any) => d.toString() !== dietitianId
-      );
+      // Remove dietitian from array
+      if (!updateObj.$pull) updateObj.$pull = {};
+      updateObj.$pull.assignedDietitians = dietitianId;
       // If removing the primary, set a new primary
       if (client.assignedDietitian?.toString() === dietitianId) {
-        client.assignedDietitian = client.assignedDietitians[0] || null;
+        const remainingDietitians = client.assignedDietitians?.filter(
+          (d: any) => d.toString() !== dietitianId
+        ) || [];
+        updateObj.assignedDietitian = remainingDietitians.length > 0 ? remainingDietitians[0] : null;
       }
     } else if (assignAction === 'transfer' && dietitianId) {
       // Transfer to new primary dietitian
@@ -158,19 +145,17 @@ export async function PATCH(
       }
       
       // Add current primary to the array if not already there (for history)
-      if (client.assignedDietitian && !client.assignedDietitians.includes(client.assignedDietitian.toString())) {
-        client.assignedDietitians.push(client.assignedDietitian);
+      if (!updateObj.$addToSet) updateObj.$addToSet = {};
+      if (client.assignedDietitian) {
+        updateObj.$addToSet.assignedDietitians = client.assignedDietitian;
+      } else {
+        updateObj.$addToSet.assignedDietitians = dietitianId;
       }
       
       // Set new primary
-      client.assignedDietitian = dietitianId;
-      
-      // Add new primary to array if not already there
-      if (!client.assignedDietitians.includes(dietitianId)) {
-        client.assignedDietitians.push(dietitianId);
-      }
+      updateObj.assignedDietitian = dietitianId;
     } else {
-      // Default: Replace primary dietitian (original behavior)
+      // Default: Replace primary dietitian
       if (dietitianId) {
         const dietitian = await User.findById(dietitianId);
         if (!dietitian) {
@@ -179,26 +164,30 @@ export async function PATCH(
         if (dietitian.role !== UserRole.DIETITIAN) {
           return NextResponse.json({ error: 'User is not a dietitian' }, { status: 400 });
         }
-        client.assignedDietitian = dietitianId;
-        // Also add to array
-        if (!client.assignedDietitians.includes(dietitianId)) {
-          client.assignedDietitians.push(dietitianId);
+        updateObj.assignedDietitian = dietitianId;
+        if (!updateObj.$addToSet) {
+          updateObj.$addToSet = { assignedDietitians: dietitianId };
         }
       } else {
-        client.assignedDietitian = null;
+        updateObj.assignedDietitian = null;
       }
     }
 
-    await client.save();
+    // Update client using findByIdAndUpdate with proper operators
+    const updatedClient = await User.findByIdAndUpdate(
+      clientId,
+      updateObj,
+      { new: true }
+    );
 
     // Sync dietitian assignment to ClientPurchase records
     // This ensures the user dashboard shows correct dietitian status
-    const dietitianToSync = client.assignedDietitian;
+    const dietitianToSync = updatedClient.assignedDietitian;
     if (dietitianToSync) {
       // Update all active purchases for this client with the assigned dietitian
       await ClientPurchase.updateMany(
         { 
-          user: client._id,
+          user: updatedClient._id,
           status: { $in: ['active', 'pending', 'on_hold'] }
         },
         { 
@@ -208,10 +197,10 @@ export async function PATCH(
     }
 
     // Populate the assigned dietitian and health counselor info
-    await client.populate('assignedDietitian', 'firstName lastName email avatar');
-    await client.populate('assignedDietitians', 'firstName lastName email avatar');
-    await client.populate('assignedHealthCounselor', 'firstName lastName email avatar');
-    await client.populate('assignedHealthCounselors', 'firstName lastName email avatar');
+    await updatedClient.populate('assignedDietitian', 'firstName lastName email avatar');
+    await updatedClient.populate('assignedDietitians', 'firstName lastName email avatar');
+    await updatedClient.populate('assignedHealthCounselor', 'firstName lastName email avatar');
+    await updatedClient.populate('assignedHealthCounselors', 'firstName lastName email avatar');
 
     const actionMessages: Record<string, string> = {
       'add': 'Dietitian(s) added successfully',
@@ -230,7 +219,7 @@ export async function PATCH(
     }
 
     // Log activity
-    const dietitianInfo = await User.findById(dietitianId || client.assignedDietitian);
+    const dietitianInfo = await User.findById(dietitianId || updatedClient.assignedDietitian);
     await logActivity({
       userId: session.user.id,
       userRole: session.user.role as any,
@@ -239,9 +228,9 @@ export async function PATCH(
       action: `Client ${assignAction === 'add' ? 'Assigned' : assignAction === 'remove' ? 'Unassigned' : 'Transferred'} to Dietitian`,
       actionType: 'assign',
       category: 'client_assignment',
-      description: `${assignAction === 'add' ? 'Assigned' : assignAction === 'remove' ? 'Removed' : 'Transferred'} ${client.firstName} ${client.lastName} ${dietitianInfo ? `${assignAction === 'remove' ? 'from' : 'to'} ${dietitianInfo.firstName} ${dietitianInfo.lastName}` : ''}`,
+      description: `${assignAction === 'add' ? 'Assigned' : assignAction === 'remove' ? 'Removed' : 'Transferred'} ${updatedClient.firstName} ${updatedClient.lastName} ${dietitianInfo ? `${assignAction === 'remove' ? 'from' : 'to'} ${dietitianInfo.firstName} ${dietitianInfo.lastName}` : ''}`,
       targetUserId: clientId,
-      targetUserName: `${client.firstName} ${client.lastName}`,
+      targetUserName: `${updatedClient.firstName} ${updatedClient.lastName}`,
       details: { dietitianId, action: assignAction }
     });
 
@@ -265,7 +254,7 @@ export async function PATCH(
     });
 
     adminSSEManager.broadcastClientUpdate('client_updated', {
-      client: client.toObject(),
+      client: updatedClient.toObject(),
       action: assignAction,
       stats: {
         total,
@@ -276,8 +265,9 @@ export async function PATCH(
     });
 
     return NextResponse.json({
+      success: true,
       message: successMessage,
-      client
+      client: updatedClient
     });
 
   } catch (error) {

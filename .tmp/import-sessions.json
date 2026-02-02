@@ -3057,5 +3057,4794 @@
     "savedCounts": {
       "User": 1
     }
+  },
+  "import_1770026373114_lr6vx517q": {
+    "id": "import_1770026373114_lr6vx517q",
+    "fileName": "Contact Details.xlsx (14).xlsx",
+    "uploadedAt": "2026-02-02T09:59:33.114Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "firstName": "Urvashi",
+              "lastName": "Gupta",
+              "email": "123.urvashi@gmail.com",
+              "dateOfBirth": "1986-09-01T18:30:00.000Z",
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Married",
+              "occupation": "Service",
+              "weightKg": "69",
+              "bmr": 1417.7,
+              "bodyFat": 36.9,
+              "idealWeight": 53.8,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-32333",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Urvashi",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Gupta",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "123.urvashi@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "123.urvashi@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Active",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 9712924530,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Oct 28,2025 06:08 AM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Sep 02,1986",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Sachi Tiwari",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Zoconut Platform (P)",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Gunjan",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "Vajeda Rahaman",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "L9C5-1075217",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "Service",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss + Disease Management",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "10 to 15 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": false,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-2.00000",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 69,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 27.8,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1417.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 36.9,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 53.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "firstName": "Priya",
+              "lastName": "Goel",
+              "email": "123meenugoel@gmail.com",
+              "dateOfBirth": "1977-07-20T18:30:00.000Z",
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Married",
+              "occupation": "Business",
+              "weightKg": "77",
+              "bmr": 1677.8,
+              "bodyFat": 31.8,
+              "idealWeight": 53.8,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 3,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 3,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 3,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 3,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-35444",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Priya",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Goel",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "123meenugoel@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "123meenugoel@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Active",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 8053657069,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Dec 09,2025 10:05 AM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Jul 21,1977",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Clinical Dietician Roshan Ara",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Zoconut Platform (P)",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Aamir Khan",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "Vajeda Rahaman",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "MJIYR1143851",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "Business",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss + Disease Management",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "10 to 15 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": false,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-2",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 77,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 31,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1677.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 31.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 53.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 4,
+            "data": {
+              "firstName": "Lavanya",
+              "lastName": "Jhamtani",
+              "email": "007hahanotsomuch@gmail.com",
+              "dateOfBirth": "2005-09-19T18:30:00.000Z",
+              "gender": "Female",
+              "source": "Custom API",
+              "maritalStatus": "Single",
+              "occupation": "student",
+              "weightKg": "100",
+              "bmr": 1827.6,
+              "bodyFat": 41.7,
+              "idealWeight": 61,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 4,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 4,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 4,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 4,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-21687",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Lavanya",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Jhamtani",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "007hahanotsomuch@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "007hahanotsomuch@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 7380308007,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Jun 24,2025 04:00 PM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Sep 20,2005",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Mariyam Khan",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Custom API",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Suruchi Sen",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "Vajeda Rahaman",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "ABLK-1016629",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Single",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "student",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "25 to 30 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": true,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-6",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 100,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 35.6,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1827.6,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 41.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 61,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 5,
+            "data": {
+              "firstName": "Monika",
+              "lastName": "Kashyap",
+              "email": "012monukashyap@gmail.com",
+              "dateOfBirth": "1996-04-11T18:30:00.000Z",
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Married",
+              "occupation": "Working",
+              "weightKg": "64",
+              "bmr": 1439.5,
+              "bodyFat": 27.8,
+              "idealWeight": 62.8,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 5,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 5,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 5,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 5,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-36201",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Monika",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Kashyap",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "012monukashyap@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "012monukashyap@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 8378077580,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "alternateNumber",
+                "mappedField": null,
+                "value": 9834331537,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Dec 26,2025 08:24 AM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Apr 12,1996",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Nikhila",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Zoconut Platform (P)",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Aamir Khan",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "Vajeda Rahaman",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "POIOD1149181",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "Working",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss + Disease Management",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "5 to 10 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": false,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-7.00000",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 64,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 22.1,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1439.5,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 27.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 62.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "alternateNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 6,
+            "data": {
+              "firstName": "Hera",
+              "lastName": "Beg",
+              "email": "05.herabeg@gmail.com",
+              "dateOfBirth": "1997-02-09T18:30:00.000Z",
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Single",
+              "occupation": "HR",
+              "weightKg": "63",
+              "bmr": 1416.5,
+              "bodyFat": 31.3,
+              "idealWeight": 53.8,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 6,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 6,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 6,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 6,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-2972",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Hera",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Beg",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "05.herabeg@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "05.herabeg@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 9717841478,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Sep 30,2024 08:52 AM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Feb 10,1997",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Clinical Dietician Roshan Ara",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Zoconut Platform (P)",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "TZE2H921261",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Single",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "HR",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "Below 5 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": false,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-2",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 63,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 25.4,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1416.5,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 31.3,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 53.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 7,
+            "data": {
+              "firstName": "Aarti",
+              "lastName": "Chauhan",
+              "email": "07aarti08@gmail.com",
+              "dateOfBirth": "1995-08-06T18:30:00.000Z",
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Single",
+              "occupation": "Teacher",
+              "weightKg": "60",
+              "bmr": 1382.7,
+              "bodyFat": 28.7,
+              "idealWeight": 57.3,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 7,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 7,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 7,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 7,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-32211",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Aarti",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Chauhan",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "07aarti08@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "07aarti08@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 9654593959,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Oct 26,2025 12:34 PM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Aug 07,1995",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Priyanka Shrivastava",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Zoconut Platform (P)",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Suruchi Sen",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "Vajeda Rahaman",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "FIVUG1074656",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Single",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "Teacher",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Other",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "5 to 10 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": true,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-4",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 60,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 22.7,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1382.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 28.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 57.3,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 8,
+            "data": {
+              "firstName": "neha",
+              "lastName": "singhal",
+              "email": "099amitguptamobile@gmail.com",
+              "dateOfBirth": "1986-08-21T18:30:00.000Z",
+              "gender": "female",
+              "source": "Android",
+              "maritalStatus": "Married",
+              "weightKg": "95",
+              "bmr": 1676.5,
+              "bodyFat": 47.9,
+              "idealWeight": 55.6,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 8,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 8,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 8,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-2094",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "neha",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "singhal",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "099amitguptamobile@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "099amitguptamobile@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 9637906541,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Aug 26,2024 04:27 PM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Aug 22,1986",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Weight Loss",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Priyanka Dey",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Android",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Gunjan",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "DGJQA904003",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referredBy",
+                "mappedField": null,
+                "value": "7UMHF893888",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss + Disease Management",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "15 to 20 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-3",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 95,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 37.1,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1676.5,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 47.9,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 55.6,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "referredBy",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary",
+              "occupation"
+            ]
+          },
+          {
+            "rowIndex": 9,
+            "data": {
+              "firstName": "himanshi",
+              "lastName": "Tuteja",
+              "email": "09himanshituteja@gmail.com",
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Single",
+              "occupation": "Office",
+              "weightKg": "68",
+              "bmr": 0,
+              "bodyFat": 0,
+              "idealWeight": 55.6,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 9,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 9,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 9,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 9,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-35103",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "himanshi",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Tuteja",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "09himanshituteja@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "09himanshituteja@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 9560836093,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Dec 01,2025 08:26 AM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Nikhila",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Zoconut Platform (P)",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Diksha",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "Vajeda Rahaman",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "YJZVM1141390",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Single",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "Office",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "5 to 10 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": false,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-3.00000",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 68,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 26.6,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 55.6,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 10,
+            "data": {
+              "firstName": "Sidhant",
+              "lastName": "Gupta",
+              "email": "09sidhantgupta@gmail.com",
+              "dateOfBirth": "1991-05-08T18:30:00.000Z",
+              "gender": "Male",
+              "source": "Mobile App",
+              "maritalStatus": "Married",
+              "occupation": "Buisness",
+              "weightKg": "95",
+              "bmr": 2038.5,
+              "bodyFat": 26.7,
+              "idealWeight": 70.6,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 10,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 10,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Male` is not a valid enum value for path `gender`.",
+                "value": "Male",
+                "errorType": "enum"
+              },
+              {
+                "row": 10,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 10,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-25193",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Sidhant",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Gupta",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "09sidhantgupta@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "09sidhantgupta@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 9797596397,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "alternateNumber",
+                "mappedField": null,
+                "value": 9797596397,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Jul 31,2025 05:24 AM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "May 09,1991",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Male",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Weight Loss",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Anukrati Chiroliya",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Mobile App",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Diksha",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "Vajeda Rahaman",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "know",
+                "mappedField": null,
+                "value": "None",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "QMUZP1035705",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "Buisness",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss + Disease Management",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "15 to 20 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": false,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-11.00000",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 95,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 29.21,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 2038.5,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 26.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 70.6,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "alternateNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "know",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 11,
+            "data": {
+              "firstName": "Anurag",
+              "lastName": "Kumar",
+              "email": "0anuragkumar0@gmail.com",
+              "dateOfBirth": "1994-05-21T18:30:00.000Z",
+              "gender": "Male",
+              "source": "Zoconut Platform (P)",
+              "maritalStatus": "Single",
+              "occupation": "Design engineer",
+              "weightKg": "85",
+              "bmr": 1896.5,
+              "bodyFat": 24.2,
+              "idealWeight": 66.7,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 11,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 11,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Male` is not a valid enum value for path `gender`.",
+                "value": "Male",
+                "errorType": "enum"
+              },
+              {
+                "row": 11,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 11,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-32135",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Anurag",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Kumar",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "0anuragkumar0@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "0anuragkumar0@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 7488713939,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Oct 25,2025 07:19 AM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "May 22,1994",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Male",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Lokesh  KUMAR",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Zoconut Platform (P)",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Suruchi Sen",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "Vajeda Rahaman",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "_3C_X1074159",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Single",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "Design engineer",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "10 to 15 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": false,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-9",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 85,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 27.7,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1896.5,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 24.2,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 66.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 12,
+            "data": {
+              "firstName": "Jitu",
+              "lastName": "Bajpai",
+              "email": "100crmoney@gmail.com",
+              "dateOfBirth": "1981-10-17T18:30:00.000Z",
+              "gender": "Male",
+              "source": "Custom API",
+              "maritalStatus": "Single",
+              "occupation": "Private job",
+              "weightKg": "115",
+              "bmr": 2276.7,
+              "bodyFat": 33.8,
+              "idealWeight": 74.6,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 12,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 12,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Male` is not a valid enum value for path `gender`.",
+                "value": "Male",
+                "errorType": "enum"
+              },
+              {
+                "row": 12,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 12,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-5379",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Jitu",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Bajpai",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "100crmoney@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "100crmoney@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 9993062787,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Dec 03,2024 06:20 AM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Oct 18,1981",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Male",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Jyoti  Sharma",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Custom API",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Diksha",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "VC_A0945887",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Single",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "Private job",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "15 to 20 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": false,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "6-1",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 115,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 33.4,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 2276.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 33.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 74.6,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 13,
+            "data": {
+              "firstName": "Ritu",
+              "lastName": "Sawhney",
+              "email": "10ritusawhney@gmail.com",
+              "dateOfBirth": "1979-07-09T18:30:00.000Z",
+              "gender": "Female",
+              "source": "Zoconut Platform (P)",
+              "weightKg": "63.5",
+              "bmr": 1341.2,
+              "bodyFat": 34.7,
+              "idealWeight": 55.6,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 13,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 13,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 13,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 13,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-13266",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Ritu",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Sawhney",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "10ritusawhney@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "10ritusawhney@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 9818640886,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Apr 02,2025 12:56 PM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Jul 10,1979",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Anukrati Chiroliya",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Zoconut Platform (P)",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Vajeda Rahaman",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "6KBD8989151",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "Below 5 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-3",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 63.5,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 24.8,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1341.2,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 34.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 55.6,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary",
+              "maritalStatus",
+              "occupation"
+            ]
+          },
+          {
+            "rowIndex": 14,
+            "data": {
+              "firstName": "Poonam",
+              "lastName": "B",
+              "email": "1193pujaa@gmail.com",
+              "dateOfBirth": "1993-08-01T18:30:00.000Z",
+              "gender": "Female",
+              "source": "Custom API",
+              "maritalStatus": "Married",
+              "occupation": "Homemaker",
+              "weightKg": "62",
+              "bmr": 1388.1,
+              "bodyFat": 31.7,
+              "idealWeight": 53.8,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 14,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 14,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 14,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 14,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-6200",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Poonam",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "B",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "1193pujaa@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "1193pujaa@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 9930556722,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Dec 20,2024 10:00 AM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Aug 02,1993",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Usha rajput",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Custom API",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Diksha",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "NPU2Q951617",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "Homemaker",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss + Disease Management",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "5 to 10 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": false,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-2",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 62,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 25,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1388.1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 31.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 53.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          },
+          {
+            "rowIndex": 15,
+            "data": {
+              "firstName": "Kavita",
+              "lastName": "Pawar",
+              "email": "1320parivansh@gmail.com",
+              "dateOfBirth": "1984-06-27T18:30:00.000Z",
+              "gender": "Female",
+              "source": "Custom API",
+              "maritalStatus": "Married",
+              "occupation": "Employed",
+              "weightKg": "60",
+              "bmr": 1317.4,
+              "bodyFat": 34.8,
+              "idealWeight": 50.4,
+              "targetBmi": 21.7
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 15,
+                "modelName": "User",
+                "field": "password",
+                "message": "Path `password` is required.",
+                "errorType": "required"
+              },
+              {
+                "row": 15,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`Female` is not a valid enum value for path `gender`.",
+                "value": "Female",
+                "errorType": "enum"
+              },
+              {
+                "row": 15,
+                "modelName": "User",
+                "field": "role",
+                "message": "\"role\" is required and cannot be empty",
+                "errorType": "required"
+              },
+              {
+                "row": 15,
+                "modelName": "User",
+                "field": "status",
+                "message": "\"status\" is required and cannot be empty",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "contactId",
+                "mappedField": null,
+                "value": "P-7732",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "firstName",
+                "mappedField": "firstName",
+                "value": "Kavita",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastName",
+                "mappedField": "lastName",
+                "value": "Pawar",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dsf",
+                "mappedField": null,
+                "value": "1320parivansh@gmail.com",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "1320parivansh@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "contactStage",
+                "mappedField": null,
+                "value": "Inactive",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "countryCode",
+                "mappedField": null,
+                "value": "+91",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryNumber",
+                "mappedField": null,
+                "value": 8411066880,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dateJoined",
+                "mappedField": null,
+                "value": "Jan 13,2025 06:50 AM",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "dob",
+                "mappedField": "dateOfBirth",
+                "value": "Jun 28,1984",
+                "status": "mapped"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "Female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "goal",
+                "mappedField": null,
+                "value": "Not Specified",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "primaryPractitioner",
+                "mappedField": null,
+                "value": "Lalita  Sharma",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": "Custom API",
+                "status": "mapped"
+              },
+              {
+                "originalField": "2Practitioner",
+                "mappedField": null,
+                "value": "Gunjan",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "3Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "4Practitioner",
+                "mappedField": null,
+                "value": "-",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "referralCode",
+                "mappedField": null,
+                "value": "OM8AZ961131",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "maritalStatus",
+                "mappedField": "maritalStatus",
+                "value": "Married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "Employed",
+                "status": "mapped"
+              },
+              {
+                "originalField": "whatAreYourGoals",
+                "mappedField": null,
+                "value": "Weight Loss",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "whatIsYourTargetWeight",
+                "mappedField": null,
+                "value": "5 to 10 Kgs",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+                "mappedField": null,
+                "value": true,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "heightftinch",
+                "mappedField": null,
+                "value": "5-0.00000",
+                "status": "unmapped"
+              },
+              {
+                "originalField": "weightKg",
+                "mappedField": "weightKg",
+                "value": 60,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmi",
+                "mappedField": null,
+                "value": 25.8,
+                "status": "unmapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1317.4,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyFat",
+                "mappedField": "bodyFat",
+                "value": 34.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealWeight",
+                "mappedField": "idealWeight",
+                "value": 50.4,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetBmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [
+              "contactId",
+              "dsf",
+              "contactStage",
+              "countryCode",
+              "primaryNumber",
+              "dateJoined",
+              "goal",
+              "primaryPractitioner",
+              "2Practitioner",
+              "3Practitioner",
+              "4Practitioner",
+              "referralCode",
+              "whatAreYourGoals",
+              "whatIsYourTargetWeight",
+              "areYouReadyToShareYourPhotoOneFromFrontAndOneFromSideforOurAnalysis",
+              "heightftinch",
+              "bmi"
+            ],
+            "emptyFields": [
+              "anniversary"
+            ]
+          }
+        ],
+        "validCount": 0,
+        "invalidCount": 14
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": false
+  },
+  "import_1770034084355_kl38w8kso": {
+    "id": "import_1770034084355_kl38w8kso",
+    "fileName": "incorrect data 2.csv",
+    "uploadedAt": "2026-02-02T12:08:04.356Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 3,
+            "data": {
+              "zoconut_id": "P-35831",
+              "email": "sonishri227@gmail.com",
+              "password": "DTps@123",
+              "firstName": "SHRISHTI",
+              "lastName": "SONI",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 919589163038,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1998-01-22T00:00:00.000Z",
+              "gender": "female",
+              "bmiCategory": "Overweight",
+              "generalGoal": "weight-loss",
+              "assignedDietitian": "694a69c2d1360ee7bdb7ee4a",
+              "onboardingStep": 0,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "activityLevel": "lightly_active",
+              "heightFeet": "5.3",
+              "heightInch": "62",
+              "maritalStatus": "single",
+              "occupation": "software engineer",
+              "targetWeightBucket": "more than 30 kgs",
+              "targetWeightKg": "38",
+              "weight": 63,
+              "bmr": 1543.4,
+              "bodyFat": 25.1,
+              "idealWeight": 53.8,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "697c97d6e3c269be7dce2706",
+              "assignedDietitians": [
+                "694a69c2d1360ee7bdb7ee4a",
+                "694a6b12d1360ee7bdb7ef0d",
+                "697dd1a36800165e353c482d",
+                "694a6fbdd1360ee7bdb7f194"
+              ],
+              "assignedHealthCounselors": [
+                "697c9638e3c269be7dce252a"
+              ],
+              "dailyGoals": {
+                "calories": 2000,
+                "steps": 8000,
+                "water": 2500,
+                "sleep": 7.5
+              },
+              "createdBy": {
+                "userId": "694a69c2d1360ee7bdb7ee4a",
+                "role": "dietitian"
+              },
+              "goals": {
+                "calories": 1800,
+                "protein": 120,
+                "carbs": 200,
+                "fat": 60,
+                "water": 8,
+                "steps": 10000
+              }
+            },
+            "isValid": true,
+            "errors": [],
+            "fieldMapping": [
+              {
+                "originalField": "zoconutId",
+                "mappedField": "zoconut_id",
+                "value": "P-35831",
+                "status": "mapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "sonishri227@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "password",
+                "mappedField": "password",
+                "value": "DTps@123",
+                "status": "mapped"
+              },
+              {
+                "originalField": "firstname",
+                "mappedField": "firstName",
+                "value": "SHRISHTI",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastname",
+                "mappedField": "lastName",
+                "value": "SONI",
+                "status": "mapped"
+              },
+              {
+                "originalField": "role",
+                "mappedField": "role",
+                "value": "client",
+                "status": "mapped"
+              },
+              {
+                "originalField": "status",
+                "mappedField": "status",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "clientstatus",
+                "mappedField": "clientStatus",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "phone",
+                "mappedField": "phone",
+                "value": 919589163038,
+                "status": "mapped"
+              },
+              {
+                "originalField": "emailverified",
+                "mappedField": "emailVerified",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "timezone",
+                "mappedField": "timezone",
+                "value": "UTC",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dateofbirth",
+                "mappedField": "dateOfBirth",
+                "value": "1998-01-22T00:00:0000Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmicategory",
+                "mappedField": "bmiCategory",
+                "value": 25.4,
+                "status": "mapped"
+              },
+              {
+                "originalField": "generalgoal",
+                "mappedField": "generalGoal",
+                "value": "more than 30 kgs",
+                "status": "mapped"
+              },
+              {
+                "originalField": "assigneddietitian",
+                "mappedField": "assignedDietitian",
+                "value": "694a69c2d1360ee7bdb7ee4a",
+                "status": "mapped"
+              },
+              {
+                "originalField": "onboardingstep",
+                "mappedField": "onboardingStep",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "diettype",
+                "mappedField": "dietType",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-01-20T12:10:53.768Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-01-20T12:33:50.697Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "activitylevel",
+                "mappedField": "activityLevel",
+                "value": "lightly_active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "alternativeemail",
+                "mappedField": "alternativeEmail",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "alternativephone",
+                "mappedField": "alternativePhone",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "heightfeet",
+                "mappedField": "heightFeet",
+                "value": 5.3,
+                "status": "mapped"
+              },
+              {
+                "originalField": "heightinch",
+                "mappedField": "heightInch",
+                "value": 62,
+                "status": "mapped"
+              },
+              {
+                "originalField": "maritalstatus",
+                "mappedField": "maritalStatus",
+                "value": "single",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "software engineer",
+                "status": "mapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "targetweightbucket",
+                "mappedField": "targetWeightBucket",
+                "value": "more than 30 kgs",
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetweightkg",
+                "mappedField": "targetWeightKg",
+                "value": 38,
+                "status": "mapped"
+              },
+              {
+                "originalField": "weight",
+                "mappedField": "weight",
+                "value": 63,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1543.4,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyfat",
+                "mappedField": "bodyFat",
+                "value": 25.1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealweight",
+                "mappedField": "idealWeight",
+                "value": 53.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetbmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedhealthcounselor",
+                "mappedField": "assignedHealthCounselor",
+                "value": "697c97d6e3c269be7dce2706",
+                "status": "mapped"
+              },
+              {
+                "originalField": "healthGoals",
+                "mappedField": "healthGoals",
+                "value": [
+                  "weight loss + disease management"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedDietitians",
+                "mappedField": "assignedDietitians",
+                "value": [
+                  "694a69c2d1360ee7bdb7ee4a",
+                  "694a6b12d1360ee7bdb7ef0d",
+                  "97dd2566800165e353c484c",
+                  "697dd1a36800165e353c482d",
+                  "694a6fbdd1360ee7bdb7f194"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedHealthCounselors",
+                "mappedField": "assignedHealthCounselors",
+                "value": [
+                  "697c9638e3c269be7dce252a"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "goals",
+                "mappedField": "healthGoals",
+                "value": {
+                  "calories": 1800,
+                  "protein": 120,
+                  "carbs": 200,
+                  "fat": 60,
+                  "water": 8,
+                  "steps": 10000
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "dailyGoals",
+                "mappedField": "dailyGoals",
+                "value": {
+                  "calories": 2000,
+                  "steps": 8000,
+                  "water": 2500,
+                  "sleep": 7.5
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdBy",
+                "mappedField": "createdBy",
+                "value": {
+                  "userId": "694a69c2d1360ee7bdb7ee4a",
+                  "role": "dietitian"
+                },
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [],
+            "emptyFields": [
+              "dietType",
+              "alternativeEmail",
+              "alternativePhone",
+              "anniversary",
+              "source"
+            ]
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1770034125693_kpalekd5m": {
+    "id": "import_1770034125693_kpalekd5m",
+    "fileName": "incorrect data 2.csv",
+    "uploadedAt": "2026-02-02T12:08:45.693Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "User",
+        "displayName": "Users",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "zoconut_id": "P-35824",
+              "email": "nukalapavani@gmail.com",
+              "password": "DTps@123",
+              "firstName": "Pavani",
+              "lastName": "Ayyala",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": "919110730308sd",
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1970-03-04T00:00:00.000Z",
+              "gender": "dfghjk",
+              "bmiCategory": "Obese",
+              "generalGoal": "weight-loss",
+              "assignedDietitian": "694b9b31d1360ee7bdb7fb78",
+              "onboardingStep": 0,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "activityLevel": "lightly_active",
+              "heightFeet": "5.2",
+              "heightInch": "64",
+              "maritalStatus": "married",
+              "occupation": "software professional",
+              "targetWeightBucket": "10 to 15 kgs",
+              "targetWeightKg": "71",
+              "weight": 81,
+              "bmr": 1466.8,
+              "bodyFat": 44.1,
+              "idealWeight": 57.3,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "555'",
+              "assignedDietitians": [
+                "694a5fe0d1360ee7bdb7eb18",
+                "694a6b12d1360ee7bdb7ef0d",
+                "697dd1a36800165e353c482d",
+                "694a6fbdd1360ee7bdb7f194"
+              ],
+              "assignedHealthCounselors": [
+                "695ba0f6ec751b66299eef58",
+                "697c9638e3c269be7dce252a"
+              ],
+              "dailyGoals": {
+                "calories": 2000,
+                "steps": 8000,
+                "water": 2500,
+                "sleep": 7.5
+              },
+              "createdBy": {
+                "userId": "694b9b31d1360ee7bdb7fb78",
+                "role": "dietitian"
+              },
+              "goals": {
+                "calories": 1800,
+                "protein": 120,
+                "carbs": 200,
+                "fat": 60,
+                "water": 8,
+                "steps": 10000
+              }
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "assignedHealthCounselor",
+                "message": "Cast to ObjectId failed for value \"555'\" (type string) at path \"assignedHealthCounselor\" because of \"BSONError\"",
+                "value": "555'",
+                "errorType": "type"
+              },
+              {
+                "row": 2,
+                "modelName": "User",
+                "field": "gender",
+                "message": "`dfghjk` is not a valid enum value for path `gender`.",
+                "value": "dfghjk",
+                "errorType": "enum"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "zoconutId",
+                "mappedField": "zoconut_id",
+                "value": "P-35824",
+                "status": "mapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "nukalapavani@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "password",
+                "mappedField": "password",
+                "value": "DTps@123",
+                "status": "mapped"
+              },
+              {
+                "originalField": "firstname",
+                "mappedField": "firstName",
+                "value": "Pavani",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastname",
+                "mappedField": "lastName",
+                "value": "Ayyala",
+                "status": "mapped"
+              },
+              {
+                "originalField": "role",
+                "mappedField": "role",
+                "value": "client",
+                "status": "mapped"
+              },
+              {
+                "originalField": "status",
+                "mappedField": "status",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "clientstatus",
+                "mappedField": "clientStatus",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "phone",
+                "mappedField": "phone",
+                "value": "919110730308sd",
+                "status": "mapped"
+              },
+              {
+                "originalField": "emailverified",
+                "mappedField": "emailVerified",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "timezone",
+                "mappedField": "timezone",
+                "value": "UTC",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dateofbirth",
+                "mappedField": "dateOfBirth",
+                "value": "1970-03-04T00:00:0000Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "dfghjk",
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmicategory",
+                "mappedField": "bmiCategory",
+                "value": 30.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "generalgoal",
+                "mappedField": "generalGoal",
+                "value": "10 to 15 kgs",
+                "status": "mapped"
+              },
+              {
+                "originalField": "assigneddietitian",
+                "mappedField": "assignedDietitian",
+                "value": "694b9b31d1360ee7bdb7fb78",
+                "status": "mapped"
+              },
+              {
+                "originalField": "onboardingstep",
+                "mappedField": "onboardingStep",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "diettype",
+                "mappedField": "dietType",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-01-20T12:10:53.768Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-01-20T12:33:50.697Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "activitylevel",
+                "mappedField": "activityLevel",
+                "value": "lightly_active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "alternativeemail",
+                "mappedField": "alternativeEmail",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "alternativephone",
+                "mappedField": "alternativePhone",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "heightfeet",
+                "mappedField": "heightFeet",
+                "value": 5.2,
+                "status": "mapped"
+              },
+              {
+                "originalField": "heightinch",
+                "mappedField": "heightInch",
+                "value": 64,
+                "status": "mapped"
+              },
+              {
+                "originalField": "maritalstatus",
+                "mappedField": "maritalStatus",
+                "value": "married",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "software professional",
+                "status": "mapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "targetweightbucket",
+                "mappedField": "targetWeightBucket",
+                "value": "10 to 15 kgs",
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetweightkg",
+                "mappedField": "targetWeightKg",
+                "value": 71,
+                "status": "mapped"
+              },
+              {
+                "originalField": "weight",
+                "mappedField": "weight",
+                "value": 81,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1466.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyfat",
+                "mappedField": "bodyFat",
+                "value": 44.1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealweight",
+                "mappedField": "idealWeight",
+                "value": 57.3,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetbmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedhealthcounselor",
+                "mappedField": "assignedHealthCounselor",
+                "value": "555'",
+                "status": "mapped"
+              },
+              {
+                "originalField": "healthGoals",
+                "mappedField": "healthGoals",
+                "value": [
+                  "weight loss"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedDietitians",
+                "mappedField": "assignedDietitians",
+                "value": [
+                  "694a5fe0d1360ee7bdb7eb18",
+                  "694a6b12d1360ee7bdb7ef0d",
+                  "97dd2566800165e353c484c",
+                  "697dd1a36800165e353c482d",
+                  "694a6fbdd1360ee7bdb7f194"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedHealthCounselors",
+                "mappedField": "assignedHealthCounselors",
+                "value": [
+                  "695ba0f6ec751b66299eef58",
+                  "697c9638e3c269be7dce252a"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "goals",
+                "mappedField": "healthGoals",
+                "value": {
+                  "calories": 1800,
+                  "protein": 120,
+                  "carbs": 200,
+                  "fat": 60,
+                  "water": 8,
+                  "steps": 10000
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "dailyGoals",
+                "mappedField": "dailyGoals",
+                "value": {
+                  "calories": 2000,
+                  "steps": 8000,
+                  "water": 2500,
+                  "sleep": 7.5
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdBy",
+                "mappedField": "createdBy",
+                "value": {
+                  "userId": "694b9b31d1360ee7bdb7fb78",
+                  "role": "dietitian"
+                },
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [],
+            "emptyFields": [
+              "dietType",
+              "alternativeEmail",
+              "alternativePhone",
+              "anniversary",
+              "source"
+            ]
+          },
+          {
+            "rowIndex": 3,
+            "data": {
+              "zoconut_id": "P-35831",
+              "email": "sonishri227@gmail.com",
+              "password": "DTps@123",
+              "firstName": "SHRISHTI",
+              "lastName": "SONI",
+              "role": "client",
+              "status": "active",
+              "clientStatus": "active",
+              "phone": 919589163038,
+              "emailVerified": false,
+              "timezone": "UTC",
+              "dateOfBirth": "1998-01-22T00:00:00.000Z",
+              "gender": "female",
+              "bmiCategory": "Overweight",
+              "generalGoal": "weight-loss",
+              "assignedDietitian": "694a69c2d1360ee7bdb7ee4a",
+              "onboardingStep": 0,
+              "createdAt": "2026-01-20T12:10:53.768Z",
+              "updatedAt": "2026-01-20T12:33:50.697Z",
+              "activityLevel": "lightly_active",
+              "heightFeet": "5.3",
+              "heightInch": "62",
+              "maritalStatus": "single",
+              "occupation": "software engineer",
+              "targetWeightBucket": "more than 30 kgs",
+              "targetWeightKg": "38",
+              "weight": 63,
+              "bmr": 1543.4,
+              "bodyFat": 25.1,
+              "idealWeight": 53.8,
+              "targetBmi": 21.7,
+              "assignedHealthCounselor": "697c97d6e3c269be7dce2706",
+              "assignedDietitians": [
+                "694a69c2d1360ee7bdb7ee4a",
+                "694a6b12d1360ee7bdb7ef0d",
+                "697dd1a36800165e353c482d",
+                "694a6fbdd1360ee7bdb7f194"
+              ],
+              "assignedHealthCounselors": [
+                "697c9638e3c269be7dce252a"
+              ],
+              "dailyGoals": {
+                "calories": 2000,
+                "steps": 8000,
+                "water": 2500,
+                "sleep": 7.5
+              },
+              "createdBy": {
+                "userId": "694a69c2d1360ee7bdb7ee4a",
+                "role": "dietitian"
+              },
+              "goals": {
+                "calories": 1800,
+                "protein": 120,
+                "carbs": 200,
+                "fat": 60,
+                "water": 8,
+                "steps": 10000
+              }
+            },
+            "isValid": true,
+            "errors": [],
+            "fieldMapping": [
+              {
+                "originalField": "zoconutId",
+                "mappedField": "zoconut_id",
+                "value": "P-35831",
+                "status": "mapped"
+              },
+              {
+                "originalField": "email",
+                "mappedField": "email",
+                "value": "sonishri227@gmail.com",
+                "status": "mapped"
+              },
+              {
+                "originalField": "password",
+                "mappedField": "password",
+                "value": "DTps@123",
+                "status": "mapped"
+              },
+              {
+                "originalField": "firstname",
+                "mappedField": "firstName",
+                "value": "SHRISHTI",
+                "status": "mapped"
+              },
+              {
+                "originalField": "lastname",
+                "mappedField": "lastName",
+                "value": "SONI",
+                "status": "mapped"
+              },
+              {
+                "originalField": "role",
+                "mappedField": "role",
+                "value": "client",
+                "status": "mapped"
+              },
+              {
+                "originalField": "status",
+                "mappedField": "status",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "clientstatus",
+                "mappedField": "clientStatus",
+                "value": "active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "phone",
+                "mappedField": "phone",
+                "value": 919589163038,
+                "status": "mapped"
+              },
+              {
+                "originalField": "emailverified",
+                "mappedField": "emailVerified",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "timezone",
+                "mappedField": "timezone",
+                "value": "UTC",
+                "status": "mapped"
+              },
+              {
+                "originalField": "dateofbirth",
+                "mappedField": "dateOfBirth",
+                "value": "1998-01-22T00:00:0000Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "gender",
+                "mappedField": "gender",
+                "value": "female",
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmicategory",
+                "mappedField": "bmiCategory",
+                "value": 25.4,
+                "status": "mapped"
+              },
+              {
+                "originalField": "generalgoal",
+                "mappedField": "generalGoal",
+                "value": "more than 30 kgs",
+                "status": "mapped"
+              },
+              {
+                "originalField": "assigneddietitian",
+                "mappedField": "assignedDietitian",
+                "value": "694a69c2d1360ee7bdb7ee4a",
+                "status": "mapped"
+              },
+              {
+                "originalField": "onboardingstep",
+                "mappedField": "onboardingStep",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "diettype",
+                "mappedField": "dietType",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-01-20T12:10:53.768Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-01-20T12:33:50.697Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "activitylevel",
+                "mappedField": "activityLevel",
+                "value": "lightly_active",
+                "status": "mapped"
+              },
+              {
+                "originalField": "alternativeemail",
+                "mappedField": "alternativeEmail",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "alternativephone",
+                "mappedField": "alternativePhone",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "anniversary",
+                "mappedField": "anniversary",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "heightfeet",
+                "mappedField": "heightFeet",
+                "value": 5.3,
+                "status": "mapped"
+              },
+              {
+                "originalField": "heightinch",
+                "mappedField": "heightInch",
+                "value": 62,
+                "status": "mapped"
+              },
+              {
+                "originalField": "maritalstatus",
+                "mappedField": "maritalStatus",
+                "value": "single",
+                "status": "mapped"
+              },
+              {
+                "originalField": "occupation",
+                "mappedField": "occupation",
+                "value": "software engineer",
+                "status": "mapped"
+              },
+              {
+                "originalField": "source",
+                "mappedField": "source",
+                "value": null,
+                "status": "empty"
+              },
+              {
+                "originalField": "targetweightbucket",
+                "mappedField": "targetWeightBucket",
+                "value": "more than 30 kgs",
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetweightkg",
+                "mappedField": "targetWeightKg",
+                "value": 38,
+                "status": "mapped"
+              },
+              {
+                "originalField": "weight",
+                "mappedField": "weight",
+                "value": 63,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bmr",
+                "mappedField": "bmr",
+                "value": 1543.4,
+                "status": "mapped"
+              },
+              {
+                "originalField": "bodyfat",
+                "mappedField": "bodyFat",
+                "value": 25.1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "idealweight",
+                "mappedField": "idealWeight",
+                "value": 53.8,
+                "status": "mapped"
+              },
+              {
+                "originalField": "targetbmi",
+                "mappedField": "targetBmi",
+                "value": 21.7,
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedhealthcounselor",
+                "mappedField": "assignedHealthCounselor",
+                "value": "697c97d6e3c269be7dce2706",
+                "status": "mapped"
+              },
+              {
+                "originalField": "healthGoals",
+                "mappedField": "healthGoals",
+                "value": [
+                  "weight loss + disease management"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedDietitians",
+                "mappedField": "assignedDietitians",
+                "value": [
+                  "694a69c2d1360ee7bdb7ee4a",
+                  "694a6b12d1360ee7bdb7ef0d",
+                  "97dd2566800165e353c484c",
+                  "697dd1a36800165e353c482d",
+                  "694a6fbdd1360ee7bdb7f194"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "assignedHealthCounselors",
+                "mappedField": "assignedHealthCounselors",
+                "value": [
+                  "697c9638e3c269be7dce252a"
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "goals",
+                "mappedField": "healthGoals",
+                "value": {
+                  "calories": 1800,
+                  "protein": 120,
+                  "carbs": 200,
+                  "fat": 60,
+                  "water": 8,
+                  "steps": 10000
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "dailyGoals",
+                "mappedField": "dailyGoals",
+                "value": {
+                  "calories": 2000,
+                  "steps": 8000,
+                  "water": 2500,
+                  "sleep": 7.5
+                },
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdBy",
+                "mappedField": "createdBy",
+                "value": {
+                  "userId": "694a69c2d1360ee7bdb7ee4a",
+                  "role": "dietitian"
+                },
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [],
+            "emptyFields": [
+              "dietType",
+              "alternativeEmail",
+              "alternativePhone",
+              "anniversary",
+              "source"
+            ]
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 1
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": false
   }
 }

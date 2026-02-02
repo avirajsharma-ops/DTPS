@@ -8,6 +8,7 @@ import { UserRole } from '@/types';
 import { getBaseUrl } from '@/lib/config';
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: 'credentials',
