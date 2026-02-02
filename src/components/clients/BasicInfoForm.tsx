@@ -331,8 +331,8 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
 
             <div className="space-y-2.5">
               <Label htmlFor="targetWeightBucket" className="text-sm font-medium">What is Your Target Weight?</Label>
-              <Select value={targetWeightBucket} onValueChange={val => onChange('targetWeightBucket', val)}>
-                <SelectTrigger className="h-10">
+              <Select value={targetWeightBucket || ''} onValueChange={val => onChange('targetWeightBucket', val)}>
+                <SelectTrigger className={`h-10 ${targetWeightBucket && targetWeightBucket !== 'none' ? 'border-orange-400 bg-orange-50' : ''}`}>
                   <SelectValue placeholder="Select range" />
                 </SelectTrigger>
                 <SelectContent className="max-h-72 overflow-auto">
@@ -446,22 +446,25 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
         </div>
 
         <div className="space-y-4 pt-2">
-          <Label className="text-sm font-medium">What Are Your Goals?</Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">What Are Your Goals?</Label>
+            <span className="text-xs text-gray-500">Select multiple</span>
+          </div>
           <div className="flex flex-wrap gap-2.5 mt-2">
             {['Weight Loss','Weight Gain','Weight Loss + Disease Management','Only Disease Management','Other'].map(item => {
               const value = item.toLowerCase().replace(/\s+/g,'-');
-              const selected = goalsList.includes(value);
+              const selected = goalsList?.includes(value);
               return (
                 <Button 
                   key={value} 
                   type="button" 
-                  variant={selected ? 'default':'outline'} 
+                  variant="outline"
                   size="sm" 
                   onClick={() => {
-                    const next = selected ? goalsList.filter(g => g !== value) : [...goalsList, value];
+                    const next = selected ? goalsList?.filter((g: string) => g !== value) : [...(goalsList || []), value];
                     onChange('goalsList', next);
                   }}
-                  className="text-xs"
+                  className={`text-xs transition-all ${selected ? 'bg-orange-500 text-white border-orange-500 hover:bg-orange-600' : 'hover:border-orange-300'}`}
                 >
                   {item}
                 </Button>
