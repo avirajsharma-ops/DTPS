@@ -224,10 +224,12 @@ export default function ProfilePage() {
       }
       
       // Then call NextAuth signOut
-      await signOut({ callbackUrl: '/' });
+      const fullSigninUrl = `${window.location.origin}/`;
+      await signOut({ callbackUrl: fullSigninUrl });
     } catch (error) {
       console.error('Error during logout:', error);
-      await signOut({ callbackUrl: '/' });
+      const fullSigninUrl = `${window.location.origin}/`;
+      await signOut({ callbackUrl: fullSigninUrl });
     }
   };
 

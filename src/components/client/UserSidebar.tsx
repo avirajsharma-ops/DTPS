@@ -93,7 +93,8 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
 
   const handleSignOut = async () => {
     onClose();
-    await signOut({ callbackUrl: '/client-auth/signin' });
+    const fullSigninUrl = `${window.location.origin}/client-auth/signin`;
+    await signOut({ callbackUrl: fullSigninUrl });
   };
 
   // Handle link click - close sidebar

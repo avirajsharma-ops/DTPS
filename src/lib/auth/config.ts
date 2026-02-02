@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import WooCommerceClient from '@/lib/db/models/WooCommerceClient';
 import { UserRole } from '@/types';
+import { getBaseUrl } from '@/lib/config';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -173,7 +174,7 @@ export const authOptions: NextAuthOptions = {
         if (user.role === UserRole.CLIENT && !user.isWooCommerceClient) {
           try {
             await connectDB();
-            const dbUser = await User.findById(user.id).select('onboardingCompleted').lean();
+            const dbUser = await User.findById(user.id).select('onboardingCompleted');
             token.onboardingCompleted = dbUser?.onboardingCompleted ?? false;
           } catch (error) {
             console.error('Error fetching onboarding status:', error);
@@ -254,11 +255,14 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      // Use getBaseUrl() instead of baseUrl from environment
+      const safeBaseUrl = getBaseUrl();
+      
       // Allows relative callback URLs
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (url.startsWith('/')) return `${safeBaseUrl}${url}`;
       // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
+      else if (new URL(url).origin === safeBaseUrl) return url;
+      return safeBaseUrl;
     }
   },
   pages: {

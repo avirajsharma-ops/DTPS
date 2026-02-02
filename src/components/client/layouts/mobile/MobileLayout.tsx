@@ -270,7 +270,8 @@ export function MobileLayout({
                 localStorage.removeItem('dtps-theme');
                 sessionStorage.clear();
               }
-              signOut({ callbackUrl: '/client-auth/signin', redirect: true });
+              const fullSigninUrl = `${window.location.origin}/client-auth/signin`;
+              signOut({ callbackUrl: fullSigninUrl, redirect: true });
             }}
           >
             <LogOut className="h-5 w-5 mr-3" />

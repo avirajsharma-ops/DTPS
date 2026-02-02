@@ -149,10 +149,12 @@ export default function HealthCounselorProfilePage() {
         sessionStorage.clear();
       }
       
-      await signOut({ callbackUrl: '/' });
+      const fullSigninUrl = `${window.location.origin}/`;
+      await signOut({ callbackUrl: fullSigninUrl });
     } catch (error) {
       console.error('Error during logout:', error);
-      await signOut({ callbackUrl: '/' });
+      const fullSigninUrl = `${window.location.origin}/`;
+      await signOut({ callbackUrl: fullSigninUrl });
     }
   };
 

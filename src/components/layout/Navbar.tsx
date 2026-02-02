@@ -93,7 +93,8 @@ export default function Navbar({ isDarkMode = false }: NavbarProps) {
   };
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    const fullSigninUrl = `${window.location.origin}/`;
+    await signOut({ callbackUrl: fullSigninUrl });
   };
 
   if (status === 'loading') {

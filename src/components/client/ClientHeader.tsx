@@ -57,12 +57,14 @@ export default function ClientHeader({ title, showBack, onBack }: ClientHeaderPr
         sessionStorage.clear();
       }
       
-      // Then call NextAuth signOut - redirect to client auth login page
-      await signOut({ callbackUrl: '/client-auth/signin', redirect: true });
+      // Then call NextAuth signOut - use absolute URL to ensure domain is used
+      const fullSigninUrl = `${window.location.origin}/client-auth/signin`;
+      await signOut({ callbackUrl: fullSigninUrl, redirect: true });
     } catch (error) {
       console.error('Error during logout:', error);
       // Force redirect even on error
-      await signOut({ callbackUrl: '/client-auth/signin', redirect: true });
+      const fullSigninUrl = `${window.location.origin}/client-auth/signin`;
+      await signOut({ callbackUrl: fullSigninUrl, redirect: true });
     }
   }, []);
 

@@ -85,7 +85,8 @@ export default function MobileSettingsPage() {
         localStorage.removeItem('dtps-theme');
         sessionStorage.clear();
       }
-      await signOut({ callbackUrl: '/client-auth/signin', redirect: true });
+      const fullSigninUrl = `${window.location.origin}/client-auth/signin`;
+      await signOut({ callbackUrl: fullSigninUrl, redirect: true });
     }
   };
 

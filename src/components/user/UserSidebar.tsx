@@ -56,7 +56,8 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/client-auth/signin' });
+    const fullSigninUrl = `${window.location.origin}/client-auth/signin`;
+    await signOut({ callbackUrl: fullSigninUrl });
   };
 
   return (

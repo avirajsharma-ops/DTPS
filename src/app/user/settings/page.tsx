@@ -82,14 +82,16 @@ export default function UserSettingsPage() {
       }
       
       // Then call NextAuth signOut
+      const fullSigninUrl = `${window.location.origin}/client-auth/signin`;
       await signOut({ 
-        callbackUrl: '/client-auth/signin',
+        callbackUrl: fullSigninUrl,
         redirect: true
       });
     } catch (error) {
       console.error('Error during logout:', error);
       // Fallback to just NextAuth signOut
-      await signOut({ callbackUrl: '/client-auth/signin' });
+      const fullSigninUrl = `${window.location.origin}/client-auth/signin`;
+      await signOut({ callbackUrl: fullSigninUrl });
     } finally {
       setLoggingOut(false);
     }
