@@ -51,6 +51,7 @@ const registerSchema = z.object({
   allergies: z.array(z.string()).optional(),
   dietaryRestrictions: z.array(z.string()).optional(),
   assignedDietitian: z.string().optional(),
+  assignedHealthCounselor: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -170,11 +171,11 @@ export async function POST(request: NextRequest) {
         const userRole = session.user.role?.toLowerCase();
         if (userRole === 'dietitian') {
           // Auto-assign to the dietitian creating the client
-          userData.assignedDietitian = validatedData.assignedDietitian || session.user.id;
+          userData.assignedDietitian = validatedData?.assignedDietitian || session.user.id;
           userData.createdBy = { userId: session.user.id, role: 'dietitian' };
         } else if (userRole === 'health_counselor') {
           // Auto-assign to the health counselor creating the client
-          userData.assignedHealthCounselor = validatedData.assignedHealthCounselor || session.user.id;
+          userData.assignedHealthCounselor = validatedData?.assignedHealthCounselor || session.user.id;
           userData.createdBy = { userId: session.user.id, role: 'health_counselor' };
         } else if (userRole === 'admin') {
           userData.assignedDietitian = validatedData.assignedDietitian;
