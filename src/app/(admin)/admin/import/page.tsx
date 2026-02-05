@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import {
@@ -31,7 +32,9 @@ import {
   Table,
   X,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Database,
+  Edit3
 } from 'lucide-react';
 
 // Types
@@ -1250,16 +1253,131 @@ export default function DataImportPage() {
     return String(value);
   };
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Data Import</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Import data from CSV, Excel, or JSON files with automatic model detection
-          </p>
+  const router = useRouter();
+
+  // Sidebar state
+  const [activeSection] = useState<'import' | 'export' | 'updates'>('import');
+
+  // Render sidebar
+  const renderSidebar = () => (
+    <div className="w-64 bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 border-r-2 border-blue-200 dark:border-blue-900 min-h-screen shadow-lg">
+      <div className="p-6 border-b-2 border-blue-200 dark:border-blue-900 bg-white dark:bg-gray-800">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <Database className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              Data Hub
+            </h2>
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+              Admin Panel
+            </p>
+          </div>
         </div>
+      </div>
+
+      <nav className="p-4 space-y-3">
+        {/* Import Section */}
+        <button
+          onClick={() => router.push('/admin/import')}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+            activeSection === 'import'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/20'
+          }`}
+        >
+          <Upload className="w-5 h-5 flex-shrink-0" />
+          <div className="text-left flex-1">
+            <p className="font-semibold">Import Data</p>
+            <p className={`text-xs opacity-70 ${activeSection === 'import' ? 'text-blue-100' : ''}`}>
+              Upload files
+            </p>
+          </div>
+          {activeSection === 'import' && <ChevronRight className="w-4 h-4 flex-shrink-0" />}
+        </button>
+
+        {/* Export Section */}
+        <button
+          onClick={() => router.push('/admin/data')}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/20`}
+        >
+          <Download className="w-5 h-5 flex-shrink-0" />
+          <div className="text-left flex-1">
+            <p className="font-semibold">Export Data</p>
+            <p className="text-xs opacity-70">Download files</p>
+          </div>
+        </button>
+
+        {/* Updates Section */}
+        <button
+          onClick={() => router.push('/admin/data')}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/20`}
+        >
+          <Edit3 className="w-5 h-5 flex-shrink-0" />
+          <div className="text-left flex-1">
+            <p className="font-semibold">Update Data</p>
+            <p className="text-xs opacity-70">Search & edit</p>
+          </div>
+        </button>
+      </nav>
+
+      {/* Quick Stats */}
+      <div className="p-4 m-4 bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-blue-900 rounded-xl">
+        <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-4">
+          📊 Status
+        </p>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Import Status</span>
+            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded-lg font-bold text-sm">
+              Active
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Mode</span>
+            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded-lg font-bold text-sm">
+              Upload
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white dark:from-gray-800 to-transparent border-t border-blue-200 dark:border-blue-900">
+        <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+          Data Management v1.0
+        </p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Sidebar - Fixed */}
+      <div className="fixed left-0 top-0 h-screen w-64 z-50">
+        {renderSidebar()}
+      </div>
+
+      {/* Main Content - with margin for sidebar */}
+      <div className="ml-64 flex-1 w-[calc(100%-16rem)] overflow-auto">
+        <div className="min-h-screen">
+          <div className="p-8 max-w-7xl">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-8">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-3 bg-blue-600 rounded-lg">
+                    <Upload className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Import Data</h1>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1">
+                      Import data from CSV, Excel, or JSON files with automatic model detection
+                    </p>
+                  </div>
+                </div>
+              </div>
         
         {state.status !== 'idle' && (
           <div className="flex items-center gap-3">
@@ -1532,6 +1650,9 @@ export default function DataImportPage() {
           </div>
         </div>
       )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
