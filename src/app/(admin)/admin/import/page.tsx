@@ -495,7 +495,7 @@ export default function DataImportPage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
             {availableModels.map(m => (
-              <div key={m.name} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg text-sm hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors">
+              <div key={m.name} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg text-sm hover:bg-teal-50 dark:hover:bg-gray-700/50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-gray-900 dark:text-white truncate">{m.displayName}</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">{m.fieldCount} fields</div>
@@ -996,7 +996,7 @@ export default function DataImportPage() {
                             rowIndex: row.rowIndex,
                             data: { ...row.data }
                           })}
-                          className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                          className="p-1 text-[#3AB1A0] hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded"
                           title="Edit"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -1089,7 +1089,7 @@ export default function DataImportPage() {
                         </button>
                         <button
                           onClick={() => setShowMatchDetails(showMatchDetails === row.rowIndex ? null : row.rowIndex)}
-                          className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                          className="px-2 py-1 text-xs bg-teal-50 dark:bg-teal-900/20 text-[#3AB1A0] dark:text-[#3AB1A0] rounded hover:bg-teal-100 dark:hover:bg-teal-900/40"
                           title="See why this row didn't match any model"
                         >
                           Why?
@@ -1112,21 +1112,21 @@ export default function DataImportPage() {
 
         {/* Model match details panel */}
         {showMatchDetails !== null && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-blue-200 dark:border-blue-800 overflow-hidden">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 flex justify-between items-center">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-teal-200 dark:border-teal-800 overflow-hidden">
+            <div className="p-4 bg-teal-50 dark:bg-teal-900/20 border-b border-teal-200 dark:border-teal-800 flex justify-between items-center">
               <div>
-                <h3 className="font-medium text-blue-700 dark:text-blue-400">
+                <h3 className="font-medium text-teal-700 dark:text-teal-400">
                   Why Row {showMatchDetails} Didn't Match Any Model
                 </h3>
-                <p className="text-sm text-blue-600 dark:text-blue-500 mt-1">
+                <p className="text-sm text-teal-600 dark:text-teal-500 mt-1">
                   A row needs at least 60% confidence to match a model. All attempts below:
                 </p>
               </div>
               <button
                 onClick={() => setShowMatchDetails(null)}
-                className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800 rounded"
+                className="p-1 hover:bg-teal-100 dark:hover:bg-teal-800 rounded"
               >
-                <X className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <X className="w-5 h-5 text-teal-600 dark:text-teal-400" />
               </button>
             </div>
             
@@ -1260,47 +1260,43 @@ export default function DataImportPage() {
 
   // Render sidebar
   const renderSidebar = () => (
-    <div className="w-64 bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 border-r-2 border-blue-200 dark:border-blue-900 min-h-screen shadow-lg">
-      <div className="p-6 border-b-2 border-blue-200 dark:border-blue-900 bg-white dark:bg-gray-800">
+    <div className="w-64 bg-gradient-to-b from-teal-50 to-white dark:from-gray-800 dark:to-gray-900 border-r-2 border-teal-200 dark:border-teal-900 h-screen shadow-lg">
+      <div className="p-5 border-b-2 border-teal-200 dark:border-teal-900 bg-white dark:bg-gray-800">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-blue-600 rounded-lg">
+          <div className="p-2.5 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
             <Database className="w-5 h-5 text-white" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-              Data Hub
+              DTPS
             </h2>
-            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+            <p className="text-xs text-[#3AB1A0] dark:text-[#3AB1A0] font-medium">
               Admin Panel
             </p>
           </div>
         </div>
       </div>
 
-      <nav className="p-4 space-y-3">
+      <nav className="p-4 space-y-2">
         {/* Import Section */}
         <button
           onClick={() => router.push('/admin/import')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
-            activeSection === 'import'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/20'
-          }`}
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 font-medium bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] text-white shadow-lg shadow-teal-500/30`}
         >
           <Upload className="w-5 h-5 flex-shrink-0" />
           <div className="text-left flex-1">
             <p className="font-semibold">Import Data</p>
-            <p className={`text-xs opacity-70 ${activeSection === 'import' ? 'text-blue-100' : ''}`}>
+            <p className={`text-xs opacity-70 text-teal-100`}>
               Upload files
             </p>
           </div>
-          {activeSection === 'import' && <ChevronRight className="w-4 h-4 flex-shrink-0" />}
+          <ChevronRight className="w-4 h-4 flex-shrink-0" />
         </button>
 
         {/* Export Section */}
         <button
           onClick={() => router.push('/admin/data')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/20`}
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 font-medium text-gray-700 dark:text-gray-300 hover:bg-teal-100 dark:hover:bg-teal-900/20`}
         >
           <Download className="w-5 h-5 flex-shrink-0" />
           <div className="text-left flex-1">
@@ -1312,7 +1308,7 @@ export default function DataImportPage() {
         {/* Updates Section */}
         <button
           onClick={() => router.push('/admin/data')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/20`}
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 font-medium text-gray-700 dark:text-gray-300 hover:bg-teal-100 dark:hover:bg-teal-900/20`}
         >
           <Edit3 className="w-5 h-5 flex-shrink-0" />
           <div className="text-left flex-1">
@@ -1323,20 +1319,20 @@ export default function DataImportPage() {
       </nav>
 
       {/* Quick Stats */}
-      <div className="p-4 m-4 bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-blue-900 rounded-xl">
-        <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-4">
+      <div className="p-4 m-4 bg-white dark:bg-gray-800 border-2 border-teal-200 dark:border-teal-900 rounded-lg">
+        <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-widest mb-4">
           📊 Status
         </p>
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Import Status</span>
-            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded-lg font-bold text-sm">
+            <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-3 py-1 rounded-lg font-bold text-sm">
               Active
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Mode</span>
-            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded-lg font-bold text-sm">
+            <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-3 py-1 rounded-lg font-bold text-sm">
               Upload
             </span>
           </div>
@@ -1344,9 +1340,9 @@ export default function DataImportPage() {
       </div>
 
       {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white dark:from-gray-800 to-transparent border-t border-blue-200 dark:border-blue-900">
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white dark:from-gray-800 to-transparent border-t border-teal-200 dark:border-teal-900">
         <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-          Data Management v1.0
+          DTPS Admin
         </p>
       </div>
     </div>
@@ -1367,7 +1363,7 @@ export default function DataImportPage() {
             <div className="flex items-start justify-between mb-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-3 bg-blue-600 rounded-lg">
+                  <div className="p-3 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
                     <Upload className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -1423,11 +1419,11 @@ export default function DataImportPage() {
 
       {/* File info */}
       {state.fileName && (
-        <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 flex items-center gap-4">
-          <FileSpreadsheet className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+        <div className="mb-6 bg-teal-50 dark:bg-teal-900/20 rounded-xl p-4 flex items-center gap-4">
+          <FileSpreadsheet className="w-8 h-8 text-[#3AB1A0] dark:text-[#3AB1A0]" />
           <div>
-            <p className="font-medium text-blue-900 dark:text-blue-300">{state.fileName}</p>
-            <p className="text-sm text-blue-700 dark:text-blue-400">
+            <p className="font-medium text-teal-900 dark:text-teal-300">{state.fileName}</p>
+            <p className="text-sm text-teal-700 dark:text-teal-400">
               {state.fileType?.toUpperCase()} • {state.totalRows} rows • {state.headers.length} columns
             </p>
           </div>
@@ -1573,7 +1569,7 @@ export default function DataImportPage() {
                           <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                             {error.modelName}
                           </td>
-                          <td className="px-4 py-3 font-semibold text-blue-600 dark:text-blue-400">
+                          <td className="px-4 py-3 font-semibold text-[#3AB1A0] dark:text-[#3AB1A0]">
                             {error.field}
                           </td>
                           <td className="px-4 py-3 text-red-700 dark:text-red-400 max-w-xs truncate" title={error.message}>
@@ -1611,8 +1607,8 @@ export default function DataImportPage() {
               </div>
 
               {/* Error Type Legend */}
-              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3 text-sm">Error Types:</h4>
+              <div className="mt-6 p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg border border-teal-200 dark:border-teal-700">
+                <h4 className="font-semibold text-teal-900 dark:text-teal-300 mb-3 text-sm">Error Types:</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full bg-red-500"></span>

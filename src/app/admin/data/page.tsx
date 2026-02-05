@@ -7,7 +7,7 @@
  * URL: /admin/data
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -83,6 +83,71 @@ interface FieldInfo {
 
 type ActiveSection = 'import' | 'export' | 'updates';
 
+// Debounce hook for search optimization
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    timeoutRef.current = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+// Lazy loading hook with Intersection Observer
+const useLazyLoad = (threshold: number = 0.1) => {
+  const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set());
+  const elementRefs = useRef<Map<number, IntersectionObserver | null>>(new Map());
+
+  const observeElement = useCallback((index: number, element: HTMLElement | null) => {
+    if (!element) {
+      const observer = elementRefs.current.get(index);
+      if (observer) {
+        observer.disconnect();
+        elementRefs.current.delete(index);
+      }
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisibleIndices(prev => new Set(prev).add(index));
+        }
+      },
+      { threshold }
+    );
+
+    observer.observe(element);
+    elementRefs.current.set(index, observer);
+  }, [threshold]);
+
+  return { visibleIndices, observeElement };
+};
+
+// Status badge component
+const StatusBadge = ({ status }: { status: string }) => {
+  const statusConfig: Record<string, { bg: string; text: string }> = {
+    completed: { bg: 'bg-green-100', text: 'text-green-700' },
+    pending: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+    scheduled: { bg: 'bg-orange-100', text: 'text-orange-700' },
+  };
+
+  const config = statusConfig[status] || { bg: 'bg-gray-100', text: 'text-gray-700' };
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs ${config.bg} ${config.text}`}>
+      {status || '-'}
+    </span>
+  );
+};
+
 // Model icon mapping
 const MODEL_ICONS: Record<string, React.ElementType> = {
   User: Users,
@@ -103,8 +168,10 @@ const MODEL_ICONS: Record<string, React.ElementType> = {
 };
 
 export default function DataManagementPage() {
-  // State
-  const [activeSection, setActiveSection] = useState<ActiveSection>('import');
+  const router = useRouter();
+  
+  // State - default to 'export' since import redirects to another page
+  const [activeSection, setActiveSection] = useState<ActiveSection>('export');
   const [loading, setLoading] = useState(false);
   const [models, setModels] = useState<ModelInfo[]>([]);
   
@@ -129,10 +196,46 @@ export default function DataManagementPage() {
     totalPages: 0
   });
 
+  // Lazy loading state
+  const { visibleIndices: visibleTableRows, observeElement: observeTableRow } = useLazyLoad(0.3);
+  const [visibleExportModels, setVisibleExportModels] = useState<Set<string>>(new Set());
+  
+  // API abort controllers
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const detailsAbortRef = useRef<AbortController | null>(null);
+
+  // Debounced search query
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
   // Fetch models on mount
   useEffect(() => {
     fetchModels();
+    
+    // Cleanup abort controllers on unmount
+    return () => {
+      if (searchAbortRef.current) searchAbortRef.current.abort();
+      if (detailsAbortRef.current) detailsAbortRef.current.abort();
+    };
   }, []);
+
+  // Auto-search when debounced query changes
+  useEffect(() => {
+    if (selectedUpdateModel && debouncedSearchQuery !== undefined) {
+      searchRecords(selectedUpdateModel, debouncedSearchQuery, 1);
+    }
+  }, [debouncedSearchQuery, selectedUpdateModel]);
+
+  // Memoized selected model
+  const currentModel = useMemo(() => 
+    models.find(m => m.name === selectedUpdateModel),
+    [models, selectedUpdateModel]
+  );
+
+  // Memoized filtered fields
+  const visibleRecordFields = useMemo(() =>
+    recordFields.filter((f) => !f.path.toLowerCase().includes('password')),
+    [recordFields]
+  );
 
   const fetchModels = async () => {
     setLoading(true);
@@ -190,12 +293,22 @@ export default function DataManagementPage() {
     }
   };
 
-  // Search records
+  // Search records with lazy loading
   const searchRecords = useCallback(async (modelName: string, query: string = '', page: number = 1) => {
     setLoading(true);
+    
+    // Cancel previous request
+    if (searchAbortRef.current) {
+      searchAbortRef.current.abort();
+    }
+    
+    // Create new abort controller
+    searchAbortRef.current = new AbortController();
+    
     try {
       const res = await fetch(
-        `/api/admin/data/records?model=${modelName}&search=${encodeURIComponent(query)}&page=${page}&limit=20`
+        `/api/admin/data/records?model=${modelName}&search=${encodeURIComponent(query)}&page=${page}&limit=20`,
+        { signal: searchAbortRef.current.signal }
       );
       const data = await res.json();
       
@@ -203,21 +316,35 @@ export default function DataManagementPage() {
         setSearchResults(data.records);
         setPagination(data.pagination);
         setRecordFields(data.fields);
+        // Lazy loading will auto-detect visible rows on render
       } else {
         toast.error('Search failed');
       }
-    } catch (error) {
-      toast.error('Error searching records');
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        toast.error('Error searching records');
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Fetch single record with related data
+  // Fetch single record with related data and lazy abort control
   const fetchRecordDetails = async (modelName: string, recordId: string) => {
     setLoading(true);
+    
+    // Cancel previous request
+    if (detailsAbortRef.current) {
+      detailsAbortRef.current.abort();
+    }
+    
+    // Create new abort controller
+    detailsAbortRef.current = new AbortController();
+    
     try {
-      const res = await fetch(`/api/admin/data/records?model=${modelName}&id=${recordId}`);
+      const res = await fetch(`/api/admin/data/records?model=${modelName}&id=${recordId}`, {
+        signal: detailsAbortRef.current.signal
+      });
       const data = await res.json();
       
       if (data.success) {
@@ -228,8 +355,10 @@ export default function DataManagementPage() {
       } else {
         toast.error('Failed to load record');
       }
-    } catch (error) {
-      toast.error('Error loading record');
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        toast.error('Error loading record');
+      }
     } finally {
       setLoading(false);
     }
@@ -297,60 +426,68 @@ export default function DataManagementPage() {
     return String(value);
   };
 
-  const router = useRouter();
+  // Fast section switching handler
+  const handleSectionChange = useCallback((section: ActiveSection) => {
+    if (section === 'import') {
+      router.push('/admin/import');
+      return;
+    }
+    setActiveSection(section);
+    // Reset update section state when switching away
+    if (section !== 'updates') {
+      setSelectedUpdateModel(null);
+      setSelectedRecord(null);
+      setSearchQuery('');
+      setSearchResults([]);
+    }
+  }, [router]);
 
   // Render sidebar
   const renderSidebar = () => (
-    <div className="w-64 bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 border-r-2 border-blue-200 dark:border-blue-900 min-h-screen shadow-lg">
-      <div className="p-6 border-b-2 border-blue-200 dark:border-blue-900 bg-white dark:bg-gray-800">
+    <div className="w-64 bg-gradient-to-b from-teal-50 to-white dark:from-gray-800 dark:to-gray-900 border-r-2 border-teal-200 dark:border-teal-900 h-screen shadow-lg">
+      <div className="p-5 border-b-2 border-teal-200 dark:border-teal-900 bg-white dark:bg-gray-800">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-blue-600 rounded-lg">
+          <div className="p-2.5 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
             <Database className="w-5 h-5 text-white" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-              Data Hub
+              DTPS
             </h2>
-            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+            <p className="text-xs text-[#3AB1A0] dark:text-[#3AB1A0] font-medium">
               Admin Panel
             </p>
           </div>
         </div>
       </div>
 
-      <nav className="p-4 space-y-3">
-        {/* Import Section */}
+      <nav className="p-4 space-y-2">
+        {/* Import Section - Always navigates to /admin/import */}
         <button
-          onClick={() => router.push('/admin/import')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
-            activeSection === 'import'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/20'
-          }`}
+          onClick={() => handleSectionChange('import')}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 font-medium text-gray-700 dark:text-gray-300 hover:bg-teal-100 dark:hover:bg-teal-900/20"
         >
           <Upload className="w-5 h-5 flex-shrink-0" />
           <div className="text-left flex-1">
             <p className="font-semibold">Import Data</p>
-            <p className={`text-xs opacity-70 ${activeSection === 'import' ? 'text-blue-100' : ''}`}>
-              Upload files
-            </p>
+            <p className="text-xs opacity-70">Upload files</p>
           </div>
-          {activeSection === 'import' && <ChevronRight className="w-4 h-4 flex-shrink-0" />}
+          <ChevronRight className="w-4 h-4 flex-shrink-0 text-gray-400" />
         </button>
 
         {/* Export Section */}
         <button
-          onClick={() => setActiveSection('export')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+          onClick={() => handleSectionChange('export')}
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 font-medium ${
             activeSection === 'export'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/20'
+              ? 'bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] text-white shadow-lg shadow-teal-500/30'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-teal-100 dark:hover:bg-teal-900/20'
           }`}
         >
           <Download className="w-5 h-5 flex-shrink-0" />
           <div className="text-left flex-1">
             <p className="font-semibold">Export Data</p>
-            <p className={`text-xs opacity-70 ${activeSection === 'export' ? 'text-blue-100' : ''}`}>
+            <p className={`text-xs opacity-70 ${activeSection === 'export' ? 'text-teal-100' : ''}`}>
               Download files
             </p>
           </div>
@@ -359,17 +496,17 @@ export default function DataManagementPage() {
 
         {/* Updates Section */}
         <button
-          onClick={() => setActiveSection('updates')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+          onClick={() => handleSectionChange('updates')}
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 font-medium ${
             activeSection === 'updates'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/20'
+              ? 'bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] text-white shadow-lg shadow-teal-500/30'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-teal-100 dark:hover:bg-teal-900/20'
           }`}
         >
           <Edit3 className="w-5 h-5 flex-shrink-0" />
           <div className="text-left flex-1">
             <p className="font-semibold">Update Data</p>
-            <p className={`text-xs opacity-70 ${activeSection === 'updates' ? 'text-blue-100' : ''}`}>
+            <p className={`text-xs opacity-70 ${activeSection === 'updates' ? 'text-teal-100' : ''}`}>
               Search & edit
             </p>
           </div>
@@ -378,20 +515,20 @@ export default function DataManagementPage() {
       </nav>
 
       {/* Quick Stats */}
-      <div className="p-4 m-4 bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-blue-900 rounded-xl">
-        <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-4">
+      <div className="p-4 m-4 bg-white dark:bg-gray-800 border-2 border-teal-200 dark:border-teal-900 rounded-lg">
+        <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-widest mb-4">
           📊 Database Stats
         </p>
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Models</span>
-            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded-lg font-bold text-sm">
+            <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-3 py-1 rounded-lg font-bold text-sm">
               {models.length}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Records</span>
-            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded-lg font-bold text-sm">
+            <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-3 py-1 rounded-lg font-bold text-sm">
               {models.reduce((acc, m) => acc + m.documentCount, 0).toLocaleString()}
             </span>
           </div>
@@ -399,112 +536,21 @@ export default function DataManagementPage() {
       </div>
 
       {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white dark:from-gray-800 to-transparent border-t border-blue-200 dark:border-blue-900">
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white dark:from-gray-800 to-transparent border-t border-teal-200 dark:border-teal-900">
         <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-          Data Management v1.0
+          DTPS Admin
         </p>
       </div>
     </div>
   );
 
   // Render Import Section
-  const renderImportSection = () => (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 bg-blue-600 rounded-lg">
-            <Upload className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Import Data
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Upload and validate data files for import
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Redirect to existing import page */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-blue-100 dark:bg-blue-800 rounded-lg">
-            <FileSpreadsheet className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Data Import Tool
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Our comprehensive import tool supports CSV, Excel, and JSON files with automatic model detection,
-              validation, field mapping, and error handling.
-            </p>
-            <div className="flex flex-wrap gap-2 mb-4">
-              <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-sm text-gray-700 dark:text-gray-300 border">
-                ✓ CSV Support
-              </span>
-              <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-sm text-gray-700 dark:text-gray-300 border">
-                ✓ Excel Support
-              </span>
-              <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-sm text-gray-700 dark:text-gray-300 border">
-                ✓ JSON Support
-              </span>
-              <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-sm text-gray-700 dark:text-gray-300 border">
-                ✓ Auto Validation
-              </span>
-              <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-sm text-gray-700 dark:text-gray-300 border">
-                ✓ Error Handling
-              </span>
-            </div>
-            <button
-              onClick={() => setActiveSection('import')}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <Upload className="w-4 h-4" />
-              Open Import Tool
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Available Models for Import */}
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Importable Models
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {models.slice(0, 9).map((model) => (
-            <div
-              key={model.name}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                  {getModelIcon(model.name)}
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">{model.displayName}</p>
-                  <p className="text-xs text-gray-500">{model.fieldCount} fields</p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                {model.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
   // Render Export Section
   const renderExportSection = () => (
     <div className="p-8">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 bg-blue-600 rounded-lg">
+          <div className="p-3 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
             <Download className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -519,7 +565,7 @@ export default function DataManagementPage() {
       </div>
 
       {/* Export Format Selector */}
-      <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl border-2 border-blue-200 dark:border-blue-900 p-6">
+      <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg border-2 border-teal-200 dark:border-teal-900 p-6">
         <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide block mb-4">
           Export Format
         </span>
@@ -528,8 +574,8 @@ export default function DataManagementPage() {
             onClick={() => setExportFormat('csv')}
             className={`flex items-center gap-2 px-6 py-3 rounded-lg border-2 font-medium transition-all ${
               exportFormat === 'csv'
-                ? 'bg-blue-600 border-blue-600 text-white shadow-lg'
-                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-400'
+                ? 'bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] border-teal-600 text-white shadow-lg shadow-teal-500/30'
+                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-teal-400'
             }`}
           >
             <Table className="w-5 h-5" />
@@ -539,8 +585,8 @@ export default function DataManagementPage() {
             onClick={() => setExportFormat('json')}
             className={`flex items-center gap-2 px-6 py-3 rounded-lg border-2 font-medium transition-all ${
               exportFormat === 'json'
-                ? 'bg-blue-600 border-blue-600 text-white shadow-lg'
-                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-400'
+                ? 'bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] border-teal-600 text-white shadow-lg shadow-teal-500/30'
+                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-teal-400'
             }`}
           >
             <FileJson className="w-5 h-5" />
@@ -553,30 +599,42 @@ export default function DataManagementPage() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+            <Loader2 className="w-12 h-12 animate-spin text-[#3AB1A0] mx-auto mb-4" />
             <p className="text-gray-600 dark:text-gray-400 font-medium">Loading models...</p>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {models.map((model) => (
-            <div
-              key={model.name}
-              className={`bg-white dark:bg-gray-800 border-2 rounded-xl p-6 transition-all ${
-                selectedExportModel === model.name
-                  ? 'border-blue-500 shadow-xl shadow-blue-500/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-lg ${
-                    selectedExportModel === model.name
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-blue-100 dark:bg-blue-900/30'
-                  }`}>
-                    {getModelIcon(model.name)}
-                  </div>
+          {models.map((model, index) => {
+            const isVisible = visibleExportModels.has(model.name);
+            return (
+              <div
+                key={model.name}
+                ref={(el) => {
+                  if (el) {
+                    const observer = new IntersectionObserver(([entry]) => {
+                      if (entry.isIntersecting) {
+                        setVisibleExportModels(prev => new Set(prev).add(model.name));
+                      }
+                    }, { threshold: 0.1 });
+                    observer.observe(el);
+                  }
+                }}
+                className={`bg-white dark:bg-gray-800 border-2 rounded-xl p-6 transition-all ${
+                  selectedExportModel === model.name
+                    ? 'border-teal-500 shadow-xl shadow-teal-500/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-teal-400 dark:hover:border-teal-600'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-3 rounded-lg ${
+                      selectedExportModel === model.name
+                        ? 'bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] text-white'
+                        : 'bg-teal-100 dark:bg-teal-900/30'
+                    }`}>
+                      {isVisible ? getModelIcon(model.name) : <Database className="w-5 h-5 text-gray-400 animate-pulse" />}
+                    </div>
                   <div>
                     <p className="font-bold text-gray-900 dark:text-white text-lg">{model.displayName}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{model.name}</p>
@@ -584,51 +642,62 @@ export default function DataManagementPage() {
                 </div>
               </div>
 
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                {model.description}
-              </p>
+              {isVisible ? (
+                <>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                    {model.description}
+                  </p>
 
-              <div className="grid grid-cols-2 gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Fields</p>
-                  <p className="text-xl font-bold text-blue-600">{model.fieldCount}</p>
-                </div>
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Records</p>
-                  <p className="text-xl font-bold text-blue-600">{model.documentCount.toLocaleString()}</p>
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                      <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Fields</p>
+                      <p className="text-xl font-bold text-orange-600">{model.fieldCount}</p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                      <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Records</p>
+                      <p className="text-xl font-bold text-orange-600">{model.documentCount.toLocaleString()}</p>
+                    </div>
+                  </div>
 
-              <button
-                onClick={() => handleExport(model.name)}
-                disabled={exporting}
-                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
-                  exporting
-                    ? 'bg-blue-400 text-white cursor-wait'
-                    : model.documentCount === 0
-                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
-              >
-                {exporting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Exporting...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    Download {exportFormat.toUpperCase()}
-                  </>
-                )}
-              </button>
-              {model.documentCount === 0 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
-                  ℹ️ No records to export
-                </p>
+                  <button
+                    onClick={() => handleExport(model.name)}
+                    disabled={exporting}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
+                      exporting
+                        ? 'bg-teal-400 text-white cursor-wait'
+                        : model.documentCount === 0
+                        ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 hover:bg-teal-200 dark:hover:bg-teal-900/50'
+                        : 'bg-[#3AB1A0] hover:bg-[#2A9A8B] text-white'
+                    }`}
+                  >
+                    {exporting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Exporting...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        Download {exportFormat.toUpperCase()}
+                      </>
+                    )}
+                  </button>
+                  {model.documentCount === 0 && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+                      ℹ️ No records to export
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-4 animate-pulse">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -639,7 +708,7 @@ export default function DataManagementPage() {
     <div className="p-8">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 bg-blue-600 rounded-lg">
+          <div className="p-3 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
             <Edit3 className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -667,10 +736,10 @@ export default function DataManagementPage() {
                   setSelectedUpdateModel(model.name);
                   searchRecords(model.name, '', 1);
                 }}
-                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 text-left hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-lg transition-all"
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 text-left hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-lg transition-all"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
                     {getModelIcon(model.name)}
                   </div>
                   <div>
@@ -705,7 +774,7 @@ export default function DataManagementPage() {
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <div className="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
                   {getModelIcon(selectedUpdateModel)}
                 </div>
                 <div>
@@ -729,7 +798,7 @@ export default function DataManagementPage() {
                     <button
                       onClick={saveRecordChanges}
                       disabled={saving}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                      className="flex items-center gap-2 px-4 py-2 bg-[#3AB1A0] hover:bg-[#2A9A8B] text-white rounded-lg font-medium"
                     >
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                       Save Changes
@@ -738,7 +807,7 @@ export default function DataManagementPage() {
                 ) : (
                   <button
                     onClick={() => setEditingRecord({ ...selectedRecord })}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#3AB1A0] hover:bg-[#2A9A8B] text-white rounded-lg font-medium"
                   >
                     <Edit3 className="w-4 h-4" />
                     Edit Record
@@ -749,39 +818,61 @@ export default function DataManagementPage() {
 
             {/* Record Fields - Filter out password fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recordFields.filter((field) => !field.path.toLowerCase().includes('password')).map((field) => (
+              {visibleRecordFields.map((field) => (
                 <div key={field.path} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
                     {field.path}
                     {field.required && <span className="text-red-500 ml-1">*</span>}
                   </label>
                   {editingRecord ? (
                     field.enum ? (
-                      <select
-                        value={editingRecord[field.path] || ''}
-                        onChange={(e) => setEditingRecord({ ...editingRecord, [field.path]: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                      >
-                        <option value="">Select...</option>
-                        {field.enum.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
+                      <div className="space-y-2">
+                        <select
+                          value={editingRecord[field.path] || ''}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, [field.path]: e.target.value })}
+                          className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-medium focus:border-[#3AB1A0] focus:ring-2 focus:ring-teal-500/20 transition-all cursor-pointer"
+                        >
+                          <option value="">-- Select {field.path} --</option>
+                          {field.enum.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        {editingRecord[field.path] && (
+                          <div className="flex items-center gap-2 pt-1">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Selected:</span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400">
+                              {editingRecord[field.path]}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     ) : field.type === 'Boolean' ? (
-                      <select
-                        value={editingRecord[field.path]?.toString() || 'false'}
-                        onChange={(e) => setEditingRecord({ ...editingRecord, [field.path]: e.target.value === 'true' })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                      >
-                        <option value="true">Yes</option>
-                        <option value="false">No</option>
-                      </select>
+                      <div className="space-y-2">
+                        <select
+                          value={editingRecord[field.path]?.toString() || 'false'}
+                          onChange={(e) => setEditingRecord({ ...editingRecord, [field.path]: e.target.value === 'true' })}
+                          className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-medium focus:border-[#3AB1A0] focus:ring-2 focus:ring-teal-500/20 transition-all cursor-pointer"
+                        >
+                          <option value="true">✓ Yes</option>
+                          <option value="false">✗ No</option>
+                        </select>
+                        <div className="flex items-center gap-2 pt-1">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            editingRecord[field.path] === true || editingRecord[field.path] === 'true'
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                              : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                          }`}>
+                            {editingRecord[field.path] === true || editingRecord[field.path] === 'true' ? '✓ Yes' : '✗ No'}
+                          </span>
+                        </div>
+                      </div>
                     ) : (
                       <input
                         type={field.type === 'Number' ? 'number' : field.type === 'Date' ? 'datetime-local' : 'text'}
                         value={editingRecord[field.path] || ''}
                         onChange={(e) => setEditingRecord({ ...editingRecord, [field.path]: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                        className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:border-[#3AB1A0] focus:ring-2 focus:ring-teal-500/20 transition-all"
+                        placeholder={`Enter ${field.path}...`}
                       />
                     )
                   ) : (
@@ -801,7 +892,7 @@ export default function DataManagementPage() {
               {relatedData.lifestyleInfo && (
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-blue-600" />
+                    <Activity className="w-5 h-5 text-[#3AB1A0]" />
                     Lifestyle Information
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -864,13 +955,7 @@ export default function DataManagementPage() {
                           <tr key={i}>
                             <td className="px-4 py-2">₹{payment.amount || '-'}</td>
                             <td className="px-4 py-2">
-                              <span className={`px-2 py-1 rounded-full text-xs ${
-                                payment.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                payment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}>
-                                {payment.status || '-'}
-                              </span>
+                              <StatusBadge status={payment.status || ''} />
                             </td>
                             <td className="px-4 py-2">{payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : '-'}</td>
                           </tr>
@@ -902,13 +987,7 @@ export default function DataManagementPage() {
                           <tr key={i}>
                             <td className="px-4 py-2">{apt.title || apt.type || '-'}</td>
                             <td className="px-4 py-2">
-                              <span className={`px-2 py-1 rounded-full text-xs ${
-                                apt.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                apt.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}>
-                                {apt.status || '-'}
-                              </span>
+                              <StatusBadge status={apt.status || ''} />
                             </td>
                             <td className="px-4 py-2">{apt.date ? new Date(apt.date).toLocaleDateString() : '-'}</td>
                           </tr>
@@ -945,38 +1024,35 @@ export default function DataManagementPage() {
                   placeholder="Search by name, email, phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && searchRecords(selectedUpdateModel, searchQuery, 1)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-[#3AB1A0] focus:ring-2 focus:ring-teal-500/20 transition-all"
                 />
               </div>
-              <button
-                onClick={() => searchRecords(selectedUpdateModel, searchQuery, 1)}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Search
-              </button>
+              {debouncedSearchQuery !== searchQuery && (
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
+              )}
             </div>
           </div>
 
           {/* Model info */}
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/20 border-2 border-blue-300 dark:border-blue-800 rounded-xl p-6 mb-6">
+          <div className="bg-gradient-to-r from-teal-50 to-teal-100 dark:from-teal-900/30 dark:to-teal-900/20 border-2 border-teal-300 dark:border-teal-800 rounded-xl p-6 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-600 rounded-lg">
+                <div className="p-3 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
                   {getModelIcon(selectedUpdateModel)}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                    {models.find(m => m.name === selectedUpdateModel)?.displayName || selectedUpdateModel}
+                    {currentModel?.displayName || selectedUpdateModel}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">
                     📊 {pagination.total.toLocaleString()} total records
                   </p>
                 </div>
               </div>
               {loading && (
-                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <div className="flex items-center gap-2 text-[#3AB1A0]">
                   <Loader2 className="w-5 h-5 animate-spin" />
                   <span className="text-sm font-medium">Searching...</span>
                 </div>
@@ -988,7 +1064,7 @@ export default function DataManagementPage() {
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+                <Loader2 className="w-12 h-12 animate-spin text-[#3AB1A0] mx-auto mb-4" />
                 <p className="text-gray-600 dark:text-gray-400 font-medium">Loading records...</p>
               </div>
             </div>
@@ -999,7 +1075,7 @@ export default function DataManagementPage() {
               <p className="text-gray-600 dark:text-gray-400 mb-4">Try a different search term or browse all records</p>
               <button
                 onClick={() => searchRecords(selectedUpdateModel, '', 1)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#3AB1A0] hover:bg-[#2A9A8B] text-white rounded-lg font-medium transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
                 View All Records
@@ -1009,9 +1085,9 @@ export default function DataManagementPage() {
             <div className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
                     <tr>
-                      {recordFields.filter((f) => !f.path.toLowerCase().includes('password')).slice(0, 5).map((field) => (
+                      {visibleRecordFields.slice(0, 5).map((field) => (
                         <th key={field.path} className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">
                           {field.path}
                         </th>
@@ -1020,23 +1096,42 @@ export default function DataManagementPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {searchResults.map((record) => (
-                      <tr key={record._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        {recordFields.filter((f) => !f.path.toLowerCase().includes('password')).slice(0, 5).map((field) => (
-                          <td key={field.path} className="px-4 py-3 text-gray-900 dark:text-white">
-                            {formatFieldValue(record[field.path], field.type).substring(0, 50)}
-                            {formatFieldValue(record[field.path], field.type).length > 50 ? '...' : ''}
-                          </td>
-                        ))}
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => fetchRecordDetails(selectedUpdateModel, record._id)}
-                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium"
-                          >
-                            <Eye className="w-4 h-4" />
-                            View
-                          </button>
-                        </td>
+                    {searchResults.map((record, index) => (
+                      <tr 
+                        key={record._id} 
+                        ref={(el) => observeTableRow(index, el)}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      >
+                        {visibleTableRows.has(index) ? (
+                          <>
+                            {visibleRecordFields.slice(0, 5).map((field) => (
+                              <td key={field.path} className="px-4 py-3 text-gray-900 dark:text-white">
+                                {formatFieldValue(record[field.path], field.type).substring(0, 50)}
+                                {formatFieldValue(record[field.path], field.type).length > 50 ? '...' : ''}
+                              </td>
+                            ))}
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => fetchRecordDetails(selectedUpdateModel, record._id)}
+                                className="flex items-center gap-1 text-[#3AB1A0] hover:text-[#2A9A8B] font-medium"
+                              >
+                                <Eye className="w-4 h-4" />
+                                View
+                              </button>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            {visibleRecordFields.slice(0, 5).map((field) => (
+                              <td key={field.path} className="px-4 py-3">
+                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2"></div>
+                              </td>
+                            ))}
+                            <td className="px-4 py-3">
+                              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-12"></div>
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -1048,7 +1143,7 @@ export default function DataManagementPage() {
                 <div className="bg-gray-50 dark:bg-gray-700/50 border-t-2 border-gray-200 dark:border-gray-700 px-6 py-4">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Showing <span className="font-bold text-blue-600">Page {pagination.page}</span> of <span className="font-bold text-blue-600">{pagination.totalPages}</span>
+                      Showing <span className="font-bold text-orange-600">Page {pagination.page}</span> of <span className="font-bold text-orange-600">{pagination.totalPages}</span>
                       <span className="ml-4 text-gray-600 dark:text-gray-400">({pagination.total.toLocaleString()} total)</span>
                     </p>
                     <div className="flex gap-2 items-center">
@@ -1067,8 +1162,8 @@ export default function DataManagementPage() {
                       >
                         Prev
                       </button>
-                      <div className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <span className="text-sm font-bold text-blue-700 dark:text-blue-400">{pagination.page}/{pagination.totalPages}</span>
+                      <div className="px-4 py-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                        <span className="text-sm font-bold text-orange-700 dark:text-orange-400">{pagination.page}/{pagination.totalPages}</span>
                       </div>
                       <button
                         onClick={() => searchRecords(selectedUpdateModel, searchQuery, pagination.page + 1)}
@@ -1106,7 +1201,7 @@ export default function DataManagementPage() {
       {/* Main Content - with margin for sidebar */}
       <div className="ml-64 flex-1 w-[calc(100%-16rem)] overflow-auto">
         <div className="min-h-screen">
-          {activeSection === 'import' && renderImportSection()}
+          {/* Only render Export and Updates sections - Import redirects to /admin/import */}
           {activeSection === 'export' && renderExportSection()}
           {activeSection === 'updates' && renderUpdateSection()}
         </div>
