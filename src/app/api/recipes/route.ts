@@ -427,8 +427,8 @@ export async function POST(request: NextRequest) {
     const recipe = new Recipe(recipeData);
     await recipe.save();
 
-    // Clear recipes cache after creation
-    clearCacheByTag('recipes');
+    // Clear recipes cache after creation (non-blocking)
+    Promise.resolve(clearCacheByTag('recipes')).catch((err: any) => console.warn('Cache clear failed:', err));
 
     // Populate the created recipe
     await recipe.populate('createdBy', 'firstName lastName');

@@ -25,17 +25,17 @@ export async function GET(
     if (!recipe)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    // Cast recipe to proper type
-    const recipeData = recipe as any;
+    // Ensure proper typing for recipe data
+    const recipeData = recipe as Record<string, any>;
     
-    // Sanitize nutrition data - ensure it's a proper array
-    if (!Array.isArray(recipeData.nutrition) || recipeData.nutrition.length === 0) {
-      recipeData.nutrition = [{
+    // Sanitize nutrition data - ensure it's a proper object
+    if (!recipeData.nutrition || typeof recipeData.nutrition !== 'object') {
+      recipeData.nutrition = {
         calories: 0,
         protein: 0,
         carbs: 0,
         fat: 0
-      }];
+      };
     }
     
     // Ensure createdBy has default values
