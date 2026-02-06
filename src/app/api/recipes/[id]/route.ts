@@ -25,20 +25,22 @@ export async function GET(
     if (!recipe)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    // Sanitize nutrition data - ensure it's a proper object
-    if (recipe && !Array.isArray(recipe) && !recipe.nutrition) {
-      recipe.nutrition = {
+    // Cast recipe to proper type
+    const recipeData = recipe as any;
+    
+    // Sanitize nutrition data - ensure it's a proper array
+    if (!Array.isArray(recipeData.nutrition) || recipeData.nutrition.length === 0) {
+      recipeData.nutrition = [{
         calories: 0,
         protein: 0,
         carbs: 0,
         fat: 0
-      };
+      }];
     }
     
     // Ensure createdBy has default values
-    const singleRecipe = recipe as { createdBy?: { firstName?: string; lastName?: string } };
-    if (!singleRecipe.createdBy) {
-      singleRecipe.createdBy = { firstName: 'Unknown', lastName: 'User' };
+    if (!recipeData.createdBy) {
+      recipeData.createdBy = { firstName: 'Unknown', lastName: 'User' };
     }
 
     await Recipe.findByIdAndUpdate(id, { $inc: { views: 1 } });
