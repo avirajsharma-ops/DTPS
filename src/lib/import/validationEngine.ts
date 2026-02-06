@@ -75,6 +75,241 @@ export interface ValidationResult {
 }
 
 // ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Parse time string to minutes
+ * Handles formats like: "15 mins", "25 min", "1 hour", "1.5 hours", "1hr 30min", "90"
+ */
+function parseTimeToMinutes(value: any): number | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  // If it's already a valid number, return it
+  if (typeof value === 'number' && !isNaN(value) && value >= 0) {
+    return Math.round(value);
+  }
+
+  const str = String(value).toLowerCase().trim();
+
+  // If it's a plain number string
+  const plainNum = parseFloat(str);
+  if (!isNaN(plainNum) && /^[\d.]+$/.test(str)) {
+    return Math.round(plainNum);
+  }
+
+  let totalMinutes = 0;
+
+  // Match hours pattern: "1 hour", "2 hours", "1.5 hr", "1hr"
+  const hourMatch = str.match(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b/i);
+  if (hourMatch) {
+    totalMinutes += parseFloat(hourMatch[1]) * 60;
+  }
+
+  // Match minutes pattern: "30 minutes", "15 mins", "45 min", "30m"
+  const minMatch = str.match(/(\d+(?:\.\d+)?)\s*(?:minutes?|mins?|m)\b/i);
+  if (minMatch) {
+    totalMinutes += parseFloat(minMatch[1]);
+  }
+
+  // If no pattern matched but there's a number at the start, assume minutes
+  if (totalMinutes === 0) {
+    const numMatch = str.match(/^(\d+(?:\.\d+)?)/);
+    if (numMatch) {
+      totalMinutes = parseFloat(numMatch[1]);
+    }
+  }
+
+  return totalMinutes > 0 ? Math.round(totalMinutes) : null;
+}
+
+/**
+ * Parse JSON string or return as-is if already parsed
+ */
+function safeJSONParse(value: any, fallback: any = null): any {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+  if (typeof value === 'object') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    try {
+      // Handle single quotes by converting to double quotes
+      const normalized = value.replace(/'/g, '"');
+      return JSON.parse(normalized);
+    } catch (e) {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
+/**
+ * Parse nutrition data from various formats
+ */
+function parseNutrition(value: any): { calories: number; protein: number; carbs: number; fat: number; fiber?: number; sugar?: number; sodium?: number } | null {
+  if (!value) return null;
+
+  // If it's already an object with required fields
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    const obj = value as Record<string, any>;
+    const result: any = {};
+
+    // Map various field name formats
+    const fieldMappings: Record<string, string[]> = {
+      calories: ['calories', 'cal', 'kcal', 'energy'],
+      protein: ['protein', 'proteins', 'prot'],
+      carbs: ['carbs', 'carbohydrates', 'carb', 'carbohydrate'],
+      fat: ['fat', 'fats', 'totalfat', 'total_fat'],
+      fiber: ['fiber', 'fibre', 'dietary_fiber'],
+      sugar: ['sugar', 'sugars', 'total_sugar'],
+      sodium: ['sodium', 'salt', 'na']
+    };
+
+    for (const [field, aliases] of Object.entries(fieldMappings)) {
+      for (const alias of aliases) {
+        const key = Object.keys(obj).find(k => k.toLowerCase() === alias);
+        if (key && obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {
+          const num = parseFloat(String(obj[key]));
+          if (!isNaN(num)) {
+            result[field] = num;
+            break;
+          }
+        }
+      }
+    }
+
+    // Check required fields
+    if (result.calories !== undefined && result.protein !== undefined && 
+        result.carbs !== undefined && result.fat !== undefined) {
+      return result;
+    }
+  }
+
+  // Try parsing as JSON string
+  const parsed = safeJSONParse(value);
+  if (parsed) {
+    return parseNutrition(parsed);
+  }
+
+  return null;
+}
+
+/**
+ * Parse ingredients array from various formats
+ */
+function parseIngredients(value: any): Array<{ name: string; quantity: string; unit?: string; remarks?: string }> | null {
+  if (!value) return null;
+
+  // If already an array
+  if (Array.isArray(value)) {
+    const ingredients: Array<{ name: string; quantity: string; unit?: string; remarks?: string }> = [];
+    
+    for (const item of value) {
+      if (typeof item === 'string') {
+        // Simple string: "2 cups flour"
+        const match = item.match(/^([\d./]+(?:\s*-\s*[\d./]+)?)\s*(\w+)?\s+(.+)$/);
+        if (match) {
+          ingredients.push({
+            name: match[3].trim(),
+            quantity: match[1],
+            unit: match[2] || ''
+          });
+        } else {
+          ingredients.push({ name: item, quantity: '1' });
+        }
+      } else if (typeof item === 'object' && item !== null) {
+        const ing: any = { name: '', quantity: '1' };
+        
+        // Map common field names
+        if (item.name || item.ingredient || item.ingredientName) {
+          ing.name = String(item.name || item.ingredient || item.ingredientName);
+        }
+        if (item.quantity || item.amount || item.qty) {
+          ing.quantity = String(item.quantity || item.amount || item.qty);
+        }
+        if (item.unit || item.measure || item.measurement) {
+          ing.unit = String(item.unit || item.measure || item.measurement);
+        }
+        if (item.remarks || item.notes || item.note) {
+          ing.remarks = String(item.remarks || item.notes || item.note);
+        }
+        
+        if (ing.name) {
+          ingredients.push(ing);
+        }
+      }
+    }
+    
+    return ingredients.length > 0 ? ingredients : null;
+  }
+
+  // Try parsing as JSON string
+  const parsed = safeJSONParse(value);
+  if (parsed) {
+    return parseIngredients(parsed);
+  }
+
+  // Try parsing as comma/newline separated string
+  if (typeof value === 'string') {
+    const items = value.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+    if (items.length > 0) {
+      return items.map(item => ({ name: item, quantity: '1' }));
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Parse instructions array from various formats
+ */
+function parseInstructions(value: any): string[] | null {
+  if (!value) return null;
+
+  // If already an array
+  if (Array.isArray(value)) {
+    const instructions: string[] = [];
+    for (const item of value) {
+      if (typeof item === 'string' && item.trim()) {
+        instructions.push(item.trim());
+      } else if (typeof item === 'object' && item !== null) {
+        // Handle objects with step/instruction/text fields
+        const text = item.step || item.instruction || item.text || item.description;
+        if (text && typeof text === 'string' && text.trim()) {
+          instructions.push(text.trim());
+        }
+      }
+    }
+    return instructions.length > 0 ? instructions : null;
+  }
+
+  // Try parsing as JSON string
+  const parsed = safeJSONParse(value);
+  if (parsed) {
+    return parseInstructions(parsed);
+  }
+
+  // Try parsing as numbered/newline separated string
+  if (typeof value === 'string') {
+    // Split by newlines or numbered steps (1. 2. etc)
+    const items = value.split(/(?:\n|(?<=\.)(?=\s*\d+\.)|\d+\.\s*)/).map(s => s.trim()).filter(Boolean);
+    if (items.length > 0) {
+      return items;
+    }
+  }
+
+  return null;
+}
+
+// Default system user ID for createdBy when not provided
+// This should be a valid ObjectId of an admin user in the system
+const DEFAULT_SYSTEM_USER_ID = '000000000000000000000000'; // Placeholder - should be configured
+
+// ============================================
 // VALIDATION ENGINE CLASS
 // ============================================
 
@@ -328,6 +563,7 @@ export class ValidationEngine {
 
     // Common field aliases for better matching
     const fieldAliases: Record<string, string[]> = {
+      // User field aliases
       'firstName': ['first_name', 'firstname', 'fname', 'first'],
       'lastName': ['last_name', 'lastname', 'lname', 'last', 'surname'],
       'email': ['email_address', 'emailaddress', 'mail', 'e-mail'],
@@ -343,6 +579,24 @@ export class ValidationEngine {
       'targetWeightBucket': ['target_weight_bucket', 'weight_bucket', 'target_bucket', 'your_target_weight', 'what_is_your_target_weight'],
       'activityLevel': ['activity_level', 'activitylevel', 'activity', 'physical_activity', 'exercise_level'],
       'activityRate': ['activity_rate', 'activityrate'],
+      
+      // Recipe field aliases
+      'prepTime': ['prep_time', 'preptime', 'preparation_time', 'prep', 'prep_minutes', 'preparation'],
+      'cookTime': ['cook_time', 'cooktime', 'cooking_time', 'cook', 'cook_minutes', 'cooking'],
+      'createdBy': ['created_by', 'createdby', 'author', 'author_id', 'user_id', 'chef', 'creator'],
+      'servings': ['serving', 'serves', 'portions', 'yield', 'serving_size', 'num_servings'],
+      'nutrition': ['nutritional_info', 'nutritional_information', 'nutrients', 'nutrition_info', 'nutrition_facts'],
+      'ingredients': ['ingredient', 'ingredient_list', 'recipe_ingredients'],
+      'instructions': ['instruction', 'steps', 'directions', 'method', 'recipe_steps', 'preparation_steps', 'cooking_instructions'],
+      'category': ['recipe_category', 'meal_type', 'dish_type', 'type'],
+      'cuisine': ['cuisine_type', 'recipe_cuisine', 'food_type', 'origin'],
+      'difficulty': ['difficulty_level', 'skill_level', 'complexity', 'level'],
+      'dietaryRestrictions': ['dietary_restrictions', 'diet_restrictions', 'dietary', 'restrictions', 'diet_type'],
+      'allergens': ['allergen', 'allergy_info', 'allergies', 'allergy'],
+      'medicalContraindications': ['medical_contraindications', 'contraindications', 'medical_restrictions'],
+      'isPublic': ['is_public', 'public', 'published', 'visible'],
+      'isPremium': ['is_premium', 'premium', 'paid', 'pro'],
+      'image': ['recipe_image', 'main_image', 'photo', 'picture', 'thumbnail'],
       'gender': ['sex'],
       'role': ['user_role', 'userrole', 'account_type'],
       'status': ['user_status', 'userstatus', 'account_status'],
@@ -875,6 +1129,224 @@ export class ValidationEngine {
           }
         } else {
           delete transformed.tags;
+        }
+      }
+    }
+
+    // Recipe-specific transformations
+    if (modelName === 'Recipe') {
+      // Transform prepTime - parse string formats like "15 mins", "1 hour", etc.
+      if (transformed.prepTime !== undefined) {
+        const parsedPrepTime = parseTimeToMinutes(transformed.prepTime);
+        if (parsedPrepTime !== null) {
+          transformed.prepTime = parsedPrepTime;
+        } else {
+          // If it can't be parsed, set to 0 and let validation catch if invalid
+          const numVal = parseFloat(String(transformed.prepTime));
+          transformed.prepTime = !isNaN(numVal) ? Math.round(numVal) : 0;
+        }
+      }
+
+      // Transform cookTime - parse string formats like "25 mins", "1.5 hours", etc.
+      if (transformed.cookTime !== undefined) {
+        const parsedCookTime = parseTimeToMinutes(transformed.cookTime);
+        if (parsedCookTime !== null) {
+          transformed.cookTime = parsedCookTime;
+        } else {
+          // If it can't be parsed, set to 0 and let validation catch if invalid
+          const numVal = parseFloat(String(transformed.cookTime));
+          transformed.cookTime = !isNaN(numVal) ? Math.round(numVal) : 0;
+        }
+      }
+
+      // Auto-inject createdBy if missing
+      if (!transformed.createdBy || transformed.createdBy === '') {
+        // Use DEFAULT_SYSTEM_USER_ID as fallback
+        // In production, this should be configured to a real admin user ID
+        transformed.createdBy = DEFAULT_SYSTEM_USER_ID;
+      } else {
+        // Clean existing createdBy value
+        const cleanObjectId = (id: string): string => {
+          if (typeof id !== 'string') return '';
+          return id.replace(/new ObjectId\(['"]?|['"]?\)/g, '').trim();
+        };
+        const isValidObjectId = (id: string): boolean => {
+          if (typeof id !== 'string') return false;
+          const cleanId = cleanObjectId(id);
+          return /^[0-9a-fA-F]{24}$/.test(cleanId);
+        };
+
+        const cleanedId = cleanObjectId(String(transformed.createdBy));
+        if (isValidObjectId(cleanedId)) {
+          transformed.createdBy = cleanedId;
+        } else {
+          // Invalid ID provided, use default
+          transformed.createdBy = DEFAULT_SYSTEM_USER_ID;
+        }
+      }
+
+      // Parse and transform nutrition object
+      if (transformed.nutrition !== undefined) {
+        const parsedNutrition = parseNutrition(transformed.nutrition);
+        if (parsedNutrition) {
+          transformed.nutrition = parsedNutrition;
+        }
+      }
+
+      // Parse and transform ingredients array
+      if (transformed.ingredients !== undefined) {
+        const parsedIngredients = parseIngredients(transformed.ingredients);
+        if (parsedIngredients) {
+          transformed.ingredients = parsedIngredients;
+        }
+      }
+
+      // Parse and transform instructions array
+      if (transformed.instructions !== undefined) {
+        const parsedInstructions = parseInstructions(transformed.instructions);
+        if (parsedInstructions) {
+          transformed.instructions = parsedInstructions;
+        }
+      }
+
+      // Handle servings - convert to number if possible
+      if (transformed.servings !== undefined) {
+        const servings = transformed.servings;
+        if (typeof servings === 'string') {
+          // Extract number from strings like "4 servings", "2-4", "4"
+          const numMatch = servings.match(/^(\d+(?:\.\d+)?)/);
+          if (numMatch) {
+            transformed.servings = parseFloat(numMatch[1]);
+          }
+        } else if (typeof servings === 'number') {
+          transformed.servings = servings;
+        }
+      }
+
+      // Handle tags - for Recipe, tags are strings, not ObjectIds
+      if (transformed.tags !== undefined) {
+        let recipeTags = transformed.tags;
+        
+        if (typeof recipeTags === 'string') {
+          try {
+            const parsed = JSON.parse(recipeTags.replace(/'/g, '"'));
+            if (Array.isArray(parsed)) {
+              recipeTags = parsed;
+            } else {
+              recipeTags = [parsed];
+            }
+          } catch (e) {
+            if (recipeTags.includes(',')) {
+              recipeTags = recipeTags.split(',').map((t: string) => t.trim().toLowerCase());
+            } else if (recipeTags.trim()) {
+              recipeTags = [recipeTags.trim().toLowerCase()];
+            } else {
+              recipeTags = [];
+            }
+          }
+        }
+
+        if (Array.isArray(recipeTags)) {
+          transformed.tags = recipeTags
+            .map((t: any) => String(t).trim().toLowerCase())
+            .filter((t: string) => t.length > 0);
+        }
+      }
+
+      // Handle difficulty - normalize to enum values
+      if (transformed.difficulty !== undefined && typeof transformed.difficulty === 'string') {
+        const difficulty = transformed.difficulty.toLowerCase().trim();
+        if (difficulty.includes('easy') || difficulty.includes('simple') || difficulty.includes('beginner')) {
+          transformed.difficulty = 'easy';
+        } else if (difficulty.includes('hard') || difficulty.includes('difficult') || difficulty.includes('advanced')) {
+          transformed.difficulty = 'hard';
+        } else {
+          transformed.difficulty = 'medium';
+        }
+      }
+
+      // Handle dietaryRestrictions - ensure it's an array of strings
+      if (transformed.dietaryRestrictions !== undefined) {
+        let restrictions = transformed.dietaryRestrictions;
+        
+        if (typeof restrictions === 'string') {
+          try {
+            const parsed = JSON.parse(restrictions.replace(/'/g, '"'));
+            if (Array.isArray(parsed)) {
+              restrictions = parsed;
+            } else {
+              restrictions = [parsed];
+            }
+          } catch (e) {
+            if (restrictions.includes(',')) {
+              restrictions = restrictions.split(',').map((r: string) => r.trim());
+            } else if (restrictions.trim()) {
+              restrictions = [restrictions.trim()];
+            } else {
+              restrictions = [];
+            }
+          }
+        }
+
+        if (Array.isArray(restrictions)) {
+          transformed.dietaryRestrictions = restrictions
+            .map((r: any) => String(r).trim())
+            .filter((r: string) => r.length > 0);
+        }
+      }
+
+      // Handle allergens - normalize to enum values
+      if (transformed.allergens !== undefined) {
+        let allergens = transformed.allergens;
+        const validAllergens = ['nuts', 'dairy', 'eggs', 'soy', 'gluten', 'shellfish', 'fish', 'sesame'];
+        
+        if (typeof allergens === 'string') {
+          try {
+            const parsed = JSON.parse(allergens.replace(/'/g, '"'));
+            if (Array.isArray(parsed)) {
+              allergens = parsed;
+            } else {
+              allergens = [parsed];
+            }
+          } catch (e) {
+            if (allergens.includes(',')) {
+              allergens = allergens.split(',').map((a: string) => a.trim().toLowerCase());
+            } else if (allergens.trim()) {
+              allergens = [allergens.trim().toLowerCase()];
+            } else {
+              allergens = [];
+            }
+          }
+        }
+
+        if (Array.isArray(allergens)) {
+          transformed.allergens = allergens
+            .map((a: any) => String(a).trim().toLowerCase())
+            .filter((a: string) => validAllergens.includes(a));
+        }
+      }
+
+      // Handle category - ensure proper capitalization
+      if (transformed.category && typeof transformed.category === 'string') {
+        transformed.category = transformed.category.trim();
+      }
+
+      // Handle cuisine - ensure proper formatting
+      if (transformed.cuisine && typeof transformed.cuisine === 'string') {
+        transformed.cuisine = transformed.cuisine.trim();
+      }
+
+      // Handle boolean fields
+      const booleanFields = ['isPublic', 'isPremium'];
+      for (const field of booleanFields) {
+        if (transformed[field] !== undefined) {
+          const val = transformed[field];
+          if (typeof val === 'string') {
+            const lower = val.toLowerCase().trim();
+            transformed[field] = lower === 'true' || lower === '1' || lower === 'yes';
+          } else if (typeof val === 'number') {
+            transformed[field] = val === 1;
+          }
         }
       }
     }

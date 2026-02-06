@@ -41,7 +41,10 @@ import {
   Heart,
   Tag,
   Bell,
-  TrendingUp
+  TrendingUp,
+  FileUp,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 // Types
@@ -195,6 +198,27 @@ export default function DataManagementPage() {
     total: 0,
     totalPages: 0
   });
+
+  // Bulk Update state
+  const [bulkUpdateFile, setBulkUpdateFile] = useState<File | null>(null);
+  const [bulkUpdateLoading, setBulkUpdateLoading] = useState(false);
+  const [bulkUpdateResult, setBulkUpdateResult] = useState<{
+    success: boolean;
+    updated: number;
+    failed: number;
+    errors: Array<{ id: string; error: string }>;
+  } | null>(null);
+  const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
+  const [bulkUpdatePreview, setBulkUpdatePreview] = useState<Array<{ _id: string; [key: string]: any }>>([]);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Error Modal state
+  const [errorModal, setErrorModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    details?: string[];
+  }>({ show: false, title: '', message: '' });
 
   // Lazy loading state
   const { visibleIndices: visibleTableRows, observeElement: observeTableRow } = useLazyLoad(0.3);
@@ -402,6 +426,326 @@ export default function DataManagementPage() {
   const getModelIcon = (modelName: string) => {
     const Icon = MODEL_ICONS[modelName] || MODEL_ICONS.default;
     return <Icon className="w-5 h-5" />;
+  };
+
+  // Parse CSV content manually
+  const parseCSV = (csvText: string): Array<Record<string, any>> => {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    if (lines.length < 2) return [];
+    
+    // Parse header row - handle both comma and tab delimiters
+    const delimiter = lines[0].includes('\t') ? '\t' : ',';
+    const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^["']|["']$/g, ''));
+    
+    // Parse data rows
+    const data: Array<Record<string, any>> = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i], delimiter);
+      if (values.length === headers.length) {
+        const row: Record<string, any> = {};
+        headers.forEach((header, idx) => {
+          let value = values[idx]?.trim().replace(/^["']|["']$/g, '') || '';
+          // Try to parse numbers and booleans
+          if (value === 'true') value = true as any;
+          else if (value === 'false') value = false as any;
+          else if (value && !isNaN(Number(value)) && value !== '') {
+            // Keep as string if it looks like an ID or phone number
+            if (header.toLowerCase().includes('id') || header.toLowerCase().includes('phone') || value.length > 15) {
+              // Keep as string
+            } else {
+              value = Number(value) as any;
+            }
+          }
+          row[header] = value;
+        });
+        data.push(row);
+      }
+    }
+    return data;
+  };
+
+  // Parse a single CSV line handling quoted fields
+  const parseCSVLine = (line: string, delimiter: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
+        inQuotes = !inQuotes;
+      } else if (char === delimiter && !inQuotes) {
+        result.push(current);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current);
+    return result;
+  };
+
+  // Parse file for bulk update (xlsx, xls, csv, json)
+  const parseUploadedFile = async (file: File): Promise<Array<{ _id: string; [key: string]: any }>> => {
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    
+    // JSON files
+    if (fileExtension === 'json') {
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        return Array.isArray(data) ? data : [data];
+      } catch (e: any) {
+        throw new Error(`Invalid JSON format: ${e.message}`);
+      }
+    }
+    
+    // CSV files - parse manually
+    if (fileExtension === 'csv') {
+      try {
+        const text = await file.text();
+        const data = parseCSV(text);
+        if (data.length === 0) {
+          throw new Error('No data found in CSV file');
+        }
+        return data as Array<{ _id: string; [key: string]: any }>;
+      } catch (e: any) {
+        throw new Error(`Failed to parse CSV: ${e.message}`);
+      }
+    }
+    
+    // For Excel files (xlsx, xls), use xlsx library
+    if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+      try {
+        // Dynamic import of xlsx library
+        const xlsxModule = await import('xlsx');
+        const XLSX = xlsxModule.default || xlsxModule;
+        
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          throw new Error('No sheets found in Excel file');
+        }
+        
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+        
+        if (!jsonData || jsonData.length === 0) {
+          throw new Error('No data found in Excel sheet');
+        }
+        
+        return jsonData as Array<{ _id: string; [key: string]: any }>;
+      } catch (e: any) {
+        // If xlsx library fails, provide helpful error
+        if (e.message.includes('Cannot read properties')) {
+          throw new Error('Excel parsing failed. Please try exporting as CSV and uploading again.');
+        }
+        throw new Error(`Failed to parse Excel file: ${e.message}`);
+      }
+    }
+    
+    throw new Error(`Unsupported file format: ${fileExtension}`);
+  };
+
+  // Handle bulk file selection
+  const handleBulkFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+
+    const validExtensions = ['xlsx', 'xls', 'csv', 'json'];
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    
+    
+    if (!fileExtension || !validExtensions.includes(fileExtension)) {
+      setErrorModal({
+        show: true,
+        title: '❌ Invalid File Format',
+        message: 'Please upload a valid file format.',
+        details: [
+          '✅ Supported formats:',
+          '• .xlsx (Excel)',
+          '• .xls (Excel)',
+          '• .csv (Comma Separated)',
+          '• .json (JSON)'
+        ]
+      });
+      return;
+    }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorModal({
+        show: true,
+        title: '❌ File Too Large',
+        message: `Your file is ${(file.size / (1024 * 1024)).toFixed(2)} MB. Maximum allowed size is 10 MB.`,
+        details: [
+          '💡 Tips:',
+          '• Split large files into smaller chunks',
+          '• Remove unnecessary columns',
+          '• Use CSV format for smaller file sizes'
+        ]
+      });
+      return;
+    }
+    
+    setBulkUpdateFile(file);
+    setBulkUpdateResult(null);
+    setBulkUpdateLoading(true);
+    
+    try {
+      const data = await parseUploadedFile(file);
+      
+      if (!data || data.length === 0) {
+        setErrorModal({
+          show: true,
+          title: '❌ No Data Found',
+          message: 'The file appears to be empty or could not be parsed.',
+          details: [
+            '💡 Please check:',
+            '• The file contains data rows',
+            '• The first row contains column headers',
+            '• The file is not corrupted'
+          ]
+        });
+        setBulkUpdateFile(null);
+        setBulkUpdateLoading(false);
+        return;
+      }
+      
+      // Validate that each row has _id field (check various possible field names)
+      const idFieldNames = ['_id', 'id', 'ID', 'Id', 'objectId', 'ObjectId', 'OBJECTID'];
+      const validData = data.filter(row => {
+        return idFieldNames.some(fieldName => row[fieldName] && String(row[fieldName]).trim() !== '');
+      });
+      
+      if (validData.length === 0) {
+        const availableFields = data[0] ? Object.keys(data[0]) : [];
+        setErrorModal({
+          show: true,
+          title: '❌ Missing Required Field: _id',
+          message: 'No records with _id field found. Each row must have an _id (MongoDB ObjectId) field to identify which record to update.',
+          details: availableFields.length > 0 ? [
+            `📋 Available fields in your file (${availableFields.length}):`,
+            ...availableFields.map(f => `• ${f}`)
+          ] : ['No fields found in the file']
+        });
+        setBulkUpdateFile(null);
+        setBulkUpdateLoading(false);
+        return;
+      }
+      
+      // Normalize _id field
+      const normalizedData = validData.map(row => {
+        const idField = idFieldNames.find(f => row[f] && String(row[f]).trim() !== '');
+        const idValue = idField ? row[idField] : null;
+        
+        // Create new object without duplicate id fields
+        const cleanRow: Record<string, any> = {};
+        for (const [key, value] of Object.entries(row)) {
+          if (!idFieldNames.includes(key) || key === '_id') {
+            cleanRow[key] = value;
+          }
+        }
+        
+        return {
+          ...cleanRow,
+          _id: String(idValue).trim()
+        };
+      });
+      
+      setBulkUpdatePreview(normalizedData);
+      setShowBulkUpdateModal(true);
+      toast.success(`✅ Loaded ${normalizedData.length} records for preview`);
+    } catch (error: any) {
+      console.error('File parse error:', error);
+      setErrorModal({
+        show: true,
+        title: '❌ Failed to Parse File',
+        message: error.message || 'An error occurred while parsing the file.',
+        details: [
+          '💡 Suggestions:',
+          '• Try exporting your data as CSV format',
+          '• Ensure the file is not password protected',
+          '• Check if the file is corrupted',
+          '• Remove any special characters from headers'
+        ]
+      });
+      setBulkUpdateFile(null);
+    } finally {
+      setBulkUpdateLoading(false);
+    }
+    
+    // Reset the input
+    if (bulkFileInputRef.current) {
+      bulkFileInputRef.current.value = '';
+    }
+  };
+
+  // Process bulk update
+  const processBulkUpdate = async () => {
+    if (!selectedUpdateModel || bulkUpdatePreview.length === 0) {
+      toast.error('No data to update');
+      return;
+    }
+    
+    setBulkUpdateLoading(true);
+    setBulkUpdateResult(null);
+    
+    try {
+      const res = await fetch('/api/admin/data/bulk-update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modelName: selectedUpdateModel,
+          records: bulkUpdatePreview
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setBulkUpdateResult({
+          success: true,
+          updated: data.updated,
+          failed: data.failed,
+          errors: data.errors || []
+        });
+        toast.success(`Successfully updated ${data.updated} records!`);
+        
+        // Refresh the search results
+        if (searchResults.length > 0) {
+          searchRecords(selectedUpdateModel, searchQuery, pagination.page);
+        }
+      } else {
+        setBulkUpdateResult({
+          success: false,
+          updated: data.updated || 0,
+          failed: data.failed || bulkUpdatePreview.length,
+          errors: data.errors || [{ id: 'unknown', error: data.error || 'Bulk update failed' }]
+        });
+        toast.error(data.error || 'Bulk update failed');
+      }
+    } catch (error: any) {
+      setBulkUpdateResult({
+        success: false,
+        updated: 0,
+        failed: bulkUpdatePreview.length,
+        errors: [{ id: 'unknown', error: error.message || 'Network error' }]
+      });
+      toast.error('Error processing bulk update');
+    } finally {
+      setBulkUpdateLoading(false);
+    }
+  };
+
+  // Close bulk update modal
+  const closeBulkUpdateModal = () => {
+    setShowBulkUpdateModal(false);
+    setBulkUpdateFile(null);
+    setBulkUpdatePreview([]);
+    setBulkUpdateResult(null);
   };
 
   // Format field value for display
@@ -1037,7 +1381,7 @@ export default function DataManagementPage() {
 
           {/* Model info */}
           <div className="bg-gradient-to-r from-teal-50 to-teal-100 dark:from-teal-900/30 dark:to-teal-900/20 border-2 border-teal-300 dark:border-teal-800 rounded-xl p-6 mb-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
                   {getModelIcon(selectedUpdateModel)}
@@ -1051,12 +1395,52 @@ export default function DataManagementPage() {
                   </p>
                 </div>
               </div>
-              {loading && (
-                <div className="flex items-center gap-2 text-[#3AB1A0]">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span className="text-sm font-medium">Searching...</span>
+              <div className="flex items-center gap-3">
+                {/* Bulk Update Button */}
+                <div className="relative">
+                  <input
+                    ref={bulkFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv,.json"
+                    onChange={handleBulkFileSelect}
+                    className="hidden"
+                    id="bulk-update-file"
+                    disabled={bulkUpdateLoading}
+                  />
+                  <label
+                    htmlFor="bulk-update-file"
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium cursor-pointer transition-all shadow-md hover:shadow-lg ${
+                      bulkUpdateLoading 
+                        ? 'bg-gray-400 cursor-wait' 
+                        : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'
+                    } text-white`}
+                  >
+                    {bulkUpdateLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Parsing File...
+                      </>
+                    ) : (
+                      <>
+                        <FileUp className="w-4 h-4" />
+                        Bulk Update
+                      </>
+                    )}
+                  </label>
                 </div>
-              )}
+                {loading && (
+                  <div className="flex items-center gap-2 text-[#3AB1A0]">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="text-sm font-medium">Searching...</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* Bulk Update Info */}
+            <div className="mt-4 pt-4 border-t border-teal-300 dark:border-teal-700">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                💡 <strong>Bulk Update:</strong> Upload a file (.xlsx, .xls, .csv, .json) with <code className="bg-teal-200 dark:bg-teal-800 px-1 rounded">_id</code> column to update multiple records at once
+              </p>
             </div>
           </div>
 
@@ -1191,8 +1575,281 @@ export default function DataManagementPage() {
     </div>
   );
 
+  // Render Bulk Update Modal
+  const renderBulkUpdateModal = () => {
+    if (!showBulkUpdateModal) return null;
+    
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={closeBulkUpdateModal}
+        />
+        
+        {/* Modal */}
+        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden m-4">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileUp className="w-6 h-6 text-white" />
+              <div>
+                <h2 className="text-xl font-bold text-white">Bulk Update Preview</h2>
+                <p className="text-orange-100 text-sm">
+                  {bulkUpdateFile?.name} • {bulkUpdatePreview.length} records
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={closeBulkUpdateModal}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+          </div>
+          
+          {/* Content */}
+          <div className="p-6 overflow-y-auto max-h-[60vh]">
+            {/* Result Summary */}
+            {bulkUpdateResult && (
+              <div className={`mb-6 p-4 rounded-xl border-2 ${
+                bulkUpdateResult.success 
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+                  : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
+              }`}>
+                <div className="flex items-center gap-3 mb-3">
+                  {bulkUpdateResult.success ? (
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <XCircle className="w-6 h-6 text-red-600" />
+                  )}
+                  <h3 className={`font-bold ${bulkUpdateResult.success ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                    {bulkUpdateResult.success ? 'Update Completed!' : 'Update Completed with Errors'}
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-green-600">{bulkUpdateResult.updated}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Updated Successfully</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-red-600">{bulkUpdateResult.failed}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Failed</p>
+                  </div>
+                </div>
+                {bulkUpdateResult.errors.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2">Errors:</p>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {bulkUpdateResult.errors.slice(0, 10).map((err, idx) => (
+                        <p key={idx} className="text-xs text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">
+                          ID: {err.id} - {err.error}
+                        </p>
+                      ))}
+                      {bulkUpdateResult.errors.length > 10 && (
+                        <p className="text-xs text-gray-500">...and {bulkUpdateResult.errors.length - 10} more errors</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Preview Table */}
+            <div className="border-2 border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+              <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 border-b border-gray-200 dark:border-gray-600">
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  📋 Data Preview (showing first {Math.min(bulkUpdatePreview.length, 10)} of {bulkUpdatePreview.length} records)
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-100 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">#</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">_id</th>
+                      {bulkUpdatePreview[0] && Object.keys(bulkUpdatePreview[0])
+                        .filter(key => key !== '_id' && key !== 'id' && key !== 'ID')
+                        .slice(0, 5)
+                        .map(key => (
+                          <th key={key} className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">
+                            {key}
+                          </th>
+                        ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {bulkUpdatePreview.slice(0, 10).map((record, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{idx + 1}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-orange-600 dark:text-orange-400">
+                          {record._id}
+                        </td>
+                        {Object.entries(record)
+                          .filter(([key]) => key !== '_id' && key !== 'id' && key !== 'ID')
+                          .slice(0, 5)
+                          .map(([key, value]) => (
+                            <td key={key} className="px-4 py-3 text-gray-900 dark:text-white">
+                              {typeof value === 'object' ? JSON.stringify(value).substring(0, 30) : String(value).substring(0, 30)}
+                              {String(value).length > 30 ? '...' : ''}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {bulkUpdatePreview.length > 10 && (
+                <div className="bg-gray-50 dark:bg-gray-700 px-4 py-2 border-t border-gray-200 dark:border-gray-600">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    ... and {bulkUpdatePreview.length - 10} more records
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            {/* Fields to Update */}
+            {bulkUpdatePreview[0] && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                <p className="font-semibold text-blue-700 dark:text-blue-400 mb-2">Fields to Update:</p>
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(bulkUpdatePreview[0])
+                    .filter(key => key !== '_id' && key !== 'id' && key !== 'ID')
+                    .map(key => (
+                      <span key={key} className="px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 rounded text-xs font-medium">
+                        {key}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Footer */}
+          <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-t border-gray-200 dark:border-gray-600 flex items-center justify-between">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Model: <span className="font-bold text-orange-600">{currentModel?.displayName || selectedUpdateModel}</span>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={closeBulkUpdateModal}
+                className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors"
+              >
+                {bulkUpdateResult ? 'Close' : 'Cancel'}
+              </button>
+              {!bulkUpdateResult && (
+                <button
+                  onClick={processBulkUpdate}
+                  disabled={bulkUpdateLoading}
+                  className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-wait"
+                >
+                  {bulkUpdateLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Update {bulkUpdatePreview.length} Records
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render Error Modal
+  const renderErrorModal = () => {
+    if (!errorModal.show) return null;
+    
+    return (
+      <div className="fixed inset-0 z-[110] flex items-center justify-center">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={() => setErrorModal({ show: false, title: '', message: '' })}
+        />
+        
+        {/* Modal */}
+        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden m-4 animate-in fade-in zoom-in duration-200">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-white" />
+              <h2 className="text-xl font-bold text-white">{errorModal.title}</h2>
+            </div>
+            <button
+              onClick={() => setErrorModal({ show: false, title: '', message: '' })}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+          </div>
+          
+          {/* Content */}
+          <div className="p-6">
+            {/* Main Message */}
+            <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-4 mb-4">
+              <p className="text-red-700 dark:text-red-400 font-medium">
+                {errorModal.message}
+              </p>
+            </div>
+            
+            {/* Details */}
+            {errorModal.details && errorModal.details.length > 0 && (
+              <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4 max-h-60 overflow-y-auto">
+                <div className="space-y-1">
+                  {errorModal.details.map((detail, idx) => (
+                    <p 
+                      key={idx} 
+                      className={`text-sm ${
+                        detail.startsWith('•') 
+                          ? 'text-gray-600 dark:text-gray-400 pl-2 font-mono' 
+                          : 'text-gray-800 dark:text-gray-200 font-semibold mt-2'
+                      }`}
+                    >
+                      {detail}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Help tip */}
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                💡 <strong>Tip:</strong> For bulk updates, your file must include an <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">_id</code> column containing the MongoDB ObjectId of each record you want to update.
+              </p>
+            </div>
+          </div>
+          
+          {/* Footer */}
+          <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+            <button
+              onClick={() => setErrorModal({ show: false, title: '', message: '' })}
+              className="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+            >
+              Got it, Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Error Modal */}
+      {renderErrorModal()}
+      
+      {/* Bulk Update Modal */}
+      {renderBulkUpdateModal()}
+      
       {/* Sidebar - Fixed */}
       <div className="fixed left-0 top-0 h-screen w-64 z-50">
         {renderSidebar()}

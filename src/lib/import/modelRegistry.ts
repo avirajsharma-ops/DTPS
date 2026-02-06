@@ -522,7 +522,23 @@ class ModelRegistry {
       console.log(`[ModelRegistry] User required fields: ${requiredFields.join(', ')}`);
       console.log(`[ModelRegistry] User total field list (first 20): ${fields.map(f => f.path).slice(0, 20).join(', ')}`);
     }
+
+
+
+
+
+
+    // Debug logging for Recipe model
+    if (config.name === 'Recipe') {
+      console.log(`[ModelRegistry] Registered Recipe model with ${fields.length} total fields`);
+      console.log(`[ModelRegistry] Recipe required fields: ${requiredFields.join(', ')}`);
+      console.log(`[ModelRegistry] Recipe total field list: ${fields.map(f => f.path).join(', ')}`);
+    }
   }
+
+
+
+
 
   /**
    * Extract field information from a Mongoose schema
@@ -722,7 +738,8 @@ class ModelRegistry {
       // Calculate confidence score with improved weighting
       // PRIMARY GOAL: If all required fields are present, the row belongs to this model
       // SECONDARY: How many total fields match (coverage)
-      // TERTIARY: Penalize for extra fields
+      // TERTIARY: Model-specific keyword indicators (Recipe has "prepTime", "cookTime", "ingredients", etc.)
+      // QUATERNARY: Penalize for extra fields
       
       // All required fields matched = strong indicator this is the right model
       const hasAllRequired = missingRequired.length === 0 ? 1 : 0;
@@ -730,8 +747,37 @@ class ModelRegistry {
       // Ratio of matched fields to model fields (how much of the model schema we cover)
       const matchRatio = matchedFields.length / Math.max(modelFields.length, 1);
       
+      // Model-specific keyword indicators for better partial-data detection
+      let keywordBonus = 0;
+      const rowFieldsLower = rowFields.map(f => f.toLowerCase().replace(/[_-]/g, ''));
+      
+      if (name === 'Recipe') {
+        // Strong indicators that this is recipe data
+        const recipeKeywords = ['preptime', 'cooktime', 'ingredients', 'instructions', 'nutrition', 'servings'];
+        const matchedKeywords = recipeKeywords.filter(kw => 
+          rowFieldsLower.some(f => f.includes(kw))
+        );
+        keywordBonus = Math.min(25, matchedKeywords.length * 6); // Up to 25 points for strong indicators
+      } else if (name === 'User') {
+        // For User model
+        const userKeywords = ['firstname', 'lastname', 'email', 'phone', 'dateofbirth', 'height', 'weight'];
+        const matchedKeywords = userKeywords.filter(kw => 
+          rowFieldsLower.some(f => f.includes(kw))
+        );
+        keywordBonus = Math.min(15, matchedKeywords.length * 3);
+      }
+      
       // Penalty for missing required fields (each missing required field is a strike)
+      // But for Recipe, reduce penalty since it might have many optional fields
       let missingRequiredPenalty = missingRequired.length * 10; // 10 points per missing required
+      if (name === 'Recipe' && missingRequired.length > 0) {
+        // Recipe-specific: if we have the strong indicators, reduce the penalty
+        const recipeKeywords = ['preptime', 'cooktime', 'ingredients', 'instructions'];
+        const hasRecipeKeywords = recipeKeywords.some(kw => rowFieldsLower.some(f => f.includes(kw)));
+        if (hasRecipeKeywords) {
+          missingRequiredPenalty = missingRequired.length * 5; // Reduce to 5 per missing for recipe with keywords
+        }
+      }
       
       // Smaller penalty for extra fields
       // If model has 50 fields and we have 60 extra, that's a ratio of 1.2, which is 36 penalty points
@@ -739,27 +785,39 @@ class ModelRegistry {
       const extraFieldRatio = extraFields.length / Math.max(modelFields.length, 1);
       const extraFieldPenalty = Math.min(20, extraFieldRatio * 25);
 
-      // NEW FORMULA: 
+      // IMPROVED FORMULA: 
       // Base: 80 points (if all required found) 
       // + matchRatio * 20 points (coverage of model fields) 
+      // + keywordBonus (model-specific indicators)
       // - penalties
       const confidence = Math.max(0, Math.min(100, 
         80 * hasAllRequired +          // 80 points if all required found
-        matchRatio * 20 -               // Up to 20 more points based on field coverage
+        matchRatio * 20 +               // Up to 20 more points based on field coverage
+        keywordBonus -                  // Bonus for model-specific keywords
         missingRequiredPenalty -        // Penalize for each missing required
         extraFieldPenalty               // Penalize for unknown extra fields
       ));
 
-      // Debug logging
-      console.log(`[ModelDetection-${name}] conf=${confidence.toFixed(1)} (allReq=${hasAllRequired*80}+match=${(matchRatio*20).toFixed(1)}-missing=${missingRequiredPenalty}-extra=${extraFieldPenalty.toFixed(1)}), matched=${matchedFields.length}/${modelFields.length}, missing=${missingRequired.length}/${registeredModel.requiredFields.length}, extra=${extraFields.length}`);
       
-      if (name === 'User') {
-        console.log(`  [User-Details] Required fields: ${registeredModel.requiredFields.join(', ')}`);
-        console.log(`  [User-Details] Missing: ${missingRequired.length > 0 ? missingRequired.join(', ') : 'NONE'}`);
-        console.log(`  [User-Details] Matched required: ${registeredModel.requiredFields.filter(rf => {
+      // Debug logging
+      console.log(`[ModelDetection-${name}] conf=${confidence.toFixed(1)} (allReq=${hasAllRequired*80}+match=${(matchRatio*20).toFixed(1)}+bonus=${keywordBonus}-missing=${missingRequiredPenalty}-extra=${extraFieldPenalty.toFixed(1)}), matched=${matchedFields.length}/${modelFields.length}, missing=${missingRequired.length}/${registeredModel.requiredFields.length}, extra=${extraFields.length}`);
+      
+
+      if (name === 'User' || name === 'Recipe') {
+        console.log(`  [${name}-Details] Required fields: ${registeredModel.requiredFields.join(', ')}`);
+        console.log(`  [${name}-Details] Missing: ${missingRequired.length > 0 ? missingRequired.join(', ') : 'NONE'}`);
+        console.log(`  [${name}-Details] Matched required: ${registeredModel.requiredFields.filter(rf => {
           const rfNorm = normalizeFieldName(rf);
           return rowFields.some(f => normalizeFieldName(f) === rfNorm);
         }).join(', ')}`);
+        if (name === 'Recipe') {
+          const recipeKeywords = ['preptime', 'cooktime', 'ingredients', 'instructions', 'nutrition', 'servings'];
+          const rowFieldsLower = rowFields.map(f => f.toLowerCase().replace(/[_-]/g, ''));
+          const matchedKeywords = recipeKeywords.filter(kw => 
+            rowFieldsLower.some(f => f.includes(kw))
+          );
+          console.log(`  [Recipe-Keywords] Matched strong indicators: ${matchedKeywords.join(', ')} (bonus: ${keywordBonus}pts)`);
+        }
       }
 
       results.push({
