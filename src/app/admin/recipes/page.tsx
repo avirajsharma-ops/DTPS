@@ -53,7 +53,7 @@ export default function AdminRecipesPage() {
       const body = await res.json();
       
       if (!res.ok) {
-        throw new Error(body.error || "Failed to load recipes");
+        throw new Error(body.error || body.details || "Failed to load recipes");
       }
       
       // Ensure recipes are properly displayed even if createdBy is missing

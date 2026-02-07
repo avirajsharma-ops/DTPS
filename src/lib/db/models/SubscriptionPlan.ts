@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISubscriptionPlan extends Document {
-  _id: string;
+  _id: mongoose.Types.ObjectId;
   name: string;
   description?: string;
   duration: number; // in days

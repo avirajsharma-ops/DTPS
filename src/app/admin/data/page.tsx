@@ -44,7 +44,23 @@ import {
   TrendingUp,
   FileUp,
   CheckCircle,
-  XCircle
+  XCircle,
+  ShoppingCart,
+  MessageSquare,
+  Star,
+  Target,
+  BookOpen,
+  FolderOpen,
+  Clock,
+  Stethoscope,
+  Dumbbell,
+  Globe,
+  Link,
+  Receipt,
+  Repeat,
+  AlertTriangle,
+  Phone,
+  ShoppingBag
 } from 'lucide-react';
 
 // Types
@@ -167,6 +183,35 @@ const MODEL_ICONS: Record<string, React.ElementType> = {
   Notification: Bell,
   DietTemplate: FileSpreadsheet,
   Transformation: TrendingUp,
+  ClientPurchase: ShoppingCart,
+  ActivityAssignment: Dumbbell,
+  ActivityLog: Activity,
+  Blog: BookOpen,
+  ClientDocuments: FolderOpen,
+  ClientMealPlan: Utensils,
+  ClientSubscription: Repeat,
+  DailyTracking: Clock,
+  DietaryRecall: ClipboardList,
+  EcommerceBlog: BookOpen,
+  EcommerceOrder: ShoppingBag,
+  EcommercePayment: CreditCard,
+  EcommercePlan: Package,
+  EcommerceRating: Star,
+  EcommerceTransformation: TrendingUp,
+  File: FileText,
+  GoalCategory: Target,
+  History: Clock,
+  JournalTracking: BookOpen,
+  LifestyleInfo: Heart,
+  MealPlanTemplate: FileSpreadsheet,
+  MedicalInfo: Stethoscope,
+  Message: MessageSquare,
+  OtherPlatformPayment: Globe,
+  PaymentLink: Link,
+  SubscriptionPlan: Receipt,
+  SystemAlert: AlertTriangle,
+  WatiContact: Phone,
+  WooCommerceClient: ShoppingBag,
   default: Database
 };
 
@@ -182,6 +227,7 @@ export default function DataManagementPage() {
   const [selectedExportModel, setSelectedExportModel] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
   const [exporting, setExporting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   
   // Update state
   const [selectedUpdateModel, setSelectedUpdateModel] = useState<string | null>(null);
@@ -314,6 +360,36 @@ export default function DataManagementPage() {
       toast.error(error.message || 'Export failed');
     } finally {
       setExporting(false);
+    }
+  };
+
+  // Sync payment status from Payment to ClientPurchase
+  const handleSyncPaymentStatus = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/admin/payments/sync-status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success(`Synced ${data.result.updated} payment statuses to ClientPurchase records`);
+        if (data.result.failed > 0) {
+          toast.warning(`${data.result.failed} payments failed to sync`);
+        }
+        // Refresh models count if Payment model is visible
+        if (selectedExportModel === 'Payment') {
+          fetchModels();
+        }
+      } else {
+        toast.error(data.error || 'Sync failed');
+      }
+    } catch (error: any) {
+      toast.error('Error syncing payment status');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -1005,9 +1081,9 @@ export default function DataManagementPage() {
 
                   <button
                     onClick={() => handleExport(model.name)}
-                    disabled={exporting}
+                    disabled={exporting || syncing}
                     className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
-                      exporting
+                      exporting || syncing
                         ? 'bg-teal-400 text-white cursor-wait'
                         : model.documentCount === 0
                         ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 hover:bg-teal-200 dark:hover:bg-teal-900/50'
@@ -1026,6 +1102,32 @@ export default function DataManagementPage() {
                       </>
                     )}
                   </button>
+
+                  {/* Sync button for Payment model */}
+                  {model.name === 'Payment' && (
+                    <button
+                      onClick={handleSyncPaymentStatus}
+                      disabled={syncing || exporting}
+                      className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors mt-3 ${
+                        syncing || exporting
+                          ? 'bg-orange-400 text-white cursor-wait'
+                          : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white'
+                      }`}
+                    >
+                      {syncing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Syncing...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4" />
+                          Sync Payment Status
+                        </>
+                      )}
+                    </button>
+                  )}
+
                   {model.documentCount === 0 && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
                       ℹ️ No records to export
@@ -1125,9 +1227,12 @@ export default function DataManagementPage() {
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                     {(selectedRecord as any).firstName 
                       ? `${(selectedRecord as any).firstName} ${(selectedRecord as any).lastName || ''}`
-                      : (selectedRecord as any).name || (selectedRecord as any).email || selectedRecord._id}
+                      : (selectedRecord as any).planName || (selectedRecord as any).name || (selectedRecord as any).email || selectedRecord._id}
                   </h2>
                   <p className="text-sm text-gray-500">{selectedUpdateModel} • ID: {selectedRecord._id}</p>
+                  {(selectedRecord as any).planName && !(selectedRecord as any).firstName && (
+                    <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Plan: {(selectedRecord as any).planName}</p>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -1365,7 +1470,7 @@ export default function DataManagementPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by name, email, phone..."
+                  placeholder="Search by any name, email, phone, planName, or field..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-[#3AB1A0] focus:ring-2 focus:ring-teal-500/20 transition-all"
@@ -1471,6 +1576,7 @@ export default function DataManagementPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
                     <tr>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300 w-12">S/No</th>
                       {visibleRecordFields.slice(0, 5).map((field) => (
                         <th key={field.path} className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">
                           {field.path}
@@ -1486,6 +1592,9 @@ export default function DataManagementPage() {
                         ref={(el) => observeTableRow(index, el)}
                         className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                       >
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400 font-medium w-12 text-center">
+                          {((pagination.page - 1) * pagination.limit) + index + 1}
+                        </td>
                         {visibleTableRows.has(index) ? (
                           <>
                             {visibleRecordFields.slice(0, 5).map((field) => (

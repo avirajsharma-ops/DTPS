@@ -62,12 +62,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // List all importable models
-    const importableModels = modelRegistry.getImportable();
+    // List all models (not just importable)
+    const allModels = modelRegistry.getAll();
 
     return NextResponse.json({
       success: true,
-      models: importableModels.map(m => ({
+      models: allModels.map(m => ({
         name: m.name,
         displayName: m.displayName,
         description: m.description,

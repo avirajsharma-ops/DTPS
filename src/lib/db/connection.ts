@@ -8,8 +8,7 @@ import './models/Appointment';
 import './models/Recipe';
 import './models/MealPlan';
 import './models/Message';
-import './models/Payment';
-import './models/SystemAlert';
+        import './models/SystemAlert';
 import './models/ProgressEntry';
 import './models/FoodLog';
 import './models/WooCommerceClient';
@@ -22,6 +21,7 @@ import './models/JournalTracking';
 import './models/DietTemplate';
 import './models/History';
 import './models/ActivityAssignment';
+import './models/Payment';
 
 // MongoDB URI from environment
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/dtps-nutrition';

@@ -11,7 +11,7 @@ export interface IPricingTier {
 
 // Interface for the service plan
 export interface IServicePlan extends Document {
-  _id: string;
+  _id: mongoose.Types.ObjectId;
   name: string;
   category: 'weight-loss' | 'weight-gain' | 'muscle-gain' | 'diabetes' | 'pcos' | 'thyroid' | 'general-wellness' | 'detox' | 'sports-nutrition' | 'custom';
   description?: string;
@@ -27,7 +27,7 @@ export interface IServicePlan extends Document {
 
 // Interface for client's purchased plan
 export interface IClientPurchase extends Document {
-  _id: string;
+  _id: mongoose.Types.ObjectId;
   client: mongoose.Types.ObjectId;
   dietitian?: mongoose.Types.ObjectId;
   servicePlan?: mongoose.Types.ObjectId;

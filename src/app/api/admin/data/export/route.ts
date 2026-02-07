@@ -76,11 +76,12 @@ export async function GET(request: NextRequest) {
 
     // If no model specified, return list of available models
     if (!modelName) {
-      const importableModels = modelRegistry.getImportable();
+      // Get ALL models, not just importable ones
+      const allModels = modelRegistry.getAll();
       
       // Get counts for each model
       const modelsWithCounts = await Promise.all(
-        importableModels.map(async (m) => {
+        allModels.map(async (m) => {
           let count = 0;
           try {
             count = await m.model.countDocuments();

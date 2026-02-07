@@ -1,22 +1,56 @@
-import mongoose, { Schema } from 'mongoose';
-import { IPayment, PaymentStatus, PaymentType } from '@/types';
+import mongoose, { Schema, Document } from 'mongoose';
+
+export interface IPayment extends Document {
+  // References
+  client: mongoose.Types.ObjectId;
+  dietitian?: mongoose.Types.ObjectId;
+  
+  // Payment details
+  amount: number;
+  currency: string;
+  type: 'subscription' | 'consultation' | 'service' | 'product' | 'other';
+  
+  // Plan details (if applicable)
+  planName?: string;
+  planCategory?: string;
+  durationDays?: number;
+  durationLabel?: string;
+  
+  // Razorpay details
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpayPaymentLinkUrl?: string;
+  razorpaySignature?: string;
+  
+  // Transaction details
+  transactionId?: string;
+  paymentMethod?: string;
+  
+  // Status
+  status: 'pending' | 'completed' | 'paid' | 'failed' | 'refunded' | 'cancelled';
+  
+  // Dates
+  paidAt?: Date;
+  
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const paymentSchema = new Schema({
   client: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
+    index: true
   },
   dietitian: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: false  // Made optional - dietitian may not be assigned yet
+    index: true
   },
-  type: {
-    type: String,
-    required: true,
-    enum: Object.values(PaymentType)
-  },
+  
+  // Payment details
   amount: {
     type: Number,
     required: true,
@@ -24,31 +58,16 @@ const paymentSchema = new Schema({
   },
   currency: {
     type: String,
-    required: true,
     default: 'INR',
     uppercase: true
   },
-  status: {
+  type: {
     type: String,
-    required: true,
-    enum: Object.values(PaymentStatus),
-    default: PaymentStatus.PENDING
-  },
-  paymentMethod: {
-    type: String,
-    default: 'razorpay'
-  },
-  transactionId: {
-    type: String,
-    unique: true,
-    sparse: true
-  },
-  description: {
-    type: String,
-    maxlength: 1000
+    enum: ['subscription', 'consultation', 'service', 'product', 'other'],
+    default: 'subscription'
   },
   
-  // Plan details (for service_plan type)
+  // Plan details
   planName: {
     type: String,
     trim: true
@@ -59,52 +78,14 @@ const paymentSchema = new Schema({
   },
   durationDays: {
     type: Number,
-    min: 1
+    min: 0
   },
   durationLabel: {
     type: String,
     trim: true
   },
   
-  // References
-  paymentLink: {
-    type: Schema.Types.ObjectId,
-    ref: 'PaymentLink'
-  },
-  clientPurchase: {
-    type: Schema.Types.ObjectId,
-    ref: 'ClientPurchase'
-  },
-  otherPlatformPayment: {
-    type: Schema.Types.ObjectId,
-    ref: 'OtherPlatformPayment'
-  },
-  
-  // Meal plan tracking
-  mealPlanCreated: {
-    type: Boolean,
-    default: false
-  },
-  mealPlanId: {
-    type: Schema.Types.ObjectId,
-    ref: 'ClientMealPlan'
-  },
-  
-  // Payment method details
-  payerEmail: {
-    type: String,
-    trim: true
-  },
-  payerPhone: {
-    type: String,
-    trim: true
-  },
-  payerName: {
-    type: String,
-    trim: true
-  },
-  
-  // Razorpay integration fields
+  // Razorpay details
   razorpayOrderId: {
     type: String,
     trim: true,
@@ -112,132 +93,53 @@ const paymentSchema = new Schema({
   },
   razorpayPaymentId: {
     type: String,
-    trim: true
-  },
-  razorpayPaymentLinkId: {
-    type: String,
-    trim: true
+    trim: true,
+    index: true
   },
   razorpayPaymentLinkUrl: {
     type: String,
     trim: true
   },
-  razorpayPaymentLinkShortUrl: {
+  razorpaySignature: {
     type: String,
     trim: true
   },
+  
+  // Transaction details
+  transactionId: {
+    type: String,
+    trim: true,
+    index: true
+  },
+  paymentMethod: {
+    type: String,
+    trim: true
+  },
+  
+  // Status
+  status: {
+    type: String,
+    enum: ['pending', 'completed', 'paid', 'failed', 'refunded', 'cancelled'],
+    default: 'pending',
+    index: true
+  },
+  
+  // Dates
   paidAt: {
     type: Date
   }
 }, {
   timestamps: true,
-  autoIndex: false
+  autoIndex: true
 });
 
-// Indexes for better query performance (transactionId index is automatic due to unique: true)
-paymentSchema.index({ client: 1, createdAt: -1 });
-paymentSchema.index({ dietitian: 1, createdAt: -1 });
-paymentSchema.index({ status: 1 });
-paymentSchema.index({ type: 1 });
+// Compound indexes for common queries
+paymentSchema.index({ client: 1, status: 1 });
+paymentSchema.index({ dietitian: 1, status: 1 });
+paymentSchema.index({ createdAt: -1 });
+paymentSchema.index({ status: 1, createdAt: -1 });
 
-// Static method to get payment history for a client
-paymentSchema.statics.getClientPaymentHistory = function(clientId: string, limit = 20, skip = 0) {
-  return this.find({ client: clientId })
-    .populate('dietitian', 'firstName lastName')
-    .sort({ createdAt: -1 })
-    .limit(limit)
-    .skip(skip);
-};
-
-// Static method to get revenue for a dietitian
-paymentSchema.statics.getDietitianRevenue = function(dietitianId: string, startDate?: Date, endDate?: Date) {
-  const matchQuery: any = {
-    dietitian: dietitianId,
-    status: PaymentStatus.COMPLETED
-  };
-  
-  if (startDate || endDate) {
-    matchQuery.createdAt = {};
-    if (startDate) matchQuery.createdAt.$gte = startDate;
-    if (endDate) matchQuery.createdAt.$lte = endDate;
-  }
-  
-  return this.aggregate([
-    { $match: matchQuery },
-    {
-      $group: {
-        _id: null,
-        totalRevenue: { $sum: '$amount' },
-        totalTransactions: { $sum: 1 },
-        averageTransaction: { $avg: '$amount' }
-      }
-    }
-  ]);
-};
-
-// Static method to get monthly revenue breakdown
-paymentSchema.statics.getMonthlyRevenue = function(dietitianId: string, year: number) {
-  return this.aggregate([
-    {
-      $match: {
-        dietitian: new mongoose.Types.ObjectId(dietitianId),
-        status: PaymentStatus.COMPLETED,
-        createdAt: {
-          $gte: new Date(year, 0, 1),
-          $lt: new Date(year + 1, 0, 1)
-        }
-      }
-    },
-    {
-      $group: {
-        _id: { $month: '$createdAt' },
-        revenue: { $sum: '$amount' },
-        transactions: { $sum: 1 }
-      }
-    },
-    {
-      $sort: { '_id': 1 }
-    }
-  ]);
-};
-
-// Static method to get payment statistics
-paymentSchema.statics.getPaymentStats = function(dietitianId: string) {
-  return this.aggregate([
-    {
-      $match: {
-        dietitian: new mongoose.Types.ObjectId(dietitianId)
-      }
-    },
-    {
-      $group: {
-        _id: '$status',
-        count: { $sum: 1 },
-        totalAmount: { $sum: '$amount' }
-      }
-    }
-  ]);
-};
-
-// Method to mark payment as completed
-paymentSchema.methods.markAsCompleted = function(transactionId: string) {
-  this.status = PaymentStatus.COMPLETED;
-  this.transactionId = transactionId;
-  return this.save();
-};
-
-// Method to mark payment as failed
-paymentSchema.methods.markAsFailed = function() {
-  this.status = PaymentStatus.FAILED;
-  return this.save();
-};
-
-// Method to refund payment
-paymentSchema.methods.refund = function() {
-  this.status = PaymentStatus.REFUNDED;
-  return this.save();
-};
-
+// Check if the model exists before creating to prevent OverwriteModelError
 const Payment = mongoose.models.Payment || mongoose.model<IPayment>('Payment', paymentSchema);
 
 export default Payment;

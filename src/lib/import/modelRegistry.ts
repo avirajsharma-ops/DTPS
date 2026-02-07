@@ -10,7 +10,6 @@ import User from '@/lib/db/models/User';
 import Appointment from '@/lib/db/models/Appointment';
 import Recipe from '@/lib/db/models/Recipe';
 import MealPlan from '@/lib/db/models/MealPlan';
-import Payment from '@/lib/db/models/Payment';
 import ProgressEntry from '@/lib/db/models/ProgressEntry';
 import FoodLog from '@/lib/db/models/FoodLog';
 import Task from '@/lib/db/models/Task';
@@ -152,15 +151,6 @@ class ModelRegistry {
       displayName: 'Meal Plans',
       description: 'Client meal plans',
       uniqueIdentifiers: []
-    });
-
-    this.registerModel({
-      name: 'Payment',
-      model: Payment,
-      importable: true,
-      displayName: 'Payments',
-      description: 'Payment records',
-      uniqueIdentifiers: ['transactionId']
     });
 
     this.registerModel({
@@ -476,6 +466,15 @@ class ModelRegistry {
       importable: true,
       displayName: 'WooCommerce Clients',
       description: 'WooCommerce client data',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'Notification',
+      model: Notification,
+      importable: true,
+      displayName: 'Notifications',
+      description: 'User notifications',
       uniqueIdentifiers: []
     });
 
