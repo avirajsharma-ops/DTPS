@@ -5,7 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import Message from '@/lib/db/models/Message';
 import Appointment from '@/lib/db/models/Appointment';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import FoodLog from '@/lib/db/models/FoodLog';
 import MealPlan from '@/lib/db/models/MealPlan';
 import { UserRole } from '@/types';
@@ -41,7 +41,7 @@ export async function GET(
       Message.find({ sender: id }).sort({ createdAt: -1 }).limit(10).select('receiver type content createdAt').lean(),
       Message.find({ receiver: id }).sort({ createdAt: -1 }).limit(10).select('sender type content createdAt').lean(),
       Appointment.find({ $or: [{ dietitian: id }, { client: id }] }).sort({ createdAt: -1 }).limit(10).select('dietitian client type status scheduledAt createdAt').lean(),
-      Payment.find({ $or: [{ dietitian: id }, { client: id }] }).sort({ createdAt: -1 }).limit(10).select('dietitian client amount status type createdAt').lean(),
+      UnifiedPayment.find({ $or: [{ dietitian: id }, { client: id }] }).sort({ createdAt: -1 }).limit(10).select('dietitian client amount status type createdAt').lean(),
       FoodLog.find({ client: id }).sort({ createdAt: -1 }).limit(10).select('date totalNutrition createdAt').lean(),
       MealPlan.find({ $or: [{ dietitian: id }, { client: id }] }).sort({ createdAt: -1 }).limit(10).select('name client dietitian startDate endDate createdAt').lean(),
     ]);

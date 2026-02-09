@@ -3,8 +3,7 @@ import crypto from 'crypto';
 import connectDB from '@/lib/db/connection';
 import ClientSubscription from '@/lib/db/models/ClientSubscription';
 import PaymentLink from '@/lib/db/models/PaymentLink';
-import { ClientPurchase } from '@/lib/db/models/ServicePlan';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { PaymentStatus, PaymentType } from '@/types';
 
 // Verify Razorpay webhook signature
@@ -114,23 +113,28 @@ async function handlePaymentSuccess(payload: any) {
 
     await subscription.save();
 
-    // Create Payment record in Payment schema
+    // Create/Update UnifiedPayment record (UPDATE existing, don't create duplicate)
     try {
-      const paymentRecord = new Payment({
-        client: subscription.client,
-        dietitian: subscription.dietitian,
-        type: PaymentType.SUBSCRIPTION,
-        amount: subscription.amount,
-        currency: 'INR',
-        status: PaymentStatus.COMPLETED,
-        paymentMethod: 'razorpay',
-        transactionId: payment.id,
-        description: `Subscription payment - Order: ${orderId}`
-      });
-
-      await paymentRecord.save();
+      await UnifiedPayment.syncRazorpayPayment(
+        { razorpayOrderId: orderId },
+        {
+          client: subscription.client,
+          dietitian: subscription.dietitian,
+          paymentType: 'subscription',
+          finalAmount: subscription.amount,
+          currency: 'INR',
+          status: 'paid',
+          paymentStatus: 'paid',
+          paymentMethod: 'razorpay',
+          razorpayOrderId: orderId,
+          razorpayPaymentId: payment.id,
+          transactionId: payment.id,
+          paidAt: new Date(),
+          description: `Subscription payment - Order: ${orderId}`
+        }
+      );
     } catch (paymentError) {
-      console.error('Error creating Payment record:', paymentError);
+      console.error('Error syncing UnifiedPayment record:', paymentError);
     }
 
 
@@ -167,23 +171,27 @@ async function handlePaymentFailed(payload: any) {
 
     await subscription.save();
 
-    // Create Payment record with FAILED status
+    // Update UnifiedPayment record with FAILED status (UPDATE existing, don't create duplicate)
     try {
-      const paymentRecord = new Payment({
-        client: subscription.client,
-        dietitian: subscription.dietitian,
-        type: PaymentType.SUBSCRIPTION,
-        amount: subscription.amount,
-        currency: 'INR',
-        status: PaymentStatus.FAILED,
-        paymentMethod: 'razorpay',
-        transactionId: payment.id,
-        description: `Failed payment - Order: ${orderId} - Reason: ${payment.description || 'Unknown'}`
-      });
-
-      await paymentRecord.save();
+      await UnifiedPayment.syncRazorpayPayment(
+        { razorpayOrderId: orderId },
+        {
+          client: subscription.client,
+          dietitian: subscription.dietitian,
+          paymentType: 'subscription',
+          finalAmount: subscription.amount,
+          currency: 'INR',
+          status: 'failed',
+          paymentStatus: 'failed',
+          paymentMethod: 'razorpay',
+          razorpayOrderId: orderId,
+          razorpayPaymentId: payment.id,
+          transactionId: payment.id,
+          description: `Failed payment - Order: ${orderId} - Reason: ${payment.description || 'Unknown'}`
+        }
+      );
     } catch (paymentError) {
-      console.error('Error creating Failed Payment record:', paymentError);
+      console.error('Error syncing Failed UnifiedPayment record:', paymentError);
     }
 
 
@@ -232,99 +240,51 @@ async function handlePaymentLinkCompleted(payload: any) {
 
       await paymentLink.save();
 
-      // Create Payment record in Payment schema with full plan details
-      let paymentRecordId = null;
+      // Create/Update UnifiedPayment record (UPDATE existing, don't create duplicate)
+      // This is the SINGLE source of truth for all payment data
       try {
-        // Check if payment record already exists to avoid duplicates
-        let existingPayment = await Payment.findOne({
-          transactionId: razorpayPaymentId,
-          client: paymentLink.client
-        });
+        const startDate = new Date();
+        const endDate = new Date();
+        if (paymentLink.durationDays) {
+          endDate.setDate(endDate.getDate() + paymentLink.durationDays);
+        }
 
-        if (existingPayment) {
-          paymentRecordId = existingPayment._id;
-        } else {
-          const paymentRecord = new Payment({
+        await UnifiedPayment.syncRazorpayPayment(
+          { paymentLink: paymentLink._id },
+          {
             client: paymentLink.client,
             dietitian: paymentLink.dietitian,
-            type: PaymentType.SERVICE_PLAN,
-            amount: paymentLink.finalAmount,
-            currency: paymentLink.currency || 'INR',
-            status: PaymentStatus.COMPLETED,
-            paymentMethod: paymentMethod,
-            transactionId: razorpayPaymentId,
-            description: `Payment for ${paymentLink.planName || 'Service Plan'} - ${paymentLink.duration || paymentLink.durationDays + ' Days'} (${paymentLink.planCategory || 'general-wellness'})`,
-            
-            // Plan details
-            planName: paymentLink.planName,
-            planCategory: paymentLink.planCategory,
-            durationDays: paymentLink.durationDays,
-            durationLabel: paymentLink.duration || `${paymentLink.durationDays} Days`,
-            
-            // References
+            servicePlan: paymentLink.servicePlanId,
             paymentLink: paymentLink._id,
-            
-            // Payer details
+            paymentType: 'service_plan',
+            planName: paymentLink.planName || 'Service Plan',
+            planCategory: paymentLink.planCategory || 'general-wellness',
+            durationDays: paymentLink.durationDays || 0,
+            durationLabel: paymentLink.duration || `${paymentLink.durationDays} Days`,
+            baseAmount: paymentLink.amount,
+            discountPercent: paymentLink.discount || 0,
+            taxPercent: paymentLink.tax || 0,
+            finalAmount: paymentLink.finalAmount,
+            currency: paymentLink.currency || 'INR',
+            status: 'paid',
+            paymentStatus: 'paid',
+            paymentMethod: paymentMethod,
+            razorpayPaymentLinkId: paymentLinkData.id,
+            razorpayPaymentId: razorpayPaymentId,
+            transactionId: razorpayPaymentId,
             payerEmail: payerEmail,
-            payerPhone: payerPhone
-          });
-
-          // Save the Payment record
-          const savedPayment = await paymentRecord.save();
-          paymentRecordId = savedPayment._id;
-        }
-      } catch (paymentError) {
-        console.error('Error creating Payment record:', paymentError);
-      }
-
-      // Create ClientPurchase record if servicePlanId exists
-      if (paymentLink.servicePlanId && paymentLink.durationDays) {
-        try {
-          // Check if ClientPurchase already exists for this payment link
-          const existingPurchase = await ClientPurchase.findOne({ paymentLink: paymentLink._id });
-          
-          if (existingPurchase) {
-          } else {
-            const startDate = new Date();
-            const endDate = new Date();
-            endDate.setDate(endDate.getDate() + paymentLink.durationDays);
-
-            const clientPurchase = new ClientPurchase({
-              client: paymentLink.client,
-              dietitian: paymentLink.dietitian,
-              servicePlan: paymentLink.servicePlanId,
-              paymentLink: paymentLink._id,
-              planName: paymentLink.planName || 'Service Plan',
-              planCategory: paymentLink.planCategory || 'general-wellness',
-              durationDays: paymentLink.durationDays,
-              durationLabel: paymentLink.duration || `${paymentLink.durationDays} Days`,
-              baseAmount: paymentLink.amount,
-              discountPercent: paymentLink.discount || 0,
-              taxPercent: paymentLink.tax || 0,
-              finalAmount: paymentLink.finalAmount,
-              purchaseDate: new Date(),
-              startDate: startDate,
-              endDate: endDate,
-              status: 'active',
-              mealPlanCreated: false,
-              daysUsed: 0
-            });
-
-            const savedPurchase = await clientPurchase.save();
-            
-            // Update Payment record with ClientPurchase reference
-            if (paymentRecordId) {
-              const updatedPayment = await Payment.findByIdAndUpdate(
-                paymentRecordId, 
-                { clientPurchase: savedPurchase._id },
-                { new: true }
-              );
-            }
+            payerPhone: payerPhone,
+            purchaseDate: startDate,
+            startDate: startDate,
+            endDate: endDate,
+            paidAt: new Date(),
+            mealPlanCreated: false,
+            daysUsed: 0,
+            description: `Payment for ${paymentLink.planName || 'Service Plan'} - ${paymentLink.duration || paymentLink.durationDays + ' Days'} (${paymentLink.planCategory || 'general-wellness'})`
           }
-        } catch (purchaseError) {
-          console.error('Error creating ClientPurchase:', purchaseError);
-        }
-      } else {
+        );
+      } catch (paymentError) {
+        console.error('Error syncing UnifiedPayment record:', paymentError);
       }
 
       return;

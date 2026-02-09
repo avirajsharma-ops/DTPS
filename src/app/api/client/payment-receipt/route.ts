@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/client/payment-receipt - Get payment receipt details
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     const payment = await withCache(
       `client:payment-receipt:${JSON.stringify(query)}`,
-      async () => await Payment.findOne(query)
+      async () => await UnifiedPayment.findOne(query)
       .populate('dietitian', 'firstName lastName email')
       .populate('client', 'firstName lastName email phone')
       .sort({ createdAt: -1 }),

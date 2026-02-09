@@ -37,16 +37,17 @@ interface Payment {
     lastName: string;
     email: string;
     phone?: string;
-  };
+  } | null;
   dietitian?: {
     _id: string;
     firstName: string;
     lastName: string;
-  };
+  } | null;
   type: string;
   amount: number;
   currency: string;
   status: string;
+  paymentStatus?: string;
   paymentMethod: string;
   planName?: string;
   planCategory?: string;
@@ -56,6 +57,8 @@ interface Payment {
   razorpayPaymentId?: string;
   razorpayPaymentLinkUrl?: string;
   transactionId?: string;
+  payerEmail?: string;
+  payerPhone?: string;
   paidAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -491,11 +494,11 @@ export default function AdminPaymentsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="font-semibold text-gray-900">₹{payment.amount.toLocaleString()}</p>
+                        <p className="font-semibold text-gray-900">₹{(payment.amount || 0).toLocaleString()}</p>
                         <p className="text-xs text-gray-500">{getTypeLabel(payment.type)}</p>
                       </td>
                       <td className="px-6 py-4">
-                        {getStatusBadge(payment.status)}
+                        {getStatusBadge(payment.paymentStatus || payment.status)}
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm text-gray-900">{format(new Date(payment.createdAt), 'dd MMM yyyy')}</p>
@@ -594,11 +597,11 @@ export default function AdminPaymentsPage() {
               <div className="space-y-3">
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-500">Amount</span>
-                  <span className="font-bold text-[#E06A26]">₹{selectedPayment.amount.toLocaleString()}</span>
+                  <span className="font-bold text-[#E06A26]">₹{(selectedPayment.amount || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-500">Status</span>
-                  {getStatusBadge(selectedPayment.status)}
+                  {getStatusBadge(selectedPayment.paymentStatus || selectedPayment.status)}
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-500">Payment Method</span>

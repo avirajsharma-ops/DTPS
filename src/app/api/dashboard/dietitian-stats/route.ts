@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import Appointment from '@/lib/db/models/Appointment';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { UserRole } from '@/types';
 import mongoose from 'mongoose';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
     // Get recent payments (last 10)
     const recentPayments = await withCache(
       `dashboard:dietitian-stats:${JSON.stringify(paymentQuery)}`,
-      async () => await Payment.find(paymentQuery)
+      async () => await UnifiedPayment.find(paymentQuery)
       .populate('client', 'firstName lastName email phone')
       .sort({ createdAt: -1 })
       .limit(10)
@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
       }},
       { $group: { _id: null, total: { $sum: '$amount' } }}
     ])}`,
-      async () => await Payment.aggregate([
+      async () => await UnifiedPayment.aggregate([
       { $match: { 
         ...paymentQuery,
         status: 'completed'
@@ -203,13 +203,13 @@ export async function GET(request: NextRequest) {
     const totalRevenue = totalRevenueResult[0]?.total || 0;
 
     // Get pending payments count
-    const pendingPaymentsCount = await Payment.countDocuments({
+    const pendingPaymentsCount = await UnifiedPayment.countDocuments({
       ...paymentQuery,
       status: 'pending'
     });
 
     // Get completed payments count
-    const completedPaymentsCount = await Payment.countDocuments({
+    const completedPaymentsCount = await UnifiedPayment.countDocuments({
       ...paymentQuery,
       status: 'completed'
     });

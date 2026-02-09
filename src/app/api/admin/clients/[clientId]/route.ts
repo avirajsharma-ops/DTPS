@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
@@ -56,8 +56,8 @@ export async function GET(
 
     // Get payments
     const payments = await withCache(
-      `admin:clients:clientId:${JSON.stringify({ userId: clientId })}`,
-      async () => await Payment.find({ userId: clientId })
+      `admin:clients:clientId:${JSON.stringify({ client: clientId })}`,
+      async () => await UnifiedPayment.find({ client: clientId })
       .sort({ createdAt: -1 })
       .limit(20),
       { ttl: 120000, tags: ['admin'] }

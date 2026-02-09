@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import dbConnect from '@/lib/db/connect';
-import { ClientPurchase } from '@/lib/db/models/ServicePlan';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
-// GET - Fetch client purchases
+// GET - Fetch client purchases (now from UnifiedPayment)
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,9 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const activeOnly = searchParams.get('activeOnly') === 'true';
 
-    const query: any = {};
+    const query: any = {
+      paymentStatus: 'paid' // Only show paid purchases
+    };
     
     // Filter by client
     if (clientId) {
@@ -35,13 +37,13 @@ export async function GET(request: NextRequest) {
     
     // Filter active purchases (not expired)
     if (activeOnly) {
-      query.status = 'active';
+      query.status = { $in: ['paid', 'completed'] };
       query.endDate = { $gte: new Date() };
     }
 
     const purchases = await withCache(
       `client-purchases:${JSON.stringify(query)}`,
-      async () => await ClientPurchase.find(query)
+      async () => await UnifiedPayment.find(query)
       .populate('client', 'firstName lastName email phone')
       .populate('dietitian', 'firstName lastName')
       .populate('servicePlan', 'name category')
@@ -54,7 +56,7 @@ export async function GET(request: NextRequest) {
     const purchasesWithInfo = purchases.map(purchase => {
       const purchaseObj = purchase.toObject();
       const now = new Date();
-      const endDate = new Date(purchaseObj.endDate);
+      const endDate = purchaseObj.endDate ? new Date(purchaseObj.endDate) : now;
       const diffTime = endDate.getTime() - now.getTime();
       const remainingDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
       
@@ -77,6 +79,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - Create a client purchase (after payment is confirmed)
+// Uses syncRazorpayPayment to UPDATE existing or CREATE new (NO DUPLICATES)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -116,28 +119,33 @@ export async function POST(request: NextRequest) {
     const purchaseEndDate = new Date(purchaseStartDate);
     purchaseEndDate.setDate(purchaseEndDate.getDate() + durationDays);
 
-    const purchase = new ClientPurchase({
-      client: clientId,
-      dietitian: session.user.id,
-      servicePlan: servicePlanId,
-      paymentLink: paymentLinkId,
-      planName,
-      planCategory,
-      durationDays,
-      durationLabel,
-      baseAmount,
-      discountPercent: Math.min(discountPercent || 0, 40), // Max 40%
-      taxPercent: taxPercent || 0,
-      finalAmount,
-      purchaseDate: new Date(),
-      startDate: purchaseStartDate,
-      endDate: purchaseEndDate,
-      status: 'active',
-      mealPlanCreated: false,
-      daysUsed: 0
-    });
-
-    await purchase.save();
+    // Use syncRazorpayPayment to UPDATE existing or CREATE new (NO DUPLICATES)
+    const purchase = await UnifiedPayment.syncRazorpayPayment(
+      { paymentLink: paymentLinkId },
+      {
+        client: clientId,
+        dietitian: session.user.id,
+        servicePlan: servicePlanId,
+        paymentLink: paymentLinkId,
+        paymentType: 'service_plan',
+        planName,
+        planCategory,
+        durationDays,
+        durationLabel,
+        baseAmount,
+        discountPercent: Math.min(discountPercent || 0, 40), // Max 40%
+        taxPercent: taxPercent || 0,
+        finalAmount,
+        currency: 'INR',
+        status: 'paid',
+        paymentStatus: 'paid',
+        purchaseDate: new Date(),
+        startDate: purchaseStartDate,
+        endDate: purchaseEndDate,
+        mealPlanCreated: false,
+        daysUsed: 0
+      }
+    );
 
     return NextResponse.json({ 
       success: true, 
@@ -171,7 +179,7 @@ export async function PUT(request: NextRequest) {
     // Get current purchase to check existing daysUsed
     const currentPurchase = await withCache(
       `client-purchases:${JSON.stringify(purchaseId)}`,
-      async () => await ClientPurchase.findById(purchaseId),
+      async () => await UnifiedPayment.findById(purchaseId),
       { ttl: 120000, tags: ['client_purchases'] }
     );
     if (!currentPurchase) {
@@ -179,7 +187,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updateData: any = {};
-    if (mealPlanId) updateData.mealPlanId = mealPlanId;
+    if (mealPlanId) updateData.mealPlan = mealPlanId;
     if (mealPlanCreated !== undefined) updateData.mealPlanCreated = mealPlanCreated;
     
     // Update expected dates
@@ -192,7 +200,7 @@ export async function PUT(request: NextRequest) {
     
     // Update parent purchase reference (for multi-phase plans)
     if (parentPurchaseId !== undefined) {
-      updateData.parentPurchaseId = parentPurchaseId || null;
+      updateData.parentPaymentId = parentPurchaseId || null;
     }
     
     // If addDaysUsed is provided, ADD to existing daysUsed (for multiple meal plans)
@@ -205,7 +213,7 @@ export async function PUT(request: NextRequest) {
     
     if (status) updateData.status = status;
 
-    const updatedPurchase = await ClientPurchase.findByIdAndUpdate(
+    const updatedPurchase = await UnifiedPayment.findByIdAndUpdate(
       purchaseId,
       updateData,
       { new: true }

@@ -26,8 +26,14 @@ export interface IPayment extends Document {
   transactionId?: string;
   paymentMethod?: string;
   
+  // Payer details
+  payerEmail?: string;
+  payerPhone?: string;
+  payerName?: string;
+  
   // Status
   status: 'pending' | 'completed' | 'paid' | 'failed' | 'refunded' | 'cancelled';
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
   
   // Dates
   paidAt?: Date;
@@ -88,13 +94,11 @@ const paymentSchema = new Schema({
   // Razorpay details
   razorpayOrderId: {
     type: String,
-    trim: true,
-    index: true
+    trim: true
   },
   razorpayPaymentId: {
     type: String,
-    trim: true,
-    index: true
+    trim: true
   },
   razorpayPaymentLinkUrl: {
     type: String,
@@ -108,10 +112,24 @@ const paymentSchema = new Schema({
   // Transaction details
   transactionId: {
     type: String,
-    trim: true,
-    index: true
+    trim: true
   },
   paymentMethod: {
+    type: String,
+    trim: true
+  },
+  
+  // Payer details
+  payerEmail: {
+    type: String,
+    trim: true,
+    lowercase: true
+  },
+  payerPhone: {
+    type: String,
+    trim: true
+  },
+  payerName: {
     type: String,
     trim: true
   },
@@ -122,6 +140,11 @@ const paymentSchema = new Schema({
     enum: ['pending', 'completed', 'paid', 'failed', 'refunded', 'cancelled'],
     default: 'pending',
     index: true
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed', 'refunded'],
+    default: 'pending'
   },
   
   // Dates
@@ -138,6 +161,21 @@ paymentSchema.index({ client: 1, status: 1 });
 paymentSchema.index({ dietitian: 1, status: 1 });
 paymentSchema.index({ createdAt: -1 });
 paymentSchema.index({ status: 1, createdAt: -1 });
+
+// Unique indexes with partial filter expressions
+// Only enforce uniqueness when the field has a value (not null/undefined)
+paymentSchema.index(
+  { razorpayOrderId: 1 },
+  { unique: true, sparse: true, partialFilterExpression: { razorpayOrderId: { $exists: true, $ne: null } } }
+);
+paymentSchema.index(
+  { razorpayPaymentId: 1 },
+  { unique: true, sparse: true, partialFilterExpression: { razorpayPaymentId: { $exists: true, $ne: null } } }
+);
+paymentSchema.index(
+  { transactionId: 1 },
+  { unique: true, sparse: true, partialFilterExpression: { transactionId: { $exists: true, $ne: null } } }
+);
 
 // Check if the model exists before creating to prevent OverwriteModelError
 const Payment = mongoose.models.Payment || mongoose.model<IPayment>('Payment', paymentSchema);

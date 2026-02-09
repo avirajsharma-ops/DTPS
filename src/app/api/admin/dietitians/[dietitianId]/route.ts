@@ -5,7 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import Appointment from '@/lib/db/models/Appointment';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import Task from '@/lib/db/models/Task';
 import mongoose from 'mongoose';
 import { AppointmentStatus, UserRole, PaymentStatus } from '@/types';
@@ -171,7 +171,7 @@ export async function GET(
       .limit(50);
 
     // Get payments associated with this dietitian
-    const payments = await Payment.find({
+    const payments = await UnifiedPayment.find({
       dietitian: dietitianId
     })
       .populate('client', 'firstName lastName email')

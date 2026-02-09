@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
-import { ClientPurchase } from '@/lib/db/models/ServicePlan';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { UserRole } from '@/types';
 import { addDays, differenceInDays, format } from 'date-fns';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
@@ -67,11 +67,11 @@ export async function GET(request: NextRequest) {
       client: { $in: clientIds },
       status: { $in: ['active', 'paid'] }
     })}`,
-      async () => await ClientPurchase.find({
+      async () => await UnifiedPayment.find({
       client: { $in: clientIds },
       status: { $in: ['active', 'paid'] }
     })
-      .select('client planName durationDays durationLabel expectedStartDate expectedEndDate mealPlanCreated daysUsed parentPurchaseId status createdAt')
+      .select('client planName durationDays durationLabel expectedStartDate expectedEndDate mealPlanCreated daysUsed parentPaymentId status createdAt')
       .sort({ createdAt: -1 })
       ,
       { ttl: 120000, tags: ['dashboard'] }

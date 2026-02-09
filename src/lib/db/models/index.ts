@@ -20,6 +20,7 @@ export { default as Tag } from './Tag';
 export { History } from './History';
 export { default as OtherPlatformPayment } from './OtherPlatformPayment';
 export { default as PaymentLink } from './PaymentLink';
+export { default as UnifiedPayment } from './UnifiedPayment';
 export { default as Transformation } from './Transformation';
 export { default as ActivityLog } from './ActivityLog';
 export { default as Counter } from './Counter';

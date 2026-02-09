@@ -377,16 +377,16 @@ export default function CreateRecipePage() {
           description: description || undefined,
           prepTime: prepTime ? parseInt(prepTime) : 0,
           cookTime: cookTime ? parseInt(cookTime) : 0,
-          servings: servings,
-          calories: calories ? parseInt(calories) : 0,
-          image: image || undefined,
-          isActive,
-          macros: {
+          servings: servings ? parseInt(servings) : 1,
+          nutrition: {
+            calories: calories ? parseInt(calories) : 0,
             protein: protein ? parseFloat(protein) : 0,
             carbs: carbs ? parseFloat(carbs) : 0,
             fat: fat ? parseFloat(fat) : 0
           },
-          ingredients: ingredients.filter(ing => ing.name.trim() !== ''),
+          image: image || undefined,
+          isActive,
+          ingredients,
           instructions: validInstructions,
           dietaryRestrictions,
           medicalContraindications

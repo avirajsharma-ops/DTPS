@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import connectDB from '@/lib/db/connection';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-07-30.basil',
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         
         // Update payment status in database
-        const payment = await Payment.findOne({ 
+        const payment = await UnifiedPayment.findOne({ 
           stripePaymentIntentId: paymentIntent.id 
         });
         
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       case 'payment_intent.payment_failed':
         const failedPayment = event.data.object as Stripe.PaymentIntent;
         
-        const failedPaymentRecord = await Payment.findOne({ 
+        const failedPaymentRecord = await UnifiedPayment.findOne({ 
           stripePaymentIntentId: failedPayment.id 
         });
         
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       case 'payment_intent.canceled':
         const canceledPayment = event.data.object as Stripe.PaymentIntent;
         
-        const canceledPaymentRecord = await Payment.findOne({ 
+        const canceledPaymentRecord = await UnifiedPayment.findOne({ 
           stripePaymentIntentId: canceledPayment.id 
         });
         

@@ -228,17 +228,17 @@ export async function GET(request: NextRequest) {
             });
           }
 
-          // Sanitize recipes to ensure nutrition object exists with default values
+          // Sanitize recipes - ensure nutrition is array and add flat nutrition
           let recipesData = recipesRaw.map((recipe: any) => {
             const creatorId = recipe.createdBy?.toString();
             const creator = creatorId ? creatorsMap[creatorId] : null;
             return {
               ...recipe,
-              nutrition: recipe.nutrition || {
-                calories: 0,
-                protein: 0,
-                carbs: 0,
-                fat: 0
+              flatNutrition: {
+                calories: recipe.calories || 0,
+                protein: recipe.protein || 0,
+                carbs: recipe.carbs || 0,
+                fat: recipe.fat || 0
               },
               createdBy: creator || { firstName: 'Unknown', lastName: 'User' }
             };
@@ -300,7 +300,12 @@ export async function GET(request: NextRequest) {
       
       recipes = recipesRaw.map((recipe: any) => ({
         ...recipe,
-        nutrition: recipe.nutrition || { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        flatNutrition: {
+          calories: recipe.calories || 0,
+          protein: recipe.protein || 0,
+          carbs: recipe.carbs || 0,
+          fat: recipe.fat || 0
+        },
         createdBy: recipe.createdBy || { firstName: 'Unknown', lastName: 'User' }
       }));
 
@@ -376,35 +381,65 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Transform data to match database schema
-    const recipeData: any = {
-      name: validatedData.name,
-      description: validatedData.description || '',
-      ingredients: validatedData.ingredients,
-      instructions: validatedData.instructions,
-      prepTime: validatedData.prepTime,
-      cookTime: validatedData.cookTime,
-      servings: validatedData.servings,
-      createdBy: session.user.id
-    };
+    // Keep ingredients as objects (don't convert to strings)
+    const validatedIngredients = validatedData.ingredients
+      .filter(ing => ing.name.trim() !== '')
+      .map(ing => ({
+        name: ing.name.trim(),
+        quantity: ing.quantity || 0,
+        unit: ing.unit || '',
+        remarks: ing.remarks || ''
+      }));
 
-    // Handle nutrition data - support both old and new formats
+    // IMPORTANT: Recipe schema expects ingredients as objects, not strings!
+    
+    // Handle nutrition and extract flat values
+    let caloriesValue = 0;
+    let proteinValue = 0;
+    let carbsValue = 0;
+    let fatValue = 0;
+
     if (validatedData.nutrition) {
-      recipeData.nutrition = validatedData.nutrition;
+      // New format - nutrition object
+      caloriesValue = validatedData.nutrition.calories || 0;
+      proteinValue = validatedData.nutrition.protein || 0;
+      carbsValue = validatedData.nutrition.carbs || 0;
+      fatValue = validatedData.nutrition.fat || 0;
     } else if (validatedData.calories !== undefined || validatedData.macros) {
-      // Transform legacy format to new format
-      recipeData.nutrition = {
-        calories: validatedData.calories || 0,
-        protein: validatedData.macros?.protein || 0,
-        carbs: validatedData.macros?.carbs || 0,
-        fat: validatedData.macros?.fat || 0,
-        fiber: validatedData.macros?.fiber
-      };
+      // Legacy format
+      caloriesValue = validatedData.calories || 0;
+      proteinValue = validatedData.macros?.protein || 0;
+      carbsValue = validatedData.macros?.carbs || 0;
+      fatValue = validatedData.macros?.fat || 0;
     } else {
       return NextResponse.json({
         error: 'Missing nutrition data',
         message: 'Please provide either nutrition object or calories/macros data'
       }, { status: 400 });
     }
+
+    // Ensure servings is a number
+    const servingsValue = typeof validatedData.servings === 'number' 
+      ? validatedData.servings 
+      : parseInt(validatedData.servings) || 1;
+
+    const recipeData: any = {
+      name: validatedData.name,
+      description: validatedData.description || '',
+      ingredients: validatedIngredients,
+      instructions: validatedData.instructions,
+      prepTime: validatedData.prepTime,
+      cookTime: validatedData.cookTime,
+      totalTime: (validatedData.prepTime || 0) + (validatedData.cookTime || 0),
+      servings: servingsValue,
+      servingSize: typeof validatedData.servings === 'string' ? validatedData.servings : `${servingsValue} servings`,
+      // Flat nutrition values for queries
+      calories: caloriesValue,
+      protein: proteinValue,
+      carbs: carbsValue,
+      fat: fatValue,
+      createdBy: session.user.id
+    };
 
     // Handle tags
     if (validatedData.tags) {
@@ -512,11 +547,19 @@ export async function POST(request: NextRequest) {
           message: 'A recipe with this name already exists'
         }, { status: 409 });
       }
+      
+      // Return error details for debugging
+      return NextResponse.json({
+        error: 'Internal server error',
+        message: 'Failed to create recipe. Please try again later.',
+        details: error.message
+      }, { status: 500 });
     }
 
     return NextResponse.json({
       error: 'Internal server error',
-      message: 'Failed to create recipe. Please try again later.'
+      message: 'Failed to create recipe. Please try again later.',
+      details: String(error)
     }, { status: 500 });
   }
 }

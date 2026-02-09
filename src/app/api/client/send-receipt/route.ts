@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getBaseUrl } from '@/lib/config';
 import connectDB from '@/lib/db/connection';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import User from '@/lib/db/models/User';
 import nodemailer from 'nodemailer';
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const payment = await Payment.findOne({
+    const payment = await UnifiedPayment.findOne({
       _id: paymentId,
       client: session.user.id
     })

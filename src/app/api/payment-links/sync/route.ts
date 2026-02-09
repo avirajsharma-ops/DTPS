@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import PaymentLink from '@/lib/db/models/PaymentLink';
-import { ClientPurchase } from '@/lib/db/models/ServicePlan';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { UserRole } from '@/types';
 import Razorpay from 'razorpay';
 
@@ -119,25 +119,22 @@ export async function POST(request: NextRequest) {
         
         await paymentLink.save();
 
-        // Create ClientPurchase if it doesn't exist and servicePlanId is present
-        let clientPurchaseCreated = false;
+        // Create/Update UnifiedPayment record (UPDATE existing, don't create duplicate)
+        let unifiedPaymentCreated = false;
         if (paymentLink.servicePlanId && paymentLink.durationDays) {
           try {
-            // Check if ClientPurchase already exists
-            const existingPurchase = await ClientPurchase.findOne({
-              paymentLink: paymentLink._id
-            });
+            const startDate = paymentLink.paidAt || new Date();
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + paymentLink.durationDays);
 
-            if (!existingPurchase) {
-              const startDate = paymentLink.paidAt || new Date();
-              const endDate = new Date(startDate);
-              endDate.setDate(endDate.getDate() + paymentLink.durationDays);
-
-              const newPurchase = new ClientPurchase({
+            await UnifiedPayment.syncRazorpayPayment(
+              { paymentLink: paymentLink._id },
+              {
                 client: paymentLink.client,
                 dietitian: paymentLink.dietitian,
                 servicePlan: paymentLink.servicePlanId,
                 paymentLink: paymentLink._id,
+                paymentType: 'service_plan',
                 planName: paymentLink.planName || 'Service Plan',
                 planCategory: paymentLink.planCategory || 'general-wellness',
                 durationDays: paymentLink.durationDays,
@@ -146,19 +143,32 @@ export async function POST(request: NextRequest) {
                 discountPercent: paymentLink.discount || 0,
                 taxPercent: paymentLink.tax || 0,
                 finalAmount: paymentLink.finalAmount,
+                currency: paymentLink.currency || 'INR',
+                status: 'paid',
+                paymentStatus: 'paid',
+                paymentMethod: paymentLink.paymentMethod || 'razorpay',
+                razorpayPaymentLinkId: paymentLink.razorpayPaymentLinkId,
+                razorpayPaymentId: paymentLink.razorpayPaymentId,
+                razorpayOrderId: paymentLink.razorpayOrderId,
+                transactionId: paymentLink.transactionId || paymentLink.razorpayPaymentId,
+                payerEmail: paymentLink.payerEmail,
+                payerPhone: paymentLink.payerPhone,
                 purchaseDate: startDate,
                 startDate: startDate,
                 endDate: endDate,
-                status: 'active',
+                paidAt: paymentLink.paidAt,
                 mealPlanCreated: false,
-                daysUsed: 0
-              });
-
-              await newPurchase.save();
-              clientPurchaseCreated = true;
-            }
+                daysUsed: 0,
+                cardLast4: paymentLink.cardLast4,
+                cardNetwork: paymentLink.cardNetwork,
+                bank: paymentLink.bank,
+                wallet: paymentLink.wallet,
+                vpa: paymentLink.vpa
+              }
+            );
+            unifiedPaymentCreated = true;
           } catch (purchaseError) {
-            console.error('Error creating ClientPurchase during sync:', purchaseError);
+            console.error('Error syncing UnifiedPayment during sync:', purchaseError);
           }
         }
         
@@ -167,7 +177,7 @@ export async function POST(request: NextRequest) {
           message: 'Payment status synced successfully - Payment is PAID',
           paymentLink,
           razorpayStatus: razorpayLink.status,
-          clientPurchaseCreated
+          unifiedPaymentCreated
         });
       } else if (razorpayLink.status === 'expired') {
         paymentLink.status = 'expired';

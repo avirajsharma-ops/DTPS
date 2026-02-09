@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import dbConnect from '@/lib/db/connect';
-import { ServicePlan, ClientPurchase } from '@/lib/db/models/ServicePlan';
-import Payment from '@/lib/db/models/Payment';
+import { ServicePlan } from '@/lib/db/models/ServicePlan';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Fetch service plans visible to clients (for user dashboard)
@@ -17,34 +17,28 @@ export async function GET(request: NextRequest) {
 
         await dbConnect();
 
-        // Check if client has any purchases in ClientPurchase collection (active, pending, or on_hold status)
+        // Check if client has any purchases in UnifiedPayment collection (paid status)
         const allPurchases = await withCache(
       `client:service-plans:${JSON.stringify({
             client: session.user.id,
-            status: { $in: ['active', 'pending', 'on_hold'] }
+            status: { $in: ['paid', 'completed'] },
+            paymentStatus: 'paid'
         })}`,
-      async () => await ClientPurchase.find({
+      async () => await UnifiedPayment.find({
             client: session.user.id,
-            status: { $in: ['active', 'pending', 'on_hold'] }
+            status: { $in: ['paid', 'completed'] },
+            paymentStatus: 'paid'
         }).populate('dietitian', 'firstName lastName email phone avatar').sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['client'] }
     );
 
-        // Also check Payment collection for any completed payments
-        const completedPayments = await withCache(
-      `client:service-plans:${JSON.stringify({
-            client: session.user.id,
-            status: { $in: ['completed', 'captured', 'paid'] }
-        })}`,
-      async () => await Payment.find({
-            client: session.user.id,
-            status: { $in: ['completed', 'captured', 'paid'] }
-        }),
-      { ttl: 120000, tags: ['client'] }
-    );
+        // With UnifiedPayment, we already have all payment data in allPurchases
+        const completedPayments = allPurchases;
 
-        // Check for active purchases specifically
-        const activePurchases = allPurchases.filter(p => p.status === 'active');
+        // Check for active purchases specifically (paid and not expired)
+        const activePurchases = allPurchases.filter(p => 
+          p.paymentStatus === 'paid' && (!p.endDate || new Date(p.endDate) >= new Date())
+        );
         const hasActivePlan = activePurchases.length > 0;
 
         // Check if there are any purchases OR payments at all (to hide swiper)

@@ -3,8 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db/connect';
 import OtherPlatformPayment from '@/lib/db/models/OtherPlatformPayment';
-import Payment from '@/lib/db/models/Payment';
-import { ClientPurchase } from '@/lib/db/models/ServicePlan';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import PaymentLink from '@/lib/db/models/PaymentLink';
 import { PaymentStatus, PaymentType, UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
@@ -91,7 +90,7 @@ export async function PUT(
     otherPayment.reviewNotes = reviewNotes || '';
     await otherPayment.save();
 
-    // If approved, create Payment record and ClientPurchase
+    // If approved, create/update UnifiedPayment record (NO DUPLICATES)
     if (status === 'approved') {
       // Get payment link details
       const paymentLinkData = otherPayment.paymentLink;
@@ -102,43 +101,20 @@ export async function PUT(
       const durationDays = otherPayment.durationDays || paymentLinkData?.durationDays || 30;
       const durationLabel = otherPayment.durationLabel || paymentLinkData?.duration || `${durationDays} Days`;
       
-      // Create Payment record with mealPlanCreated: false
-      const paymentRecord = new Payment({
-        client: otherPayment.client,
-        dietitian: otherPayment.dietitian,
-        type: PaymentType.SERVICE_PLAN,
-        amount: otherPayment.amount,
-        currency: 'INR',
-        status: PaymentStatus.COMPLETED,
-        paymentMethod: otherPayment.platform === 'other' ? otherPayment.customPlatform : otherPayment.platform,
-        transactionId: `OPP-${otherPayment._id}-${otherPayment.transactionId}`,
-        description: `Other Platform Payment - ${otherPayment.platform === 'other' ? otherPayment.customPlatform : otherPayment.platform}`,
-        planName: planName,
-        planCategory: planCategory,
-        durationDays: durationDays,
-        durationLabel: durationLabel,
-        paymentLink: otherPayment.paymentLink?._id,
-        otherPlatformPayment: otherPayment._id,
-        mealPlanCreated: false, // Default false - will be set true when meal plan is created
-      });
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + durationDays);
 
-      await paymentRecord.save();
-
-      // Create ClientPurchase - always create if we have plan details
-      // This is needed for the Planning section to recognize the payment
-      const hasPlanDetails = planName && durationDays > 0;
-      
-      if (hasPlanDetails) {
-        const startDate = new Date();
-        const endDate = new Date();
-        endDate.setDate(endDate.getDate() + durationDays);
-
-        const clientPurchase = new ClientPurchase({
+      // Create/Update UnifiedPayment record (UPDATE existing, NO DUPLICATES)
+      await UnifiedPayment.syncRazorpayPayment(
+        { otherPlatformPayment: otherPayment._id },
+        {
           client: otherPayment.client,
           dietitian: otherPayment.dietitian,
           servicePlan: paymentLinkData?.servicePlanId || undefined,
           paymentLink: paymentLinkData?._id || undefined,
           otherPlatformPayment: otherPayment._id,
+          paymentType: 'service_plan',
           planName: planName,
           planCategory: planCategory,
           durationDays: durationDays,
@@ -147,27 +123,27 @@ export async function PUT(
           discountPercent: paymentLinkData?.discount || 0,
           taxPercent: paymentLinkData?.tax || 0,
           finalAmount: otherPayment.amount,
+          currency: 'INR',
+          status: 'paid',
+          paymentStatus: 'paid',
+          paymentMethod: otherPayment.platform === 'other' ? otherPayment.customPlatform : otherPayment.platform,
+          transactionId: `OPP-${otherPayment._id}-${otherPayment.transactionId}`,
           purchaseDate: new Date(),
           startDate,
           endDate,
-          status: 'active',
+          paidAt: new Date(),
           mealPlanCreated: false,
           daysUsed: 0,
-        });
-
-        await clientPurchase.save();
-
-        // Update payment record with clientPurchase reference
-        paymentRecord.clientPurchase = clientPurchase._id;
-        await paymentRecord.save();
-
-        // Update payment link status to paid if it exists
-        if (paymentLinkData?._id) {
-          await PaymentLink.findByIdAndUpdate(paymentLinkData._id, {
-            status: 'paid',
-            paidAt: new Date(),
-          });
+          description: `Other Platform Payment - ${otherPayment.platform === 'other' ? otherPayment.customPlatform : otherPayment.platform}`
         }
+      );
+
+      // Update payment link status to paid if it exists
+      if (paymentLinkData?._id) {
+        await PaymentLink.findByIdAndUpdate(paymentLinkData._id, {
+          status: 'paid',
+          paidAt: new Date(),
+        });
       }
     }
 

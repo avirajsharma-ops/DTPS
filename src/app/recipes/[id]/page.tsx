@@ -685,7 +685,7 @@ export default function RecipeViewPage() {
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
-                {recipe.ingredients.map((ingredient, index) => (
+                {recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.map((ingredient, index) => (
                   <li key={index} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
                     <input
                       type="checkbox"
@@ -717,7 +717,7 @@ export default function RecipeViewPage() {
             </CardHeader>
             <CardContent>
               <ol className="space-y-4">
-                {recipe.instructions.map((instruction, index) => (
+                {recipe.instructions && Array.isArray(recipe.instructions) && recipe.instructions.map((instruction, index) => (
                   <li key={index} className="flex space-x-3">
                     <div className="shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
                       {index + 1}
@@ -746,7 +746,7 @@ export default function RecipeViewPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {recipe.tips.map((tip, index) => (
+                    {recipe.tips && Array.isArray(recipe.tips) && recipe.tips.map((tip, index) => (
                       <li key={index} className="flex items-start space-x-2">
                         <span className="w-2 h-2 bg-yellow-400 rounded-full mt-2 shrink-0"></span>
                         <span className="text-gray-700">{tip}</span>
@@ -768,7 +768,7 @@ export default function RecipeViewPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {recipe.variations.map((variation, index) => (
+                    {recipe.variations && Array.isArray(recipe.variations) && recipe.variations.map((variation, index) => (
                       <div key={index} className="border-l-4 border-blue-200 pl-4">
                         <h4 className="font-medium text-gray-900">{variation.name}</h4>
                         <p className="text-sm text-gray-600 mt-1">{variation.description}</p>
@@ -776,7 +776,7 @@ export default function RecipeViewPage() {
                           <div className="mt-2">
                             <p className="text-xs font-medium text-gray-700">Changes:</p>
                             <ul className="text-xs text-gray-600 mt-1">
-                              {variation.ingredientChanges.map((change, idx) => (
+                              {variation.ingredientChanges && Array.isArray(variation.ingredientChanges) && variation.ingredientChanges.map((change, idx) => (
                                 <li key={idx}>• {change}</li>
                               ))}
                             </ul>
@@ -804,7 +804,7 @@ export default function RecipeViewPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {recipe.tags.map((tag, index) => (
+                {recipe.tags && Array.isArray(recipe.tags) && recipe.tags.map((tag, index) => (
                   <Badge key={index} variant="outline" className="text-sm">
                     #{tag}
                   </Badge>

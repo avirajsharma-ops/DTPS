@@ -1,394 +1,459 @@
-import mongoose, { Schema } from 'mongoose';
-import { IRecipe, INutrition } from '@/types';
+import mongoose, { Schema, Document } from 'mongoose';
 import Counter from './Counter';
 
-const nutritionSchema = new Schema<INutrition>({
-  calories: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  protein: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  carbs: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  fat: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  // fiber: {
-  //   type: Number,
-  //   min: 0
-  // },
-  // sugar: {
-  //   type: Number,
-  //   min: 0
-  // },
-  // sodium: {
-  //   type: Number,
-  //   min: 0
-  // }
-});
+/**
+ * Optimized Recipe Model
+ * 
+ * Simple, flat structure for easy CSV/JSON import/export
+ * - No nested schemas (ingredients, instructions, nutrition as arrays)
+ * - Numbers only for time fields (no "15 mins" strings)
+ * - Production-ready with proper indexes
+ * - Used for: Diet plans, meal templates, recipe management
+ */
 
-const ingredientSchema = new Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  quantity: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  unit: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  remarks: {
-    type: String,
-    trim: true
-  }
-});
+export interface IRecipe extends Document {
+  _id: mongoose.Types.ObjectId;
+  uuid: string;
+  name: string;
+  description: string;
+  category: string;
+  cuisine: string;
+  mealType: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  
+  // Time (in minutes - numbers only)
+  prepTime: number;
+  cookTime: number;
+  totalTime: number;
+  
+  // Servings
+  servings: number;
+  servingSize: string;
+  
+  // Simple arrays (no nested schemas)
+  ingredients: {
+    name: string;
+    quantity: number;
+    unit: string;
+    remarks?: string;
+  }[];
+  instructions: string[];
+  
+  // Flat nutrition values for queries
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  
+  // Tags and categories
+  tags: string[];
+  dietTypes: string[];
+  dietaryRestrictions: string[];
+  allergens: string[];
+  medicalContraindications: string[];
+  
+  // Media
+  image: string;
+  images: string[];
+  videoUrl: string;
+  
+  // Flags
+  isActive: boolean;
+  isPublic: boolean;
+  isPremium: boolean;
+  isTemplate: boolean;
+  
+  // Stats
+  rating: number;
+  ratingCount: number;
+  usageCount: number;
+  favoriteCount: number;
+  
+  // Creator
+  createdBy: mongoose.Types.ObjectId;
+  
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-const recipeSchema = new Schema({
+const recipeSchema = new Schema<IRecipe>({
   uuid: {
     type: String,
     unique: true,
-    index: true
-  },
-  isActive: {
-    type: Boolean,
-    default: true,
+    sparse: true,
     index: true
   },
   name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    index: true
   },
   description: {
-    type: String
+    type: String,
+    default: '',
+    trim: true
   },
-  ingredients: {
-    type: [ingredientSchema],
-    required: true,
-    validate: {
-      validator: function(ingredients: any[]) {
-        return ingredients.length > 0;
-      },
-      message: 'Recipe must have at least one ingredient'
-    }
+  category: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    index: true
   },
-  instructions: {
-    type: [String],
-    required: true,
-    validate: {
-      validator: function(instructions: string[]) {
-        return instructions.length > 0;
-      },
-      message: 'Recipe must have at least one instruction'
-    }
+  cuisine: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    index: true
   },
+  mealType: {
+    type: String,
+    enum: ['breakfast', 'lunch', 'dinner', 'snack', 'beverage', 'dessert', 'other'],
+    index: true
+  },
+  difficulty: {
+    type: String,
+    enum: ['easy', 'medium', 'hard']
+  },
+  
+  // Time (numbers in minutes - no strings like "15 mins")
   prepTime: {
     type: Number,
-    required: true,
+    default: 0,
     min: 0
   },
   cookTime: {
     type: Number,
-    required: true,
+    default: 0,
     min: 0
   },
+  totalTime: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  
+  // Servings (number only)
   servings: {
-    type: mongoose.Schema.Types.Mixed, // Allow both string and number
-    required: true,
+    type: Number,
+    default: 2,
+    min: 1
+  },
+  servingSize: {
+    type: String,
+    default: '1 serving',
+    trim: true
+  },
+  
+  // Ingredients - array of objects
+  // Format: { name: "rice", quantity: 2, unit: "cups", remarks: "optional" }
+  ingredients: {
+    type: [{
+      name: { type: String, required: true },
+      quantity: { type: Number, required: true, min: 0 },
+      unit: { type: String, required: true },
+      remarks: { type: String, default: '' },
+      _id: false
+    }],
+    default: [],
     validate: {
-      validator: function(value: any) {
-        // Accept numbers >= 1 or non-empty strings
-        return (typeof value === 'number' && value >= 1) ||
-               (typeof value === 'string' && value.trim().length > 0);
-      },
-      message: 'Servings must be a positive number or a non-empty string'
+      validator: (arr: any[]) => arr.length > 0,
+      message: 'At least one ingredient is required'
     }
   },
-  nutrition: {
-    type: nutritionSchema,
-    required: true
+  
+  // Instructions - simple string array
+  instructions: {
+    type: [String],
+    default: [],
+    validate: {
+      validator: (arr: string[]) => arr.length > 0,
+      message: 'At least one instruction is required'
+    }
   },
-  tags: [{
-    type: String,
-    trim: true,
-    lowercase: true
-  }],
-
-  dietaryRestrictions: [{
-    type: String,
-    trim: true
-  }],
-  allergens: [{
-    type: String,
-    enum: ['nuts', 'dairy', 'eggs', 'soy', 'gluten', 'shellfish', 'fish', 'sesame']
-  }],
-  medicalContraindications: [{
-    type: String,
-    trim: true
-  }],
-  difficulty: {
-    type: String,
-    enum: ['easy', 'medium', 'hard'],
-    default: 'medium'
+  
+  // Flat nutrition values for queries (numbers only)
+  calories: { type: Number, default: 0, min: 0, index: true },
+  protein: { type: Number, default: 0, min: 0 },
+  carbs: { type: Number, default: 0, min: 0 },
+  fat: { type: Number, default: 0, min: 0 },
+  
+  // Tags - simple string arrays
+  tags: {
+    type: [String],
+    default: [],
+    set: (tags: string[]) => tags.map(t => t.toLowerCase().trim())
   },
-  image: {
-    type: String
+  dietTypes: {
+    type: [String],
+    default: []
   },
-  images: [{
-    url: String,
-    caption: String,
-    isMain: { type: Boolean, default: false }
-  }],
-  video: {
-    url: String,
-    thumbnail: String,
-    duration: Number // in seconds
+  dietaryRestrictions: {
+    type: [String],
+    default: []
   },
-  isPublic: {
-    type: Boolean,
-    default: false
+  allergens: {
+    type: [String],
+    default: []
   },
-  isPremium: {
-    type: Boolean,
-    default: false
+  medicalContraindications: {
+    type: [String],
+    default: []
   },
-  rating: {
-    average: { type: Number, min: 0, max: 5, default: 0 },
-    count: { type: Number, default: 0 }
-  },
-  reviews: [{
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    userName: String,
-    rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String },
-    images: [String],
-    helpful: { type: Number, default: 0 },
-    createdAt: { type: Date, default: Date.now }
-  }],
-
-  usageCount: { type: Number, default: 0 },
-  favorites: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  
+  // Media
+  image: { type: String, default: '' },
+  images: { type: [String], default: [] },
+  videoUrl: { type: String, default: '' },
+  
+  // Flags
+  isActive: { type: Boolean, default: true, index: true },
+  isPublic: { type: Boolean, default: false, index: true },
+  isPremium: { type: Boolean, default: false },
+  isTemplate: { type: Boolean, default: false, index: true },
+  
+  // Stats (flat numbers)
+  rating: { type: Number, default: 0, min: 0, max: 5, index: true },
+  ratingCount: { type: Number, default: 0, min: 0 },
+  usageCount: { type: Number, default: 0, min: 0, index: true },
+  favoriteCount: { type: Number, default: 0, min: 0 },
+  
+  // Creator
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
+    index: true
   }
 }, {
   timestamps: true,
-  autoIndex: false
+  autoIndex: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
-
-// Indexes for better search performance
-recipeSchema.index({ name: 'text', description: 'text', tags: 'text', 'ingredients.name': 'text' });
+// Compound indexes
+recipeSchema.index({ isActive: 1, isPublic: 1 });
+recipeSchema.index({ category: 1, mealType: 1, isActive: 1 });
 recipeSchema.index({ tags: 1 });
-recipeSchema.index({ category: 1, isPublic: 1 });
-recipeSchema.index({ cuisine: 1, isPublic: 1 });
+recipeSchema.index({ dietTypes: 1 });
 recipeSchema.index({ dietaryRestrictions: 1 });
-recipeSchema.index({ difficulty: 1 });
-recipeSchema.index({ createdBy: 1 });
-recipeSchema.index({ 'nutrition.calories': 1 });
-recipeSchema.index({ 'rating.average': -1 });
-recipeSchema.index({ usageCount: -1 });
 recipeSchema.index({ createdAt: -1 });
-recipeSchema.index({ isPublic: 1, isPremium: 1 });
+recipeSchema.index({ name: 1, createdBy: 1 }, { unique: true });
 
-// Pre-save hook to generate auto-incrementing uuid starting from 10
+// Text search index
+recipeSchema.index(
+  { name: 'text', description: 'text', tags: 'text' },
+  { weights: { name: 10, tags: 5, description: 1 } }
+);
+
+// Pre-save: Calculate totalTime and generate uuid
 recipeSchema.pre('save', async function(next) {
+  // Calculate total time
+  this.totalTime = (this.prepTime || 0) + (this.cookTime || 0);
+  
+  // Generate uuid if new
   if (this.isNew && !this.uuid) {
     const counter = await Counter.findByIdAndUpdate(
       'recipeId',
       { $inc: { seq: 1 } },
       { new: true, upsert: true }
     );
-    // Ensure uuid starts from 10 (add 9 offset if counter is below 10)
     const uuidNumber = counter.seq < 10 ? counter.seq + 9 : counter.seq;
     this.uuid = String(uuidNumber);
   }
+  
   next();
-});
-
-// Virtual for total time
-recipeSchema.virtual('totalTime').get(function() {
-  return this.prepTime + this.cookTime;
 });
 
 // Virtual for nutrition per serving
 recipeSchema.virtual('nutritionPerServing').get(function() {
-  // Extract numeric value from servings (handle both number and string)
-  let servingCount = 1;
-  if (typeof this.servings === 'number') {
-    servingCount = this.servings;
-  } else if (typeof this.servings === 'string') {
-    // Extract number from string like "2.5 TSP" -> 2.5
-    const match = this.servings.match(/^(\d+(?:\.\d+)?)/);
-    servingCount = match ? parseFloat(match[1]) : 1;
-  }
-
-  // Ensure we don't divide by zero
-  servingCount = servingCount > 0 ? servingCount : 1;
-
+  const s = this.servings || 1;
   return {
-    calories: Math.round(this.nutrition.calories / servingCount),
-    protein: Math.round((this.nutrition.protein / servingCount) * 10) / 10,
-    carbs: Math.round((this.nutrition.carbs / servingCount) * 10) / 10,
-    fat: Math.round((this.nutrition.fat / servingCount) * 10) / 10,
-    fiber: this.nutrition.fiber ? Math.round((this.nutrition.fiber / servingCount) * 10) / 10 : undefined,
-    sugar: this.nutrition.sugar ? Math.round((this.nutrition.sugar / servingCount) * 10) / 10 : undefined,
-    sodium: this.nutrition.sodium ? Math.round(this.nutrition.sodium / servingCount) : undefined
+    calories: Math.round(this.calories / s),
+    protein: Math.round((this.protein / s) * 10) / 10,
+    carbs: Math.round((this.carbs / s) * 10) / 10,
+    fat: Math.round((this.fat / s) * 10) / 10
   };
 });
 
-// Static method to search recipes with advanced filters
-recipeSchema.statics.searchRecipes = function(query: string, filters?: any) {
-  const searchQuery: any = { isPublic: true };
-
-  if (query) {
-    searchQuery.$text = { $search: query };
-  }
-
-  if (filters) {
-    if (filters.category) {
-      searchQuery.category = filters.category;
-    }
-
-    if (filters.cuisine) {
-      searchQuery.cuisine = filters.cuisine;
-    }
-
-    if (filters.difficulty) {
-      searchQuery.difficulty = filters.difficulty;
-    }
-
-    if (filters.tags && filters.tags.length > 0) {
-      searchQuery.tags = { $in: filters.tags };
-    }
-
-    if (filters.dietaryRestrictions && filters.dietaryRestrictions.length > 0) {
-      searchQuery.dietaryRestrictions = { $in: filters.dietaryRestrictions };
-    }
-
-    if (filters.excludeAllergens && filters.excludeAllergens.length > 0) {
-      searchQuery.allergens = { $nin: filters.excludeAllergens };
-    }
-
-    if (filters.maxCalories) {
-      searchQuery['nutrition.calories'] = { $lte: filters.maxCalories };
-    }
-
-    if (filters.minCalories) {
-      searchQuery['nutrition.calories'] = { ...searchQuery['nutrition.calories'], $gte: filters.minCalories };
-    }
-
-    if (filters.minProtein) {
-      searchQuery['nutrition.protein'] = { $gte: filters.minProtein };
-    }
-
-    if (filters.maxPrepTime) {
-      searchQuery.prepTime = { $lte: filters.maxPrepTime };
-    }
-
-    if (filters.maxCookTime) {
-      searchQuery.cookTime = { $lte: filters.maxCookTime };
-    }
-
-    if (filters.minRating) {
-      searchQuery['rating.average'] = { $gte: filters.minRating };
-    }
-
-    if (filters.isPremium !== undefined) {
-      searchQuery.isPremium = filters.isPremium;
-    }
-  }
-
-  const sortOptions: any = {};
-  if (filters?.sortBy) {
-    switch (filters.sortBy) {
-      case 'rating':
-        sortOptions['rating.average'] = -1;
-        break;
-      case 'popular':
-        sortOptions.usageCount = -1;
-        break;
-      case 'newest':
-        sortOptions.createdAt = -1;
-        break;
-      case 'prepTime':
-        sortOptions.prepTime = 1;
-        break;
-      case 'calories':
-        sortOptions['nutrition.calories'] = 1;
-        break;
-      default:
-        sortOptions.createdAt = -1;
-    }
-  } else {
-    sortOptions.createdAt = -1;
-  }
-
-  return this.find(searchQuery)
-    .sort(sortOptions)
+// Static: Simple search
+recipeSchema.statics.searchRecipes = function(
+  query: string,
+  filters: {
+    category?: string;
+    mealType?: string;
+    cuisine?: string;
+    difficulty?: string;
+    dietTypes?: string[];
+    dietaryRestrictions?: string[];
+    excludeAllergens?: string[];
+    maxCalories?: number;
+    minProtein?: number;
+    isTemplate?: boolean;
+    isPremium?: boolean;
+    limit?: number;
+    skip?: number;
+    sortBy?: string;
+  } = {}
+) {
+  const match: any = { isActive: true };
+  
+  if (query) match.$text = { $search: query };
+  if (filters.category) match.category = filters.category;
+  if (filters.mealType) match.mealType = filters.mealType;
+  if (filters.cuisine) match.cuisine = filters.cuisine;
+  if (filters.difficulty) match.difficulty = filters.difficulty;
+  if (filters.dietTypes?.length) match.dietTypes = { $in: filters.dietTypes };
+  if (filters.dietaryRestrictions?.length) match.dietaryRestrictions = { $in: filters.dietaryRestrictions };
+  if (filters.excludeAllergens?.length) match.allergens = { $nin: filters.excludeAllergens };
+  if (filters.maxCalories) match.calories = { $lte: filters.maxCalories };
+  if (filters.minProtein) match.protein = { $gte: filters.minProtein };
+  if (filters.isTemplate !== undefined) match.isTemplate = filters.isTemplate;
+  if (filters.isPremium !== undefined) match.isPremium = filters.isPremium;
+  
+  const sortOptions: Record<string, any> = {
+    rating: { rating: -1 },
+    popular: { usageCount: -1 },
+    newest: { createdAt: -1 },
+    calories: { calories: 1 }
+  };
+  
+  return this.find(match)
+    .sort(sortOptions[filters.sortBy || 'newest'] || { createdAt: -1 })
+    .limit(filters.limit || 20)
+    .skip(filters.skip || 0)
     .populate('createdBy', 'firstName lastName')
-    .limit(filters?.limit || 20)
-    .skip(filters?.skip || 0);
+    .lean();
 };
 
-// Method to get similar recipes
+// Static: Get diet plan templates
+recipeSchema.statics.getDietTemplates = function(mealType?: string) {
+  const query: any = { isActive: true, isTemplate: true };
+  if (mealType) query.mealType = mealType;
+  
+  return this.find(query)
+    .sort({ usageCount: -1 })
+    .lean();
+};
+
+// Static: Bulk import from CSV/JSON
+recipeSchema.statics.bulkImport = async function(
+  recipes: Partial<IRecipe>[],
+  createdBy: mongoose.Types.ObjectId
+) {
+  const docs = recipes.map(r => ({
+    ...r,
+    createdBy,
+    // Handle ingredients - already objects, just validate/parse if needed
+    ingredients: Array.isArray(r.ingredients) 
+      ? r.ingredients.map((ing: any) => 
+          typeof ing === 'string' 
+            ? { name: ing, quantity: 1, unit: 'piece' }
+            : ing
+        )
+      : [],
+    instructions: Array.isArray(r.instructions) 
+      ? r.instructions 
+      : String(r.instructions || '').split('|').filter(Boolean),
+    tags: Array.isArray(r.tags) 
+      ? r.tags 
+      : String(r.tags || '').split(',').map(t => t.trim()).filter(Boolean),
+    dietTypes: Array.isArray(r.dietTypes) 
+      ? r.dietTypes 
+      : String(r.dietTypes || '').split(',').map(t => t.trim()).filter(Boolean),
+    // Ensure numbers (handle CSV string imports)
+    prepTime: Number(r.prepTime) || 0,
+    cookTime: Number(r.cookTime) || 0,
+    servings: Number(r.servings) || 2,
+    calories: Number(r.calories) || 0,
+    protein: Number(r.protein) || 0,
+    carbs: Number(r.carbs) || 0,
+    fat: Number(r.fat) || 0
+  }));
+  
+  return this.insertMany(docs, { ordered: false });
+};
+
+// Static: Export for CSV
+recipeSchema.statics.exportForCSV = async function(filter: any = {}) {
+  const recipes = await this.find(filter).lean();
+  
+  return recipes.map((r: any) => ({
+    uuid: r.uuid,
+    name: r.name,
+    description: r.description,
+    category: r.category,
+    cuisine: r.cuisine,
+    mealType: r.mealType,
+    difficulty: r.difficulty,
+    prepTime: r.prepTime,
+    cookTime: r.cookTime,
+    totalTime: r.totalTime,
+    servings: r.servings,
+    servingSize: r.servingSize,
+    // Convert ingredients objects to pipe-delimited string for CSV
+    ingredients: r.ingredients?.map((ing: any) => `${ing.quantity}|${ing.unit}|${ing.name}|${ing.remarks || ''}`).join('\n') || '',
+    instructions: r.instructions?.join('|') || '',
+    tags: r.tags?.join(',') || '',
+    dietTypes: r.dietTypes?.join(',') || '',
+    allergens: r.allergens?.join(',') || '',
+    calories: r.calories,
+    protein: r.protein,
+    carbs: r.carbs,
+    fat: r.fat,
+    image: r.image,
+    isTemplate: r.isTemplate,
+    rating: r.rating,
+    usageCount: r.usageCount
+  }));
+};
+
+// Static: Get similar recipes
 recipeSchema.statics.getSimilarRecipes = function(recipeId: string, limit = 5) {
   return this.findById(recipeId).then((recipe: any) => {
     if (!recipe) return [];
-
+    
     return this.find({
       _id: { $ne: recipeId },
+      isActive: true,
       isPublic: true,
       $or: [
         { category: recipe.category },
         { cuisine: recipe.cuisine },
-        { tags: { $in: recipe.tags } },
-        { dietaryRestrictions: { $in: recipe.dietaryRestrictions } }
+        { tags: { $in: recipe.tags || [] } },
+        { dietTypes: { $in: recipe.dietTypes || [] } }
       ]
     })
-    .sort({ 'rating.average': -1, usageCount: -1 })
+    .sort({ rating: -1, usageCount: -1 })
     .limit(limit)
-    .populate('createdBy', 'firstName lastName');
+    .populate('createdBy', 'firstName lastName')
+    .lean();
   });
 };
 
-// Method to get trending recipes
+// Static: Get trending recipes
 recipeSchema.statics.getTrendingRecipes = function(limit = 10) {
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
+  
   return this.find({
+    isActive: true,
     isPublic: true,
     createdAt: { $gte: oneWeekAgo }
   })
-  .sort({ usageCount: -1, 'rating.average': -1 })
+  .sort({ usageCount: -1, rating: -1 })
   .limit(limit)
-  .populate('createdBy', 'firstName lastName');
+  .populate('createdBy', 'firstName lastName')
+  .lean();
 };
 
-// Ensure virtual fields are serialized
-recipeSchema.set('toJSON', {
-  virtuals: true
-});
+// Clear cached model to prevent conflicts
+if (mongoose.models.Recipe) {
+  delete mongoose.models.Recipe;
+}
 
-const Recipe = mongoose.models.Recipe || mongoose.model<IRecipe>('Recipe', recipeSchema);
+const Recipe = mongoose.model<IRecipe>('Recipe', recipeSchema);
 
 export default Recipe;

@@ -2,103 +2,60 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import connectDB from '@/lib/db/connection';
 import PaymentLink from '@/lib/db/models/PaymentLink';
-import { ClientPurchase } from '@/lib/db/models/ServicePlan';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { PaymentStatus, PaymentType } from '@/types';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { clearCacheByTag } from '@/lib/api/utils';
 import { SSEManager } from '@/lib/realtime/sse-manager';
 
-// Helper function to create ClientPurchase from PaymentLink
-async function createClientPurchaseFromPaymentLink(paymentLink: any): Promise<any> {
+// Helper function to create/update UnifiedPayment from PaymentLink
+// Uses syncRazorpayPayment to UPDATE existing or CREATE new (NO DUPLICATES)
+async function createUnifiedPaymentFromPaymentLink(paymentLink: any): Promise<any> {
   try {
-    // Check if ClientPurchase already exists
-    const existingPurchase = await ClientPurchase.findOne({
-      client: paymentLink.client,
-      razorpayPaymentId: paymentLink.razorpayPaymentId
-    });
-
-    if (existingPurchase) {
-      return existingPurchase;
-    }
-
     const startDate = new Date();
     const endDate = new Date();
     const durationDays = paymentLink.durationDays || 30;
     endDate.setDate(endDate.getDate() + durationDays);
 
-    const purchase = new ClientPurchase({
-      client: paymentLink.client,
-      dietitian: paymentLink.dietitian,
-      servicePlan: paymentLink.servicePlan,
-      planName: paymentLink.planName || paymentLink.description || 'Diet Plan',
-      planCategory: paymentLink.planCategory || 'general',
-      durationDays: durationDays,
-      durationLabel: paymentLink.duration || `${durationDays} Days`,
-      selectedTier: {
+    const unifiedPayment = await UnifiedPayment.syncRazorpayPayment(
+      { paymentLink: paymentLink._id },
+      {
+        client: paymentLink.client,
+        dietitian: paymentLink.dietitian,
+        servicePlan: paymentLink.servicePlanId || paymentLink.servicePlan,
+        paymentLink: paymentLink._id,
+        paymentType: 'service_plan',
+        planName: paymentLink.planName || paymentLink.description || 'Diet Plan',
+        planCategory: paymentLink.planCategory || 'general-wellness',
         durationDays: durationDays,
         durationLabel: paymentLink.duration || `${durationDays} Days`,
-        amount: paymentLink.finalAmount || paymentLink.amount
-      },
-      startDate,
-      endDate,
-      status: 'active',
-      paymentStatus: 'paid',
-      paymentMethod: paymentLink.paymentMethod || 'razorpay',
-      razorpayPaymentId: paymentLink.razorpayPaymentId,
-      razorpayOrderId: paymentLink.razorpayOrderId,
-      paidAt: paymentLink.paidAt || new Date(),
-      mealPlanCreated: false
-    });
+        baseAmount: paymentLink.amount,
+        discountPercent: paymentLink.discount || 0,
+        taxPercent: paymentLink.tax || 0,
+        finalAmount: paymentLink.finalAmount || paymentLink.amount,
+        currency: paymentLink.currency || 'INR',
+        status: 'paid',
+        paymentStatus: 'paid',
+        paymentMethod: paymentLink.paymentMethod || 'razorpay',
+        razorpayPaymentLinkId: paymentLink.razorpayPaymentLinkId,
+        razorpayPaymentId: paymentLink.razorpayPaymentId,
+        razorpayOrderId: paymentLink.razorpayOrderId,
+        transactionId: paymentLink.razorpayPaymentId || paymentLink.razorpayPaymentLinkId,
+        payerEmail: paymentLink.payerEmail,
+        payerPhone: paymentLink.payerPhone,
+        purchaseDate: new Date(),
+        startDate,
+        endDate,
+        paidAt: paymentLink.paidAt || new Date(),
+        mealPlanCreated: false,
+        daysUsed: 0
+      }
+    );
 
-    await purchase.save();
-    return purchase;
+    return unifiedPayment;
   } catch (error) {
-    console.error('Error creating ClientPurchase:', error);
-    return null;
-  }
-}
-
-// Helper function to create Payment record from PaymentLink
-async function createPaymentRecordFromLink(paymentLink: any): Promise<any> {
-  try {
-    // Check if Payment record already exists
-    const existingPayment = await Payment.findOne({
-      paymentLink: paymentLink._id
-    });
-
-    if (existingPayment) {
-      return existingPayment;
-    }
-
-    const paymentRecord = new Payment({
-      client: paymentLink.client,
-      dietitian: paymentLink.dietitian,
-      type: PaymentType.SERVICE_PLAN,
-      amount: paymentLink.finalAmount || paymentLink.amount,
-      currency: paymentLink.currency || 'INR',
-      status: PaymentStatus.COMPLETED,
-      paymentMethod: paymentLink.paymentMethod || 'razorpay',
-      transactionId: paymentLink.razorpayPaymentId || paymentLink.razorpayPaymentLinkId,
-      description: `Payment for ${paymentLink.planName || 'Service Plan'} - ${paymentLink.duration || paymentLink.durationDays + ' Days'}`,
-      planName: paymentLink.planName,
-      planCategory: paymentLink.planCategory,
-      durationDays: paymentLink.durationDays,
-      durationLabel: paymentLink.duration || `${paymentLink.durationDays} Days`,
-      paymentLink: paymentLink._id,
-      payerEmail: paymentLink.payerEmail,
-      payerPhone: paymentLink.payerPhone,
-      razorpayPaymentId: paymentLink.razorpayPaymentId,
-      razorpayOrderId: paymentLink.razorpayOrderId,
-      paidAt: paymentLink.paidAt || new Date(),
-      mealPlanCreated: false
-    });
-
-    await paymentRecord.save();
-    return paymentRecord;
-  } catch (error) {
-    console.error('Error creating Payment record:', error);
+    console.error('Error creating UnifiedPayment:', error);
     return null;
   }
 }
@@ -158,15 +115,13 @@ export async function POST(request: NextRequest) {
       paymentLink.razorpayPaymentId = paymentId;
       await paymentLink.save();
 
-      // Create ClientPurchase record so dietitian can see in Planning section
-      const purchase = await createClientPurchaseFromPaymentLink(paymentLink);
-      
-      // Create Payment record for accounting
-      const payment = await createPaymentRecordFromLink(paymentLink);
+      // Create/Update UnifiedPayment record (UPDATE existing, NO DUPLICATES)
+      const unifiedPayment = await createUnifiedPaymentFromPaymentLink(paymentLink);
 
       // Invalidate caches so payment sections update without manual refresh.
       clearCacheByTag('payment_links');
       clearCacheByTag('payments');
+      clearCacheByTag('client_purchases');
 
       // Realtime notify: admin + involved client + involved dietitian
       try {
@@ -182,11 +137,11 @@ export async function POST(request: NextRequest) {
           status: paymentLink.status,
           paidAt: paymentLink.paidAt,
         });
-        if (payment) {
+        if (unifiedPayment) {
           sse.sendToUsers(Array.from(notifyUserIds), 'payment_updated', {
-            paymentId: String(payment._id),
-            status: payment.status,
-            paidAt: payment.paidAt,
+            paymentId: String(unifiedPayment._id),
+            status: unifiedPayment.status,
+            paidAt: unifiedPayment.paidAt,
             paymentLinkId: String(paymentLink._id),
           });
         }

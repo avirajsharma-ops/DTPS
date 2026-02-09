@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import User from '@/lib/db/models/User';
 import Razorpay from 'razorpay';
 import { getPaymentCallbackUrl } from '@/lib/config';
@@ -51,20 +51,21 @@ export async function POST(request: NextRequest) {
     // Get dietitian if assigned (optional now)
     let dietitianId = client.assignedDietitian || null;
 
-    // Create payment record (dietitian is optional)
-    const payment = new Payment({
+    // Create payment record using UnifiedPayment (dietitian is optional)
+    const payment = new UnifiedPayment({
       client: session.user.id,
       ...(dietitianId && { dietitian: dietitianId }),
-      type: 'service_plan',
-      amount: amount,
+      paymentType: 'service_plan',
+      baseAmount: amount,
+      finalAmount: amount,
       currency: 'INR',
       status: 'pending',
+      paymentStatus: 'pending',
       paymentMethod: 'razorpay',
       planName: planName || 'Service Plan',
       planCategory: planCategory || 'general-wellness',
       durationDays: durationDays || 30,
       durationLabel: durationLabel || '1 Month',
-      description: `${planName} - ${durationLabel}`,
       payerEmail: client.email,
       payerPhone: client.phone
     });

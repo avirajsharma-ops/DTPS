@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import User from '@/lib/db/models/User';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       `client:billing:${JSON.stringify({
       client: session.user.id
     })}`,
-      async () => await Payment.find({
+      async () => await UnifiedPayment.find({
       client: session.user.id
     })
       .populate('dietitian', 'firstName lastName')

@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import dbConnect from '@/lib/db/connect';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
-import { ClientPurchase } from '@/lib/db/models/ServicePlan';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { addDays, format, differenceInDays, startOfDay, parseISO } from 'date-fns';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
@@ -361,9 +361,9 @@ export async function POST(
 
     await mealPlan.save();
 
-    // Also update ClientPurchase end date and expected end date to keep in sync
-    await ClientPurchase.updateOne(
-      { mealPlanId: mealPlan._id },
+    // Also update UnifiedPayment end date and expected end date to keep in sync
+    await UnifiedPayment.updateOne(
+      { mealPlan: mealPlan._id },
       { $set: { endDate: newEndDate } }
     );
 
@@ -371,12 +371,12 @@ export async function POST(
     if (purchaseId) {
       const purchase = await withCache(
       `client-meal-plans:id:freeze:${JSON.stringify(purchaseId)}`,
-      async () => await ClientPurchase.findById(purchaseId),
+      async () => await UnifiedPayment.findById(purchaseId),
       { ttl: 120000, tags: ['client_meal_plans'] }
     );
       if (purchase && purchase.expectedEndDate) {
         const newExpectedEndDate = addDays(new Date(purchase.expectedEndDate), validFreezeDates.length);
-        await ClientPurchase.updateOne(
+        await UnifiedPayment.updateOne(
           { _id: purchaseId },
           { 
             $set: { 
@@ -526,9 +526,9 @@ export async function DELETE(
 
     await mealPlan.save();
 
-    // Also update ClientPurchase end date to keep in sync
-    await ClientPurchase.updateOne(
-      { mealPlanId: mealPlan._id },
+    // Also update UnifiedPayment end date to keep in sync
+    await UnifiedPayment.updateOne(
+      { mealPlan: mealPlan._id },
       { $set: { endDate: newEndDate } }
     );
 

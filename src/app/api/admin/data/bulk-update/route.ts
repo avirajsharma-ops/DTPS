@@ -1,9 +1,10 @@
 /**
  * API Route: Bulk Update Records
- * PUT /api/admin/data/bulk-update - Update multiple records by _id
+ * PUT /api/admin/data/bulk-update - Update multiple records by _id or uuid
  * 
- * Accepts an array of records, each must have _id field
+ * Accepts an array of records, each must have _id OR uuid field
  * Updates fields based on the data provided in each record
+ * For Recipe model: supports uuid-based identification and tracks update history
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,14 +16,78 @@ import mongoose from 'mongoose';
 
 export const runtime = 'nodejs';
 
+/**
+ * Parse Python-style string arrays to proper JSON arrays
+ * Handles strings like "[{'name': 'value', ...}]"
+ */
+function parsePythonStyleArray(value: any): any {
+  if (typeof value !== 'string') return value;
+  
+  // Check if it looks like a Python-style array with single quotes
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return value;
+  
+  // Check if it contains Python-style single quotes for strings
+  if (trimmed.includes("{'") || trimmed.includes("': '") || trimmed.includes("', '")) {
+    try {
+      // Replace Python-style quotes with JSON-style quotes
+      // Handle various Python patterns:
+      // 1. {'key': 'value'} -> {"key": "value"}
+      // 2. 'key': value -> "key": value
+      // 3. None -> null
+      // 4. True/False -> true/false
+      
+      let jsonStr = trimmed
+        // Replace single quotes around keys and string values
+        .replace(/'/g, '"')
+        // Fix numbers that got quoted (e.g., "90.0" should stay as number)
+        .replace(/"(\d+\.?\d*)"/g, '$1')
+        // Handle Python None
+        .replace(/: None/g, ': null')
+        .replace(/: True/g, ': true')
+        .replace(/: False/g, ': false');
+      
+      const parsed = JSON.parse(jsonStr);
+      return parsed;
+    } catch (e) {
+      // If parsing fails, try a more aggressive approach
+      try {
+        // Use Function constructor to safely evaluate Python-like syntax
+        const sanitized = trimmed
+          .replace(/'/g, '"')
+          .replace(/None/g, 'null')
+          .replace(/True/g, 'true')
+          .replace(/False/g, 'false');
+        return JSON.parse(sanitized);
+      } catch (e2) {
+        // Return original if all parsing fails
+        console.error('Failed to parse Python-style array:', e2);
+        return value;
+      }
+    }
+  }
+  
+  // Try parsing as regular JSON
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+}
+
 interface UpdateRecord {
-  _id: string;
+  _id?: string;
+  uuid?: string;
   [key: string]: any;
 }
 
 interface UpdateError {
   id: string;
   error: string;
+  errorDetails?: string;
+  errorCode?: string;
+  uuid?: string;
+  _id?: string;
 }
 
 export async function PUT(request: NextRequest) {
@@ -37,7 +102,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { modelName, records } = body as { modelName: string; records: UpdateRecord[] };
+    const { modelName, records, reason } = body as { modelName: string; records: UpdateRecord[]; reason?: string };
 
     // Validation
     if (!modelName) {
@@ -54,11 +119,11 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Validate all records have _id
-    const invalidRecords = records.filter(r => !r._id);
+    // Validate all records have _id OR uuid (for Recipe model)
+    const invalidRecords = records.filter(r => !r._id && !r.uuid);
     if (invalidRecords.length > 0) {
       return NextResponse.json(
-        { success: false, error: `${invalidRecords.length} records missing _id field` },
+        { success: false, error: `${invalidRecords.length} records missing _id or uuid field` },
         { status: 400 }
       );
     }
@@ -76,114 +141,236 @@ export async function PUT(request: NextRequest) {
 
     const Model = registeredModel.model;
     const schemaFields = registeredModel.fields.map(f => f.path);
+    const isRecipeModel = modelName.toLowerCase() === 'recipe';
     
     // Process updates
     let updatedCount = 0;
     let failedCount = 0;
+    let noChangesCount = 0;
     const errors: UpdateError[] = [];
+    const updateResults: any[] = [];
 
-    // Use bulk operations for efficiency
-    const bulkOps = [];
+    // For Recipe model with uuid, process individually to track changes
+    if (isRecipeModel) {
+      for (const record of records) {
+        const { _id, uuid, ...updateData } = record;
+        const identifier = uuid || _id || 'unknown';
+        
+        try {
+          // Use ONLY the identifier provided - don't mix uuid and _id
+          let recipe;
+          
+          if (_id) {
+            // Use _id if provided - ignore uuid
+            if (mongoose.Types.ObjectId.isValid(_id)) {
+              recipe = await Model.findById(_id);
+            }
+          } else if (uuid) {
+            // Use uuid only if _id is NOT provided
+            const uuidStr = String(uuid);
+            const uuidNum = isNaN(Number(uuid)) ? null : Number(uuid);
+            
+            recipe = await Model.findOne({
+              $or: [
+                { uuid: uuidStr },
+                ...(uuidNum !== null ? [{ uuid: uuidNum }] : [])
+              ]
+            });
+          }
 
-    for (const record of records) {
-      const { _id, ...updateData } = record;
-      
-      // Validate ObjectId format
-      if (!mongoose.Types.ObjectId.isValid(_id)) {
-        errors.push({ id: _id, error: 'Invalid ObjectId format' });
-        failedCount++;
-        continue;
+          if (!recipe) {
+            errors.push({ 
+              id: String(identifier),
+              error: 'Recipe not found with this identifier',
+              errorCode: 'RECIPE_NOT_FOUND',
+              uuid: uuid || undefined,
+              _id: _id || undefined
+            });
+            failedCount++;
+            continue;
+          }
+
+          // Track changes for update history
+          const changedFields: any[] = [];
+          const cleanedData: Record<string, any> = {};
+
+          for (const [key, value] of Object.entries(updateData)) {
+            if (key.startsWith('_') || key === 'createdAt' || key === '__v' || key === 'updates') continue;
+            
+            const schemaField = schemaFields.find(sf => sf.toLowerCase() === key.toLowerCase());
+            if (!schemaField) continue;
+
+            const oldValue = (recipe as any)[schemaField];
+            let newValue = value;
+
+            // Handle special cases
+            if (newValue === '' || newValue === null || newValue === 'null') {
+              newValue = null;
+            } else if (newValue === 'true') newValue = true;
+            else if (newValue === 'false') newValue = false;
+            else if (typeof newValue === 'string') {
+              // Parse Python-style arrays (ingredients, instructions, etc.)
+              newValue = parsePythonStyleArray(newValue);
+            }
+
+            // Only track if value changed
+            if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+              changedFields.push({
+                fieldName: schemaField,
+                oldValue: oldValue,
+                newValue: newValue,
+                timestamp: new Date()
+              });
+              cleanedData[schemaField] = newValue;
+            }
+          }
+
+          if (Object.keys(cleanedData).length === 0) {
+            updateResults.push({ id: identifier, status: 'no_changes' });
+            noChangesCount++;
+            continue;
+          }
+
+          // Add update record with change tracking
+          const updateRecord = {
+            changedFields,
+            updatedBy: new mongoose.Types.ObjectId(session.user.id),
+            reason: reason || 'Bulk update via admin data',
+            timestamp: new Date(),
+            ...(isRecipeModel && {
+              recipeIdentifiers: {
+                uuid: String(recipe.uuid),
+                _id: String(recipe._id)
+              }
+            })
+          };
+
+          const existingUpdates = (recipe.updates as any) || [];
+          cleanedData.updates = [...existingUpdates, updateRecord];
+          cleanedData.updatedAt = new Date();
+
+          const updated = await Model.findByIdAndUpdate(
+            recipe._id,
+            { $set: cleanedData },
+            { new: true }
+          );
+
+          const lastUpdate = updated?.updates?.[updated.updates.length - 1];
+          updateResults.push({
+            id: identifier,
+            _id: String(updated?._id),
+            ...(isRecipeModel && { uuid: String(recipe.uuid) }),
+            status: 'success',
+            updateId: lastUpdate?.updateId,
+            changedFields: changedFields.map((f: any) => f.fieldName)
+          });
+          updatedCount++;
+
+        } catch (error: any) {
+          errors.push({ 
+            id: String(identifier), 
+            error: 'Update failed',
+            errorDetails: error.message || 'Unknown error',
+            errorCode: error.code || 'UNKNOWN_ERROR',
+            uuid: uuid || undefined,
+            _id: _id || undefined
+          });
+          failedCount++;
+        }
       }
+    } else {
+      // Use bulk operations for non-Recipe models
+      const bulkOps = [];
 
-      // Clean update data - only include fields that exist in schema
-      const cleanedData: Record<string, any> = {};
-      for (const [key, value] of Object.entries(updateData)) {
-        // Skip internal fields
-        if (key.startsWith('_') || key === 'createdAt' || key === '__v') {
+      for (const record of records) {
+        const { _id, uuid, ...updateData } = record;
+        const identifier = _id || uuid;
+        
+        // For non-Recipe models, require valid ObjectId
+        if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
+          errors.push({ id: identifier || 'unknown', error: 'Invalid ObjectId format' });
+          failedCount++;
           continue;
         }
-        
-        // Check if field exists in schema (case-insensitive)
-        const schemaField = schemaFields.find(sf => 
-          sf.toLowerCase() === key.toLowerCase()
-        );
-        
-        if (schemaField) {
-          // Handle special cases
-          if (value === '' || value === null || value === 'null') {
-            cleanedData[schemaField] = null;
-          } else if (value === 'true' || value === true) {
-            cleanedData[schemaField] = true;
-          } else if (value === 'false' || value === false) {
-            cleanedData[schemaField] = false;
+
+        // Clean update data - only include fields that exist in schema
+        const cleanedData: Record<string, any> = {};
+        for (const [key, value] of Object.entries(updateData)) {
+          if (key.startsWith('_') || key === 'createdAt' || key === '__v') continue;
+          
+          const schemaField = schemaFields.find(sf => sf.toLowerCase() === key.toLowerCase());
+          
+          if (schemaField) {
+            if (value === '' || value === null || value === 'null') {
+              cleanedData[schemaField] = null;
+            } else if (value === 'true' || value === true) {
+              cleanedData[schemaField] = true;
+            } else if (value === 'false' || value === false) {
+              cleanedData[schemaField] = false;
+            } else {
+              cleanedData[schemaField] = value;
+            }
+          }
+        }
+
+        if (Object.keys(cleanedData).length === 0) {
+          errors.push({ id: _id, error: 'No valid fields to update' });
+          failedCount++;
+          continue;
+        }
+
+        cleanedData.updatedAt = new Date();
+
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: new mongoose.Types.ObjectId(_id) },
+            update: { $set: cleanedData }
+          }
+        });
+      }
+
+      // Execute bulk operations
+      if (bulkOps.length > 0) {
+        try {
+          const result = await Model.bulkWrite(bulkOps, { ordered: false });
+          updatedCount = result.modifiedCount;
+          
+          if (result.matchedCount < bulkOps.length) {
+            const notFoundCount = bulkOps.length - result.matchedCount;
+            failedCount += notFoundCount;
+            errors.push({ 
+              id: 'multiple', 
+              error: `${notFoundCount} records not found in database` 
+            });
+          }
+        } catch (bulkError: any) {
+          if (bulkError.writeErrors) {
+            for (const writeError of bulkError.writeErrors) {
+              const failedId = records[writeError.index]?._id || 'unknown';
+              errors.push({ id: failedId, error: writeError.errmsg || 'Write error' });
+              failedCount++;
+            }
+            updatedCount = bulkError.result?.nModified || 0;
           } else {
-            cleanedData[schemaField] = value;
+            throw bulkError;
           }
-        }
-      }
-
-      // Skip if no valid fields to update
-      if (Object.keys(cleanedData).length === 0) {
-        errors.push({ id: _id, error: 'No valid fields to update' });
-        failedCount++;
-        continue;
-      }
-
-      // Add updatedAt timestamp
-      cleanedData.updatedAt = new Date();
-
-      bulkOps.push({
-        updateOne: {
-          filter: { _id: new mongoose.Types.ObjectId(_id) },
-          update: { $set: cleanedData }
-        }
-      });
-    }
-
-    // Execute bulk operations
-    if (bulkOps.length > 0) {
-      try {
-        const result = await Model.bulkWrite(bulkOps, { ordered: false });
-        updatedCount = result.modifiedCount;
-        
-        // Check for records that weren't found
-        const notModified = bulkOps.length - result.modifiedCount - result.matchedCount + result.modifiedCount;
-        if (notModified > 0) {
-          // Some records might have had no changes
-        }
-        
-        // Track records not found
-        if (result.matchedCount < bulkOps.length) {
-          const notFoundCount = bulkOps.length - result.matchedCount;
-          failedCount += notFoundCount;
-          errors.push({ 
-            id: 'multiple', 
-            error: `${notFoundCount} records not found in database` 
-          });
-        }
-      } catch (bulkError: any) {
-        // Handle bulk write errors
-        if (bulkError.writeErrors) {
-          for (const writeError of bulkError.writeErrors) {
-            const failedId = records[writeError.index]?._id || 'unknown';
-            errors.push({ id: failedId, error: writeError.errmsg || 'Write error' });
-            failedCount++;
-          }
-          updatedCount = bulkError.result?.nModified || 0;
-        } else {
-          throw bulkError;
         }
       }
     }
 
-    console.log(`[BulkUpdate] Model: ${modelName}, Updated: ${updatedCount}, Failed: ${failedCount}`);
+    console.log(`[BulkUpdate] Model: ${modelName}, Updated: ${updatedCount}, Failed: ${failedCount}, NoChanges: ${noChangesCount}`);
 
     return NextResponse.json({
       success: true,
       message: `Bulk update completed`,
-      updated: updatedCount,
-      failed: failedCount,
-      total: records.length,
+      modelName,
+      summary: {
+        total: records.length,
+        updated: updatedCount,
+        failed: failedCount,
+        noChanges: noChangesCount
+      },
+      ...(isRecipeModel && { updateResults: updateResults.slice(0, 100) }),
       errors: errors.slice(0, 50) // Limit errors to prevent huge response
     });
 
@@ -233,6 +420,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const isRecipeModel = modelName.toLowerCase() === 'recipe';
+
     // Get fields for template
     const fields = registeredModel.fields
       .filter(f => !f.path.startsWith('_') && f.path !== 'createdAt' && f.path !== '__v')
@@ -247,8 +436,19 @@ export async function GET(request: NextRequest) {
       modelName,
       displayName: registeredModel.displayName,
       fields,
-      requiredIdField: '_id',
-      instructions: 'Upload a file with _id column and any fields you want to update. Only matching records will be updated.'
+      requiredIdField: isRecipeModel ? 'uuid or _id' : '_id',
+      supportsUuid: isRecipeModel,
+      instructions: isRecipeModel 
+        ? 'Upload a file with uuid OR _id column and any fields you want to update. Recipe updates are tracked with unique updateIds for audit purposes.'
+        : 'Upload a file with _id column and any fields you want to update. Only matching records will be updated.',
+      ...(isRecipeModel && {
+        recipeNotes: [
+          'Use uuid (e.g., "10", "11") to identify recipes - preferred for CSV updates',
+          'Each update generates a unique updateId for tracking',
+          'All field changes are recorded in update history',
+          'Include a "reason" field in your request to document why changes were made'
+        ]
+      })
     });
 
   } catch (error: any) {

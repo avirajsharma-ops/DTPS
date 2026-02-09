@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
-import { ClientPurchase } from '@/lib/db/models/ServicePlan';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { UserRole } from '@/types';
 import { logActivity } from '@/lib/utils/activityLogger';
 import { adminSSEManager } from '@/lib/realtime/admin-sse-manager';
@@ -180,15 +180,15 @@ export async function PATCH(
       { new: true }
     );
 
-    // Sync dietitian assignment to ClientPurchase records
+    // Sync dietitian assignment to UnifiedPayment records
     // This ensures the user dashboard shows correct dietitian status
     const dietitianToSync = updatedClient.assignedDietitian;
     if (dietitianToSync) {
       // Update all active purchases for this client with the assigned dietitian
-      await ClientPurchase.updateMany(
+      await UnifiedPayment.updateMany(
         { 
-          user: updatedClient._id,
-          status: { $in: ['active', 'pending', 'on_hold'] }
+          client: updatedClient._id,
+          status: { $in: ['active', 'pending', 'on_hold', 'paid'] }
         },
         { 
           $set: { dietitian: dietitianToSync } 

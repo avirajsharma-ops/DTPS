@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import Stripe from 'stripe';
@@ -42,18 +42,17 @@ export async function GET(request: NextRequest) {
 
     // Add status filter
     if (status) {
-      query.status = status;
+      query.paymentStatus = status;
     }
 
-    const payments = await Payment.find(query)
+    const payments = await UnifiedPayment.find(query)
       .populate('client', 'firstName lastName email')
       .populate('dietitian', 'firstName lastName email')
-      .populate('appointment', 'type scheduledAt')
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit);
 
-    const total = await Payment.countDocuments(query);
+    const total = await UnifiedPayment.countDocuments(query);
 
     const response = NextResponse.json({
       payments,
@@ -99,23 +98,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create payment record
-    const payment = new Payment({
-      client: session.user.id,
-      dietitian: dietitianId,
-      appointment: appointmentId,
-      amount,
-      currency,
-      description,
-      status: 'pending',
-      paymentMethod: 'stripe', // Default to Stripe
-      metadata: {
-        sessionId: session.user.id,
-        timestamp: new Date().toISOString()
+    // Create payment record using UnifiedPayment
+    const payment = await UnifiedPayment.syncRazorpayPayment(
+      { transactionId: `stripe_${Date.now()}_${session.user.id}` },
+      {
+        client: session.user.id,
+        dietitian: dietitianId,
+        paymentType: 'consultation',
+        finalAmount: amount,
+        baseAmount: amount,
+        discountPercent: 0,
+        taxPercent: 0,
+        currency: currency,
+        description: description,
+        status: 'pending',
+        paymentStatus: 'pending',
+        paymentMethod: 'stripe',
+        planName: description,
+        planCategory: 'consultation',
+        durationDays: 0,
+        durationLabel: 'One-time'
       }
-    });
-
-    await payment.save();
+    );
 
     // Newly created payments should show up immediately in payment lists.
     clearCacheByTag('payments');
@@ -210,26 +214,23 @@ export async function PUT(request: NextRequest) {
 
     await connectDB();
 
-    // Find payment by Stripe payment intent ID
-    const payment = await Payment.findOne({ stripePaymentIntentId: paymentIntentId });
+    // Find and update payment using syncRazorpayPayment
+    const payment = await UnifiedPayment.findOneAndUpdate(
+      { transactionId: { $regex: paymentIntentId } },
+      {
+        status: status === 'completed' ? 'paid' : status,
+        paymentStatus: status === 'completed' ? 'paid' : status,
+        paidAt: status === 'completed' ? new Date() : undefined
+      },
+      { new: true }
+    );
+    
     if (!payment) {
       return NextResponse.json(
         { error: 'Payment not found' },
         { status: 404 }
       );
     }
-
-    // Update payment status
-    payment.status = status;
-    if (status === 'completed') {
-      payment.paidAt = new Date();
-    }
-    
-    if (metadata) {
-      payment.metadata = { ...payment.metadata, ...metadata };
-    }
-
-    await payment.save();
 
     clearCacheByTag('payments');
 
@@ -255,8 +256,6 @@ export async function PUT(request: NextRequest) {
       description: `Payment status updated to ${status}`,
       metadata: {
         paymentId: payment._id,
-        appointmentId: payment.appointment,
-        dietitianId: payment.dietitian,
         status,
       },
     });
@@ -291,9 +290,9 @@ export async function PATCH(request: NextRequest) {
 
     const updateData: any = {};
     if (mealPlanCreated !== undefined) updateData.mealPlanCreated = mealPlanCreated;
-    if (mealPlanId) updateData.mealPlanId = mealPlanId;
+    if (mealPlanId) updateData.mealPlan = mealPlanId;
 
-    const payment = await Payment.findByIdAndUpdate(
+    const payment = await UnifiedPayment.findByIdAndUpdate(
       paymentId,
       updateData,
       { new: true }

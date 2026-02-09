@@ -1,7 +1,7 @@
 import mongoose, { Schema, Model, Document, Types } from 'mongoose';
 
 export interface IActivityAssignment extends Document {
-  _id: string;
+  _id: mongoose.Types.ObjectId;
   client: mongoose.Types.ObjectId;
   assignedBy: mongoose.Types.ObjectId;
   date: Date;

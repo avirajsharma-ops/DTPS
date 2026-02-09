@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
-import Payment from '@/lib/db/models/Payment';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import SubscriptionPlan from '@/lib/db/models/SubscriptionPlan';
 import User from '@/lib/db/models/User';
 import Razorpay from 'razorpay';
@@ -66,21 +66,21 @@ export async function POST(request: NextRequest) {
       durationDays = plan.duration * 30;
     }
 
-    // Create payment record
-    const payment = new Payment({
+    // Create payment record using UnifiedPayment
+    const payment = new UnifiedPayment({
       client: session.user.id,
       dietitian: client.assignedDietitian || plan.createdBy,
-      type: 'service_plan',
-      amount: plan.price,
+      paymentType: 'subscription',
+      baseAmount: plan.price,
+      finalAmount: plan.price,
       currency: plan.currency || 'INR',
       status: 'pending',
+      paymentStatus: 'pending',
       paymentMethod: 'razorpay',
       planName: plan.name,
       planCategory: plan.category,
       durationDays,
       durationLabel: `${plan.duration} ${plan.durationType}`,
-      description: plan.description || plan.name,
-      features: plan.features || [],
       payerEmail: client.email,
       payerPhone: client.phone
     });
