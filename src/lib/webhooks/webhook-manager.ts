@@ -105,7 +105,7 @@ export class WebhookManager {
           'X-Webhook-Signature': signature,
           'X-Webhook-Event': event.type,
           'X-Webhook-ID': event.id,
-          'User-Agent': 'Zoconut-Webhooks/1.0'
+          'User-Agent': 'DTPS-Webhooks/1.0'
         },
         body: payload,
         signal: AbortSignal.timeout(10000) // 10 second timeout
@@ -164,7 +164,7 @@ export class WebhookManager {
   static createEvent(
     type: WebhookEvent['type'], 
     data: any, 
-    source: string = 'zoconut-api'
+    source: string = 'dtps-api'
   ): WebhookEvent {
     return {
       id: crypto.randomUUID(),

@@ -74,7 +74,7 @@ const userSchema = new Schema({
     lowercase: true,
     trim: true
   },
-  zoconut_id: {
+  dtps_id: {
     type: String,
     trim: true,
     unique: true,

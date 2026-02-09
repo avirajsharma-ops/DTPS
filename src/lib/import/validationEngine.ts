@@ -615,7 +615,7 @@ export class ValidationEngine {
       'referralSource': ['referral_source', 'referred_by'],
       'alternativePhone': ['alternative_phone', 'alt_phone', 'secondary_phone'],
       'alternativeEmail': ['alternative_email', 'alt_email', 'secondary_email'],
-      'zoconut_id': ['zoconutid', 'zoconut'],
+      'dtps_id': ['dtpsid', 'dtps'],
       'avatar': ['profile_image', 'profile_picture', 'photo'],
       'bio': ['biography', 'about', 'description'],
       'experience': ['years_experience', 'exp', 'work_experience'],

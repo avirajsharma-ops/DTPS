@@ -527,7 +527,7 @@ export default function EnhancedFitnessTracker({ className = '', clientOnly = fa
                         <li><strong>Install Google Fit</strong> app on your phone</li>
                         <li><strong>Sign in</strong> with your Google account</li>
                         <li><strong>Connect your devices</strong> to Google Fit (see device-specific steps below)</li>
-                        <li><strong>Click "Connect Google Fit"</strong> in Zoconut</li>
+                        <li><strong>Click "Connect Google Fit"</strong> in DTPS</li>
                         <li><strong>Grant permissions</strong> and enjoy automatic sync!</li>
                       </ol>
                     </div>
