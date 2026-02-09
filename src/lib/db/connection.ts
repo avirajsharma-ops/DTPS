@@ -60,25 +60,25 @@ const connectionOptions: mongoose.ConnectOptions = {
   // Buffer commands when disconnected - mongoose will auto-reconnect
   bufferCommands: true,
   
-  // Timeouts - be patient but not too patient
-  serverSelectionTimeoutMS: 45000,  // 45s to find a server
-  socketTimeoutMS: 45000,           // 45s socket timeout
-  connectTimeoutMS: 30000,          // 30s to establish connection
+  // Timeouts — keep tight for faster failure detection
+  serverSelectionTimeoutMS: 15000,  // 15s to find a server
+  socketTimeoutMS: 30000,           // 30s socket timeout
+  connectTimeoutMS: 15000,          // 15s to establish connection
   
   // Force IPv4 - helps with some DNS issues
   family: 4,
   
-  // Connection pool settings
-  maxPoolSize: 50,                  // Max connections in pool
-  minPoolSize: 5,                   // Keep some connections ready
-  maxIdleTimeMS: 60000,             // Close idle connections after 1 min
+  // Connection pool — right-sized for Atlas shared tier
+  maxPoolSize: 10,                  // Avoid exhausting Atlas connection limits
+  minPoolSize: 2,                   // Keep 2 connections warm
+  maxIdleTimeMS: 30000,             // Close idle connections after 30s
   
   // Retry settings (MongoDB driver handles these)
   retryWrites: true,
   retryReads: true,
   
   // Heartbeat to detect dead connections
-  heartbeatFrequencyMS: 10000,      // Check every 10s
+  heartbeatFrequencyMS: 15000,      // Check every 15s (reduce overhead)
   
   // Auto-index in development only
   autoIndex: process.env.NODE_ENV !== 'production',

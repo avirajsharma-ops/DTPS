@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       }
     } else if (session.user.role === UserRole.CLIENT) {
       // Clients can see only their assigned dietitian
-      const currentUser = await User.findById(session.user.id).select('assignedDietitian');
+      const currentUser = await User.findById(session.user.id).select('assignedDietitian').lean();
 
       if (currentUser?.assignedDietitian) {
         // Show only assigned dietitian
@@ -96,7 +96,8 @@ export async function GET(request: NextRequest) {
           .select(selectFields)
           .sort({ createdAt: -1 })
           .limit(limit)
-          .skip((page - 1) * limit);
+          .skip((page - 1) * limit)
+          .lean();
 
         const total = await User.countDocuments(query);
 
@@ -115,10 +116,9 @@ export async function GET(request: NextRequest) {
     // For admin users, we need to manually serialize to include passwords
     let serializedUsers;
     if (session.user.role === UserRole.ADMIN) {
-      serializedUsers = users.map(user => {
-        const userObj = user.toObject();
+      serializedUsers = users.map((user: any) => {
         return {
-          ...userObj,
+          ...user,
           password: user.password // Explicitly include password for admin
         };
       });

@@ -86,7 +86,8 @@ export async function GET(request: NextRequest) {
       .populate('receiver', 'firstName lastName avatar')
       .sort({ createdAt: 1 }) // Sort oldest first for proper chat order
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)
+      .lean();
 
     const total = await Message.countDocuments(query);
 

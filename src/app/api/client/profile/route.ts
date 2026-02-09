@@ -50,7 +50,8 @@ export async function GET() {
           .select(
             "name firstName lastName email phone dateOfBirth gender address city state pincode profileImage avatar createdAt heightCm weightKg targetWeightKg activityLevel generalGoal dietType alternativeEmail alternativePhone anniversary source referralSource assignedDietitian bmi bmiCategory height weight"
           )
-          .populate('assignedDietitian', 'firstName lastName email phone');
+          .populate('assignedDietitian', 'firstName lastName email phone')
+          .lean();
 
         if (!user) {
           return null;
@@ -81,7 +82,7 @@ export async function GET() {
         }
 
         return { 
-          ...user.toObject(),
+          ...user,
           bmi,
           bmiCategory
         };
@@ -136,7 +137,7 @@ export async function PUT(request: Request) {
     
     if (isWeightOrHeightUpdated) {
       // Get current user data to calculate BMI with new values
-      const currentUser = await User.findById(session.user.id).select('weightKg heightCm');
+      const currentUser = await User.findById(session.user.id).select('weightKg heightCm').lean();
       
       const finalWeightKg = parseFloat(data.weightKg !== undefined ? String(data.weightKg) : currentUser?.weightKg || '0');
       const finalHeightCm = parseFloat(data.heightCm !== undefined ? String(data.heightCm) : currentUser?.heightCm || '0');

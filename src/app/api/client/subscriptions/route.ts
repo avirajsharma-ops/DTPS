@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
       type: { $in: ['service_plan', 'subscription', 'consultation'] }
     })
       .populate('dietitian', 'firstName lastName')
-      .sort({ createdAt: -1 }),
+      .sort({ createdAt: -1 })
+      .lean(),
       { ttl: 120000, tags: ['client'] }
     );
 

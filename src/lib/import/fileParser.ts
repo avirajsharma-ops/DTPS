@@ -5,7 +5,14 @@
  * for model detection and validation.
  */
 
-import * as XLSX from 'xlsx';
+// Lazy-load xlsx (~300KB) only when actually needed
+let _XLSX: typeof import('xlsx') | null = null;
+async function getXLSX() {
+  if (!_XLSX) {
+    _XLSX = await import('xlsx');
+  }
+  return _XLSX;
+}
 
 // ============================================
 // TYPE DEFINITIONS
@@ -96,6 +103,7 @@ export class FileParser {
     fileName: string
   ): Promise<ParseResult> {
     const content = await this.getFileContent(file);
+    const XLSX = await getXLSX();
     const workbook = XLSX.read(content, { type: 'string', raw: false });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
@@ -111,6 +119,7 @@ export class FileParser {
     fileName: string
   ): Promise<ParseResult> {
     const buffer = await this.getFileBuffer(file);
+    const XLSX = await getXLSX();
     const workbook = XLSX.read(buffer, { type: 'buffer', raw: false, cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
@@ -243,12 +252,13 @@ export class FileParser {
   /**
    * Parse an Excel/CSV sheet
    */
-  private parseSheet(
-    sheet: XLSX.WorkSheet,
+  private async parseSheet(
+    sheet: any,
     fileName: string,
     fileType: 'csv' | 'excel'
-  ): ParseResult {
+  ): Promise<ParseResult> {
     // Use XLSX to convert sheet to array format where first row is headers
+    const XLSX = await getXLSX();
     const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, {
       raw: false,
       defval: ''
@@ -665,10 +675,11 @@ export class FileGenerator {
   /**
    * Generate an Excel buffer from data
    */
-  static generateExcel(
+  static async generateExcel(
     data: Record<string, any>[],
     sheetName: string = 'Sheet1'
-  ): Buffer {
+  ): Promise<Buffer> {
+    const XLSX = await getXLSX();
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);

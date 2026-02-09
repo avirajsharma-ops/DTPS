@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     if (clientId) {
       const requestedClient = await User.findById(clientId).select(
         '_id role assignedDietitian assignedDietitians assignedHealthCounselor'
-      );
+      ).lean();
       if (!requestedClient) {
         return NextResponse.json({ error: 'Client not found' }, { status: 404 });
       }
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
           { assignedDietitian: session.user.id },
           { assignedDietitians: session.user.id }
         ]
-      }).select('_id');
+      }).select('_id').lean();
       const assignedClientIds = assignedClients.map(c => c._id);
       
       // Dietitian can see appointments they created OR for their assigned clients
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       const assignedClients = await User.find({
         role: UserRole.CLIENT,
         assignedHealthCounselor: session.user.id
-      }).select('_id');
+      }).select('_id').lean();
       const assignedClientIds = assignedClients.map(c => c._id);
       
       // Health counselor can see appointments for their assigned clients
@@ -158,7 +158,8 @@ export async function GET(request: NextRequest) {
           .populate('client', 'firstName lastName email avatar')
           .sort({ scheduledAt: 1 })
           .limit(limit)
-          .skip((page - 1) * limit);
+          .skip((page - 1) * limit)
+          .lean();
 
         const total = await Appointment.countDocuments(query);
         return { appointments, total };

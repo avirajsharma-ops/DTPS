@@ -203,7 +203,7 @@ export default withAuth(
           '/client-auth/error',
         ];
         
-        // Exact match for home page
+        // Home page now handles its own redirect (server component)
         if (pathname === '/') {
           return true;
         }

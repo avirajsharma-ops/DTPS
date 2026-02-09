@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
       .populate('receiver', 'firstName lastName avatar role')
       .sort({ createdAt: 1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)
+      .lean();
 
     const total = await Message.countDocuments(query);
 

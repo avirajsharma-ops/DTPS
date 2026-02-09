@@ -107,19 +107,32 @@ export async function GET(request: NextRequest) {
 
 
     // Populate user details for conversation partners
-    const conversationList = await Promise.all(
-      conversations.map(async (conv) => {
-        const user = await User.findById(conv._id).select('firstName lastName avatar role');
+    // Batch-fetch all conversation partner users in one query instead of N+1
+    const convIds = conversations.map((c: any) => c._id);
+    const users = await User.find({ _id: { $in: convIds } })
+      .select('firstName lastName avatar role assignedDietitian assignedDietitians assignedHealthCounselor')
+      .lean();
+    const userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
+
+    // Pre-fetch current user's assignment data once (not per conversation)
+    let currentUserAssignments: any = null;
+    if (sessionRole === 'client') {
+      currentUserAssignments = await User.findById(session.user.id)
+        .select('assignedDietitian assignedDietitians')
+        .lean();
+    }
+
+    const conversationList = conversations.map((conv: any) => {
+        const user = userMap.get(conv._id.toString());
         if (!user) {
           return null;
         }
 
         // For clients, only show conversations with their assigned dietitians
-        if (sessionRole === 'client') {
-          const currentUser = await User.findById(session.user.id).select('assignedDietitian assignedDietitians');
+        if (sessionRole === 'client' && currentUserAssignments) {
           const assignedIds = [
-            ...(currentUser?.assignedDietitian ? [currentUser.assignedDietitian.toString()] : []),
-            ...(currentUser?.assignedDietitians?.map((d: any) => d.toString()) || [])
+            ...(currentUserAssignments?.assignedDietitian ? [currentUserAssignments.assignedDietitian.toString()] : []),
+            ...(currentUserAssignments?.assignedDietitians?.map((d: any) => d.toString()) || [])
           ];
           if (assignedIds.length > 0 && !assignedIds.includes(user._id.toString())) {
             return null; // Skip conversations with non-assigned dietitians
@@ -129,11 +142,10 @@ export async function GET(request: NextRequest) {
         // For dietitians/HC, only show conversations with their assigned clients
         if (sessionRole === 'dietitian' || sessionRole === 'health_counselor') {
           if (user.role === 'client') {
-            const clientUser = await User.findById(user._id).select('assignedDietitian assignedDietitians assignedHealthCounselor');
             const isAssignedAsDietitian = 
-              clientUser?.assignedDietitian?.toString() === session.user.id ||
-              clientUser?.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
-            const isAssignedAsHealthCounselor = clientUser?.assignedHealthCounselor?.toString() === session.user.id;
+              user.assignedDietitian?.toString() === session.user.id ||
+              user.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
+            const isAssignedAsHealthCounselor = user.assignedHealthCounselor?.toString() === session.user.id;
             
             if (!isAssignedAsDietitian && !isAssignedAsHealthCounselor) {
               return null; // Skip conversations with non-assigned clients
@@ -143,13 +155,13 @@ export async function GET(request: NextRequest) {
 
         return {
           user: {
-            ...user.toObject(),
+            ...user,
             _id: user._id.toString()
           },
           lastMessage: conv.lastMessage,
           unreadCount: conv.unreadCount
         };
-      })
+      }
     );
 
     // Filter out null entries (users not found or not assigned)
