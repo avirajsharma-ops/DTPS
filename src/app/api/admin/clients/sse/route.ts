@@ -30,6 +30,16 @@ export async function GET(request: NextRequest) {
         let closed = false;
         let heartbeatInterval: NodeJS.Timeout;
 
+        const enqueue = (message: string) => {
+          if (closed) return;
+          try {
+            controller.enqueue(encoder.encode(message));
+          } catch (error) {
+            closed = true;
+            throw error;
+          }
+        };
+
         // Create a writer for this connection
         const writer = {
           write: (chunk: Uint8Array) => {
@@ -49,7 +59,7 @@ export async function GET(request: NextRequest) {
         } as unknown as WritableStreamDefaultWriter;
 
         // Set browser auto-retry to 5s
-        controller.enqueue(encoder.encode(`retry: 5000\n\n`));
+        enqueue(`retry: 5000\n\n`);
 
         // Send initial connection message
         const welcomeMessage = `event: connected\ndata: ${JSON.stringify({
@@ -58,7 +68,7 @@ export async function GET(request: NextRequest) {
           connectionId,
           timestamp: Date.now()
         })}\n\n`;
-        controller.enqueue(encoder.encode(welcomeMessage));
+        enqueue(welcomeMessage);
 
         // Store connection using the manager
         adminSSEManager.addConnection(connectionId, userId, writer);
@@ -106,7 +116,7 @@ export async function GET(request: NextRequest) {
             },
             timestamp: Date.now()
           })}\n\n`;
-          controller.enqueue(encoder.encode(initialDataMessage));
+          enqueue(initialDataMessage);
         } catch (error) {
           console.error('Error fetching initial clients data:', error);
         }
@@ -117,7 +127,7 @@ export async function GET(request: NextRequest) {
             const heartbeatMessage = `event: heartbeat\ndata: ${JSON.stringify({
               timestamp: Date.now()
             })}\n\n`;
-            controller.enqueue(encoder.encode(heartbeatMessage));
+            enqueue(heartbeatMessage);
           } catch (error) {
             clearInterval(heartbeatInterval);
             adminSSEManager.removeConnection(connectionId);

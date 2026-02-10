@@ -282,18 +282,15 @@ const unifiedPaymentSchema = new Schema<IUnifiedPayment>({
   // ========== RAZORPAY DETAILS ==========
   razorpayOrderId: {
     type: String,
-    trim: true,
-    sparse: true
+    trim: true
   },
   razorpayPaymentId: {
     type: String,
-    trim: true,
-    sparse: true
+    trim: true
   },
   razorpayPaymentLinkId: {
     type: String,
-    trim: true,
-    sparse: true
+    trim: true
   },
   razorpayPaymentLinkUrl: {
     type: String,
@@ -307,8 +304,7 @@ const unifiedPaymentSchema = new Schema<IUnifiedPayment>({
   // ========== TRANSACTION DETAILS ==========
   transactionId: {
     type: String,
-    trim: true,
-    sparse: true
+    trim: true
   },
   paymentMethod: {
     type: String,

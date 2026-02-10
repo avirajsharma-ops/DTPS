@@ -38,12 +38,15 @@ import {
   Wifi,
   WifiOff,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Mail,
+  Phone
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { getClientId } from '@/lib/utils';
+import { ProfessionalSection } from '@/components/admin/ProfessionalGrid';
 
 interface Client {
   _id: string;
@@ -1110,8 +1113,8 @@ export default function AdminAllClientsPage() {
 
         {/* Assignment Dialog */}
         <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>Manage Professionals</DialogTitle>
               <DialogDescription>
                 {selectedClient && (
@@ -1122,7 +1125,7 @@ export default function AdminAllClientsPage() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 overflow-y-auto flex-1 pr-2">
               {/* Summary Section */}
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -1437,7 +1440,7 @@ export default function AdminAllClientsPage() {
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="flex-shrink-0 border-t pt-4">
               <Button
                 variant="outline"
                 onClick={() => setAssignDialogOpen(false)}
@@ -1691,93 +1694,43 @@ export default function AdminAllClientsPage() {
                   </div>
                 )}
 
-                {/* Assigned Professionals */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-gray-900 border-b pb-2">Assigned Professionals</h3>
-                  <div className="space-y-3">
-                    {/* Dietitians */}
-                    {(() => {
-                      const allDietitians: { _id: string; firstName: string; lastName: string; email: string; avatar?: string }[] = [];
-                      if (detailClient.assignedDietitian) {
-                        allDietitians.push(detailClient.assignedDietitian);
+                {/* Assigned Professionals - Improved Responsive Grid */}
+                {(() => {
+                  const allDietitians: any[] = [];
+                  if (detailClient.assignedDietitian) {
+                    allDietitians.push(detailClient.assignedDietitian);
+                  }
+                  if (detailClient.assignedDietitians && detailClient.assignedDietitians.length > 0) {
+                    detailClient.assignedDietitians.forEach((d: any) => {
+                      if (!allDietitians.find(existing => existing._id === d._id)) {
+                        allDietitians.push(d);
                       }
-                      if (detailClient.assignedDietitians && detailClient.assignedDietitians.length > 0) {
-                        detailClient.assignedDietitians.forEach(d => {
-                          if (!allDietitians.find(existing => existing._id === d._id)) {
-                            allDietitians.push(d);
-                          }
-                        });
-                      }
-                      
-                      if (allDietitians.length > 0) {
-                        return (
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Dietitians ({allDietitians.length})</p>
-                            <div className="space-y-2">
-                              {allDietitians.map((dietitian) => (
-                                <div key={dietitian._id} className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src={dietitian.avatar} />
-                                    <AvatarFallback className="bg-green-200 text-green-800 text-xs">
-                                      {dietitian.firstName?.[0]}{dietitian.lastName?.[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-900">{dietitian.firstName} {dietitian.lastName}</p>
-                                    <p className="text-xs text-gray-500">{dietitian.email}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      } else {
-                        return <p className="text-sm text-gray-500">No dietitian assigned</p>;
-                      }
-                    })()}
+                    });
+                  }
 
-                    {/* Health Counselors */}
-                    {(() => {
-                      const allHealthCounselors: { _id: string; firstName: string; lastName: string; email: string; avatar?: string }[] = [];
-                      if (detailClient.assignedHealthCounselor) {
-                        allHealthCounselors.push(detailClient.assignedHealthCounselor);
+                  const allHealthCounselors: any[] = [];
+                  if (detailClient.assignedHealthCounselor) {
+                    allHealthCounselors.push(detailClient.assignedHealthCounselor);
+                  }
+                  if (detailClient.assignedHealthCounselors && detailClient.assignedHealthCounselors.length > 0) {
+                    detailClient.assignedHealthCounselors.forEach((hc: any) => {
+                      if (!allHealthCounselors.find(existing => existing._id === hc._id)) {
+                        allHealthCounselors.push(hc);
                       }
-                      if (detailClient.assignedHealthCounselors && detailClient.assignedHealthCounselors.length > 0) {
-                        detailClient.assignedHealthCounselors.forEach(hc => {
-                          if (!allHealthCounselors.find(existing => existing._id === hc._id)) {
-                            allHealthCounselors.push(hc);
-                          }
-                        });
-                      }
-                      
-                      if (allHealthCounselors.length > 0) {
-                        return (
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Health Counselors ({allHealthCounselors.length})</p>
-                            <div className="space-y-2">
-                              {allHealthCounselors.map((hc) => (
-                                <div key={hc._id} className="flex items-center gap-2 p-2 bg-purple-50 rounded border border-purple-200">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src={hc.avatar} />
-                                    <AvatarFallback className="bg-purple-200 text-purple-800 text-xs">
-                                      {hc.firstName?.[0]}{hc.lastName?.[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-900">{hc.firstName} {hc.lastName}</p>
-                                    <p className="text-xs text-gray-500">{hc.email}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      } else {
-                        return <p className="text-sm text-gray-500">No health counselor assigned</p>;
-                      }
-                    })()}
-                  </div>
-                </div>
+                    });
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-gray-900 border-b pb-2">Assigned Professionals</h3>
+                      <ProfessionalSection
+                        dietitians={allDietitians}
+                        healthCounselors={allHealthCounselors}
+                        compact={false}
+                      />
+                    </div>
+                  );
+                })()}
 
                 {/* Timestamps */}
                 <div className="space-y-2 text-xs text-gray-500 border-t pt-4">

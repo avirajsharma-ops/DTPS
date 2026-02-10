@@ -267,6 +267,12 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
             description: 'Manage recipe database'
           },
           {
+            href: '/admin/diet-templates',
+            label: 'Diet Templates',
+            icon: FileText,
+            description: 'Manage diet templates by creator'
+          },
+          {
             href: '/analytics',
             label: 'Analytics',
             icon: TrendingUp,
