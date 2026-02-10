@@ -467,9 +467,6 @@ export class ValidationEngine {
     let modelConfidence: number = 0;
     let matchResults: ModelMatchResult[] = [];
 
-    console.log(`[ValidateRow] Starting validation for row ${row.rowIndex}`);
-    console.log(`[ValidateRow] Row data keys: ${Object.keys(row.data).join(', ')}`);
-
     if (forceModel) {
       // Use the forced model
       const model = modelRegistry.get(forceModel);
@@ -489,35 +486,10 @@ export class ValidationEngine {
       // Detect model automatically
       matchResults = modelRegistry.detectModel(row.data);
       
-      console.log(`[ValidateRow] Row ${row.rowIndex} - Checked ${matchResults.length} models`);
-      console.log(`[ValidateRow] Row ${row.rowIndex} detection results:`, {
-        totalModels: matchResults.length,
-        topModel: matchResults[0]?.modelName,
-        topConfidence: matchResults[0]?.confidence,
-        threshold: this.modelConfidenceThreshold,
-        topMatched: matchResults[0]?.matchedFields.length,
-        topMissing: matchResults[0]?.missingRequired.length,
-        topExtra: matchResults[0]?.extraFields.length,
-        rowFieldsCount: Object.keys(row.data).length
-      });
-      
-      // Log all model attempts for debugging
-      console.log(`[ValidateRow] All model match attempts for row ${row.rowIndex}:`);
-      matchResults.slice(0, 5).forEach((m, i) => {
-        const status = m.confidence >= this.modelConfidenceThreshold ? '✓' : '✗';
-        console.log(`  ${status} ${i+1}. ${m.modelName}: ${m.confidence.toFixed(1)}%`);
-      });
-      if (matchResults.length > 5) {
-        console.log(`  ... and ${matchResults.length - 5} more models`);
-      }
-      
       if (matchResults.length > 0 && 
           matchResults[0].confidence >= this.modelConfidenceThreshold) {
         detectedModel = matchResults[0].modelName;
         modelConfidence = matchResults[0].confidence;
-        console.log(`[ValidateRow] ✅ Row ${row.rowIndex} MATCHED to ${detectedModel} with confidence ${modelConfidence.toFixed(1)}%`);
-      } else {
-        console.log(`[ValidateRow] ❌ Row ${row.rowIndex} UNMATCHED - best: ${matchResults[0]?.modelName}(${matchResults[0]?.confidence.toFixed(1)}%) < threshold ${this.modelConfidenceThreshold}%`);
       }
     }
 
@@ -559,11 +531,6 @@ export class ValidationEngine {
       value: e.value,
       errorType: this.categorizeError(e.message)
     }));
-
-    // Add warnings for unmapped fields if any
-    if (unmappedFields.length > 0) {
-      console.log(`[ValidateRow] Row ${row.rowIndex} has ${unmappedFields.length} unmapped fields: ${unmappedFields.join(', ')}`);
-    }
 
     return {
       rowIndex: row.rowIndex,
@@ -639,8 +606,6 @@ export class ValidationEngine {
         for (const key of flatIngredientKeys) {
           delete processedData[key];
         }
-        
-        console.log(`[CleanRowData] Reassembled ${sortedIngredients.length} flattened ingredients into array`);
       }
       
       // Similarly handle flattened instructions if needed
@@ -668,8 +633,6 @@ export class ValidationEngine {
         for (const key of flatInstructionKeys) {
           delete processedData[key];
         }
-        
-        console.log(`[CleanRowData] Reassembled ${sortedInstructions.length} flattened instructions into array`);
       }
     }
 

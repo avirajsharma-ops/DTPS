@@ -294,7 +294,6 @@ export class FileParser {
     // Clean headers
     const headers = rawHeaders.map((h, i) => {
       const cleaned = this.cleanHeader(String(h || `column_${i}`));
-      console.log(`[FileParser-Header] "${h}" -> "${cleaned}"`);
       return cleaned || `column_${i}`;
     });
 
@@ -319,13 +318,6 @@ export class FileParser {
         });
       }
     });
-
-    console.log(`\n[FileParser] ===== PARSING COMPLETE =====`);
-    console.log(`[FileParser] Total raw headers: ${rawHeaders.length}`);
-    console.log(`[FileParser] Raw headers: ${rawHeaders.join(', ')}`);
-    console.log(`[FileParser] Cleaned headers: ${headers.join(', ')}`);
-    console.log(`[FileParser] Parsed ${rows.length} data rows from ${fileName}`);
-    console.log(`[FileParser] ===== END PARSING =====\n`);
 
     return {
       success: true,
@@ -480,14 +472,11 @@ export class FileParser {
 
     // Don't convert to camelCase if it has brackets or dots (preserve original structure)
     if (cleaned.includes('[') || cleaned.includes('.')) {
-      console.log(`[cleanHeader] "${header}" -> "${cleaned}" (preserved notation)`);
       return cleaned;
     }
 
     // Convert snake_case to camelCase only for simple fields
     let camelCased = this.snakeToCamelCase(cleaned);
-    
-    console.log(`[cleanHeader] "${header}" -> "${cleaned}" -> "${camelCased}"`);
     
     return camelCased;
   }

@@ -6,8 +6,6 @@
  */
 
 import mongoose from 'mongoose';
-import * as fs from 'fs';
-import * as path from 'path';
 import { modelRegistry } from './modelRegistry';
 import { validationEngine, ValidationError } from './validationEngine';
 import { FileGenerator } from './fileParser';
@@ -62,49 +60,8 @@ export interface ImportSession {
   savedCounts?: Record<string, number>;
 }
 
-// In-memory session storage with file persistence
+// In-memory session storage (no file persistence)
 let sessions: Map<string, ImportSession> = new Map();
-const SESSIONS_FILE = path.join(process.cwd(), '.tmp', 'import-sessions.json');
-
-// Ensure .tmp directory exists
-function ensureSessionsDir() {
-  const dir = path.dirname(SESSIONS_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
-
-// Load sessions from file on startup
-function loadSessions() {
-  try {
-    ensureSessionsDir();
-    if (fs.existsSync(SESSIONS_FILE)) {
-      const data = fs.readFileSync(SESSIONS_FILE, 'utf-8');
-      const sessionsData = JSON.parse(data);
-      sessions = new Map(Object.entries(sessionsData));
-      console.log(`[DataImport] Loaded ${sessions.size} sessions from disk`);
-      return;
-    }
-  } catch (error) {
-    console.error('[DataImport] Failed to load sessions from file:', error);
-  }
-  sessions = new Map();
-}
-
-// Save sessions to file
-function saveSessions() {
-  try {
-    ensureSessionsDir();
-    const sessionsData = Object.fromEntries(sessions);
-    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessionsData, null, 2), 'utf-8');
-    console.log(`[DataImport] Saved ${sessions.size} sessions to disk`);
-  } catch (error) {
-    console.error('[DataImport] Failed to save sessions to file:', error);
-  }
-}
-
-// Load sessions on startup
-loadSessions();
 
 // ============================================
 // DATA IMPORT SERVICE CLASS
@@ -126,9 +83,6 @@ export class DataImportService {
     };
 
     sessions.set(session.id, session);
-    saveSessions(); // Persist to disk
-    console.log(`[DataImport] ✅ Created session ${session.id} for file: ${fileName}`);
-    console.log(`[DataImport] Total sessions now: ${sessions.size}`);
     return session;
   }
 
@@ -136,15 +90,7 @@ export class DataImportService {
    * Get a session by ID
    */
   getSession(sessionId: string): ImportSession | undefined {
-    const session = sessions.get(sessionId);
-    if (!session) {
-      console.error(`[DataImport] ❌ Session ${sessionId} not found`);
-      console.error(`[DataImport] Available session IDs: ${Array.from(sessions.keys()).join(', ') || 'NONE'}`);
-      console.error(`[DataImport] Total sessions: ${sessions.size}`);
-    } else {
-      console.log(`[DataImport] ✅ Retrieved session ${sessionId}`);
-    }
-    return session;
+    return sessions.get(sessionId);
   }
 
   /**
@@ -191,7 +137,6 @@ export class DataImportService {
     session.status = 'validated';
 
     sessions.set(sessionId, session);
-    saveSessions(); // Persist to disk
     return session;
   }
 
@@ -215,21 +160,16 @@ export class DataImportService {
   }> {
     const session = sessions.get(sessionId);
     if (!session) {
-      console.error(`[DataImport] Session ${sessionId} not found for row update`);
       return { success: false, row: null, sessionCanSave: false };
     }
 
     const group = session.modelGroups.find(g => g.modelName === modelName);
     if (!group) {
-      console.error(`[DataImport] Model group ${modelName} not found in session ${sessionId}`);
-      console.error(`[DataImport] Available models: ${session.modelGroups.map(g => g.modelName).join(', ')}`);
       return { success: false, row: null, sessionCanSave: false };
     }
 
     const rowIdx = group.rows.findIndex(r => r.rowIndex === rowIndex);
     if (rowIdx === -1) {
-      console.error(`[DataImport] Row ${rowIndex} not found in model ${modelName}`);
-      console.error(`[DataImport] Available rows: ${group.rows.map(r => r.rowIndex).join(', ')}`);
       return { success: false, row: null, sessionCanSave: false };
     }
 
@@ -319,9 +259,6 @@ export class DataImportService {
     // Check if session can now be saved
     session.canSave = this.checkCanSave(session);
     sessions.set(sessionId, session);
-    saveSessions(); // Persist to disk
-
-    console.log(`[DataImport] Row ${rowIndex} updated in session ${sessionId}, isValid: ${updatedRow.isValid}`);
 
     return {
       success: true,
@@ -369,7 +306,6 @@ export class DataImportService {
     // Check if session can now be saved
     session.canSave = this.checkCanSave(session);
     sessions.set(sessionId, session);
-    saveSessions(); // Persist to disk
 
     return {
       success: true,
@@ -402,7 +338,6 @@ export class DataImportService {
     // Check if session can now be saved
     session.canSave = this.checkCanSave(session);
     sessions.set(sessionId, session);
-    saveSessions(); // Persist to disk
 
     return {
       success: true,
@@ -552,9 +487,6 @@ export class DataImportService {
       session.savedAt = new Date();
       session.savedCounts = savedCounts;
       sessions.set(sessionId, session);
-      saveSessions(); // Persist to disk
-
-      console.log(`[DataImport] Successfully saved ${totalSaved} records`);
 
       return {
         success: true,
@@ -567,7 +499,6 @@ export class DataImportService {
 
     } catch (error: any) {
       // Transaction automatically rolls back on error
-      console.error(`[DataImport] Save failed:`, error);
       return {
         success: false,
         savedCounts: {},
@@ -601,7 +532,6 @@ export class DataImportService {
     session.unmatchedRows = [];
     session.canSave = false;
     sessions.set(sessionId, session);
-    saveSessions(); // Persist to disk
     
     return true;
   }
@@ -610,11 +540,7 @@ export class DataImportService {
    * Delete a session completely
    */
   deleteSession(sessionId: string): boolean {
-    const deleted = sessions.delete(sessionId);
-    if (deleted) {
-      saveSessions(); // Persist to disk
-    }
-    return deleted;
+    return sessions.delete(sessionId);
   }
 
   /**
