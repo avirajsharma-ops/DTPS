@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { UserRole, UserStatus } from "@/types";
 import { toast } from "sonner";
+import { useDataRefresh, emitDataChange, DataEventTypes } from "@/lib/events/useDataRefresh";
 
 interface HealthCounselor {
   _id: string;
@@ -78,6 +79,9 @@ export default function AdminHealthCounselorsPage() {
     fetchHealthCounselors();
   }, [search]);
 
+  // Subscribe to real-time health counselors updates
+  useDataRefresh(DataEventTypes.HEALTH_COUNSELORS_UPDATED, () => fetchHealthCounselors(), [search]);
+
   function openCreate() {
     setEditing(null);
     setForm({ 
@@ -140,12 +144,16 @@ export default function AdminHealthCounselorsPage() {
   }
 
   async function handleStatusToggle(id: string, currentStatus: string) {
-    const action = currentStatus === 'active' ? 'deactivate' : 'activate';
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const action = newStatus === 'active' ? 'activate' : 'deactivate';
+    
     if (!confirm(`Are you sure you want to ${action} this health counselor?`)) return;
 
     try {
       const response = await fetch(`/api/users/${id}`, {
-        method: 'DELETE'
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
       });
 
       if (!response.ok) {
@@ -153,9 +161,17 @@ export default function AdminHealthCounselorsPage() {
         throw new Error(data.error || `Failed to ${action} health counselor`);
       }
 
-      const actionPast = currentStatus === 'active' ? 'deactivated' : 'activated';
+      const updatedHC = await response.json();
+      setHealthCounselors(prev => prev.map(hc => hc._id === id ? updatedHC.user : hc));
+      
+      const actionPast = newStatus === 'active' ? 'activated' : 'deactivated';
       toast.success(`Health counselor ${actionPast} successfully`);
-      fetchHealthCounselors();
+      
+      // Emit event for real-time updates
+      emitDataChange(DataEventTypes.HEALTH_COUNSELORS_UPDATED);
+      
+      // Refresh list
+      await fetchHealthCounselors();
     } catch (e: any) {
       toast.error(e?.message || 'Failed to update health counselor status');
     }

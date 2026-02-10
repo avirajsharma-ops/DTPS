@@ -23,6 +23,32 @@ import { clearCacheByTag } from '@/lib/api/utils';
 export const runtime = 'nodejs';
 
 /**
+ * Parse servings string to extract numeric value
+ * Examples:
+ *   "2.5 SMALL BOWL (500 gm/ml)" -> 2.5
+ *   "1/2 TSP ( 2.5 gm/ml )" -> 0.5
+ */
+function parseServingsToNumber(servingsStr: string | number): number {
+  if (typeof servingsStr === 'number') return servingsStr;
+
+  const str = String(servingsStr).trim();
+  const match = str.match(/^[\s]*([0-9]+(?:\/[0-9]+)?(?:\.[0-9]+)?)/);
+  if (match && match[1]) {
+    const qStr = match[1];
+    if (qStr.includes('/')) {
+      const [numerator, denominator] = qStr.split('/').map(Number);
+      if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+        return numerator / denominator;
+      }
+    } else {
+      const num = parseFloat(qStr);
+      if (!isNaN(num)) return num;
+    }
+  }
+  return 1;
+}
+
+/**
  * Parse Python-style string arrays to proper JSON arrays
  * Handles strings like "[{'name': 'value', ...}]"
  */
@@ -92,8 +118,28 @@ function normalizeFieldValue(field: string, value: any): any {
   
   // Numeric fields
   if (['prepTime', 'cookTime', 'servings'].includes(field)) {
-    const num = parseInt(value);
-    return isNaN(num) ? value : num;
+    if (typeof value === 'number') return value;
+    
+    // Extract numeric part from strings like "1.5 TSP ( 7.5 gm/ml )" or "1/2 TSP ( 2.5 gm/ml )"
+    if (typeof value === 'string') {
+      // Try to extract first number (decimal, integer, or fraction)
+      // Match patterns like: 1.5, 2, 1/2, 3/4, etc.
+      const match = value.match(/^[\s]*([0-9]+(?:\/[0-9]+)?(?:\.[0-9]+)?)/);
+      if (match && match[1]) {
+        let num: number;
+        if (match[1].includes('/')) {
+          // Handle fraction like "1/2" or "3/4"
+          const [numerator, denominator] = match[1].split('/').map(Number);
+          num = numerator / denominator;
+        } else {
+          num = parseFloat(match[1]);
+        }
+        return isNaN(num) ? null : num;
+      }
+      return null;
+    }
+    
+    return null;
   }
 
   // Parse arrays if they are strings
@@ -210,8 +256,19 @@ function parseCSV(csvContent: string): UpdateRecord[] {
       
       // Parse numbers for numeric fields
       if (['prepTime', 'cookTime', 'servings'].includes(header) && typeof parsedValue === 'string') {
-        const numValue = parseFloat(parsedValue);
-        if (!isNaN(numValue)) parsedValue = numValue;
+        // Extract first number from strings like "1.5 TSP ( 7.5 gm/ml )" or "1/2 TSP ( 2.5 gm/ml )"
+        const match = parsedValue.match(/^[\s]*([0-9]+(?:\/[0-9]+)?(?:\.[0-9]+)?)/);
+        if (match && match[1]) {
+          let numValue: number;
+          if (match[1].includes('/')) {
+            // Handle fraction like "1/2" or "3/4"
+            const [numerator, denominator] = match[1].split('/').map(Number);
+            numValue = numerator / denominator;
+          } else {
+            numValue = parseFloat(match[1]);
+          }
+          if (!isNaN(numValue)) parsedValue = numValue;
+        }
       }
       
       record[header] = parsedValue;
@@ -334,6 +391,14 @@ export async function PUT(request: NextRequest) {
           // Parse and normalize field values
           let newValue = parsePythonStyleArray(rawValue);
           newValue = normalizeFieldValue(key, newValue);
+          
+          // Special handling for servings: extract number, keep full string
+          if (key === 'servings' && rawValue !== undefined) {
+            updatePayload['servings'] = parseServingsToNumber(rawValue);
+            updatePayload['servingSize'] = typeof rawValue === 'string' ? rawValue.trim() : `${rawValue} serving${rawValue !== 1 ? 's' : ''}`;
+            changedFields.push('servings', 'servingSize');
+            continue;
+          }
           
           // Only include if value actually changed
           if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
@@ -506,6 +571,14 @@ export async function POST(request: NextRequest) {
           // Parse and normalize field values
           let newValue = parsePythonStyleArray(rawValue);
           newValue = normalizeFieldValue(key, newValue);
+          
+          // Special handling for servings: extract number, keep full string
+          if (key === 'servings' && rawValue !== undefined) {
+            updatePayload['servings'] = parseServingsToNumber(rawValue);
+            updatePayload['servingSize'] = typeof rawValue === 'string' ? rawValue.trim() : `${rawValue} serving${rawValue !== 1 ? 's' : ''}`;
+            changedFields.push('servings', 'servingSize');
+            continue;
+          }
           
           // Only include if value actually changed
           if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {

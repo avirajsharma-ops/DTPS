@@ -100,9 +100,18 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     return { cal, carbs, protein, fats, fiber };
   };
 
-  // Generate HTML table structure
+  // Generate HTML table structure with date sorting
   const generateHTMLContent = useCallback((showMacros: boolean = true) => {
     const today = format(new Date(), 'dd MMM yyyy');
+    
+    // Sort days by actual date if available
+    const sortedDays = [...weekPlan].sort((a, b) => {
+      if (a.date && b.date) {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
+      return weekPlan.indexOf(a) - weekPlan.indexOf(b);
+    });
+    
     const includeMacrosStyle = showMacros ? '' : `
     .macro-cell { display: none !important; }
     thead tr th:nth-child(3),
@@ -187,7 +196,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     </div>
     ` : ''}
 
-    ${weekPlan.map((day, dayIndex) => {
+    ${sortedDays.map((day, dayIndex) => {
       const totals = calculateDayTotals(day);
       const hasData = Object.keys(day.meals).length > 0;
       
@@ -289,11 +298,11 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
           <div class="summary-label">Meals Per Day</div>
         </div>
         <div class="summary-item">
-          <div class="summary-value">${weekPlan.reduce((sum, day) => sum + calculateDayTotals(day).cal, 0).toFixed(0)}</div>
+          <div class="summary-value">${sortedDays.reduce((sum, day) => sum + calculateDayTotals(day).cal, 0).toFixed(0)}</div>
           <div class="summary-label">Total Calories</div>
         </div>
         <div class="summary-item">
-          <div class="summary-value">${(weekPlan.reduce((sum, day) => sum + calculateDayTotals(day).cal, 0) / duration).toFixed(0)}</div>
+          <div class="summary-value">${(sortedDays.reduce((sum, day) => sum + calculateDayTotals(day).cal, 0) / duration).toFixed(0)}</div>
           <div class="summary-label">Avg Daily Calories</div>
         </div>
       </div>
@@ -309,28 +318,88 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     `;
   }, [weekPlan, mealTypes, clientName, clientInfo, duration]);
 
-  // Generate CSV content
+  // Generate CSV content with proper date/time sorting
   const generateCSVContent = useCallback(() => {
-    let csv = 'Diet Plan Export\n';
-    csv += `Client: ${clientName || 'N/A'}\n`;
-    csv += `Generated: ${format(new Date(), 'PPP')}\n`;
-    csv += `Duration: ${duration} days\n\n`;
+    // Sort days by actual date if available, otherwise by index
+    const sortedDays = [...weekPlan].sort((a, b) => {
+      if (a.date && b.date) {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
+      return weekPlan.indexOf(a) - weekPlan.indexOf(b);
+    });
+
+    let csv = '"Diet Plan Export"\n';
+    csv += `"Client","${clientName || 'N/A'}"\n`;
+    csv += `"Generated","${format(new Date(), 'PPP HH:mm')}"\n`;
+    csv += `"Duration","${duration} days"\n`;
+    csv += `"Start Date","${startDate ? format(new Date(startDate), 'PPP') : 'N/A'}"\n`;
+    csv += '\n';
     
-    csv += 'Day,Date,Meal,Time,Food,Quantity,Calories,Carbs(g),Protein(g),Fats(g),Fiber(g),Notes\n';
+    // Column headers
+    csv += '"Day","Date","Meal Type","Meal Time","Food Item","Quantity","Calories","Carbs(g)","Protein(g)","Fats(g)","Fiber(g)","Alternative Options","Notes"\n';
     
-    weekPlan.forEach(day => {
+    // Data rows
+    sortedDays.forEach((day) => {
+      // Skip held days or show them differently
+      if (day.isHeld) {
+        csv += `"${day.day}","${day.date || ''}","ON HOLD","","","","","","","","","","⏸️ ${day.holdReason || 'Plan on hold'}"\n`;
+        return;
+      }
+
       const allMealTypes = getAllMealTypesSorted();
+      
       allMealTypes.forEach(mealType => {
         const meal = day.meals[mealType];
-        if (meal?.foodOptions?.[0]) {
-          const opt = meal.foodOptions[0];
-          csv += `"${day.day}","${day.date || ''}","${mealType}","${meal.time || ''}","${opt.food || ''}","${opt.unit || ''}","${opt.cal || ''}","${opt.carbs || ''}","${opt.protein || ''}","${opt.fats || ''}","${opt.fiber || ''}","${day.note || ''}"\n`;
-        }
+        if (!meal?.foodOptions?.length) return;
+
+        // Get primary food and alternatives
+        const primaryFood = meal.foodOptions[0];
+        const alternatives = meal.foodOptions.slice(1);
+        
+        const alternativesStr = alternatives
+          .map(alt => `${alt.food}${alt.unit ? ` (${alt.unit})` : ''}`)
+          .join(' | ');
+
+        // Main food row
+        csv += `"${day.day}","${day.date || ''}","${mealType}","${meal.time || ''}","${primaryFood.food || ''}","${primaryFood.unit || ''}","${primaryFood.cal || ''}","${primaryFood.carbs || ''}","${primaryFood.protein || ''}","${primaryFood.fats || ''}","${primaryFood.fiber || ''}","${alternativesStr}","${day.note || ''}"\n`;
+        
+        // Alternative rows (if any)
+        alternatives.forEach((alt, altIndex) => {
+          csv += `"","","(Alternative ${altIndex + 1})","","${alt.food || ''}","${alt.unit || ''}","${alt.cal || ''}","${alt.carbs || ''}","${alt.protein || ''}","${alt.fats || ''}","${alt.fiber || ''}","",""\n`;
+        });
       });
+      
+      // Add day total row
+      const dayTotals = calculateDayTotals(day);
+      csv += `"${day.day} TOTAL","","","","","","${dayTotals.cal.toFixed(0)}","${dayTotals.carbs.toFixed(1)}","${dayTotals.protein.toFixed(1)}","${dayTotals.fats.toFixed(1)}","${dayTotals.fiber.toFixed(1)}","",""\n`;
+      csv += '\n'; // Blank line between days for readability
     });
     
+    // Weekly summary
+    csv += '\n"WEEKLY SUMMARY"\n';
+    const weeklyTotals = sortedDays.reduce(
+      (acc, day) => {
+        const totals = calculateDayTotals(day);
+        return {
+          cal: acc.cal + totals.cal,
+          carbs: acc.carbs + totals.carbs,
+          protein: acc.protein + totals.protein,
+          fats: acc.fats + totals.fats,
+          fiber: acc.fiber + totals.fiber
+        };
+      },
+      { cal: 0, carbs: 0, protein: 0, fats: 0, fiber: 0 }
+    );
+
+    csv += `"Total Calories","${weeklyTotals.cal.toFixed(0)}"\n`;
+    csv += `"Average Daily Calories","${(weeklyTotals.cal / duration).toFixed(0)}"\n`;
+    csv += `"Total Carbs","${weeklyTotals.carbs.toFixed(1)} g"\n`;
+    csv += `"Total Protein","${weeklyTotals.protein.toFixed(1)} g"\n`;
+    csv += `"Total Fats","${weeklyTotals.fats.toFixed(1)} g"\n`;
+    csv += `"Total Fiber","${weeklyTotals.fiber.toFixed(1)} g"\n`;
+    
     return csv;
-  }, [weekPlan, clientName, duration]);
+  }, [weekPlan, clientName, duration, startDate]);
 
   // Export handlers
   const handleExportHTML = useCallback(() => {

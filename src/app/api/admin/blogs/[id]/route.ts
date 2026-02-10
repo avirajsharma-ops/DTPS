@@ -40,8 +40,8 @@ export async function GET(
   }
 }
 
-// PUT - Update blog
-export async function PUT(
+// PATCH - Toggle blog status or update specific fields
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -54,16 +54,42 @@ export async function PUT(
     const { id } = await params;
     await dbConnect();
 
-    const blog = await withCache(
-      `admin:blogs:id:${JSON.stringify(id)}`,
-      async () => await Blog.findById(id),
-      { ttl: 120000, tags: ['admin'] }
+    const { isActive } = await request.json();
+
+    if (typeof isActive !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Invalid request: isActive must be a boolean' },
+        { status: 400 }
+      );
+    }
+
+    const blog = await Blog.findByIdAndUpdate(
+      id,
+      { isActive },
+      { new: true }
     );
+
     if (!blog) {
       return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
     }
 
-    const formData = await request.formData();
+    // Clear cache
+    await clearCacheByTag('admin');
+
+    return NextResponse.json({ 
+      blog, 
+      message: `Blog ${isActive ? 'activated' : 'deactivated'} successfully` 
+    });
+  } catch (error) {
+    console.error('Error updating blog status:', error);
+    return NextResponse.json(
+      { error: 'Failed to update blog status' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - Update blog (full update)
     
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;

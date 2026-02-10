@@ -27,8 +27,8 @@ export interface IRecipe extends Document {
   totalTime: number;
   
   // Servings
-  servings: number;
-  servingSize: string;
+  servings: number;      // Numeric value for calculations (e.g., 2.5)
+  servingSize: string;   // Full display string (e.g., "2.5 SMALL BOWL (500 gm/ml)")
   
   // Simple arrays (no nested schemas)
   ingredients: {
@@ -134,11 +134,11 @@ const recipeSchema = new Schema<IRecipe>({
     min: 0
   },
   
-  // Servings (number only)
+  // Servings
   servings: {
     type: Number,
-    default: 2,
-    min: 1
+    default: 1,
+    min: 0
   },
   servingSize: {
     type: String,

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { UserRole, UserStatus } from "@/types";
+import { useDataRefresh, emitDataChange, DataEventTypes } from "@/lib/events/useDataRefresh";
 
 interface Dietitian {
   _id: string;
@@ -73,6 +75,9 @@ export default function AdminDietitiansPage() {
   }
 
   useEffect(() => { fetchDietitians(); }, []);
+
+  // Subscribe to real-time dietitians updates
+  useDataRefresh(DataEventTypes.DIETITIANS_UPDATED, fetchDietitians, [fetchDietitians]);
 
   function openCreate() {
     setEditing(null);
@@ -148,15 +153,38 @@ export default function AdminDietitiansPage() {
   }
 
   async function handleStatusToggle(id: string, currentStatus: string) {
-    const action = currentStatus === 'active' ? 'deactivate' : 'activate';
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const action = newStatus === 'active' ? 'activate' : 'deactivate';
+    
     if (!confirm(`Are you sure you want to ${action} this dietitian?`)) return;
 
     try {
-      const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error((await res.json()).error || "Status update failed");
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Status update failed');
+      }
+
+      const updatedDietitian = await res.json();
+      
+      // Update local state immediately
+      setData(prev => prev.map(d => d._id === id ? updatedDietitian.user : d));
+      
+      toast?.success?.(`Dietitian ${action}d successfully`) || console.log(`Dietitian ${action}d`);
+      
+      // Emit event for real-time updates
+      emitDataChange(DataEventTypes.DIETITIANS_UPDATED);
+      
+      // Refresh full list to ensure consistency
       await fetchDietitians();
     } catch (e: any) {
-      setError(e?.message || "Status update failed");
+      setError(e?.message || 'Status update failed');
+      toast?.error?.(e?.message || 'Status update failed') || console.error(e?.message);
     }
   }
 

@@ -149,6 +149,58 @@ export async function GET(
 //   }
 // }
 
+// PATCH /api/users/[id] - Partial update for status toggle
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user || session.user.role !== UserRole.ADMIN) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    await connectDB();
+    const { id } = await params;
+
+    const { status } = await request.json();
+
+    if (!status || !['active', 'inactive'].includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status value. Must be "active" or "inactive"' },
+        { status: 400 }
+      );
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Clear cache
+    await clearCacheByTag('users');
+
+    return NextResponse.json({ 
+      user,
+      message: `User ${status === 'active' ? 'activated' : 'deactivated'} successfully`
+    });
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    return NextResponse.json(
+      { error: 'Failed to update user status' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/users/[id] - Deactivate user (admin only)
 export async function DELETE(
   request: NextRequest,

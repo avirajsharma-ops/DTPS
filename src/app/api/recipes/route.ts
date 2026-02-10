@@ -418,10 +418,31 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Ensure servings is a number
-    const servingsValue = typeof validatedData.servings === 'number' 
-      ? validatedData.servings 
-      : parseInt(validatedData.servings) || 1;
+    // Parse servings: extract number for calculations, keep full string for display
+    let servingsValue: number = 1;
+    let servingSizeValue: string = '1 serving';
+    
+    if (typeof validatedData.servings === 'number') {
+      servingsValue = validatedData.servings;
+      servingSizeValue = `${servingsValue} serving${servingsValue !== 1 ? 's' : ''}`;
+    } else if (typeof validatedData.servings === 'string') {
+      const str = validatedData.servings.trim();
+      servingSizeValue = str;
+      
+      // Extract numeric value (supports decimals and fractions)
+      const match = str.match(/^[\s]*([0-9]+(?:\/[0-9]+)?(?:\.[0-9]+)?)/);
+      if (match && match[1]) {
+        const qStr = match[1];
+        if (qStr.includes('/')) {
+          const [numerator, denominator] = qStr.split('/').map(Number);
+          if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+            servingsValue = numerator / denominator;
+          }
+        } else {
+          servingsValue = parseFloat(qStr) || 1;
+        }
+      }
+    }
 
     const recipeData: any = {
       name: validatedData.name,
@@ -432,7 +453,7 @@ export async function POST(request: NextRequest) {
       cookTime: validatedData.cookTime,
       totalTime: (validatedData.prepTime || 0) + (validatedData.cookTime || 0),
       servings: servingsValue,
-      servingSize: typeof validatedData.servings === 'string' ? validatedData.servings : `${servingsValue} servings`,
+      servingSize: servingSizeValue,
       // Flat nutrition values for queries
       calories: caloriesValue,
       protein: proteinValue,

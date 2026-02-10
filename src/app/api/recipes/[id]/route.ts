@@ -7,6 +7,36 @@ import User from '@/lib/db/models/User';
 import mongoose from 'mongoose';
 import { clearCacheByTag } from '@/lib/api/utils';
 
+/**
+ * Parse servings string to extract numeric value
+ * Examples:
+ *   "2.5 SMALL BOWL (500 gm/ml)" -> 2.5
+ *   "1/2 TSP ( 2.5 gm/ml )" -> 0.5
+ *   "1 GLASS ( 250 ml )" -> 1
+ */
+function parseServingsToNumber(servingsStr: string | number): number {
+  if (typeof servingsStr === 'number') return servingsStr;
+
+  const str = String(servingsStr).trim();
+  
+  // Extract quantity (supports decimals and fractions like 1/2, 3/4)
+  const match = str.match(/^[\s]*([0-9]+(?:\/[0-9]+)?(?:\.[0-9]+)?)/);
+  if (match && match[1]) {
+    const qStr = match[1];
+    if (qStr.includes('/')) {
+      const [numerator, denominator] = qStr.split('/').map(Number);
+      if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+        return numerator / denominator;
+      }
+    } else {
+      const num = parseFloat(qStr);
+      if (!isNaN(num)) return num;
+    }
+  }
+  
+  return 1; // Default
+}
+
 /* -------- GET SINGLE -------- */
 export async function GET(
   req: NextRequest,
@@ -101,6 +131,13 @@ export async function PUT(
       data.protein = data.nutrition.protein || 0;
       data.carbs = data.nutrition.carbs || 0;
       data.fat = data.nutrition.fat || 0;
+    }
+
+    // Parse servings: extract number for calculations, keep full string for display
+    if (data.servings !== undefined) {
+      const servingsInput = data.servings;
+      data.servings = parseServingsToNumber(servingsInput);
+      data.servingSize = typeof servingsInput === 'string' ? servingsInput.trim() : `${servingsInput} serving${servingsInput !== 1 ? 's' : ''}`;
     }
 
     // Calculate total time if times changed

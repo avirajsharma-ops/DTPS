@@ -202,11 +202,12 @@ export default function EditRecipePage() {
         // setCategory(recipeData.category || '');
         setPrepTime(recipeData.prepTime?.toString() || '');
         setCookTime(recipeData.cookTime?.toString() || '');
-        setServings(recipeData.servings?.toString() || '');
-        setCalories(recipeData.nutrition?.calories?.toString() || '');
-        setProtein(recipeData.nutrition?.protein?.toString() || '');
-        setCarbs(recipeData.nutrition?.carbs?.toString() || '');
-        setFat(recipeData.nutrition?.fat?.toString() || '');
+        // Use servingSize (display string) if available, otherwise fall back to servings
+        setServings(recipeData.servingSize || recipeData.servings?.toString() || '');
+        setCalories(recipeData.nutrition?.calories?.toString() || recipeData.calories?.toString() || '');
+        setProtein(recipeData.nutrition?.protein?.toString() || recipeData.protein?.toString() || '');
+        setCarbs(recipeData.nutrition?.carbs?.toString() || recipeData.carbs?.toString() || '');
+        setFat(recipeData.nutrition?.fat?.toString() || recipeData.fat?.toString() || '');
         setIsActive(recipeData.isActive !== false); // Default to true if not set
         setIngredients(recipeData.ingredients?.length > 0 ? recipeData.ingredients : [{ name: '', quantity: 0, unit: '', remarks: '' }]);
         setInstructions(recipeData.instructions?.length > 0 ? recipeData.instructions : ['']);

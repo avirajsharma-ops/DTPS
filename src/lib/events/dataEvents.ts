@@ -19,6 +19,8 @@ type EventType =
   | 'tags-updated'
   | 'transformations-updated'
   | 'blogs-updated'
+  | 'dietitians-updated'
+  | 'health-counselors-updated'
   | 'goal-categories-updated'
   | 'data-changed'; // Generic event for any data change
 
@@ -94,6 +96,8 @@ export const DataEventTypes = {
   TAGS_UPDATED: 'tags-updated' as EventType,
   TRANSFORMATIONS_UPDATED: 'transformations-updated' as EventType,
   BLOGS_UPDATED: 'blogs-updated' as EventType,
+  DIETITIANS_UPDATED: 'dietitians-updated' as EventType,
+  HEALTH_COUNSELORS_UPDATED: 'health-counselors-updated' as EventType,
   GOAL_CATEGORIES_UPDATED: 'goal-categories-updated' as EventType,
   DATA_CHANGED: 'data-changed' as EventType,
 };

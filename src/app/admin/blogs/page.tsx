@@ -430,30 +430,31 @@ export default function BlogsManagement() {
 
   const handleToggleActive = async (blog: Blog) => {
     try {
-      const submitData = new FormData();
-      submitData.append('title', blog.title);
-      submitData.append('description', blog.description);
-      submitData.append('content', blog.content);
-      submitData.append('category', blog.category);
-      submitData.append('author', blog.author);
-      submitData.append('isActive', (!blog.isActive).toString());
-      submitData.append('displayOrder', blog.displayOrder.toString());
-
+      const newStatus = !blog.isActive;
+      
       const response = await fetch(`/api/admin/blogs/${blog._id}`, {
-        method: 'PUT',
-        body: submitData,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: newStatus })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update blog');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to toggle blog status');
       }
 
-      toast.success(`Blog ${blog.isActive ? 'deactivated' : 'activated'}`);
+      const updatedBlog = await response.json();
+      
+      // Update local state immediately for fast UI feedback
+      setBlogs(prev => prev.map(b => b._id === blog._id ? updatedBlog.blog || updatedBlog : b));
+      
+      toast.success(`Blog ${newStatus ? 'activated' : 'deactivated'} successfully`);
+      
+      // Emit event for real-time updates
       emitDataChange(DataEventTypes.BLOGS_UPDATED);
-      fetchBlogs();
-    } catch (error) {
-      console.error('Error toggling blog:', error);
-      toast.error('Failed to update blog');
+    } catch (error: any) {
+      console.error('Error toggling blog status:', error);
+      toast.error(error.message || 'Failed to toggle blog status');
     }
   };
 
