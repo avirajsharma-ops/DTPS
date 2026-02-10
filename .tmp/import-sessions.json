@@ -17222,5 +17222,3087 @@
     "savedCounts": {
       "Recipe": 5
     }
+  },
+  "import_1770703725900_83l7yiz5t": {
+    "id": "import_1770703725900_83l7yiz5t",
+    "fileName": "rawdatanew.csv",
+    "uploadedAt": "2026-02-10T06:08:45.900Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "Recipe",
+        "displayName": "Recipes",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "name": "Cauliflower Biryani",
+              "description": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+              "prepTime": 15,
+              "cookTime": 30,
+              "totalTime": 45,
+              "servings": 1,
+              "servingSize": "1 servings",
+              "calories": 0,
+              "protein": 0,
+              "carbs": 0,
+              "fat": 0,
+              "isActive": true,
+              "isPublic": false,
+              "isPremium": false,
+              "isTemplate": false,
+              "usageCount": 0,
+              "createdBy": "694a5b8c102172e30cb672a4",
+              "createdAt": "2026-02-09T18:31:29.334Z",
+              "updatedAt": "2026-02-09T18:31:29.334Z",
+              "uuid": 2893,
+              "instructions": [
+                "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                "Rest covered 5 minutes. Fluff gently and serve hot."
+              ]
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 2,
+                "modelName": "Recipe",
+                "field": "ingredients",
+                "message": "At least one ingredient is required",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "name",
+                "mappedField": "name",
+                "value": "Cauliflower Biryani",
+                "status": "mapped"
+              },
+              {
+                "originalField": "description",
+                "mappedField": "description",
+                "value": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+                "status": "mapped"
+              },
+              {
+                "originalField": "preptime",
+                "mappedField": "prepTime",
+                "value": 15,
+                "status": "mapped"
+              },
+              {
+                "originalField": "cooktime",
+                "mappedField": "cookTime",
+                "value": 30,
+                "status": "mapped"
+              },
+              {
+                "originalField": "totaltime",
+                "mappedField": "totalTime",
+                "value": 45,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servings",
+                "mappedField": "servings",
+                "value": 1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servingsize",
+                "mappedField": "servingSize",
+                "value": "1 servings",
+                "status": "mapped"
+              },
+              {
+                "originalField": "calories",
+                "mappedField": "calories",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "protein",
+                "mappedField": "protein",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "carbs",
+                "mappedField": "carbs",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "fat",
+                "mappedField": "fat",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "isactive",
+                "mappedField": "isActive",
+                "value": true,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispublic",
+                "mappedField": "isPublic",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispremium",
+                "mappedField": "isPremium",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "istemplate",
+                "mappedField": "isTemplate",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "usagecount",
+                "mappedField": "usageCount",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdby",
+                "mappedField": "createdBy",
+                "value": "694a5b8c102172e30cb672a4",
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "uuid",
+                "mappedField": "uuid",
+                "value": 2893,
+                "status": "mapped"
+              },
+              {
+                "originalField": "instructions",
+                "mappedField": "instructions",
+                "value": [
+                  "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                  "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                  "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                  "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                  "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                  "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                  "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                  "Rest covered 5 minutes. Fluff gently and serve hot."
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "ingredients[0]",
+                "mappedField": null,
+                "value": {
+                  "name": "Basmati rice",
+                  "quantity": 90,
+                  "unit": "GRAM",
+                  "remarks": [
+                    "raw",
+                    "rinsed & soaked 15 min"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[1]",
+                "mappedField": null,
+                "value": {
+                  "name": "Onion",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "thinly sliced"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[2]",
+                "mappedField": null,
+                "value": {
+                  "name": "Tomato",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[3]",
+                "mappedField": null,
+                "value": {
+                  "name": "Ginger-garlic paste",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": "fresh"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[4]",
+                "mappedField": null,
+                "value": {
+                  "name": "Curd (yogurt)",
+                  "quantity": 100,
+                  "unit": "ML",
+                  "remarks": "whisked"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[5]",
+                "mappedField": null,
+                "value": {
+                  "name": "Biryani masala",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": "store-bought or homemade"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[6]",
+                "mappedField": null,
+                "value": {
+                  "name": "Red chilli powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "adjust to taste"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[7]",
+                "mappedField": null,
+                "value": {
+                  "name": "Turmeric powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[8]",
+                "mappedField": null,
+                "value": {
+                  "name": "Garam masala",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[9]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cumin seeds",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[10]",
+                "mappedField": null,
+                "value": {
+                  "name": "Whole spices",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": [
+                    "bay leaf",
+                    "cinnamon",
+                    "cloves",
+                    "cardamom"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[11]",
+                "mappedField": null,
+                "value": {
+                  "name": "Mint leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[12]",
+                "mappedField": null,
+                "value": {
+                  "name": "Coriander leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[13]",
+                "mappedField": null,
+                "value": {
+                  "name": "Lemon juice",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[14]",
+                "mappedField": null,
+                "value": {
+                  "name": "Water",
+                  "quantity": 250,
+                  "unit": "ML",
+                  "remarks": "for cooking"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[15]",
+                "mappedField": null,
+                "value": {
+                  "name": "Salt",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "or as needed"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[16]",
+                "mappedField": null,
+                "value": {
+                  "name": "Oil",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": [
+                    "or ghee",
+                    "optional"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[17]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cauliflower",
+                  "quantity": 200,
+                  "unit": "GRAM",
+                  "remarks": "florets"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[18]",
+                "mappedField": null,
+                "value": {
+                  "name": "Green peas",
+                  "quantity": 50,
+                  "unit": "GRAM",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              }
+            ],
+            "unmappedFields": [
+              "ingredients[0]",
+              "ingredients[1]",
+              "ingredients[2]",
+              "ingredients[3]",
+              "ingredients[4]",
+              "ingredients[5]",
+              "ingredients[6]",
+              "ingredients[7]",
+              "ingredients[8]",
+              "ingredients[9]",
+              "ingredients[10]",
+              "ingredients[11]",
+              "ingredients[12]",
+              "ingredients[13]",
+              "ingredients[14]",
+              "ingredients[15]",
+              "ingredients[16]",
+              "ingredients[17]",
+              "ingredients[18]"
+            ],
+            "emptyFields": []
+          }
+        ],
+        "validCount": 0,
+        "invalidCount": 1
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": false
+  },
+  "import_1770703965728_5xrops29m": {
+    "id": "import_1770703965728_5xrops29m",
+    "fileName": "rawdatanew.csv",
+    "uploadedAt": "2026-02-10T06:12:45.728Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "Recipe",
+        "displayName": "Recipes",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "name": "Cauliflower Biryani",
+              "description": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+              "prepTime": 15,
+              "cookTime": 30,
+              "totalTime": 45,
+              "servings": 1,
+              "servingSize": "1 servings",
+              "calories": 0,
+              "protein": 0,
+              "carbs": 0,
+              "fat": 0,
+              "isActive": true,
+              "isPublic": false,
+              "isPremium": false,
+              "isTemplate": false,
+              "usageCount": 0,
+              "createdBy": "694a5b8c102172e30cb672a4",
+              "createdAt": "2026-02-09T18:31:29.334Z",
+              "updatedAt": "2026-02-09T18:31:29.334Z",
+              "uuid": 2893,
+              "instructions": [
+                "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                "Rest covered 5 minutes. Fluff gently and serve hot."
+              ]
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 2,
+                "modelName": "Recipe",
+                "field": "ingredients",
+                "message": "At least one ingredient is required",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "name",
+                "mappedField": "name",
+                "value": "Cauliflower Biryani",
+                "status": "mapped"
+              },
+              {
+                "originalField": "description",
+                "mappedField": "description",
+                "value": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+                "status": "mapped"
+              },
+              {
+                "originalField": "preptime",
+                "mappedField": "prepTime",
+                "value": 15,
+                "status": "mapped"
+              },
+              {
+                "originalField": "cooktime",
+                "mappedField": "cookTime",
+                "value": 30,
+                "status": "mapped"
+              },
+              {
+                "originalField": "totaltime",
+                "mappedField": "totalTime",
+                "value": 45,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servings",
+                "mappedField": "servings",
+                "value": 1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servingsize",
+                "mappedField": "servingSize",
+                "value": "1 servings",
+                "status": "mapped"
+              },
+              {
+                "originalField": "calories",
+                "mappedField": "calories",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "protein",
+                "mappedField": "protein",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "carbs",
+                "mappedField": "carbs",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "fat",
+                "mappedField": "fat",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "isactive",
+                "mappedField": "isActive",
+                "value": true,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispublic",
+                "mappedField": "isPublic",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispremium",
+                "mappedField": "isPremium",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "istemplate",
+                "mappedField": "isTemplate",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "usagecount",
+                "mappedField": "usageCount",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdby",
+                "mappedField": "createdBy",
+                "value": "694a5b8c102172e30cb672a4",
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "uuid",
+                "mappedField": "uuid",
+                "value": 2893,
+                "status": "mapped"
+              },
+              {
+                "originalField": "instructions",
+                "mappedField": "instructions",
+                "value": [
+                  "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                  "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                  "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                  "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                  "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                  "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                  "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                  "Rest covered 5 minutes. Fluff gently and serve hot."
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "ingredients[0]",
+                "mappedField": null,
+                "value": {
+                  "name": "Basmati rice",
+                  "quantity": 90,
+                  "unit": "GRAM",
+                  "remarks": [
+                    "raw",
+                    "rinsed & soaked 15 min"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[1]",
+                "mappedField": null,
+                "value": {
+                  "name": "Onion",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "thinly sliced"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[2]",
+                "mappedField": null,
+                "value": {
+                  "name": "Tomato",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[3]",
+                "mappedField": null,
+                "value": {
+                  "name": "Ginger-garlic paste",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": "fresh"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[4]",
+                "mappedField": null,
+                "value": {
+                  "name": "Curd (yogurt)",
+                  "quantity": 100,
+                  "unit": "ML",
+                  "remarks": "whisked"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[5]",
+                "mappedField": null,
+                "value": {
+                  "name": "Biryani masala",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": "store-bought or homemade"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[6]",
+                "mappedField": null,
+                "value": {
+                  "name": "Red chilli powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "adjust to taste"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[7]",
+                "mappedField": null,
+                "value": {
+                  "name": "Turmeric powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[8]",
+                "mappedField": null,
+                "value": {
+                  "name": "Garam masala",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[9]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cumin seeds",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[10]",
+                "mappedField": null,
+                "value": {
+                  "name": "Whole spices",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": [
+                    "bay leaf",
+                    "cinnamon",
+                    "cloves",
+                    "cardamom"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[11]",
+                "mappedField": null,
+                "value": {
+                  "name": "Mint leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[12]",
+                "mappedField": null,
+                "value": {
+                  "name": "Coriander leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[13]",
+                "mappedField": null,
+                "value": {
+                  "name": "Lemon juice",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[14]",
+                "mappedField": null,
+                "value": {
+                  "name": "Water",
+                  "quantity": 250,
+                  "unit": "ML",
+                  "remarks": "for cooking"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[15]",
+                "mappedField": null,
+                "value": {
+                  "name": "Salt",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "or as needed"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[16]",
+                "mappedField": null,
+                "value": {
+                  "name": "Oil",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": [
+                    "or ghee",
+                    "optional"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[17]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cauliflower",
+                  "quantity": 200,
+                  "unit": "GRAM",
+                  "remarks": "florets"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[18]",
+                "mappedField": null,
+                "value": {
+                  "name": "Green peas",
+                  "quantity": 50,
+                  "unit": "GRAM",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              }
+            ],
+            "unmappedFields": [
+              "ingredients[0]",
+              "ingredients[1]",
+              "ingredients[2]",
+              "ingredients[3]",
+              "ingredients[4]",
+              "ingredients[5]",
+              "ingredients[6]",
+              "ingredients[7]",
+              "ingredients[8]",
+              "ingredients[9]",
+              "ingredients[10]",
+              "ingredients[11]",
+              "ingredients[12]",
+              "ingredients[13]",
+              "ingredients[14]",
+              "ingredients[15]",
+              "ingredients[16]",
+              "ingredients[17]",
+              "ingredients[18]"
+            ],
+            "emptyFields": []
+          }
+        ],
+        "validCount": 0,
+        "invalidCount": 1
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": false
+  },
+  "import_1770704083412_fh5wgjf1w": {
+    "id": "import_1770704083412_fh5wgjf1w",
+    "fileName": "rawdatanew.csv",
+    "uploadedAt": "2026-02-10T06:14:43.412Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "Recipe",
+        "displayName": "Recipes",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "name": "Cauliflower Biryani",
+              "description": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+              "prepTime": 15,
+              "cookTime": 30,
+              "totalTime": 45,
+              "servings": 1,
+              "servingSize": "1 servings",
+              "calories": 0,
+              "protein": 0,
+              "carbs": 0,
+              "fat": 0,
+              "isActive": true,
+              "isPublic": false,
+              "isPremium": false,
+              "isTemplate": false,
+              "usageCount": 0,
+              "createdBy": "694a5b8c102172e30cb672a4",
+              "createdAt": "2026-02-09T18:31:29.334Z",
+              "updatedAt": "2026-02-09T18:31:29.334Z",
+              "uuid": 2893,
+              "instructions": [
+                "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                "Rest covered 5 minutes. Fluff gently and serve hot."
+              ]
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 2,
+                "modelName": "Recipe",
+                "field": "ingredients",
+                "message": "At least one ingredient is required",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "name",
+                "mappedField": "name",
+                "value": "Cauliflower Biryani",
+                "status": "mapped"
+              },
+              {
+                "originalField": "description",
+                "mappedField": "description",
+                "value": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+                "status": "mapped"
+              },
+              {
+                "originalField": "preptime",
+                "mappedField": "prepTime",
+                "value": 15,
+                "status": "mapped"
+              },
+              {
+                "originalField": "cooktime",
+                "mappedField": "cookTime",
+                "value": 30,
+                "status": "mapped"
+              },
+              {
+                "originalField": "totaltime",
+                "mappedField": "totalTime",
+                "value": 45,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servings",
+                "mappedField": "servings",
+                "value": 1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servingsize",
+                "mappedField": "servingSize",
+                "value": "1 servings",
+                "status": "mapped"
+              },
+              {
+                "originalField": "calories",
+                "mappedField": "calories",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "protein",
+                "mappedField": "protein",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "carbs",
+                "mappedField": "carbs",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "fat",
+                "mappedField": "fat",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "isactive",
+                "mappedField": "isActive",
+                "value": true,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispublic",
+                "mappedField": "isPublic",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispremium",
+                "mappedField": "isPremium",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "istemplate",
+                "mappedField": "isTemplate",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "usagecount",
+                "mappedField": "usageCount",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdby",
+                "mappedField": "createdBy",
+                "value": "694a5b8c102172e30cb672a4",
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "uuid",
+                "mappedField": "uuid",
+                "value": 2893,
+                "status": "mapped"
+              },
+              {
+                "originalField": "instructions",
+                "mappedField": "instructions",
+                "value": [
+                  "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                  "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                  "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                  "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                  "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                  "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                  "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                  "Rest covered 5 minutes. Fluff gently and serve hot."
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "ingredients[0]",
+                "mappedField": null,
+                "value": {
+                  "name": "Basmati rice",
+                  "quantity": 90,
+                  "unit": "GRAM",
+                  "remarks": [
+                    "raw",
+                    "rinsed & soaked 15 min"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[1]",
+                "mappedField": null,
+                "value": {
+                  "name": "Onion",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "thinly sliced"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[2]",
+                "mappedField": null,
+                "value": {
+                  "name": "Tomato",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[3]",
+                "mappedField": null,
+                "value": {
+                  "name": "Ginger-garlic paste",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": "fresh"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[4]",
+                "mappedField": null,
+                "value": {
+                  "name": "Curd (yogurt)",
+                  "quantity": 100,
+                  "unit": "ML",
+                  "remarks": "whisked"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[5]",
+                "mappedField": null,
+                "value": {
+                  "name": "Biryani masala",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": "store-bought or homemade"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[6]",
+                "mappedField": null,
+                "value": {
+                  "name": "Red chilli powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "adjust to taste"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[7]",
+                "mappedField": null,
+                "value": {
+                  "name": "Turmeric powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[8]",
+                "mappedField": null,
+                "value": {
+                  "name": "Garam masala",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[9]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cumin seeds",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[10]",
+                "mappedField": null,
+                "value": {
+                  "name": "Whole spices",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": [
+                    "bay leaf",
+                    "cinnamon",
+                    "cloves",
+                    "cardamom"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[11]",
+                "mappedField": null,
+                "value": {
+                  "name": "Mint leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[12]",
+                "mappedField": null,
+                "value": {
+                  "name": "Coriander leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[13]",
+                "mappedField": null,
+                "value": {
+                  "name": "Lemon juice",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[14]",
+                "mappedField": null,
+                "value": {
+                  "name": "Water",
+                  "quantity": 250,
+                  "unit": "ML",
+                  "remarks": "for cooking"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[15]",
+                "mappedField": null,
+                "value": {
+                  "name": "Salt",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "or as needed"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[16]",
+                "mappedField": null,
+                "value": {
+                  "name": "Oil",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": [
+                    "or ghee",
+                    "optional"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[17]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cauliflower",
+                  "quantity": 200,
+                  "unit": "GRAM",
+                  "remarks": "florets"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[18]",
+                "mappedField": null,
+                "value": {
+                  "name": "Green peas",
+                  "quantity": 50,
+                  "unit": "GRAM",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              }
+            ],
+            "unmappedFields": [
+              "ingredients[0]",
+              "ingredients[1]",
+              "ingredients[2]",
+              "ingredients[3]",
+              "ingredients[4]",
+              "ingredients[5]",
+              "ingredients[6]",
+              "ingredients[7]",
+              "ingredients[8]",
+              "ingredients[9]",
+              "ingredients[10]",
+              "ingredients[11]",
+              "ingredients[12]",
+              "ingredients[13]",
+              "ingredients[14]",
+              "ingredients[15]",
+              "ingredients[16]",
+              "ingredients[17]",
+              "ingredients[18]"
+            ],
+            "emptyFields": []
+          }
+        ],
+        "validCount": 0,
+        "invalidCount": 1
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": false
+  },
+  "import_1770704311237_aafwamly6": {
+    "id": "import_1770704311237_aafwamly6",
+    "fileName": "rawdatanew.csv",
+    "uploadedAt": "2026-02-10T06:18:31.237Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "Recipe",
+        "displayName": "Recipes",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "name": "Cauliflower Biryani",
+              "description": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+              "prepTime": 15,
+              "cookTime": 30,
+              "totalTime": 45,
+              "servings": 1,
+              "servingSize": "1 servings",
+              "calories": 0,
+              "protein": 0,
+              "carbs": 0,
+              "fat": 0,
+              "isActive": true,
+              "isPublic": false,
+              "isPremium": false,
+              "isTemplate": false,
+              "usageCount": 0,
+              "createdBy": "694a5b8c102172e30cb672a4",
+              "createdAt": "2026-02-09T18:31:29.334Z",
+              "updatedAt": "2026-02-09T18:31:29.334Z",
+              "uuid": 2893,
+              "instructions": [
+                "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                "Rest covered 5 minutes. Fluff gently and serve hot."
+              ]
+            },
+            "isValid": false,
+            "errors": [
+              {
+                "row": 2,
+                "modelName": "Recipe",
+                "field": "ingredients",
+                "message": "At least one ingredient is required",
+                "errorType": "required"
+              }
+            ],
+            "fieldMapping": [
+              {
+                "originalField": "name",
+                "mappedField": "name",
+                "value": "Cauliflower Biryani",
+                "status": "mapped"
+              },
+              {
+                "originalField": "description",
+                "mappedField": "description",
+                "value": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+                "status": "mapped"
+              },
+              {
+                "originalField": "preptime",
+                "mappedField": "prepTime",
+                "value": 15,
+                "status": "mapped"
+              },
+              {
+                "originalField": "cooktime",
+                "mappedField": "cookTime",
+                "value": 30,
+                "status": "mapped"
+              },
+              {
+                "originalField": "totaltime",
+                "mappedField": "totalTime",
+                "value": 45,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servings",
+                "mappedField": "servings",
+                "value": 1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servingsize",
+                "mappedField": "servingSize",
+                "value": "1 servings",
+                "status": "mapped"
+              },
+              {
+                "originalField": "calories",
+                "mappedField": "calories",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "protein",
+                "mappedField": "protein",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "carbs",
+                "mappedField": "carbs",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "fat",
+                "mappedField": "fat",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "isactive",
+                "mappedField": "isActive",
+                "value": true,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispublic",
+                "mappedField": "isPublic",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispremium",
+                "mappedField": "isPremium",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "istemplate",
+                "mappedField": "isTemplate",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "usagecount",
+                "mappedField": "usageCount",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdby",
+                "mappedField": "createdBy",
+                "value": "694a5b8c102172e30cb672a4",
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "uuid",
+                "mappedField": "uuid",
+                "value": 2893,
+                "status": "mapped"
+              },
+              {
+                "originalField": "instructions",
+                "mappedField": "instructions",
+                "value": [
+                  "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                  "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                  "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                  "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                  "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                  "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                  "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                  "Rest covered 5 minutes. Fluff gently and serve hot."
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "ingredients[0]",
+                "mappedField": null,
+                "value": {
+                  "name": "Basmati rice",
+                  "quantity": 90,
+                  "unit": "GRAM",
+                  "remarks": [
+                    "raw",
+                    "rinsed & soaked 15 min"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[1]",
+                "mappedField": null,
+                "value": {
+                  "name": "Onion",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "thinly sliced"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[2]",
+                "mappedField": null,
+                "value": {
+                  "name": "Tomato",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[3]",
+                "mappedField": null,
+                "value": {
+                  "name": "Ginger-garlic paste",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": "fresh"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[4]",
+                "mappedField": null,
+                "value": {
+                  "name": "Curd (yogurt)",
+                  "quantity": 100,
+                  "unit": "ML",
+                  "remarks": "whisked"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[5]",
+                "mappedField": null,
+                "value": {
+                  "name": "Biryani masala",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": "store-bought or homemade"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[6]",
+                "mappedField": null,
+                "value": {
+                  "name": "Red chilli powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "adjust to taste"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[7]",
+                "mappedField": null,
+                "value": {
+                  "name": "Turmeric powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[8]",
+                "mappedField": null,
+                "value": {
+                  "name": "Garam masala",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[9]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cumin seeds",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[10]",
+                "mappedField": null,
+                "value": {
+                  "name": "Whole spices",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": [
+                    "bay leaf",
+                    "cinnamon",
+                    "cloves",
+                    "cardamom"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[11]",
+                "mappedField": null,
+                "value": {
+                  "name": "Mint leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[12]",
+                "mappedField": null,
+                "value": {
+                  "name": "Coriander leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[13]",
+                "mappedField": null,
+                "value": {
+                  "name": "Lemon juice",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[14]",
+                "mappedField": null,
+                "value": {
+                  "name": "Water",
+                  "quantity": 250,
+                  "unit": "ML",
+                  "remarks": "for cooking"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[15]",
+                "mappedField": null,
+                "value": {
+                  "name": "Salt",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "or as needed"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[16]",
+                "mappedField": null,
+                "value": {
+                  "name": "Oil",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": [
+                    "or ghee",
+                    "optional"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[17]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cauliflower",
+                  "quantity": 200,
+                  "unit": "GRAM",
+                  "remarks": "florets"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[18]",
+                "mappedField": null,
+                "value": {
+                  "name": "Green peas",
+                  "quantity": 50,
+                  "unit": "GRAM",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              }
+            ],
+            "unmappedFields": [
+              "ingredients[0]",
+              "ingredients[1]",
+              "ingredients[2]",
+              "ingredients[3]",
+              "ingredients[4]",
+              "ingredients[5]",
+              "ingredients[6]",
+              "ingredients[7]",
+              "ingredients[8]",
+              "ingredients[9]",
+              "ingredients[10]",
+              "ingredients[11]",
+              "ingredients[12]",
+              "ingredients[13]",
+              "ingredients[14]",
+              "ingredients[15]",
+              "ingredients[16]",
+              "ingredients[17]",
+              "ingredients[18]"
+            ],
+            "emptyFields": []
+          }
+        ],
+        "validCount": 0,
+        "invalidCount": 1
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": false
+  },
+  "import_1770704385700_umgxq6t0e": {
+    "id": "import_1770704385700_umgxq6t0e",
+    "fileName": "rawdatanew.csv",
+    "uploadedAt": "2026-02-10T06:19:45.700Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "Recipe",
+        "displayName": "Recipes",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "name": "Cauliflower Biryani",
+              "description": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+              "prepTime": 15,
+              "cookTime": 30,
+              "totalTime": 45,
+              "servings": 1,
+              "servingSize": "1 servings",
+              "calories": 0,
+              "protein": 0,
+              "carbs": 0,
+              "fat": 0,
+              "isActive": true,
+              "isPublic": false,
+              "isPremium": false,
+              "isTemplate": false,
+              "usageCount": 0,
+              "createdBy": "694a5b8c102172e30cb672a4",
+              "createdAt": "2026-02-09T18:31:29.334Z",
+              "updatedAt": "2026-02-09T18:31:29.334Z",
+              "uuid": 2893,
+              "instructions": [
+                "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                "Rest covered 5 minutes. Fluff gently and serve hot."
+              ]
+            },
+            "isValid": true,
+            "errors": [],
+            "fieldMapping": [
+              {
+                "originalField": "name",
+                "mappedField": "name",
+                "value": "Cauliflower Biryani",
+                "status": "mapped"
+              },
+              {
+                "originalField": "description",
+                "mappedField": "description",
+                "value": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+                "status": "mapped"
+              },
+              {
+                "originalField": "preptime",
+                "mappedField": "prepTime",
+                "value": 15,
+                "status": "mapped"
+              },
+              {
+                "originalField": "cooktime",
+                "mappedField": "cookTime",
+                "value": 30,
+                "status": "mapped"
+              },
+              {
+                "originalField": "totaltime",
+                "mappedField": "totalTime",
+                "value": 45,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servings",
+                "mappedField": "servings",
+                "value": 1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servingsize",
+                "mappedField": "servingSize",
+                "value": "1 servings",
+                "status": "mapped"
+              },
+              {
+                "originalField": "calories",
+                "mappedField": "calories",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "protein",
+                "mappedField": "protein",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "carbs",
+                "mappedField": "carbs",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "fat",
+                "mappedField": "fat",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "isactive",
+                "mappedField": "isActive",
+                "value": true,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispublic",
+                "mappedField": "isPublic",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispremium",
+                "mappedField": "isPremium",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "istemplate",
+                "mappedField": "isTemplate",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "usagecount",
+                "mappedField": "usageCount",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdby",
+                "mappedField": "createdBy",
+                "value": "694a5b8c102172e30cb672a4",
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "uuid",
+                "mappedField": "uuid",
+                "value": 2893,
+                "status": "mapped"
+              },
+              {
+                "originalField": "instructions",
+                "mappedField": "instructions",
+                "value": [
+                  "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                  "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                  "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                  "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                  "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                  "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                  "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                  "Rest covered 5 minutes. Fluff gently and serve hot."
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "ingredients[0]",
+                "mappedField": null,
+                "value": {
+                  "name": "Basmati rice",
+                  "quantity": 90,
+                  "unit": "GRAM",
+                  "remarks": [
+                    "raw",
+                    "rinsed & soaked 15 min"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[1]",
+                "mappedField": null,
+                "value": {
+                  "name": "Onion",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "thinly sliced"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[2]",
+                "mappedField": null,
+                "value": {
+                  "name": "Tomato",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[3]",
+                "mappedField": null,
+                "value": {
+                  "name": "Ginger-garlic paste",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": "fresh"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[4]",
+                "mappedField": null,
+                "value": {
+                  "name": "Curd (yogurt)",
+                  "quantity": 100,
+                  "unit": "ML",
+                  "remarks": "whisked"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[5]",
+                "mappedField": null,
+                "value": {
+                  "name": "Biryani masala",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": "store-bought or homemade"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[6]",
+                "mappedField": null,
+                "value": {
+                  "name": "Red chilli powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "adjust to taste"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[7]",
+                "mappedField": null,
+                "value": {
+                  "name": "Turmeric powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[8]",
+                "mappedField": null,
+                "value": {
+                  "name": "Garam masala",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[9]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cumin seeds",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[10]",
+                "mappedField": null,
+                "value": {
+                  "name": "Whole spices",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": [
+                    "bay leaf",
+                    "cinnamon",
+                    "cloves",
+                    "cardamom"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[11]",
+                "mappedField": null,
+                "value": {
+                  "name": "Mint leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[12]",
+                "mappedField": null,
+                "value": {
+                  "name": "Coriander leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[13]",
+                "mappedField": null,
+                "value": {
+                  "name": "Lemon juice",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[14]",
+                "mappedField": null,
+                "value": {
+                  "name": "Water",
+                  "quantity": 250,
+                  "unit": "ML",
+                  "remarks": "for cooking"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[15]",
+                "mappedField": null,
+                "value": {
+                  "name": "Salt",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "or as needed"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[16]",
+                "mappedField": null,
+                "value": {
+                  "name": "Oil",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": [
+                    "or ghee",
+                    "optional"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[17]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cauliflower",
+                  "quantity": 200,
+                  "unit": "GRAM",
+                  "remarks": "florets"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[18]",
+                "mappedField": null,
+                "value": {
+                  "name": "Green peas",
+                  "quantity": 50,
+                  "unit": "GRAM",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              }
+            ],
+            "unmappedFields": [
+              "ingredients[0]",
+              "ingredients[1]",
+              "ingredients[2]",
+              "ingredients[3]",
+              "ingredients[4]",
+              "ingredients[5]",
+              "ingredients[6]",
+              "ingredients[7]",
+              "ingredients[8]",
+              "ingredients[9]",
+              "ingredients[10]",
+              "ingredients[11]",
+              "ingredients[12]",
+              "ingredients[13]",
+              "ingredients[14]",
+              "ingredients[15]",
+              "ingredients[16]",
+              "ingredients[17]",
+              "ingredients[18]"
+            ],
+            "emptyFields": []
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1770704810739_asumkpb7g": {
+    "id": "import_1770704810739_asumkpb7g",
+    "fileName": "rawdatanew.csv",
+    "uploadedAt": "2026-02-10T06:26:50.740Z",
+    "status": "validated",
+    "modelGroups": [
+      {
+        "modelName": "Recipe",
+        "displayName": "Recipes",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "name": "Cauliflower Biryani",
+              "description": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+              "prepTime": 15,
+              "cookTime": 30,
+              "totalTime": 45,
+              "servings": 1,
+              "servingSize": "1 servings",
+              "calories": 0,
+              "protein": 0,
+              "carbs": 0,
+              "fat": 0,
+              "isActive": true,
+              "isPublic": false,
+              "isPremium": false,
+              "isTemplate": false,
+              "usageCount": 0,
+              "createdBy": "694a5b8c102172e30cb672a4",
+              "createdAt": "2026-02-09T18:31:29.334Z",
+              "updatedAt": "2026-02-09T18:31:29.334Z",
+              "uuid": 2893,
+              "instructions": [
+                "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                "Rest covered 5 minutes. Fluff gently and serve hot."
+              ]
+            },
+            "isValid": true,
+            "errors": [],
+            "fieldMapping": [
+              {
+                "originalField": "name",
+                "mappedField": "name",
+                "value": "Cauliflower Biryani",
+                "status": "mapped"
+              },
+              {
+                "originalField": "description",
+                "mappedField": "description",
+                "value": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+                "status": "mapped"
+              },
+              {
+                "originalField": "preptime",
+                "mappedField": "prepTime",
+                "value": 15,
+                "status": "mapped"
+              },
+              {
+                "originalField": "cooktime",
+                "mappedField": "cookTime",
+                "value": 30,
+                "status": "mapped"
+              },
+              {
+                "originalField": "totaltime",
+                "mappedField": "totalTime",
+                "value": 45,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servings",
+                "mappedField": "servings",
+                "value": 1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servingsize",
+                "mappedField": "servingSize",
+                "value": "1 servings",
+                "status": "mapped"
+              },
+              {
+                "originalField": "calories",
+                "mappedField": "calories",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "protein",
+                "mappedField": "protein",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "carbs",
+                "mappedField": "carbs",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "fat",
+                "mappedField": "fat",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "isactive",
+                "mappedField": "isActive",
+                "value": true,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispublic",
+                "mappedField": "isPublic",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispremium",
+                "mappedField": "isPremium",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "istemplate",
+                "mappedField": "isTemplate",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "usagecount",
+                "mappedField": "usageCount",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdby",
+                "mappedField": "createdBy",
+                "value": "694a5b8c102172e30cb672a4",
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "uuid",
+                "mappedField": "uuid",
+                "value": 2893,
+                "status": "mapped"
+              },
+              {
+                "originalField": "instructions",
+                "mappedField": "instructions",
+                "value": [
+                  "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                  "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                  "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                  "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                  "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                  "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                  "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                  "Rest covered 5 minutes. Fluff gently and serve hot."
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "ingredients[0]",
+                "mappedField": null,
+                "value": {
+                  "name": "Basmati rice",
+                  "quantity": 90,
+                  "unit": "GRAM",
+                  "remarks": [
+                    "raw",
+                    "rinsed & soaked 15 min"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[1]",
+                "mappedField": null,
+                "value": {
+                  "name": "Onion",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "thinly sliced"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[2]",
+                "mappedField": null,
+                "value": {
+                  "name": "Tomato",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[3]",
+                "mappedField": null,
+                "value": {
+                  "name": "Ginger-garlic paste",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": "fresh"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[4]",
+                "mappedField": null,
+                "value": {
+                  "name": "Curd (yogurt)",
+                  "quantity": 100,
+                  "unit": "ML",
+                  "remarks": "whisked"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[5]",
+                "mappedField": null,
+                "value": {
+                  "name": "Biryani masala",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": "store-bought or homemade"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[6]",
+                "mappedField": null,
+                "value": {
+                  "name": "Red chilli powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "adjust to taste"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[7]",
+                "mappedField": null,
+                "value": {
+                  "name": "Turmeric powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[8]",
+                "mappedField": null,
+                "value": {
+                  "name": "Garam masala",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[9]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cumin seeds",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[10]",
+                "mappedField": null,
+                "value": {
+                  "name": "Whole spices",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": [
+                    "bay leaf",
+                    "cinnamon",
+                    "cloves",
+                    "cardamom"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[11]",
+                "mappedField": null,
+                "value": {
+                  "name": "Mint leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[12]",
+                "mappedField": null,
+                "value": {
+                  "name": "Coriander leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[13]",
+                "mappedField": null,
+                "value": {
+                  "name": "Lemon juice",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[14]",
+                "mappedField": null,
+                "value": {
+                  "name": "Water",
+                  "quantity": 250,
+                  "unit": "ML",
+                  "remarks": "for cooking"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[15]",
+                "mappedField": null,
+                "value": {
+                  "name": "Salt",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "or as needed"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[16]",
+                "mappedField": null,
+                "value": {
+                  "name": "Oil",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": [
+                    "or ghee",
+                    "optional"
+                  ]
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[17]",
+                "mappedField": null,
+                "value": {
+                  "name": "Cauliflower",
+                  "quantity": 200,
+                  "unit": "GRAM",
+                  "remarks": "florets"
+                },
+                "status": "unmapped"
+              },
+              {
+                "originalField": "ingredients[18]",
+                "mappedField": null,
+                "value": {
+                  "name": "Green peas",
+                  "quantity": 50,
+                  "unit": "GRAM",
+                  "remarks": null
+                },
+                "status": "unmapped"
+              }
+            ],
+            "unmappedFields": [
+              "ingredients[0]",
+              "ingredients[1]",
+              "ingredients[2]",
+              "ingredients[3]",
+              "ingredients[4]",
+              "ingredients[5]",
+              "ingredients[6]",
+              "ingredients[7]",
+              "ingredients[8]",
+              "ingredients[9]",
+              "ingredients[10]",
+              "ingredients[11]",
+              "ingredients[12]",
+              "ingredients[13]",
+              "ingredients[14]",
+              "ingredients[15]",
+              "ingredients[16]",
+              "ingredients[17]",
+              "ingredients[18]"
+            ],
+            "emptyFields": []
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true
+  },
+  "import_1770705188943_2zlsbcnyl": {
+    "id": "import_1770705188943_2zlsbcnyl",
+    "fileName": "rawdatanew.csv",
+    "uploadedAt": "2026-02-10T06:33:08.943Z",
+    "status": "saved",
+    "modelGroups": [
+      {
+        "modelName": "Recipe",
+        "displayName": "Recipes",
+        "rows": [
+          {
+            "rowIndex": 2,
+            "data": {
+              "name": "Cauliflower Biryani",
+              "description": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+              "prepTime": 15,
+              "cookTime": 30,
+              "totalTime": 45,
+              "servings": 1,
+              "servingSize": "1 servings",
+              "calories": 0,
+              "protein": 0,
+              "carbs": 0,
+              "fat": 0,
+              "isActive": true,
+              "isPublic": false,
+              "isPremium": false,
+              "isTemplate": false,
+              "usageCount": 0,
+              "createdBy": "694a5b8c102172e30cb672a4",
+              "createdAt": "2026-02-09T18:31:29.334Z",
+              "updatedAt": "2026-02-09T18:31:29.334Z",
+              "uuid": 2893,
+              "instructions": [
+                "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                "Rest covered 5 minutes. Fluff gently and serve hot."
+              ],
+              "ingredients": [
+                {
+                  "name": "Basmati rice",
+                  "quantity": 90,
+                  "unit": "GRAM",
+                  "remarks": "raw, rinsed & soaked 15 min"
+                },
+                {
+                  "name": "Onion",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "thinly sliced"
+                },
+                {
+                  "name": "Tomato",
+                  "quantity": 80,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                {
+                  "name": "Ginger-garlic paste",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": "fresh"
+                },
+                {
+                  "name": "Curd (yogurt)",
+                  "quantity": 100,
+                  "unit": "ML",
+                  "remarks": "whisked"
+                },
+                {
+                  "name": "Biryani masala",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": "store-bought or homemade"
+                },
+                {
+                  "name": "Red chilli powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "adjust to taste"
+                },
+                {
+                  "name": "Turmeric powder",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": ""
+                },
+                {
+                  "name": "Garam masala",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": ""
+                },
+                {
+                  "name": "Cumin seeds",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": ""
+                },
+                {
+                  "name": "Whole spices",
+                  "quantity": 1,
+                  "unit": "TSP",
+                  "remarks": "bay leaf, cinnamon, cloves, cardamom"
+                },
+                {
+                  "name": "Mint leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                {
+                  "name": "Coriander leaves",
+                  "quantity": 10,
+                  "unit": "GRAM",
+                  "remarks": "chopped"
+                },
+                {
+                  "name": "Lemon juice",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": ""
+                },
+                {
+                  "name": "Water",
+                  "quantity": 250,
+                  "unit": "ML",
+                  "remarks": "for cooking"
+                },
+                {
+                  "name": "Salt",
+                  "quantity": 0.5,
+                  "unit": "TSP",
+                  "remarks": "or as needed"
+                },
+                {
+                  "name": "Oil",
+                  "quantity": 1,
+                  "unit": "TBSP",
+                  "remarks": "or ghee, optional"
+                },
+                {
+                  "name": "Cauliflower",
+                  "quantity": 200,
+                  "unit": "GRAM",
+                  "remarks": "florets"
+                },
+                {
+                  "name": "Green peas",
+                  "quantity": 50,
+                  "unit": "GRAM",
+                  "remarks": ""
+                }
+              ]
+            },
+            "isValid": true,
+            "errors": [],
+            "fieldMapping": [
+              {
+                "originalField": "name",
+                "mappedField": "name",
+                "value": "Cauliflower Biryani",
+                "status": "mapped"
+              },
+              {
+                "originalField": "description",
+                "mappedField": "description",
+                "value": "A fragrant cauliflower biryani with classic spices and fresh herbs.",
+                "status": "mapped"
+              },
+              {
+                "originalField": "preptime",
+                "mappedField": "prepTime",
+                "value": 15,
+                "status": "mapped"
+              },
+              {
+                "originalField": "cooktime",
+                "mappedField": "cookTime",
+                "value": 30,
+                "status": "mapped"
+              },
+              {
+                "originalField": "totaltime",
+                "mappedField": "totalTime",
+                "value": 45,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servings",
+                "mappedField": "servings",
+                "value": 1,
+                "status": "mapped"
+              },
+              {
+                "originalField": "servingsize",
+                "mappedField": "servingSize",
+                "value": "1 servings",
+                "status": "mapped"
+              },
+              {
+                "originalField": "calories",
+                "mappedField": "calories",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "protein",
+                "mappedField": "protein",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "carbs",
+                "mappedField": "carbs",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "fat",
+                "mappedField": "fat",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "isactive",
+                "mappedField": "isActive",
+                "value": true,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispublic",
+                "mappedField": "isPublic",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "ispremium",
+                "mappedField": "isPremium",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "istemplate",
+                "mappedField": "isTemplate",
+                "value": false,
+                "status": "mapped"
+              },
+              {
+                "originalField": "usagecount",
+                "mappedField": "usageCount",
+                "value": 0,
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdby",
+                "mappedField": "createdBy",
+                "value": "694a5b8c102172e30cb672a4",
+                "status": "mapped"
+              },
+              {
+                "originalField": "createdat",
+                "mappedField": "createdAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "updatedat",
+                "mappedField": "updatedAt",
+                "value": "2026-02-09T18:31:29.334Z",
+                "status": "mapped"
+              },
+              {
+                "originalField": "uuid",
+                "mappedField": "uuid",
+                "value": 2893,
+                "status": "mapped"
+              },
+              {
+                "originalField": "instructions",
+                "mappedField": "instructions",
+                "value": [
+                  "Rinse the grain and soak for 10–15 minutes. Drain and keep aside.",
+                  "Heat oil/ghee in a heavy pan. Add cumin and whole spices; sauté for 30 seconds.",
+                  "Add sliced onion and cook until light golden. Add ginger-garlic paste; sauté 1 minute.",
+                  "Add tomatoes, spices, and salt. Cook until tomatoes soften and oil separates.",
+                  "Add the main protein/vegetables. Cook 4–6 minutes (or until 70% done).",
+                  "Add curd, mint, coriander, and lemon juice. Mix well and simmer 2 minutes.",
+                  "Add soaked grain + measured water. Cover and cook on low until grain is cooked and water is absorbed.",
+                  "Rest covered 5 minutes. Fluff gently and serve hot."
+                ],
+                "status": "mapped"
+              },
+              {
+                "originalField": "ingredients",
+                "mappedField": "ingredients",
+                "value": [
+                  {
+                    "name": "Basmati rice",
+                    "quantity": 90,
+                    "unit": "GRAM",
+                    "remarks": [
+                      "raw",
+                      "rinsed & soaked 15 min"
+                    ]
+                  },
+                  {
+                    "name": "Onion",
+                    "quantity": 80,
+                    "unit": "GRAM",
+                    "remarks": "thinly sliced"
+                  },
+                  {
+                    "name": "Tomato",
+                    "quantity": 80,
+                    "unit": "GRAM",
+                    "remarks": "chopped"
+                  },
+                  {
+                    "name": "Ginger-garlic paste",
+                    "quantity": 1,
+                    "unit": "TBSP",
+                    "remarks": "fresh"
+                  },
+                  {
+                    "name": "Curd (yogurt)",
+                    "quantity": 100,
+                    "unit": "ML",
+                    "remarks": "whisked"
+                  },
+                  {
+                    "name": "Biryani masala",
+                    "quantity": 1,
+                    "unit": "TSP",
+                    "remarks": "store-bought or homemade"
+                  },
+                  {
+                    "name": "Red chilli powder",
+                    "quantity": 0.5,
+                    "unit": "TSP",
+                    "remarks": "adjust to taste"
+                  },
+                  {
+                    "name": "Turmeric powder",
+                    "quantity": 0.5,
+                    "unit": "TSP",
+                    "remarks": null
+                  },
+                  {
+                    "name": "Garam masala",
+                    "quantity": 0.5,
+                    "unit": "TSP",
+                    "remarks": null
+                  },
+                  {
+                    "name": "Cumin seeds",
+                    "quantity": 0.5,
+                    "unit": "TSP",
+                    "remarks": null
+                  },
+                  {
+                    "name": "Whole spices",
+                    "quantity": 1,
+                    "unit": "TSP",
+                    "remarks": [
+                      "bay leaf",
+                      "cinnamon",
+                      "cloves",
+                      "cardamom"
+                    ]
+                  },
+                  {
+                    "name": "Mint leaves",
+                    "quantity": 10,
+                    "unit": "GRAM",
+                    "remarks": "chopped"
+                  },
+                  {
+                    "name": "Coriander leaves",
+                    "quantity": 10,
+                    "unit": "GRAM",
+                    "remarks": "chopped"
+                  },
+                  {
+                    "name": "Lemon juice",
+                    "quantity": 1,
+                    "unit": "TBSP",
+                    "remarks": null
+                  },
+                  {
+                    "name": "Water",
+                    "quantity": 250,
+                    "unit": "ML",
+                    "remarks": "for cooking"
+                  },
+                  {
+                    "name": "Salt",
+                    "quantity": 0.5,
+                    "unit": "TSP",
+                    "remarks": "or as needed"
+                  },
+                  {
+                    "name": "Oil",
+                    "quantity": 1,
+                    "unit": "TBSP",
+                    "remarks": [
+                      "or ghee",
+                      "optional"
+                    ]
+                  },
+                  {
+                    "name": "Cauliflower",
+                    "quantity": 200,
+                    "unit": "GRAM",
+                    "remarks": "florets"
+                  },
+                  {
+                    "name": "Green peas",
+                    "quantity": 50,
+                    "unit": "GRAM",
+                    "remarks": null
+                  }
+                ],
+                "status": "mapped"
+              }
+            ],
+            "unmappedFields": [],
+            "emptyFields": []
+          }
+        ],
+        "validCount": 1,
+        "invalidCount": 0
+      }
+    ],
+    "unmatchedRows": [],
+    "canSave": true,
+    "savedAt": "2026-02-10T06:33:21.219Z",
+    "savedCounts": {
+      "Recipe": 1
+    }
   }
 }

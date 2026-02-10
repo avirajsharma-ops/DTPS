@@ -255,7 +255,7 @@ export default function DataManagementPage() {
     errors: Array<{ id: string; error: string }>;
   } | null>(null);
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
-  const [bulkUpdatePreview, setBulkUpdatePreview] = useState<Array<{ _id: string; [key: string]: any }>>([]);
+  const [bulkUpdatePreview, setBulkUpdatePreview] = useState<Array<{ uuid: string; [key: string]: any }>>([]);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
   
   // Error Modal state
@@ -690,21 +690,22 @@ export default function DataManagementPage() {
         return;
       }
       
-      // Validate that each row has _id field (check various possible field names)
-      const idFieldNames = ['_id', 'id', 'ID', 'Id', 'objectId', 'ObjectId', 'OBJECTID'];
+      // Validate that each row has uuid field (UUID is the ONLY identifier)
       const validData = data.filter(row => {
-        return idFieldNames.some(fieldName => row[fieldName] && String(row[fieldName]).trim() !== '');
+        return row.uuid && String(row.uuid).trim() !== '';
       });
       
       if (validData.length === 0) {
         const availableFields = data[0] ? Object.keys(data[0]) : [];
         setErrorModal({
           show: true,
-          title: '❌ Missing Required Field: _id',
-          message: 'No records with _id field found. Each row must have an _id (MongoDB ObjectId) field to identify which record to update.',
+          title: '❌ Missing Required Field: uuid',
+          message: 'No records with uuid field found. Each row must have a uuid field to identify which recipe to update. UUID is the only supported identifier.',
           details: availableFields.length > 0 ? [
             `📋 Available fields in your file (${availableFields.length}):`,
-            ...availableFields.map(f => `• ${f}`)
+            ...availableFields.map(f => `• ${f}`),
+            '',
+            '💡 Tip: Your CSV file needs a "uuid" column. UUID is now the ONLY accepted identifier for recipe updates.'
           ] : ['No fields found in the file']
         });
         setBulkUpdateFile(null);
@@ -712,26 +713,25 @@ export default function DataManagementPage() {
         return;
       }
       
-      // Normalize _id field
+      // Normalize uuid field
       const normalizedData = validData.map(row => {
-        const idField = idFieldNames.find(f => row[f] && String(row[f]).trim() !== '');
-        const idValue = idField ? row[idField] : null;
+        const uuidValue = String(row.uuid).trim();
         
-        // Create new object without duplicate id fields
+        // Create new object with uuid
         const cleanRow: Record<string, any> = {};
         for (const [key, value] of Object.entries(row)) {
-          if (!idFieldNames.includes(key) || key === '_id') {
+          if (key !== 'uuid') {
             cleanRow[key] = value;
           }
         }
         
         return {
           ...cleanRow,
-          _id: String(idValue).trim()
-        };
+          uuid: uuidValue
+        } as { uuid: string; [key: string]: any };
       });
       
-      setBulkUpdatePreview(normalizedData);
+      setBulkUpdatePreview(normalizedData as Array<{ uuid: string; [key: string]: any }>);
       setShowBulkUpdateModal(true);
       toast.success(`✅ Loaded ${normalizedData.length} records for preview`);
     } catch (error: any) {

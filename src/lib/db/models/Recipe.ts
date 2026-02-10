@@ -157,20 +157,14 @@ const recipeSchema = new Schema<IRecipe>({
       _id: false
     }],
     default: [],
-    validate: {
-      validator: (arr: any[]) => arr.length > 0,
-      message: 'At least one ingredient is required'
-    }
+    
   },
   
   // Instructions - simple string array
   instructions: {
     type: [String],
     default: [],
-    validate: {
-      validator: (arr: string[]) => arr.length > 0,
-      message: 'At least one instruction is required'
-    }
+    
   },
   
   // Flat nutrition values for queries (numbers only)

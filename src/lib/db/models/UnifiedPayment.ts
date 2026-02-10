@@ -212,8 +212,7 @@ const unifiedPaymentSchema = new Schema<IUnifiedPayment>({
   },
   paymentLink: {
     type: Schema.Types.ObjectId,
-    ref: 'PaymentLink',
-    index: true
+    ref: 'PaymentLink'
   },
   otherPlatformPayment: {
     type: Schema.Types.ObjectId,
@@ -363,14 +362,12 @@ const unifiedPaymentSchema = new Schema<IUnifiedPayment>({
   status: {
     type: String,
     enum: ['pending', 'processing', 'paid', 'completed', 'failed', 'refunded', 'cancelled', 'expired'],
-    default: 'pending',
-    index: true
+    default: 'pending'
   },
   paymentStatus: {
     type: String,
     enum: ['pending', 'paid', 'failed', 'refunded'],
-    default: 'pending',
-    index: true
+    default: 'pending'
   },
   
   // ========== DATES ==========
@@ -382,8 +379,7 @@ const unifiedPaymentSchema = new Schema<IUnifiedPayment>({
     type: Date
   },
   endDate: {
-    type: Date,
-    index: true
+    type: Date
   },
   expectedStartDate: {
     type: Date

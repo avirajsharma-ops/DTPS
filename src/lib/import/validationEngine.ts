@@ -199,14 +199,52 @@ function parseNutrition(value: any): { calories: number; protein: number; carbs:
 }
 
 /**
+ * Reassemble ingredients from flattened CSV format
+ * Handles fields like: ingredients[0], ingredients[1], etc.
+ * Returns an array of ingredient objects
+ */
+function reassembleIngredientsFromFlattened(data: Record<string, any>): any[] | null {
+  const flatIngredientsPattern = /^ingredients\[(\d+)\]$/;
+  const flatIngredients: Record<number, any> = {};
+  
+  for (const [key, value] of Object.entries(data)) {
+    const match = key.match(flatIngredientsPattern);
+    if (match && value !== undefined && value !== null && value !== '') {
+      const index = parseInt(match[1]);
+      // Try to parse the value as JSON if it's a string
+      let parsedValue = value;
+      if (typeof value === 'string') {
+        try {
+          parsedValue = JSON.parse(value);
+        } catch (e) {
+          // If JSON parsing fails, keep it as string
+        }
+      }
+      flatIngredients[index] = parsedValue;
+    }
+  }
+  
+  // If we found any flattened ingredients, return them as an array
+  if (Object.keys(flatIngredients).length > 0) {
+    const sorted = Object.keys(flatIngredients)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map(idx => flatIngredients[idx]);
+    return sorted.length > 0 ? sorted : null;
+  }
+  
+  return null;
+}
+
+/**
  * Parse ingredients array from various formats
  */
-function parseIngredients(value: any): Array<{ name: string; quantity: string; unit?: string; remarks?: string }> | null {
+function parseIngredients(value: any): Array<{ name: string; quantity: number; unit: string; remarks?: string }> | null {
   if (!value) return null;
 
   // If already an array
   if (Array.isArray(value)) {
-    const ingredients: Array<{ name: string; quantity: string; unit?: string; remarks?: string }> = [];
+    const ingredients: Array<{ name: string; quantity: number; unit: string; remarks?: string }> = [];
     
     for (const item of value) {
       if (typeof item === 'string') {
@@ -215,27 +253,35 @@ function parseIngredients(value: any): Array<{ name: string; quantity: string; u
         if (match) {
           ingredients.push({
             name: match[3].trim(),
-            quantity: match[1],
-            unit: match[2] || ''
+            quantity: parseFloat(match[1]) || 0,
+            unit: match[2] || 'unit',
+            remarks: ''
           });
         } else {
-          ingredients.push({ name: item, quantity: '1' });
+          ingredients.push({ name: item, quantity: 1, unit: 'unit', remarks: '' });
         }
       } else if (typeof item === 'object' && item !== null) {
-        const ing: any = { name: '', quantity: '1' };
+        const ing: any = { name: '', quantity: 1, unit: 'unit', remarks: '' };
         
         // Map common field names
         if (item.name || item.ingredient || item.ingredientName) {
           ing.name = String(item.name || item.ingredient || item.ingredientName);
         }
         if (item.quantity || item.amount || item.qty) {
-          ing.quantity = String(item.quantity || item.amount || item.qty);
+          const qty = item.quantity || item.amount || item.qty;
+          ing.quantity = typeof qty === 'number' ? qty : parseFloat(String(qty)) || 1;
         }
         if (item.unit || item.measure || item.measurement) {
           ing.unit = String(item.unit || item.measure || item.measurement);
         }
         if (item.remarks || item.notes || item.note) {
-          ing.remarks = String(item.remarks || item.notes || item.note);
+          const remarks = item.remarks || item.notes || item.note;
+          // Handle remarks as array or string
+          if (Array.isArray(remarks)) {
+            ing.remarks = remarks.filter((r: any) => r).join(', ');
+          } else if (remarks && remarks !== 'null') {
+            ing.remarks = String(remarks);
+          }
         }
         
         if (ing.name) {
@@ -257,7 +303,7 @@ function parseIngredients(value: any): Array<{ name: string; quantity: string; u
   if (typeof value === 'string') {
     const items = value.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
     if (items.length > 0) {
-      return items.map(item => ({ name: item, quantity: '1' }));
+      return items.map(item => ({ name: item, quantity: 1, unit: 'unit', remarks: '' }));
     }
   }
 
@@ -552,6 +598,81 @@ export class ValidationEngine {
       emptyFields: [] 
     };
 
+    // PRE-PROCESS: Reassemble flattened array fields BEFORE field mapping
+    // This handles CSV exports like ingredients[0], ingredients[1], etc.
+    let processedData = { ...data };
+    
+    if (modelName === 'Recipe') {
+      // Reassemble flattened ingredients
+      const flatIngredientsPattern = /^ingredients\[(\d+)\]$/;
+      const flatIngredients: Record<number, any> = {};
+      const flatIngredientKeys: string[] = [];
+      
+      for (const [key, value] of Object.entries(processedData)) {
+        const match = key.match(flatIngredientsPattern);
+        if (match && value !== undefined && value !== null && value !== '') {
+          const index = parseInt(match[1]);
+          let parsedValue = value;
+          if (typeof value === 'string') {
+            try {
+              parsedValue = JSON.parse(value);
+            } catch (e) {
+              // If JSON parsing fails, keep it as string
+            }
+          }
+          flatIngredients[index] = parsedValue;
+          flatIngredientKeys.push(key);
+        }
+      }
+      
+      // If we found flattened ingredients, reassemble them
+      if (Object.keys(flatIngredients).length > 0) {
+        const sortedIngredients = Object.keys(flatIngredients)
+          .map(Number)
+          .sort((a, b) => a - b)
+          .map(idx => flatIngredients[idx]);
+        
+        // Add the reassembled ingredients array
+        processedData.ingredients = sortedIngredients;
+        
+        // Remove the flattened fields
+        for (const key of flatIngredientKeys) {
+          delete processedData[key];
+        }
+        
+        console.log(`[CleanRowData] Reassembled ${sortedIngredients.length} flattened ingredients into array`);
+      }
+      
+      // Similarly handle flattened instructions if needed
+      const flatInstructionsPattern = /^instructions\[(\d+)\]$/;
+      const flatInstructions: Record<number, any> = {};
+      const flatInstructionKeys: string[] = [];
+      
+      for (const [key, value] of Object.entries(processedData)) {
+        const match = key.match(flatInstructionsPattern);
+        if (match && value !== undefined && value !== null && value !== '') {
+          const index = parseInt(match[1]);
+          flatInstructions[index] = value;
+          flatInstructionKeys.push(key);
+        }
+      }
+      
+      if (Object.keys(flatInstructions).length > 0) {
+        const sortedInstructions = Object.keys(flatInstructions)
+          .map(Number)
+          .sort((a, b) => a - b)
+          .map(idx => flatInstructions[idx]);
+        
+        processedData.instructions = sortedInstructions;
+        
+        for (const key of flatInstructionKeys) {
+          delete processedData[key];
+        }
+        
+        console.log(`[CleanRowData] Reassembled ${sortedInstructions.length} flattened instructions into array`);
+      }
+    }
+
     const schemaFields = model.fields.map(f => f.path);
     const allowedFields = new Set([
       ...schemaFields,
@@ -646,7 +767,7 @@ export class ValidationEngine {
     const unmappedFields: string[] = [];
     const emptyFields: string[] = [];
 
-    for (const [key, value] of Object.entries(data)) {
+    for (const [key, value] of Object.entries(processedData)) {
       // Check if value is empty
       const isEmpty = value === null || value === undefined || value === '' || 
         (typeof value === 'string' && value.trim() === '');
@@ -1194,8 +1315,21 @@ export class ValidationEngine {
       }
 
       // Parse and transform ingredients array
-      if (transformed.ingredients !== undefined) {
-        const parsedIngredients = parseIngredients(transformed.ingredients);
+      // First, try to reassemble from flattened CSV format (ingredients[0], ingredients[1], etc.)
+      let ingredientsToProcess = transformed.ingredients;
+      const reassembled = reassembleIngredientsFromFlattened(transformed);
+      if (reassembled) {
+        ingredientsToProcess = reassembled;
+        // Remove the flattened fields so they don't show as unmapped
+        for (const [key] of Object.entries(transformed)) {
+          if (key.match(/^ingredients\[\d+\]$/)) {
+            delete transformed[key];
+          }
+        }
+      }
+      
+      if (ingredientsToProcess !== undefined) {
+        const parsedIngredients = parseIngredients(ingredientsToProcess);
         if (parsedIngredients) {
           transformed.ingredients = parsedIngredients;
         }

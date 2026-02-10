@@ -1,11 +1,15 @@
 /**
- * API Route: Bulk Update Recipes by UUID or _ID
- * PUT /api/admin/recipes/bulk-update - Update multiple recipes using UUID or _ID
- * POST /api/admin/recipes/bulk-update - Upload CSV file for bulk updates
+ * API Route: Bulk Update Recipes by UUID
+ * PUT /api/admin/recipes/bulk-update - Update recipes using UUID identifier only
+ * POST /api/admin/recipes/bulk-update - Upload CSV file for bulk updates using UUID
  * 
- * Accepts records with 'uuid' OR '_id' field for identification
- * Use whichever identifier is available in your data
- * Tracks update history with unique updateId for each change
+ * IMPORTANT: UUID is the ONLY accepted identifier for recipe lookups.
+ * - Updates are identified strictly by UUID
+ * - Existing recipes are updated via $set operations
+ * - No new recipes are created during update operations
+ * - Requests without valid UUID are skipped with status 'cancelled'
+ * - Arrays are replaced completely (not appended)
+ * - All updates use MongoDB $set operator for consistency
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -65,20 +69,69 @@ function parsePythonStyleArray(value: any): any {
   }
 }
 
+/**
+ * Convert string boolean values to actual booleans
+ */
+function normalizeBoolean(value: any): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const lower = value.toLowerCase().trim();
+    return lower === 'true' || lower === '1' || lower === 'yes' || lower === 'on';
+  }
+  return Boolean(value);
+}
+
+/**
+ * Normalize field values based on field type
+ */
+function normalizeFieldValue(field: string, value: any): any {
+  // Boolean fields
+  if (['isActive', 'isPublic', 'isPremium', 'isTemplate'].includes(field)) {
+    return normalizeBoolean(value);
+  }
+  
+  // Numeric fields
+  if (['prepTime', 'cookTime', 'servings'].includes(field)) {
+    const num = parseInt(value);
+    return isNaN(num) ? value : num;
+  }
+
+  // Parse arrays if they are strings
+  if (['ingredients', 'instructions', 'tags', 'dietaryRestrictions', 'allergens', 'medicalContraindications'].includes(field)) {
+    let parsed = parsePythonStyleArray(value);
+    
+    // For ingredients, ensure quantity is a number
+    if (field === 'ingredients' && Array.isArray(parsed)) {
+      parsed = parsed.map((ing: any) => {
+        if (typeof ing === 'object' && ing !== null) {
+          return {
+            name: ing.name || '',
+            quantity: typeof ing.quantity === 'number' ? ing.quantity : parseFloat(String(ing.quantity)) || 1,
+            unit: ing.unit || 'unit',
+            remarks: ing.remarks || ''
+          };
+        }
+        return ing;
+      });
+    }
+    
+    return parsed;
+  }
+
+  return value;
+}
+
 interface UpdateRecord {
-  uuid?: string;
-  _id?: string;
+  uuid: string | number;
   [key: string]: any;
 }
 
 interface UpdateResult {
-  uuid?: string;
-  _id?: string;
-  status: 'success' | 'failed' | 'not_found' | 'no_changes' | 'error';
+  uuid: string | number;
+  status: 'completed' | 'failed' | 'cancelled';
   message: string;
   errorDetails?: string;
   errorCode?: string;
-  updateId?: string;
   changedFields?: string[];
   changedFieldsCount?: number;
 }
@@ -91,7 +144,7 @@ const UPDATABLE_FIELDS = [
   'isPublic', 'isPremium', 'isActive', 'cuisine', 'category', 'tips', 'variations'
 ];
 
-// Parse CSV content to array of records
+// Parse CSV content to array of records (UUID required)
 function parseCSV(csvContent: string): UpdateRecord[] {
   const lines = csvContent.trim().split('\n');
   if (lines.length < 2) {
@@ -100,12 +153,11 @@ function parseCSV(csvContent: string): UpdateRecord[] {
 
   const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
   
-  // Validate uuid or _id column exists
+  // Validate uuid column exists (REQUIRED - only identifier allowed)
   const uuidIndex = headers.findIndex(h => h.toLowerCase() === 'uuid');
-  const idIndex = headers.findIndex(h => h.toLowerCase() === '_id');
   
-  if (uuidIndex === -1 && idIndex === -1) {
-    throw new Error('CSV must have either a "uuid" or "_id" column for identifying recipes');
+  if (uuidIndex === -1) {
+    throw new Error('CSV must have a "uuid" column to identify recipes for updating. This is the only supported identifier.');
   }
 
   const records: UpdateRecord[] = [];
@@ -122,7 +174,8 @@ function parseCSV(csvContent: string): UpdateRecord[] {
       continue;
     }
 
-    const record: UpdateRecord = {};
+    const record: Partial<UpdateRecord> = {};
+    let uuid: string | number | null = null;
     
     for (let j = 0; j < headers.length; j++) {
       const header = headers[j];
@@ -130,6 +183,13 @@ function parseCSV(csvContent: string): UpdateRecord[] {
       
       // Skip empty values
       if (value === '' || value === undefined) continue;
+      
+      // Extract and validate UUID
+      if (header.toLowerCase() === 'uuid') {
+        uuid = value;
+        record.uuid = value;
+        continue;
+      }
       
       // Store the final value (can be any type after parsing)
       let parsedValue: any = value;
@@ -157,9 +217,11 @@ function parseCSV(csvContent: string): UpdateRecord[] {
       record[header] = parsedValue;
     }
     
-    // Validate record has at least uuid or _id
-    if (record.uuid || record._id) {
-      records.push(record);
+    // Validate record has UUID
+    if (uuid) {
+      records.push(record as UpdateRecord);
+    } else {
+      console.warn(`Row ${i + 1} skipped: missing UUID value`);
     }
   }
 
@@ -194,7 +256,7 @@ function parseCSVLine(line: string): string[] {
   return values;
 }
 
-// PUT - Bulk update with JSON payload
+// PUT - Bulk update with JSON payload (UUID only)
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -217,11 +279,11 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Validate all records have uuid or _id
-    const invalidRecords = records.filter(r => !r.uuid && !r._id);
+    // Validate all records have UUID
+    const invalidRecords = records.filter(r => !r.uuid);
     if (invalidRecords.length > 0) {
       return NextResponse.json(
-        { success: false, error: `${invalidRecords.length} records missing uuid or _id field` },
+        { success: false, error: `${invalidRecords.length} records missing required uuid field` },
         { status: 400 }
       );
     }
@@ -229,56 +291,39 @@ export async function PUT(request: NextRequest) {
     await connectDB();
     
     const results: UpdateResult[] = [];
-    let successCount = 0;
+    let completedCount = 0;
     let failedCount = 0;
-    let notFoundCount = 0;
-    let noChangesCount = 0;
+    let cancelledCount = 0;
 
     for (const record of records) {
-      const { uuid, _id, ...updateData } = record;
+      const { uuid, ...updateData } = record;
       
       try {
-        let recipe = null;
+        // Find recipe by UUID ONLY (this is the single source of truth)
+        const uuidStr = String(uuid);
+        const uuidNum = isNaN(Number(uuid)) ? null : Number(uuid);
         
-        // Use ONLY the identifier provided - don't mix uuid and _id
-        if (_id) {
-          // Use _id if provided - ignore uuid
-          try {
-            if (mongoose.Types.ObjectId.isValid(_id)) {
-              recipe = await Recipe.findById(_id);
-            }
-          } catch (e) {
-            // Invalid ObjectId format
-          }
-        } else if (uuid) {
-          // Use uuid only if _id is NOT provided
-          const uuidStr = String(uuid);
-          const uuidNum = isNaN(Number(uuid)) ? null : Number(uuid);
-          
-          recipe = await Recipe.findOne({
-            $or: [
-              { uuid: uuidStr },
-              ...(uuidNum !== null ? [{ uuid: uuidNum }] : [])
-            ]
-          });
-        }
+        const recipe = await Recipe.findOne({
+          $or: [
+            { uuid: uuidStr },
+            ...(uuidNum !== null ? [{ uuid: uuidNum }] : [])
+          ]
+        });
         
         if (!recipe) {
-          const result: UpdateResult = {
-            status: 'not_found', 
-            message: 'Recipe not found with provided identifier',
-            errorCode: 'RECIPE_NOT_FOUND'
-          };
-          if (uuid) result.uuid = uuid;
-          if (_id) result._id = _id;
-          results.push(result);
-          notFoundCount++;
+          results.push({
+            uuid,
+            status: 'cancelled',
+            message: `Recipe not found with UUID: ${uuid}`,
+            errorCode: 'UUID_NOT_FOUND'
+          });
+          cancelledCount++;
           continue;
         }
 
         // Track changes
-        const changedFields: any[] = [];
-        const cleanedData: Record<string, any> = {};
+        const changedFields: string[] = [];
+        const updatePayload: Record<string, any> = {};
 
         for (const [key, rawValue] of Object.entries(updateData)) {
           // Skip non-updatable fields
@@ -286,101 +331,71 @@ export async function PUT(request: NextRequest) {
           
           const oldValue = (recipe as any)[key];
           
-          // Parse Python-style arrays (for ingredients, instructions, etc.)
+          // Parse and normalize field values
           let newValue = parsePythonStyleArray(rawValue);
+          newValue = normalizeFieldValue(key, newValue);
           
-          // Check if value actually changed
+          // Only include if value actually changed
           if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-            changedFields.push({
-              fieldName: key,
-              oldValue: oldValue,
-              newValue: newValue,
-              timestamp: new Date()
-            });
-            cleanedData[key] = newValue;
+            changedFields.push(key);
+            updatePayload[key] = newValue;
           }
         }
 
-        // Skip if no changes
-        if (Object.keys(cleanedData).length === 0) {
-          const result: UpdateResult = { 
-            _id: String(recipe._id),
-            status: 'no_changes', 
-            message: 'No fields changed',
-            changedFieldsCount: 0
-          };
-          if (uuid) result.uuid = uuid;
-          results.push(result);
-          noChangesCount++;
+        // If no changes detected, skip
+        if (changedFields.length === 0) {
+          results.push({
+            uuid,
+            status: 'cancelled',
+            message: 'No field changes detected',
+            errorCode: 'NO_CHANGES'
+          });
+          cancelledCount++;
           continue;
         }
 
-        // Add update record to track changes with uuid and _id
-        const updateRecord = {
-          changedFields,
-          updatedBy: new mongoose.Types.ObjectId(session.user.id),
-          reason: reason || 'Bulk update via API',
-          timestamp: new Date(),
-          recipeIdentifiers: {
-            uuid: String(recipe.uuid),
-            _id: String(recipe._id)
-          }
-        };
+        // Add timestamp for tracking
+        updatePayload.updatedAt = new Date();
 
-        // Prepare update with timestamp
-        cleanedData.updatedAt = new Date();
-
-        // Update the recipe
+        // Update recipe using $set (replaces fields completely, doesn't append)
         const updated = await Recipe.findByIdAndUpdate(
           recipe._id,
-          { $set: cleanedData },
-          { new: true }
+          { $set: updatePayload },
+          { new: true, runValidators: true }
         );
 
-        // Get the generated updateId from the record
-        const updateId = `upd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        const result: UpdateResult = {
-          _id: String(updated?._id),
-          status: 'success',
-          message: `Updated ${changedFields.length} field(s)`,
-          updateId: updateId,
-          changedFields: changedFields.map(f => f.fieldName),
+        results.push({
+          uuid,
+          status: 'completed',
+          message: `Successfully updated ${changedFields.length} field(s)`,
+          changedFields,
           changedFieldsCount: changedFields.length
-        };
-        
-        // Include the identifier that was provided
-        if (uuid) result.uuid = uuid;
-        
-        results.push(result);
-        successCount++;
+        });
+        completedCount++;
 
       } catch (error: any) {
-        const result: UpdateResult = { 
-          status: 'error', 
-          message: 'Update failed',
+        results.push({
+          uuid,
+          status: 'failed',
+          message: 'Update operation failed',
           errorDetails: error.message || 'Unknown error',
-          errorCode: error.code || 'UNKNOWN_ERROR'
-        };
-        if (uuid) result.uuid = uuid;
-        if (_id) result._id = _id;
-        results.push(result);
+          errorCode: error.code || 'UPDATE_ERROR'
+        });
         failedCount++;
       }
     }
 
-    // Clear recipe cache
+    // Clear recipe cache for immediate reflection
     clearCacheByTag('recipes');
 
     return NextResponse.json({
       success: true,
-      message: 'Bulk update completed',
+      message: 'Bulk update operation completed',
       summary: {
         total: records.length,
-        success: successCount,
+        completed: completedCount,
         failed: failedCount,
-        notFound: notFoundCount,
-        noChanges: noChangesCount
+        cancelled: cancelledCount
       },
       results
     });
@@ -394,7 +409,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// POST - Bulk update with CSV file upload
+// POST - Bulk update with CSV file upload (UUID only)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -441,7 +456,7 @@ export async function POST(request: NextRequest) {
 
     if (records.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'No valid records found in CSV' },
+        { success: false, error: 'No valid records with UUID found in CSV' },
         { status: 400 }
       );
     }
@@ -449,16 +464,15 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const results: UpdateResult[] = [];
-    let successCount = 0;
+    let completedCount = 0;
     let failedCount = 0;
-    let notFoundCount = 0;
-    let noChangesCount = 0;
+    let cancelledCount = 0;
 
     for (const record of records) {
       const { uuid, ...updateData } = record;
       
       try {
-        // Find recipe by uuid - handle both string and numeric UUIDs
+        // Find recipe by UUID ONLY (this is the single source of truth)
         const uuidStr = String(uuid);
         const uuidNum = isNaN(Number(uuid)) ? null : Number(uuid);
         
@@ -470,105 +484,91 @@ export async function POST(request: NextRequest) {
         });
         
         if (!recipe) {
-          results.push({ 
-            uuid, 
-            status: 'not_found', 
-            message: 'Recipe not found with this UUID',
-            errorCode: 'RECIPE_NOT_FOUND'
+          results.push({
+            uuid,
+            status: 'cancelled',
+            message: `Recipe not found with UUID: ${uuid}`,
+            errorCode: 'UUID_NOT_FOUND'
           });
-          notFoundCount++;
+          cancelledCount++;
           continue;
         }
 
         // Track changes
-        const changedFields: any[] = [];
-        const cleanedData: Record<string, any> = {};
+        const changedFields: string[] = [];
+        const updatePayload: Record<string, any> = {};
 
-        for (const [key, newValue] of Object.entries(updateData)) {
+        for (const [key, rawValue] of Object.entries(updateData)) {
           if (!UPDATABLE_FIELDS.includes(key)) continue;
           
           const oldValue = (recipe as any)[key];
           
+          // Parse and normalize field values
+          let newValue = parsePythonStyleArray(rawValue);
+          newValue = normalizeFieldValue(key, newValue);
+          
+          // Only include if value actually changed
           if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-            changedFields.push({
-              fieldName: key,
-              oldValue: oldValue,
-              newValue: newValue,
-              timestamp: new Date()
-            });
-            cleanedData[key] = newValue;
+            changedFields.push(key);
+            updatePayload[key] = newValue;
           }
         }
 
-        if (Object.keys(cleanedData).length === 0) {
-          results.push({ 
-            uuid, 
-            _id: String(recipe._id),
-            status: 'no_changes', 
-            message: 'No fields changed',
-            changedFieldsCount: 0
+        // If no changes detected, skip
+        if (changedFields.length === 0) {
+          results.push({
+            uuid,
+            status: 'cancelled',
+            message: 'No field changes detected',
+            errorCode: 'NO_CHANGES'
           });
-          noChangesCount++;
+          cancelledCount++;
           continue;
         }
 
-        const updateRecord = {
-          changedFields,
-          updatedBy: new mongoose.Types.ObjectId(session.user.id),
-          reason,
-          timestamp: new Date(),
-          recipeIdentifiers: {
-            uuid: String(recipe.uuid),
-            _id: String(recipe._id)
-          }
-        };
+        // Add timestamp for tracking
+        updatePayload.updatedAt = new Date();
 
-        cleanedData.updatedAt = new Date();
-
+        // Update recipe using $set (replaces fields completely, doesn't append)
         const updated = await Recipe.findByIdAndUpdate(
           recipe._id,
-          { $set: cleanedData },
-          { new: true }
+          { $set: updatePayload },
+          { new: true, runValidators: true }
         );
 
-        const updateId = `upd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
         results.push({
           uuid,
-          _id: String(updated?._id),
-          status: 'success',
-          message: `Updated ${changedFields.length} field(s)`,
-          updateId: updateId,
-          changedFields: changedFields.map(f => f.fieldName),
+          status: 'completed',
+          message: `Successfully updated ${changedFields.length} field(s)`,
+          changedFields,
           changedFieldsCount: changedFields.length
         });
-        successCount++;
+        completedCount++;
 
       } catch (error: any) {
-        results.push({ 
-          uuid, 
-          status: 'error', 
-          message: 'Update failed',
+        results.push({
+          uuid,
+          status: 'failed',
+          message: 'Update operation failed',
           errorDetails: error.message || 'Unknown error',
-          errorCode: error.code || 'UNKNOWN_ERROR'
+          errorCode: error.code || 'UPDATE_ERROR'
         });
         failedCount++;
       }
     }
 
-    // Clear recipe cache
+    // Clear recipe cache for immediate reflection
     clearCacheByTag('recipes');
 
     return NextResponse.json({
       success: true,
-      message: 'CSV bulk update completed',
+      message: 'CSV bulk update operation completed',
       fileName: file.name,
       summary: {
         total: records.length,
-        success: successCount,
+        completed: completedCount,
         failed: failedCount,
-        notFound: notFoundCount,
-        noChanges: noChangesCount
+        cancelled: cancelledCount
       },
       results
     });
@@ -596,7 +596,7 @@ export async function GET(request: NextRequest) {
     if (format === 'csv') {
       // Return sample CSV template
       const csvHeader = 'uuid,name,description,prepTime,cookTime,servings,difficulty,isPublic,isPremium,tags';
-      const csvSample = '10,"Sample Recipe","Updated description",15,30,4,easy,true,false,"[""healthy"",""quick""]"';
+      const csvSample = '10,"Updated Recipe Name","Updated description",15,30,4,easy,true,false,"[""healthy"",""quick""]"';
       const csvContent = `${csvHeader}\n${csvSample}`;
 
       return new NextResponse(csvContent, {
@@ -609,20 +609,53 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      instructions: 'Upload a CSV file with uuid or _id column to identify recipes. Include only fields you want to update.',
-      requiredField: 'uuid or _id (use either one)',
+      instructions: 'Upload a CSV file with a "uuid" column to identify recipes for updating.',
+      requiredField: 'uuid (string or numeric - used to locate recipes)',
+      identificationMethod: 'UUID is the ONLY accepted identifier for recipe lookups',
+      updateMode: 'Updates only - no new recipes are created',
+      operationMode: '$set operations used to replace field values completely',
       updatableFields: UPDATABLE_FIELDS,
       sampleCSV: {
         headers: ['uuid', 'name', 'description', 'prepTime', 'cookTime', 'difficulty', 'isPublic', 'tags'],
         sampleRow: ['10', 'Updated Recipe Name', 'New description', '15', '30', 'easy', 'true', '["healthy","quick"]']
       },
       notes: [
-        'Use either "uuid" or "_id" column to identify the recipe to update (whichever is available)',
+        'Use "uuid" column to identify the recipe to update (REQUIRED - only accepted identifier)',
         'Only include columns for fields you want to change',
         'Arrays (like tags, ingredients) should be JSON formatted',
-        'Boolean values: use true/false',
-        'Each update is tracked with a unique updateId for audit purposes'
-      ]
+        'Boolean values: use true/false or TRUE/FALSE or 1/0',
+        'Numeric values: use standard numbers (no quotes)',
+        'Records without UUID will be skipped and logged',
+        'If UUID does not match any recipe, that row is marked as "cancelled"',
+        'Updates reflect immediately across all dashboards and APIs',
+        'Use $set operations - arrays are completely replaced (not appended)',
+        'All updates include updatedAt timestamp'
+      ],
+      exampleRequests: {
+        putMethod: {
+          endpoint: 'PUT /api/admin/recipes/bulk-update',
+          payload: {
+            records: [
+              { uuid: '10', name: 'Updated Name', prepTime: 20 },
+              { uuid: '15', description: 'New description', isPublic: true }
+            ],
+            reason: 'Admin bulk update'
+          }
+        },
+        postMethod: {
+          endpoint: 'POST /api/admin/recipes/bulk-update',
+          description: 'Upload CSV file with form-data',
+          formData: {
+            file: 'recipe_updates.csv',
+            reason: 'Admin bulk update (optional)'
+          }
+        }
+      },
+      responseStatuses: {
+        completed: 'Recipe successfully updated',
+        cancelled: 'Update skipped - no recipe found with UUID or no field changes',
+        failed: 'Update operation encountered an error'
+      }
     });
 
   } catch (error: any) {
