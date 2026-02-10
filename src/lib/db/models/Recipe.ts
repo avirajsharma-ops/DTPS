@@ -156,8 +156,7 @@ const recipeSchema = new Schema<IRecipe>({
   },
   
 
-  // Instructions 
-  // - simple string array
+  // Instructions- simple string array
   instructions: {
     type: [String],
     default: [],
