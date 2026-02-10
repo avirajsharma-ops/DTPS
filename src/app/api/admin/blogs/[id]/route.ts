@@ -90,6 +90,20 @@ export async function PATCH(
 }
 
 // PUT - Update blog (full update)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await connectDB();
+    
+    const formData = await request.formData();
+    
+    const blog = await Blog.findById(id);
+    if (!blog) {
+      return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
+    }
     
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
