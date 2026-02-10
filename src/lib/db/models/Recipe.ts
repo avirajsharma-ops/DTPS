@@ -88,7 +88,7 @@ const recipeSchema = new Schema<IRecipe>({
     type: String,
     required: true,
     trim: true,
-    index: true
+  
   },
   description: {
     type: String,
@@ -101,12 +101,7 @@ const recipeSchema = new Schema<IRecipe>({
     lowercase: true,
     index: true
   },
-  cuisine: {
-    type: String,
-    trim: true,
-    lowercase: true,
-    index: true
-  },
+ 
   mealType: {
     type: String,
     enum: ['breakfast', 'lunch', 'dinner', 'snack', 'beverage', 'dessert', 'other'],
@@ -168,7 +163,7 @@ const recipeSchema = new Schema<IRecipe>({
   },
   
   // Flat nutrition values for queries (numbers only)
-  calories: { type: Number, default: 0, min: 0, index: true },
+  calories: { type: Number, default: 0, min: 0},
   protein: { type: Number, default: 0, min: 0 },
   carbs: { type: Number, default: 0, min: 0 },
   fat: { type: Number, default: 0, min: 0 },
@@ -234,7 +229,7 @@ recipeSchema.index({ tags: 1 });
 recipeSchema.index({ dietTypes: 1 });
 recipeSchema.index({ dietaryRestrictions: 1 });
 recipeSchema.index({ createdAt: -1 });
-recipeSchema.index({ name: 1, createdBy: 1 }, { unique: true });
+recipeSchema.index({ name: 1, createdBy: 1 }, { unique: true, sparse: true });
 
 // Text search index
 recipeSchema.index(
