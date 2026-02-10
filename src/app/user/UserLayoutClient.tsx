@@ -41,7 +41,7 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   const [showLoader, setShowLoader] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
   const redirectingRef = useRef(false);
-  
+
   // Enable scroll restoration
   useScrollRestoration(!pathname.startsWith('/user/recipes'));
 
@@ -66,20 +66,20 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
       setIsNavigating(true);
       setSidebarOpen(false);
       setShowLoader(false);
-      
+
       // Delay showing loader by 400ms - if page loads fast, no loader shown
       const loaderTimer = setTimeout(() => {
         if (isNavigating) {
           setShowLoader(true);
         }
       }, 400);
-      
+
       // Content is ready after a short delay for smooth transition
       const contentTimer = setTimeout(() => {
         setIsNavigating(false);
         setShowLoader(false);
       }, 150);
-      
+
       return () => {
         clearTimeout(loaderTimer);
         clearTimeout(contentTimer);
@@ -114,7 +114,7 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   return (
     <ThemeProvider>
       <UnreadCountProvider>
-        <UserLayoutContent 
+        <UserLayoutContent
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           showLoader={showLoader}
@@ -128,13 +128,13 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
 }
 
 // Inner component that uses the UnreadCount context
-function UserLayoutContent({ 
-  children, 
-  sidebarOpen, 
-  setSidebarOpen, 
-  showLoader, 
-  isNavigating 
-}: { 
+function UserLayoutContent({
+  children,
+  sidebarOpen,
+  setSidebarOpen,
+  showLoader,
+  isNavigating
+}: {
   children: ReactNode;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
@@ -146,25 +146,11 @@ function UserLayoutContent({
 
   return (
     <div className={`relative flex flex-col min-h-screen transition-colors duration-500 ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
-      {/* Sidebar overlay for mobile - smooth fade */}
-      <div 
-        className={`fixed inset-0 bg-black z-40 lg:hidden transition-opacity duration-900 ease-in-out ${
-          sidebarOpen ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={() => setSidebarOpen(false)}
+      {/* Sidebar — self-contained overlay (handles its own backdrop + positioning) */}
+      <UserSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
-
-      {/* Sidebar for desktop - always mounted with smooth graceful animation */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-50 lg:z-30
-        ${sidebarOpen ? '' : '-translate-x-full lg:translate-x-0'}
-        transition-transform duration-300 ease-in-out
-      `}>
-        <UserSidebar 
-          isOpen={sidebarOpen} 
-          onClose={() => setSidebarOpen(false)} 
-        />
-      </aside>
 
       {/* Navigation Loader - OUTSIDE main, true viewport center */}
       {showLoader && isNavigating && (
@@ -172,9 +158,9 @@ function UserLayoutContent({
       )}
 
       {/* Main Content Area - this is what reloads on route change */}
-      <main className="flex-1 pb-20 lg:pb-0 lg:ml-64">
+      <main className="flex-1 pb-20">
         {/* Mobile Header */}
-        <div className={`sticky top-0 z-40 flex items-center justify-between px-4 py-3 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'} border-b shadow-sm lg:hidden`}>
+        <div className={`sticky top-0 z-40 flex items-center justify-between px-4 py-3 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'} border-b shadow-sm`}>
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 transition-all duration-150 rounded-lg hover:bg-gray-100 active:scale-95"
@@ -192,7 +178,7 @@ function UserLayoutContent({
             <span className="text-lg font-bold text-[#E06A26]">DTPS</span>
           </div>
           {/* Bell Notification Icon */}
-          <Link 
+          <Link
             href="/user/notifications"
             className="relative p-2 transition-all duration-150 rounded-lg hover:bg-gray-100 active:scale-95"
           >
@@ -206,7 +192,7 @@ function UserLayoutContent({
         </div>
 
         {/* Page Content */}
-        <div className="min-h-[calc(100vh-140px)] lg:min-h-[calc(100vh-20px)]">
+        <div className="min-h-[calc(100vh-140px)]">
           <div className={`transition-opacity duration-300 ${isNavigating ? 'opacity-50' : 'opacity-100'}`}>
             {children}
           </div>
@@ -214,7 +200,7 @@ function UserLayoutContent({
       </main>
 
       {/* Bottom Navigation - always visible on mobile, persists across route changes */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-30">
         <BottomNavBar />
       </div>
     </div>

@@ -26,7 +26,7 @@ export default function BottomNavBar() {
 
   return (
     <div className={`fixed bottom-0 left-0 right-0 px-9 py-3 z-50 border-t transition-colors duration-300 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
-      <div className="pb-safe max-w-md mx-auto">
+      <div className="pb-safe max-w-lg mx-auto">
         <div className="flex items-center justify-between gap-4">
           {navItems.map((item) => (
             <Link

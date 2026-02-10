@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21678"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="EHf-IW-A2E">
+            <objects>
+                <viewController id="01J-lp-oVM" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <!-- Glow Effect -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="glow-view">
+                                <rect key="frame" x="52.5" y="282" width="288" height="288"/>
+                                <color key="backgroundColor" red="0.38039215686274508" green="0.62745098039215685" blue="0.20784313725490197" alpha="0.20000000000000001"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="288" id="glow-w"/>
+                                    <constraint firstAttribute="height" constant="288" id="glow-h"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <integer key="value" value="144"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </view>
+                            <!-- Pill Container -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="pill-container">
+                                <rect key="frame" x="156.5" y="386" width="80" height="80"/>
+                                <subviews>
+                                    <!-- Logo Container -->
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="logo-bg">
+                                        <rect key="frame" x="0.0" y="0.0" width="80" height="80"/>
+                                        <subviews>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="DTPS" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="logo-text">
+                                                <rect key="frame" x="10" y="25" width="60" height="30"/>
+                                                <fontDescription key="fontDescription" type="boldSystem" pointSize="20"/>
+                                                <color key="textColor" red="0.23137254901960785" green="0.65490196078431373" blue="0.58823529411764708" alpha="1"/>
+                                            </label>
+                                        </subviews>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="80" id="logo-w"/>
+                                            <constraint firstAttribute="height" constant="80" id="logo-h"/>
+                                            <constraint firstItem="logo-text" firstAttribute="centerX" secondItem="logo-bg" secondAttribute="centerX" id="logo-cx"/>
+                                            <constraint firstItem="logo-text" firstAttribute="centerY" secondItem="logo-bg" secondAttribute="centerY" id="logo-cy"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                                <integer key="value" value="40"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="boolean" keyPath="clipsToBounds" value="YES"/>
+                                        </userDefinedRuntimeAttributes>
+                                    </view>
+                                </subviews>
+                                <color key="backgroundColor" red="0.23137254901960785" green="0.65490196078431373" blue="0.58823529411764708" alpha="1"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="80" id="pill-h"/>
+                                    <constraint firstAttribute="width" constant="80" id="pill-w"/>
+                                    <constraint firstItem="logo-bg" firstAttribute="leading" secondItem="pill-container" secondAttribute="leading" id="logo-lead"/>
+                                    <constraint firstItem="logo-bg" firstAttribute="top" secondItem="pill-container" secondAttribute="top" id="logo-top"/>
+                                    <constraint firstItem="logo-bg" firstAttribute="bottom" secondItem="pill-container" secondAttribute="bottom" id="logo-bot"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <integer key="value" value="40"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="boolean" keyPath="clipsToBounds" value="YES"/>
+                                </userDefinedRuntimeAttributes>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="glow-view" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="glow-cx"/>
+                            <constraint firstItem="glow-view" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="glow-cy"/>
+                            <constraint firstItem="pill-container" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="pill-cx"/>
+                            <constraint firstItem="pill-container" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="pill-cy"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="52" y="5"/>
+        </scene>
+    </scenes>
+</document>
