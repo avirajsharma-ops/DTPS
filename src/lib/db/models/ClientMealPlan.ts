@@ -213,7 +213,7 @@ const ClientMealPlanSchema = new Schema({
   
   mealTypes: [{
     name: { type: String, required: true },
-    time: { type: String, default: '12:00' }
+    time: { type: String, default: '12:00 PM' }
   }],
   startDate: { 
     type: Date, 

@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 // Import all models to register their schemas before any operations
+// Core models
 import './models/User';
 import './models/Tag';
 import './models/Task';
@@ -22,6 +23,33 @@ import './models/DietTemplate';
 import './models/History';
 import './models/ActivityAssignment';
 import './models/Payment';
+
+// Payment & subscription models (must be registered before queries with populate)
+import './models/ServicePlan';
+import './models/SubscriptionPlan';
+import './models/PaymentLink';
+import './models/UnifiedPayment';
+import './models/ClientSubscription';
+import './models/OtherPlatformPayment';
+
+// Additional models
+import './models/MealPlanTemplate';
+import './models/ClientMealPlan';
+import './models/Notification';
+import './models/GoalCategory';
+import './models/Lead';
+import './models/Blog';
+import './models/Transformation';
+import './models/DailyTracking';
+import './models/ActivityLog';
+
+// Ecommerce models
+import './models/EcommerceBlog';
+import './models/EcommerceOrder';
+import './models/EcommercePayment';
+import './models/EcommercePlan';
+import './models/EcommerceRating';
+import './models/EcommerceTransformation';
 
 // MongoDB URI from environment
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/dtps-nutrition';

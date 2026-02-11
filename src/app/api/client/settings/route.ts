@@ -99,7 +99,7 @@ async function handleReminderSettings(userId: string, settings: any) {
       await User.findByIdAndUpdate(userId, {
         $set: {
           'reminderPreferences.mealReminders': true,
-          'reminderPreferences.mealTimes': settings.mealTimes || ['8:00', '13:00', '19:00']
+          'reminderPreferences.mealTimes': settings.mealTimes || ['8:00 AM', '1:00 PM', '7:00 PM']
         }
       });
     }

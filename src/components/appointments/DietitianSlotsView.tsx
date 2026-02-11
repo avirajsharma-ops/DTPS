@@ -90,9 +90,9 @@ export default function DietitianSlotsView({
   ];
 
   const TIME_SLOTS = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'
+    '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+    '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM',
+    '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM'
   ];
 
   // Use SSE for real-time updates
@@ -278,7 +278,7 @@ export default function DietitianSlotsView({
   const addAvailabilitySlot = () => {
     setEditableAvailability([
       ...editableAvailability, 
-      { day: 'monday', startTime: '10:00', endTime: '18:00' }
+      { day: 'monday', startTime: '10:00 AM', endTime: '6:00 PM' }
     ]);
   };
 

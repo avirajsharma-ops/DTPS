@@ -44,12 +44,12 @@ type MealGridTableProps = {
 };
 
 const mealTimeSuggestions: { [key: string]: string } = {
-  'Breakfast': '07:00',
-  'Mid Morning': '09:00',
-  'Lunch': '13:00',
-  'Evening Snack': '17:00',
-  'Dinner': '21:00',
-  'Bedtime': '23:00'
+  'Breakfast': '7:00 AM',
+  'Mid Morning': '9:00 AM',
+  'Lunch': '1:00 PM',
+  'Evening Snack': '5:00 PM',
+  'Dinner': '9:00 PM',
+  'Bedtime': '11:00 PM'
 };
 
 const DAYS_PER_PAGE = 14;
@@ -154,7 +154,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
 
   const createNewMeal = (mealType: string): Meal => ({
     id: Math.random().toString(36).substr(2, 9),
-    time: customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00',
+    time: customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00 PM',
     name: mealType,
     showAlternatives: true,
     foodOptions: [
@@ -393,7 +393,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     if (readOnly || !onUpdate || !onAddMealType) return;
     const name = newMealTypeName.trim();
     if (!name) return;
-    const time = newMealTime || '12:00';
+    const time = newMealTime || '12:00 PM';
 
     // Create meal in all days if missing
     const newWeekPlan = weekPlan.map(d => {
@@ -432,7 +432,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       for (const day of weekPlan) {
         if (day.meals[mt]?.time) return day.meals[mt].time;
       }
-      return customMealTimes[mt] || mealTimeSuggestions[mt] || '12:00';
+      return customMealTimes[mt] || mealTimeSuggestions[mt] || '12:00 PM';
     };
     const sorted = [...mealTypes, name].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=> getMealTime(a).localeCompare(getMealTime(b)));
     const position = sorted.indexOf(name);
@@ -468,7 +468,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       }
     }
     // Fall back to custom times or suggestions
-    return customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00';
+    return customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00 PM';
   };
 
   // Convert time string to numeric for proper sorting
@@ -584,7 +584,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   const openBulkTimeEditor = () => {
     const timesMap: { [key: string]: string } = {};
     mealTypes.forEach(mealType => {
-      timesMap[mealType] = customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00';
+      timesMap[mealType] = customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00 PM';
     });
     setMealTimesForBulkEdit(timesMap);
     setBulkTimeEditorOpen(true);
@@ -617,12 +617,12 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
 
   const applyDefaultMealTimes = () => {
     const defaults = {
-      'Breakfast': '07:00',
-      'Mid Morning': '09:00',
-      'Lunch': '13:00',
-      'Evening Snack': '17:00',
-      'Dinner': '21:00',
-      'Bedtime': '23:00'
+      'Breakfast': '7:00 AM',
+      'Mid Morning': '9:00 AM',
+      'Lunch': '1:00 PM',
+      'Evening Snack': '5:00 PM',
+      'Dinner': '9:00 PM',
+      'Bedtime': '11:00 PM'
     };
     setMealTimesForBulkEdit(prev => ({ ...prev, ...defaults }));
   };
@@ -1025,9 +1025,10 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                               {/* Time Input and Action Buttons */}
                               <div className="flex items-center gap-2">
                                 <Input
-                                  type="time"
+                                  type="text"
                                   value={meal.time}
                                   onChange={(e) => updateMealTime(actualDayIndex, mealType, e.target.value)}
+                                  placeholder="e.g., 8:00 AM"
                                   className="h-9 text-xs flex-1 bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
                                 />
                                 <Button
@@ -1455,14 +1456,14 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
 
       {/* Copy Meal Dialog */}
       <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
-        <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-slate-900 font-semibold">Copy Meal Plan</DialogTitle>
             <DialogDescription className="text-slate-600">
               Select the days and meal types where you want to copy this meal.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-5 py-4">
+          <div className="space-y-5 py-4 overflow-y-auto flex-1 min-h-0">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-slate-900 font-semibold text-sm">Target Days</Label>
@@ -1475,7 +1476,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                   {selectedDays.length === weekPlan.length ? 'Deselect All' : 'Select All'}
                 </Button>
               </div>
-              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50 max-h-60 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
                 {weekPlan.map((day, index) => (
                   <div key={day.id} className="flex items-center space-x-2.5">
                     <Checkbox
@@ -1535,7 +1536,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               </div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setCopyDialogOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
               Cancel
             </Button>
@@ -1573,9 +1574,10 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
             <div className="space-y-3">
               <Label className="text-slate-900 font-semibold text-sm">Meal Time</Label>
               <Input
-                type="time"
+                type="text"
                 value={newMealTime}
                 onChange={(e) => setNewMealTime(e.target.value)}
+                placeholder="e.g., 8:00 AM"
                 className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium"
               />
             </div>
@@ -1613,12 +1615,13 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                     {mealType}
                   </Label>
                   <Input
-                    type="time"
-                    value={mealTimesForBulkEdit[mealType] || '12:00'}
+                    type="text"
+                    value={mealTimesForBulkEdit[mealType] || '12:00 PM'}
                     onChange={(e) => setMealTimesForBulkEdit(prev => ({
                       ...prev,
                       [mealType]: e.target.value
                     }))}
+                    placeholder="e.g., 8:00 AM"
                     className="h-8 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500"
                   />
                 </div>

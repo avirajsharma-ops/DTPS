@@ -42,6 +42,22 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
   
   const [exportFormat, setExportFormat] = useState<'html' | 'csv' | 'pdf' | 'print'>('pdf');
 
+  // Helper function to format date properly
+  const formatDateProper = (dateStr: string): string => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long',
+        month: 'long', 
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
   // Helper function to get meal time from first occurrence
   const getMealTime = (mealType: string): string => {
     for (const day of weekPlan) {
@@ -49,7 +65,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
         return day.meals[mealType].time;
       }
     }
-    return '12:00';
+    return '12:00 PM';
   };
 
   // Helper function to convert time string to numeric for sorting
@@ -205,7 +221,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
         <div class="day-section">
           <div class="day-header" style="background: #fbbf24;">
             <span>📅 ${day.day}</span>
-            <span class="date">${day.date || ''}</span>
+            <span class="date">${day.date ? formatDateProper(day.date) : ''}</span>
           </div>
           <div class="day-note">⏸️ Plan on hold${day.holdReason ? `: ${day.holdReason}` : ''}</div>
         </div>
@@ -216,7 +232,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
       <div class="day-section">
         <div class="day-header">
           <span>📅 ${day.day}</span>
-          <span class="date">${day.date || ''}</span>
+          <span class="date">${day.date ? formatDateProper(day.date) : ''}</span>
         </div>
         ${day.note ? `<div class="day-note">📝 ${day.note}</div>` : ''}
         <table>
@@ -342,7 +358,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     sortedDays.forEach((day) => {
       // Skip held days or show them differently
       if (day.isHeld) {
-        csv += `"${day.day}","${day.date || ''}","ON HOLD","","","","","","","","","","⏸️ ${day.holdReason || 'Plan on hold'}"\n`;
+        csv += `"${day.day}","${day.date ? formatDateProper(day.date) : ''}","ON HOLD","","","","","","","","","","⏸️ ${day.holdReason || 'Plan on hold'}"\n`;
         return;
       }
 
@@ -361,7 +377,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
           .join(' | ');
 
         // Main food row
-        csv += `"${day.day}","${day.date || ''}","${mealType}","${meal.time || ''}","${primaryFood.food || ''}","${primaryFood.unit || ''}","${primaryFood.cal || ''}","${primaryFood.carbs || ''}","${primaryFood.protein || ''}","${primaryFood.fats || ''}","${primaryFood.fiber || ''}","${alternativesStr}","${day.note || ''}"\n`;
+        csv += `"${day.day}","${day.date ? formatDateProper(day.date) : ''}","${mealType}","${meal.time || ''}","${primaryFood.food || ''}","${primaryFood.unit || ''}","${primaryFood.cal || ''}","${primaryFood.carbs || ''}","${primaryFood.protein || ''}","${primaryFood.fats || ''}","${primaryFood.fiber || ''}","${alternativesStr}","${day.note || ''}"\n`;
         
         // Alternative rows (if any)
         alternatives.forEach((alt, altIndex) => {

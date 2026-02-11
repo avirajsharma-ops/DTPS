@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, ChefHat, Target, Pencil, User, Globe, Lock, Flame, Dumbbell, Clock, Star, Leaf, UtensilsCrossed, Calendar } from 'lucide-react';
+import { ArrowLeft, ChefHat, Target, Pencil, User, Globe, Lock, Flame, Dumbbell, Clock, Star, Leaf, UtensilsCrossed, Calendar, Coffee, Sun, Moon, Utensils, Salad, Sandwich, Cookie, Soup, Pizza } from 'lucide-react';
 import Link from 'next/link';
 import { UserRole } from '@/types';
 
@@ -23,6 +23,7 @@ interface FoodOption {
   fats: string;
   protein: string;
   fiber: string;
+  isAlternative?: boolean;
 }
 
 interface Meal {
@@ -72,6 +73,100 @@ interface DietTemplateResp {
   createdAt?: string;
   updatedAt?: string;
 }
+
+// Meal type ordering and icons
+const MEAL_TYPE_ORDER: { [key: string]: number } = {
+  'early-morning': 1,
+  'earlymorning': 1,
+  'breakfast': 2,
+  'mid-morning': 3,
+  'midmorning': 3,
+  'brunch': 4,
+  'lunch': 5,
+  'afternoon': 6,
+  'afternoon-snack': 6,
+  'snack': 7,
+  'evening': 8,
+  'evening-snack': 8,
+  'dinner': 9,
+  'supper': 10,
+  'late-night': 11,
+  'latenight': 11,
+  'pre-workout': 12,
+  'post-workout': 13,
+};
+
+const getMealIcon = (mealType: string) => {
+  const type = mealType.toLowerCase().replace(/[\s-_]/g, '');
+  if (type.includes('breakfast') || type.includes('earlymorning')) return Coffee;
+  if (type.includes('lunch') || type.includes('brunch')) return Utensils;
+  if (type.includes('dinner') || type.includes('supper')) return Moon;
+  if (type.includes('snack') || type.includes('evening')) return Cookie;
+  if (type.includes('morning') || type.includes('afternoon')) return Sun;
+  return Salad;
+};
+
+const getMealTypeColor = (mealType: string) => {
+  const type = mealType.toLowerCase().replace(/[\s-_]/g, '');
+  if (type.includes('breakfast') || type.includes('earlymorning')) return 'bg-amber-50 border-amber-200 text-amber-700';
+  if (type.includes('lunch') || type.includes('brunch')) return 'bg-green-50 border-green-200 text-green-700';
+  if (type.includes('dinner') || type.includes('supper')) return 'bg-indigo-50 border-indigo-200 text-indigo-700';
+  if (type.includes('snack')) return 'bg-pink-50 border-pink-200 text-pink-700';
+  if (type.includes('morning')) return 'bg-orange-50 border-orange-200 text-orange-700';
+  if (type.includes('evening') || type.includes('afternoon')) return 'bg-purple-50 border-purple-200 text-purple-700';
+  return 'bg-gray-50 border-gray-200 text-gray-700';
+};
+
+// Parse time string to minutes for sorting (handles both 24-hour and 12-hour formats)
+const parseTimeToMinutes = (timeStr: string): number => {
+  if (!timeStr) return 720; // Default to noon if no time
+  
+  timeStr = timeStr.trim();
+  
+  // Handle 12-hour format with AM/PM
+  const ampmMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+  if (ampmMatch) {
+    let hours = parseInt(ampmMatch[1], 10);
+    const minutes = parseInt(ampmMatch[2], 10);
+    const period = ampmMatch[3].toLowerCase();
+    
+    // Convert to 24-hour for sorting
+    if (period === 'pm' && hours !== 12) {
+      hours += 12;
+    } else if (period === 'am' && hours === 12) {
+      hours = 0;
+    }
+    
+    return hours * 60 + minutes;
+  }
+  
+  // Handle 24-hour format
+  const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
+  if (timeMatch) {
+    const hours = parseInt(timeMatch[1], 10);
+    const minutes = parseInt(timeMatch[2], 10);
+    return hours * 60 + minutes;
+  }
+  
+  return 720; // Default to noon
+};
+
+// Sort meals by time
+const sortMealsByTime = (meals: { [mealType: string]: Meal }): [string, Meal][] => {
+  return Object.entries(meals).sort(([typeA, mealA], [typeB, mealB]) => {
+    // First sort by time if available
+    const timeA = parseTimeToMinutes(mealA.time);
+    const timeB = parseTimeToMinutes(mealB.time);
+    
+    if (timeA !== timeB) return timeA - timeB;
+    
+    // Then by meal type order
+    const orderA = MEAL_TYPE_ORDER[typeA.toLowerCase().replace(/[\s-_]/g, '')] || 50;
+    const orderB = MEAL_TYPE_ORDER[typeB.toLowerCase().replace(/[\s-_]/g, '')] || 50;
+    
+    return orderA - orderB;
+  });
+};
 
 export default function DietTemplateViewPage() {
   const params = useParams();
@@ -394,78 +489,210 @@ export default function DietTemplateViewPage() {
                       Diet Plan ({template.meals.length} Days)
                     </div>
                     
-                    {/* Day Selector */}
-                    <div className="flex flex-wrap gap-2">
+                    {/* Day Selector - Horizontal scrollable tabs */}
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
                       {template.meals.map((day, index) => (
                         <Button
                           key={day.id || index}
                           variant={selectedDay === index ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => setSelectedDay(index)}
-                          className="text-xs"
+                          className={`text-xs whitespace-nowrap flex-shrink-0 ${
+                            selectedDay === index 
+                              ? 'bg-emerald-600 hover:bg-emerald-700' 
+                              : 'hover:bg-emerald-50 hover:border-emerald-300'
+                          }`}
                         >
                           <Calendar className="h-3 w-3 mr-1" />
                           {day.day || `Day ${index + 1}`}
+                          {day.date && (
+                            <span className="ml-2 opacity-80 text-[10px] font-medium">
+                              {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                            </span>
+                          )}
                         </Button>
                       ))}
                     </div>
 
-                    {/* Selected Day Meals */}
+                    {/* Selected Day Meals - Improved Layout */}
                     {template.meals[selectedDay] && (
-                      <Card className="border-2 border-emerald-200">
-                        <CardHeader className="pb-2 bg-emerald-50">
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-emerald-600" />
-                            {template.meals[selectedDay].day || `Day ${selectedDay + 1}`}
-                          </CardTitle>
+                      <Card className="border-2 border-emerald-200 overflow-hidden">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-emerald-50 to-green-50 border-b border-emerald-100">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-base flex items-center gap-3">
+                              <Calendar className="h-5 w-5 text-emerald-600" />
+                              <span className="font-bold text-gray-800">{template.meals[selectedDay].day || `Day ${selectedDay + 1}`}</span>
+                              {template.meals[selectedDay].date && (
+                                <Badge className="text-xs font-bold bg-emerald-100 text-emerald-800 border-0 ml-2">
+                                  📅 {new Date(template.meals[selectedDay].date).toLocaleDateString('en-US', { 
+                                    weekday: 'long',
+                                    month: 'long', 
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </Badge>
+                              )}
+                            </CardTitle>
+                            {/* Day Summary */}
+                            {Object.keys(template.meals[selectedDay].meals || {}).length > 0 && (
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span className="font-medium">
+                                  {Object.keys(template.meals[selectedDay].meals).length} meals
+                                </span>
+                                <span>•</span>
+                                <span className="font-medium text-orange-600">
+                                  {Object.values(template.meals[selectedDay].meals).reduce((total, meal: any) => {
+                                    return total + (meal.foodOptions?.reduce((sum: number, f: FoodOption) => sum + (parseFloat(f.cal) || 0), 0) || 0);
+                                  }, 0).toFixed(0)} cal
+                                </span>
+                              </div>
+                            )}
+                          </div>
                           {template.meals[selectedDay].note && (
-                            <CardDescription className="text-xs">
-                              Note: {template.meals[selectedDay].note}
+                            <CardDescription className="text-xs mt-1 bg-amber-50 text-amber-800 p-2 rounded border border-amber-200">
+                              📝 {template.meals[selectedDay].note}
                             </CardDescription>
                           )}
                         </CardHeader>
-                        <CardContent className="pt-4">
+                        <CardContent className="p-0">
                           {Object.keys(template.meals[selectedDay].meals || {}).length > 0 ? (
-                            <div className="space-y-4">
-                              {Object.entries(template.meals[selectedDay].meals).map(([mealType, meal]: [string, any]) => (
-                                <div key={mealType} className="border rounded-lg p-3 bg-gray-50">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <h4 className="font-medium text-sm text-gray-900 capitalize">{mealType}</h4>
-                                    {meal.time && (
-                                      <span className="text-xs text-gray-500">{meal.time}</span>
+                            <div className="divide-y divide-gray-100">
+                              {sortMealsByTime(template.meals[selectedDay].meals).map(([mealType, meal]: [string, any]) => {
+                                const MealIcon = getMealIcon(mealType);
+                                const mealColorClass = getMealTypeColor(mealType);
+                                
+                                // Separate primary and alternative foods
+                                const primaryFoods = meal.foodOptions?.filter((f: FoodOption, idx: number) => 
+                                  !f.isAlternative && idx === 0
+                                ) || [];
+                                const alternativeFoods = meal.foodOptions?.filter((f: FoodOption, idx: number) => 
+                                  f.isAlternative || idx > 0
+                                ) || [];
+                                
+                                return (
+                                  <div key={mealType} className="p-3 hover:bg-gray-50/50 transition-colors">
+                                    {/* Meal Header */}
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`p-1.5 rounded-lg border ${mealColorClass}`}>
+                                          <MealIcon className="h-4 w-4" />
+                                        </div>
+                                        <div>
+                                          <h4 className="font-medium text-sm text-gray-900 capitalize">
+                                            {meal.name || mealType.replace(/[-_]/g, ' ')}
+                                          </h4>
+                                          {meal.time && (
+                                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                                              <Clock className="h-3 w-3" />
+                                              {meal.time}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {/* Meal Total Calories */}
+                                      <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                        <Flame className="h-3 w-3 mr-1" />
+                                        {meal.foodOptions?.reduce((sum: number, f: FoodOption) => sum + (parseFloat(f.cal) || 0), 0).toFixed(0)} cal
+                                      </Badge>
+                                    </div>
+                                    
+                                    {/* Food Items */}
+                                    {meal.foodOptions && meal.foodOptions.length > 0 ? (
+                                      <div className="space-y-1.5 ml-8">
+                                        {/* Primary Food (First item) */}
+                                        {meal.foodOptions.slice(0, 1).map((food: FoodOption, idx: number) => (
+                                          <div 
+                                            key={food.id || idx} 
+                                            className="bg-white rounded-lg p-3 border-2 border-emerald-300 shadow-sm"
+                                          >
+                                            <div className="flex justify-between items-start gap-2 mb-2">
+                                              <div className="flex-1 min-w-0">
+                                                <span className="font-semibold text-sm text-emerald-900 block truncate">
+                                                  {food.food || food.label}
+                                                </span>
+                                                {food.unit && (
+                                                  <span className="text-xs text-emerald-600 font-medium">Qty: {food.unit}</span>
+                                                )}
+                                              </div>
+                                              <Badge className="text-[10px] bg-emerald-100 text-emerald-800 border-0 shrink-0 font-semibold">
+                                                {food.cal} cal
+                                              </Badge>
+                                            </div>
+                                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[11px] text-gray-700 font-medium">
+                                              <span className="flex items-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                                <span>P: <span className="font-bold">{food.protein}g</span></span>
+                                              </span>
+                                              <span className="flex items-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                                <span>C: <span className="font-bold">{food.carbs}g</span></span>
+                                              </span>
+                                              <span className="flex items-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                                <span>F: <span className="font-bold">{food.fats}g</span></span>
+                                              </span>
+                                              {food.fiber && (
+                                                <span className="flex items-center gap-1">
+                                                  <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                                                  Fiber: {food.fiber}g
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                        
+                                        {/* Alternative Foods (Remaining items) - Show ONLY if there are actually alternatives */}
+                                        {meal.foodOptions.length > 1 && (
+                                          <div className="mt-1 space-y-2 pt-2 border-t-2 border-dashed border-blue-300">
+                                            <div className="text-xs text-blue-700 font-bold px-1">🔄 Alternative Options</div>
+                                            {meal.foodOptions.slice(1).map((food: FoodOption, idx: number) => (
+                                              <div 
+                                                key={food.id || `alt-${idx}`} 
+                                                className="bg-blue-50 rounded-lg p-2.5 border-2 border-blue-300 border-dashed"
+                                              >
+                                                <div className="flex justify-between items-start gap-2 mb-1.5">
+                                                  <div className="flex-1 min-w-0">
+                                                    <span className="font-semibold text-sm text-blue-900 block truncate">
+                                                      {food.food || food.label}
+                                                    </span>
+                                                    {food.unit && (
+                                                      <span className="text-xs text-blue-700 font-medium">Qty: {food.unit}</span>
+                                                    )}
+                                                  </div>
+                                                  <Badge className="text-[10px] bg-blue-200 text-blue-800 border-0 shrink-0 font-semibold">
+                                                    {food.cal} cal
+                                                  </Badge>
+                                                </div>
+                                                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-[11px] text-blue-700 font-medium">
+                                                  <span className="flex items-center gap-1.5">
+                                                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                                    <span>P: <span className="font-bold">{food.protein}g</span></span>
+                                                  </span>
+                                                  <span className="flex items-center gap-1.5">
+                                                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                                    <span>C: <span className="font-bold">{food.carbs}g</span></span>
+                                                  </span>
+                                                  <span className="flex items-center gap-1.5">
+                                                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                                    <span>F: <span className="font-bold">{food.fats}g</span></span>
+                                                  </span>
+                                                  {food.fiber && <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500"></span><span>Fiber: <span className="font-bold">{food.fiber}g</span></span></span>}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-gray-400 italic ml-8">No food items added</p>
                                     )}
                                   </div>
-                                  {meal.foodOptions && meal.foodOptions.length > 0 ? (
-                                    <div className="space-y-2">
-                                      {meal.foodOptions.map((food: FoodOption, idx: number) => (
-                                        <div key={food.id || idx} className="bg-white rounded p-2 border text-xs">
-                                          <div className="flex justify-between items-start">
-                                            <div>
-                                              <span className="font-medium text-gray-900">{food.food || food.label}</span>
-                                              {food.unit && <span className="text-gray-500 ml-1">({food.unit})</span>}
-                                            </div>
-                                            <Badge variant="outline" className="text-[10px]">
-                                              {food.cal} cal
-                                            </Badge>
-                                          </div>
-                                          <div className="flex gap-3 mt-1 text-gray-500">
-                                            <span>P: {food.protein}g</span>
-                                            <span>C: {food.carbs}g</span>
-                                            <span>F: {food.fats}g</span>
-                                            {food.fiber && <span>Fiber: {food.fiber}g</span>}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <p className="text-xs text-gray-400 italic">No food items added</p>
-                                  )}
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           ) : (
-                            <div className="text-center py-6 text-gray-500">
-                              <UtensilsCrossed className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <div className="text-center py-8 text-gray-500">
+                              <UtensilsCrossed className="h-10 w-10 mx-auto mb-2 opacity-30" />
                               <p className="text-sm">No meals planned for this day</p>
                             </div>
                           )}

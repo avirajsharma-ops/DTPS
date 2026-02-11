@@ -26,5 +26,28 @@ export { default as ActivityLog } from './ActivityLog';
 export { default as Counter } from './Counter';
 export { default as Notification } from './Notification';
 
+// Payment & subscription models
+export { default as ServicePlan } from './ServicePlan';
+export { default as SubscriptionPlan } from './SubscriptionPlan';
+export { default as Payment } from './Payment';
+export { default as ClientSubscription } from './ClientSubscription';
+
+// Additional models
+export { default as MealPlanTemplate } from './MealPlanTemplate';
+export { default as ClientMealPlan } from './ClientMealPlan';
+export { default as GoalCategory } from './GoalCategory';
+export { default as Lead } from './Lead';
+export { default as Blog } from './Blog';
+export { default as DailyTracking } from './DailyTracking';
+export { default as ActivityAssignment } from './ActivityAssignment';
+
+// Ecommerce models
+export { default as EcommerceBlog } from './EcommerceBlog';
+export { default as EcommerceOrder } from './EcommerceOrder';
+export { default as EcommercePayment } from './EcommercePayment';
+export { default as EcommercePlan } from './EcommercePlan';
+export { default as EcommerceRating } from './EcommerceRating';
+export { default as EcommerceTransformation } from './EcommerceTransformation';
+
 // Re-export types for convenience
 export * from '@/types';

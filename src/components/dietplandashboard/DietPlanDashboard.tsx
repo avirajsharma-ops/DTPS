@@ -110,26 +110,18 @@ export type DayPlan = {
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const defaultMealTypes: MealTypeConfig[] = [
-  { name: 'Breakfast', time: '07:00' },
-  { name: 'Mid Morning', time: '09:00' },
-  { name: 'Lunch', time: '13:00' },
-  { name: 'Evening Snack', time: '17:00' },
-  { name: 'Dinner', time: '21:00' },
-  { name: 'Bedtime', time: '23:00' }
+  { name: 'Breakfast', time: '7:00 AM' },
+  { name: 'Mid Morning', time: '9:00 AM' },
+  { name: 'Lunch', time: '1:00 PM' },
+  { name: 'Evening Snack', time: '5:00 PM' },
+  { name: 'Dinner', time: '9:00 PM' },
+  { name: 'Bedtime', time: '11:00 PM' }
 ];
 
-const to24HourTime = (value?: string): string | null => {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (/^\d{2}:\d{2}$/.test(trimmed)) return trimmed;
-  const match = trimmed.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
-  if (!match) return null;
-  let hour = parseInt(match[1], 10);
-  const minute = match[2];
-  const meridiem = match[3].toLowerCase();
-  if (meridiem === 'pm' && hour !== 12) hour += 12;
-  if (meridiem === 'am' && hour === 12) hour = 0;
-  return `${String(hour).padStart(2, '0')}:${minute}`;
+// Time normalization - using 12-hour format directly
+const normalizeTime = (value?: string): string => {
+  if (!value) return '12:00 PM';
+  return value.trim();
 };
 
 export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, duration = 7, startDate, initialMeals, initialMealTypes, clientId, clientName, readOnly = false, clientDietaryRestrictions, clientMedicalConditions, clientAllergies, holdDays = [], totalHeldDays = 0 }: DietPlanDashboardProps) {
@@ -255,7 +247,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
     if (initialMealTypes && initialMealTypes.length > 0) {
       const normalized = initialMealTypes.map((meal) => ({
         ...meal,
-        time: to24HourTime(meal.time) || meal.time
+        time: normalizeTime(meal.time)
       }));
       setMealTypeConfigs(normalized);
     }
@@ -371,7 +363,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         if (hasData) {
           const normalizedMealTypes = (draft.mealTypeConfigs || defaultMealTypes).map((meal: MealTypeConfig) => ({
             ...meal,
-            time: to24HourTime(meal.time) || meal.time
+            time: normalizeTime(meal.time)
           }));
 
           const mealTimeMap = new Map(normalizedMealTypes.map((meal: MealTypeConfig) => [meal.name, meal.time]));
@@ -380,9 +372,9 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
             Object.keys(meals).forEach((mealName) => {
               const current = meals[mealName];
               if (!current) return;
-              const normalizedTime = to24HourTime(current.time) ?? current.time;
-              const fallbackTime = mealTimeMap.get(mealName) || '12:00';
-              const resolvedTime = (normalizedTime || fallbackTime) as string;
+              const normalizedTimeVal = normalizeTime(current.time);
+              const fallbackTime = mealTimeMap.get(mealName) || '12:00 PM';
+              const resolvedTime = (normalizedTimeVal || fallbackTime) as string;
               meals[mealName] = {
                 ...current,
                 time: resolvedTime
@@ -453,7 +445,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
 
   const handleAddMealType = (newMealType: string, position?: number) => {
     if (newMealType && !mealTypes.includes(newMealType)) {
-      const newConfig: MealTypeConfig = { name: newMealType, time: '12:00' };
+      const newConfig: MealTypeConfig = { name: newMealType, time: '12:00 PM' };
       if (position !== undefined) {
         // Insert at specific position
         setMealTypeConfigs(prev => {

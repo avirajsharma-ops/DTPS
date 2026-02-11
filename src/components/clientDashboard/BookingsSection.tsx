@@ -458,9 +458,10 @@ export default function BookingsSection({ clientId, clientName, userRole = 'diet
               <div className="space-y-2">
                 <Label>Time</Label>
                 <Input
-                  type="time"
+                  type="text"
                   value={bookingTime}
                   onChange={(e) => setBookingTime(e.target.value)}
+                  placeholder="e.g., 10:00 AM"
                 />
               </div>
             </div>

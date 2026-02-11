@@ -159,7 +159,7 @@ export function FoodDatabasePanel({
           const transformedData: FoodItem[] = filteredRecipes.map((recipe: any) => ({
             id: recipe._id,
             date: new Date().toISOString().split('T')[0],
-            time: '12:00',
+            time: '12:00 PM',
             menu: recipe.name,
             amount: `${recipe.servings || 1} serving${(recipe.servings || 1) > 1 ? 's' : ''}`,
             cals: recipe.nutrition?.calories || 0,

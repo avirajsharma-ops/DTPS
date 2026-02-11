@@ -27,6 +27,32 @@ import { toast } from 'sonner';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { getDietitianId } from '@/lib/utils';
 
+// Helper to parse 12-hour time format to hours and minutes
+const parse12HourTime = (timeStr: string): { hour: number; min: number } => {
+  if (!timeStr) return { hour: 9, min: 0 };
+  
+  // Handle 24-hour format (legacy)
+  if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+    const [h, m] = timeStr.split(':').map(Number);
+    return { hour: h, min: m };
+  }
+  
+  // Handle 12-hour format (e.g., "10:00 AM", "1:30 PM")
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    const min = parseInt(match[2], 10);
+    const period = match[3].toUpperCase();
+    
+    if (period === 'PM' && hour !== 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+    
+    return { hour, min };
+  }
+  
+  return { hour: 9, min: 0 };
+};
+
 interface Dietitian {
   _id: string;
   firstName: string;
@@ -172,17 +198,14 @@ export default function BookAppointmentPage() {
         
         // Process each schedule for the day
         for (const schedule of daySchedules) {
-          const startTime = schedule.startTime || '09:00';
-          const endTime = schedule.endTime || '17:00';
-          const [startHour, startMin] = startTime.split(':').map(Number);
-          const [endHour, endMin] = endTime.split(':').map(Number);
+          const startParsed = parse12HourTime(schedule.startTime || '9:00 AM');
+          const endParsed = parse12HourTime(schedule.endTime || '5:00 PM');
           
-          let currentHour = startHour;
-          let currentMin = startMin;
+          let currentHour = startParsed.hour;
+          let currentMin = startParsed.min;
           const now = new Date();
 
-          while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-            const time24 = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
+          while (currentHour < endParsed.hour || (currentHour === endParsed.hour && currentMin < endParsed.min)) {
             const hour12 = currentHour > 12 ? currentHour - 12 : currentHour === 0 ? 12 : currentHour;
             const ampm = currentHour >= 12 ? 'PM' : 'AM';
             const display = `${hour12}:${currentMin.toString().padStart(2, '0')} ${ampm}`;
@@ -192,14 +215,17 @@ export default function BookAppointmentPage() {
             slotDateTime.setHours(currentHour, currentMin, 0, 0);
             const isPastTime = slotDateTime <= now;
 
-            // Only add if not already in the list
-            if (!slots.some(s => s.time === time24)) {
+            // Only add if not already in the list (use display format as time)
+            if (!slots.some(s => s.time === display)) {
               // Available if: in availableSlots API response AND time hasn't passed
               // If time has passed, mark as not available (will show as white/disabled)
+              // Check both 12-hour and legacy 24-hour formats in availableSlotTimes
+              const time24Legacy = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
+              const isAvailable = availableSlotTimes.has(display) || availableSlotTimes.has(time24Legacy);
               slots.push({
-                time: time24,
+                time: display,
                 display,
-                available: !isPastTime && availableSlotTimes.has(time24)
+                available: !isPastTime && isAvailable
               });
             }
             
@@ -211,8 +237,12 @@ export default function BookAppointmentPage() {
           }
         }
 
-        // Sort slots by time
-        slots.sort((a, b) => a.time.localeCompare(b.time));
+        // Sort slots by parsing the time
+        slots.sort((a, b) => {
+          const aTime = parse12HourTime(a.time);
+          const bTime = parse12HourTime(b.time);
+          return (aTime.hour * 60 + aTime.min) - (bTime.hour * 60 + bTime.min);
+        });
         setAvailableSlots(slots);
       } else {
         // Fallback to local generation if API fails

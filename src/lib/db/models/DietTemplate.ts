@@ -120,7 +120,7 @@ const DayPlanSchema = new Schema({
 // Meal type config schema
 const MealTypeConfigSchema = new Schema({
   name: { type: String, required: true },
-  time: { type: String, default: '12:00' }
+  time: { type: String, default: '12:00 PM' }
 }, { _id: false });
 
 // Main diet template schema

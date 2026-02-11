@@ -168,25 +168,42 @@ export function convertLocalToUTC(localDateTime: Date | string, timezone: string
 
 /**
  * Generate time slots for a given date and timezone
+ * Note: This function uses 24-hour format internally for calculations
+ * Input times can be in either 12-hour (e.g., "9:00 AM") or 24-hour (e.g., "09:00") format
  */
 export function generateTimeSlots(
   date: Date | string,
-  startTime: string, // "09:00"
-  endTime: string,   // "17:00"
+  startTime: string, // "9:00 AM" or "09:00"
+  endTime: string,   // "5:00 PM" or "17:00"
   intervalMinutes: number = 15,
   timezone: string = 'UTC'
 ): string[] {
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
   const slots: string[] = [];
   
-  const [startHour, startMinute] = startTime.split(':').map(Number);
-  const [endHour, endMinute] = endTime.split(':').map(Number);
+  // Parse time - handle both 12-hour and 24-hour formats
+  const parseTime = (timeStr: string): { hour: number; minute: number } => {
+    const match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (match12) {
+      let hour = parseInt(match12[1], 10);
+      const minute = parseInt(match12[2], 10);
+      const period = match12[3].toUpperCase();
+      if (period === 'PM' && hour !== 12) hour += 12;
+      if (period === 'AM' && hour === 12) hour = 0;
+      return { hour, minute };
+    }
+    const [hour, minute] = timeStr.split(':').map(Number);
+    return { hour, minute };
+  };
+  
+  const start = parseTime(startTime);
+  const end = parseTime(endTime);
   
   const startDateTime = new Date(dateObj);
-  startDateTime.setHours(startHour, startMinute, 0, 0);
+  startDateTime.setHours(start.hour, start.minute, 0, 0);
   
   const endDateTime = new Date(dateObj);
-  endDateTime.setHours(endHour, endMinute, 0, 0);
+  endDateTime.setHours(end.hour, end.minute, 0, 0);
   
   let currentTime = new Date(startDateTime);
   

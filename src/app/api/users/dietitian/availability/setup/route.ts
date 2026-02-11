@@ -21,20 +21,20 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Default business hours availability (Monday to Saturday, 10 AM to 6 PM with lunch break)
-    // Using simple format that matches User model schema
+    // Using 12-hour format for IST
     const defaultAvailability = [
-      { day: 'monday', startTime: '10:00', endTime: '13:00' },
-      { day: 'monday', startTime: '14:00', endTime: '18:00' },
-      { day: 'tuesday', startTime: '10:00', endTime: '13:00' },
-      { day: 'tuesday', startTime: '14:00', endTime: '18:00' },
-      { day: 'wednesday', startTime: '10:00', endTime: '13:00' },
-      { day: 'wednesday', startTime: '14:00', endTime: '18:00' },
-      { day: 'thursday', startTime: '10:00', endTime: '13:00' },
-      { day: 'thursday', startTime: '14:00', endTime: '18:00' },
-      { day: 'friday', startTime: '10:00', endTime: '13:00' },
-      { day: 'friday', startTime: '14:00', endTime: '18:00' },
-      { day: 'saturday', startTime: '10:00', endTime: '13:00' },
-      { day: 'saturday', startTime: '14:00', endTime: '18:00' }
+      { day: 'monday', startTime: '10:00 AM', endTime: '1:00 PM' },
+      { day: 'monday', startTime: '2:00 PM', endTime: '6:00 PM' },
+      { day: 'tuesday', startTime: '10:00 AM', endTime: '1:00 PM' },
+      { day: 'tuesday', startTime: '2:00 PM', endTime: '6:00 PM' },
+      { day: 'wednesday', startTime: '10:00 AM', endTime: '1:00 PM' },
+      { day: 'wednesday', startTime: '2:00 PM', endTime: '6:00 PM' },
+      { day: 'thursday', startTime: '10:00 AM', endTime: '1:00 PM' },
+      { day: 'thursday', startTime: '2:00 PM', endTime: '6:00 PM' },
+      { day: 'friday', startTime: '10:00 AM', endTime: '1:00 PM' },
+      { day: 'friday', startTime: '2:00 PM', endTime: '6:00 PM' },
+      { day: 'saturday', startTime: '10:00 AM', endTime: '1:00 PM' },
+      { day: 'saturday', startTime: '2:00 PM', endTime: '6:00 PM' }
     ];
 
     // Update dietitian's availability
