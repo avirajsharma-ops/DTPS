@@ -14,6 +14,14 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
+import {
+  AISkeleton,
+  AISkeletonInput,
+  AISkeletonTextarea,
+  AISkeletonBadges,
+  AISkeletonIngredientRow,
+  AISkeletonInstructionRow,
+} from '@/components/ui/ai-skeleton';
 import { 
   Plus, 
   Trash2, 
@@ -25,7 +33,9 @@ import {
   ArrowLeft,
   Save,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 
 interface Ingredient {
@@ -73,6 +83,7 @@ export default function EditRecipePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [aiFetching, setAiFetching] = useState(false);
   
   // Form state
   const [name, setName] = useState('');
@@ -284,6 +295,43 @@ export default function EditRecipePage() {
     }
   };
 
+  // AI Auto-fill: regenerate recipe data from OpenAI
+  const fetchAIRecipeData = async () => {
+    if (!name || name.trim().length < 2 || aiFetching) return;
+    setAiFetching(true);
+    try {
+      const response = await fetch('/api/recipes/ai-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipeName: name.trim() }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to fetch AI data');
+      }
+      const data = await response.json();
+      if (data.description) setDescription(data.description);
+      if (data.prepTime) setPrepTime(String(data.prepTime));
+      if (data.cookTime) setCookTime(String(data.cookTime));
+      if (data.portionSize) setServings(data.portionSize);
+      if (data.nutrition) {
+        if (data.nutrition.calories) setCalories(String(data.nutrition.calories));
+        if (data.nutrition.protein) setProtein(String(data.nutrition.protein));
+        if (data.nutrition.carbs) setCarbs(String(data.nutrition.carbs));
+        if (data.nutrition.fat) setFat(String(data.nutrition.fat));
+      }
+      if (data.ingredients?.length > 0) setIngredients(data.ingredients);
+      if (data.instructions?.length > 0) setInstructions(data.instructions);
+      if (data.dietaryRestrictions?.length > 0) setDietaryRestrictions(data.dietaryRestrictions);
+      if (data.medicalContraindications?.length > 0) setMedicalContraindications(data.medicalContraindications);
+      toast.success('AI auto-filled recipe data!', { description: 'Review and adjust as needed.' });
+    } catch (err: any) {
+      toast.error('AI auto-fill failed', { description: err.message || 'Please try again.' });
+    } finally {
+      setAiFetching(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -465,25 +513,46 @@ export default function EditRecipePage() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="name">Recipe Name *</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., Grilled Chicken Salad"
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g., Paneer Butter Masala"
+                      required
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchAIRecipeData}
+                      disabled={aiFetching || name.trim().length < 2}
+                      className="shrink-0 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100 text-purple-700"
+                    >
+                      {aiFetching ? (
+                        <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Generating...</>
+                      ) : (
+                        <><Sparkles className="h-4 w-4 mr-1" />AI Fill</>
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
                 <div>
                   <Label htmlFor="description">Description </Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Brief description of the recipe..."
-                    rows={3}
-                    
-                  />
+                  {aiFetching ? (
+                    <AISkeletonTextarea rows={3} />
+                  ) : (
+                    <Textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Brief description of the recipe..."
+                      rows={3}
+                      
+                    />
+                  )}
                 </div>
 {/* 
                 <div>
@@ -511,6 +580,16 @@ export default function EditRecipePage() {
                 <CardTitle>Timing & Servings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {aiFetching ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><Label>Prep Time (min) *</Label><AISkeletonInput /></div>
+                      <div><Label>Cook Time (min) *</Label><AISkeletonInput /></div>
+                    </div>
+                    <div><Label>Portion Size *</Label><AISkeletonInput /></div>
+                  </>
+                ) : (
+                  <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="prepTime">Prep Time (min) *</Label>
@@ -556,6 +635,8 @@ export default function EditRecipePage() {
                     </SelectContent>
                   </Select>
                 </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -567,6 +648,14 @@ export default function EditRecipePage() {
               <CardDescription>Required - helps users track their nutritional goals</CardDescription>
             </CardHeader>
             <CardContent>
+              {aiFetching ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div><Label>Calories *</Label><AISkeletonInput /></div>
+                  <div><Label>Protein (g) *</Label><AISkeletonInput /></div>
+                  <div><Label>Carbs (g) *</Label><AISkeletonInput /></div>
+                  <div><Label>Fat (g) *</Label><AISkeletonInput /></div>
+                </div>
+              ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="calories">Calories *</Label>
@@ -620,6 +709,7 @@ export default function EditRecipePage() {
                   />
                 </div>
               </div>
+              )}
             </CardContent>
           </Card>
 
@@ -629,6 +719,22 @@ export default function EditRecipePage() {
               <CardTitle>Ingredients *</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {aiFetching ? (
+                <>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="space-y-3">
+                      <div className="flex items-end space-x-4">
+                        <div className="flex-1"><AISkeleton className="h-10 w-full" /></div>
+                        <div className="w-24"><AISkeleton className="h-10 w-full" /></div>
+                        <div className="w-24"><AISkeleton className="h-10 w-full" /></div>
+                        <div className="w-32"><AISkeleton className="h-10 w-full" /></div>
+                        <AISkeleton className="h-8 w-8" />
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
               {ingredients.map((ingredient, index) => (
                 <div key={index} className="space-y-3">
                   <div className="flex items-end space-x-4">
@@ -701,6 +807,8 @@ export default function EditRecipePage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Ingredient
               </Button>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -710,6 +818,14 @@ export default function EditRecipePage() {
               <CardTitle>Instructions *</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {aiFetching ? (
+                <>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <AISkeletonInstructionRow key={i} step={i + 1} />
+                  ))}
+                </>
+              ) : (
+                <>
               {instructions.map((instruction, index) => (
                 <div key={index} className="flex items-start space-x-4">
                   <div className="shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
@@ -739,6 +855,8 @@ export default function EditRecipePage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Step
               </Button>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -748,6 +866,26 @@ export default function EditRecipePage() {
               <CardTitle>Dietary Restrictions & Medical Contraindications</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {aiFetching ? (
+                <>
+                  <div>
+                    <Label>Dietary Restrictions</Label>
+                    <div className="mt-2"><AISkeletonBadges count={5} /></div>
+                  </div>
+                  <div>
+                    <Label>Medical Contraindications</Label>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Select medical conditions for which this recipe should NOT be recommended
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <AISkeleton key={i} className="h-10 w-full rounded-lg" />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
               <div>
                 <Label>Dietary Restrictions</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -798,6 +936,8 @@ export default function EditRecipePage() {
                   ))}
                 </div>
               </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -810,7 +950,7 @@ export default function EditRecipePage() {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving || aiFetching}>
               {saving ? (
                 <>
                   <LoadingSpinner className="mr-2 h-4 w-4" />

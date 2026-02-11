@@ -23,10 +23,21 @@ import {
   AlertCircle,
   ToggleLeft,
   ToggleRight,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRecipeAutoSave, type RecipeFormData } from '@/hooks/useAutoSave';
+import {
+  AISkeleton,
+  AISkeletonInput,
+  AISkeletonTextarea,
+  AISkeletonBadges,
+  AISkeletonIngredientRow,
+  AISkeletonInstructionRow,
+  AISkeletonOverlay,
+} from '@/components/ui/ai-skeleton';
 
 interface Ingredient {
   name: string;
@@ -63,6 +74,11 @@ export default function CreateRecipePage() {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [aiFetching, setAiFetching] = useState(false);
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [forceCreate, setForceCreate] = useState(false);
+  const [similarRecipe, setSimilarRecipe] = useState<{ id: string; name: string; ingredientOverlap: number } | null>(null);
+  const lastAiFetchedName = useState<string>('');  // track to avoid duplicate fetches
 
   // Form state
   const [name, setName] = useState('');
@@ -167,6 +183,8 @@ export default function CreateRecipePage() {
     setDietaryRestrictions([]);
     setMedicalContraindications([]);
     setError('');
+    setAiGenerated(false);
+    lastAiFetchedName[0] = '';
     toast.success('Draft cleared', { description: 'Starting fresh.' });
   }, [clearDraft]);
 
@@ -289,6 +307,70 @@ export default function CreateRecipePage() {
     }
   };
 
+  // AI Auto-fill: fetch recipe data from OpenAI
+  const fetchAIRecipeData = useCallback(async (recipeName?: string) => {
+    const nameToFetch = recipeName || name;
+    if (!nameToFetch || nameToFetch.trim().length < 2) return;
+    if (aiFetching) return;
+    if (lastAiFetchedName[0] === nameToFetch.trim()) return;
+
+    setAiFetching(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/recipes/ai-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipeName: nameToFetch.trim() }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to fetch AI data');
+      }
+
+      const data = await response.json();
+
+      // Auto-fill all fields
+      if (data.description) setDescription(data.description);
+      if (data.prepTime) setPrepTime(String(data.prepTime));
+      if (data.cookTime) setCookTime(String(data.cookTime));
+      if (data.portionSize) setServings(data.portionSize);
+      if (data.nutrition) {
+        if (data.nutrition.calories) setCalories(String(data.nutrition.calories));
+        if (data.nutrition.protein) setProtein(String(data.nutrition.protein));
+        if (data.nutrition.carbs) setCarbs(String(data.nutrition.carbs));
+        if (data.nutrition.fat) setFat(String(data.nutrition.fat));
+      }
+      if (data.ingredients?.length > 0) {
+        setIngredients(data.ingredients);
+      }
+      if (data.instructions?.length > 0) {
+        setInstructions(data.instructions);
+      }
+      if (data.dietaryRestrictions?.length > 0) {
+        setDietaryRestrictions(data.dietaryRestrictions);
+      }
+      if (data.medicalContraindications?.length > 0) {
+        setMedicalContraindications(data.medicalContraindications);
+      }
+
+      lastAiFetchedName[0] = nameToFetch.trim();
+      setAiGenerated(true);
+      toast.success('AI auto-filled recipe data!', {
+        description: 'Review and adjust the values as needed.',
+        duration: 4000,
+      });
+    } catch (err: any) {
+      console.error('AI fetch error:', err);
+      toast.error('AI auto-fill failed', {
+        description: err.message || 'Please try again or fill in manually.',
+      });
+    } finally {
+      setAiFetching(false);
+    }
+  }, [name, aiFetching, lastAiFetchedName]);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -389,18 +471,33 @@ export default function CreateRecipePage() {
           ingredients,
           instructions: validInstructions,
           dietaryRestrictions,
-          medicalContraindications
+          medicalContraindications,
+          forceCreate,
         }),
       });
 
       if (response.ok) {
         // Clear draft after successful save
         clearDraft();
+        setForceCreate(false);
+        setSimilarRecipe(null);
         toast.success('Recipe created successfully!');
         router.push('/recipes?success=created');
       } else {
         const data = await response.json();
         console.error('Recipe creation failed:', data);
+
+        // Handle duplicate / similar recipe warning
+        if (response.status === 409 && data.canForceCreate && data.similarRecipe) {
+          setSimilarRecipe(data.similarRecipe);
+          setError('');
+          toast.warning(`Similar recipe found: "${data.similarRecipe.name}"`, {
+            description: 'You can create anyway or review the existing one.',
+            duration: 6000,
+          });
+          setLoading(false);
+          return;
+        }
 
         // Handle detailed error messages
         if (data.details && Array.isArray(data.details)) {
@@ -467,6 +564,56 @@ export default function CreateRecipePage() {
             </Alert>
           )}
 
+          {/* Similar recipe warning */}
+          {similarRecipe && (
+            <Alert className="border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 dark:text-amber-300">
+                <div className="space-y-2">
+                  <p>
+                    A similar recipe <strong>&quot;{similarRecipe.name}&quot;</strong> already exists
+                    ({similarRecipe.ingredientOverlap}% ingredient overlap).
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="border-amber-400 text-amber-700 hover:bg-amber-100"
+                      onClick={() => router.push(`/recipes/${similarRecipe.id}`)}
+                    >
+                      View Existing Recipe
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                      onClick={() => {
+                        setForceCreate(true);
+                        setSimilarRecipe(null);
+                        // Re-submit immediately
+                        setTimeout(() => {
+                          const form = document.querySelector('form');
+                          if (form) form.requestSubmit();
+                        }, 50);
+                      }}
+                    >
+                      Create Anyway
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSimilarRecipe(null)}
+                    >
+                      Dismiss
+                    </Button>
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Basic Information */}
             <Card>
@@ -499,24 +646,80 @@ export default function CreateRecipePage() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="name">Recipe Name *</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., Grilled Chicken Salad"
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onBlur={() => {
+                        if (name.trim().length >= 2 && !aiGenerated) {
+                          fetchAIRecipeData();
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (name.trim().length >= 2) {
+                            fetchAIRecipeData();
+                          }
+                        }
+                      }}
+                      placeholder="e.g., Paneer Butter Masala"
+                      required
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        lastAiFetchedName[0] = ''; // allow re-fetch
+                        setAiGenerated(false);
+                        fetchAIRecipeData();
+                      }}
+                      disabled={aiFetching || name.trim().length < 2}
+                      className="shrink-0 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100 text-purple-700 dark:bg-purple-900/20 dark:border-purple-700 dark:text-purple-300 dark:hover:bg-purple-900/30"
+                    >
+                      {aiFetching ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-1" />
+                          AI Fill
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  {aiFetching && (
+                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-1 flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      Fetching ingredients, nutrition, and dietary info with AI...
+                    </p>
+                  )}
+                  {aiGenerated && !aiFetching && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      AI-generated data applied. Review and adjust as needed.
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Brief description of the recipe..."
-                    rows={3}
-                  />
+                  {aiFetching ? (
+                    <AISkeletonTextarea rows={3} />
+                  ) : (
+                    <Textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Brief description of the recipe..."
+                      rows={3}
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -562,48 +765,65 @@ export default function CreateRecipePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="prepTime">Prep Time (min) *</Label>
-                    <Input
-                      id="prepTime"
-                      type="number"
-                      value={prepTime}
-                      onChange={(e) => setPrepTime(e.target.value)}
-                      placeholder="15"
-                      required
-                    />
+                {aiFetching ? (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label>Prep Time (min) *</Label>
+                      <AISkeletonInput />
+                    </div>
+                    <div>
+                      <Label>Cook Time (min) *</Label>
+                      <AISkeletonInput />
+                    </div>
+                    <div>
+                      <Label>Portion Size *</Label>
+                      <AISkeletonInput />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="cookTime">Cook Time (min) *</Label>
-                    <Input
-                      id="cookTime"
-                      type="number"
-                      value={cookTime}
-                      onChange={(e) => setCookTime(e.target.value)}
-                      placeholder="30"
-                      required
-                    />
+                ) : (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="prepTime">Prep Time (min) *</Label>
+                      <Input
+                        id="prepTime"
+                        type="number"
+                        value={prepTime}
+                        onChange={(e) => setPrepTime(e.target.value)}
+                        placeholder="15"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cookTime">Cook Time (min) *</Label>
+                      <Input
+                        id="cookTime"
+                        type="number"
+                        value={cookTime}
+                        onChange={(e) => setCookTime(e.target.value)}
+                        placeholder="30"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="servings">Portion Size *</Label>
+                      <Select
+                        value={servings}
+                        onValueChange={(value) => setServings(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select portion size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {portionSizes.map((size) => (
+                            <SelectItem key={size} value={size}>
+                              {size}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="servings">Portion Size *</Label>
-                    <Select
-                      value={servings}
-                      onValueChange={(value) => setServings(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select portion size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {portionSizes.map((size) => (
-                          <SelectItem key={size} value={size}>
-                            {size}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
@@ -613,9 +833,44 @@ export default function CreateRecipePage() {
                 <CardTitle className="flex items-center space-x-2">
                   <Target className="h-5 w-5" />
                   <span>Nutrition (per serving)</span>
+                  {aiGenerated && (
+                    <Badge variant="outline" className="ml-2 bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-700">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      AI Generated
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {aiFetching ? (
+                  <>
+                    <div>
+                      <Label>Calories *</Label>
+                      <AISkeletonInput />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div><Label>Protein (g) *</Label><AISkeletonInput /></div>
+                      <div><Label>Carbs (g) *</Label><AISkeletonInput /></div>
+                      <div><Label>Fat (g) *</Label><AISkeletonInput /></div>
+                    </div>
+                    <div>
+                      <Label>Dietary Restrictions</Label>
+                      <div className="mt-2"><AISkeletonBadges count={5} /></div>
+                    </div>
+                    <div>
+                      <Label>Medical Contraindications</Label>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Select medical conditions for which this recipe should NOT be recommended
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <AISkeleton key={i} className="h-10 w-full rounded-lg" />
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
                 <div>
                   <Label htmlFor="calories">Calories *</Label>
                   <Input
@@ -717,6 +972,8 @@ export default function CreateRecipePage() {
                     ))}
                   </div>
                 </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -727,6 +984,14 @@ export default function CreateRecipePage() {
               <CardTitle>Ingredients *</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {aiFetching ? (
+                <>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <AISkeletonIngredientRow key={i} />
+                  ))}
+                </>
+              ) : (
+                <>
               {ingredients.map((ingredient, index) => (
                 <div key={index} className="space-y-3">
                   <div className="grid grid-cols-12 gap-4 items-end">
@@ -789,6 +1054,8 @@ export default function CreateRecipePage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Ingredient
               </Button>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -798,6 +1065,14 @@ export default function CreateRecipePage() {
               <CardTitle>Instructions *</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {aiFetching ? (
+                <>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <AISkeletonInstructionRow key={i} step={i + 1} />
+                  ))}
+                </>
+              ) : (
+                <>
               {instructions.map((instruction, index) => (
                 <div key={index} className="flex items-start space-x-4">
                   <div className="shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
@@ -827,6 +1102,8 @@ export default function CreateRecipePage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Step
               </Button>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -835,7 +1112,7 @@ export default function CreateRecipePage() {
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || aiFetching}>
               {loading ? (
                 <>
                   <LoadingSpinner className="mr-2 h-4 w-4" />

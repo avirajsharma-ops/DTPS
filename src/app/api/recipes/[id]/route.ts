@@ -78,6 +78,16 @@ export async function GET(
       fat: recipeData.fat || 0
     };
     recipeData.flatNutrition = flatNutrition;
+    
+    // Build nutrition object for detail page compatibility
+    if (!recipeData.nutrition) {
+      recipeData.nutrition = {
+        calories: recipeData.calories || 0,
+        protein: recipeData.protein || 0,
+        carbs: recipeData.carbs || 0,
+        fat: recipeData.fat || 0,
+      };
+    }
 
     await Recipe.findByIdAndUpdate(id, { $inc: { views: 1 } });
 

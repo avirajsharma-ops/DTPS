@@ -10,6 +10,7 @@ import { getImageKit } from '@/lib/imagekit';
 import { compressImageServer } from '@/lib/imageCompressionServer';
 import mongoose from 'mongoose';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { findSimilarRecipes, compareIngredients } from '@/lib/recipe-dedup';
 
 // Recipe validation schema - flexible to handle both old and new formats (no word limits)
 const recipeSchema = z.object({
@@ -58,7 +59,10 @@ const recipeSchema = z.object({
   isActive: z.boolean().optional(),
 
   // Allow any string for image URL
-  image: z.string().optional().or(z.literal(''))
+  image: z.string().optional().or(z.literal('')),
+
+  // Force-create even if a similar recipe exists
+  forceCreate: z.boolean().optional(),
 });
 
 // GET /api/recipes - Get recipes
@@ -379,6 +383,34 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB();
+
+    // ── Broad-match duplicate detection ──
+    // Skip if client explicitly opts to force-create (e.g. after reviewing warning)
+    if (!body.forceCreate) {
+      const similarRecipes = await findSimilarRecipes(validatedData.name, 5);
+      if (similarRecipes.length > 0) {
+        // Compare ingredients to decide if it's truly the same dish
+        const validatedIngredientNames = validatedData.ingredients
+          .filter(ing => ing.name.trim() !== '')
+          .map(ing => ({ name: ing.name.trim() }));
+
+        for (const sim of similarRecipes) {
+          const cmp = compareIngredients(validatedIngredientNames, sim.ingredients || []);
+          if (cmp.similar) {
+            return NextResponse.json({
+              error: 'Similar recipe exists',
+              message: `A similar recipe "${sim.name}" already exists with matching ingredients. You can review the existing recipe or force-create a new one.`,
+              similarRecipe: {
+                id: sim._id.toString(),
+                name: sim.name,
+                ingredientOverlap: Math.round(cmp.overlap * 100),
+              },
+              canForceCreate: true,
+            }, { status: 409 });
+          }
+        }
+      }
+    }
 
     // Transform data to match database schema
     // Keep ingredients as objects (don't convert to strings)
