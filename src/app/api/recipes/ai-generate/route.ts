@@ -3,9 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 const AVAILABLE_DIETARY_RESTRICTIONS = [
   'Vegetarian', 'Vegan', 'Gluten-Free', 'Non-Vegetarian', 'Dairy-Free',
@@ -141,7 +143,7 @@ Important rules:
 - If the recipe is clearly non-vegetarian (contains meat/fish/eggs), include "Non-Vegetarian". If pure vegetarian, include "Vegetarian". If vegan, include both "Vegan" and "Vegetarian".
 - Consider medical conditions carefully: e.g., high-sodium dishes contraindicate High Blood Pressure, high-sugar for Diabetes, high-fat for Heart Disease/High Cholesterol, etc.`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAIClient().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
