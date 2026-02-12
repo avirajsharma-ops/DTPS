@@ -7,9 +7,11 @@ import { clearCacheByTag } from '@/lib/api/utils';
 import { batchFindDuplicates, findSimilarRecipes, compareIngredients, mergeRecipeData } from '@/lib/recipe-dedup';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 const AVAILABLE_DIETARY_RESTRICTIONS = [
   'Vegetarian', 'Vegan', 'Gluten-Free', 'Non-Vegetarian', 'Dairy-Free',
@@ -144,7 +146,7 @@ Rules:
 - Non-veg items must include "Non-Vegetarian" tag
 - Be accurate with nutritional values`;
 
-  const completion = await openai.chat.completions.create({
+  const completion = await getOpenAIClient().chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       {
