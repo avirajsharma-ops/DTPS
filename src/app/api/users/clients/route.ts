@@ -84,15 +84,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('[GET /api/users/clients] Query:', {
-      userRole,
-      userId,
-      isAdmin,
-      isDietitian,
-      isHealthCounselor,
-      query: JSON.stringify(query)
-    });
-
     const clientsData = await User.find(query)
       .select('firstName lastName email avatar phone dateOfBirth gender height weight activityLevel healthGoals medicalConditions allergies dietaryRestrictions assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors status clientStatus createdAt createdBy tags')
       .populate('assignedDietitian', 'firstName lastName email avatar')
@@ -109,8 +100,6 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .skip((page - 1) * limit)
       .lean();
-
-    console.log('[GET /api/users/clients] Found clients:', clientsData.length);
 
     // Fetch meal plan data for all clients to get programStart, programEnd, lastDiet
     const clientIds = clientsData.map((c: any) => c._id);

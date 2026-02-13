@@ -113,7 +113,7 @@ const defaultMealTypes: MealTypeConfig[] = [
   { name: 'Breakfast', time: '7:00 AM' },
   { name: 'Mid Morning', time: '9:00 AM' },
   { name: 'Lunch', time: '1:00 PM' },
-  { name: 'Evening Snack', time: '5:00 PM' },
+  { name: 'Snack', time: '5:00 PM' },
   { name: 'Dinner', time: '9:00 PM' },
   { name: 'Bedtime', time: '11:00 PM' }
 ];
@@ -361,7 +361,12 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         );
         
         if (hasData) {
-          const normalizedMealTypes = (draft.mealTypeConfigs || defaultMealTypes).map((meal: MealTypeConfig) => ({
+          // If initialMealTypes is provided, use that order; otherwise use draft's meal types
+          const baseMealTypes = initialMealTypes && initialMealTypes.length > 0 
+            ? initialMealTypes 
+            : (draft.mealTypeConfigs || defaultMealTypes);
+            
+          const normalizedMealTypes = baseMealTypes.map((meal: MealTypeConfig) => ({
             ...meal,
             time: normalizeTime(meal.time)
           }));
@@ -400,7 +405,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       console.error('Failed to restore diet plan draft:', error);
       setDraftRestored(true);
     }
-  }, [draftKey, draftRestored, readOnly, session?.user?.id]);
+  }, [draftKey, draftRestored, readOnly, session?.user?.id, initialMealTypes]);
   
   // Clear draft function
   const handleClearDraft = useCallback(() => {

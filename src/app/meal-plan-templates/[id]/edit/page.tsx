@@ -58,6 +58,7 @@ export default function EditTemplatePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [isOwner, setIsOwner] = useState(false);
   
   // Form state
   const [template, setTemplate] = useState<MealPlanTemplate | null>(null);
@@ -84,10 +85,15 @@ export default function EditTemplatePage() {
   const fetchTemplate = async () => {
     try {
       setLoading(true);
+      setError('');
       const response = await fetch(`/api/meal-plan-templates/${templateId}`);
       if (response.ok) {
         const data = await response.json();
         const t = data.template;
+
+        // All dietitians can edit any template
+        setIsOwner(true);
+
         setTemplate(t);
         setName(t.name || '');
         setDescription(t.description || '');

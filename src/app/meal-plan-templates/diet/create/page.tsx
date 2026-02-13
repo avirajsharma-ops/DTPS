@@ -226,12 +226,12 @@ export default function CreateDietTemplatePage() {
     setSelectedDay(1);
     setWeekPlanData([]);
     setMealTypesData([
-      { name: 'Breakfast', time: '8:00 AM' },
-      { name: 'Mid Morning', time: '10:30 AM' },
+      { name: 'Breakfast', time: '7:00 AM' },
+      { name: 'Mid Morning', time: '9:00 AM' },
       { name: 'Lunch', time: '1:00 PM' },
-      { name: 'Evening Snack', time: '4:00 PM' },
-      { name: 'Dinner', time: '7:00 PM' },
-      { name: 'Bedtime', time: '9:30 PM' }
+      { name: 'Snack', time: '5:00 PM' },
+      { name: 'Dinner', time: '9:00 PM' },
+      { name: 'Bedtime', time: '11:00 PM' }
     ]);
     toast.success('Draft cleared', { description: 'Starting fresh.' });
   }, [clearDraft]);
@@ -396,12 +396,12 @@ export default function CreateDietTemplatePage() {
   // Store weekPlan and mealTypes data from DietPlanDashboard
   const [weekPlanData, setWeekPlanData] = useState<any[]>([]);
   const [mealTypesData, setMealTypesData] = useState<{name: string; time: string}[]>([
-    { name: 'Breakfast', time: '8:00 AM' },
-    { name: 'Mid Morning', time: '10:30 AM' },
+    { name: 'Breakfast', time: '7:00 AM' },
+    { name: 'Mid Morning', time: '9:00 AM' },
     { name: 'Lunch', time: '1:00 PM' },
-    { name: 'Evening Snack', time: '4:00 PM' },
-    { name: 'Dinner', time: '7:00 PM' },
-    { name: 'Bedtime', time: '9:30 PM' }
+    { name: 'Snack', time: '5:00 PM' },
+    { name: 'Dinner', time: '9:00 PM' },
+    { name: 'Bedtime', time: '11:00 PM' }
   ]);
 
   // -------------- SAVE/PUBLISH TEMPLATE -------------
@@ -638,6 +638,7 @@ export default function CreateDietTemplatePage() {
                   planType: template.category || 'Uncategorized'
                 }}
                 duration={template.duration}
+                initialMealTypes={mealTypesData}
                 onBack={() => setCurrentStep(2)}
                 onSavePlan={(weekPlan, mealTypes) => {
                   setWeekPlanData(weekPlan);

@@ -8,15 +8,21 @@ interface Recipe {
   _id: string;
   name: string;
   image?: string;
-  nutrition: {
+  nutrition?: {
     calories: number;
     protein: number;
     carbs: number;
     fat: number;
   };
+  // Flat nutrition values from API
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
   prepTime: number;
   cookTime: number;
   servings: number;
+  servingSize?: string;
 }
 
 export function RecipeCarousel() {
@@ -122,12 +128,14 @@ export function RecipeCarousel() {
                 {/* Stats Row */}
                 <div className="grid grid-cols-3 gap-2 mb-2">
                   <div className="text-center p-2 bg-linear-to-br from-orange-500 to-red-500 rounded-lg shadow-sm">
-                    <p className="text-lg font-bold text-white">{recipe.nutrition.calories}</p>
+                    <p className="text-lg font-bold text-white">{recipe.calories || recipe.nutrition?.calories || 0}</p>
                     <p className="text-xs text-orange-100 font-medium">Calories</p>
                   </div>
                   <div className="text-center p-2 bg-linear-to-br from-green-500 to-emerald-500 rounded-lg shadow-sm">
-                    <p className="text-lg font-bold text-white">{recipe.servings}</p>
-                    <p className="text-xs text-green-100 font-medium">Servings</p>
+                    <p className="text-sm font-bold text-white truncate" title={recipe.servingSize || `${recipe.servings} serving${Number(recipe.servings) > 1 ? 's' : ''}`}>
+                      {recipe.servingSize || `${recipe.servings}`}
+                    </p>
+                    <p className="text-xs text-green-100 font-medium">Serving Size</p>
                   </div>
                   <div className="text-center p-2 bg-linear-to-br from-purple-500 to-indigo-500 rounded-lg shadow-sm">
                     <p className="text-lg font-bold text-white">{recipe.prepTime + recipe.cookTime}</p>
@@ -138,15 +146,15 @@ export function RecipeCarousel() {
                 {/* Macros */}
                 <div className="flex items-center justify-around text-sm">
                   <div className="text-center">
-                    <p className="font-bold text-blue-600">{recipe.nutrition.protein}g</p>
+                    <p className="font-bold text-blue-600">{recipe.protein || recipe.nutrition?.protein || 0}g</p>
                     <p className="text-xs text-gray-500">Protein</p>
                   </div>
                   <div className="text-center">
-                    <p className="font-bold text-yellow-600">{recipe.nutrition.carbs}g</p>
+                    <p className="font-bold text-yellow-600">{recipe.carbs || recipe.nutrition?.carbs || 0}g</p>
                     <p className="text-xs text-gray-500">Carbs</p>
                   </div>
                   <div className="text-center">
-                    <p className="font-bold text-purple-600">{recipe.nutrition.fat}g</p>
+                    <p className="font-bold text-purple-600">{recipe.fat || recipe.nutrition?.fat || 0}g</p>
                     <p className="text-xs text-gray-500">Fat</p>
                   </div>
                 </div>

@@ -46,7 +46,12 @@ interface Recipe {
   instructions: string[];
   prepTime: number;
   cookTime: number;
-  servings: string | number;
+  servings: number;
+  servingSize?: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
   nutrition?: {
     calories: number;
     protein: number;
@@ -438,8 +443,8 @@ export default function RecipeViewPage() {
                 </div>
                 <div className="text-center p-3 bg-gray-50 rounded-lg">
                   <Users className="h-5 w-5 mx-auto mb-1 text-gray-600" />
-                  <p className="text-sm text-gray-600">Portion Size</p>
-                  <p className="font-semibold">{recipe.servings}</p>
+                  <p className="text-sm text-gray-600">Serving Size</p>
+                  <p className="font-semibold">{recipe.servingSize || `${recipe.servings} serving${Number(recipe.servings) > 1 ? 's' : ''}`}</p>
                 </div>
                 <div className="text-center p-3 bg-gray-50 rounded-lg">
                   <Award className="h-5 w-5 mx-auto mb-1 text-gray-600" />
@@ -525,19 +530,19 @@ export default function RecipeViewPage() {
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-600">{Math.round((recipe.nutrition?.calories || 0) * servingMultiplier)}</p>
+                  <p className="text-2xl font-bold text-blue-600">{Math.round((recipe.calories || recipe.nutrition?.calories || 0) * servingMultiplier)}</p>
                   <p className="text-sm text-gray-600">Calories</p>
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <p className="text-2xl font-bold text-green-600">{Math.round((recipe.nutrition?.protein || 0) * servingMultiplier)}g</p>
+                  <p className="text-2xl font-bold text-green-600">{Math.round((recipe.protein || recipe.nutrition?.protein || 0) * servingMultiplier)}g</p>
                   <p className="text-sm text-gray-600">Protein</p>
                 </div>
                 <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                  <p className="text-2xl font-bold text-yellow-600">{Math.round((recipe.nutrition?.carbs || 0) * servingMultiplier)}g</p>
+                  <p className="text-2xl font-bold text-yellow-600">{Math.round((recipe.carbs || recipe.nutrition?.carbs || 0) * servingMultiplier)}g</p>
                   <p className="text-sm text-gray-600">Carbs</p>
                 </div>
                 <div className="text-center p-3 bg-red-50 rounded-lg">
-                  <p className="text-2xl font-bold text-red-600">{Math.round((recipe.nutrition?.fat || 0) * servingMultiplier)}g</p>
+                  <p className="text-2xl font-bold text-red-600">{Math.round((recipe.fat || recipe.nutrition?.fat || 0) * servingMultiplier)}g</p>
                   <p className="text-sm text-gray-600">Fat</p>
                 </div>
               </div>

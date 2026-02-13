@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
+import { compressImage, validateImageFile, uploadCompressedImage } from '@/lib/imageCompression';
 import {
   AISkeleton,
   AISkeletonInput,
@@ -52,7 +53,8 @@ interface Recipe {
   // category: string;
   prepTime: number;
   cookTime: number;
-  servings: string | number;
+  servings: number;
+  servingSize?: string;
   nutrition?: {
     calories: number;
     protein: number;
@@ -71,6 +73,7 @@ interface Recipe {
     email: string;
   };
   createdAt: string;
+  image?: string;
 }
 
 export default function EditRecipePage() {
@@ -96,6 +99,9 @@ export default function EditRecipePage() {
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  const [image, setImage] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: '', quantity: 0, unit: '', remarks: '' }]);
 
@@ -219,6 +225,8 @@ export default function EditRecipePage() {
         setProtein(recipeData.nutrition?.protein?.toString() || recipeData.protein?.toString() || '');
         setCarbs(recipeData.nutrition?.carbs?.toString() || recipeData.carbs?.toString() || '');
         setFat(recipeData.nutrition?.fat?.toString() || recipeData.fat?.toString() || '');
+        setImage(recipeData.image || '');
+        setImagePreview(recipeData.image || '');
         setIsActive(recipeData.isActive !== false); // Default to true if not set
         setIngredients(recipeData.ingredients?.length > 0 ? recipeData.ingredients : [{ name: '', quantity: 0, unit: '', remarks: '' }]);
         setInstructions(recipeData.instructions?.length > 0 ? recipeData.instructions : ['']);
@@ -329,6 +337,47 @@ export default function EditRecipePage() {
       toast.error('AI auto-fill failed', { description: err.message || 'Please try again.' });
     } finally {
       setAiFetching(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid image file');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+
+    try {
+      // Compress image
+      const { blob, dataUrl, size } = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+      });
+
+      // Show preview while uploading
+      setImagePreview(dataUrl);
+
+      // Upload to ImageKit
+      const uploadedUrl = await uploadCompressedImage(blob, file.name, 'recipes/images');
+      
+      setImage(uploadedUrl);
+      toast.success('Image uploaded successfully', {
+        description: `Original: ${(file.size / 1024 / 1024).toFixed(2)}MB → Compressed: ${(blob.size / 1024 / 1024).toFixed(2)}MB`,
+      });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to upload image');
+      setImagePreview('');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -554,6 +603,49 @@ export default function EditRecipePage() {
                     />
                   )}
                 </div>
+
+                <div>
+                  <Label htmlFor="image">Recipe Image</Label>
+                  <div className="space-y-3">
+                    {imagePreview && (
+                      <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-200">
+                        <img
+                          src={imagePreview}
+                          alt="Recipe preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImage('');
+                            setImagePreview('');
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                    <Input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                      className="cursor-pointer"
+                    />
+                    {uploading && (
+                      <div className="text-sm text-gray-500 flex items-center gap-2">
+                        <LoadingSpinner className="h-4 w-4" />
+                        Uploading and compressing image...
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-500">
+                      Upload an image for your recipe (max 10MB, JPG/PNG/WebP) - automatically compressed
+                    </div>
+                  </div>
+                </div>
 {/* 
                 <div>
                   <Label htmlFor="category">Category *</Label>
@@ -577,7 +669,7 @@ export default function EditRecipePage() {
             {/* Timing & Servings */}
             <Card>
               <CardHeader>
-                <CardTitle>Timing & Servings</CardTitle>
+                <CardTitle>Timing & Serving Size</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {aiFetching ? (
@@ -586,7 +678,7 @@ export default function EditRecipePage() {
                       <div><Label>Prep Time (min) *</Label><AISkeletonInput /></div>
                       <div><Label>Cook Time (min) *</Label><AISkeletonInput /></div>
                     </div>
-                    <div><Label>Portion Size *</Label><AISkeletonInput /></div>
+                    <div><Label>Serving Size *</Label><AISkeletonInput /></div>
                   </>
                 ) : (
                   <>
@@ -618,13 +710,13 @@ export default function EditRecipePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="servings">Portion Size *</Label>
+                  <Label htmlFor="servings">Serving Size *</Label>
                   <Select
                     value={servings}
                     onValueChange={(value) => setServings(value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select portion size" />
+                      <SelectValue placeholder="Select serving size" />
                     </SelectTrigger>
                     <SelectContent>
                       {portionSizes.map((size) => (

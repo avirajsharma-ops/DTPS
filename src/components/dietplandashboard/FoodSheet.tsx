@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   X,
   Search,
@@ -17,6 +17,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+// Debounce hook for search optimization
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  
+  return debouncedValue;
+}
 
 type FoodItem = {
   id: string;
@@ -54,14 +71,71 @@ export function FoodDatabasePanel({
   const clientDietaryArr = clientDietaryRestrictions.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
   const clientMedicalArr = clientMedicalConditions.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
   const clientAllergyArr = clientAllergies.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const [allRecipes, setAllRecipes] = useState<FoodItem[]>([]); // Store all recipes
   const [foodData, setFoodData] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Debounce search query for optimization
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Fetch recipes from the database
+  // Optimized search function that ranks results by relevance
+  const searchAndRankRecipes = useCallback((recipes: FoodItem[], query: string): FoodItem[] => {
+    if (!query.trim()) return recipes;
+    
+    const searchLower = query.toLowerCase().trim();
+    const searchWords = searchLower.split(/\s+/).filter(Boolean);
+    
+    // Score each recipe based on match quality
+    const scoredRecipes = recipes.map(recipe => {
+      const nameLower = recipe.menu.toLowerCase();
+      let score = 0;
+      
+      // Exact match - highest priority
+      if (nameLower === searchLower) {
+        score = 1000;
+      }
+      // Name starts with search term - very high priority
+      else if (nameLower.startsWith(searchLower)) {
+        score = 500;
+      }
+      // Name contains search term as a whole word - high priority
+      else if (nameLower.includes(searchLower)) {
+        // Bonus if it's at a word boundary
+        const wordBoundaryMatch = new RegExp(`\\b${searchLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i').test(nameLower);
+        score = wordBoundaryMatch ? 300 : 200;
+      }
+      // All search words match somewhere in name - medium priority
+      else if (searchWords.every(word => nameLower.includes(word))) {
+        score = 100;
+      }
+      // Some search words match - lower priority  
+      else {
+        const matchCount = searchWords.filter(word => nameLower.includes(word)).length;
+        if (matchCount > 0) {
+          score = matchCount * 30;
+        }
+      }
+      
+      return { recipe, score };
+    });
+    
+    // Filter out non-matches and sort by score (highest first)
+    return scoredRecipes
+      .filter(item => item.score > 0)
+      .sort((a, b) => {
+        // Sort by score first
+        if (b.score !== a.score) return b.score - a.score;
+        // Then alphabetically for same score
+        return a.recipe.menu.localeCompare(b.recipe.menu);
+      })
+      .map(item => item.recipe);
+  }, []);
+
+  // Fetch recipes from the database (fetch all once, then filter locally)
   useEffect(() => {
     const fetchRecipes = async () => {
       if (!isOpen) return;
@@ -69,8 +143,7 @@ export function FoodDatabasePanel({
       try {
         setLoading(true);
         const params = new URLSearchParams();
-        params.append('limit', '100');
-        if (searchQuery) params.append('search', searchQuery);
+        params.append('limit', '500'); // Fetch more recipes for better local search
         if (categoryFilter && categoryFilter !== 'all') {
           params.append('category', categoryFilter);
         }
@@ -153,24 +226,41 @@ export function FoodDatabasePanel({
             return true;
           });
           
-          // Log filtering results
-          
           // Transform filtered recipes to FoodItem format
-          const transformedData: FoodItem[] = filteredRecipes.map((recipe: any) => ({
-            id: recipe._id,
-            date: new Date().toISOString().split('T')[0],
-            time: '12:00 PM',
-            menu: recipe.name,
-            amount: `${recipe.servings || 1} serving${(recipe.servings || 1) > 1 ? 's' : ''}`,
-            cals: recipe.nutrition?.calories || 0,
-            carbs: recipe.nutrition?.carbs || 0,
-            protein: recipe.nutrition?.protein || 0,
-            fats: recipe.nutrition?.fat || 0,
-            fiber: recipe.nutrition?.fiber || 0,
-            selected: false,
-            recipeUuid: recipe.uuid || undefined, // Include recipe UUID
-          }));
+          const transformedData: FoodItem[] = filteredRecipes.map((recipe: any) => {
+            // Format serving size - use servingSize if available, otherwise show servings count
+            const servingSizeDisplay = recipe.servingSize || recipe.portionSize;
+            const servingsCount = recipe.servings || 1;
+            const amount = servingSizeDisplay 
+              ? servingSizeDisplay 
+              : `${servingsCount} serving${servingsCount > 1 ? 's' : ''}`;
+            
+            // Get nutrition values - API returns flat values at recipe level
+            // Also check nutrition object for backwards compatibility
+            const cals = recipe.calories || recipe.nutrition?.calories || recipe.flatNutrition?.calories || 0;
+            const carbsVal = recipe.carbs || recipe.nutrition?.carbs || recipe.flatNutrition?.carbs || 0;
+            const proteinVal = recipe.protein || recipe.nutrition?.protein || recipe.flatNutrition?.protein || 0;
+            const fatsVal = recipe.fat || recipe.nutrition?.fat || recipe.flatNutrition?.fat || 0;
+            const fiberVal = recipe.fiber || recipe.nutrition?.fiber || recipe.flatNutrition?.fiber || 0;
+            
+            return {
+              id: recipe._id,
+              date: new Date().toISOString().split('T')[0],
+              time: '12:00 PM',
+              menu: recipe.name,
+              amount,
+              cals,
+              carbs: carbsVal,
+              protein: proteinVal,
+              fats: fatsVal,
+              fiber: fiberVal,
+              selected: false,
+              recipeUuid: recipe.uuid || undefined,
+            };
+          });
           
+          // Store all recipes for local filtering
+          setAllRecipes(transformedData);
           setFoodData(transformedData);
         }
       } catch (error) {
@@ -181,10 +271,24 @@ export function FoodDatabasePanel({
     };
 
     fetchRecipes();
-  }, [isOpen, searchQuery, categoryFilter, clientDietaryArr.join(','), clientMedicalArr.join(','), clientAllergyArr.join(','), refreshKey]);
+  }, [isOpen, categoryFilter, clientDietaryArr.join(','), clientMedicalArr.join(','), clientAllergyArr.join(','), refreshKey]);
+
+  // Apply local search filtering with ranking when search query changes
+  useEffect(() => {
+    if (!allRecipes.length) return;
+    
+    if (debouncedSearchQuery.trim()) {
+      const rankedResults = searchAndRankRecipes(allRecipes, debouncedSearchQuery);
+      setFoodData(rankedResults);
+      setCurrentPage(1); // Reset to first page on search
+    } else {
+      setFoodData(allRecipes);
+    }
+  }, [debouncedSearchQuery, allRecipes, searchAndRankRecipes]);
 
   const handleRefresh = () => {
     setCurrentPage(1);
+    setSearchQuery("");
     setRefreshKey(prev => prev + 1);
   };
   
@@ -195,7 +299,13 @@ export function FoodDatabasePanel({
   const paginatedData = foodData.slice(startIndex, startIndex + itemsPerPage);
 
   const toggleSelection = (id: string) => {
+    // Update both foodData and allRecipes to maintain selection state
     setFoodData((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, selected: !item.selected } : item
+      )
+    );
+    setAllRecipes((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, selected: !item.selected } : item
       )
@@ -211,10 +321,13 @@ export function FoodDatabasePanel({
   };
 
   const handleAddSelected = () => {
-    const selectedItems = foodData.filter((item) => item.selected);
+    // Get selected items from allRecipes to include all selections
+    const selectedItems = allRecipes.filter((item) => item.selected);
     if (selectedItems.length > 0) {
       onSelectFood(selectedItems);
+      // Clear selections from both arrays
       setFoodData(prev => prev.map(item => ({ ...item, selected: false })));
+      setAllRecipes(prev => prev.map(item => ({ ...item, selected: false })));
       onClose();
     }
   };

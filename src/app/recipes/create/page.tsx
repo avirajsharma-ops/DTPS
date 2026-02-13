@@ -28,7 +28,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useRecipeAutoSave, type RecipeFormData } from '@/hooks/useAutoSave';
+import { compressImage, validateImageFile, uploadCompressedImage } from '@/lib/imageCompression';
 import {
   AISkeleton,
   AISkeletonInput,
@@ -371,45 +371,52 @@ export default function CreateRecipePage() {
     }
   }, [name, aiFetching, lastAiFetchedName]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file');
-      return;
-    }
-
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Image size must be less than 10MB');
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid image file');
       return;
     }
 
     setUploading(true);
     setError('');
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      setImagePreview(base64);
-      setImage(base64); // Set base64 string directly for backend
-      setUploading(false);
-    };
-    reader.onerror = () => {
-      setError('Failed to read image file.');
+    try {
+      // Compress image
+      const { blob, dataUrl, size } = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+      });
+
+      // Show preview while uploading
+      setImagePreview(dataUrl);
+
+      // Upload to ImageKit
+      const uploadedUrl = await uploadCompressedImage(blob, file.name, 'recipes/images');
+      
+      setImage(uploadedUrl);
+      toast.success('Image uploaded successfully', {
+        description: `Original: ${(file.size / 1024 / 1024).toFixed(2)}MB → Compressed: ${(blob.size / 1024 / 1024).toFixed(2)}MB`,
+      });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to upload image');
       setImagePreview('');
+    } finally {
       setUploading(false);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name || !servings || ingredients.some(ing => !ing.name || !ing.unit)) {
-      setError('Please fill in all required fields (name, portion size, and complete ingredient details)');
+      setError('Please fill in all required fields (name, serving size, and complete ingredient details)');
       return;
     }
 
@@ -419,9 +426,9 @@ export default function CreateRecipePage() {
       return;
     }
 
-    // Validate portion size is selected
+    // Validate serving size is selected
     if (!portionSizes.includes(servings)) {
-      setError('Please select a valid portion size');
+      setError('Please select a valid serving size');
       return;
     }
 
@@ -805,13 +812,13 @@ export default function CreateRecipePage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="servings">Portion Size *</Label>
+                      <Label htmlFor="servings">Serving Size *</Label>
                       <Select
                         value={servings}
                         onValueChange={(value) => setServings(value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select portion size" />
+                          <SelectValue placeholder="Select serving size" />
                         </SelectTrigger>
                         <SelectContent>
                           {portionSizes.map((size) => (

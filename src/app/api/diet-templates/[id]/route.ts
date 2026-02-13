@@ -161,18 +161,30 @@ export async function PUT(
     const body = await request.json();
     const validatedData = updateDietTemplateSchema.parse(body);
 
-    const template = await DietTemplate.findOneAndUpdate(
-      { _id: id, isActive: true },
-      { $set: validatedData },
-      { new: true, runValidators: true }
-    ).populate('createdBy', 'firstName lastName');
+    // First fetch the template to check ownership
+    const existingTemplate = await DietTemplate.findOne({ _id: id, isActive: true });
 
-    if (!template) {
+    if (!existingTemplate) {
       return NextResponse.json(
         { success: false, error: 'Diet template not found' },
         { status: 404 }
       );
     }
+
+    // Check what fields are being updated
+    const mealsOnlyFields = ['meals', 'mealTypes'];
+    const updatingMetadata = Object.keys(validatedData).some(
+      key => !mealsOnlyFields.includes(key)
+    );
+
+    // Any dietitian can update meals/recipes and template details
+    // No ownership check needed - all dietitians can edit templates
+
+    const template = await DietTemplate.findOneAndUpdate(
+      { _id: id, isActive: true },
+      { $set: validatedData },
+      { new: true, runValidators: true }
+    ).populate('createdBy', 'firstName lastName');
 
     return NextResponse.json({
       success: true,
@@ -233,19 +245,27 @@ export async function DELETE(
 
     await connectDB();
 
-    // Soft delete by setting isActive to false
-    const template = await DietTemplate.findByIdAndUpdate(
-      id,
-      { isActive: false },
-      { new: true }
-    );
-
-    if (!template) {
+    // First fetch the template to check ownership
+    const existingTemplate = await DietTemplate.findById(id);
+    
+    if (!existingTemplate) {
       return NextResponse.json(
         { success: false, error: 'Diet template not found' },
         { status: 404 }
       );
     }
+
+    // Check if user owns the template or is admin
+    if (existingTemplate.createdBy.toString() !== session.user.id && session.user.role !== UserRole.ADMIN) {
+      return NextResponse.json(
+        { success: false, error: 'Not authorized to delete this template' },
+        { status: 403 }
+      );
+    }
+
+    // Soft delete by setting isActive to false
+    existingTemplate.isActive = false;
+    await existingTemplate.save();
 
     return NextResponse.json({
       success: true,

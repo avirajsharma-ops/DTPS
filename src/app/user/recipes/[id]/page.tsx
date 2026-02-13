@@ -12,6 +12,7 @@ interface Recipe {
   description?: string;
   category?: string;
   servings?: number;
+  servingSize?: string;
   cookTime?: string;
   prepTime?: string;
   calories?: number;
@@ -148,11 +149,11 @@ export default function RecipeDetailPage() {
               <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{recipe.cookTime}</p>
             </div>
           )}
-          {recipe.servings && (
+          {(recipe.servings || recipe.servingSize) && (
             <div className={`rounded-xl p-4 shadow-sm border text-center ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
               <Users className="w-5 h-5 text-[#3AB1A0] mx-auto mb-2" />
-              <p className={`text-xs mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Servings</p>
-              <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{recipe.servings}</p>
+              <p className={`text-xs mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Serving Size</p>
+              <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{recipe.servingSize || `${recipe.servings} serving${Number(recipe.servings) > 1 ? 's' : ''}`}</p>
             </div>
           )}
           {recipe.calories && (

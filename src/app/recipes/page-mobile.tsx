@@ -9,15 +9,21 @@ interface Recipe {
   _id: string;
   name: string;
   image?: string;
-  nutrition: {
+  nutrition?: {
     calories: number;
     protein: number;
     carbs: number;
     fat: number;
   };
+  // Flat nutrition values from API
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
   prepTime: number;
   cookTime: number;
   servings: number;
+  servingSize?: string;
   description?: string;
 }
 

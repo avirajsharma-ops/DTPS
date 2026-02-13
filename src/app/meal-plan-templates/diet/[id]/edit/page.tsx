@@ -52,6 +52,7 @@ export default function EditDietTemplatePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [isOwner, setIsOwner] = useState(false);
 
   // Form state
   const [name, setName] = useState('');
@@ -97,6 +98,10 @@ export default function EditDietTemplatePage() {
         if (res.ok) {
           const data = await res.json();
           const t = data.template;
+
+          // All dietitians can edit any template
+          setIsOwner(true);
+
           setName(t.name || '');
           setDescription(t.description || '');
           setCategory(t.category || '');

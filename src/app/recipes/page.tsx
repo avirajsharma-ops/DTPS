@@ -43,9 +43,15 @@ interface Recipe {
     carbs?: number;
     fat?: number;
   };
+  // Flat nutrition values from API
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
   prepTime: number;
   cookTime: number;
   servings: number;
+  servingSize?: string;
   tags: string[];
   ingredients: Array<{
     name: string;
@@ -538,16 +544,16 @@ function RecipesPageContent() {
                   {/* Nutrition Info */}
                   <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
                     <div className="text-center">
-                      <p className="text-sm font-bold text-gray-900">{recipe.flatNutrition?.calories || 0}</p>
+                      <p className="text-sm font-bold text-gray-900">{recipe.calories || recipe.flatNutrition?.calories || 0}</p>
                       <p className="text-xs text-gray-500">Calories</p>
                     </div>
                     <div className="text-center border-x border-gray-200">
-                      <p className="text-sm font-bold text-gray-900">{recipe.flatNutrition?.protein || 0}g</p>
+                      <p className="text-sm font-bold text-gray-900">{recipe.protein || recipe.flatNutrition?.protein || 0}g</p>
                       <p className="text-xs text-gray-500">Protein</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-bold text-gray-900">{recipe.servings || 1}</p>
-                      <p className="text-xs text-gray-500">Servings</p>
+                      <p className="text-sm font-bold text-gray-900 truncate" title={recipe.servingSize || `${recipe.servings || 1}`}>{recipe.servingSize || recipe.servings || 1}</p>
+                      <p className="text-xs text-gray-500">Serving Size</p>
                     </div>
                   </div>
 
@@ -558,8 +564,8 @@ function RecipesPageContent() {
                       <span>{(recipe.prepTime || 0) + (recipe.cookTime || 0)} min</span>
                     </div>
                     <div className="flex gap-2 text-xs">
-                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded">C: {recipe.flatNutrition?.carbs || 0}g</span>
-                      <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded">F: {recipe.flatNutrition?.fat || 0}g</span>
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded">C: {recipe.carbs || recipe.flatNutrition?.carbs || 0}g</span>
+                      <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded">F: {recipe.fat || recipe.flatNutrition?.fat || 0}g</span>
                     </div>
                   </div>
 

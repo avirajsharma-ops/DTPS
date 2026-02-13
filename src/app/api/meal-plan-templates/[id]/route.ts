@@ -60,10 +60,8 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Template not found' }, { status: 404 });
     }
 
-    // Check if user owns the template or is admin
-    if (existingTemplate.createdBy.toString() !== session.user.id && session.user.role !== UserRole.ADMIN) {
-      return NextResponse.json({ success: false, error: 'Not authorized to update this template' }, { status: 403 });
-    }
+    // Any dietitian can update meals/recipes and template details
+    // No ownership check needed - all dietitians can edit templates
 
     // Update fields
     const updateFields = [
@@ -123,9 +121,19 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Template not found' }, { status: 404 });
     }
 
-    // Check ownership
-    if (existingTemplate.createdBy.toString() !== session.user.id && session.user.role !== UserRole.ADMIN) {
-      return NextResponse.json({ success: false, error: 'Not authorized to update this template' }, { status: 403 });
+    // Fields that any dietitian can update (meals/recipes)
+    const mealsOnlyFields = ['meals', 'mealTypes'];
+    // Check if updating metadata (not just meals)
+    const updatingMetadata = Object.keys(body).some(
+      key => !mealsOnlyFields.includes(key)
+    );
+
+    // If updating metadata, require ownership or admin
+    // Any dietitian can update meals/recipes
+    if (updatingMetadata) {
+      if (existingTemplate.createdBy.toString() !== session.user.id && session.user.role !== UserRole.ADMIN) {
+        return NextResponse.json({ success: false, error: 'Not authorized to update template details. Only the creator or admin can modify template metadata.' }, { status: 403 });
+      }
     }
 
     // Apply partial updates

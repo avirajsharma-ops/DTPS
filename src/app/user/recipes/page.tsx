@@ -16,6 +16,7 @@ interface Recipe {
   description?: string;
   category?: string;
   servings?: number;
+  servingSize?: string;
   cookTime?: string;
   prepTime?: string;
   calories?: number;
@@ -234,10 +235,10 @@ export default function RecipesPage() {
                       <span>{recipe.prepTime}</span>
                     </div>
                   )}
-                  {recipe.servings && (
+                  {(recipe.servings || recipe.servingSize) && (
                     <div className="flex items-center gap-1">
                       <Users className="w-3.5 h-3.5 text-[#3AB1A0]" />
-                      <span>{recipe.servings} servings</span>
+                      <span>{recipe.servingSize || `${recipe.servings} serving${Number(recipe.servings) > 1 ? 's' : ''}`}</span>
                     </div>
                   )}
                   {recipe.calories && (

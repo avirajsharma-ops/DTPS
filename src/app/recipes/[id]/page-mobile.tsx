@@ -19,7 +19,8 @@ interface Recipe {
   instructions: string[];
   prepTime: number;
   cookTime: number;
-  servings: string | number;
+  servings: number;
+  servingSize?: string;
   nutrition: {
     calories: number;
     protein: number;
@@ -141,7 +142,7 @@ export default function RecipeDetailMobile({ params }: { params: Promise<{ id: s
           </div>
           <div className="flex items-center gap-1">
             <Users className="h-4 w-4" />
-            <span>{recipe.servings}</span>
+            <span>{recipe.servingSize || `${recipe.servings} serving${Number(recipe.servings) > 1 ? 's' : ''}`}</span>
           </div>
         </div>
       </div>
