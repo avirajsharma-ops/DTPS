@@ -590,30 +590,56 @@ export default function DataManagementPage() {
       }
     }
     
-    // For Excel files (xlsx, xls), use xlsx library
+    // For Excel files (xlsx, xls), use exceljs library
     if (fileExtension === 'xlsx' || fileExtension === 'xls') {
       try {
-        // Dynamic import of xlsx library
-        const xlsxModule = await import('xlsx');
-        const XLSX = xlsxModule.default || xlsxModule;
+        // Dynamic import of exceljs library
+        const ExcelJS = await import('exceljs');
         
         const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
         
-        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet) {
           throw new Error('No sheets found in Excel file');
         }
         
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+        // Get headers from first row
+        const headerRow = worksheet.getRow(1);
+        const headers: string[] = [];
+        headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          headers[colNumber - 1] = cell.text || `column_${colNumber - 1}`;
+        });
+
+        // Parse data rows
+        const jsonData: Array<{ _id: string; [key: string]: any }> = [];
+        worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+          if (rowNumber === 1) return; // Skip header row
+          
+          const rowData: Record<string, any> = {};
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            const header = headers[colNumber - 1];
+            if (header) {
+              let value = cell.value;
+              if (value && typeof value === 'object') {
+                if ('text' in value) value = value.text;
+                else if ('result' in value) value = value.result;
+                else if (!(value instanceof Date)) value = cell.text;
+              }
+              rowData[header] = value ?? '';
+            }
+          });
+          jsonData.push(rowData as { _id: string; [key: string]: any });
+        });
         
         if (!jsonData || jsonData.length === 0) {
           throw new Error('No data found in Excel sheet');
         }
         
-        return jsonData as Array<{ _id: string; [key: string]: any }>;
+        return jsonData;
       } catch (e: any) {
-        // If xlsx library fails, provide helpful error
+        // If exceljs library fails, provide helpful error
         if (e.message.includes('Cannot read properties')) {
           throw new Error('Excel parsing failed. Please try exporting as CSV and uploading again.');
         }

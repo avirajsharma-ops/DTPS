@@ -5,13 +5,15 @@
  * for model detection and validation.
  */
 
-// Lazy-load xlsx (~300KB) only when actually needed
-let _XLSX: typeof import('xlsx') | null = null;
-async function getXLSX() {
-  if (!_XLSX) {
-    _XLSX = await import('xlsx');
+// Lazy-load exceljs only when actually needed
+import type ExcelJS from 'exceljs';
+let _ExcelJS: typeof ExcelJS | null = null;
+async function getExcelJS(): Promise<typeof ExcelJS> {
+  if (!_ExcelJS) {
+    const module = await import('exceljs');
+    _ExcelJS = module.default;
   }
-  return _XLSX;
+  return _ExcelJS;
 }
 
 // ============================================
@@ -103,12 +105,87 @@ export class FileParser {
     fileName: string
   ): Promise<ParseResult> {
     const content = await this.getFileContent(file);
-    const XLSX = await getXLSX();
-    const workbook = XLSX.read(content, { type: 'string', raw: false });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
     
-    return this.parseSheet(sheet, fileName, 'csv');
+    // Parse CSV manually without xlsx
+    const lines = content.split(/\r?\n/);
+    if (lines.length === 0) {
+      return {
+        success: false,
+        rows: [],
+        headers: [],
+        totalRows: 0,
+        errors: ['File is empty'],
+        fileType: 'csv',
+        fileName
+      };
+    }
+
+    // Parse CSV respecting quoted fields
+    const parseCSVLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          result.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current);
+      return result;
+    };
+
+    // Get headers from first row
+    const rawHeaders = parseCSVLine(lines[0]);
+    const headers = rawHeaders.map((h, i) => {
+      const cleaned = this.cleanHeader(String(h || `column_${i}`));
+      return cleaned || `column_${i}`;
+    });
+
+    // Parse data rows
+    const rows: ParsedRow[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const values = parseCSVLine(line);
+      const rowData: Record<string, any> = {};
+      
+      headers.forEach((header, index) => {
+        rowData[header] = values[index] || '';
+      });
+
+      const processedData = this.processRow(rowData, headers);
+      
+      if (!this.isEmptyRow(processedData) || !this.options.skipEmptyRows) {
+        rows.push({
+          rowIndex: i + 1,
+          data: processedData,
+          rawData: rowData
+        });
+      }
+    }
+
+    return {
+      success: true,
+      rows,
+      headers,
+      totalRows: rows.length,
+      errors: [],
+      fileType: 'csv',
+      fileName
+    };
   }
 
   /**
@@ -119,12 +196,96 @@ export class FileParser {
     fileName: string
   ): Promise<ParseResult> {
     const buffer = await this.getFileBuffer(file);
-    const XLSX = await getXLSX();
-    const workbook = XLSX.read(buffer, { type: 'buffer', raw: false, cellDates: true });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
+    const ExcelJS = await getExcelJS();
+    const workbook = new ExcelJS.Workbook();
     
-    return this.parseSheet(sheet, fileName, 'excel');
+    // Use Uint8Array for exceljs compatibility
+    await workbook.xlsx.load(new Uint8Array(buffer) as any);
+    
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) {
+      return {
+        success: false,
+        rows: [],
+        headers: [],
+        totalRows: 0,
+        errors: ['No sheets found in Excel file'],
+        fileType: 'excel',
+        fileName
+      };
+    }
+
+    // Get headers from first row
+    const headerRow = worksheet.getRow(1);
+    const rawHeaders: string[] = [];
+    headerRow.eachCell({ includeEmpty: true }, (cell: ExcelJS.Cell, colNumber: number) => {
+      rawHeaders[colNumber - 1] = cell.text || `column_${colNumber - 1}`;
+    });
+
+    if (rawHeaders.length === 0) {
+      return {
+        success: false,
+        rows: [],
+        headers: [],
+        totalRows: 0,
+        errors: ['No headers found in the file'],
+        fileType: 'excel',
+        fileName
+      };
+    }
+
+    // Clean headers
+    const headers = rawHeaders.map((h, i) => {
+      const cleaned = this.cleanHeader(String(h || `column_${i}`));
+      return cleaned || `column_${i}`;
+    });
+
+    // Parse data rows (starting from row 2)
+    const rows: ParsedRow[] = [];
+    worksheet.eachRow({ includeEmpty: false }, (row: ExcelJS.Row, rowNumber: number) => {
+      if (rowNumber === 1) return; // Skip header row
+
+      const rowData: Record<string, any> = {};
+      row.eachCell({ includeEmpty: true }, (cell: ExcelJS.Cell, colNumber: number) => {
+        const header = headers[colNumber - 1];
+        if (header) {
+          // Handle different cell value types
+          let value = cell.value;
+          if (value && typeof value === 'object') {
+            if ('text' in value) {
+              value = value.text;
+            } else if ('result' in value) {
+              value = value.result;
+            } else if (value instanceof Date) {
+              value = value;
+            } else {
+              value = cell.text;
+            }
+          }
+          rowData[header] = value ?? '';
+        }
+      });
+
+      const processedData = this.processRow(rowData, headers);
+      
+      if (!this.isEmptyRow(processedData) || !this.options.skipEmptyRows) {
+        rows.push({
+          rowIndex: rowNumber,
+          data: processedData,
+          rawData: rowData
+        });
+      }
+    });
+
+    return {
+      success: true,
+      rows,
+      headers,
+      totalRows: rows.length,
+      errors: [],
+      fileType: 'excel',
+      fileName
+    };
   }
 
   /**
@@ -245,87 +406,6 @@ export class FileParser {
       totalRows: 0,
       errors: ['Unable to detect file format. Please use CSV, Excel (.xlsx/.xls), or JSON.'],
       fileType: 'unknown',
-      fileName
-    };
-  }
-
-  /**
-   * Parse an Excel/CSV sheet
-   */
-  private async parseSheet(
-    sheet: any,
-    fileName: string,
-    fileType: 'csv' | 'excel'
-  ): Promise<ParseResult> {
-    // Use XLSX to convert sheet to array format where first row is headers
-    const XLSX = await getXLSX();
-    const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, {
-      raw: false,
-      defval: ''
-    });
-
-    if (jsonData.length === 0) {
-      return {
-        success: false,
-        rows: [],
-        headers: [],
-        totalRows: 0,
-        errors: ['File is empty'],
-        fileType,
-        fileName
-      };
-    }
-
-    // Extract headers from the first object's keys
-    const rawHeaders = Object.keys(jsonData[0]);
-    
-    if (!rawHeaders || rawHeaders.length === 0) {
-      return {
-        success: false,
-        rows: [],
-        headers: [],
-        totalRows: 0,
-        errors: ['No headers found in the file'],
-        fileType,
-        fileName
-      };
-    }
-
-    // Clean headers
-    const headers = rawHeaders.map((h, i) => {
-      const cleaned = this.cleanHeader(String(h || `column_${i}`));
-      return cleaned || `column_${i}`;
-    });
-
-    // Parse data rows
-    const rows: ParsedRow[] = [];
-    jsonData.forEach((rowData: Record<string, any>, index: number) => {
-      const cleanedRowData: Record<string, any> = {};
-      
-      // Map raw headers to cleaned headers
-      rawHeaders.forEach((rawHeader, headerIndex) => {
-        const cleanedHeader = headers[headerIndex];
-        cleanedRowData[cleanedHeader] = rowData[rawHeader];
-      });
-
-      const processedData = this.processRow(cleanedRowData, headers);
-      
-      if (!this.isEmptyRow(processedData) || !this.options.skipEmptyRows) {
-        rows.push({
-          rowIndex: index + 2, // +2 because first row is headers (row 1) and we start from row 2
-          data: processedData,
-          rawData: rowData
-        });
-      }
-    });
-
-    return {
-      success: true,
-      rows,
-      headers,
-      totalRows: rows.length,
-      errors: [],
-      fileType,
       fileName
     };
   }
@@ -668,11 +748,36 @@ export class FileGenerator {
     data: Record<string, any>[],
     sheetName: string = 'Sheet1'
   ): Promise<Buffer> {
-    const XLSX = await getXLSX();
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const ExcelJS = await getExcelJS();
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(sheetName);
+
+    if (data.length === 0) {
+      return Buffer.from(await workbook.xlsx.writeBuffer());
+    }
+
+    // Extract headers from data
+    const headers = this.extractHeaders(data);
+    
+    // Add header row
+    worksheet.addRow(headers);
+    
+    // Add data rows
+    data.forEach(row => {
+      const rowValues = headers.map(header => {
+        const value = row[header];
+        if (value === null || value === undefined) return '';
+        if (Array.isArray(value)) return value.join(', ');
+        if (typeof value === 'object') {
+          if (value instanceof Date) return value;
+          return JSON.stringify(value);
+        }
+        return value;
+      });
+      worksheet.addRow(rowValues);
+    });
+
+    return Buffer.from(await workbook.xlsx.writeBuffer());
   }
 
   /**

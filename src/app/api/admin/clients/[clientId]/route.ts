@@ -7,61 +7,150 @@ import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import mongoose from 'mongoose';
+
+// Helper function to validate MongoDB ObjectId
+function isValidObjectId(id: string): boolean {
+  return mongoose.Types.ObjectId.isValid(id) && new mongoose.Types.ObjectId(id).toString() === id;
+}
+
+// Helper function to check if dietitian/health-counselor is assigned to client
+async function isStaffAssignedToClient(staffId: string, clientId: string): Promise<boolean> {
+  try {
+    const result = await User.findById(clientId).select('assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors').lean();
+    const client = result as Record<string, any> | null;
+    if (!client) return false;
+    
+    const staffIdStr = staffId.toString();
+    return (
+      client.assignedDietitian?.toString() === staffIdStr ||
+      (Array.isArray(client.assignedDietitians) && client.assignedDietitians.some((d: any) => d?.toString() === staffIdStr)) ||
+      client.assignedHealthCounselor?.toString() === staffIdStr ||
+      (Array.isArray(client.assignedHealthCounselors) && client.assignedHealthCounselors.some((hc: any) => hc?.toString() === staffIdStr))
+    );
+  } catch (error) {
+    console.error('[isStaffAssignedToClient] Error checking assignment:', error);
+    return false;
+  }
+}
 
 // GET /api/admin/clients/[clientId] - Get full client details
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
+  let clientId: string = '';
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
+      console.log('[GET /api/admin/clients/[clientId]] Unauthorized - no session');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userRole = session.user.role?.toLowerCase();
-    if (!userRole || !userRole.includes('admin')) {
-      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    const { clientId: rawClientId } = await params;
+    clientId = rawClientId;
+
+    // Validate clientId format
+    if (!clientId || !isValidObjectId(clientId)) {
+      console.log('[GET /api/admin/clients/[clientId]] Invalid clientId format:', clientId);
+      return NextResponse.json({ 
+        error: 'Invalid client ID format',
+        details: 'The provided client ID is not a valid MongoDB ObjectId'
+      }, { status: 400 });
     }
 
+    // Establish DB connection first
     await connectDB();
-    const { clientId } = await params;
 
-    const client = await withCache(
-      `admin:clients:clientId:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId)
+    const userRole = session.user.role?.toLowerCase();
+    const userId = session.user.id;
+    const isAdmin = userRole?.includes('admin');
+    const isDietitian = userRole === 'dietitian';
+    const isHealthCounselor = userRole === 'health-counselor' || userRole === 'healthcounselor' || userRole === 'health_counselor';
+
+    console.log('[GET /api/admin/clients/[clientId]] Request details:', {
+      clientId,
+      requestingUserId: userId,
+      requestingUserRole: userRole,
+      isAdmin,
+      isDietitian,
+      isHealthCounselor
+    });
+
+    // Check authorization: admin can access all, dietitian/HC can only access assigned clients
+    if (!isAdmin && !isDietitian && !isHealthCounselor) {
+      console.log('[GET /api/admin/clients/[clientId]] Forbidden - invalid role:', userRole);
+      return NextResponse.json({ 
+        error: 'Forbidden - Access denied',
+        details: `Role '${userRole}' does not have permission to access client data`
+      }, { status: 403 });
+    }
+
+    // For non-admin roles, verify they are assigned to this client
+    if (!isAdmin) {
+      const isAssigned = await isStaffAssignedToClient(userId, clientId);
+      console.log('[GET /api/admin/clients/[clientId]] Assignment check:', {
+        staffId: userId,
+        clientId,
+        isAssigned
+      });
+      
+      if (!isAssigned) {
+        return NextResponse.json({ 
+          error: 'You are not assigned to this client',
+          details: 'Access denied - no assignment relationship found'
+        }, { status: 403 });
+      }
+    }
+
+    // Fetch client without cache first to debug
+    const clientResult = await User.findById(clientId)
       .select('-password')
       .populate('assignedDietitian', 'firstName lastName email avatar phone specializations')
       .populate('assignedDietitians', 'firstName lastName email avatar phone specializations')
       .populate('assignedHealthCounselor', 'firstName lastName email avatar phone')
       .populate('assignedHealthCounselors', 'firstName lastName email avatar phone')
-      .populate('tags'),
-      { ttl: 120000, tags: ['admin'] }
-    );
+      .populate('tags')
+      .lean();
+
+    const client = clientResult as Record<string, any> | null;
 
     if (!client) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+      console.log('[GET /api/admin/clients/[clientId]] Client not found:', clientId);
+      return NextResponse.json({ 
+        error: 'Client not found',
+        details: `No client exists with ID: ${clientId}`
+      }, { status: 404 });
     }
 
+    console.log('[GET /api/admin/clients/[clientId]] Client found:', {
+      clientId: client._id,
+      name: `${client.firstName} ${client.lastName}`,
+      role: client.role,
+      assignedDietitian: client.assignedDietitian?._id || client.assignedDietitian,
+      assignedDietitians: client.assignedDietitians?.map((d: any) => d._id || d)
+    });
+
     // Get meal plans
-    const mealPlans = await withCache(
-      `admin:clients:clientId:${JSON.stringify({ clientId })}`,
-      async () => await ClientMealPlan.find({ clientId })
+    const mealPlans = await ClientMealPlan.find({ clientId: new mongoose.Types.ObjectId(clientId) })
       .populate('templateId', 'name category')
-      .populate('assignedBy', 'firstName lastName')
+      .populate('dietitianId', 'firstName lastName email')
       .sort({ createdAt: -1 })
-      .limit(10),
-      { ttl: 120000, tags: ['admin'] }
-    );
+      .limit(10)
+      .lean();
 
     // Get payments
-    const payments = await withCache(
-      `admin:clients:clientId:${JSON.stringify({ client: clientId })}`,
-      async () => await UnifiedPayment.find({ client: clientId })
+    const payments = await UnifiedPayment.find({ client: new mongoose.Types.ObjectId(clientId) })
       .sort({ createdAt: -1 })
-      .limit(20),
-      { ttl: 120000, tags: ['admin'] }
-    );
+      .limit(20)
+      .lean();
+
+    console.log('[GET /api/admin/clients/[clientId]] Response summary:', {
+      clientId,
+      mealPlansCount: mealPlans.length,
+      paymentsCount: payments.length
+    });
 
     return NextResponse.json({
       client,
@@ -69,9 +158,34 @@ export async function GET(
       payments
     });
 
-  } catch (error) {
-    console.error('Error fetching client details:', error);
-    return NextResponse.json({ error: 'Failed to fetch client details' }, { status: 500 });
+  } catch (error: any) {
+    // Detailed error logging
+    console.error('[GET /api/admin/clients/[clientId]] Error:', {
+      clientId,
+      errorName: error?.name,
+      errorMessage: error?.message,
+      errorStack: error?.stack?.split('\n').slice(0, 5).join('\n')
+    });
+
+    // Handle specific MongoDB errors
+    if (error?.name === 'CastError') {
+      return NextResponse.json({ 
+        error: 'Invalid client ID',
+        details: 'The provided ID is not a valid format'
+      }, { status: 400 });
+    }
+
+    if (error?.name === 'MongoNetworkError' || error?.name === 'MongoServerSelectionError') {
+      return NextResponse.json({ 
+        error: 'Database connection failed',
+        details: 'Unable to connect to the database. Please try again.'
+      }, { status: 503 });
+    }
+
+    return NextResponse.json({ 
+      error: 'Failed to fetch client details',
+      details: process.env.NODE_ENV === 'development' ? error?.message : 'An unexpected error occurred'
+    }, { status: 500 });
   }
 }
 
@@ -80,19 +194,45 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
+  let clientId: string = '';
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { clientId: rawClientId } = await params;
+    clientId = rawClientId;
+
+    // Validate clientId format
+    if (!clientId || !isValidObjectId(clientId)) {
+      return NextResponse.json({ 
+        error: 'Invalid client ID format',
+        details: 'The provided client ID is not a valid MongoDB ObjectId'
+      }, { status: 400 });
+    }
+
     const userRole = session.user.role?.toLowerCase();
-    if (!userRole || !userRole.includes('admin')) {
-      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    const isAdmin = userRole?.includes('admin');
+    const isDietitian = userRole === 'dietitian';
+    const isHealthCounselor = userRole === 'health-counselor' || userRole === 'healthcounselor' || userRole === 'health_counselor';
+
+    // Check authorization
+    if (!isAdmin && !isDietitian && !isHealthCounselor) {
+      return NextResponse.json({ error: 'Forbidden - Access denied' }, { status: 403 });
     }
 
     await connectDB();
-    const { clientId } = await params;
+
+    // For non-admin roles, verify they are assigned to this client
+    if (!isAdmin) {
+      const isAssigned = await isStaffAssignedToClient(session.user.id, clientId);
+      if (!isAssigned) {
+        return NextResponse.json({ error: 'You are not assigned to this client' }, { status: 403 });
+      }
+    }
+
     const body = await request.json();
 
     // Remove fields that shouldn't be updated directly
@@ -102,17 +242,32 @@ export async function PUT(
       clientId,
       { $set: updateData },
       { new: true }
-    ).select('-password');
+    ).select('-password').lean();
 
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
+    // Clear cache for this client
+    clearCacheByTag('admin');
+
     return NextResponse.json({ client, message: 'Client updated successfully' });
 
-  } catch (error) {
-    console.error('Error updating client:', error);
-    return NextResponse.json({ error: 'Failed to update client' }, { status: 500 });
+  } catch (error: any) {
+    console.error('[PUT /api/admin/clients/[clientId]] Error:', {
+      clientId,
+      errorName: error?.name,
+      errorMessage: error?.message
+    });
+
+    if (error?.name === 'CastError') {
+      return NextResponse.json({ error: 'Invalid client ID' }, { status: 400 });
+    }
+
+    return NextResponse.json({ 
+      error: 'Failed to update client',
+      details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    }, { status: 500 });
   }
 }
 
@@ -121,10 +276,23 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
+  let clientId: string = '';
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { clientId: rawClientId } = await params;
+    clientId = rawClientId;
+
+    // Validate clientId format
+    if (!clientId || !isValidObjectId(clientId)) {
+      return NextResponse.json({ 
+        error: 'Invalid client ID format',
+        details: 'The provided client ID is not a valid MongoDB ObjectId'
+      }, { status: 400 });
     }
 
     const userRole = session.user.role?.toLowerCase();
@@ -133,13 +301,16 @@ export async function DELETE(
     }
 
     await connectDB();
-    const { clientId } = await params;
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'deactivate'; // 'deactivate' or 'delete'
 
     if (action === 'delete') {
       // Permanent delete - use with caution
-      await User.findByIdAndDelete(clientId);
+      const result = await User.findByIdAndDelete(clientId);
+      if (!result) {
+        return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+      }
+      clearCacheByTag('admin');
       return NextResponse.json({ message: 'Client deleted permanently' });
     } else {
       // Deactivate (soft delete)
@@ -147,17 +318,30 @@ export async function DELETE(
         clientId,
         { status: 'inactive' },
         { new: true }
-      ).select('-password');
+      ).select('-password').lean();
 
       if (!client) {
         return NextResponse.json({ error: 'Client not found' }, { status: 404 });
       }
 
+      clearCacheByTag('admin');
       return NextResponse.json({ client, message: 'Client deactivated successfully' });
     }
 
-  } catch (error) {
-    console.error('Error deleting/deactivating client:', error);
-    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
+  } catch (error: any) {
+    console.error('[DELETE /api/admin/clients/[clientId]] Error:', {
+      clientId,
+      errorName: error?.name,
+      errorMessage: error?.message
+    });
+
+    if (error?.name === 'CastError') {
+      return NextResponse.json({ error: 'Invalid client ID' }, { status: 400 });
+    }
+
+    return NextResponse.json({ 
+      error: 'Failed to process request',
+      details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    }, { status: 500 });
   }
 }

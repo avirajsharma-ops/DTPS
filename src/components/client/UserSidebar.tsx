@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { X, LayoutDashboard, Heart, Utensils, TrendingUp, Calendar, MessageCircle, CreditCard, User, Settings, HelpCircle, LogOut, ShoppingBag, BookOpen, Package, ChevronRight, Bell } from 'lucide-react';
+import { X, LayoutDashboard, Heart, Utensils, TrendingUp, Calendar, MessageCircle, CreditCard, User, Settings, HelpCircle, LogOut, BookOpen, Package, ChevronRight, Bell } from 'lucide-react';
 import { useUnreadCountsSafe } from '@/contexts/UnreadCountContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -78,7 +78,6 @@ export default function UserSidebar({ isOpen, onClose }: UserSidebarProps) {
     { href: '/user/appointments', label: 'Appointments', icon: Calendar, badge: (session as any)?.user?.upcomingAppointmentsCount || "" },
     { href: '/user/notifications', label: 'Notifications', icon: Bell, badge: counts.notifications > 0 ? counts.notifications : "" },
     { href: '/user/messages', label: 'Messages', icon: MessageCircle, badge: counts.messages > 0 ? counts.messages : "" },
-    { href: '/user/subscriptions', label: 'My Subscriptions', icon: ShoppingBag },
     { href: '/user/billing', label: 'Billing', icon: CreditCard },
     { href: '/user/profile', label: 'Profile', icon: User },
     { href: '/user/settings', label: 'Settings', icon: Settings },
