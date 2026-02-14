@@ -106,10 +106,10 @@ export const MEAL_TYPES: Record<MealTypeKey, MealTypeConfig> = {
   },
 } as const;
 
+
 // ============================================================================
 // ARRAYS FOR ITERATION & VALIDATION
 // ============================================================================
-
 /**
  * All meal type keys in chronological order
  */

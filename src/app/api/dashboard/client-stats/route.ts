@@ -26,29 +26,61 @@ export async function GET(request: NextRequest) {
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Get user profile for goals and assigned dietitian
-    const user = await withCache(
-      `dashboard:client-stats:${JSON.stringify(userId)}`,
-      async () => await User.findById(userId)
-      .select('firstName lastName email goals assignedDietitian')
-      .populate('assignedDietitian', 'firstName lastName email avatar bio experience specializations'),
-      { ttl: 120000, tags: ['dashboard'] }
-    );
+    // Run all independent queries concurrently to avoid N+1 round-trips
+    const [user, todayFoodLog, latestWeight, weekAgoWeight, firstWeight, streak, nextAppointment] = await Promise.all([
+      // User profile
+      withCache(
+        `dashboard:client-stats:user-${userId}`,
+        async () => User.findById(userId)
+          .select('firstName lastName email goals assignedDietitian')
+          .populate('assignedDietitian', 'firstName lastName email avatar bio experience specializations'),
+        { ttl: 120000, tags: ['dashboard'] }
+      ),
+      // Today's food log
+      withCache(
+        `dashboard:client-stats:foodlog-${userId}-${today.toISOString()}`,
+        async () => FoodLog.findOne({ client: userId, date: { $gte: today, $lte: endOfDay } }),
+        { ttl: 120000, tags: ['dashboard'] }
+      ),
+      // Latest weight
+      withCache(
+        `dashboard:client-stats:weight-latest-${userId}`,
+        async () => ProgressEntry.findOne({ user: userId, type: 'weight' }).sort({ recordedAt: -1 }),
+        { ttl: 120000, tags: ['dashboard'] }
+      ),
+      // Weight from 7 days ago
+      withCache(
+        `dashboard:client-stats:weight-week-${userId}`,
+        async () => {
+          const sevenDaysAgo = new Date(today);
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          return ProgressEntry.findOne({ user: userId, type: 'weight', recordedAt: { $lte: sevenDaysAgo } }).sort({ recordedAt: -1 });
+        },
+        { ttl: 120000, tags: ['dashboard'] }
+      ),
+      // First weight entry
+      withCache(
+        `dashboard:client-stats:weight-first-${userId}`,
+        async () => ProgressEntry.findOne({ user: userId, type: 'weight' }).sort({ recordedAt: 1 }),
+        { ttl: 120000, tags: ['dashboard'] }
+      ),
+      // Streak
+      calculateStreak(userId),
+      // Next appointment
+      withCache(
+        `dashboard:client-stats:next-appointment-${userId}`,
+        async () => Appointment.findOne({
+          client: userId,
+          scheduledAt: { $gte: new Date() },
+          status: { $in: ['scheduled', 'confirmed'] }
+        })
+          .populate('dietitian', 'firstName lastName')
+          .sort({ scheduledAt: 1 }),
+        { ttl: 120000, tags: ['dashboard'] }
+      )
+    ]);
 
-    // Get today's food logs (new structure)
-    const todayFoodLog = await withCache(
-      `dashboard:client-stats:${JSON.stringify({
-      client: userId,
-      date: { $gte: today, $lte: endOfDay }
-    })}`,
-      async () => await FoodLog.findOne({
-      client: userId,
-      date: { $gte: today, $lte: endOfDay }
-    }),
-      { ttl: 120000, tags: ['dashboard'] }
-    );
-
-    // Calculate today's totals from the new structure
+    // Derived calculations
     const todayTotals = todayFoodLog?.totalNutrition ? {
       calories: todayFoodLog.totalNutrition.calories || 0,
       protein: todayFoodLog.totalNutrition.protein || 0,
@@ -56,75 +88,9 @@ export async function GET(request: NextRequest) {
       fat: todayFoodLog.totalNutrition.fat || 0
     } : { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
-    // Get latest weight entry
-    const latestWeight = await withCache(
-      `dashboard:client-stats:${JSON.stringify({
-      user: userId,
-      type: 'weight'
-    })}`,
-      async () => await ProgressEntry.findOne({
-      user: userId,
-      type: 'weight'
-    }).sort({ recordedAt: -1 }),
-      { ttl: 120000, tags: ['dashboard'] }
-    );
-
-    // Get weight from 7 days ago for weekly change
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const weekAgoWeight = await withCache(
-      `dashboard:client-stats:${JSON.stringify({
-      user: userId,
-      type: 'weight',
-      recordedAt: { $lte: sevenDaysAgo }
-    })}`,
-      async () => await ProgressEntry.findOne({
-      user: userId,
-      type: 'weight',
-      recordedAt: { $lte: sevenDaysAgo }
-    }).sort({ recordedAt: -1 }),
-      { ttl: 120000, tags: ['dashboard'] }
-    );
-
-    // Calculate weight change
-    const weightChange = latestWeight && weekAgoWeight 
+    const weightChange = latestWeight && weekAgoWeight
       ? (latestWeight.value - weekAgoWeight.value).toFixed(1)
       : '0.0';
-
-    // Get first weight entry for start weight
-    const firstWeight = await withCache(
-      `dashboard:client-stats:${JSON.stringify({
-      user: userId,
-      type: 'weight'
-    })}`,
-      async () => await ProgressEntry.findOne({
-      user: userId,
-      type: 'weight'
-    }).sort({ recordedAt: 1 }),
-      { ttl: 120000, tags: ['dashboard'] }
-    );
-
-    // Get streak (consecutive days with food logs)
-    const streak = await calculateStreak(userId);
-
-    // Get next appointment
-    const nextAppointment = await withCache(
-      `dashboard:client-stats:${JSON.stringify({
-      client: userId,
-      scheduledAt: { $gte: new Date() },
-      status: { $in: ['scheduled', 'confirmed'] }
-    })
-    .populate('dietitian', 'firstName lastName')
-    .sort({ scheduledAt: 1 })}`,
-      async () => await Appointment.findOne({
-      client: userId,
-      scheduledAt: { $gte: new Date() },
-      status: { $in: ['scheduled', 'confirmed'] }
-    })
-    .populate('dietitian', 'firstName lastName')
-    .sort({ scheduledAt: 1 }),
-      { ttl: 120000, tags: ['dashboard'] }
-    );
 
     // Get user's goals (default values if not set)
     const goals = user?.goals || {

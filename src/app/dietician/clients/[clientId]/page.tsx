@@ -417,6 +417,19 @@ export default function ClientDetailPage() {
     }
   }, [params.clientId]);
 
+  // Suppress Event-type unhandled rejections from resource load failures (broken images/media)
+  // These are native browser Events, not real app errors, but Sentry captures them
+  useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      // If the rejection reason is a native Event (not an Error), it's a resource load failure
+      if (event.reason instanceof Event && !(event.reason instanceof Error)) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    return () => window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+  }, []);
+
   const handleAdminDeactivateClient = async () => {
     if (!isAdmin) return;
     const ok = window.confirm('Deactivate this client? They will not be able to login.');
@@ -2082,7 +2095,7 @@ export default function ClientDetailPage() {
                                 <div key={idx} className="relative">
                                   {att.type === 'image' && (
                                     <a href={att.url} target="_blank" rel="noopener noreferrer">
-                                      <img src={att.url} alt={att.filename || 'Image'} className="h-24 w-24 object-cover rounded-lg border shadow-sm hover:shadow-md transition-shadow" />
+                                      <img src={att.url} alt={att.filename || 'Image'} className="h-24 w-24 object-cover rounded-lg border shadow-sm hover:shadow-md transition-shadow" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                     </a>
                                   )}
                                   {att.type === 'video' && (
@@ -2363,7 +2376,7 @@ export default function ClientDetailPage() {
                       {(newNote.attachments || []).map((att, idx) => (
                         <div key={idx} className="relative group">
                           {att.type === 'image' && (
-                            <img src={att.url} alt={att.filename} className="h-16 w-16 object-cover rounded border" />
+                            <img src={att.url} alt={att.filename} className="h-16 w-16 object-cover rounded border" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                           )}
                           {att.type === 'video' && (
                             <div className="h-16 w-16 bg-gray-100 rounded border flex items-center justify-center">

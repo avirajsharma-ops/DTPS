@@ -47,110 +47,93 @@ export async function GET(request: NextRequest) {
     }
     // Admin sees all clients (no filter needed)
 
-    // Get total clients count (assigned to this dietitian or all for admin)
-    const totalClients = await User.countDocuments(clientQuery);
+    // Run all independent queries concurrently to avoid N+1 round-trips
+    const [
+      totalClients,
+      activeClients,
+      todaysAppointments,
+      confirmedAppointments,
+      pendingAppointments,
+      completedSessions,
+      totalPastAppointments,
+      recentClients,
+      todaysSchedule
+    ] = await Promise.all([
+      // Total clients
+      User.countDocuments(clientQuery),
+      // Active clients
+      User.countDocuments({
+        ...clientQuery,
+        $or: [
+          { 'wooCommerceData.totalOrders': { $gt: 0 } },
+          { lastLoginAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+          { updatedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
+        ]
+      }),
+      // Today's appointments
+      Appointment.countDocuments({
+        ...appointmentQuery,
+        scheduledAt: { $gte: startOfToday, $lt: endOfToday }
+      }),
+      // Confirmed appointments for today
+      Appointment.countDocuments({
+        ...appointmentQuery,
+        scheduledAt: { $gte: startOfToday, $lt: endOfToday },
+        status: { $in: ['confirmed', 'scheduled'] }
+      }),
+      // Pending appointments for today
+      Appointment.countDocuments({
+        ...appointmentQuery,
+        scheduledAt: { $gte: startOfToday, $lt: endOfToday },
+        status: 'pending'
+      }),
+      // Completed sessions
+      Appointment.countDocuments({
+        ...appointmentQuery,
+        scheduledAt: { $lt: startOfToday },
+        status: { $in: ['confirmed', 'completed'] }
+      }),
+      // Total past appointments (for completion rate)
+      Appointment.countDocuments({
+        ...appointmentQuery,
+        scheduledAt: { $lt: startOfToday }
+      }),
+      // Recent clients
+      withCache(
+        `dashboard:dietitian-stats:${JSON.stringify(clientQuery)}`,
+        async () => User.find(clientQuery)
+          .sort({ createdAt: -1 })
+          .limit(10)
+          .select('firstName lastName email phone wooCommerceData createdAt'),
+        { ttl: 120000, tags: ['dashboard'] }
+      ),
+      // Today's schedule
+      withCache(
+        `dashboard:dietitian-stats:schedule-${startOfToday.toISOString()}`,
+        async () => Appointment.find({
+          ...appointmentQuery,
+          scheduledAt: { $gte: startOfToday, $lt: endOfToday }
+        })
+          .populate('client', 'firstName lastName email')
+          .sort({ scheduledAt: 1 }),
+        { ttl: 120000, tags: ['dashboard'] }
+      )
+    ]);
 
-    // Get active clients (clients with recent activity or WooCommerce data)
-    const activeClients = await User.countDocuments({
-      ...clientQuery,
-      $or: [
-        { 'wooCommerceData.totalOrders': { $gt: 0 } },
-        { lastLoginAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }, // Last 30 days
-        { updatedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
-      ]
-    });
-
-    // Get clients with meal plans (estimate based on active clients)
-    const clientsWithMealPlans = Math.floor(activeClients * 0.7); // Estimate 70% have meal plans
-
-    // Get today's appointments (for this dietitian or all for admin)
-    const todaysAppointments = await Appointment.countDocuments({
-      ...appointmentQuery,
-      scheduledAt: {
-        $gte: startOfToday,
-        $lt: endOfToday
-      }
-    });
-
-    // Get confirmed appointments for today
-    const confirmedAppointments = await Appointment.countDocuments({
-      ...appointmentQuery,
-      scheduledAt: {
-        $gte: startOfToday,
-        $lt: endOfToday
-      },
-      status: { $in: ['confirmed', 'scheduled'] }
-    });
-
-    // Get pending appointments for today
-    const pendingAppointments = await Appointment.countDocuments({
-      ...appointmentQuery,
-      scheduledAt: {
-        $gte: startOfToday,
-        $lt: endOfToday
-      },
-      status: 'pending'
-    });
-
-    // Get total completed sessions (all past confirmed appointments)
-    const completedSessions = await Appointment.countDocuments({
-      ...appointmentQuery,
-      scheduledAt: { $lt: startOfToday },
-      status: { $in: ['confirmed', 'completed'] }
-    });
-
-    // Calculate completion rate
-    const totalPastAppointments = await Appointment.countDocuments({
-      ...appointmentQuery,
-      scheduledAt: { $lt: startOfToday }
-    });
+    // Derived calculations
+    const clientsWithMealPlans = Math.floor(activeClients * 0.7);
     const completionRate = totalPastAppointments > 0
       ? Math.round((completedSessions / totalPastAppointments) * 100)
       : 0;
 
-    // Get recent clients (last 10 assigned to this dietitian or all for admin)
-    const recentClients = await withCache(
-      `dashboard:dietitian-stats:${JSON.stringify(clientQuery)}`,
-      async () => await User.find(clientQuery)
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .select('firstName lastName email phone wooCommerceData createdAt')
-    ,
-      { ttl: 120000, tags: ['dashboard'] }
-    );
-
-    // Get today's schedule (for this dietitian or all for admin)
-    const todaysSchedule = await withCache(
-      `dashboard:dietitian-stats:${JSON.stringify({
-      ...appointmentQuery,
-      scheduledAt: {
-        $gte: startOfToday,
-        $lt: endOfToday
-      }
-    })}`,
-      async () => await Appointment.find({
-      ...appointmentQuery,
-      scheduledAt: {
-        $gte: startOfToday,
-        $lt: endOfToday
-      }
-    })
-    .populate('client', 'firstName lastName email')
-    .sort({ scheduledAt: 1 })
-    ,
-      { ttl: 120000, tags: ['dashboard'] }
-    );
-
     // Get payments ONLY from clients assigned to this dietitian
     let paymentQuery: any = {};
-    let assignedClientIds: mongoose.Types.ObjectId[] = [];
     
     if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
-      // Convert session user ID to ObjectId
       const dietitianObjectId = new mongoose.Types.ObjectId(session.user.id);
       
       // Get list of client IDs assigned to this dietitian
-      assignedClientIds = await User.find({
+      const assignedClientIds = await User.find({
         role: 'client',
         $or: [
           { assignedDietitian: dietitianObjectId },
@@ -158,61 +141,37 @@ export async function GET(request: NextRequest) {
         ]
       }).distinct('_id');
       
-      
-      // Only get payments from clients assigned to this dietitian
       if (assignedClientIds.length > 0) {
-        paymentQuery = {
-          client: { $in: assignedClientIds }
-        };
+        paymentQuery = { client: { $in: assignedClientIds } };
       } else {
-        // No assigned clients, return empty payments
-        paymentQuery = { _id: null }; // This will return no results
+        paymentQuery = { _id: null };
       }
     }
     // For admin, paymentQuery stays empty to show all payments
 
-    // Get recent payments (last 10)
-    const recentPayments = await withCache(
-      `dashboard:dietitian-stats:${JSON.stringify(paymentQuery)}`,
-      async () => await UnifiedPayment.find(paymentQuery)
-      .populate('client', 'firstName lastName email phone')
-      .sort({ createdAt: -1 })
-      .limit(10)
-      ,
-      { ttl: 120000, tags: ['dashboard'] }
-    );
+    // Run all payment queries concurrently
+    const [recentPayments, totalRevenueResult, pendingPaymentsCount, completedPaymentsCount] = await Promise.all([
+      withCache(
+        `dashboard:dietitian-stats:payments-${JSON.stringify(paymentQuery)}`,
+        async () => UnifiedPayment.find(paymentQuery)
+          .populate('client', 'firstName lastName email phone')
+          .sort({ createdAt: -1 })
+          .limit(10),
+        { ttl: 120000, tags: ['dashboard'] }
+      ),
+      withCache(
+        `dashboard:dietitian-stats:revenue-${JSON.stringify(paymentQuery)}`,
+        async () => UnifiedPayment.aggregate([
+          { $match: { ...paymentQuery, status: 'completed' } },
+          { $group: { _id: null, total: { $sum: '$amount' } } }
+        ]),
+        { ttl: 120000, tags: ['dashboard'] }
+      ),
+      UnifiedPayment.countDocuments({ ...paymentQuery, status: 'pending' }),
+      UnifiedPayment.countDocuments({ ...paymentQuery, status: 'completed' })
+    ]);
 
-    // Get total revenue for this dietitian
-    const totalRevenueResult = await withCache(
-      `dashboard:dietitian-stats:${JSON.stringify([
-      { $match: { 
-        ...paymentQuery,
-        status: 'completed'
-      }},
-      { $group: { _id: null, total: { $sum: '$amount' } }}
-    ])}`,
-      async () => await UnifiedPayment.aggregate([
-      { $match: { 
-        ...paymentQuery,
-        status: 'completed'
-      }},
-      { $group: { _id: null, total: { $sum: '$amount' } }}
-    ]),
-      { ttl: 120000, tags: ['dashboard'] }
-    );
     const totalRevenue = totalRevenueResult[0]?.total || 0;
-
-    // Get pending payments count
-    const pendingPaymentsCount = await UnifiedPayment.countDocuments({
-      ...paymentQuery,
-      status: 'pending'
-    });
-
-    // Get completed payments count
-    const completedPaymentsCount = await UnifiedPayment.countDocuments({
-      ...paymentQuery,
-      status: 'completed'
-    });
 
     // Calculate active percentage
     const activePercentage = totalClients > 0 ? Math.round((activeClients / totalClients) * 100) : 0;
