@@ -87,5 +87,7 @@ export function computeClientStatusFromDocs(
     return plan.status === 'active' && start <= today && end >= today;
   }) || null;
 
+  
   return computeClientStatus({ hasSuccessfulPayment, activePlan });
 }
+
