@@ -81,7 +81,6 @@ export async function GET(request: NextRequest) {
       } else {
         // admin: allowed
       }
-
       query.client = clientId;
       if (dietitianId) query.dietitian = dietitianId;
     } else if (dietitianId) {

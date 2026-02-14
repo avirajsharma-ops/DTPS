@@ -3,8 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
+import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { computeClientStatusFromDocs } from '@/lib/status/computeClientStatus';
 
 // GET /api/admin/clients - Get all clients for admin
 export async function GET(request: NextRequest) {
@@ -43,9 +46,9 @@ export async function GET(request: NextRequest) {
       query.assignedDietitian = null;
     }
 
-    // Filter by status
+    // Filter by status (now uses clientStatus: lead/active/inactive)
     if (status) {
-      query.status = status;
+      query.clientStatus = status;
     }
 
     // Add search filter
@@ -79,10 +82,54 @@ export async function GET(request: NextRequest) {
       { ttl: 120000, tags: ['admin'] }
     );
 
-    // Debug log for assigned dietitian
-    const clientsWithDebug = JSON.parse(JSON.stringify(clients));
-    if (clientsWithDebug.length > 0) {
-      console.log('First client assignedDietitian:', clientsWithDebug[0].assignedDietitian);
+    // Dynamically compute client status for each client
+    const clientIds = clients.map((c: any) => c._id);
+
+    // Fetch payment data (UnifiedPayment uses 'client' field)
+    const paymentData = await UnifiedPayment.aggregate([
+      { $match: { client: { $in: clientIds }, $or: [{ status: { $in: ['paid', 'completed', 'active'] } }, { paymentStatus: 'paid' }] } },
+      { $group: { _id: '$client', count: { $sum: 1 } } }
+    ]);
+    const paidClientIds = new Set(paymentData.map((p: any) => p._id.toString()));
+
+    // Fetch all meal plans for these clients
+    const allMealPlans = await ClientMealPlan.find(
+      { clientId: { $in: clientIds } },
+      { clientId: 1, startDate: 1, endDate: 1, status: 1 }
+    ).lean();
+
+    // Group meal plans by clientId
+    const mealPlansByClient = new Map<string, Array<{ startDate: Date | string; endDate: Date | string; status: string }>>();
+    allMealPlans.forEach((mp: any) => {
+      const cid = mp.clientId.toString();
+      if (!mealPlansByClient.has(cid)) mealPlansByClient.set(cid, []);
+      mealPlansByClient.get(cid)!.push({ startDate: mp.startDate, endDate: mp.endDate, status: mp.status });
+    });
+
+    // Compute status for each client and build bulk ops
+    const bulkOps: any[] = [];
+    const clientsWithStatus = JSON.parse(JSON.stringify(clients)).map((client: any) => {
+      const cid = client._id.toString();
+      const hasPaid = paidClientIds.has(cid);
+      const plans = mealPlansByClient.get(cid) || [];
+      const payments = hasPaid ? [{ status: 'paid' }] : [];
+      const computedStatus = computeClientStatusFromDocs(payments, plans);
+
+      if (client.clientStatus !== computedStatus) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: client._id },
+            update: { $set: { clientStatus: computedStatus } }
+          }
+        });
+      }
+
+      return { ...client, clientStatus: computedStatus };
+    });
+
+    // Persist updated statuses in the background
+    if (bulkOps.length > 0) {
+      User.bulkWrite(bulkOps).catch(err => console.error('Admin bulk status update error:', err));
     }
 
     const total = await User.countDocuments(query);
@@ -103,12 +150,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      clients,
-      debug: {
-        firstClientRaw: clients[0],
-        firstClientAssignedDietitian: clients[0]?.assignedDietitian,
-        firstClientAllKeys: clients[0] ? Object.keys(clients[0]) : []
-      },
+      clients: clientsWithStatus,
       stats: {
         total,
         assigned: assignedCount,

@@ -29,6 +29,9 @@ export interface ILifestyleInfo extends Document {
   cookingSalt?: string;
   carbonatedBeverageFrequency?: string;
   cravingType?: string;
+  // Lifestyle Form (Sleep & Stress)
+  sleepPattern?: string;
+  stressLevel?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -67,6 +70,27 @@ const lifestyleInfoSchema = new Schema<ILifestyleInfo>({
   cookingSalt: { type: String },
   carbonatedBeverageFrequency: { type: String },
   cravingType: { type: String },
+  // Lifestyle Form (Sleep & Stress)
+  sleepPattern: {
+    type: String,
+    enum: [
+      'regular-sleep',
+      'irregular-sleep',
+      'insomnia-diagnosed',
+      'difficulty-falling-asleep',
+      ''
+    ]
+  },
+  stressLevel: {
+    type: String,
+    enum: [
+      'rarely-stressed',
+      'mild-occasional-stress',
+      'moderate-stress',
+      'frequent-stress',
+      ''
+    ]
+  },
 }, {
   timestamps: true,
 });

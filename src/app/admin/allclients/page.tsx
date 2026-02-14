@@ -56,6 +56,7 @@ interface Client {
   avatar?: string;
   phone?: string;
   status: string;
+  clientStatus?: string;
   createdAt: string;
   dateOfBirth?: string;
   gender?: string;
@@ -601,8 +602,9 @@ export default function AdminAllClientsPage() {
         return 'bg-green-100 text-green-800';
       case 'inactive':
         return 'bg-gray-100 text-gray-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+      case 'lead':
+      case 'leading':
+        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -738,9 +740,9 @@ export default function AdminAllClientsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="lead">Lead</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -977,8 +979,8 @@ export default function AdminAllClientsPage() {
                           })()}
                         </td>
                         <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
-                          <Badge className={getStatusColor(client.status)}>
-                            {client.status}
+                          <Badge className={getStatusColor(client.clientStatus || 'lead')}>
+                            {(client.clientStatus || 'lead') === 'lead' ? 'Lead' : (client.clientStatus || 'lead') === 'active' ? 'Active' : 'Inactive'}
                           </Badge>
                         </td>
                         <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
@@ -1604,8 +1606,8 @@ export default function AdminAllClientsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
-                      <Badge className={getStatusColor(detailClient.status)}>
-                        {detailClient.status}
+                      <Badge className={getStatusColor(detailClient.clientStatus || 'lead')}>
+                        {(detailClient.clientStatus || 'lead') === 'lead' ? 'Lead' : (detailClient.clientStatus || 'lead') === 'active' ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
                   </div>

@@ -46,7 +46,9 @@ export async function GET() {
         monthlyOilConsumption: "",
         cookingSalt: "",
         carbonatedBeverageFrequency: "",
-        cravingType: ""
+        cravingType: "",
+        sleepPattern: "",
+        stressLevel: ""
       });
     }
 

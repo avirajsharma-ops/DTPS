@@ -16,11 +16,9 @@ export enum UserStatus {
 
 // Client-specific status for tracking engagement (different from account status)
 export enum ClientStatus {
-  LEADING = 'leading',       // New lead/prospect, not yet started
-  ACTIVE = 'active',         // Currently on a plan, engaged
-  INACTIVE = 'inactive',     // Plan ended, not renewed
-  ONBOARDING = 'onboarding', // In onboarding process
-  PAUSED = 'paused'          // Temporarily paused their plan
+  LEAD = 'lead',          // Registered but no successful payment yet
+  ACTIVE = 'active',      // Has successful payment AND a currently valid (non-expired) plan
+  INACTIVE = 'inactive'   // Has paid in the past but all plans are expired
 }
 
 export interface IUser extends Document {

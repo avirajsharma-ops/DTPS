@@ -317,8 +317,6 @@ export async function PUT(
       "consultationFee",
       "availability",
       "assignedDietitian",
-      // Client engagement status
-      "clientStatus",
       // Tags
       "tags"
     ];
@@ -337,13 +335,6 @@ export async function PUT(
         if (key === 'generalGoal' && value) {
           const validGoals = ['not-specified', 'weight-loss', 'weight-gain', 'disease-management'];
           if (!validGoals.includes(value)) {
-            return obj; // Skip invalid values
-          }
-        }
-        // Special handling for clientStatus enum
-        if (key === 'clientStatus' && value) {
-          const validStatuses = ['leading', 'active', 'inactive', 'onboarding', 'paused'];
-          if (!validStatuses.includes(value)) {
             return obj; // Skip invalid values
           }
         }

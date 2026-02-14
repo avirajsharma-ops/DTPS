@@ -121,6 +121,8 @@ export async function PUT(
           activityLevel: data.activityLevel,
           cookingOil: data.cookingOil,
           cravingType: data.cravingType,
+          sleepPattern: data.sleepPattern,
+          stressLevel: data.stressLevel,
           updatedBy: session.user.id,
           updatedByRole: 'admin',
           updatedAt: new Date()

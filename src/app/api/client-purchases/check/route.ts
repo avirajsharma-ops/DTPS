@@ -6,8 +6,10 @@ import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import PaymentLink from '@/lib/db/models/PaymentLink';
 import User from '@/lib/db/models/User';
 import MealPlan from '@/lib/db/models/MealPlan';
+import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import Razorpay from 'razorpay';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { computeClientStatus } from '@/lib/status/computeClientStatus';
 
 // Initialize Razorpay for syncing payment status
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
@@ -17,43 +19,56 @@ const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
     })
   : null;
 
-// Helper function to update client status based on their meal plan status
+// Helper function to update client status based on payments + plans
 async function updateClientStatusBasedOnMealPlan(clientId: string): Promise<string> {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
+    // Check for any successful payment (UnifiedPayment uses 'client' field, not 'clientId')
+    const hasSuccessfulPayment = await UnifiedPayment.exists({
+      client: clientId,
+      $or: [
+        { status: { $in: ['paid', 'completed', 'active'] } },
+        { paymentStatus: 'paid' }
+      ]
+    });
+
+    // Check both MealPlan and ClientMealPlan for active plans
     const activeMealPlan = await MealPlan.findOne({
       client: clientId,
       status: 'active',
       startDate: { $lte: today },
       endDate: { $gte: today }
     });
-    
-    const client = await User.findById(clientId).select('clientStatus createdAt');
-    if (!client) return 'leading';
-    
-    let newStatus = client.clientStatus || 'leading';
-    
-    if (activeMealPlan) {
-      newStatus = 'active';
-    } else {
-      const anyMealPlan = await MealPlan.findOne({ client: clientId });
-      if (anyMealPlan) {
-        newStatus = 'inactive';
-      } else if (!client.clientStatus || client.clientStatus === 'leading') {
-        newStatus = 'leading';
-      }
-    }
-    
-    if (client.clientStatus !== newStatus) {
+
+    const activeClientMealPlan = !activeMealPlan ? await ClientMealPlan.findOne({
+      clientId,
+      status: 'active',
+      startDate: { $lte: today },
+      endDate: { $gte: today }
+    }) : null;
+
+    const currentActivePlan = activeMealPlan || activeClientMealPlan;
+
+    const newStatus = computeClientStatus({
+      hasSuccessfulPayment: !!hasSuccessfulPayment,
+      activePlan: currentActivePlan ? {
+        startDate: currentActivePlan.startDate,
+        endDate: currentActivePlan.endDate,
+        status: currentActivePlan.status
+      } : null
+    });
+
+    const client = await User.findById(clientId).select('clientStatus');
+    if (client && client.clientStatus !== newStatus) {
       await User.findByIdAndUpdate(clientId, { clientStatus: newStatus });
     }
-    
+
     return newStatus;
   } catch (error) {
     console.error('Error updating client status:', error);
-    return 'leading';
+    return 'lead';
   }
 }
 

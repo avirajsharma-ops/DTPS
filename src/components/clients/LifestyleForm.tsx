@@ -25,6 +25,9 @@ export interface LifestyleData {
   cookingSalt: string;
   carbonatedBeverageFrequency: string;
   cravingType: string;
+  // Lifestyle Form (Sleep & Stress)
+  sleepPattern: string;
+  stressLevel: string;
 }
 
 interface LifestyleFormProps extends LifestyleData {
@@ -39,7 +42,8 @@ export function LifestyleForm(props: LifestyleFormProps) {
     allergiesFood, fastDays, nonVegExemptDays, foodLikes, foodDislikes,
     eatOutFrequency, smokingFrequency, alcoholFrequency, activityRate,
     cookingOil, monthlyOilConsumption, cookingSalt,
-    carbonatedBeverageFrequency, cravingType, onChange, onSave, loading
+    carbonatedBeverageFrequency, cravingType, sleepPattern, stressLevel,
+    onChange, onSave, loading
   } = props;
 
   return (
@@ -124,6 +128,23 @@ export function LifestyleForm(props: LifestyleFormProps) {
                   </Button>
                 );
               })}
+            </div>
+            {/* Other / Custom allergy input */}
+            <div className="mt-2">
+              <Label className="text-xs text-gray-500 mb-1 block">Other (type your allergies, comma separated)</Label>
+              <Input
+                placeholder="e.g. Soy, Shellfish, Gluten"
+                className="h-9 text-sm"
+                value={allergiesFood.filter(a => !["dairy","beef","sea-food","egg","nuts","lamb/mutton","wheat","poultry"].includes(a)).join(", ")}
+                onChange={e => {
+                  const preset = allergiesFood.filter(a => ["dairy","beef","sea-food","egg","nuts","lamb/mutton","wheat","poultry"].includes(a));
+                  const custom = e.target.value
+                    .split(",")
+                    .map(s => s.trim().toLowerCase().replace(/\s+/g, "-"))
+                    .filter(Boolean);
+                  onChange("allergiesFood", [...preset, ...custom]);
+                }}
+              />
             </div>
           </div>
 
@@ -234,9 +255,9 @@ export function LifestyleForm(props: LifestyleFormProps) {
                 <SelectTrigger className="h-10"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="occasional">Occasional</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="frequent">Frequent</SelectItem>
+                  <SelectItem value="once-a-month">Once In A Month</SelectItem>
+                  <SelectItem value="twice-a-month">Twice In A Month</SelectItem>
+                  <SelectItem value="daily">Daily</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -364,6 +385,49 @@ export function LifestyleForm(props: LifestyleFormProps) {
                   <SelectItem value="fried">Fried</SelectItem>
                   <SelectItem value="spicy">Spicy</SelectItem>
                   <SelectItem value="none">None</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Lifestyle Form Section (Sleep & Stress) */}
+        <div className="space-y-6 border-t border-gray-200 pt-6">
+          <h4 className="font-semibold text-gray-900 text-base">Sleep & Stress</h4>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Sleep Pattern */}
+            <div className="space-y-2.5">
+              <Label className="text-sm font-medium">Sleep Pattern *</Label>
+              <Select
+                value={sleepPattern}
+                onValueChange={val => onChange("sleepPattern", val)}
+              >
+                <SelectTrigger className="h-10"><SelectValue placeholder="Select sleep pattern" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="regular-sleep">Regular (7–9 hours nightly)</SelectItem>
+                  <SelectItem value="irregular-sleep">Irregular sleep</SelectItem>
+                  <SelectItem value="insomnia-diagnosed">Insomnia diagnosed</SelectItem>
+                  <SelectItem value="difficulty-falling-asleep">Difficulty falling asleep</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Stress Level */}
+            <div className="space-y-2.5">
+              <Label className="text-sm font-medium">Stress Level *</Label>
+              <Select
+                value={stressLevel}
+                onValueChange={val => onChange("stressLevel", val)}
+              >
+                <SelectTrigger className="h-10"><SelectValue placeholder="Select stress level" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="rarely-stressed">Rarely stressed</SelectItem>
+                  <SelectItem value="mild-occasional-stress">Mild occasional stress</SelectItem>
+                  <SelectItem value="moderate-stress">Moderate stress</SelectItem>
+                  <SelectItem value="frequent-stress">Frequent stress</SelectItem>
                 </SelectContent>
               </Select>
             </div>

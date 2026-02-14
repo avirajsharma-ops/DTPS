@@ -270,7 +270,9 @@ export default function HealthCounselorClientDetailPage() {
     monthlyOilConsumption: '',
     cookingSalt: '',
     carbonatedBeverageFrequency: '',
-    cravingType: ''
+    cravingType: '',
+    sleepPattern: '',
+    stressLevel: ''
   });
 
   const [recallEntries, setRecallEntries] = useState<RecallEntry[]>([]);
@@ -626,7 +628,9 @@ export default function HealthCounselorClientDetailPage() {
           monthlyOilConsumption: lifestyleInfo?.monthlyOilConsumption || data?.user?.monthlyOilConsumption || '',
           cookingSalt: lifestyleInfo?.cookingSalt || data?.user?.cookingSalt || '',
           carbonatedBeverageFrequency: lifestyleInfo?.carbonatedBeverageFrequency || data?.user?.carbonatedBeverageFrequency || '',
-          cravingType: lifestyleInfo?.cravingType || data?.user?.cravingType || ''
+          cravingType: lifestyleInfo?.cravingType || data?.user?.cravingType || '',
+          sleepPattern: lifestyleInfo?.sleepPattern || data?.user?.sleepPattern || '',
+          stressLevel: lifestyleInfo?.stressLevel || data?.user?.stressLevel || ''
         });
 
         // Fetch medical data from separate API
@@ -726,6 +730,8 @@ export default function HealthCounselorClientDetailPage() {
         cookingSalt: lifestyleData.cookingSalt,
         carbonatedBeverageFrequency: lifestyleData.carbonatedBeverageFrequency,
         cravingType: lifestyleData.cravingType,
+        sleepPattern: lifestyleData.sleepPattern,
+        stressLevel: lifestyleData.stressLevel,
       };
 
       const lifestyleResponse = await fetch(`/api/users/${params.clientId}/lifestyle`, {

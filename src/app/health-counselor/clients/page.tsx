@@ -46,7 +46,7 @@ interface Client {
   avatar?: string;
   phone?: string;
   status: string;
-  clientStatus?: 'leading' | 'active' | 'inactive' | 'onboarding' | 'paused';
+  clientStatus?: 'lead' | 'active' | 'inactive';
   createdAt: string;
   healthGoals?: string[];
   tags?: string[];
@@ -70,11 +70,9 @@ interface Client {
 
 // Client status colors
 const clientStatusColors: Record<string, { bg: string; text: string }> = {
-  leading: { bg: 'bg-purple-100', text: 'text-purple-800' },
+  lead: { bg: 'bg-blue-100', text: 'text-blue-800' },
   active: { bg: 'bg-green-100', text: 'text-green-800' },
   inactive: { bg: 'bg-gray-100', text: 'text-gray-800' },
-  onboarding: { bg: 'bg-blue-100', text: 'text-blue-800' },
-  paused: { bg: 'bg-orange-100', text: 'text-orange-800' },
 };
 
 export default function HealthCounselorClientsPage() {
@@ -210,7 +208,7 @@ export default function HealthCounselorClientsPage() {
     
     // Filter by client status
     const matchesStatus = filterType === 'all' || 
-      (client.clientStatus || 'leading') === filterType;
+      (client.clientStatus || 'lead') === filterType;
     
     return matchesSearch && matchesStatus;
   });
@@ -306,11 +304,9 @@ export default function HealthCounselorClientsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="leading">Leading</SelectItem>
+                <SelectItem value="lead">Lead</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="onboarding">Onboarding</SelectItem>
-                <SelectItem value="paused">Paused</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -461,46 +457,24 @@ export default function HealthCounselorClientsPage() {
                               ) : '-'}
                             </TableCell>
                             <TableCell className="px-3">
-                              <Select
-                                value={client.clientStatus || 'leading'}
-                                onValueChange={(value) => handleClientStatusChange(client._id, value)}
+                              {/* Status is automatically computed: LEAD / ACTIVE / INACTIVE */}
+                              <Badge 
+                                variant="outline"
+                                className={`text-xs px-2 py-0.5 ${
+                                  client.clientStatus === 'active' ? 'bg-green-100 text-green-700 border-green-300' :
+                                  client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                                  'bg-blue-100 text-blue-700 border-blue-300'
+                                }`}
                               >
-                                <SelectTrigger className="h-7 w-27.5 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="leading">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                      Leading
-                                    </span>
-                                  </SelectItem>
-                                  <SelectItem value="active">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                                      Active
-                                    </span>
-                                  </SelectItem>
-                                  <SelectItem value="inactive">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-gray-500"></span>
-                                      Inactive
-                                    </span>
-                                  </SelectItem>
-                                  <SelectItem value="onboarding">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-                                      Onboarding
-                                    </span>
-                                  </SelectItem>
-                                  <SelectItem value="paused">
-                                    <span className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                                      Paused
-                                    </span>
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
+                                <span className="flex items-center gap-1.5">
+                                  <span className={`w-2 h-2 rounded-full ${
+                                    client.clientStatus === 'active' ? 'bg-green-500' :
+                                    client.clientStatus === 'inactive' ? 'bg-gray-500' :
+                                    'bg-blue-500'
+                                  }`}></span>
+                                  {client.clientStatus === 'active' ? 'Active' : client.clientStatus === 'inactive' ? 'Inactive' : 'Lead'}
+                                </span>
+                              </Badge>
                             </TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.programStart ? formatDate(client.programStart) : '-'}</TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.programEnd ? formatDate(client.programEnd) : '-'}</TableCell>

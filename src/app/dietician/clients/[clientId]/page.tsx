@@ -403,10 +403,15 @@ export default function ClientDetailPage() {
     monthlyOilConsumption: '',
     cookingSalt: '',
     carbonatedBeverageFrequency: '',
-    cravingType: ''
+    cravingType: '',
+    sleepPattern: '',
+    stressLevel: ''
   });
 
   const [recallEntries, setRecallEntries] = useState<RecallEntry[]>([]);
+
+  // Backend-computed client status (lead / active / inactive)
+  const [clientComputedStatus, setClientComputedStatus] = useState<'lead' | 'active' | 'inactive'>('lead');
 
   useEffect(() => {
     if (params.clientId) {
@@ -493,6 +498,10 @@ export default function ClientDetailPage() {
       const purchaseRes = await fetch(`/api/client-purchases/check?clientId=${params.clientId}`);
       if (purchaseRes.ok) {
         purchaseData = await purchaseRes.json();
+        // Use backend-computed status as single source of truth
+        if (purchaseData.clientStatus) {
+          setClientComputedStatus(purchaseData.clientStatus as 'lead' | 'active' | 'inactive');
+        }
       }
 
       // Fetch meal plans for this client
@@ -948,7 +957,9 @@ export default function ClientDetailPage() {
           monthlyOilConsumption: lifestyleInfo?.monthlyOilConsumption || data?.user?.monthlyOilConsumption || '',
           cookingSalt: lifestyleInfo?.cookingSalt || data?.user?.cookingSalt || '',
           carbonatedBeverageFrequency: lifestyleInfo?.carbonatedBeverageFrequency || data?.user?.carbonatedBeverageFrequency || '',
-          cravingType: lifestyleInfo?.cravingType || data?.user?.cravingType || ''
+          cravingType: lifestyleInfo?.cravingType || data?.user?.cravingType || '',
+          sleepPattern: lifestyleInfo?.sleepPattern || data?.user?.sleepPattern || '',
+          stressLevel: lifestyleInfo?.stressLevel || data?.user?.stressLevel || ''
         });
 
         // Fetch medical data from separate API
@@ -1085,6 +1096,8 @@ export default function ClientDetailPage() {
         cookingSalt: lifestyleData?.cookingSalt,
         carbonatedBeverageFrequency: lifestyleData?.carbonatedBeverageFrequency,
         cravingType: lifestyleData?.cravingType,
+        sleepPattern: lifestyleData?.sleepPattern,
+        stressLevel: lifestyleData?.stressLevel,
       };
 
       const lifestyleResponse = await fetch(`/api/users/${params.clientId}/lifestyle`, {
@@ -1676,8 +1689,16 @@ export default function ClientDetailPage() {
                       </div>
                       <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
                         <div className="flex items-center gap-1.5">
-                          <span className={`inline-block h-2 w-2 rounded-full ${activePlan?.status === 'active' || activePlan?.status === 'upcoming' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                          <span className="capitalize">{activePlan?.status === 'active' || activePlan?.status === 'upcoming' ? 'Active' : 'Inactive'}</span>
+                          <span className={`inline-block h-2 w-2 rounded-full ${
+                            clientComputedStatus === 'active' ? 'bg-green-500' :
+                            clientComputedStatus === 'inactive' ? 'bg-gray-400' :
+                            'bg-blue-500'
+                          }`} />
+                          <span className="capitalize">
+                            {clientComputedStatus === 'active' ? 'Active' :
+                             clientComputedStatus === 'inactive' ? 'Inactive' :
+                             'Lead'}
+                          </span>
                         </div>
                         <span className="text-gray-300">•</span>
                         <span>Dietitian: {getDietitianDisplayName()}</span>
@@ -1918,10 +1939,22 @@ export default function ClientDetailPage() {
                         <p className="text-xs font-medium text-gray-300 uppercase tracking-wide">Program dates</p>
                         <p className="mt-1.5 text-sm font-semibold text-white">No dates</p>
                       </div>
-                      <div className="rounded-xl bg-linear-to-br from-red-600 to-red-700 px-4 py-3 shadow-md">
-                        <p className="text-xs font-medium text-red-200 uppercase tracking-wide">Status</p>
-                        <Badge className="mt-1.5 bg-red-500/30 backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold">
-                          Inactive
+                      <div className={`rounded-xl bg-linear-to-br ${
+                        clientComputedStatus === 'lead' ? 'from-blue-600 to-blue-700' :
+                        clientComputedStatus === 'inactive' ? 'from-red-600 to-red-700' :
+                        'from-green-600 to-green-700'
+                      } px-4 py-3 shadow-md`}>
+                        <p className={`text-xs font-medium uppercase tracking-wide ${
+                          clientComputedStatus === 'lead' ? 'text-blue-200' :
+                          clientComputedStatus === 'inactive' ? 'text-red-200' :
+                          'text-green-200'
+                        }`}>Status</p>
+                        <Badge className={`mt-1.5 ${
+                          clientComputedStatus === 'lead' ? 'bg-blue-500/30' :
+                          clientComputedStatus === 'inactive' ? 'bg-red-500/30' :
+                          'bg-green-500/30'
+                        } backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold`}>
+                          {clientComputedStatus === 'active' ? 'Active' : clientComputedStatus === 'inactive' ? 'Inactive' : 'Lead'}
                         </Badge>
                       </div>
                     </div>

@@ -4,7 +4,10 @@ import connectDB from '@/lib/db/connection';
 import ClientSubscription from '@/lib/db/models/ClientSubscription';
 import PaymentLink from '@/lib/db/models/PaymentLink';
 import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
+import User from '@/lib/db/models/User';
+import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import { PaymentStatus, PaymentType } from '@/types';
+import { computeClientStatus } from '@/lib/status/computeClientStatus';
 
 // Verify Razorpay webhook signature
 function verifyRazorpaySignature(
@@ -116,7 +119,7 @@ async function handlePaymentSuccess(payload: any) {
     // Create/Update UnifiedPayment record (UPDATE existing, don't create duplicate)
     try {
       await UnifiedPayment.syncRazorpayPayment(
-        { razorpayOrderId: orderId },
+        { orderId: orderId },
         {
           client: subscription.client,
           dietitian: subscription.dietitian,
@@ -137,10 +140,27 @@ async function handlePaymentSuccess(payload: any) {
       console.error('Error syncing UnifiedPayment record:', paymentError);
     }
 
-
-    // TODO: Send email notification to client
-    // TODO: Send SMS notification to client
-    // TODO: Trigger any other business logic (e.g., activate features)
+    // Update client status on successful payment
+    try {
+      const clientId = subscription.client?.toString();
+      if (clientId) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const activePlan = await ClientMealPlan.findOne({
+          clientId,
+          status: 'active',
+          startDate: { $lte: today },
+          endDate: { $gte: today }
+        });
+        const newStatus = computeClientStatus({
+          hasSuccessfulPayment: true,
+          activePlan: activePlan ? { startDate: activePlan.startDate, endDate: activePlan.endDate, status: activePlan.status } : null
+        });
+        await User.findByIdAndUpdate(clientId, { clientStatus: newStatus });
+      }
+    } catch (statusError) {
+      console.error('Error updating client status after payment:', statusError);
+    }
   } catch (error) {
     console.error('Error handling payment success:', error);
   }
@@ -174,7 +194,7 @@ async function handlePaymentFailed(payload: any) {
     // Update UnifiedPayment record with FAILED status (UPDATE existing, don't create duplicate)
     try {
       await UnifiedPayment.syncRazorpayPayment(
-        { razorpayOrderId: orderId },
+        { orderId: orderId },
         {
           client: subscription.client,
           dietitian: subscription.dietitian,

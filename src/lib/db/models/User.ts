@@ -110,8 +110,8 @@ const userSchema = new Schema({
   // Client engagement status (different from account status)
   clientStatus: {
     type: String,
-    enum: Object.values(ClientStatus),
-    default: ClientStatus.LEADING
+    enum: [...Object.values(ClientStatus), 'leading', 'onboarding', 'paused'],
+    default: ClientStatus.LEAD
   },
   phone: {
     type: String,

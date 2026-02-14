@@ -41,6 +41,8 @@ interface LifestyleData {
   activityLevel: string;
   cookingOil: string[];
   cravingType: string;
+  sleepPattern: string;
+  stressLevel: string;
 }
 
 const foodPreferences = ["None", "Veg", "Non-Veg", "Eggetarian", "Vegan", "Pescatarian", "Flexitarian"];
@@ -82,7 +84,9 @@ export default function LifestyleInfoPage() {
     alcoholFrequency: "",
     activityLevel: "",
     cookingOil: [],
-    cravingType: ""
+    cravingType: "",
+    sleepPattern: "",
+    stressLevel: ""
   });
 
   const [customAllergy, setCustomAllergy] = useState("");
@@ -129,7 +133,9 @@ export default function LifestyleInfoPage() {
             alcoholFrequency: result.alcoholFrequency || "",
             activityLevel: result.activityLevel || "",
             cookingOil: result.cookingOil || [],
-            cravingType: result.cravingType || ""
+            cravingType: result.cravingType || "",
+            sleepPattern: result.sleepPattern || "",
+            stressLevel: result.stressLevel || ""
           });
         }
       } catch (error) {

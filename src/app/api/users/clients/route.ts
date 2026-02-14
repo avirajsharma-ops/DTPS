@@ -4,8 +4,10 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { computeClientStatusFromDocs } from '@/lib/status/computeClientStatus';
 import mongoose from 'mongoose';
 
 // GET /api/users/clients - Get clients for dietitians to book appointments 
@@ -133,16 +135,64 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    // Merge meal plan data into clients
+    // Fetch payment data for all clients to determine LEAD vs ACTIVE vs INACTIVE
+    const paymentData = await UnifiedPayment.aggregate([
+      { $match: { client: { $in: clientIds }, $or: [{ status: { $in: ['paid', 'completed', 'active'] } }, { paymentStatus: 'paid' }] } },
+      { $group: { _id: '$client', count: { $sum: 1 } } }
+    ]);
+    const paidClientIds = new Set(paymentData.map((p: any) => p._id.toString()));
+
+    // Fetch all active meal plans to check validity
+    const allMealPlans = await ClientMealPlan.find(
+      { clientId: { $in: clientIds } },
+      { clientId: 1, startDate: 1, endDate: 1, status: 1 }
+    ).lean();
+
+    // Group meal plans by clientId
+    const mealPlansByClient = new Map<string, Array<{ startDate: Date | string; endDate: Date | string; status: string }>>();
+    allMealPlans.forEach((mp: any) => {
+      const cid = mp.clientId.toString();
+      if (!mealPlansByClient.has(cid)) mealPlansByClient.set(cid, []);
+      mealPlansByClient.get(cid)!.push({ startDate: mp.startDate, endDate: mp.endDate, status: mp.status });
+    });
+
+    // Compute status and build bulk update ops
+    const bulkOps: any[] = [];
+
+    // Merge meal plan data + computed status into clients
     const clients = clientsData.map((client: any) => {
       const mealData = mealPlanMap.get(client._id.toString());
+      const cid = client._id.toString();
+
+      // Compute status dynamically
+      const hasPaid = paidClientIds.has(cid);
+      const plans = mealPlansByClient.get(cid) || [];
+      const payments = hasPaid ? [{ status: 'paid' }] : [];
+      const computedStatus = computeClientStatusFromDocs(payments, plans);
+
+      // Queue a DB update if status changed (fire-and-forget)
+      if (client.clientStatus !== computedStatus) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: client._id },
+            update: { $set: { clientStatus: computedStatus } }
+          }
+        });
+      }
+
       return {
         ...client,
+        clientStatus: computedStatus,
         programStart: mealData?.programStart || null,
         programEnd: mealData?.programEnd || null,
         lastDiet: mealData?.lastDiet || null
       };
     });
+
+    // Persist updated statuses in the background
+    if (bulkOps.length > 0) {
+      User.bulkWrite(bulkOps).catch(err => console.error('Bulk status update error:', err));
+    }
 
     const total = await User.countDocuments(query);
 

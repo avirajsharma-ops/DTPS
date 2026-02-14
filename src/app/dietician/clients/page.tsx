@@ -46,7 +46,7 @@ interface Client {
   avatar?: string;
   phone?: string;
   status: string;
-  clientStatus?: 'leading' | 'active' | 'inactive' | 'onboarding' | 'paused';
+  clientStatus?: 'lead' | 'active' | 'inactive';
   createdAt: string;
   healthGoals?: string[];
   tags?: Array<{
@@ -74,13 +74,11 @@ interface Client {
   };
 }
 
-// Client status colors
+// Client status colors (3-state system: lead / active / inactive)
 const clientStatusColors: Record<string, { bg: string; text: string }> = {
-  leading: { bg: 'bg-purple-100', text: 'text-purple-800' },
+  lead: { bg: 'bg-blue-100', text: 'text-blue-800' },
   active: { bg: 'bg-green-100', text: 'text-green-800' },
   inactive: { bg: 'bg-gray-100', text: 'text-gray-800' },
-  onboarding: { bg: 'bg-blue-100', text: 'text-blue-800' },
-  paused: { bg: 'bg-orange-100', text: 'text-orange-800' },
 };
 
 export default function DieticianClientsPage() {
@@ -204,36 +202,10 @@ export default function DieticianClientsPage() {
     }
   };
 
-  const handleClientStatusChange = async (clientId: string, newStatus: string) => {
-    try {
-      const response = await fetch(`/api/users/${clientId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientStatus: newStatus }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to update status');
-      }
-
-      // Update local state
-      setClients(prev => prev.map(client => 
-        client._id === clientId 
-          ? { ...client, clientStatus: newStatus as Client['clientStatus'] }
-          : client
-      ));
-
-      toast.success(`Client status updated to ${newStatus}`);
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to update client status');
-    }
-  };
-
   // Search is handled server-side; only apply local status filter
   const filteredClients = clients.filter(client => {
     const matchesStatus = filterType === 'all' || 
-      (client.clientStatus || 'leading') === filterType;
+      (client.clientStatus || 'lead') === filterType;
     
     return matchesStatus;
   });
@@ -329,11 +301,9 @@ export default function DieticianClientsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="leading">Leading</SelectItem>
+                <SelectItem value="lead">Lead</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="onboarding">Onboarding</SelectItem>
-                <SelectItem value="paused">Paused</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -426,14 +396,12 @@ export default function DieticianClientsPage() {
                               )}
                             </TableCell>
                             <TableCell className="px-3">
-                              {/* Status is now automatically managed based on meal plan */}
+                              {/* Status is automatically computed: LEAD / ACTIVE / INACTIVE */}
                               <Badge 
                                 variant="outline"
                                 className={`text-xs px-2 py-0.5 ${
                                   client.clientStatus === 'active' ? 'bg-green-100 text-green-700 border-green-300' :
                                   client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
-                                  client.clientStatus === 'onboarding' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
-                                  client.clientStatus === 'paused' ? 'bg-orange-100 text-orange-700 border-orange-300' :
                                   'bg-blue-100 text-blue-700 border-blue-300'
                                 }`}
                               >
@@ -441,11 +409,9 @@ export default function DieticianClientsPage() {
                                   <span className={`w-2 h-2 rounded-full ${
                                     client.clientStatus === 'active' ? 'bg-green-500' :
                                     client.clientStatus === 'inactive' ? 'bg-gray-500' :
-                                    client.clientStatus === 'onboarding' ? 'bg-yellow-500' :
-                                    client.clientStatus === 'paused' ? 'bg-orange-500' :
                                     'bg-blue-500'
                                   }`}></span>
-                                  {(client.clientStatus || 'leading').charAt(0).toUpperCase() + (client.clientStatus || 'leading').slice(1)}
+                                  {client.clientStatus === 'active' ? 'Active' : client.clientStatus === 'inactive' ? 'Inactive' : 'Lead'}
                                 </span>
                               </Badge>
                             </TableCell>

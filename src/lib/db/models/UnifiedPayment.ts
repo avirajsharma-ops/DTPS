@@ -168,6 +168,8 @@ export interface UnifiedPaymentInput {
   daysUsed?: number;
   stripePaymentIntentId?: string;
   parentPaymentId?: ObjectIdLike;
+  description?: string;
+  notes?: string;
   metadata?: Record<string, any>;
 }
 
