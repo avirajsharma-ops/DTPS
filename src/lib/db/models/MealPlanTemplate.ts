@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import Counter from './Counter';
+import { MEAL_TYPE_KEYS } from '@/lib/mealConfig';
 
 // Meal item interface
 interface IMealItem {
@@ -248,7 +249,7 @@ MealPlanTemplateSchema.virtual('totalRecipes').get(function() {
   if (!this.meals) return 0;
   let count = 0;
   this.meals.forEach((day: any) => {
-    ['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'eveningSnack'].forEach(mealType => {
+    MEAL_TYPE_KEYS.forEach(mealType => {
       if (day[mealType]) {
         count += day[mealType].filter((item: any) => item.recipeId).length;
       }
@@ -284,7 +285,7 @@ MealPlanTemplateSchema.pre('save', async function(next) {
         sodium: 0
       };
 
-      ['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'eveningSnack'].forEach(mealType => {
+      MEAL_TYPE_KEYS.forEach(mealType => {
         if ((day as any)[mealType]) {
           (day as any)[mealType].forEach((item: any) => {
             const itemNutrition = item.customMeal?.nutrition || item.recipeId?.nutrition || {};

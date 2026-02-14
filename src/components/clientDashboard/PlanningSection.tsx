@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 import { DietPlanDashboard } from '@/components/dietplandashboard/DietPlanDashboard';
 import { useDataRefresh, emitDataChange, DataEventTypes } from '@/lib/events/useDataRefresh';
+import { DEFAULT_MEAL_TYPES_LIST } from '@/lib/mealConfig';
 
 // Client Purchase interface
 interface ClientPurchase {
@@ -163,14 +164,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
   
   // Meal plan states
   const [initialMeals, setInitialMeals] = useState<any[]>([]);
-  const [initialMealTypes, setInitialMealTypes] = useState<{ name: string; time: string }[]>([
-    { name: 'Breakfast', time: '8:00 AM' },
-    { name: 'Mid Morning', time: '10:30 AM' },
-    { name: 'Lunch', time: '1:00 PM' },
-    { name: 'Evening Snack', time: '4:00 PM' },
-    { name: 'Dinner', time: '7:00 PM' },
-    { name: 'Bedtime', time: '9:30 PM' }
-  ]);
+  const [initialMealTypes, setInitialMealTypes] = useState<{ name: string; time: string }[]>(DEFAULT_MEAL_TYPES_LIST);
   
   // Loading and saving states
   const [saving, setSaving] = useState(false);
@@ -706,14 +700,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     setPrimaryGoal('weight-loss');
     setSelectedTemplate(null);
     setInitialMeals([]);
-    setInitialMealTypes([
-      { name: 'Breakfast', time: '8:00 AM' },
-      { name: 'Mid Morning', time: '10:30 AM' },
-      { name: 'Lunch', time: '1:00 PM' },
-      { name: 'Evening Snack', time: '4:00 PM' },
-      { name: 'Dinner', time: '7:00 PM' },
-      { name: 'Bedtime', time: '9:30 PM' }
-    ]);
+    setInitialMealTypes(DEFAULT_MEAL_TYPES_LIST);
     setEditingPlan(null);
     setIsEditMode(false);
     setViewingPlan(null);
@@ -730,14 +717,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     // Use stored duration if available, otherwise calculate from dates
     const planDuration = plan.duration || Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const planMeals = plan.meals || [];
-    const planMealTypes = plan.mealTypes || [
-      { name: 'Breakfast', time: '8:00 AM' },
-      { name: 'Mid Morning', time: '10:30 AM' },
-      { name: 'Lunch', time: '1:00 PM' },
-      { name: 'Evening Snack', time: '4:00 PM' },
-      { name: 'Dinner', time: '7:00 PM' },
-      { name: 'Bedtime', time: '9:30 PM' }
-    ];
+    const planMealTypes = plan.mealTypes || DEFAULT_MEAL_TYPES_LIST;
     
     
     setViewingPlan(plan);
@@ -763,14 +743,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     // Use stored duration if available, otherwise calculate from dates
     const planDuration = plan.duration || Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const planMeals = plan.meals || [];
-    const planMealTypes = plan.mealTypes || [
-      { name: 'Breakfast', time: '8:00 AM' },
-      { name: 'Mid Morning', time: '10:30 AM' },
-      { name: 'Lunch', time: '1:00 PM' },
-      { name: 'Evening Snack', time: '4:00 PM' },
-      { name: 'Dinner', time: '7:00 PM' },
-      { name: 'Bedtime', time: '9:30 PM' }
-    ];
+    const planMealTypes = plan.mealTypes || DEFAULT_MEAL_TYPES_LIST;
     
     
     setEditingPlan(plan);
@@ -884,14 +857,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
     setDuration(planDuration);
     setPrimaryGoal(plan.goals?.primaryGoal || 'health-improvement');
     setInitialMeals(plan.meals || []);
-    setInitialMealTypes(plan.mealTypes || [
-      { name: 'Breakfast', time: '8:00 AM' },
-      { name: 'Mid Morning', time: '10:30 AM' },
-      { name: 'Lunch', time: '1:00 PM' },
-      { name: 'Evening Snack', time: '4:00 PM' },
-      { name: 'Dinner', time: '7:00 PM' },
-      { name: 'Bedtime', time: '9:30 PM' }
-    ]);
+    setInitialMealTypes(plan.mealTypes || DEFAULT_MEAL_TYPES_LIST);
     setIsEditMode(false);
     setEditingPlan(null);
     setStep('form');

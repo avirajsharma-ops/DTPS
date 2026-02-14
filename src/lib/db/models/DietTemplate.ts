@@ -1,5 +1,17 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import Counter from './Counter';
+import { 
+  MEAL_TYPE_KEYS, 
+  MEAL_TYPES, 
+  normalizeMealType,
+  type MealTypeKey 
+} from '@/lib/mealConfig';
+
+// Get default meal types from canonical config
+const getDefaultMealTypes = () => MEAL_TYPE_KEYS.map(key => ({
+  name: MEAL_TYPES[key].label,
+  time: MEAL_TYPES[key].time12h
+}));
 
 // Food option interface (from DietPlanDashboard)
 interface IFoodOption {
@@ -119,7 +131,18 @@ const DayPlanSchema = new Schema({
 
 // Meal type config schema
 const MealTypeConfigSchema = new Schema({
-  name: { type: String, required: true },
+  name: { 
+    type: String, 
+    required: true,
+    set: (val: string) => {
+      // Normalize to canonical display label (e.g. "EARLY_MORNING" → "Early Morning")
+      const key = normalizeMealType(val);
+      if (key && MEAL_TYPES[key]) {
+        return MEAL_TYPES[key].label;
+      }
+      return val; // Keep original if not a known meal type
+    }
+  },
   time: { type: String, default: '12:00 PM' }
 }, { _id: false });
 
@@ -179,14 +202,7 @@ const DietTemplateSchema = new Schema({
   meals: { type: [Schema.Types.Mixed], default: [] },
   mealTypes: {
     type: [MealTypeConfigSchema],
-    default: [
-      { name: 'Breakfast', time: '8:00 AM' },
-      { name: 'Mid Morning', time: '10:30 AM' },
-      { name: 'Lunch', time: '1:00 PM' },
-      { name: 'Evening Snack', time: '4:00 PM' },
-      { name: 'Dinner', time: '7:00 PM' },
-      { name: 'Bedtime', time: '9:30 PM' }
-    ]
+    default: getDefaultMealTypes
   },
   isPublic: { type: Boolean, default: false },
   isPremium: { type: Boolean, default: false },

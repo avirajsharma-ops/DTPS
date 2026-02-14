@@ -1,4 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { MEAL_TYPES, MEAL_TYPE_KEYS } from '@/lib/mealConfig';
+
+// Get label variations for backward compatibility
+const JOURNAL_MEAL_TYPES = [...MEAL_TYPE_KEYS.map(k => MEAL_TYPES[k].label), 'Snack'];
 
 // Activity Entry Interface
 export interface IActivityEntry {
@@ -52,7 +56,7 @@ export interface IMealEntry {
   protein: number;
   carbs: number;
   fat: number;
-  type: 'Breakfast' | 'Mid Morning' | 'Lunch' | 'Evening Snack' | 'Dinner' | 'Bedtime' | 'Snack';
+  type: 'Early Morning' | 'Breakfast' | 'Mid Morning' | 'Lunch' | 'Mid Evening' | 'Evening' | 'Dinner' | 'Past Dinner' | 'Snack';
   time: string;
   consumed: boolean;
   photo?: string; // URL of uploaded meal photo
@@ -241,7 +245,7 @@ const mealEntrySchema = new Schema({
   fat: { type: Number, default: 0, min: 0 },
   type: {
     type: String,
-    enum: ['Breakfast', 'Mid Morning', 'Lunch', 'Evening Snack', 'Dinner', 'Bedtime', 'Snack'],
+    enum: JOURNAL_MEAL_TYPES,
     required: true
   },
   time: { type: String, required: true },

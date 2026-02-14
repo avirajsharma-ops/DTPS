@@ -13,10 +13,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { LoadingPage, LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DEFAULT_MEAL_TYPES_LIST } from '@/lib/mealConfig';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChefHat, Target, Calendar, AlertCircle, ArrowLeft, RefreshCw, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DietPlanDashboard } from '@/components/dietplandashboard/DietPlanDashboard';
+import { MEAL_TYPE_KEYS } from '@/lib/mealConfig';
 import Link from 'next/link';
 import { UserRole } from '@/types';
 import { useDietTemplateAutoSave } from '@/hooks/useAutoSave';
@@ -225,14 +227,7 @@ export default function CreateDietTemplatePage() {
     setCurrentStep(1);
     setSelectedDay(1);
     setWeekPlanData([]);
-    setMealTypesData([
-      { name: 'Breakfast', time: '7:00 AM' },
-      { name: 'Mid Morning', time: '9:00 AM' },
-      { name: 'Lunch', time: '1:00 PM' },
-      { name: 'Snack', time: '5:00 PM' },
-      { name: 'Dinner', time: '9:00 PM' },
-      { name: 'Bedtime', time: '11:00 PM' }
-    ]);
+    setMealTypesData(DEFAULT_MEAL_TYPES_LIST);
     toast.success('Draft cleared', { description: 'Starting fresh.' });
   }, [clearDraft]);
 
@@ -360,7 +355,7 @@ export default function CreateDietTemplatePage() {
         }
         return acc;
       }, { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 });
-      const total = ['breakfast','morningSnack','lunch','afternoonSnack','dinner','eveningSnack']
+      const total = MEAL_TYPE_KEYS
         .map(k=>sum((day as any)[k]))
         .reduce((a,b)=>({ calories:a.calories+b.calories, protein:a.protein+b.protein, carbs:a.carbs+b.carbs, fat:a.fat+b.fat, fiber:a.fiber+b.fiber, sugar:a.sugar+b.sugar, sodium:a.sodium+b.sodium }), { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 });
       const meals = [...prev.meals];
@@ -395,14 +390,7 @@ export default function CreateDietTemplatePage() {
 
   // Store weekPlan and mealTypes data from DietPlanDashboard
   const [weekPlanData, setWeekPlanData] = useState<any[]>([]);
-  const [mealTypesData, setMealTypesData] = useState<{name: string; time: string}[]>([
-    { name: 'Breakfast', time: '7:00 AM' },
-    { name: 'Mid Morning', time: '9:00 AM' },
-    { name: 'Lunch', time: '1:00 PM' },
-    { name: 'Snack', time: '5:00 PM' },
-    { name: 'Dinner', time: '9:00 PM' },
-    { name: 'Bedtime', time: '11:00 PM' }
-  ]);
+  const [mealTypesData, setMealTypesData] = useState<{name: string; time: string}[]>(DEFAULT_MEAL_TYPES_LIST);
 
   // -------------- SAVE/PUBLISH TEMPLATE -------------
   const saveTemplate = async (weekPlan?: any[], mealTypes?: {name: string; time: string}[]) => {
@@ -631,6 +619,7 @@ export default function CreateDietTemplatePage() {
             <CardContent className="space-y-6">
               <DietPlanDashboard 
                 key={`diet-dashboard-${template.duration}`}
+                clientId="template-create-new"
                 clientData={{
                   name: template.name || 'Untitled Template',
                   age: 0,

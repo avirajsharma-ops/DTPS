@@ -8,6 +8,7 @@ import { Download, FileText, FileSpreadsheet, Printer, FileImage, FileDown } fro
 import { DayPlan, MealTypeConfig, FoodOption } from './DietPlanDashboard';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { MEAL_TYPES, MEAL_TYPE_KEYS, normalizeMealType } from '@/lib/mealConfig';
 
 interface DietPlanExportProps {
   weekPlan: DayPlan[];
@@ -58,8 +59,13 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     }
   };
 
-  // Helper function to get meal time from first occurrence
+  // Helper function to get meal time — prefer canonical IST time from mealConfig
   const getMealTime = (mealType: string): string => {
+    const normalizedKey = normalizeMealType(mealType);
+    if (normalizedKey && MEAL_TYPES[normalizedKey]) {
+      return MEAL_TYPES[normalizedKey].time12h;
+    }
+    // Fallback: try stored time from plan data
     for (const day of weekPlan) {
       if (day.meals[mealType]?.time) {
         return day.meals[mealType].time;
@@ -68,14 +74,50 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     return '12:00 PM';
   };
 
-  // Helper function to convert time string to numeric for sorting
+  // Helper: get canonical sort order for a meal type
+  const getCanonicalSortOrder = (mealType: string): number => {
+    const normalizedKey = normalizeMealType(mealType);
+    if (normalizedKey && MEAL_TYPES[normalizedKey]) {
+      return MEAL_TYPES[normalizedKey].sortOrder;
+    }
+    return 99; // custom types go last
+  };
+
+  // Helper function to convert time string to numeric for sorting (proper AM/PM handling)
   const getTimeNumericValue = (timeStr: string): number => {
     if (!timeStr) return 1200;
+    const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (match) {
+      let hours = parseInt(match[1], 10);
+      const minutes = parseInt(match[2], 10);
+      const period = match[3].toUpperCase();
+      if (period === 'AM' && hours === 12) hours = 0;
+      if (period === 'PM' && hours !== 12) hours += 12;
+      return hours * 60 + minutes;
+    }
+    // Fallback: try 24h format
     if (timeStr.includes(':')) {
       const [hours, minutes] = timeStr.split(':');
-      return parseInt(hours, 10) * 100 + parseInt(minutes, 10);
+      return parseInt(hours, 10) * 60 + parseInt(minutes, 10);
     }
     return 1200;
+  };
+
+  // Helper: resolve meal type to display label
+  const toDisplayLabel = (mt: string): string => {
+    const key = normalizeMealType(mt);
+    if (key && MEAL_TYPES[key]) return MEAL_TYPES[key].label;
+    return mt;
+  };
+
+  // Helper: find meal in day's meals, trying both label and key forms
+  const findMealInDay = (day: DayPlan, mealType: string) => {
+    if (day.meals[mealType]) return day.meals[mealType];
+    const key = normalizeMealType(mealType);
+    if (key && day.meals[key]) return day.meals[key];
+    const label = toDisplayLabel(mealType);
+    if (label !== mealType && day.meals[label]) return day.meals[label];
+    return undefined;
   };
 
   // Get all unique meal types from weekPlan and sort by time
@@ -83,15 +125,20 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     const allMealTypes = new Set<string>();
     weekPlan.forEach(day => {
       Object.keys(day.meals).forEach(mt => {
+        const label = toDisplayLabel(mt);
         const meal = day.meals[mt];
         // Only include if it has food
         if (meal?.foodOptions?.some(opt => opt.food?.trim())) {
-          allMealTypes.add(mt);
+          allMealTypes.add(label);
         }
       });
     });
     
     return Array.from(allMealTypes).sort((a, b) => {
+      const orderA = getCanonicalSortOrder(a);
+      const orderB = getCanonicalSortOrder(b);
+      if (orderA !== orderB) return orderA - orderB;
+      // Same order (both custom) — sort by time
       const timeA = getMealTime(a);
       const timeB = getMealTime(b);
       return getTimeNumericValue(timeA) - getTimeNumericValue(timeB);
@@ -251,7 +298,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
             ${(() => {
               const allMealTypes = getAllMealTypesSorted();
               return allMealTypes.map(mealType => {
-                const meal = day.meals[mealType];
+                const meal = findMealInDay(day, mealType);
                 if (!meal) return '';
                 
                 const primaryFood = meal.foodOptions?.[0];
@@ -263,7 +310,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
                 <tr>
                   <td>
                     <div class="meal-name">${mealType}</div>
-                    <div class="meal-time">${meal.time || ''}</div>
+                    <div class="meal-time">${getMealTime(mealType)}</div>
                   </td>
                   <td>
                     <div class="food-item">
@@ -273,7 +320,9 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
                     ${alternatives.length > 0 ? `
                     <div class="alternatives">
                       <span class="alternatives-label">Alternatives:</span>
-                      ${alternatives.map((alt, i) => `${alt.food || '-'}${alt.unit ? ` (${alt.unit})` : ''}`).join(' | ')}
+                      <ul style="margin: 4px 0 0 15px; padding: 0; list-style: disc;">
+                        ${alternatives.map(alt => `<li style="margin-bottom: 2px;">${alt.food || '-'}${alt.unit ? ` (${alt.unit})` : ''}${showMacros && alt.cal ? ` — <span style="color:#6b7280; font-size:10px;">Cal: ${alt.cal}, C: ${alt.carbs || 0}g, P: ${alt.protein || 0}g, F: ${alt.fats || 0}g</span>` : ''}</li>`).join('')}
+                      </ul>
                     </div>
                     ` : ''}
                   </td>
@@ -365,7 +414,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
       const allMealTypes = getAllMealTypesSorted();
       
       allMealTypes.forEach(mealType => {
-        const meal = day.meals[mealType];
+        const meal = findMealInDay(day, mealType);
         if (!meal?.foodOptions?.length) return;
 
         // Get primary food and alternatives
@@ -377,7 +426,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
           .join(' | ');
 
         // Main food row
-        csv += `"${day.day}","${day.date ? formatDateProper(day.date) : ''}","${mealType}","${meal.time || ''}","${primaryFood.food || ''}","${primaryFood.unit || ''}","${primaryFood.cal || ''}","${primaryFood.carbs || ''}","${primaryFood.protein || ''}","${primaryFood.fats || ''}","${primaryFood.fiber || ''}","${alternativesStr}","${day.note || ''}"\n`;
+        csv += `"${day.day}","${day.date ? formatDateProper(day.date) : ''}","${mealType}","${getMealTime(mealType)}","${primaryFood.food || ''}","${primaryFood.unit || ''}","${primaryFood.cal || ''}","${primaryFood.carbs || ''}","${primaryFood.protein || ''}","${primaryFood.fats || ''}","${primaryFood.fiber || ''}","${alternativesStr}","${day.note || ''}"\n`;
         
         // Alternative rows (if any)
         alternatives.forEach((alt, altIndex) => {

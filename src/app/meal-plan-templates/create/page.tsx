@@ -15,6 +15,7 @@ import { LoadingPage, LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+import { MEAL_TYPE_KEYS } from '@/lib/mealConfig';
 import { 
   Plus, 
   Trash2, 
@@ -341,7 +342,7 @@ export default function CreateMealPlanTemplatePage() {
         }
         return acc;
       }, { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 });
-      const totals = ['breakfast','morningSnack','lunch','afternoonSnack','dinner','eveningSnack']
+      const totals = MEAL_TYPE_KEYS
         .map((k) => sumFromItems((day as any)[k]))
         .reduce((a,b)=>({
           calories:a.calories+b.calories,
@@ -359,7 +360,7 @@ export default function CreateMealPlanTemplatePage() {
   };
 
   const addRecipeTo = (dayIdx: number, slot: keyof DailyMeal, recipe: Recipe) => {
-    if (!['breakfast','morningSnack','lunch','afternoonSnack','dinner','eveningSnack'].includes(slot as string)) return;
+    if (!MEAL_TYPE_KEYS.includes(slot as any)) return;
     setTemplate(prev => {
       const day = prev.meals[dayIdx];
       const list = ([...(day as any)[slot]] as MealItem[]);
@@ -831,11 +832,11 @@ export default function CreateMealPlanTemplatePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {([
                   { key:'breakfast', label:'Breakfast', icon: '🍳' },
-                  { key:'morningSnack', label:'Morning Snack', icon: '🥜' },
+                  { key:'morningSnack', label:'Mid Morning', icon: '🥜' },
                   { key:'lunch', label:'Lunch', icon: '🍛' },
-                  { key:'afternoonSnack', label:'Afternoon Snack', icon: '🍎' },
+                  { key:'afternoonSnack', label:'Mid Evening', icon: '🍎' },
                   { key:'dinner', label:'Dinner', icon: '🍽️' },
-                  { key:'eveningSnack', label:'Evening Snack', icon: '🍪' }
+                  { key:'eveningSnack', label:'Past Dinner', icon: '🍪' }
                 ] as {key: keyof DailyMeal; label: string; icon: string;}[]).map(slot => (
                   <div key={slot.key} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">

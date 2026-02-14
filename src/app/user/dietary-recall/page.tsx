@@ -36,11 +36,13 @@ const DRAFT_KEY = 'dtps-dietary-recall-draft';
 
 const mealTypes = [
   { value: "Early Morning", label: "Early Morning", icon: Sunrise },
-  { value: "BreakFast", label: "Breakfast", icon: Coffee },
+  { value: "Breakfast", label: "Breakfast", icon: Coffee },
+  { value: "Mid Morning", label: "Mid Morning", icon: Apple },
   { value: "Lunch", label: "Lunch", icon: Sandwich },
-  { value: "Evening Snack", label: "Evening Snack", icon: Apple },
+  { value: "Mid Evening", label: "Mid Evening", icon: Sun },
+  { value: "Evening", label: "Evening", icon: Coffee },
   { value: "Dinner", label: "Dinner", icon: Utensils },
-  { value: "Post Dinner", label: "Post Dinner", icon: Moon }
+  { value: "Past Dinner", label: "Past Dinner", icon: Moon }
 ];
 
 const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0"));

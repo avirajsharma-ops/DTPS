@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useRecipeAutoSave, type RecipeFormData } from '@/hooks';
 import { 
   Plus, 
   Trash2, 
@@ -397,7 +398,7 @@ export default function CreateRecipePage() {
       setImagePreview(dataUrl);
 
       // Upload to ImageKit
-      const uploadedUrl = await uploadCompressedImage(blob, file.name, 'recipes/images');
+      const uploadedUrl = await uploadCompressedImage(blob, file.name, 'recipes');
       
       setImage(uploadedUrl);
       toast.success('Image uploaded successfully', {

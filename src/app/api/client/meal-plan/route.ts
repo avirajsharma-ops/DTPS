@@ -7,6 +7,14 @@ import Recipe from '@/lib/db/models/Recipe';
 import { UserRole } from '@/types';
 import { startOfDay, endOfDay, parseISO, format } from 'date-fns';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { 
+  MEAL_TYPES, 
+  MEAL_TYPE_KEYS, 
+  getMealLabel, 
+  getDefaultMealTime as getCanonicalMealTime,
+  normalizeMealType as canonicalNormalizeMealType,
+  type MealTypeKey 
+} from '@/lib/mealConfig';
 
 // GET /api/client/meal-plan - Get client's meal plan for a specific date
 export async function GET(request: NextRequest) {
@@ -67,9 +75,11 @@ export async function GET(request: NextRequest) {
       
       if (dayData?.meals) {
         const mealsObj = dayData.meals;
-        const mealKeys = Object.keys(mealsObj).filter(k => 
-          ['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'eveningSnack', 'Breakfast', 'Lunch', 'Dinner'].includes(k)
-        );
+        // Use canonical meal type keys with normalization for DB compatibility
+        const mealKeys = Object.keys(mealsObj).filter(k => {
+          const normalized = normalizeMealType(k);
+          return MEAL_TYPE_KEYS.includes(normalized as MealTypeKey);
+        });
         
         if (mealKeys.length > 0) {
           mealsSource = 'plan-meals';
@@ -166,41 +176,27 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Helper functions
-function getMealTypeByIndex(index: number): string {
-  const mealTypes = ['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'eveningSnack'];
-  return mealTypes[index % mealTypes.length] || 'meal';
+// Helper functions - using canonical meal config
+function getMealTypeByIndex(index: number): MealTypeKey {
+  return MEAL_TYPE_KEYS[index % MEAL_TYPE_KEYS.length] || 'BREAKFAST';
 }
 
 function getDefaultMealTime(mealType: string): string {
-  const normalizedType = mealType?.toLowerCase().replace(/\s+/g, '') || '';
-  const times: Record<string, string> = {
-    breakfast: '8:00 AM',
-    morningsnack: '10:30 AM',
-    midmorning: '10:30 AM',
-    lunch: '1:00 PM',
-    afternoonsnack: '4:00 PM',
-    eveningsnack: '4:00 PM',
-    dinner: '7:30 PM',
-    bedtime: '9:00 PM'
-  };
-  return times[normalizedType] || '12:00 PM';
+  // Normalize and get canonical time
+  const normalized = canonicalNormalizeMealType(mealType);
+  if (normalized && MEAL_TYPE_KEYS.includes(normalized)) {
+    return MEAL_TYPES[normalized as MealTypeKey].time12h;
+  }
+  return '12:00 PM';
 }
 
 function getDefaultMealSlots(planId: string, dayIndex: number): any[] {
-  const defaultSlots = [
-    { type: 'breakfast', time: '8:00 AM', label: 'Breakfast' },
-    { type: 'morningSnack', time: '10:30 AM', label: 'Mid Morning' },
-    { type: 'lunch', time: '1:00 PM', label: 'Lunch' },
-    { type: 'afternoonSnack', time: '4:00 PM', label: 'Evening Snack' },
-    { type: 'dinner', time: '7:30 PM', label: 'Dinner' },
-    { type: 'eveningSnack', time: '9:00 PM', label: 'Bedtime' }
-  ];
-  
-  return defaultSlots.map((slot, index) => ({
+  // Use canonical meal types from config
+  return MEAL_TYPE_KEYS.map((key, index) => ({
     id: `${planId}-${dayIndex}-${index}`,
-    type: slot.type,
-    time: slot.time,
+    type: key,
+    time: MEAL_TYPES[key].time12h,
+    label: MEAL_TYPES[key].label,
     totalCalories: 0,
     items: [],
     isCompleted: false,
@@ -278,11 +274,14 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
   
   // If it's an object with meal types as keys (breakfast, lunch, etc.)
   if (typeof mealsData === 'object') {
-    const validMealTypes = ['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'eveningSnack', 
-                            'Breakfast', 'Mid Morning', 'Lunch', 'Evening Snack', 'Dinner', 'Bedtime'];
+    // Use canonical meal type keys - filter for any meal-related keys
+    const isValidMealKey = (key: string) => {
+      const normalized = normalizeMealType(key);
+      return MEAL_TYPE_KEYS.includes(normalized as MealTypeKey);
+    };
     
     return Object.entries(mealsData)
-      .filter(([key]) => validMealTypes.some(t => key.toLowerCase().includes(t.toLowerCase())))
+      .filter(([key]) => isValidMealKey(key))
       .map(([mealType, meal]: [string, any], index: number) => {
         const normalizedType = normalizeMealType(mealType);
         const macros = calculateMealMacros(meal);
@@ -305,20 +304,11 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
   return [];
 }
 
-function normalizeMealType(type: string): string {
-  const typeMap: Record<string, string> = {
-    'breakfast': 'breakfast',
-    'mid morning': 'morningSnack',
-    'morningsnack': 'morningSnack',
-    'lunch': 'lunch',
-    'evening snack': 'afternoonSnack',
-    'afternoonsnack': 'afternoonSnack',
-    'dinner': 'dinner',
-    'bedtime': 'eveningSnack',
-    'eveningsnack': 'eveningSnack'
-  };
-  return typeMap[type.toLowerCase()] || type.toLowerCase().replace(/\s+/g, '');
-}
+// Use imported canonical normalizeMealType as 'normalizeMealType' for local usage
+const normalizeMealType = (type: string): MealTypeKey | string => {
+  const result = canonicalNormalizeMealType(type);
+  return result || type.toLowerCase().replace(/\\s+/g, '');
+};
 
 function hasFood(meal: any): boolean {
   if (!meal) return false;

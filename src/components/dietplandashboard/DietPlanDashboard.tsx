@@ -7,6 +7,14 @@ import { DietPlanExport } from './DietPlanExport';
 import { Save, User, Download, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
+import { 
+  MEAL_TYPES, 
+  MEAL_TYPE_KEYS, 
+  getMealLabel, 
+  sortMealsByType,
+  normalizeMealType,
+  type MealTypeKey 
+} from '@/lib/mealConfig';
 
 // ClientInfoPanel component (inline)
 function InfoCard({ label, value, variant = 'default' }: { label: string; value: string; variant?: 'default' | 'dark' | 'bordered' }) {
@@ -109,19 +117,43 @@ export type DayPlan = {
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-const defaultMealTypes: MealTypeConfig[] = [
-  { name: 'Breakfast', time: '7:00 AM' },
-  { name: 'Mid Morning', time: '9:00 AM' },
-  { name: 'Lunch', time: '1:00 PM' },
-  { name: 'Snack', time: '5:00 PM' },
-  { name: 'Dinner', time: '9:00 PM' },
-  { name: 'Bedtime', time: '11:00 PM' }
-];
+// Default meal types from canonical config (IST times)
+const defaultMealTypes: MealTypeConfig[] = MEAL_TYPE_KEYS.map(key => ({
+  name: MEAL_TYPES[key].label,
+  time: MEAL_TYPES[key].time12h
+}));
 
 // Time normalization - using 12-hour format directly
 const normalizeTime = (value?: string): string => {
   if (!value) return '12:00 PM';
   return value.trim();
+};
+
+// Normalize meal keys in a day's meals object
+// Converts keys like "EARLY_MORNING" to "Early Morning" and deduplicates
+const normalizeMealKeys = (meals: Record<string, Meal>): Record<string, Meal> => {
+  const normalized: Record<string, Meal> = {};
+  Object.keys(meals).forEach(mealName => {
+    const current = meals[mealName];
+    if (!current) return;
+    const mealKey = normalizeMealType(mealName);
+    const displayName = mealKey ? MEAL_TYPES[mealKey].label : mealName;
+    const canonicalTime = mealKey ? MEAL_TYPES[mealKey].time12h : undefined;
+    if (normalized[displayName]) {
+      // Merge food options if same meal type appears under different key names
+      normalized[displayName].foodOptions = [
+        ...normalized[displayName].foodOptions,
+        ...current.foodOptions
+      ];
+    } else {
+      normalized[displayName] = {
+        ...current,
+        name: displayName,
+        time: canonicalTime || current.time || '12:00 PM'
+      };
+    }
+  });
+  return normalized;
 };
 
 export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, duration = 7, startDate, initialMeals, initialMealTypes, clientId, clientName, readOnly = false, clientDietaryRestrictions, clientMedicalConditions, clientAllergies, holdDays = [], totalHeldDays = 0 }: DietPlanDashboardProps) {
@@ -188,7 +220,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       return newDays.map((d, i) => ({
         ...d,
         ...(initialMeals[i] || {}), // Preserve all fields from initialMeals including isHeld, isCopiedFromHold
-        meals: initialMeals[i]?.meals || {},
+        meals: normalizeMealKeys(initialMeals[i]?.meals || {}),
         note: initialMeals[i]?.note || ''
       }));
     }
@@ -234,7 +266,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       setWeekPlan(adjustedDays.map((d, i) => ({
         ...d,
         ...(initialMeals[i] || {}), // Preserve all fields including isHeld, isCopiedFromHold
-        meals: initialMeals[i]?.meals || {},
+        meals: normalizeMealKeys(initialMeals[i]?.meals || {}),
         note: initialMeals[i]?.note || ''
       })));
     }
@@ -243,12 +275,20 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   }, [initialMealsKey, duration]);
 
   // Update mealTypeConfigs when initialMealTypes changes
+  // Normalize names from DB (which may be canonical KEYS like "EARLY_MORNING") to display labels
   useEffect(() => {
     if (initialMealTypes && initialMealTypes.length > 0) {
-      const normalized = initialMealTypes.map((meal) => ({
-        ...meal,
-        time: normalizeTime(meal.time)
-      }));
+      const seen = new Set<string>();
+      const normalized: MealTypeConfig[] = [];
+      for (const meal of initialMealTypes) {
+        const key = normalizeMealType(meal.name);
+        const label = key ? MEAL_TYPES[key].label : meal.name;
+        const time = key ? MEAL_TYPES[key].time12h : normalizeTime(meal.time);
+        if (!seen.has(label)) {
+          seen.add(label);
+          normalized.push({ ...meal, name: label, time });
+        }
+      }
       setMealTypeConfigs(normalized);
     }
   }, [initialMealTypes]);
@@ -353,9 +393,12 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         return;
       }
       
-      // Always restore draft if it exists and has data, regardless of initialMeals
-      // This allows users to recover work in progress even when editing existing meals
-      if (draft.weekPlan && draft.weekPlan.length > 0) {
+      // Only restore draft if initialMeals is empty/absent (new plan or template create)
+      // When initialMeals has data (editing existing plan/template), DB data takes priority
+      const hasInitialMeals = initialMeals && Array.isArray(initialMeals) && initialMeals.length > 0 &&
+        initialMeals.some((day: any) => day?.meals && Object.keys(day.meals).length > 0);
+      
+      if (!hasInitialMeals && draft.weekPlan && draft.weekPlan.length > 0) {
         const hasData = draft.weekPlan.some((day: DayPlan) => 
           Object.keys(day.meals).length > 0 || day.note
         );
@@ -366,30 +409,53 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
             ? initialMealTypes 
             : (draft.mealTypeConfigs || defaultMealTypes);
             
-          const normalizedMealTypes = baseMealTypes.map((meal: MealTypeConfig) => ({
-            ...meal,
-            time: normalizeTime(meal.time)
-          }));
+          const normalizedMealTypes = baseMealTypes.map((meal: MealTypeConfig) => {
+            const key = normalizeMealType(meal.name);
+            return {
+              ...meal,
+              name: key ? MEAL_TYPES[key].label : meal.name,
+              time: key ? MEAL_TYPES[key].time12h : normalizeTime(meal.time)
+            };
+          });
+          // Deduplicate by name
+          const seen = new Set<string>();
+          const dedupedMealTypes = normalizedMealTypes.filter((m: MealTypeConfig) => {
+            if (seen.has(m.name)) return false;
+            seen.add(m.name);
+            return true;
+          });
 
-          const mealTimeMap = new Map(normalizedMealTypes.map((meal: MealTypeConfig) => [meal.name, meal.time]));
+          const mealTimeMap = new Map(dedupedMealTypes.map((meal: MealTypeConfig) => [meal.name, meal.time]));
           const normalizedWeekPlan = draft.weekPlan.map((day: DayPlan) => {
-            const meals = { ...day.meals } as Record<string, Meal>;
-            Object.keys(meals).forEach((mealName) => {
-              const current = meals[mealName];
+            const meals: Record<string, Meal> = {};
+            Object.keys(day.meals).forEach((mealName) => {
+              const current = day.meals[mealName];
               if (!current) return;
+              // Normalize the meal key to display label (e.g. "EARLY_MORNING" → "Early Morning")
+              const mealKey = normalizeMealType(mealName);
+              const displayName = mealKey ? MEAL_TYPES[mealKey].label : mealName;
               const normalizedTimeVal = normalizeTime(current.time);
-              const fallbackTime = mealTimeMap.get(mealName) || '12:00 PM';
+              const fallbackTime = mealTimeMap.get(displayName) || '12:00 PM';
               const resolvedTime = (normalizedTimeVal || fallbackTime) as string;
-              meals[mealName] = {
-                ...current,
-                time: resolvedTime
-              };
+              // If this display name already exists (duplicate), merge food options
+              if (meals[displayName]) {
+                meals[displayName].foodOptions = [
+                  ...meals[displayName].foodOptions,
+                  ...current.foodOptions
+                ];
+              } else {
+                meals[displayName] = {
+                  ...current,
+                  name: displayName,
+                  time: resolvedTime
+                };
+              }
             });
             return { ...day, meals };
           });
 
           setWeekPlan(normalizedWeekPlan);
-          setMealTypeConfigs(normalizedMealTypes);
+          setMealTypeConfigs(dedupedMealTypes);
           setHasDraft(true);
           setLastSaved(draft.lastSaved ? new Date(draft.lastSaved) : null);
           

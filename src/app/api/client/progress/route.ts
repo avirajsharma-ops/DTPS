@@ -8,6 +8,10 @@ import FoodLog from "@/lib/db/models/FoodLog";
 import ClientMealPlan from "@/lib/db/models/ClientMealPlan";
 import { startOfDay, endOfDay, format } from 'date-fns';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { MEAL_TYPES, MEAL_TYPE_KEYS } from '@/lib/mealConfig';
+
+// Get all possible meal type keys (canonical + common variations for DB compatibility)
+const ALL_MEAL_KEYS = [...MEAL_TYPE_KEYS, ...MEAL_TYPE_KEYS.map(k => MEAL_TYPES[k].label)];
 
 // Helper to get date range based on filter
 function getStartDate(range: string): Date {
@@ -319,11 +323,8 @@ export async function GET(request: Request) {
             let totalCarbs = 0;
             let totalFat = 0;
 
-            // Iterate through all meal types for the day
-            const mealTypes = ['Breakfast', 'breakfast', 'Mid Morning', 'morningSnack', 'Lunch', 'lunch', 
-                              'Evening Snack', 'afternoonSnack', 'Dinner', 'dinner', 'Bedtime', 'eveningSnack'];
-            
-            for (const mealType of mealTypes) {
+            // Iterate through all meal types for the day using canonical config
+            for (const mealType of ALL_MEAL_KEYS) {
               const mealData = dayData.meals[mealType];
               if (mealData?.foodOptions && Array.isArray(mealData.foodOptions)) {
                 for (const food of mealData.foodOptions) {

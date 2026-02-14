@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Plus, X, Minus, Copy, ChevronLeft, ChevronRight, Check, Maximize2, Minimize2, Trash2, Download } from 'lucide-react';
 import { DayPlan, Meal, FoodOption, FoodItem as MealFoodItem } from './DietPlanDashboard';
+import { DEFAULT_MEAL_TYPES_LIST, MEAL_TYPES, MEAL_TYPE_KEYS, normalizeMealType } from '@/lib/mealConfig';
 import { FoodDatabasePanel } from './FoodSheet';
 // Define FoodDatabaseItem shape to type foods parameter from FoodDatabasePanel selection
 type FoodDatabaseItem = {
@@ -43,14 +44,10 @@ type MealGridTableProps = {
   totalHeldDays?: number;
 };
 
-const mealTimeSuggestions: { [key: string]: string } = {
-  'Breakfast': '7:00 AM',
-  'Mid Morning': '9:00 AM',
-  'Lunch': '1:00 PM',
-  'Evening Snack': '5:00 PM',
-  'Dinner': '9:00 PM',
-  'Bedtime': '11:00 PM'
-};
+// Build mealTimeSuggestions from canonical config
+const mealTimeSuggestions: { [key: string]: string } = Object.fromEntries(
+  DEFAULT_MEAL_TYPES_LIST.map(m => [m.name, m.time])
+);
 
 const DAYS_PER_PAGE = 14;
 
@@ -119,7 +116,9 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   // Recipe search state for Find & Replace
   const [recipes, setRecipes] = useState<{ _id: string; name: string }[]>([]);
   const [findRecipeSearch, setFindRecipeSearch] = useState('');
+  const [findRecipeId, setFindRecipeId] = useState('');
   const [replaceRecipeSearch, setReplaceRecipeSearch] = useState('');
+  const [replaceRecipeId, setReplaceRecipeId] = useState('');
   const [replaceAction, setReplaceAction] = useState<'replace' | 'delete'>('replace');
   // Search filter for dropdowns
   const [findSearchFilter, setFindSearchFilter] = useState('');
@@ -173,11 +172,9 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   });
 
   const getMealForDay = (dayIndex: number, mealType: string): Meal | null => {
-    const meal = weekPlan[dayIndex]?.meals[mealType] || null;
-    // Debug logging only for first day
-    if (dayIndex === 0) {
-    }
-    return meal;
+    const day = weekPlan[dayIndex];
+    if (!day) return null;
+    return findMealInDay(day, mealType) || null;
   };
 
   const addMealToCell = (dayIndex: number, mealType: string) => {
@@ -434,7 +431,12 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       }
       return customMealTimes[mt] || mealTimeSuggestions[mt] || '12:00 PM';
     };
-    const sorted = [...mealTypes, name].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=> getMealTime(a).localeCompare(getMealTime(b)));
+    const sorted = [...mealTypes, name].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=> {
+      const orderA = getCanonicalSortOrder(a);
+      const orderB = getCanonicalSortOrder(b);
+      if (orderA !== orderB) return orderA - orderB;
+      return getTimeNumericValue(getMealTime(a)) - getTimeNumericValue(getMealTime(b));
+    });
     const position = sorted.indexOf(name);
     onAddMealType(name, position);
 
@@ -471,37 +473,81 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     return customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00 PM';
   };
 
-  // Convert time string to numeric for proper sorting
+  // Convert 12h time string (e.g. "01:00 PM") to minutes since midnight for sorting
   const getTimeNumericValue = (timeStr: string): number => {
-    if (!timeStr) return 1200;
-    if (timeStr.includes(':')) {
-      const [hours, minutes] = timeStr.split(':');
-      return parseInt(hours, 10) * 100 + parseInt(minutes, 10);
+    if (!timeStr) return 720; // noon fallback
+    const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (match) {
+      let hours = parseInt(match[1], 10);
+      const mins = parseInt(match[2], 10);
+      const period = match[3].toUpperCase();
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+      return hours * 60 + mins;
     }
-    return 1200;
+    // Try 24h format
+    const parts = timeStr.split(':');
+    if (parts.length >= 2) {
+      return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    }
+    return 720;
   };
 
-  // Get all unique meal types (default + custom) that have food, sorted by time
+  // Get canonical sort order for a meal type name (returns sortOrder or 99 for custom)
+  const getCanonicalSortOrder = (mealName: string): number => {
+    const key = normalizeMealType(mealName);
+    if (key && MEAL_TYPES[key]) return MEAL_TYPES[key].sortOrder;
+    return 99; // custom meal types go last
+  };
+
+  // Helper: resolve a meal type string to its canonical display label
+  // e.g. "EARLY_MORNING" → "Early Morning", "Early Morning" → "Early Morning"
+  const toDisplayLabel = (mt: string): string => {
+    const key = normalizeMealType(mt);
+    if (key && MEAL_TYPES[key]) return MEAL_TYPES[key].label;
+    return mt; // keep as-is for truly custom types
+  };
+
+  // Helper: find meal data in a day's meals, trying both label and key forms
+  const findMealInDay = (day: DayPlan, mealType: string): Meal | undefined => {
+    // Try exact match first
+    if (day.meals[mealType]) return day.meals[mealType];
+    // Try canonical key form (e.g. "Early Morning" → "EARLY_MORNING")
+    const key = normalizeMealType(mealType);
+    if (key && day.meals[key]) return day.meals[key];
+    // Try label form (e.g. "EARLY_MORNING" → "Early Morning")
+    const label = toDisplayLabel(mealType);
+    if (label !== mealType && day.meals[label]) return day.meals[label];
+    return undefined;
+  };
+
+  // Get all unique meal types (default + custom) that have food, sorted by canonical order then time
+  // Deduplicates by normalizing both mealTypes prop and weekPlan meal keys to display labels
   const displayMealTypes = (() => {
     const allMealTypes = new Set<string>();
     
-    // Add all default meal types
-    mealTypes.forEach(mt => allMealTypes.add(mt));
+    // Add all default meal types (already labels)
+    mealTypes.forEach(mt => allMealTypes.add(toDisplayLabel(mt)));
     
-    // Add all custom meal types that have food
+    // Add meal types from weekPlan that aren't already present (after normalization)
     weekPlan.forEach(day => {
       Object.keys(day.meals).forEach(mt => {
-        if (!mealTypes.includes(mt)) {
+        const label = toDisplayLabel(mt);
+        if (!allMealTypes.has(label)) {
           const meal = day.meals[mt];
           if (meal?.foodOptions?.some(opt => opt.food?.trim())) {
-            allMealTypes.add(mt);
+            allMealTypes.add(label);
           }
         }
       });
     });
     
-    // Sort by time
+    // Sort by canonical sortOrder first, then by time for custom types
     return Array.from(allMealTypes).sort((a, b) => {
+      const orderA = getCanonicalSortOrder(a);
+      const orderB = getCanonicalSortOrder(b);
+      if (orderA !== orderB) return orderA - orderB;
+      // Same order (both custom) — sort by time
       const timeA = getMealTypeTime(a);
       const timeB = getMealTypeTime(b);
       return getTimeNumericValue(timeA) - getTimeNumericValue(timeB);
@@ -533,18 +579,38 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     // For replace action, require a replace value
     if (replaceAction === 'replace' && !replaceValue) return;
     
+    // Matching helper: checks food name (case-insensitive) OR recipeUuid
+    const isMatch = (opt: FoodOption): boolean => {
+      const foodName = (opt.food || '').trim().toLowerCase();
+      const findLower = findValue.toLowerCase();
+      // Exact name match
+      if (foodName === findLower) return true;
+      // If a recipe was selected from DB, also match by recipeUuid
+      if (findRecipeId && opt.recipeUuid && opt.recipeUuid === findRecipeId) return true;
+      // Flexible: check if food name contains the search term or vice versa
+      if (foodName && findLower && (foodName.includes(findLower) || findLower.includes(foodName))) return true;
+      // Also check stacked foods array
+      if (opt.foods && opt.foods.length > 0) {
+        return opt.foods.some(f => {
+          const fName = (f.food || '').trim().toLowerCase();
+          if (fName === findLower) return true;
+          if (findRecipeId && f.recipeUuid && f.recipeUuid === findRecipeId) return true;
+          return false;
+        });
+      }
+      return false;
+    };
+    
     const newWeekPlan = weekPlan.map((d, idx) => {
       if (!selectedDaysForReplace.includes(idx)) return d;
       const day = { ...d, meals: { ...d.meals } };
       Object.keys(day.meals).forEach(mt => {
         if (!selectedMealTypesForReplace.includes(mt)) return;
-        const meal = day.meals[mt];
+        const meal = { ...day.meals[mt] };
         
         if (replaceAction === 'delete') {
           // Delete matching food options
-          meal.foodOptions = meal.foodOptions.filter(opt =>
-            opt.food.trim().toLowerCase() !== findValue.toLowerCase()
-          );
+          meal.foodOptions = meal.foodOptions.filter(opt => !isMatch(opt));
           // Clear labels for remaining options
           meal.foodOptions.forEach((opt, i) => {
             opt.label = '';
@@ -552,11 +618,12 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         } else {
           // Replace matching food options
           meal.foodOptions = meal.foodOptions.map(opt =>
-            opt.food.trim().toLowerCase() === findValue.toLowerCase()
-              ? { ...opt, food: replaceValue }
+            isMatch(opt)
+              ? { ...opt, food: replaceValue, recipeUuid: replaceRecipeId || opt.recipeUuid }
               : opt
           );
         }
+        day.meals[mt] = meal;
       });
       return day;
     });
@@ -572,7 +639,9 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     setSelectedMealTypesForReplace([]);
     setManualFindFoodName('');
     setFindRecipeSearch('');
+    setFindRecipeId('');
     setReplaceRecipeSearch('');
+    setReplaceRecipeId('');
     setReplaceAction('replace');
     setFindSearchFilter('');
     setReplaceSearchFilter('');
@@ -616,14 +685,9 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   };
 
   const applyDefaultMealTimes = () => {
-    const defaults = {
-      'Breakfast': '7:00 AM',
-      'Mid Morning': '9:00 AM',
-      'Lunch': '1:00 PM',
-      'Evening Snack': '5:00 PM',
-      'Dinner': '9:00 PM',
-      'Bedtime': '11:00 PM'
-    };
+    const defaults = Object.fromEntries(
+      DEFAULT_MEAL_TYPES_LIST.map(m => [m.name, m.time])
+    );
     setMealTimesForBulkEdit(prev => ({ ...prev, ...defaults }));
   };
 
@@ -905,14 +969,15 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               const dayMealTypes = [...displayMealTypes];
               // Only include custom meals that have food in them
               const customMeals = Object.keys(day.meals).filter(mt => {
-                if (!mealTypes.includes(mt) && !displayMealTypes.includes(mt)) {
+                const label = toDisplayLabel(mt);
+                if (!mealTypes.includes(label) && !displayMealTypes.includes(label)) {
                   // Check if this custom meal has any food
                   const meal = day.meals[mt];
                   return meal?.foodOptions?.some(opt => opt.food?.trim());
                 }
                 return false;
-              });
-              const allMealTypesForDay = [...dayMealTypes, ...customMeals];
+              }).map(mt => toDisplayLabel(mt));
+              const allMealTypesForDay = [...dayMealTypes, ...customMeals.filter(cm => !dayMealTypes.includes(cm))];
               
               // Format day label to show date + day number + day name
               const formatDayLabel = () => {
@@ -1638,7 +1703,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                 📋 Apply Default Times
               </Button>
               <p className="text-xs text-blue-600 mt-2 text-center">
-                Breakfast: 7 AM, Mid Morning: 9 AM, Lunch: 1 PM, Snack: 5 PM, Dinner: 9 PM, Bedtime: 11 PM
+                {DEFAULT_MEAL_TYPES_LIST.map(m => `${m.name}: ${m.time}`).join(', ')}
               </p>
             </div>
           </div>
@@ -1682,6 +1747,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                     if (findFoodTarget || findRecipeSearch) {
                       setFindFoodTarget('');
                       setFindRecipeSearch('');
+                      setFindRecipeId('');
                     }
                   }}
                   onFocus={() => setShowFindDropdown(true)}
@@ -1709,6 +1775,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                             setFindFoodTarget(f);
                             setFindSearchFilter(f);
                             setFindRecipeSearch('');
+                            setFindRecipeId('');
                             setManualFindFoodName('');
                             setShowFindDropdown(false);
                           }}
@@ -1733,6 +1800,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                           className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100"
                           onClick={() => {
                             setFindRecipeSearch(r.name);
+                            setFindRecipeId(r._id);
                             setFindSearchFilter(r.name);
                             setFindFoodTarget('');
                             setManualFindFoodName('');
@@ -1759,6 +1827,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                         setManualFindFoodName(findSearchFilter);
                         setFindFoodTarget('');
                         setFindRecipeSearch('');
+                        setFindRecipeId('');
                         setShowFindDropdown(false);
                       }}
                     >
@@ -1776,6 +1845,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                     onClick={() => {
                       setFindFoodTarget('');
                       setFindRecipeSearch('');
+                      setFindRecipeId('');
                       setManualFindFoodName('');
                       setFindSearchFilter('');
                     }}
@@ -1829,6 +1899,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                       // Clear selected value when typing
                       if (replaceRecipeSearch || replaceFoodValue) {
                         setReplaceRecipeSearch('');
+                        setReplaceRecipeId('');
                         setReplaceFoodValue('');
                       }
                     }}
@@ -1855,6 +1926,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                             className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100"
                             onClick={() => {
                               setReplaceRecipeSearch(r.name);
+                              setReplaceRecipeId(r._id);
                               setReplaceSearchFilter(r.name);
                               setReplaceFoodValue('');
                               setShowReplaceDropdown(false);
@@ -1878,6 +1950,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                         onClick={() => {
                           setReplaceFoodValue(replaceSearchFilter);
                           setReplaceRecipeSearch('');
+                          setReplaceRecipeId('');
                           setShowReplaceDropdown(false);
                         }}
                       >
@@ -1894,6 +1967,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                     <button
                       onClick={() => {
                         setReplaceRecipeSearch('');
+                        setReplaceRecipeId('');
                         setReplaceFoodValue('');
                         setReplaceSearchFilter('');
                       }}

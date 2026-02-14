@@ -186,6 +186,9 @@ export async function PUT(
       { new: true, runValidators: true }
     ).populate('createdBy', 'firstName lastName');
 
+    // Clear cached GET responses so next load returns fresh data
+    clearCacheByTag('diet_templates');
+
     return NextResponse.json({
       success: true,
       message: 'Diet template updated successfully',
@@ -266,6 +269,9 @@ export async function DELETE(
     // Soft delete by setting isActive to false
     existingTemplate.isActive = false;
     await existingTemplate.save();
+
+    // Clear cached GET responses so deleted template disappears immediately
+    clearCacheByTag('diet_templates');
 
     return NextResponse.json({
       success: true,

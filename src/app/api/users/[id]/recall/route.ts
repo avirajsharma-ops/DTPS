@@ -104,14 +104,16 @@ export async function POST(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Default times for each meal type
+    // Default times for each meal type (canonical 8 types)
     const defaultTimes: { [key: string]: { hour: string; minute: string; meridian: 'AM' | 'PM' } } = {
       'Early Morning': { hour: '6', minute: '00', meridian: 'AM' },
-      'BreakFast': { hour: '9', minute: '00', meridian: 'AM' },
+      'Breakfast': { hour: '9', minute: '00', meridian: 'AM' },
+      'Mid Morning': { hour: '11', minute: '00', meridian: 'AM' },
       'Lunch': { hour: '1', minute: '00', meridian: 'PM' },
-      'Evening Snack': { hour: '4', minute: '00', meridian: 'PM' },
-      'Dinner': { hour: '8', minute: '00', meridian: 'PM' },
-      'Post Dinner': { hour: '10', minute: '00', meridian: 'PM' },
+      'Mid Evening': { hour: '4', minute: '00', meridian: 'PM' },
+      'Evening': { hour: '7', minute: '00', meridian: 'PM' },
+      'Dinner': { hour: '7', minute: '00', meridian: 'PM' },
+      'Past Dinner': { hour: '9', minute: '00', meridian: 'PM' },
     };
 
     // Ensure all meals have valid times

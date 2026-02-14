@@ -17,7 +17,7 @@ interface Meal {
   protein: number;
   carbs: number;
   fat: number;
-  type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Mid Morning' | 'Evening Snack' | 'Bedtime';
+  type: 'Early Morning' | 'Breakfast' | 'Mid Morning' | 'Lunch' | 'Mid Evening' | 'Evening' | 'Dinner' | 'Past Dinner';
   time: string;
   consumed: boolean;
   fromMealPlan?: boolean;
@@ -282,13 +282,14 @@ export default function CaloriesSection({ clientId, selectedDate }: CaloriesSect
 
   const getMealTypeColor = (type: string) => {
     switch (type) {
+      case 'Early Morning': return 'bg-yellow-100 text-yellow-700';
       case 'Breakfast': return 'bg-blue-100 text-blue-700';
       case 'Mid Morning': return 'bg-cyan-100 text-cyan-700';
       case 'Lunch': return 'bg-green-100 text-green-700';
-      case 'Evening Snack': return 'bg-amber-100 text-amber-700';
+      case 'Mid Evening': return 'bg-amber-100 text-amber-700';
+      case 'Evening': return 'bg-orange-100 text-orange-700';
       case 'Dinner': return 'bg-purple-100 text-purple-700';
-      case 'Bedtime': return 'bg-indigo-100 text-indigo-700';
-      case 'Snack': return 'bg-orange-100 text-orange-700';
+      case 'Past Dinner': return 'bg-indigo-100 text-indigo-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };

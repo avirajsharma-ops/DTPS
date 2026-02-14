@@ -7,6 +7,7 @@ import { UserRole } from '@/types';
 import { parseISO, startOfDay, isToday } from 'date-fns';
 import { getImageKit } from '@/lib/imagekit';
 import { compressImageServer } from '@/lib/imageCompressionServer';
+import { MEAL_TYPE_KEYS } from '@/lib/mealConfig';
 
 // POST /api/client/meal-plan/complete - Mark a meal as completed with image
 export async function POST(request: NextRequest) {
@@ -75,8 +76,8 @@ export async function POST(request: NextRequest) {
     // Determine meal type from mealId if not provided
     const mealIdParts = mealId.split('-');
     const mealIndex = parseInt(mealIdParts[2] || '0');
-    const mealTypes = ['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'eveningSnack'];
-    const determinedMealType = mealType || mealTypes[mealIndex % mealTypes.length];
+    // Use canonical meal types from config
+    const determinedMealType = mealType || MEAL_TYPE_KEYS[mealIndex % MEAL_TYPE_KEYS.length];
 
     // Handle image upload - save to ImageKit
     let imagePath: string | undefined;

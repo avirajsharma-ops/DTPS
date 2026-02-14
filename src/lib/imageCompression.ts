@@ -21,12 +21,12 @@ const defaultOptions: CompressionOptions = {
  * Compress an image file using canvas
  * @param file - The image file to compress
  * @param options - Compression options
- * @returns Promise with compressed file as base64 string and metadata
+ * @returns Promise with compressed blob, dataUrl, and metadata
  */
 export async function compressImage(
   file: File,
   options: CompressionOptions = {}
-): Promise<{ base64: string; mimeType: string; originalSize: number; compressedSize: number }> {
+): Promise<{ blob: Blob; dataUrl: string; size: number; originalSize: number; compressedSize: number }> {
   const opts = { ...defaultOptions, ...options };
   
   return new Promise((resolve, reject) => {
@@ -70,18 +70,28 @@ export async function compressImage(
         
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Convert to base64
-        const base64 = canvas.toDataURL(opts.format || 'image/jpeg', opts.quality || 0.8);
+        // Convert to blob and dataUrl
+        const dataUrl = canvas.toDataURL(opts.format || 'image/jpeg', opts.quality || 0.8);
         
-        // Calculate compressed size (approximate from base64)
-        const compressedSize = Math.round((base64.length * 3) / 4);
-        
-        resolve({
-          base64,
-          mimeType: opts.format || 'image/jpeg',
-          originalSize: file.size,
-          compressedSize
-        });
+        // Convert canvas to blob
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Failed to convert canvas to blob'));
+              return;
+            }
+            
+            resolve({
+              blob,
+              dataUrl,
+              size: blob.size,
+              originalSize: file.size,
+              compressedSize: blob.size
+            });
+          },
+          opts.format || 'image/jpeg',
+          opts.quality || 0.8
+        );
       };
       
       img.onerror = () => {
@@ -179,6 +189,66 @@ export function fileToBase64(file: File): Promise<string> {
 export function extractBase64Data(dataUrl: string): string {
   const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
   return matches ? matches[2] : dataUrl;
+}
+
+/**
+ * Validate image file
+ * @param file - File to validate
+ * @param maxSizeMB - Maximum file size in MB
+ * @returns Validation result with error message if invalid
+ */
+export function validateImageFile(
+  file: File,
+  maxSizeMB: number = 10
+): { valid: boolean; error?: string } {
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+  if (!validTypes.includes(file.type)) {
+    return {
+      valid: false,
+      error: 'Invalid file type. Please upload JPG, PNG, or WebP image.',
+    };
+  }
+
+  if (file.size > maxSizeBytes) {
+    return {
+      valid: false,
+      error: `File size exceeds ${maxSizeMB}MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Upload compressed image blob to backend (which uploads to ImageKit)
+ * @param blob - Compressed image blob
+ * @param fileName - File name for storage
+ * @param folder - Folder path in ImageKit (default: 'recipes')
+ * @returns Uploaded image URL
+ */
+export async function uploadCompressedImage(
+  blob: Blob,
+  fileName: string,
+  folder: string = 'recipes'
+): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', blob, fileName);
+  formData.append('folder', folder);
+
+  const response = await fetch('/api/upload-image', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to upload image');
+  }
+
+  const data = await response.json();
+  return data.url;
 }
 
 export default compressImage;

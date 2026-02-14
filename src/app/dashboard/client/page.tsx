@@ -62,9 +62,9 @@ export default function ClientDashboard() {
   ];
 
   const recentMeals = [
-    { meal: 'Breakfast', calories: 350, time: '8:00 AM' },
-    { meal: 'Lunch', calories: 520, time: '1:00 PM' },
-    { meal: 'Snack', calories: 180, time: '4:00 PM' },
+    { meal: 'Breakfast', calories: 350, time: '09:00 AM' },
+    { meal: 'Lunch', calories: 520, time: '01:00 PM' },
+    { meal: 'Mid Evening', calories: 180, time: '04:00 PM' },
   ];
 
   const progressData = {

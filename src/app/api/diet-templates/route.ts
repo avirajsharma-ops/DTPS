@@ -6,6 +6,17 @@ import DietTemplate from '@/lib/db/models/DietTemplate';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { 
+  MEAL_TYPES, 
+  MEAL_TYPE_KEYS,
+  type MealTypeKey 
+} from '@/lib/mealConfig';
+
+// Get default meal types from canonical config
+const getCanonicalMealTypes = () => MEAL_TYPE_KEYS.map(key => ({
+  name: MEAL_TYPES[key].label,
+  time: MEAL_TYPES[key].time12h
+}));
 
 // Validation schema for meal type config
 const mealTypeConfigSchema = z.object({
@@ -44,14 +55,7 @@ const dietTemplateSchema = z.object({
   dietaryRestrictions: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),
   meals: z.array(z.any()).default([]),
-  mealTypes: z.array(mealTypeConfigSchema).optional().default([
-    { name: 'Breakfast', time: '8:00 AM' },
-    { name: 'Mid Morning', time: '10:30 AM' },
-    { name: 'Lunch', time: '1:00 PM' },
-    { name: 'Evening Snack', time: '4:00 PM' },
-    { name: 'Dinner', time: '7:00 PM' },
-    { name: 'Bedtime', time: '9:30 PM' }
-  ]),
+  mealTypes: z.array(mealTypeConfigSchema).optional().default(getCanonicalMealTypes()),
   isPublic: z.boolean().optional().default(false),
   isPremium: z.boolean().optional().default(false),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional().default('intermediate'),

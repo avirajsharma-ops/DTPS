@@ -366,7 +366,7 @@ export default function EditRecipePage() {
       setImagePreview(dataUrl);
 
       // Upload to ImageKit
-      const uploadedUrl = await uploadCompressedImage(blob, file.name, 'recipes/images');
+      const uploadedUrl = await uploadCompressedImage(blob, file.name, 'recipes');
       
       setImage(uploadedUrl);
       toast.success('Image uploaded successfully', {

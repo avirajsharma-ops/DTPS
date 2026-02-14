@@ -29,14 +29,16 @@ interface RecallFormProps {
 }
 
 export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEntry, loading, userRole = 'client' }: RecallFormProps) {
-  // Predefined meal slots - Only 6 meal types
+  // Predefined meal slots - 8 canonical meal types
   const defaultSlots: { mealType: string; hour: string; minute: string; meridian: 'AM'|'PM' }[] = [
     { mealType: 'Early Morning', hour: '6', minute: '00', meridian: 'AM' },
-    { mealType: 'BreakFast', hour: '9', minute: '00', meridian: 'AM' },
+    { mealType: 'Breakfast', hour: '9', minute: '00', meridian: 'AM' },
+    { mealType: 'Mid Morning', hour: '11', minute: '00', meridian: 'AM' },
     { mealType: 'Lunch', hour: '1', minute: '00', meridian: 'PM' },
-    { mealType: 'Evening Snack', hour: '4', minute: '00', meridian: 'PM' },
-    { mealType: 'Dinner', hour: '8', minute: '00', meridian: 'PM' },
-    { mealType: 'Post Dinner', hour: '10', minute: '00', meridian: 'PM' },
+    { mealType: 'Mid Evening', hour: '4', minute: '00', meridian: 'PM' },
+    { mealType: 'Evening', hour: '7', minute: '00', meridian: 'PM' },
+    { mealType: 'Dinner', hour: '7', minute: '00', meridian: 'PM' },
+    { mealType: 'Past Dinner', hour: '9', minute: '00', meridian: 'PM' },
   ];
 
   // For dietitian: show single save button at bottom

@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
+import { DEFAULT_MEAL_TYPES_LIST } from '@/lib/mealConfig';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, ChefHat, Target, AlertCircle, Save, Leaf, UtensilsCrossed } from 'lucide-react';
 import Link from 'next/link';
@@ -73,14 +74,7 @@ export default function EditDietTemplatePage() {
   
   // Meals and meal types state
   const [meals, setMeals] = useState<any[]>([]);
-  const [mealTypes, setMealTypes] = useState<{name: string; time: string}[]>([
-    { name: 'Breakfast', time: '8:00 AM' },
-    { name: 'Mid Morning', time: '10:30 AM' },
-    { name: 'Lunch', time: '1:00 PM' },
-    { name: 'Evening Snack', time: '4:00 PM' },
-    { name: 'Dinner', time: '7:00 PM' },
-    { name: 'Bedtime', time: '9:30 PM' }
-  ]);
+  const [mealTypes, setMealTypes] = useState<{name: string; time: string}[]>(DEFAULT_MEAL_TYPES_LIST);
   const [activeTab, setActiveTab] = useState('details');
 
   useEffect(() => {
@@ -415,7 +409,8 @@ export default function EditDietTemplatePage() {
               </CardHeader>
               <CardContent>
                 <DietPlanDashboard
-                  key={`diet-dashboard-${duration}`}
+                  key={`diet-dashboard-${id}-${duration}`}
+                  clientId={`template-${id}`}
                   clientData={{
                     name: name || 'Untitled Template',
                     age: 0,

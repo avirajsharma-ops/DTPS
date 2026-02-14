@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { MEAL_TYPE_KEYS } from '@/lib/mealConfig';
 
 // Freeze day interface
 interface IFreezeDay {
@@ -29,7 +30,7 @@ interface IProgressEntry {
 // Meal completion tracking
 interface IMealCompletion {
   date: Date;
-  mealType: 'breakfast' | 'morningSnack' | 'lunch' | 'afternoonSnack' | 'dinner' | 'eveningSnack';
+  mealType: 'EARLY_MORNING' | 'BREAKFAST' | 'MID_MORNING' | 'LUNCH' | 'MID_EVENING' | 'EVENING' | 'DINNER' | 'PAST_DINNER';
   completed: boolean;
   actualServings?: number;
   substitutions?: string;
@@ -153,7 +154,7 @@ const MealCompletionSchema = new Schema({
   mealType: { 
     type: String, 
     required: true,
-    enum: ['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'eveningSnack']
+    enum: MEAL_TYPE_KEYS
   },
   completed: { type: Boolean, required: true, default: false },
   actualServings: { type: Number, min: 0, max: 10 },

@@ -1,4 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { MEAL_TYPES, MEAL_TYPE_KEYS } from '@/lib/mealConfig';
+
+// Build enum from canonical labels
+const RECALL_MEAL_LABELS = MEAL_TYPE_KEYS.map(k => MEAL_TYPES[k].label);
 
 export interface IMealEntry {
   mealType: string;
@@ -20,7 +24,7 @@ const mealEntrySchema = new Schema({
   mealType: {
     type: String,
     required: false,
-    enum: ['Early Morning', 'BreakFast', 'Lunch', 'Evening Snack', 'Dinner', 'Post Dinner'],
+    enum: RECALL_MEAL_LABELS,
   },
   hour: {
     type: String,

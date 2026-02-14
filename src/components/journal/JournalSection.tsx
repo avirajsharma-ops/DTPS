@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
+import { MEAL_TYPES, MEAL_TYPE_KEYS } from '@/lib/mealConfig';
 import { 
   Activity, 
   Utensils, 
@@ -1751,7 +1752,7 @@ function FoodCompliance({ clientId, selectedDate }: { clientId: string; selected
                         </div>
                         
                         {/* Group meals by type */}
-                        {['Breakfast', 'Mid Morning', 'Lunch', 'Evening Snack', 'Dinner', 'Bedtime'].map(mealType => {
+                        {MEAL_TYPE_KEYS.map(key => MEAL_TYPES[key].label).map(mealType => {
                           const mealsOfType = plannedMeals.filter(m => m.type === mealType);
                           if (mealsOfType.length === 0) return null;
                           

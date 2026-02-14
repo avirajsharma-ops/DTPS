@@ -11,6 +11,7 @@ import { format, differenceInDays } from 'date-fns';
 import { UserRole } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { normalizeMealType, DEFAULT_MEAL_TYPES_LIST } from '@/lib/mealConfig';
 
 // Helper to get date without time
 const getDateOnly = (date: Date | string): Date => {
@@ -20,34 +21,12 @@ const getDateOnly = (date: Date | string): Date => {
 };
 
 // Helper to normalize meal type keys for consistent matching
-// Maps various meal type formats to a canonical key
+// Uses canonical normalization from mealConfig
 const normalizeMealTypeKey = (mealType: string): string => {
-  const normalized = mealType.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-  // Map common variations to canonical keys
-  const mappings: { [key: string]: string } = {
-    // Breakfast variations
-    'breakfast': 'breakfast',
-    // Mid Morning / Morning Snack variations
-    'midmorning': 'midmorning',
-    'morningsnack': 'midmorning',
-    'mid_morning': 'midmorning',
-    'morning_snack': 'midmorning',
-    // Lunch variations
-    'lunch': 'lunch',
-    // Evening Snack / Afternoon Snack variations
-    'eveningsnack': 'eveningsnack',
-    'afternoonsnack': 'eveningsnack',
-    'evening_snack': 'eveningsnack',
-    'afternoon_snack': 'eveningsnack',
-    // Dinner variations
-    'dinner': 'dinner',
-    // Bedtime variations
-    'bedtime': 'bedtime',
-    'bedtimesnack': 'bedtime',
-    'bedtime_snack': 'bedtime',
-    'nightsnack': 'bedtime',
-  };
-  return mappings[normalized] || normalized;
+  const canonical = normalizeMealType(mealType);
+  if (canonical) return canonical.toLowerCase().replace(/_/g, '');
+  // Fallback: simple lowercase strip
+  return mealType.toLowerCase().replace(/[\s_]/g, '');
 };
 
 // Helper to check if user has permission to access client data
@@ -213,14 +192,7 @@ export async function GET(request: NextRequest) {
       
       // Get meal types from plan or template or use defaults
       const mealTypes = clientMealPlan.mealTypes || 
-        (clientMealPlan.templateId as any)?.mealTypes || [
-          { name: 'Breakfast', time: '8:00 AM' },
-          { name: 'Mid Morning', time: '10:30 AM' },
-          { name: 'Lunch', time: '1:00 PM' },
-          { name: 'Evening Snack', time: '4:00 PM' },
-          { name: 'Dinner', time: '7:00 PM' },
-          { name: 'Bedtime', time: '9:30 PM' }
-        ];
+        (clientMealPlan.templateId as any)?.mealTypes || DEFAULT_MEAL_TYPES_LIST;
 
       // Check if meals are stored directly in clientMealPlan
       let dayPlan = null;
@@ -332,10 +304,10 @@ export async function GET(request: NextRequest) {
         
         if (dayMeals) {
           const mealTypes = [
-            { type: 'Breakfast', items: dayMeals.breakfast, time: '08:00 AM' },
-            { type: 'Lunch', items: dayMeals.lunch, time: '12:30 PM' },
-            { type: 'Dinner', items: dayMeals.dinner, time: '07:30 PM' },
-            { type: 'Snack', items: dayMeals.snacks, time: '04:00 PM' }
+            { type: 'Breakfast', items: dayMeals.breakfast, time: '09:00 AM' },
+            { type: 'Lunch', items: dayMeals.lunch, time: '01:00 PM' },
+            { type: 'Dinner', items: dayMeals.dinner, time: '07:00 PM' },
+            { type: 'Mid Evening', items: dayMeals.snacks, time: '04:00 PM' }
           ];
 
           for (const mealType of mealTypes) {

@@ -150,14 +150,14 @@ interface FoodItemSelectorModalData {
   isOpen: boolean;
 }
 
-// Default meal slots with fixed times - 6 meal types
+// Default meal slots with fixed times - canonical 8 meal types
 const DEFAULT_MEAL_SLOTS: { type: Meal['type']; time: string; label: string }[] = [
-  { type: 'breakfast', time: '7:00 AM', label: 'Breakfast' },
-  { type: 'morningSnack', time: '10:00 AM', label: 'Mid Morning' },
-  { type: 'lunch', time: '12:30 PM', label: 'Lunch' },
-  { type: 'afternoonSnack', time: '4:00 PM', label: 'Evening Snack' },
-  { type: 'dinner', time: '7:30 PM', label: 'Dinner' },
-  { type: 'eveningSnack', time: '9:00 PM', label: 'Bedtime' },
+  { type: 'breakfast', time: '09:00 AM', label: 'Breakfast' },
+  { type: 'morningSnack', time: '11:00 AM', label: 'Mid Morning' },
+  { type: 'lunch', time: '01:00 PM', label: 'Lunch' },
+  { type: 'afternoonSnack', time: '04:00 PM', label: 'Mid Evening' },
+  { type: 'dinner', time: '07:00 PM', label: 'Dinner' },
+  { type: 'eveningSnack', time: '09:00 PM', label: 'Past Dinner' },
 ];
 
 // Helper function to format notes with period as line break

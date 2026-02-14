@@ -184,10 +184,10 @@ export default function UserDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {[
-              { name: 'Breakfast', time: '8:00 AM', calories: 450, completed: true },
-              { name: 'Lunch', time: '1:00 PM', calories: 650, completed: true },
-              { name: 'Snack', time: '4:00 PM', calories: 150, completed: false },
-              { name: 'Dinner', time: '7:30 PM', calories: 550, completed: false },
+              { name: 'Breakfast', time: '09:00 AM', calories: 450, completed: true },
+              { name: 'Lunch', time: '01:00 PM', calories: 650, completed: true },
+              { name: 'Mid Evening', time: '04:00 PM', calories: 150, completed: false },
+              { name: 'Dinner', time: '07:00 PM', calories: 550, completed: false },
             ].map((meal) => (
               <div 
                 key={meal.name}
