@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
       }
     } else if (session.user.role === UserRole.CLIENT) {
       // Clients can see only their assigned dietitian
-      const currentUser = await User.findById(session.user.id).select('assignedDietitian').lean();
+      const currentUserRaw = await User.findById(session.user.id).select('assignedDietitian').lean();
+      const currentUser = currentUserRaw as { _id: unknown; assignedDietitian?: unknown } | null;
 
       if (currentUser?.assignedDietitian) {
         // Show only assigned dietitian
@@ -76,11 +77,28 @@ export async function GET(request: NextRequest) {
 
     // Search functionality
     if (search) {
-      query.$or = [
-        { firstName: { $regex: search, $options: 'i' } },
-        { lastName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
-      ];
+      const searchCondition = {
+        $or: [
+          { firstName: { $regex: search, $options: 'i' } },
+          { lastName: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } }
+        ]
+      };
+
+      if (query.$or) {
+        // Preserve assignment $or by wrapping both in $and
+        query = {
+          ...query,
+          $or: undefined,
+          $and: [
+            { $or: query.$or },
+            searchCondition
+          ]
+        };
+      } else {
+        query = { ...query, ...searchCondition };
+      }
     }
 
     // For admin users, include password field; for others, exclude it

@@ -71,6 +71,9 @@ export interface IUser extends Document {
   allergies?: string[];
   dietaryRestrictions?: string[];
   assignedDietitian?: string;
+  assignedDietitians?: string[];
+  assignedHealthCounselor?: string;
+  assignedHealthCounselors?: string[];
 }
 
 // Appointment Types

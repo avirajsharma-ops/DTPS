@@ -12,6 +12,16 @@ import { logActivity, logApiError } from '@/lib/utils/activityLogger';
 import { SSEManager } from '@/lib/realtime/sse-manager';
 import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import mongoose from 'mongoose';
+
+// Lean result type for User fields used in access checks
+interface LeanClientDoc {
+  _id: unknown;
+  role?: string;
+  assignedDietitian?: unknown;
+  assignedDietitians?: unknown[];
+  assignedHealthCounselor?: unknown;
+}
 
 // GET /api/appointments - Get appointments for current user
 export async function GET(request: NextRequest) {
@@ -37,24 +47,25 @@ export async function GET(request: NextRequest) {
 
     // If specific clientId is requested (client panel view), enforce access and scope to that client
     if (clientId) {
-      const requestedClient = await User.findById(clientId).select(
+      const requestedClientRaw = await User.findById(clientId).select(
         '_id role assignedDietitian assignedDietitians assignedHealthCounselor'
       ).lean();
-      if (!requestedClient) {
+      if (!requestedClientRaw) {
         return NextResponse.json({ error: 'Client not found' }, { status: 404 });
       }
 
+      // Cast the lean result to a typed object for safe property access
+      const clientDoc = requestedClientRaw as LeanClientDoc;
       const role = session.user.role;
       const requesterId = String(session.user.id);
 
-      if (role === UserRole.CLIENT || role === 'client') {
+      if (role === UserRole.CLIENT) {
         if (requesterId !== String(clientId)) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
-      } else if (role === UserRole.DIETITIAN || role === 'dietitian') {
-        const assignedDietitian = requestedClient.assignedDietitian?.toString();
-        const assignedDietitiansRaw = (requestedClient as unknown as { assignedDietitians?: unknown })
-          .assignedDietitians;
+      } else if (role === UserRole.DIETITIAN) {
+        const assignedDietitian = clientDoc.assignedDietitian?.toString();
+        const assignedDietitiansRaw = clientDoc.assignedDietitians;
         const assignedDietitians = Array.isArray(assignedDietitiansRaw)
           ? assignedDietitiansRaw.map(String)
           : [];
@@ -62,8 +73,8 @@ export async function GET(request: NextRequest) {
         if (assignedDietitian !== requesterId && !inAssignedList) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
-      } else if (role === UserRole.HEALTH_COUNSELOR || role === 'health_counselor') {
-        const assignedHC = requestedClient.assignedHealthCounselor?.toString();
+      } else if (role === UserRole.HEALTH_COUNSELOR) {
+        const assignedHC = clientDoc.assignedHealthCounselor?.toString();
         if (assignedHC !== requesterId) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -78,11 +89,12 @@ export async function GET(request: NextRequest) {
       query.dietitian = dietitianId;
     } else if (session.user.role === UserRole.DIETITIAN) {
       // Get all clients assigned to this dietitian
+      const userObjectId = new mongoose.Types.ObjectId(session.user.id);
       const assignedClients = await User.find({
         role: UserRole.CLIENT,
         $or: [
-          { assignedDietitian: session.user.id },
-          { assignedDietitians: session.user.id }
+          { assignedDietitian: userObjectId },
+          { assignedDietitians: userObjectId }
         ]
       }).select('_id').lean();
       const assignedClientIds = assignedClients.map(c => c._id);
@@ -92,11 +104,12 @@ export async function GET(request: NextRequest) {
         { dietitian: session.user.id },
         { client: { $in: assignedClientIds } }
       ];
-    } else if (session.user.role === 'health_counselor') {
+    } else if (session.user.role === UserRole.HEALTH_COUNSELOR) {
       // Get all clients assigned to this health counselor
+      const userObjectId = new mongoose.Types.ObjectId(session.user.id);
       const assignedClients = await User.find({
         role: UserRole.CLIENT,
-        assignedHealthCounselor: session.user.id
+        assignedHealthCounselor: userObjectId
       }).select('_id').lean();
       const assignedClientIds = assignedClients.map(c => c._id);
       
@@ -200,10 +213,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // For health counselors, validate they can only book appointments with their assigned clients
-    if (
-      (session.user.role as string) === 'health_counselor' ||
-      (session.user.role as string) === UserRole.HEALTH_COUNSELOR
-    ) {
+    if (session.user.role === UserRole.HEALTH_COUNSELOR) {
       const client = await User.findById(clientId);
       if (!client) {
         return NextResponse.json(

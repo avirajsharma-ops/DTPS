@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,12 +32,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ExternalLink, RefreshCw, Search, Users, Plus } from 'lucide-react';
+import { ExternalLink, RefreshCw, Search, Users, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { getClientId } from '@/lib/utils';
-import { log } from 'console';
 
 interface Client {
   _id: string;
@@ -89,10 +88,28 @@ export default function DieticianClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterFreeze, setFilterFreeze] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalClients, setTotalClients] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Debounce search input — wait 400ms after user stops typing, then trigger server-side search
+  const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset to page 1 on new search
+    }, 400);
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+  }, [searchTerm]);
+
   // Create client dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -105,25 +122,28 @@ export default function DieticianClientsPage() {
     gender: '',
     dateOfBirth: '',
   });
-console.log('Render DieticianClientsPage with clients:', clients);
   // Only fetch when session is authenticated and user ID is available
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {
-      fetchMyClients();
+      fetchMyClients(currentPage, pageSize, debouncedSearch);
     } else if (status === 'unauthenticated') {
       setLoading(false);
     }
     // While loading session, keep loading state true
-  }, [status, session?.user?.id]);
+  }, [status, session?.user?.id, currentPage, pageSize, debouncedSearch]);
 
-  const fetchMyClients = async () => {
+  const fetchMyClients = async (page = 1, limit = 50, search = '') => {
     try {
       setLoading(true);
-      // Fetch only clients assigned to this dietician
-      const response = await fetch('/api/users/clients');
+      // Fetch clients with pagination and server-side search
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (search.trim()) params.set('search', search.trim());
+      const response = await fetch(`/api/users/clients?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setClients(data.clients || []);
+        setTotalClients(data.pagination?.total || 0);
+        setTotalPages(data.pagination?.pages || 1);
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -150,7 +170,7 @@ console.log('Render DieticianClientsPage with clients:', clients);
         dateOfBirth: createForm.dateOfBirth ? new Date(createForm.dateOfBirth) : undefined,
         role: 'client',
         // Auto-assign to the current dietitian
-        assignedDietitian: (session?.user as any)?._id || undefined,
+        assignedDietitian: session?.user?.id || undefined,
       };
 
       const res = await fetch('/api/users', {
@@ -175,7 +195,8 @@ console.log('Render DieticianClientsPage with clients:', clients);
         gender: '',
         dateOfBirth: '',
       });
-      await fetchMyClients();
+      setCurrentPage(1);
+      await fetchMyClients(1, pageSize, debouncedSearch);
     } catch (error: any) {
       toast.error(error?.message || 'Failed to create client');
     } finally {
@@ -209,17 +230,12 @@ console.log('Render DieticianClientsPage with clients:', clients);
     }
   };
 
+  // Search is handled server-side; only apply local status filter
   const filteredClients = clients.filter(client => {
-    const matchesSearch = client.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone?.includes(searchTerm);
-    
-    // Filter by client status
     const matchesStatus = filterType === 'all' || 
       (client.clientStatus || 'leading') === filterType;
     
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
   const toggleClientSelection = (clientId: string) => {
@@ -272,7 +288,7 @@ console.log('Render DieticianClientsPage with clients:', clients);
             </Button>
             <div className="flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
               <Users className="h-5 w-5 text-blue-600" />
-              <span className="text-blue-900 font-semibold">{filteredClients.length} Clients</span>
+              <span className="text-blue-900 font-semibold">{totalClients} Clients</span>
             </div>
           </div>
         </div>
@@ -322,7 +338,7 @@ console.log('Render DieticianClientsPage with clients:', clients);
             </Select>
           </div>
           
-          <Button size="sm" variant="ghost" onClick={fetchMyClients}>
+          <Button size="sm" variant="ghost" onClick={() => fetchMyClients(currentPage, pageSize, debouncedSearch)}>
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
@@ -492,9 +508,82 @@ console.log('Render DieticianClientsPage with clients:', clients);
                   </Table>
                 </div>
                 
-                {/* Footer */}
-                <div className="px-4 py-3 border-t text-sm text-gray-600">
-                  Showing {filteredClients.length} to 1 of {filteredClients.length} rows
+                {/* Pagination Footer */}
+                <div className="px-4 py-3 border-t flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span>Rows per page:</span>
+                    <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                      <SelectTrigger className="w-[70px] h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                        <SelectItem value="200">200</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <span className="ml-2">
+                      Showing {totalClients === 0 ? 0 : (currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalClients)} of {totalClients} clients
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage <= 1}
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="flex items-center gap-1 mx-2">
+                      {(() => {
+                        const pages: number[] = [];
+                        const start = Math.max(1, currentPage - 2);
+                        const end = Math.min(totalPages, currentPage + 2);
+                        for (let i = start; i <= end; i++) pages.push(i);
+                        return pages.map(p => (
+                          <Button
+                            key={p}
+                            variant={p === currentPage ? 'default' : 'outline'}
+                            size="icon"
+                            className={`h-8 w-8 text-xs ${p === currentPage ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
+                            onClick={() => setCurrentPage(p)}
+                          >
+                            {p}
+                          </Button>
+                        ));
+                      })()}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage >= totalPages}
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </>
             )}
