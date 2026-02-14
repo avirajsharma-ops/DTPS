@@ -31,6 +31,7 @@ interface Recipe {
   cuisine?: string;
   difficulty?: string;
   tags?: string[];
+  dietaryRestrictions?: string[];
 }
 
 export default function RecipeDetailMobile({ params }: { params: Promise<{ id: string }> }) {
@@ -210,6 +211,25 @@ export default function RecipeDetailMobile({ params }: { params: Promise<{ id: s
           </div>
         </div>
       </div>
+
+      {/* Dietary Restrictions */}
+      {recipe.dietaryRestrictions && recipe.dietaryRestrictions.length > 0 && (
+        <div className="px-6 mt-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            Dietary Restrictions
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {recipe.dietaryRestrictions.map((restriction, index) => (
+              <span
+                key={index}
+                className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-medium"
+              >
+                {restriction}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Bottom Navigation Placeholder */}
     

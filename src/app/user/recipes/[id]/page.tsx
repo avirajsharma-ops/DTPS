@@ -27,6 +27,7 @@ interface Recipe {
     fat?: number;
     fiber?: number;
   };
+  dietaryRestrictions?: string[];
 }
 
 export default function RecipeDetailPage() {
@@ -276,6 +277,23 @@ export default function RecipeDetailPage() {
                   <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{recipe.nutrition.fiber}g</p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Dietary Restrictions */}
+        {recipe.dietaryRestrictions && recipe.dietaryRestrictions.length > 0 && (
+          <div className={`rounded-2xl p-6 shadow-sm border mt-8 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <h3 className={`text-xl font-bold mb-5 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Dietary Restrictions</h3>
+            <div className="flex flex-wrap gap-2">
+              {recipe.dietaryRestrictions.map((restriction, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-medium"
+                >
+                  {restriction}
+                </span>
+              ))}
             </div>
           </div>
         )}

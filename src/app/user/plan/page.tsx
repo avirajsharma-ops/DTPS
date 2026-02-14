@@ -1259,7 +1259,7 @@ export default function UserPlanPage() {
                   {((fullRecipeData?.dietaryRestrictions && fullRecipeData.dietaryRestrictions.length > 0) || 
                     (recipeModal.item?.recipe?.dietaryRestrictions && recipeModal.item.recipe.dietaryRestrictions.length > 0)) && (
                     <div>
-                      <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🥗 Dietary Info</h4>
+                      <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🥗 Dietary Restrictions</h4>
                       <div className="flex flex-wrap gap-2">
                         {(fullRecipeData?.dietaryRestrictions || recipeModal.item.recipe?.dietaryRestrictions)?.map((restriction, i) => (
                           <span key={i} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">{restriction}</span>

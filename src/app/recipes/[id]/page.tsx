@@ -468,7 +468,7 @@ export default function RecipeViewPage() {
 
               {recipe.dietaryRestrictions && recipe.dietaryRestrictions.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium mb-2">Dietary</p>
+                  <p className="text-sm font-medium mb-2">Dietary Restrictions</p>
                   <div className="flex flex-wrap gap-1">
                     {recipe.dietaryRestrictions.map((restriction, index) => (
                       <Badge
