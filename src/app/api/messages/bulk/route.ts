@@ -9,6 +9,7 @@ import { SSEManager } from '@/lib/realtime/sse-manager';
 import { sendNewMessageNotification } from '@/lib/notifications/notificationService';
 import { clearCacheByTag } from '@/lib/api/utils';
 import { logHistoryServer } from '@/lib/server/history';
+import { UserRole } from '@/types';
 
 const bulkMessageSchema = z.object({
   recipientIds: z.array(z.string().min(1)).min(1, 'At least one recipient is required').max(100, 'Maximum 100 recipients per bulk message'),
@@ -27,6 +28,12 @@ const bulkMessageSchema = z.object({
 });
 
 // POST /api/messages/bulk - Send the same message to multiple people individually
+// STRICT RULES:
+// - Only staff can send bulk messages
+// - Bulk messages can ONLY be sent to clients (never to other staff)
+// - Dietitians can only send to their assigned clients
+// - Health Counselors can only send to their assigned clients
+// - Admin can send to all clients
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -34,9 +41,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const sessionRole = String(session.user.role || '').toLowerCase();
+
     // Only staff roles (admin, dietitian, health_counselor) can send bulk messages
     const allowedRoles = ['admin', 'dietitian', 'health_counselor'];
-    if (!allowedRoles.includes(session.user.role?.toLowerCase())) {
+    if (!allowedRoles.includes(sessionRole)) {
       return NextResponse.json({ error: 'Bulk messaging is only available for staff' }, { status: 403 });
     }
 
@@ -45,19 +54,69 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Verify all recipients exist
+    // STRICT VALIDATION: Verify ALL recipients are clients AND properly assigned
     const recipients = await User.find({ _id: { $in: validatedData.recipientIds } })
-      .select('_id firstName lastName avatar role')
+      .select('_id firstName lastName avatar role assignedDietitian assignedDietitians assignedHealthCounselor')
       .lean();
 
     if (recipients.length === 0) {
       return NextResponse.json({ error: 'No valid recipients found' }, { status: 400 });
     }
 
-    const validRecipientIds = recipients.map((r: any) => r._id.toString());
+    // RULE: Bulk messages can ONLY be sent to clients
+    const nonClientRecipients = recipients.filter((r: any) => r.role !== UserRole.CLIENT && r.role !== 'client');
+    if (nonClientRecipients.length > 0) {
+      return NextResponse.json({ 
+        error: 'Bulk messages can only be sent to clients. Staff members must be messaged individually.',
+        invalidRecipients: nonClientRecipients.map((r: any) => ({
+          id: r._id,
+          name: `${r.firstName} ${r.lastName}`,
+          role: r.role
+        }))
+      }, { status: 403 });
+    }
+
+    // RULE: Staff can only bulk message their OWN assigned clients
+    let validRecipientIds: string[] = [];
+    let unauthorizedRecipients: any[] = [];
+
+    for (const recipient of recipients) {
+      const r = recipient as any;
+      let isAuthorized = false;
+
+      if (sessionRole === 'admin') {
+        // Admin can send to any client
+        isAuthorized = true;
+      } else if (sessionRole === 'dietitian') {
+        // Dietitian can only send to clients assigned to them
+        const assignedToDietitian = r.assignedDietitian?.toString() === session.user.id;
+        const inDietitianArray = r.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
+        isAuthorized = assignedToDietitian || inDietitianArray;
+      } else if (sessionRole === 'health_counselor') {
+        // Health Counselor can only send to clients assigned to them
+        isAuthorized = r.assignedHealthCounselor?.toString() === session.user.id;
+      }
+
+      if (isAuthorized) {
+        validRecipientIds.push(r._id.toString());
+      } else {
+        unauthorizedRecipients.push({
+          id: r._id,
+          name: `${r.firstName} ${r.lastName}`
+        });
+      }
+    }
+
+    if (validRecipientIds.length === 0) {
+      return NextResponse.json({ 
+        error: 'None of the selected recipients are assigned to you. You can only send bulk messages to your assigned clients.',
+        unauthorizedRecipients
+      }, { status: 403 });
+    }
+
     const invalidIds = validatedData.recipientIds.filter(id => !validRecipientIds.includes(id));
 
-    // Create individual messages for each recipient
+    // Create individual messages for each valid recipient
     const messageDocs = validRecipientIds.map(recipientId => ({
       sender: session.user.id,
       receiver: recipientId,

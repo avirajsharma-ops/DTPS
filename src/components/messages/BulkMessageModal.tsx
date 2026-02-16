@@ -44,9 +44,11 @@ export default function BulkMessageModal({ isOpen, onClose, currentUserId }: Bul
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/users/available-for-chat');
+      // For bulk messages, only fetch clients (forBulkMessage=true)
+      const response = await fetch('/api/users/available-for-chat?forBulkMessage=true&limit=500');
       if (response.ok) {
         const data = await response.json();
+        // All users returned should be clients only (server-side filtered)
         setUsers((data.users || []).filter((u: User) => u._id !== currentUserId));
       }
     } catch (error) {
@@ -109,8 +111,8 @@ export default function BulkMessageModal({ isOpen, onClose, currentUserId }: Bul
     const matchesSearch = `${user.firstName} ${user.lastName} ${user.email || ''}`
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    const matchesRole = filterRole === 'all' || user.role === filterRole;
-    return matchesSearch && matchesRole;
+    // No role filter needed - API returns only assigned clients for bulk messages
+    return matchesSearch;
   });
 
   if (!isOpen) return null;
@@ -138,30 +140,18 @@ export default function BulkMessageModal({ isOpen, onClose, currentUserId }: Bul
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search users..."
+                  placeholder="Search clients..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              <div className="flex gap-1 flex-wrap">
-                {['all', 'client', 'dietitian', 'health_counselor'].map(role => (
-                  <button
-                    key={role}
-                    onClick={() => setFilterRole(role)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      filterRole === role
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {role === 'all' ? 'All' : role === 'health_counselor' ? 'HC' : role.charAt(0).toUpperCase() + role.slice(1)}
-                  </button>
-                ))}
-              </div>
+              <p className="text-xs text-gray-500">
+                Bulk messages can only be sent to your assigned clients.
+              </p>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">
-                  {selectedUsers.length} selected of {filteredUsers.length}
+                  {selectedUsers.length} selected of {filteredUsers.length} clients
                 </span>
                 <button onClick={selectAll} className="text-green-600 hover:text-green-700 font-medium">
                   {filteredUsers.every(u => selectedUsers.includes(u._id)) ? 'Deselect All' : 'Select All'}
@@ -213,7 +203,7 @@ export default function BulkMessageModal({ isOpen, onClose, currentUserId }: Bul
                     }`}>
                       {selectedUsers.includes(user._id) && <Check className="h-3 w-3 text-white" />}
                     </div>
-                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-medium text-sm flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-medium text-sm shrink-0">
                       {user.avatar ? (
                         <img src={user.avatar} className="h-10 w-10 rounded-full object-cover" alt="" />
                       ) : (

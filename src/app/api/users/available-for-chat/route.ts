@@ -8,6 +8,11 @@ import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/users/available-for-chat - Get users available for starting conversations
+// STRICT ROLE-BASED VISIBILITY:
+// - Dietitians: see ONLY their assigned clients + all staff (dietitians, HCs, admin)
+// - Health Counselors: see ONLY their assigned clients + all staff
+// - Admin: see all users
+// - Clients: see their assigned dietitians only
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,50 +24,102 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = parseInt(searchParams.get('limit') || '100');
+    const forBulkMessage = searchParams.get('forBulkMessage') === 'true';
 
-    // Get users that the current user can chat with
+    const sessionRole = String(session.user.role || '').toLowerCase();
+
+    // For bulk messages, ONLY return clients (never staff)
+    if (forBulkMessage) {
+      let clientQuery: any = { role: UserRole.CLIENT };
+
+      if (sessionRole === 'dietitian') {
+        // Dietitian can only bulk message their OWN assigned clients
+        clientQuery.$or = [
+          { assignedDietitian: session.user.id },
+          { assignedDietitians: session.user.id }
+        ];
+      } else if (sessionRole === 'health_counselor') {
+        // Health Counselor can only bulk message their OWN assigned clients
+        clientQuery.assignedHealthCounselor = session.user.id;
+      } else if (sessionRole !== 'admin') {
+        // Non-admin, non-dietitian, non-HC cannot bulk message
+        return NextResponse.json({ error: 'Unauthorized for bulk messaging' }, { status: 403 });
+      }
+      // Admin can see all clients for bulk messaging
+
+      // Add search filter
+      if (search) {
+        const searchRegex = { $regex: search, $options: 'i' };
+        clientQuery.$and = clientQuery.$and || [];
+        clientQuery.$and.push({
+          $or: [
+            { firstName: searchRegex },
+            { lastName: searchRegex },
+            { email: searchRegex }
+          ]
+        });
+      }
+
+      const clients = await User.find(clientQuery)
+        .select('firstName lastName email avatar role')
+        .sort({ firstName: 1, lastName: 1 })
+        .limit(limit);
+
+      return NextResponse.json({
+        users: clients.map(u => u.toJSON()),
+        total: clients.length
+      });
+    }
+
+    // Regular chat: build query based on role
     let query: any = {
-      _id: { $ne: session.user.id }, // Exclude current user
+      _id: { $ne: session.user.id },
       $or: []
     };
 
-    // Define who can chat with whom
-    if (session.user.role === UserRole.CLIENT) {
-      // Clients can chat with:
-      // 1. Their assigned dietitians (from assignedDietitians array)
-      // 2. Any dietitian if they don't have one assigned
-      const currentUser = await withCache(
-      `users:available-for-chat:${JSON.stringify(session.user.id)}`,
-      async () => await User.findById(session.user.id).select('assignedDietitian assignedDietitians'),
-      { ttl: 120000, tags: ['users'] }
-    );
+    if (sessionRole === 'client') {
+      // Clients can ONLY chat with their assigned dietitians
+      const currentUser = await User.findById(session.user.id)
+        .select('assignedDietitian assignedDietitians assignedHealthCounselor')
+        .lean();
       
       if (currentUser?.assignedDietitians && currentUser.assignedDietitians.length > 0) {
-        // Chat with all assigned dietitians
         query.$or.push({ _id: { $in: currentUser.assignedDietitians } });
       } else if (currentUser?.assignedDietitian) {
-        // Chat with assigned dietitian (backwards compatibility)
         query.$or.push({ _id: currentUser.assignedDietitian });
-      } else {
-        // Chat with any dietitian
-        query.$or.push({ role: UserRole.DIETITIAN });
       }
-    } else if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
-      // Dietitians and Health Counselors can chat with:
-      // 1. Their assigned clients (from both assignedDietitian and assignedDietitians)
-      // 2. Any unassigned clients
-      // 3. Other dietitians and health counselors (for collaboration)
+      if (currentUser?.assignedHealthCounselor) {
+        query.$or.push({ _id: currentUser.assignedHealthCounselor });
+      }
+      
+      // If no assigned staff, client cannot start new chats
+      if (query.$or.length === 0) {
+        return NextResponse.json({ users: [], total: 0 });
+      }
+    } else if (sessionRole === 'dietitian') {
+      // Dietitians can chat with:
+      // 1. ONLY their assigned clients (strict - not unassigned clients)
+      // 2. All staff (dietitians, health counselors, admin) for internal communication
       query.$or.push(
-        { assignedDietitian: session.user.id }, // Assigned clients (primary)
-        { assignedDietitians: session.user.id }, // Assigned clients (from array)
-        { role: UserRole.CLIENT, assignedDietitian: { $exists: false } }, // Unassigned clients
-        { role: UserRole.CLIENT, assignedDietitian: null }, // Clients with null assignment
-        { role: { $in: [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR] } } // Other dietitians and health counselors
+        { assignedDietitian: session.user.id },
+        { assignedDietitians: session.user.id },
+        { role: { $in: [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR, UserRole.ADMIN] } }
       );
-    } else if (session.user.role === UserRole.ADMIN) {
+    } else if (sessionRole === 'health_counselor') {
+      // Health Counselors can chat with:
+      // 1. ONLY their assigned clients (strict)
+      // 2. All staff for internal communication
+      query.$or.push(
+        { assignedHealthCounselor: session.user.id },
+        { role: { $in: [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR, UserRole.ADMIN] } }
+      );
+    } else if (sessionRole === 'admin') {
       // Admins can chat with everyone
       query = { _id: { $ne: session.user.id } };
+    } else {
+      // Unknown role - deny access
+      return NextResponse.json({ users: [], total: 0 });
     }
 
     // Add search filter

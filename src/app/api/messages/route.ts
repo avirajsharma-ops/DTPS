@@ -45,19 +45,57 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const page = parseInt(searchParams.get('page') || '1');
 
-    // For health counselors, validate they can message this client
-    if (conversationWith && session.user.role === 'health_counselor') {
-      const otherUser = await User.findById(conversationWith);
+    const sessionRole = String(session.user.role || '').toLowerCase();
+
+    // STRICT ROLE-BASED VALIDATION for conversation access
+    if (conversationWith) {
+      const otherUser = await User.findById(conversationWith)
+        .select('role assignedDietitian assignedDietitians assignedHealthCounselor')
+        .lean();
+      
       if (!otherUser) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      // Check if this is a client and if they're assigned to this health counselor
-      if (otherUser.role === 'client') {
-        if (otherUser.assignedHealthCounselor?.toString() !== session.user.id) {
-          return NextResponse.json({ error: 'You can only message clients assigned to you' }, { status: 403 });
+      const otherRole = String((otherUser as any).role || '').toLowerCase();
+
+      // Validate access based on roles
+      if (sessionRole === 'dietitian') {
+        // Dietitian can only message their assigned clients OR other staff
+        if (otherRole === 'client') {
+          const isAssigned = 
+            (otherUser as any).assignedDietitian?.toString() === session.user.id ||
+            (otherUser as any).assignedDietitians?.some((d: any) => d.toString() === session.user.id);
+          if (!isAssigned) {
+            return NextResponse.json({ error: 'You can only message clients assigned to you' }, { status: 403 });
+          }
+        }
+        // Staff-to-staff communication is allowed
+      } else if (sessionRole === 'health_counselor') {
+        // Health Counselor can only message their assigned clients OR other staff
+        if (otherRole === 'client') {
+          if ((otherUser as any).assignedHealthCounselor?.toString() !== session.user.id) {
+            return NextResponse.json({ error: 'You can only message clients assigned to you' }, { status: 403 });
+          }
+        }
+        // Staff-to-staff communication is allowed
+      } else if (sessionRole === 'client') {
+        // Client can only message their assigned staff
+        const currentUser = await User.findById(session.user.id)
+          .select('assignedDietitian assignedDietitians assignedHealthCounselor')
+          .lean();
+        
+        const assignedIds = [
+          ...(currentUser as any)?.assignedDietitian ? [(currentUser as any).assignedDietitian.toString()] : [],
+          ...((currentUser as any)?.assignedDietitians?.map((d: any) => d.toString()) || []),
+          ...(currentUser as any)?.assignedHealthCounselor ? [(currentUser as any).assignedHealthCounselor.toString()] : []
+        ];
+        
+        if (!assignedIds.includes(conversationWith)) {
+          return NextResponse.json({ error: 'You can only message your assigned staff' }, { status: 403 });
         }
       }
+      // Admin has no restrictions
     }
 
     let query: any = {};
@@ -149,20 +187,54 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // For health counselors, validate they can message this client
-    if (session.user.role === 'health_counselor') {
-      const recipientUser = await User.findById(validatedData.recipientId);
-      if (!recipientUser) {
-        return NextResponse.json({ error: 'Recipient not found' }, { status: 404 });
-      }
+    const sessionRole = String(session.user.role || '').toLowerCase();
 
-      // Check if this is a client and if they're assigned to this health counselor
-      if (recipientUser.role === 'client') {
-        if (recipientUser.assignedHealthCounselor?.toString() !== session.user.id) {
+    // STRICT ROLE-BASED VALIDATION for sending messages
+    const recipientUser = await User.findById(validatedData.recipientId)
+      .select('role assignedDietitian assignedDietitians assignedHealthCounselor')
+      .lean();
+    
+    if (!recipientUser) {
+      return NextResponse.json({ error: 'Recipient not found' }, { status: 404 });
+    }
+
+    const recipientRole = String((recipientUser as any).role || '').toLowerCase();
+
+    // Validate based on sender role
+    if (sessionRole === 'dietitian') {
+      // Dietitian can message their assigned clients OR other staff
+      if (recipientRole === 'client') {
+        const isAssigned = 
+          (recipientUser as any).assignedDietitian?.toString() === session.user.id ||
+          (recipientUser as any).assignedDietitians?.some((d: any) => d.toString() === session.user.id);
+        if (!isAssigned) {
           return NextResponse.json({ error: 'You can only message clients assigned to you' }, { status: 403 });
         }
       }
+    } else if (sessionRole === 'health_counselor') {
+      // Health Counselor can message their assigned clients OR other staff
+      if (recipientRole === 'client') {
+        if ((recipientUser as any).assignedHealthCounselor?.toString() !== session.user.id) {
+          return NextResponse.json({ error: 'You can only message clients assigned to you' }, { status: 403 });
+        }
+      }
+    } else if (sessionRole === 'client') {
+      // Client can only message their assigned staff
+      const currentUser = await User.findById(session.user.id)
+        .select('assignedDietitian assignedDietitians assignedHealthCounselor')
+        .lean();
+      
+      const assignedIds = [
+        ...(currentUser as any)?.assignedDietitian ? [(currentUser as any).assignedDietitian.toString()] : [],
+        ...((currentUser as any)?.assignedDietitians?.map((d: any) => d.toString()) || []),
+        ...(currentUser as any)?.assignedHealthCounselor ? [(currentUser as any).assignedHealthCounselor.toString()] : []
+      ];
+      
+      if (!assignedIds.includes(validatedData.recipientId)) {
+        return NextResponse.json({ error: 'You can only message your assigned staff' }, { status: 403 });
+      }
     }
+    // Admin has no restrictions
 
     // Create message
     const message = new Message({
