@@ -143,7 +143,7 @@ export function FoodDatabasePanel({
       try {
         setLoading(true);
         const params = new URLSearchParams();
-        params.append('limit', '500'); // Fetch more recipes for better local search
+        params.append('limit', '0'); // Fetch ALL recipes (0 = no limit)
         if (categoryFilter && categoryFilter !== 'all') {
           params.append('category', categoryFilter);
         }
