@@ -577,7 +577,7 @@ export default function EditRecipePage() {
                       size="sm"
                       onClick={fetchAIRecipeData}
                       disabled={aiFetching || name.trim().length < 2}
-                      className="shrink-0 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100 text-purple-700"
+                      className="shrink-0 bg-linear-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100 text-purple-700"
                     >
                       {aiFetching ? (
                         <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Generating...</>

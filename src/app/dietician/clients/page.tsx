@@ -300,7 +300,7 @@ export default function DieticianClientsPage() {
                 <SelectValue placeholder="Client Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">All status</SelectItem>
                 <SelectItem value="lead">Lead</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
@@ -479,7 +479,7 @@ export default function DieticianClientsPage() {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <span>Rows per page:</span>
                     <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
-                      <SelectTrigger className="w-[70px] h-8 text-sm">
+                      <SelectTrigger className="w-17.5 h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

@@ -686,7 +686,7 @@ export default function CreateRecipePage() {
                         fetchAIRecipeData();
                       }}
                       disabled={aiFetching || name.trim().length < 2}
-                      className="shrink-0 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100 text-purple-700 dark:bg-purple-900/20 dark:border-purple-700 dark:text-purple-300 dark:hover:bg-purple-900/30"
+                      className="shrink-0 bg-linear-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100 text-purple-700 dark:bg-purple-900/20 dark:border-purple-700 dark:text-purple-300 dark:hover:bg-purple-900/30"
                     >
                       {aiFetching ? (
                         <>

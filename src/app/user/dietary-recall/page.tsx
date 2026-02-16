@@ -276,7 +276,7 @@ export default function DietaryRecallPage() {
 
   if (loading) {
     return (
-      <div className={`fixed inset-0 ${isDarkMode ? 'bg-gray-950' : 'bg-white'} flex items-center justify-center z-[100]`}>
+      <div className={`fixed inset-0 ${isDarkMode ? 'bg-gray-950' : 'bg-white'} flex items-center justify-center z-100`}>
         <SpoonGifLoader size="lg" />
       </div>
     );

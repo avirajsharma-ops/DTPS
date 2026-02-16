@@ -1522,7 +1522,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       {/* Copy Meal Dialog */}
       <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
         <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl max-h-[85vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="text-slate-900 font-semibold">Copy Meal Plan</DialogTitle>
             <DialogDescription className="text-slate-600">
               Select the days and meal types where you want to copy this meal.
@@ -1601,7 +1601,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               </div>
             )}
           </div>
-          <DialogFooter className="flex-shrink-0">
+          <DialogFooter className="shrink-0">
             <Button variant="outline" onClick={() => setCopyDialogOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
               Cancel
             </Button>
