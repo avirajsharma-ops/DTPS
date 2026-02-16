@@ -154,12 +154,18 @@ export function FoodDatabasePanel({
           const recipes = data.recipes || [];
           
           // Debug: Log client restrictions
+          // Helper to ensure value is an array
+          const toArray = (val: any): any[] => {
+            if (Array.isArray(val)) return val;
+            if (typeof val === 'string' && val.trim()) return [val];
+            return [];
+          };
           // Filter recipes based on client restrictions
           const filteredRecipes = recipes.filter((recipe: any) => {
-            const recipeAllergens: string[] = (recipe.allergens || []).map((a: string) => a.toLowerCase().trim());
-            const recipeDietary: string[] = (recipe.dietaryRestrictions || []).map((d: string) => d.toLowerCase().trim());
-            const recipeMedical: string[] = (recipe.medicalContraindications || []).map((m: string) => m.toLowerCase().trim());
-            const recipeIngredients: string[] = (recipe.ingredients || []).map((ing: any) => (ing.name || '').toLowerCase().trim());
+            const recipeAllergens: string[] = toArray(recipe.allergens).map((a: string) => String(a).toLowerCase().trim());
+            const recipeDietary: string[] = toArray(recipe.dietaryRestrictions).map((d: string) => String(d).toLowerCase().trim());
+            const recipeMedical: string[] = toArray(recipe.medicalContraindications).map((m: string) => String(m).toLowerCase().trim());
+            const recipeIngredients: string[] = toArray(recipe.ingredients).map((ing: any) => (ing?.name || String(ing) || '').toLowerCase().trim());
             
             // ===== ALLERGEN CHECKS =====
             // Exclude if recipe contains any allergen the client is allergic to
