@@ -313,6 +313,7 @@ export default function DieticianClientsPage() {
           </Button>
         </div>
 
+
         {/* Table */}
         <Card>
           <CardContent className="p-0">
