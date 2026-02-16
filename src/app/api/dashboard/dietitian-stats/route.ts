@@ -5,6 +5,7 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import Appointment from '@/lib/db/models/Appointment';
 import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
+import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import { UserRole } from '@/types';
 import mongoose from 'mongoose';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
@@ -36,21 +37,35 @@ export async function GET(request: NextRequest) {
     let clientQuery: any = { role: 'client' };
     let appointmentQuery: any = {};
 
-    // If dietitian or health counselor, filter by assigned clients only
+    // If dietitian or health counselor, filter by assigned clients AND clients they created
     if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
       const dietitianObjectId = new mongoose.Types.ObjectId(session.user.id);
       clientQuery.$or = [
         { assignedDietitian: dietitianObjectId },
-        { assignedDietitians: dietitianObjectId }
+        { assignedDietitians: dietitianObjectId },
+        { 'createdBy.userId': dietitianObjectId }
       ];
       appointmentQuery.dietitian = dietitianObjectId;
     }
     // Admin sees all clients (no filter needed)
 
+    // Build status-based queries using the 3-state clientStatus field (lead/active/inactive)
+    const buildStatusQuery = (status: string) => {
+      return { ...clientQuery, clientStatus: status };
+    };
+
+    // Build lead query — need $and when clientQuery already has $or
+    const leadStatusOr = [{ clientStatus: 'lead' }, { clientStatus: { $exists: false } }, { clientStatus: null }];
+    const leadQuery = clientQuery.$or
+      ? { role: 'client', $and: [{ $or: clientQuery.$or }, { $or: leadStatusOr }] }
+      : { ...clientQuery, $or: leadStatusOr };
+
     // Run all independent queries concurrently to avoid N+1 round-trips
     const [
       totalClients,
       activeClients,
+      leadClients,
+      inactiveClients,
       todaysAppointments,
       confirmedAppointments,
       pendingAppointments,
@@ -61,15 +76,12 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       // Total clients
       User.countDocuments(clientQuery),
-      // Active clients
-      User.countDocuments({
-        ...clientQuery,
-        $or: [
-          { 'wooCommerceData.totalOrders': { $gt: 0 } },
-          { lastLoginAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
-          { updatedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
-        ]
-      }),
+      // Active clients (3-state: clientStatus = 'active')
+      User.countDocuments(buildStatusQuery('active')),
+      // Lead clients (clientStatus = 'lead' or no clientStatus set)
+      User.countDocuments(leadQuery),
+      // Inactive clients
+      User.countDocuments(buildStatusQuery('inactive')),
       // Today's appointments
       Appointment.countDocuments({
         ...appointmentQuery,
@@ -120,8 +132,17 @@ export async function GET(request: NextRequest) {
       )
     ]);
 
-    // Derived calculations
-    const clientsWithMealPlans = Math.floor(activeClients * 0.7);
+    // Get client IDs for meal plan and payment queries
+    const clientIds = await User.find(clientQuery).distinct('_id');
+
+    // Get actual clients with active meal plans
+    const clientsWithMealPlans = clientIds.length > 0
+      ? await ClientMealPlan.distinct('clientId', {
+          clientId: { $in: clientIds },
+          status: 'active'
+        }).then(ids => ids.length)
+      : 0;
+
     const completionRate = totalPastAppointments > 0
       ? Math.round((completedSessions / totalPastAppointments) * 100)
       : 0;
@@ -130,19 +151,8 @@ export async function GET(request: NextRequest) {
     let paymentQuery: any = {};
     
     if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
-      const dietitianObjectId = new mongoose.Types.ObjectId(session.user.id);
-      
-      // Get list of client IDs assigned to this dietitian
-      const assignedClientIds = await User.find({
-        role: 'client',
-        $or: [
-          { assignedDietitian: dietitianObjectId },
-          { assignedDietitians: dietitianObjectId }
-        ]
-      }).distinct('_id');
-      
-      if (assignedClientIds.length > 0) {
-        paymentQuery = { client: { $in: assignedClientIds } };
+      if (clientIds.length > 0) {
+        paymentQuery = { client: { $in: clientIds } };
       } else {
         paymentQuery = { _id: null };
       }
@@ -179,6 +189,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       totalClients,
       activeClients,
+      leadClients,
+      inactiveClients,
       clientsWithMealPlans,
       todaysAppointments,
       confirmedAppointments,
@@ -191,9 +203,6 @@ export async function GET(request: NextRequest) {
         name: `${client.firstName} ${client.lastName}`,
         email: client.email,
         phone: client.phone,
-        hasWooCommerceData: !!client.wooCommerceData,
-        totalOrders: client.wooCommerceData?.totalOrders || 0,
-        totalSpent: client.wooCommerceData?.totalSpent || 0,
         joinedDate: client.createdAt
       })),
       todaysSchedule: todaysSchedule.map(appointment => ({

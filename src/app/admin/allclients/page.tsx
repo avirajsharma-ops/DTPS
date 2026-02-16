@@ -1116,7 +1116,7 @@ export default function AdminAllClientsPage() {
         {/* Assignment Dialog */}
         <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
           <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
-            <DialogHeader className="flex-shrink-0">
+            <DialogHeader className="shrink-0">
               <DialogTitle>Manage Professionals</DialogTitle>
               <DialogDescription>
                 {selectedClient && (
@@ -1442,7 +1442,7 @@ export default function AdminAllClientsPage() {
               </div>
             </div>
 
-            <DialogFooter className="flex-shrink-0 border-t pt-4">
+            <DialogFooter className="shrink-0 border-t pt-4">
               <Button
                 variant="outline"
                 onClick={() => setAssignDialogOpen(false)}

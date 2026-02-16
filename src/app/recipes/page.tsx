@@ -331,7 +331,7 @@ function RecipesPageContent() {
                 setBulkResults(null);
                 setBulkProgress('');
               }}
-              className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100 text-purple-700 dark:bg-purple-900/20 dark:border-purple-700 dark:text-purple-300"
+              className="bg-linear-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100 text-purple-700 dark:bg-purple-900/20 dark:border-purple-700 dark:text-purple-300"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               AI Bulk Add
@@ -730,7 +730,7 @@ function RecipesPageContent() {
                     {bulkResults && bulkResults.length > 0 && (
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-linear-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all duration-300"
                           style={{
                             width: `${Math.round((bulkResults.length / Math.max(bulkRecipeNames.split(',').map(n => n.trim()).filter(n => n.length >= 2).length, 1)) * 100)}%`
                           }}
@@ -795,7 +795,7 @@ function RecipesPageContent() {
                     <Button
                       onClick={handleBulkAIAdd}
                       disabled={bulkLoading || !bulkRecipeNames.trim()}
-                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                      className="bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
                     >
                       {bulkLoading ? (
                         <>

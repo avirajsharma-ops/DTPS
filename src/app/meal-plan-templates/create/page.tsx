@@ -822,7 +822,7 @@ export default function CreateMealPlanTemplatePage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="relative flex-1 min-w-[220px]">
+                <div className="relative flex-1 min-w-55">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input value={searchQuery} onChange={(e)=>setSearchQuery(e.target.value)} placeholder="Search recipes to add..." className="pl-10" />
                 </div>

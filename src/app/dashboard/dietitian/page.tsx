@@ -78,6 +78,8 @@ export default function DietitianDashboard() {
   const [stats, setStats] = useState({
     totalClients: 0,
     activeClients: 0,
+    leadClients: 0,
+    inactiveClients: 0,
     clientsWithMealPlans: 0,
     todaysAppointments: 0,
     confirmedAppointments: 0,
@@ -189,13 +191,6 @@ export default function DietitianDashboard() {
     }
   }, [status, session?.user?.id]);
 
-  const pendingTasks = [
-    { id: 1, task: 'Review Sarah\'s food log', priority: 'high' },
-    { id: 2, task: 'Create meal plan for new client', priority: 'medium' },
-    { id: 3, task: 'Update Mike\'s progress notes', priority: 'low' },
-    { id: 4, task: 'Respond to Emma\'s message', priority: 'high' }
-  ];
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -204,19 +199,6 @@ export default function DietitianDashboard() {
         return 'bg-yellow-100 text-yellow-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
-        return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -297,24 +279,32 @@ export default function DietitianDashboard() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
                       <div className="text-2xl font-bold text-blue-600">{stats.totalClients}</div>
-                      <div className="text-sm text-blue-700">Total Clients</div>
+                      <div className="text-xs text-blue-700">Total</div>
                     </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-center p-3 bg-amber-50 rounded-lg">
+                      <div className="text-2xl font-bold text-amber-600">{stats.leadClients}</div>
+                      <div className="text-xs text-amber-700">Lead</div>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
                       <div className="text-2xl font-bold text-green-600">{stats.activeClients}</div>
-                      <div className="text-sm text-green-700">Active Clients</div>
+                      <div className="text-xs text-green-700">Active</div>
+                    </div>
+                    <div className="text-center p-3 bg-red-50 rounded-lg">
+                      <div className="text-2xl font-bold text-red-600">{stats.inactiveClients}</div>
+                      <div className="text-xs text-red-700">Inactive</div>
                     </div>
                   </div>
                   <div className="mt-4">
                     <div className="flex justify-between text-sm text-gray-600 mb-2">
-                      <span>Client Progress</span>
+                      <span>Active Clients</span>
                       <span>{stats.activePercentage}% Active</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        className="bg-green-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${Math.min(100, Math.max(0, stats.activePercentage))}%` }}
                       ></div>
                     </div>
@@ -449,17 +439,12 @@ export default function DietitianDashboard() {
                       <div>
                         <p className="font-medium">{client.name}</p>
                         <p className="text-sm text-gray-600">{client.email}</p>
-                        {client.hasWooCommerceData && (
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
-                              🛒 {client.totalOrders} orders
-                            </Badge>
-                            <span className="text-xs text-gray-500">₹{client.totalSpent?.toFixed(2)}</span>
-                          </div>
+                        {client.joinedDate && (
+                          <p className="text-xs text-gray-400 mt-1">Joined {format(new Date(client.joinedDate), 'dd MMM yyyy')}</p>
                         )}
                       </div>
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/clients/${client.id}`}>
+                        <Link href={`/dietician/clients/${client.id}`}>
                           View
                         </Link>
                       </Button>
@@ -473,7 +458,7 @@ export default function DietitianDashboard() {
                 )}
                 
                 <Button variant="outline" className="w-full mt-4" asChild>
-                  <Link href="/clients">View All Clients</Link>
+                  <Link href="/dietician/clients">View All Clients</Link>
                 </Button>
               </div>
             </CardContent>
