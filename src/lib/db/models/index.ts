@@ -40,6 +40,8 @@ export { default as Lead } from './Lead';
 export { default as Blog } from './Blog';
 export { default as DailyTracking } from './DailyTracking';
 export { default as ActivityAssignment } from './ActivityAssignment';
+export { default as MessageGroup } from './MessageGroup';
+export { default as GroupMessage } from './GroupMessage';
 
 // Ecommerce models
 export { default as EcommerceBlog } from './EcommerceBlog';

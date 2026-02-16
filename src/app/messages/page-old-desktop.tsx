@@ -38,9 +38,15 @@ import {
   User,
   PhoneOff,
   MicOff,
-  VideoOff
+  VideoOff,
+  Users,
+  Megaphone
 } from 'lucide-react';
 import { format } from 'date-fns';
+import BulkMessageModal from '@/components/messages/BulkMessageModal';
+import CreateGroupModal from '@/components/messages/CreateGroupModal';
+import GroupChatView from '@/components/messages/GroupChatView';
+import GroupInfoPanel from '@/components/messages/GroupInfoPanel';
 
 // Dynamic import for emoji picker to avoid SSR issues
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
@@ -119,6 +125,16 @@ function MessagesContent() {
   const [isAudioCall, setIsAudioCall] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
 
+  // Bulk & Group messaging states
+  const [sidebarTab, setSidebarTab] = useState<'chats' | 'groups'>('chats');
+  const [showBulkMessageModal, setShowBulkMessageModal] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroupData, setSelectedGroupData] = useState<any | null>(null);
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+
   // WebRTC calling states
   const [callState, setCallState] = useState<'idle' | 'calling' | 'incoming' | 'connected' | 'ended'>('idle');
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -194,6 +210,37 @@ function MessagesContent() {
             }
             // Always refresh conversations list (keeps last message + unread counts in sync)
             fetchConversationsRef.current();
+          }
+          return;
+        }
+
+        // Handle group message events
+        if (evt.type === 'new_group_message') {
+          const incoming = (data as any)?.message;
+          const groupId = (data as any)?.groupId;
+          if (incoming?._id && groupId) {
+            // If this group is currently open, add the message
+            if (selectedGroup === groupId && (window as any).__groupChatAddMessage) {
+              (window as any).__groupChatAddMessage(incoming);
+            }
+            // Refresh groups list
+            fetchGroups();
+          }
+          return;
+        }
+
+        // Handle group CRUD events
+        if (evt.type === 'group_created' || evt.type === 'group_member_added' || evt.type === 'group_updated') {
+          fetchGroups();
+          return;
+        }
+
+        if (evt.type === 'group_deleted' || evt.type === 'group_member_removed') {
+          fetchGroups();
+          const deletedGroupId = (data as any)?.groupId;
+          if (selectedGroup === deletedGroupId) {
+            setSelectedGroup(null);
+            setSelectedGroupData(null);
           }
           return;
         }
@@ -562,6 +609,44 @@ function MessagesContent() {
   useEffect(() => {
     fetchConversationsRef.current = fetchConversations;
   });
+
+  // Fetch groups
+  const fetchGroups = async () => {
+    setLoadingGroups(true);
+    try {
+      const response = await fetch('/api/messages/groups');
+      if (response.ok) {
+        const data = await response.json();
+        setGroups(data.groups || []);
+      }
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  // Load groups on mount
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchGroups();
+    }
+  }, [session?.user?.id]);
+
+  // Select a group
+  const selectGroup = (group: any) => {
+    setSelectedGroup(group._id);
+    setSelectedGroupData(group);
+    setSelectedConversation(null); // Deselect individual conversation
+    setShowGroupInfo(false);
+  };
+
+  // Handle group created
+  const handleGroupCreated = (group: any) => {
+    setGroups(prev => [group, ...prev]);
+    selectGroup(group);
+    setSidebarTab('groups');
+  };
 
   const fetchOnlineStatus = async (userIds: string[]) => {
     try {
@@ -1223,6 +1308,9 @@ function MessagesContent() {
 
   const selectConversation = (userId: string) => {
     setSelectedConversation(userId);
+    setSelectedGroup(null); // Deselect group when selecting individual chat
+    setSelectedGroupData(null);
+    setShowGroupInfo(false);
     setMessages([]); // Clear messages first to show loading state
 
 
@@ -1307,6 +1395,31 @@ function MessagesContent() {
           <div className="p-4 border-b bg-green-600 text-white">
             <div className="flex items-center justify-between">
               <h1 className="text-xl font-semibold">DTPS Chat</h1>
+              <div className="flex items-center gap-1">
+                {/* Bulk Message Button - staff only */}
+                {session?.user?.role && ['admin', 'dietitian', 'health_counselor'].includes(session.user.role.toLowerCase()) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-green-700"
+                    onClick={() => setShowBulkMessageModal(true)}
+                    title="Bulk Message"
+                  >
+                    <Megaphone className="h-5 w-5" />
+                  </Button>
+                )}
+                {/* New Group Button - staff only */}
+                {session?.user?.role && ['admin', 'dietitian', 'health_counselor'].includes(session.user.role.toLowerCase()) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-green-700"
+                    onClick={() => setShowCreateGroupModal(true)}
+                    title="New Group"
+                  >
+                    <Users className="h-5 w-5" />
+                  </Button>
+                )}
               <Dialog open={showNewChatDialog} onOpenChange={setShowNewChatDialog}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="sm" className="text-white hover:bg-green-700">
@@ -1374,6 +1487,7 @@ function MessagesContent() {
                   </div>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
             {/* Search */}
             <div className="mt-3 relative">
@@ -1383,10 +1497,35 @@ function MessagesContent() {
                 className="pl-10 bg-white text-gray-900"
               />
             </div>
+            {/* Tabs: Chats / Groups */}
+            <div className="flex mt-2">
+              <button
+                onClick={() => setSidebarTab('chats')}
+                className={`flex-1 py-2 text-sm font-medium text-center transition-colors ${
+                  sidebarTab === 'chats'
+                    ? 'text-white border-b-2 border-white'
+                    : 'text-green-200 hover:text-white'
+                }`}
+              >
+                Chats
+              </button>
+              <button
+                onClick={() => setSidebarTab('groups')}
+                className={`flex-1 py-2 text-sm font-medium text-center transition-colors ${
+                  sidebarTab === 'groups'
+                    ? 'text-white border-b-2 border-white'
+                    : 'text-green-200 hover:text-white'
+                }`}
+              >
+                Groups {groups.length > 0 && `(${groups.length})`}
+              </button>
+            </div>
           </div>
 
-          {/* Conversations List */}
+          {/* Tab Content */}
           <div className="flex-1 overflow-y-auto">
+            {sidebarTab === 'chats' ? (
+              <>
             {conversations.length === 0 ? (
               <div className="text-center py-8 px-4">
                 <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1456,12 +1595,122 @@ function MessagesContent() {
                 </div>
               ))
             )}
+              </>
+            ) : (
+              /* Groups Tab */
+              <>
+                {loadingGroups ? (
+                  <div className="flex items-center justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                ) : groups.length === 0 ? (
+                  <div className="text-center py-8 px-4">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No groups yet</p>
+                    <p className="text-sm text-gray-400 mb-4">Create a group to message multiple people</p>
+                    {session?.user?.role && ['admin', 'dietitian', 'health_counselor'].includes(session.user.role.toLowerCase()) && (
+                      <Button onClick={() => setShowCreateGroupModal(true)} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Group
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  groups.map((group) => (
+                    <div
+                      key={group._id}
+                      onClick={() => selectGroup(group)}
+                      className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors border-b ${
+                        selectedGroup === group._id ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                          {group.avatar ? (
+                            <img src={group.avatar} className="h-12 w-12 rounded-full object-cover" alt="" />
+                          ) : (
+                            <Users className="h-6 w-6 text-blue-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {group.name}
+                            </p>
+                            {group.lastMessage?.createdAt && (() => {
+                              try {
+                                const date = new Date(group.lastMessage.createdAt);
+                                if (!isNaN(date.getTime())) {
+                                  return (
+                                    <p className="text-xs text-gray-500">
+                                      {format(date, 'HH:mm')}
+                                    </p>
+                                  );
+                                }
+                              } catch {
+                                return null;
+                              }
+                              return null;
+                            })()}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-500 truncate">
+                              {group.lastMessage?.senderInfo
+                                ? `${group.lastMessage.senderInfo.firstName}: ${group.lastMessage.content}`
+                                : group.lastMessage?.content || `${group.memberCount || group.members?.length || 0} members`}
+                            </p>
+                            {group.unreadCount > 0 && (
+                              <div className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                {group.unreadCount}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </>
+            )}
           </div>
         </div>
 
         {/* Chat Area */}
         <div className="flex-1 flex flex-col">
-          {selectedConversation && selectedUser ? (
+          {/* Group Chat View */}
+          {selectedGroup && selectedGroupData && !showGroupInfo ? (
+            <GroupChatView
+              group={selectedGroupData}
+              currentUserId={session?.user?.id || ''}
+              onBack={() => {
+                setSelectedGroup(null);
+                setSelectedGroupData(null);
+              }}
+              onShowInfo={() => setShowGroupInfo(true)}
+            />
+          ) : selectedGroup && showGroupInfo ? (
+            <GroupInfoPanel
+              groupId={selectedGroup}
+              currentUserId={session?.user?.id || ''}
+              onClose={() => setShowGroupInfo(false)}
+              onGroupUpdated={() => {
+                fetchGroups();
+                // Refresh selected group data
+                fetch(`/api/messages/groups/${selectedGroup}`)
+                  .then(r => r.json())
+                  .then(data => {
+                    if (data.group) setSelectedGroupData(data.group);
+                  })
+                  .catch(() => {});
+              }}
+              onGroupDeleted={() => {
+                setSelectedGroup(null);
+                setSelectedGroupData(null);
+                setShowGroupInfo(false);
+                fetchGroups();
+              }}
+            />
+          ) : selectedConversation && selectedUser ? (
             <>
               {/* Chat Header */}
               <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
@@ -1841,16 +2090,45 @@ function MessagesContent() {
               <div className="text-center">
                 <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Welcome to DTPS Chat</h3>
-                <p className="text-gray-500 mb-4">Select a conversation to start messaging</p>
-                <Button onClick={() => setShowNewChatDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Start New Conversation
-                </Button>
+                <p className="text-gray-500 mb-4">Select a conversation or group to start messaging</p>
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <Button onClick={() => setShowNewChatDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Chat
+                  </Button>
+                  {session?.user?.role && ['admin', 'dietitian', 'health_counselor'].includes(session.user.role.toLowerCase()) && (
+                    <>
+                      <Button variant="outline" onClick={() => setShowBulkMessageModal(true)}>
+                        <Megaphone className="h-4 w-4 mr-2" />
+                        Bulk Message
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowCreateGroupModal(true)}>
+                        <Users className="h-4 w-4 mr-2" />
+                        New Group
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Bulk Message Modal */}
+      <BulkMessageModal
+        isOpen={showBulkMessageModal}
+        onClose={() => setShowBulkMessageModal(false)}
+        currentUserId={session?.user?.id || ''}
+      />
+
+      {/* Create Group Modal */}
+      <CreateGroupModal
+        isOpen={showCreateGroupModal}
+        onClose={() => setShowCreateGroupModal(false)}
+        onGroupCreated={handleGroupCreated}
+        currentUserId={session?.user?.id || ''}
+      />
 
       {/* Call Interface */}
       {(isVideoCall || isAudioCall) && (
