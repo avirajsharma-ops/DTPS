@@ -83,10 +83,10 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
             description: 'Schedule and manage appointments'
           },
           {
-            href: '/appointments/book-flexible',
-            label: 'Flexible Booking',
+            href: '/appointments/unified-booking',
+            label: 'Book Appointment',
             icon: Clock,
-            description: 'Book at any time with any dietitian'
+            description: 'Book appointment for assigned clients'
           },
           {
             href: '/meal-plan-templates',
@@ -145,6 +145,12 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
             label: 'Appointments',
             icon: Calendar,
             description: 'Schedule and manage appointments'
+          },
+          {
+            href: '/appointments/unified-booking',
+            label: 'Book Appointment',
+            icon: Clock,
+            description: 'Book appointment for assigned clients'
           },
           {
             href: '/health-counselor/messages',
@@ -255,10 +261,16 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
             description: 'View all booked meetings'
           },
           {
-            href: '/appointments/book-flexible',
-            label: 'Flexible Booking',
+            href: '/appointments/unified-booking',
+            label: 'Book Appointment',
             icon: Clock,
             description: 'Book appointments for any user'
+          },
+          {
+            href: '/admin/appointment-config',
+            label: 'Appointment Config',
+            icon: Settings,
+            description: 'Configure appointment types and modes'
           },
           {
             href: '/admin/recipes',

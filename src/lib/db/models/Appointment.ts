@@ -27,11 +27,31 @@ const appointmentSchema = new Schema({
     ref: 'User',
     required: true
   },
+  // Legacy type field (string enum) - kept for backward compatibility
   type: {
     type: String,
     required: true,
     enum: Object.values(AppointmentType),
     default: AppointmentType.CONSULTATION
+  },
+  // New: Reference to admin-created appointment type
+  appointmentTypeId: {
+    type: Schema.Types.ObjectId,
+    ref: 'AppointmentType'
+  },
+  // New: Reference to admin-created appointment mode (online/offline/call)
+  appointmentModeId: {
+    type: Schema.Types.ObjectId,
+    ref: 'AppointmentMode'
+  },
+  // New: Mode name for quick reference (populated from AppointmentMode)
+  modeName: {
+    type: String
+  },
+  // New: Location for offline appointments
+  location: {
+    type: String,
+    maxlength: 500
   },
   status: {
     type: String,

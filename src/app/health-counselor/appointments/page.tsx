@@ -30,6 +30,11 @@ const DietitianSlotsView = dynamic(() => import('@/components/appointments/Dieti
   ssr: false
 });
 
+// Import TimeSlotManagement for managing availability
+const TimeSlotManagement = dynamic(() => import('@/components/appointments/TimeSlotManagement'), {
+  ssr: false
+});
+
 interface Appointment {
   _id: string;
   type: string;
@@ -38,6 +43,16 @@ interface Appointment {
   duration: number;
   notes?: string;
   meetingLink?: string;
+  modeName?: string;
+  location?: string;
+  appointmentTypeId?: {
+    name: string;
+    color?: string;
+  };
+  appointmentModeId?: {
+    name: string;
+    icon?: string;
+  };
   dietitian: {
     firstName: string;
     lastName: string;
@@ -167,16 +182,25 @@ export default function HealthCounselorAppointmentsPage() {
     const isUpcoming = appointment.status === 'scheduled' && new Date(appointment.scheduledAt) > new Date();
     const canCancel = isUpcoming && appointment.status === 'scheduled';
     
+    // Get display name for appointment type
+    const typeName = appointment.appointmentTypeId?.name || appointment.type.replace('_', ' ');
+    const modeName = appointment.modeName || appointment.appointmentModeId?.name;
+    
     return (
       <Card key={appointment._id}>
         <CardContent className="p-6">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
+              <div className="flex items-center space-x-2 mb-2 flex-wrap gap-1">
                 {getTypeIcon(appointment.type)}
                 <h3 className="font-semibold capitalize">
-                  {appointment.type.replace('_', ' ')}
+                  {typeName}
                 </h3>
+                {modeName && (
+                  <Badge variant="outline" className="text-xs">
+                    {modeName}
+                  </Badge>
+                )}
                 <Badge className={getStatusColor(appointment.status)}>
                   {appointment.status}
                 </Badge>
@@ -267,9 +291,9 @@ export default function HealthCounselorAppointmentsPage() {
               Refresh
             </Button>
             <Button asChild>
-              <Link href="/appointments/book-client">
+              <Link href="/appointments/unified-booking">
                 <Plus className="h-4 w-4 mr-2" />
-                Book with Client
+                Book Appointment
               </Link>
             </Button>
           </div>
@@ -307,7 +331,7 @@ export default function HealthCounselorAppointmentsPage() {
                     You don't have any scheduled appointments.
                   </p>
                   <Button asChild>
-                    <Link href="/appointments/book-client">Book with Client</Link>
+                    <Link href="/appointments/unified-booking">Book Appointment</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -361,7 +385,7 @@ export default function HealthCounselorAppointmentsPage() {
 
           {/* My Slots Tab */}
           <TabsContent value="slots" className="space-y-4">
-            <DietitianSlotsView />
+            <TimeSlotManagement />
           </TabsContent>
         </Tabs>
       </div>

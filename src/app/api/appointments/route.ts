@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Appointment from '@/lib/db/models/Appointment';
 import User from '@/lib/db/models/User';
+import { AppointmentType, AppointmentMode } from '@/lib/db/models/AppointmentConfig';
 import zoomService from '@/lib/services/zoom';
 import { syncAppointmentToCalendars } from '@/lib/services/googleCalendar';
 import { UserRole, AppointmentStatus } from '@/types';
@@ -168,6 +169,8 @@ export async function GET(request: NextRequest) {
         const appointments = await Appointment.find(query)
           .populate('dietitian', 'firstName lastName email avatar')
           .populate('client', 'firstName lastName email avatar')
+          .populate('appointmentTypeId', 'name slug color icon')
+          .populate('appointmentModeId', 'name slug icon')
           .sort({ scheduledAt: 1 })
           .limit(limit)
           .skip((page - 1) * limit)
@@ -207,23 +210,71 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    let { dietitianId, clientId, scheduledAt, duration, type, notes } = body;
+    let { 
+      dietitianId, 
+      clientId, 
+      scheduledAt, 
+      duration, 
+      type, 
+      notes,
+      appointmentTypeId,
+      appointmentModeId,
+      modeName,
+      location
+    } = body;
 
     await connectDB();
 
-    // For health counselors, validate they can only book appointments with their assigned clients
-    if (session.user.role === UserRole.HEALTH_COUNSELOR) {
-      const client = await User.findById(clientId);
-      if (!client) {
+    // Validate required fields
+    if (!dietitianId || !clientId || !scheduledAt) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Get the client to check assignment
+    const client = await User.findById(clientId);
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Client not found' },
+        { status: 404 }
+      );
+    }
+
+    const currentUserId = session.user.id?.toString();
+
+    // ====== STRICT ROLE-BASED VALIDATION ======
+    
+    // For Dietitians: can only book for clients assigned to them
+    if (session.user.role === UserRole.DIETITIAN) {
+      const assignedDietitianId = client.assignedDietitian?.toString();
+      const assignedDietitians = Array.isArray(client.assignedDietitians) 
+        ? client.assignedDietitians.map((d: any) => d.toString()) 
+        : [];
+      
+      const isAssigned = assignedDietitianId === currentUserId || 
+                         assignedDietitians.includes(currentUserId);
+      
+      if (!isAssigned) {
         return NextResponse.json(
-          { error: 'Client not found' },
-          { status: 404 }
+          { error: 'You can only book appointments for clients assigned to you' },
+          { status: 403 }
         );
       }
-
-      // Check if this client is assigned to this health counselor
+      
+      // Dietitians can only book appointments where they are the provider
+      if (dietitianId !== currentUserId) {
+        return NextResponse.json(
+          { error: 'You can only create appointments as yourself' },
+          { status: 403 }
+        );
+      }
+    }
+    
+    // For Health Counselors: can only book for clients assigned to them
+    if (session.user.role === UserRole.HEALTH_COUNSELOR) {
       const assignedHCId = client.assignedHealthCounselor?.toString();
-      const currentUserId = session.user.id?.toString();
       
       // Allow booking if HC is assigned to this client
       // If no HC is assigned yet, auto-assign this HC to the client
@@ -239,15 +290,25 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         );
       }
+      
+      // Health counselors can only book appointments where they are the provider
+      if (dietitianId !== currentUserId) {
+        return NextResponse.json(
+          { error: 'You can only create appointments as yourself' },
+          { status: 403 }
+        );
+      }
     }
-
-    // Validate required fields
-    if (!dietitianId || !clientId || !scheduledAt) {
+    
+    // For Clients: they cannot create appointments via this API
+    if (session.user.role === UserRole.CLIENT) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+        { error: 'Clients cannot create appointments directly' },
+        { status: 403 }
       );
     }
+    
+    // Admin: no restrictions on client/provider selection
 
     // Map common type values to valid enum values
     const typeMapping: { [key: string]: string } = {
@@ -282,9 +343,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get dietitian and client details for Zoom meeting
+    // Get dietitian details for Zoom meeting (client already fetched above)
     const dietitian = await User.findById(dietitianId);
-    const client = await User.findById(clientId);
 
     if (!dietitian || !client) {
       return NextResponse.json(
@@ -302,7 +362,12 @@ export async function POST(request: NextRequest) {
       type,
       notes,
       status: AppointmentStatus.SCHEDULED,
-      createdBy: session.user.id // Track who created this appointment
+      createdBy: session.user.id, // Track who created this appointment
+      // New unified booking fields
+      appointmentTypeId: appointmentTypeId || undefined,
+      appointmentModeId: appointmentModeId || undefined,
+      modeName: modeName || undefined,
+      location: location || undefined,
     }) as any;
 
     // Try to create Zoom meeting

@@ -36,6 +36,11 @@ const DietitianSlotsView = dynamic(() => import('@/components/appointments/Dieti
   ssr: false
 });
 
+// Import TimeSlotManagement for managing availability
+const TimeSlotManagement = dynamic(() => import('@/components/appointments/TimeSlotManagement'), {
+  ssr: false
+});
+
 interface Appointment {
   _id: string;
   type: string;
@@ -44,6 +49,16 @@ interface Appointment {
   duration: number;
   notes?: string;
   meetingLink?: string;
+  modeName?: string;
+  location?: string;
+  appointmentTypeId?: {
+    name: string;
+    color?: string;
+  };
+  appointmentModeId?: {
+    name: string;
+    icon?: string;
+  };
   dietitian: {
     firstName: string;
     lastName: string;
@@ -182,16 +197,25 @@ function DesktopAppointmentsPage() {
     const isPast = new Date(appointment.scheduledAt) < new Date();
     const canCancel = isUpcoming && appointment.status === 'scheduled';
     
+    // Get display name for appointment type
+    const typeName = appointment.appointmentTypeId?.name || appointment.type.replace('_', ' ');
+    const modeName = appointment.modeName || appointment.appointmentModeId?.name;
+    
     return (
       <Card key={appointment._id}>
         <CardContent className="p-6">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
+              <div className="flex items-center space-x-2 mb-2 flex-wrap gap-1">
                 {getTypeIcon(appointment.type)}
                 <h3 className="font-semibold capitalize">
-                  {appointment.type.replace('_', ' ')}
+                  {typeName}
                 </h3>
+                {modeName && (
+                  <Badge variant="outline" className="text-xs">
+                    {modeName}
+                  </Badge>
+                )}
                 <Badge className={getStatusColor(appointment.status)}>
                   {appointment.status}
                 </Badge>
@@ -321,9 +345,8 @@ function DesktopAppointmentsPage() {
                   <div className="flex justify-center mx-auto space-x-2">
                     {session?.user?.role === 'dietitian' ? (
                       <>
-                        
                         <Button asChild>
-                          <Link href="/appointments/book-client">Book with Client</Link>
+                          <Link href="/appointments/unified-booking">Book Appointment</Link>
                         </Button>
                       </>
                     ) : (
@@ -385,7 +408,7 @@ function DesktopAppointmentsPage() {
           {/* My Slots Tab - Dietitian Only */}
           {session?.user?.role === 'dietitian' && (
             <TabsContent value="slots" className="space-y-4">
-              <DietitianSlotsView />
+              <TimeSlotManagement />
             </TabsContent>
           )}
         </Tabs>
