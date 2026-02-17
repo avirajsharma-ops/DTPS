@@ -263,7 +263,7 @@ export default function TagsManagement() {
 
       {/* Create/Edit Tag Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-125">
           <DialogHeader>
             <DialogTitle>
               {editingTag ? 'Edit Tag' : 'Create New Tag'}

@@ -129,6 +129,12 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
         // Health Counselors manage assigned clients only
         return [
           {
+            href: '/dashboard/health-counselor',
+            label: 'Dashboard',
+            icon: BarChart3,
+            description: 'Overview and analytics'
+          },
+          {
             href: '/health-counselor/clients',
             label: 'My Clients',
             icon: Users,

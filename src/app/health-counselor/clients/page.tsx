@@ -38,6 +38,13 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { getClientId } from '@/lib/utils';
 
+interface Tag {
+  _id: string;
+  name: string;
+  color?: string;
+  icon?: string;
+}
+
 interface Client {
   _id: string;
   firstName: string;
@@ -49,7 +56,7 @@ interface Client {
   clientStatus?: 'lead' | 'active' | 'inactive';
   createdAt: string;
   healthGoals?: string[];
-  tags?: string[];
+  tags?: Tag[];
   programStart?: string;
   programEnd?: string;
   lastDiet?: string;
@@ -97,6 +104,12 @@ export default function HealthCounselorClientsPage() {
     dateOfBirth: '',
   });
 
+  // Tag management state
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [tagDialogOpen, setTagDialogOpen] = useState(false);
+  const [selectedClientForTag, setSelectedClientForTag] = useState<string | null>(null);
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+
   // Only fetch when session is authenticated and user ID is available
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {
@@ -115,11 +128,61 @@ export default function HealthCounselorClientsPage() {
       if (response.ok) {
         const data = await response.json();
         setClients(data.clients || []);
+        // Also fetch available tags
+        fetchAvailableTags();
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAvailableTags = async () => {
+    try {
+      const response = await fetch('/api/admin/tags');
+      if (response.ok) {
+        const data = await response.json();
+        // Filter tags to only show those created by health counselor
+        const hcTags = data.tags?.filter((tag: Tag) => 
+          tag._id && typeof tag.name === 'string'
+        ) || [];
+        setAvailableTags(hcTags);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
+
+  const handleAssignTag = async () => {
+    if (!selectedClientForTag || !selectedTagId) {
+      toast.error('Please select both client and tag');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const response = await fetch(`/api/users/${selectedClientForTag}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tags: [selectedTagId], // Only one tag allowed
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to assign tag');
+      }
+
+      toast.success('Tag assigned successfully');
+      setTagDialogOpen(false);
+      setSelectedClientForTag(null);
+      setSelectedTagId(null);
+      await fetchMyClients();
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to assign tag');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -448,9 +511,14 @@ export default function HealthCounselorClientsPage() {
                             <TableCell className="px-3">
                               {client.tags && client.tags.length > 0 ? (
                                 <div className="flex gap-1">
-                                  {client.tags.slice(0, 2).map((tag, idx) => (
-                                    <Badge key={idx} variant="outline" className="text-xs px-1.5 py-0">
-                                      {tag}
+                                  {client.tags.slice(0, 2).map((tag) => (
+                                    <Badge 
+                                      key={tag._id} 
+                                      variant="outline" 
+                                      className="text-xs px-1.5 py-0"
+                                      style={tag.color ? { borderColor: tag.color, color: tag.color } : undefined}
+                                    >
+                                      {tag.name}
                                     </Badge>
                                   ))}
                                 </div>

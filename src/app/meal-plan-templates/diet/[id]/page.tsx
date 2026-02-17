@@ -497,7 +497,7 @@ export default function DietTemplateViewPage() {
                           variant={selectedDay === index ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => setSelectedDay(index)}
-                          className={`text-xs whitespace-nowrap flex-shrink-0 ${
+                          className={`text-xs whitespace-nowrap shrink-0 ${
                             selectedDay === index 
                               ? 'bg-emerald-600 hover:bg-emerald-700' 
                               : 'hover:bg-emerald-50 hover:border-emerald-300'
@@ -517,7 +517,7 @@ export default function DietTemplateViewPage() {
                     {/* Selected Day Meals - Improved Layout */}
                     {template.meals[selectedDay] && (
                       <Card className="border-2 border-emerald-200 overflow-hidden">
-                        <CardHeader className="pb-3 bg-gradient-to-r from-emerald-50 to-green-50 border-b border-emerald-100">
+                        <CardHeader className="pb-3 bg-linear-to-r from-emerald-50 to-green-50 border-b border-emerald-100">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-base flex items-center gap-3">
                               <Calendar className="h-5 w-5 text-emerald-600" />

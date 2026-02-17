@@ -129,8 +129,12 @@ export default function HealthCounselorRecipesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
+                  {Array.from(new Set(
+                    categories
+                      .filter(c => c && typeof c === 'string' && c.trim())
+                      .map(c => c.trim())
+                  )).map((category) => (
+                    <SelectItem key={`cat-${category.toLowerCase()}`} value={category}>
                       {category}
                     </SelectItem>
                   ))}

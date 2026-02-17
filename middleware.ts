@@ -78,7 +78,7 @@ export default withAuth(
         const redirectPath = userRole === 'dietitian' 
           ? '/dashboard/dietitian'
           : userRole === 'health_counselor'
-          ? '/health-counselor/clients'
+          ? '/dashboard/health-counselor'
           : userRole === 'client'
           ? '/user'
           : '/client-auth/signin';
@@ -86,8 +86,8 @@ export default withAuth(
       }
     }
     
-    // Health Counselor specific routes
-    if (pathname.startsWith('/health-counselor')) {
+    // Health Counselor specific routes - only health counselors and admins
+    if (pathname.startsWith('/health-counselor') || pathname.startsWith('/dashboard/health-counselor')) {
       if (userRole !== 'health_counselor' && !userRole?.includes('admin')) {
         console.log('Health Counselor access denied. Role:', token?.role);
         const redirectPath = userRole === 'dietitian'
@@ -99,12 +99,25 @@ export default withAuth(
       }
     }
     
-    // Dietitian/Health Counselor routes
-    if (pathname.startsWith('/dietician') || pathname.startsWith('/dashboard/dietitian')) {
+    // Dietitian-only routes - do NOT allow health counselors on dietitian dashboard
+    if (pathname.startsWith('/dashboard/dietitian')) {
+      if (userRole !== 'dietitian' && !userRole?.includes('admin')) {
+        console.log('Dietitian dashboard access denied. Role:', token?.role);
+        const redirectPath = userRole === 'health_counselor'
+          ? '/dashboard/health-counselor'
+          : userRole === 'client'
+          ? '/user'
+          : '/client-auth/signin';
+        return NextResponse.redirect(new URL(redirectPath, req.url));
+      }
+    }
+    
+    // Dietician client routes - allow dietitians, health counselors, and admins
+    if (pathname.startsWith('/dietician')) {
       if (userRole !== 'dietitian' && 
           userRole !== 'health_counselor' && 
           !userRole?.includes('admin')) {
-        console.log('Dietitian access denied. Role:', token?.role);
+        console.log('Dietitian route access denied. Role:', token?.role);
         // Redirect to appropriate dashboard
         const redirectPath = userRole === 'client'
           ? '/user'
