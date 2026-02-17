@@ -1625,7 +1625,7 @@ function MessagesContent() {
                       }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                           {group.avatar ? (
                             <img src={group.avatar} className="h-12 w-12 rounded-full object-cover" alt="" />
                           ) : (
