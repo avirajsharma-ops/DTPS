@@ -132,6 +132,7 @@ interface ClientData {
 
 interface PlanningSectionProps {
   client: ClientData;
+  viewOnly?: boolean; // If true, hides create/edit options (for health counselor)
 }
 
 // Helper to convert array or string to comma-separated string
@@ -141,7 +142,7 @@ const toCommaString = (val?: string | string[]): string => {
   return val;
 };
 
-export default function PlanningSection({ client }: PlanningSectionProps) {
+export default function PlanningSection({ client, viewOnly = false }: PlanningSectionProps) {
   // Form states
   const [step, setStep] = useState<'list' | 'form' | 'meals' | 'view'>('list');
   const [planTitle, setPlanTitle] = useState('');
@@ -2919,7 +2920,8 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
               >
                 <RefreshCw className={`h-4 w-4 ${checkingPayment || loadingPlans ? 'animate-spin' : ''}`} />
               </Button>
-              {/* Create New Plan Button */}
+              {/* Create New Plan Button - Hidden in viewOnly mode (health counselor) */}
+              {!viewOnly && (
               <Button 
                 className={`${
                   paymentCheck?.hasPaidPlan && paymentCheck.remainingDays > 0
@@ -2948,6 +2950,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                 <Plus className="h-4 w-4 mr-2" />
                 Create New Plan
               </Button>
+              )}
             </div>
           </div>
           {paymentCheck?.hasPaidPlan && paymentCheck.remainingDays > 0 && (
@@ -3200,6 +3203,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                       </div>
                     </div>
 
+                    {!viewOnly && (
                     <div className="flex gap-2 ml-4">
                       <Button size="sm" variant="outline">
                         <Edit className="h-4 w-4" />
@@ -3211,6 +3215,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -3221,8 +3226,12 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
               <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p className="text-lg font-medium text-gray-900 mb-2">No diet plans created yet</p>
               <p className="text-sm text-gray-600 mb-6">
-                Create a personalized diet plan for {client.firstName} {client.lastName}
+                {viewOnly 
+                  ? `No diet plans available for ${client.firstName} ${client.lastName}`
+                  : `Create a personalized diet plan for ${client.firstName} ${client.lastName}`
+                }
               </p>
+              {!viewOnly && (
               <Button 
                 className="bg-blue-600 hover:bg-blue-700"
                 onClick={() => setStep('form')}
@@ -3230,6 +3239,7 @@ export default function PlanningSection({ client }: PlanningSectionProps) {
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Diet Plan
               </Button>
+              )}
             </div>
           )}
         </CardContent>

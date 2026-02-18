@@ -135,14 +135,20 @@ export async function PUT(
     if (userRole === UserRole.ADMIN || userRole === 'admin') {
       canUpdate = true;
     } else if (userRole === UserRole.DIETITIAN || userRole === 'dietitian') {
-      // Dietitian can only update appointments they created
-      if ((appointment as any).createdBy?.toString() === session.user.id) {
+      // Dietitian can update appointments they created OR where they are the assigned dietitian
+      if ((appointment as any).createdBy?.toString() === session.user.id || dietitianId === session.user.id) {
         canUpdate = true;
       }
     } else if (userRole === UserRole.HEALTH_COUNSELOR || userRole === 'health_counselor') {
-      // Health counselor can only update appointments they created
+      // Health counselor can update appointments they created
       if ((appointment as any).createdBy?.toString() === session.user.id) {
         canUpdate = true;
+      } else {
+        // Also check if HC is assigned to the client
+        const client = await User.findById(clientId).select('assignedHealthCounselor');
+        if (client?.assignedHealthCounselor?.toString() === session.user.id) {
+          canUpdate = true;
+        }
       }
     } else if (userRole === UserRole.CLIENT || userRole === 'client') {
       // Client can only cancel their own appointments
@@ -153,7 +159,7 @@ export async function PUT(
     }
     
     if (!canUpdate) {
-      return NextResponse.json({ error: 'You can only edit appointments you created' }, { status: 403 });
+      return NextResponse.json({ error: 'You do not have permission to edit this appointment' }, { status: 403 });
     }
 
     // Track if status is changing to cancelled
@@ -597,19 +603,26 @@ export async function DELETE(
     let isClientCancellingDelete = false;
     
     const clientIdDelete = appointment.client?.toString();
+    const dietitianIdDelete = appointment.dietitian?.toString();
     const userRoleDelete = session.user.role as string;
     
     if (userRoleDelete === UserRole.ADMIN || userRoleDelete === 'admin') {
       canCancel = true;
     } else if (userRoleDelete === UserRole.DIETITIAN || userRoleDelete === 'dietitian') {
-      // Dietitian can only cancel appointments they created
-      if ((appointment as any).createdBy?.toString() === session.user.id) {
+      // Dietitian can cancel appointments they created OR where they are the assigned dietitian
+      if ((appointment as any).createdBy?.toString() === session.user.id || dietitianIdDelete === session.user.id) {
         canCancel = true;
       }
     } else if (userRoleDelete === UserRole.HEALTH_COUNSELOR || userRoleDelete === 'health_counselor') {
-      // Health counselor can only cancel appointments they created
+      // Health counselor can cancel appointments they created
       if ((appointment as any).createdBy?.toString() === session.user.id) {
         canCancel = true;
+      } else {
+        // Also check if HC is assigned to the client
+        const client = await User.findById(clientIdDelete).select('assignedHealthCounselor');
+        if (client?.assignedHealthCounselor?.toString() === session.user.id) {
+          canCancel = true;
+        }
       }
     } else if (userRoleDelete === UserRole.CLIENT || userRoleDelete === 'client') {
       // Client can cancel their own appointments
@@ -620,13 +633,12 @@ export async function DELETE(
     }
 
     if (!canCancel) {
-      return NextResponse.json({ error: 'You can only cancel appointments you created' }, { status: 403 });
+      return NextResponse.json({ error: 'You do not have permission to cancel this appointment' }, { status: 403 });
     }
 
     // Get actor role and name for lifecycle tracking
     const actorRoleDelete = getActorRole(userRoleDelete);
     const actorNameDelete = session.user.name || 'Unknown User';
-    const dietitianIdDelete = appointment.dietitian?.toString();
 
     // Remove from Google Calendar before cancelling
     try {

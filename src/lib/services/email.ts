@@ -22,6 +22,12 @@ export interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
+    // Check if SMTP credentials are configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.error('[EMAIL] SMTP credentials not configured. SMTP_USER or SMTP_PASS is missing.');
+      return false;
+    }
+
     const mailOptions = {
       from: options.from || process.env.SMTP_FROM || `"DTPS" <${process.env.SMTP_USER}>`,
       to: options.to,
@@ -30,10 +36,12 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       text: options.text,
     };
 
+    console.log(`[EMAIL] Attempting to send email to: ${options.to}, subject: ${options.subject}`);
     const info = await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL] Email sent successfully to: ${options.to}, messageId: ${info.messageId}`);
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('[EMAIL] Error sending email:', error);
     return false;
   }
 }

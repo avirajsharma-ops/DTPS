@@ -1127,7 +1127,7 @@ export default function HealthCounselorClientDetailPage() {
                     <strong>View Only:</strong> Health counselors can view meal plans but cannot create, edit, or delete them.
                   </p>
                 </div>
-                <PlanningSection client={client} />
+                <PlanningSection client={client} viewOnly={true} />
               </div>
             )}
 

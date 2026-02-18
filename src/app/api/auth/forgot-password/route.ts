@@ -87,9 +87,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!emailSent) {
-      console.error(`Failed to send password reset email to: ${email}`);
+      console.error(`[FORGOT-PASSWORD] Failed to send password reset email to: ${email} (role: ${user.role})`);
       // Still return success to prevent email enumeration
     } else {
+      console.log(`[FORGOT-PASSWORD] Password reset email sent successfully to: ${email} (role: ${user.role})`);
     }
 
     return NextResponse.json({
