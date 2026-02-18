@@ -247,61 +247,89 @@ function checkMealCompletion(completions: any[], date: Date, mealType: string): 
   });
 }
 
-// Main extraction function - handles all meal structures
+// Main extraction function - handles all meal structures WITHOUT filtering
 function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Date, completions: any[]): any[] {
   if (!mealsData) return [];
   
+  const results: any[] = [];
+  
   // If it's an array of meals
   if (Array.isArray(mealsData)) {
-    return mealsData.map((meal: any, index: number) => {
+    mealsData.forEach((meal: any, index: number) => {
       const mealType = meal.mealType || meal.type || getMealTypeByIndex(index);
+      const normalizedType = normalizeMealType(mealType);
+      const items = extractFoodItems(meal, planId, dayIndex, index);
       const macros = calculateMealMacros(meal);
-      return {
+      
+      results.push({
         id: `${planId}-${dayIndex}-${index}`,
-        type: mealType,
+        type: normalizedType,
+        originalType: mealType, // Keep original for debugging
         time: meal.time || getDefaultMealTime(mealType),
         totalCalories: macros.calories || calculateMealCalories(meal),
         protein: macros.protein,
         carbs: macros.carbs,
         fat: macros.fat,
         notes: meal.notes || meal.note || '',
-        items: extractFoodItems(meal, planId, dayIndex, index),
-        isCompleted: checkMealCompletion(completions, date, mealType),
-        isEmpty: !hasFood(meal)
-      };
+        items: items,
+        itemCount: items.length, // Explicit count for debugging
+        isCompleted: checkMealCompletion(completions, date, normalizedType),
+        isEmpty: items.length === 0
+      });
     });
+    return results;
   }
   
   // If it's an object with meal types as keys (breakfast, lunch, etc.)
   if (typeof mealsData === 'object') {
-    // Use canonical meal type keys - filter for any meal-related keys
-    const isValidMealKey = (key: string) => {
-      const normalized = normalizeMealType(key);
-      return MEAL_TYPE_KEYS.includes(normalized as MealTypeKey);
-    };
+    let mealIndex = 0;
     
-    return Object.entries(mealsData)
-      .filter(([key]) => isValidMealKey(key))
-      .map(([mealType, meal]: [string, any], index: number) => {
-        const normalizedType = normalizeMealType(mealType);
+    // Process ALL keys - don't filter by canonical types only
+    Object.entries(mealsData).forEach(([mealType, meal]: [string, any]) => {
+      // Skip non-meal properties (like 'note', 'date', etc.)
+      if (typeof meal !== 'object' || meal === null || Array.isArray(meal)) {
+        return;
+      }
+      
+      // Check if it looks like a meal (has foods/items or is a recognized meal type)
+      const hasFoodData = meal.foods || meal.items || meal.foodOptions;
+      const normalizedType = normalizeMealType(mealType);
+      const isKnownMealType = MEAL_TYPE_KEYS.includes(normalizedType as MealTypeKey);
+      
+      if (hasFoodData || isKnownMealType) {
+        const items = extractFoodItems(meal, planId, dayIndex, mealIndex);
         const macros = calculateMealMacros(meal);
-        return {
-          id: `${planId}-${dayIndex}-${index}`,
+        
+        results.push({
+          id: `${planId}-${dayIndex}-${mealIndex}`,
           type: normalizedType,
-          time: (meal as any)?.time || getDefaultMealTime(mealType),
+          originalType: mealType,
+          time: meal.time || getDefaultMealTime(mealType),
           totalCalories: macros.calories || calculateMealCalories(meal),
           protein: macros.protein,
           carbs: macros.carbs,
           fat: macros.fat,
-          notes: (meal as any)?.notes || (meal as any)?.note || '',
-          items: extractFoodItems(meal, planId, dayIndex, index),
+          notes: meal.notes || meal.note || '',
+          items: items,
+          itemCount: items.length,
           isCompleted: checkMealCompletion(completions, date, normalizedType),
-          isEmpty: !hasFood(meal)
-        };
-      });
+          isEmpty: items.length === 0
+        });
+        mealIndex++;
+      }
+    });
   }
   
-  return [];
+  // Log for debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[extractMeals] Extracted meals:', results.map(m => ({
+      type: m.type,
+      itemCount: m.itemCount,
+      items: m.items?.map((i: any) => i.name)
+    })));
+  }
+  
+  return results;
 }
 
 // Use imported canonical normalizeMealType as 'normalizeMealType' for local usage
@@ -322,24 +350,48 @@ function extractFoodItems(meal: any, planId: string, dayIndex: number, mealIndex
   const foods = meal.foods || meal.items || meal.foodOptions || [];
   if (!Array.isArray(foods)) return [];
   
-  return foods
-    .filter((food: any) => food.food || food.name || food.foodName) // Only include items with actual food data
-    .map((food: any, foodIndex: number) => ({
+  // Extract ALL food items - no filtering, include everything
+  return foods.map((food: any, foodIndex: number) => {
+    // Get the food name from various possible fields
+    const foodName = food.food || food.name || food.foodName || food.recipeName || '';
+    
+    // Skip only if completely empty (no name at all)
+    if (!foodName && !food.recipeId && !food.recipeUuid) {
+      return null;
+    }
+    
+    return {
       id: `${planId}-${dayIndex}-${mealIndex}-${foodIndex}`,
-      name: food.food || food.name || food.foodName || 'Unknown Food',
-      portion: food.unit || food.portion || food.quantity || '1 serving',
+      name: foodName || 'Food Item',
+      portion: food.unit || food.portion || food.quantity || food.servingSize || '1 serving',
       calories: Number(food.calories) || Number(food.cal) || 0,
-      alternatives: food.alternatives || [],
+      // Alternatives - ensure proper structure
+      alternatives: Array.isArray(food.alternatives) ? food.alternatives.map((alt: any) => ({
+        name: alt.name || alt.food || 'Alternative',
+        portion: alt.portion || alt.unit || '1 serving',
+        calories: Number(alt.calories) || 0
+      })) : [],
+      // Recipe data - include if present
       recipe: food.recipe || null,
       recipeId: food.recipeId || food.recipe?._id || null,
-      recipeUuid: food.recipeUuid || null, // UUID for recipe lookup
-      tags: food.tags || [],
-      // Include extra nutrition info if available
-      protein: food.protein || null,
-      carbs: food.carbs || null,
-      fats: food.fats || null,
-      fiber: food.fiber || null
-    }));
+      recipeUuid: food.recipeUuid || null,
+      // Tags
+      tags: Array.isArray(food.tags) ? food.tags : [],
+      // Full nutrition info
+      protein: Number(food.protein) || 0,
+      carbs: Number(food.carbs) || 0,
+      fats: Number(food.fats) || Number(food.fat) || 0,
+      fiber: Number(food.fiber) || 0,
+      // Additional details for full view
+      notes: food.notes || food.dietitianNotes || food.remarks || '',
+      timing: food.timing || food.whenToEat || food.timeToEat || '',
+      quantity: food.quantity || food.servingSize || food.amount || '',
+      // Type indicator (recipe vs plain food)
+      isRecipe: !!(food.recipeId || food.recipeUuid || food.recipe),
+      // Original data for debugging
+      _rawData: process.env.NODE_ENV === 'development' ? food : undefined
+    };
+  }).filter(Boolean); // Remove null entries
 }
 
 // Fetch full recipe details from Recipe model

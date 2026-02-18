@@ -301,7 +301,7 @@ export default function UserAppointmentsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-[100] bg-white dark:bg-gray-950">
+      <div className="fixed inset-0 flex items-center justify-center z-100 bg-white dark:bg-gray-950">
         <SpoonGifLoader size="lg" />
       </div>
     );
