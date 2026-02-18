@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Update payment with Stripe payment intent ID
-    payment.stripePaymentIntentId = paymentIntent.id;
+    (payment as any).stripePaymentIntentId = paymentIntent.id;
     await payment.save();
 
     clearCacheByTag('payments');

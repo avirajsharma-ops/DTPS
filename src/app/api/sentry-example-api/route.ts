@@ -1,17 +1,10 @@
-import * as Sentry from "@sentry/nextjs";
-export const dynamic = "force-dynamic";
+import { NextResponse } from 'next/server';
 
-class SentryExampleAPIError extends Error {
-  constructor(message: string | undefined) {
-    super(message);
-    this.name = "SentryExampleAPIError";
-  }
-}
-
-// A faulty API route to test Sentry's error monitoring
-export function GET() {
-  Sentry.logger.info("Sentry example API called");
-  throw new SentryExampleAPIError(
-    "This error is raised on the backend called by the example page.",
+// DEPRECATED: This endpoint has been removed.
+// Sentry testing should be done via dedicated test environment, not production API.
+export async function GET() {
+  return NextResponse.json(
+    { error: 'This debug endpoint has been deprecated. Use Sentry dashboard for error monitoring.' },
+    { status: 410 }
   );
 }

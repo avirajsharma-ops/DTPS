@@ -1,16 +1,41 @@
 import nodemailer from 'nodemailer';
 import { format } from 'date-fns';
 
-// Email transporter configuration
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// Lazy transporter initialization to ensure env vars are loaded
+let transporter: nodemailer.Transporter | null = null;
+
+function getTransporter(): nodemailer.Transporter {
+  if (!transporter) {
+    // Log SMTP configuration (mask password)
+    console.log('[APPOINTMENT_EMAIL] Initializing SMTP transporter:', {
+      host: process.env.SMTP_HOST || 'NOT SET',
+      port: process.env.SMTP_PORT || '587 (default)',
+      secure: process.env.SMTP_SECURE || 'false (default)',
+      user: process.env.SMTP_USER || 'NOT SET',
+      pass: process.env.SMTP_PASS ? '****' : 'NOT SET',
+    });
+
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  }
+  return transporter;
+}
+
+// Check if SMTP is properly configured
+function isSmtpConfigured(): boolean {
+  const configured = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+  if (!configured) {
+    console.error('[APPOINTMENT_EMAIL] SMTP credentials not configured. SMTP_USER or SMTP_PASS is missing.');
+  }
+  return configured;
+}
 
 export interface AppointmentEmailData {
   appointmentId: string;
@@ -390,29 +415,40 @@ function generateRescheduleEmailHTML(data: AppointmentEmailData, isProvider: boo
 export async function sendAppointmentConfirmationEmail(data: AppointmentEmailData): Promise<{ success: boolean; errors: string[] }> {
   const errors: string[] = [];
 
+  // Check SMTP configuration first
+  if (!isSmtpConfigured()) {
+    return { success: false, errors: ['SMTP not configured - SMTP_USER or SMTP_PASS missing'] };
+  }
+
+  const transport = getTransporter();
+
   try {
     // Send to client
-    await transporter.sendMail({
+    console.log(`[APPOINTMENT_EMAIL] Sending confirmation to client: ${data.clientEmail}`);
+    const clientResult = await transport.sendMail({
       from: `"${process.env.SMTP_NAME || 'DTPS'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
       to: data.clientEmail,
       subject: `📅 Appointment Confirmed - ${data.appointmentType} on ${format(data.scheduledAt, 'MMM d, yyyy')}`,
       html: generateConfirmationEmailHTML(data, false),
     });
+    console.log(`[APPOINTMENT_EMAIL] Client confirmation sent successfully, messageId: ${clientResult.messageId}`);
   } catch (error: any) {
-    console.error('Failed to send confirmation email to client:', error);
+    console.error('[APPOINTMENT_EMAIL] Failed to send confirmation email to client:', error);
     errors.push(`Client email failed: ${error.message}`);
   }
 
   try {
     // Send to provider (dietitian/health counselor)
-    await transporter.sendMail({
+    console.log(`[APPOINTMENT_EMAIL] Sending confirmation to provider: ${data.providerEmail}`);
+    const providerResult = await transport.sendMail({
       from: `"${process.env.SMTP_NAME || 'DTPS'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
       to: data.providerEmail,
       subject: `📅 New Appointment - ${data.clientName} on ${format(data.scheduledAt, 'MMM d, yyyy')}`,
       html: generateConfirmationEmailHTML(data, true),
     });
+    console.log(`[APPOINTMENT_EMAIL] Provider confirmation sent successfully, messageId: ${providerResult.messageId}`);
   } catch (error: any) {
-    console.error('Failed to send confirmation email to provider:', error);
+    console.error('[APPOINTMENT_EMAIL] Failed to send confirmation email to provider:', error);
     errors.push(`Provider email failed: ${error.message}`);
   }
 
@@ -423,29 +459,40 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
 export async function sendAppointmentCancellationEmail(data: AppointmentEmailData): Promise<{ success: boolean; errors: string[] }> {
   const errors: string[] = [];
 
+  // Check SMTP configuration first
+  if (!isSmtpConfigured()) {
+    return { success: false, errors: ['SMTP not configured - SMTP_USER or SMTP_PASS missing'] };
+  }
+
+  const transport = getTransporter();
+
   try {
     // Send to client
-    await transporter.sendMail({
+    console.log(`[APPOINTMENT_EMAIL] Sending cancellation to client: ${data.clientEmail}`);
+    const clientResult = await transport.sendMail({
       from: `"${process.env.SMTP_NAME || 'DTPS'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
       to: data.clientEmail,
       subject: `❌ Appointment Cancelled - ${format(data.scheduledAt, 'MMM d, yyyy')}`,
       html: generateCancellationEmailHTML(data, false),
     });
+    console.log(`[APPOINTMENT_EMAIL] Client cancellation sent successfully, messageId: ${clientResult.messageId}`);
   } catch (error: any) {
-    console.error('Failed to send cancellation email to client:', error);
+    console.error('[APPOINTMENT_EMAIL] Failed to send cancellation email to client:', error);
     errors.push(`Client email failed: ${error.message}`);
   }
 
   try {
     // Send to provider
-    await transporter.sendMail({
+    console.log(`[APPOINTMENT_EMAIL] Sending cancellation to provider: ${data.providerEmail}`);
+    const providerResult = await transport.sendMail({
       from: `"${process.env.SMTP_NAME || 'DTPS'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
       to: data.providerEmail,
       subject: `❌ Appointment Cancelled - ${data.clientName} on ${format(data.scheduledAt, 'MMM d, yyyy')}`,
       html: generateCancellationEmailHTML(data, true),
     });
+    console.log(`[APPOINTMENT_EMAIL] Provider cancellation sent successfully, messageId: ${providerResult.messageId}`);
   } catch (error: any) {
-    console.error('Failed to send cancellation email to provider:', error);
+    console.error('[APPOINTMENT_EMAIL] Failed to send cancellation email to provider:', error);
     errors.push(`Provider email failed: ${error.message}`);
   }
 
@@ -456,29 +503,40 @@ export async function sendAppointmentCancellationEmail(data: AppointmentEmailDat
 export async function sendAppointmentRescheduleEmail(data: AppointmentEmailData): Promise<{ success: boolean; errors: string[] }> {
   const errors: string[] = [];
 
+  // Check SMTP configuration first
+  if (!isSmtpConfigured()) {
+    return { success: false, errors: ['SMTP not configured - SMTP_USER or SMTP_PASS missing'] };
+  }
+
+  const transport = getTransporter();
+
   try {
     // Send to client
-    await transporter.sendMail({
+    console.log(`[APPOINTMENT_EMAIL] Sending reschedule to client: ${data.clientEmail}`);
+    const clientResult = await transport.sendMail({
       from: `"${process.env.SMTP_NAME || 'DTPS'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
       to: data.clientEmail,
       subject: `🔄 Appointment Rescheduled - Now on ${format(data.scheduledAt, 'MMM d, yyyy')}`,
       html: generateRescheduleEmailHTML(data, false),
     });
+    console.log(`[APPOINTMENT_EMAIL] Client reschedule sent successfully, messageId: ${clientResult.messageId}`);
   } catch (error: any) {
-    console.error('Failed to send reschedule email to client:', error);
+    console.error('[APPOINTMENT_EMAIL] Failed to send reschedule email to client:', error);
     errors.push(`Client email failed: ${error.message}`);
   }
 
   try {
     // Send to provider
-    await transporter.sendMail({
+    console.log(`[APPOINTMENT_EMAIL] Sending reschedule to provider: ${data.providerEmail}`);
+    const providerResult = await transport.sendMail({
       from: `"${process.env.SMTP_NAME || 'DTPS'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
       to: data.providerEmail,
       subject: `🔄 Appointment Rescheduled - ${data.clientName} on ${format(data.scheduledAt, 'MMM d, yyyy')}`,
       html: generateRescheduleEmailHTML(data, true),
     });
+    console.log(`[APPOINTMENT_EMAIL] Provider reschedule sent successfully, messageId: ${providerResult.messageId}`);
   } catch (error: any) {
-    console.error('Failed to send reschedule email to provider:', error);
+    console.error('[APPOINTMENT_EMAIL] Failed to send reschedule email to provider:', error);
     errors.push(`Provider email failed: ${error.message}`);
   }
 

@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
       // Clients can ONLY chat with their assigned dietitians
       const currentUser = await User.findById(session.user.id)
         .select('assignedDietitian assignedDietitians assignedHealthCounselor')
-        .lean();
+        .lean() as any;
       
       if (currentUser?.assignedDietitians && currentUser.assignedDietitians.length > 0) {
         query.$or.push({ _id: { $in: currentUser.assignedDietitians } });

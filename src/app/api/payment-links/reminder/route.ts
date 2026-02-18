@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Send email
+    console.log('[PAYMENT_REMINDER] Sending reminder to:', clientEmail);
     const sent = await sendEmail({
       to: clientEmail,
       subject: emailTemplate.subject,
@@ -94,12 +95,19 @@ export async function POST(request: NextRequest) {
     });
 
     if (!sent) {
+      console.error('[PAYMENT_REMINDER] Failed to send reminder email');
       return NextResponse.json({ 
         error: 'Failed to send email. Please check SMTP configuration.',
-        hint: 'Ensure SMTP_HOST, SMTP_USER, SMTP_PASS are configured in .env'
+        hint: 'Ensure SMTP_HOST, SMTP_USER, SMTP_PASS are configured in .env',
+        debug: {
+          smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
+          smtpHost: process.env.SMTP_HOST || 'NOT SET',
+          smtpUser: process.env.SMTP_USER || 'NOT SET'
+        }
       }, { status: 500 });
     }
 
+    console.log('[PAYMENT_REMINDER] Reminder sent successfully to:', clientEmail);
     return NextResponse.json({
       success: true,
       message: `Reminder sent to ${clientEmail}`,

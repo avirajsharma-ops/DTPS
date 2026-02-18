@@ -618,6 +618,22 @@ function DesktopAppointmentDetailPage() {
                     {appointment.status}
                   </Badge>
                 </div>
+
+                {/* Meeting Link */}
+                {meetingLink && (
+                  <div className="pt-2 border-t mt-2">
+                    <span className="text-gray-600 block mb-1">Meeting Link:</span>
+                    <a 
+                      href={meetingLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 text-xs break-all flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3 shrink-0" />
+                      {meetingLink}
+                    </a>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

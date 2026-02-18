@@ -24,8 +24,25 @@ export async function GET(request: NextRequest) {
       query.$or = [{ name: { $regex: search, $options: 'i' } }];
     }
 
-    const transformations = await EcommerceTransformation.find(query).sort({ createdAt: -1 });
-    return NextResponse.json({ transformations });
+    // Add pagination support
+    const limit = Math.max(parseInt(searchParams.get('limit') || '20', 10), 1);
+    const page = Math.max(parseInt(searchParams.get('page') || '1', 10), 1);
+    const skip = (page - 1) * limit;
+
+    const [transformations, total] = await Promise.all([
+      EcommerceTransformation.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      EcommerceTransformation.countDocuments(query)
+    ]);
+
+    return NextResponse.json({
+      transformations,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Error fetching ecommerce transformations:', error);
     return NextResponse.json({ error: 'Failed to fetch ecommerce transformations' }, { status: 500 });

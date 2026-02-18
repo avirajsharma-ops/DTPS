@@ -196,8 +196,8 @@ export async function PUT(
     // Handle cancellation with lifecycle tracking
     if (isBeingCancelled) {
       // Add to lifecycle history
-      const lifecycleEvent = {
-        action: 'cancelled',
+      const lifecycleEvent: any = {
+        action: 'cancelled' as const,
         performedBy: session.user.id,
         performedByRole: actorRole,
         performedByName: actorName,
@@ -222,8 +222,8 @@ export async function PUT(
 
     // Handle rescheduling with lifecycle tracking
     if (isRescheduling) {
-      const lifecycleEvent = {
-        action: 'rescheduled',
+      const lifecycleEvent: any = {
+        action: 'rescheduled' as const,
         performedBy: session.user.id,
         performedByRole: actorRole,
         performedByName: actorName,
@@ -667,8 +667,8 @@ export async function DELETE(
     }
 
     // Add lifecycle tracking for cancellation
-    const lifecycleEvent = {
-      action: 'cancelled',
+    const lifecycleEvent: any = {
+      action: 'cancelled' as const,
       performedBy: session.user.id,
       performedByRole: actorRoleDelete,
       performedByName: actorNameDelete,

@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
       expiryMinutes: 60
     });
 
+    console.log(`[FORGOT-PASSWORD] Sending reset email to: ${email} (role: ${user.role})`);
     const emailSent = await sendEmail({
       to: email,
       subject: emailTemplate.subject,
@@ -88,10 +89,17 @@ export async function POST(request: NextRequest) {
 
     if (!emailSent) {
       console.error(`[FORGOT-PASSWORD] Failed to send password reset email to: ${email} (role: ${user.role})`);
-      // Still return success to prevent email enumeration
-    } else {
-      console.log(`[FORGOT-PASSWORD] Password reset email sent successfully to: ${email} (role: ${user.role})`);
+      return NextResponse.json({
+        error: 'Failed to send password reset email',
+        hint: 'Check SMTP configuration in .env (SMTP_HOST, SMTP_USER, SMTP_PASS)',
+        debug: {
+          smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
+          recipient: email
+        }
+      }, { status: 500 });
     }
+
+    console.log(`[FORGOT-PASSWORD] Password reset email sent successfully to: ${email} (role: ${user.role})`);
 
     return NextResponse.json({
       success: true,

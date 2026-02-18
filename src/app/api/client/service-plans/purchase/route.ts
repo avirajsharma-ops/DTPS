@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       // Update payment with Razorpay details
       payment.razorpayPaymentLinkId = paymentLink.id;
       payment.razorpayPaymentLinkUrl = paymentLink.long_url;
-      payment.razorpayPaymentLinkShortUrl = paymentLink.short_url;
+      (payment as any).razorpayPaymentLinkShortUrl = paymentLink.short_url;
       await payment.save();
 
       return NextResponse.json({

@@ -525,7 +525,7 @@ export async function POST(request: NextRequest) {
     // Send appointment confirmation emails
     try {
       const providerRole: 'dietitian' | 'health_counselor' = 
-        session.user.role === UserRole.HEALTH_COUNSELOR || session.user.role === 'health_counselor' 
+        (session.user.role as string) === UserRole.HEALTH_COUNSELOR || (session.user.role as string) === 'health_counselor' 
           ? 'health_counselor' 
           : 'dietitian';
 

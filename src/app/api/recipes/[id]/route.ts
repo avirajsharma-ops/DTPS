@@ -43,7 +43,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    let { id } = await params;
+    
+    // Strip any extra quotes from the ID (handles malformed URLs)
+    id = id.replace(/^["']+|["']+$/g, '').trim();
+    
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid recipe ID format' }, { status: 400 });
+    }
+    
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -104,7 +113,16 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    let { id } = await params;
+    
+    // Strip any extra quotes from the ID
+    id = id.replace(/^["']+|["']+$/g, '').trim();
+    
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid recipe ID format' }, { status: 400 });
+    }
+    
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -176,7 +194,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    let { id } = await params;
+    
+    // Strip any extra quotes from the ID
+    id = id.replace(/^["']+|["']+$/g, '').trim();
+    
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid recipe ID format' }, { status: 400 });
+    }
+    
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

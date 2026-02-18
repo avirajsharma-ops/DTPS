@@ -24,8 +24,25 @@ export async function GET(request: NextRequest) {
       query.$or = [{ name: { $regex: search, $options: 'i' } }];
     }
 
-    const plans = await EcommercePlan.find(query).sort({ createdAt: -1 });
-    return NextResponse.json({ plans });
+    // Add pagination support
+    const limit = Math.max(parseInt(searchParams.get('limit') || '20', 10), 1);
+    const page = Math.max(parseInt(searchParams.get('page') || '1', 10), 1);
+    const skip = (page - 1) * limit;
+
+    const [plans, total] = await Promise.all([
+      EcommercePlan.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      EcommercePlan.countDocuments(query)
+    ]);
+
+    return NextResponse.json({
+      plans,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Error fetching ecommerce plans:', error);
     return NextResponse.json({ error: 'Failed to fetch ecommerce plans' }, { status: 500 });

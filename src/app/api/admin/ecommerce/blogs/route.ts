@@ -27,8 +27,25 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const blogs = await EcommerceBlog.find(query).sort({ createdAt: -1 });
-    return NextResponse.json({ blogs });
+    // Add pagination support
+    const limit = Math.max(parseInt(searchParams.get('limit') || '20', 10), 1);
+    const page = Math.max(parseInt(searchParams.get('page') || '1', 10), 1);
+    const skip = (page - 1) * limit;
+
+    const [blogs, total] = await Promise.all([
+      EcommerceBlog.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      EcommerceBlog.countDocuments(query)
+    ]);
+
+    return NextResponse.json({
+      blogs,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Error fetching ecommerce blogs:', error);
     return NextResponse.json({ error: 'Failed to fetch ecommerce blogs' }, { status: 500 });

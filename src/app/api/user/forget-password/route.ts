@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
       expiryMinutes: 60
     });
 
+    console.log(`[USER_FORGET_PASSWORD] Sending reset email to: ${email}`);
     const emailSent = await sendEmail({
       to: email,
       subject: emailTemplate.subject,
@@ -72,10 +73,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (!emailSent) {
-      console.error(`Failed to send password reset email to: ${email}`);
+      console.error(`[USER_FORGET_PASSWORD] Failed to send password reset email to: ${email}`);
     } else {
+      console.log(`[USER_FORGET_PASSWORD] Password reset email sent successfully to: ${email}`);
     }
 
+    // Always return success message for security (don't reveal if account exists)
     return NextResponse.json({
       success: true,
       message: 'If an account exists with this email, you will receive a password reset link.'

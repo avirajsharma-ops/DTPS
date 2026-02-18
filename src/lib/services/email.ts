@@ -1,16 +1,45 @@
 import nodemailer from 'nodemailer';
 
-// Email configuration - uses environment variables
-// SMTP credentials for sending emails
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// Lazy transporter initialization to ensure env vars are loaded
+let transporter: nodemailer.Transporter | null = null;
+
+function getTransporter(): nodemailer.Transporter {
+  if (!transporter) {
+    // Log SMTP configuration (mask password)
+    const config = {
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      }
+    };
+
+    console.log('[EMAIL] Initializing SMTP transporter:', {
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
+      user: config.auth.user || 'NOT SET',
+      hasPassword: !!config.auth.pass,
+    });
+
+    transporter = nodemailer.createTransport(config);
+  }
+  return transporter;
+}
+
+function isSmtpConfigured(): boolean {
+  const configured = !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  if (!configured) {
+    const missing = [];
+    if (!process.env.SMTP_HOST) missing.push('SMTP_HOST');
+    if (!process.env.SMTP_USER) missing.push('SMTP_USER');
+    if (!process.env.SMTP_PASS) missing.push('SMTP_PASS');
+    console.error('[EMAIL] SMTP not fully configured. Missing:', missing.join(', '));
+  }
+  return configured;
+}
 
 export interface EmailOptions {
   to: string;
@@ -23,11 +52,12 @@ export interface EmailOptions {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     // Check if SMTP credentials are configured
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.error('[EMAIL] SMTP credentials not configured. SMTP_USER or SMTP_PASS is missing.');
+    if (!isSmtpConfigured()) {
+      console.error('[EMAIL] Cannot send email - SMTP credentials not configured in .env');
       return false;
     }
 
+    const transport = getTransporter();
     const mailOptions = {
       from: options.from || process.env.SMTP_FROM || `"DTPS" <${process.env.SMTP_USER}>`,
       to: options.to,
@@ -37,11 +67,15 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     };
 
     console.log(`[EMAIL] Attempting to send email to: ${options.to}, subject: ${options.subject}`);
-    const info = await transporter.sendMail(mailOptions);
+    const info = await transport.sendMail(mailOptions);
     console.log(`[EMAIL] Email sent successfully to: ${options.to}, messageId: ${info.messageId}`);
     return true;
   } catch (error) {
-    console.error('[EMAIL] Error sending email:', error);
+    console.error('[EMAIL] Error sending email:', {
+      to: options.to,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      fullError: error
+    });
     return false;
   }
 }

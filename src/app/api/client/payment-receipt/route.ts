@@ -49,8 +49,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const userName = `${payment.client?.firstName || ''} ${payment.client?.lastName || ''}`.trim() || payment.payerName || 'User';
-    const userEmail = payment.client?.email || payment.payerEmail || '';
+    const client = payment.client as any;
+    const dietitian = payment.dietitian as any;
+    const userName = `${client?.firstName || ''} ${client?.lastName || ''}`.trim() || payment.payerName || 'User';
+    const userEmail = client?.email || payment.payerEmail || '';
 
     return NextResponse.json({
       receipt: {
@@ -68,9 +70,9 @@ export async function GET(request: NextRequest) {
         paidAt: payment.paidAt || payment.createdAt,
         userName,
         userEmail,
-        dietitian: payment.dietitian ? {
-          firstName: payment.dietitian.firstName,
-          lastName: payment.dietitian.lastName
+        dietitian: dietitian ? {
+          firstName: dietitian.firstName,
+          lastName: dietitian.lastName
         } : null
       },
       // Also include payment for backward compatibility
@@ -83,16 +85,16 @@ export async function GET(request: NextRequest) {
         status: payment.status,
         durationDays: payment.durationDays || 30,
         durationLabel: payment.durationLabel || '1 Month',
-        payerEmail: payment.payerEmail || payment.client?.email,
+        payerEmail: payment.payerEmail || client?.email,
         payerName: userName,
         razorpayPaymentId: payment.razorpayPaymentId,
         razorpayOrderId: payment.razorpayOrderId,
         transactionId: payment.transactionId,
         paidAt: payment.paidAt,
         createdAt: payment.createdAt,
-        dietitian: payment.dietitian ? {
-          firstName: payment.dietitian.firstName,
-          lastName: payment.dietitian.lastName
+        dietitian: dietitian ? {
+          firstName: dietitian.firstName,
+          lastName: dietitian.lastName
         } : null
       }
     });
