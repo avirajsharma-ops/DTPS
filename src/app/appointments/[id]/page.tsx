@@ -27,7 +27,8 @@ import {
   Trash2,
   CreditCard,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -63,6 +64,26 @@ interface Appointment {
     avatar?: string;
   };
   createdAt: string;
+  lifecycleHistory?: Array<{
+    action: string;
+    performedBy?: { _id: string; firstName?: string; lastName?: string };
+    performedByRole?: string;
+    timestamp: string;
+  }>;
+  cancelledBy?: {
+    userId?: string;
+    role?: string;
+    name?: string;
+    reason?: string;
+    timestamp?: string;
+  };
+  rescheduledBy?: {
+    userId?: string;
+    role?: string;
+    name?: string;
+    previousScheduledAt?: string;
+    timestamp?: string;
+  };
 }
 
 const TIME_SLOTS = [
@@ -94,6 +115,49 @@ function DesktopAppointmentDetailPage() {
     type: 'consultation',
     notes: ''
   });
+
+  // Helper functions for audit information
+  const getCreatedByLabel = (): string | null => {
+    if (appointment?.lifecycleHistory && appointment.lifecycleHistory.length > 0) {
+      const createdEvent = appointment.lifecycleHistory.find(e => e.action === 'created');
+      if (createdEvent) {
+        const roleLabel = createdEvent.performedByRole === 'dietitian' ? 'Dietitian' :
+                         createdEvent.performedByRole === 'health_counselor' ? 'Health Counselor' :
+                         createdEvent.performedByRole === 'admin' ? 'Admin' : 'Client';
+        return `Created by ${roleLabel}`;
+      }
+    }
+    return null;
+  };
+
+  const getCancelledByLabel = (): string | null => {
+    if (appointment?.status === 'cancelled' && appointment?.cancelledBy) {
+      const roleLabel = appointment.cancelledBy.role === 'dietitian' ? 'Dietitian' :
+                       appointment.cancelledBy.role === 'health_counselor' ? 'Health Counselor' :
+                       appointment.cancelledBy.role === 'admin' ? 'Admin' : 'Client';
+      return `Cancelled by ${roleLabel}${appointment.cancelledBy.name ? ` (${appointment.cancelledBy.name})` : ''}`;
+    }
+    return null;
+  };
+
+  const getRescheduledByLabel = (): string | null => {
+    if (appointment?.rescheduledBy) {
+      const roleLabel = appointment.rescheduledBy.role === 'dietitian' ? 'Dietitian' :
+                       appointment.rescheduledBy.role === 'health_counselor' ? 'Health Counselor' :
+                       appointment.rescheduledBy.role === 'admin' ? 'Admin' : 'Client';
+      return `Rescheduled by ${roleLabel}${appointment.rescheduledBy.name ? ` (${appointment.rescheduledBy.name})` : ''}`;
+    }
+    return null;
+  };
+
+  // Get the primary meeting link (prefer Google Meet, fall back to Zoom, then legacy)
+  const getMeetingLink = (): string | null => {
+    if (appointment?.meetingLink) return appointment.meetingLink;
+    if (appointment?.zoomMeeting?.joinUrl) return appointment.zoomMeeting.joinUrl;
+    return null;
+  };
+
+  const meetingLink = getMeetingLink();
 
   useEffect(() => {
     if (appointmentId) {
@@ -417,6 +481,16 @@ function DesktopAppointmentDetailPage() {
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Join Meeting (only if meeting link exists and appointment is upcoming) */}
+                {meetingLink && isUpcoming(appointment.scheduledAt) && (
+                  <Button className="w-full bg-green-600 hover:bg-green-700" asChild>
+                    <a href={meetingLink} target="_blank" rel="noopener noreferrer">
+                      <Video className="h-4 w-4 mr-2" />
+                      Join Meet
+                    </a>
+                  </Button>
+                )}
+
                 {/* Message */}
                 <Button variant="outline" className="w-full" asChild>
                   <Link href={`/messages?user=${
@@ -471,6 +545,46 @@ function DesktopAppointmentDetailPage() {
                       </>
                     )}
                   </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Audit Tags */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Lifecycle</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Created By */}
+                {getCreatedByLabel() && (
+                  <div className="flex items-center">
+                    <span className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+                      📝 {getCreatedByLabel()}
+                    </span>
+                  </div>
+                )}
+
+                {/* Rescheduled By */}
+                {getRescheduledByLabel() && (
+                  <div className="flex items-center">
+                    <span className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                      🔄 {getRescheduledByLabel()}
+                    </span>
+                  </div>
+                )}
+
+                {/* Cancelled By */}
+                {getCancelledByLabel() && (
+                  <div className="flex items-center">
+                    <span className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-red-50 text-red-700 border border-red-200 whitespace-nowrap">
+                      ❌ {getCancelledByLabel()}
+                    </span>
+                  </div>
+                )}
+
+                {/* Fallback if no audit tags */}
+                {!getCreatedByLabel() && !getRescheduledByLabel() && !getCancelledByLabel() && (
+                  <p className="text-sm text-gray-500">No lifecycle events recorded</p>
                 )}
               </CardContent>
             </Card>

@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
       async () => await Appointment.find(query)
       .populate('dietitian', 'firstName lastName email avatar')
       .populate('client', 'firstName lastName email avatar')
+      .populate('createdBy', 'firstName lastName role')
+      .select('+lifecycleHistory +cancelledBy +rescheduledBy')
       .sort({ scheduledAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit),
@@ -62,7 +64,11 @@ export async function GET(request: NextRequest) {
       notes: apt.notes,
       meetingLink: apt.meetingLink,
       zoomMeetingId: apt.zoomMeetingId,
-      zoomJoinUrl: apt.zoomJoinUrl
+      zoomJoinUrl: apt.zoomJoinUrl,
+      // Audit fields
+      lifecycleHistory: apt.lifecycleHistory || [],
+      cancelledBy: apt.cancelledBy,
+      rescheduledBy: apt.rescheduledBy
     }));
 
     return NextResponse.json(transformedAppointments);

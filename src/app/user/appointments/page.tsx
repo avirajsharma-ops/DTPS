@@ -29,6 +29,19 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 
+interface LifecycleEvent {
+  action: string;
+  performedBy?: { _id: string; firstName?: string; lastName?: string };
+  performedByRole?: string;
+  timestamp: string;
+}
+
+interface AuditActor {
+  id?: string;
+  name?: string;
+  role?: string;
+}
+
 interface Appointment {
   id: string;
   dietitianId: string;
@@ -40,6 +53,9 @@ interface Appointment {
   type: 'video' | 'audio' | 'in-person';
   status: 'upcoming' | 'completed' | 'cancelled' | 'rescheduled';
   notes?: string;
+  lifecycleHistory?: LifecycleEvent[];
+  cancelledBy?: AuditActor;
+  rescheduledBy?: AuditActor;
 }
 
 export default function UserAppointmentsPage() {
@@ -158,6 +174,44 @@ export default function UserAppointmentsPage() {
     const TypeIcon = getTypeIcon(appointment.type);
     const isUpcoming = appointment.status === 'upcoming';
 
+    // Get audit info - who created/cancelled/rescheduled
+    const getCreatedByLabel = () => {
+      if (appointment.lifecycleHistory && appointment.lifecycleHistory.length > 0) {
+        const createdEvent = appointment.lifecycleHistory.find(e => e.action === 'created');
+        if (createdEvent) {
+          const roleLabel = createdEvent.performedByRole === 'dietitian' ? 'Dietitian' :
+                           createdEvent.performedByRole === 'health_counselor' ? 'Health Counselor' :
+                           createdEvent.performedByRole === 'admin' ? 'Admin' : 'Client';
+          return `Created by ${roleLabel}`;
+        }
+      }
+      return null;
+    };
+
+    const getCancelledByLabel = () => {
+      if (appointment.status === 'cancelled' && appointment.cancelledBy) {
+        const roleLabel = appointment.cancelledBy.role === 'dietitian' ? 'Dietitian' :
+                         appointment.cancelledBy.role === 'health_counselor' ? 'Health Counselor' :
+                         appointment.cancelledBy.role === 'admin' ? 'Admin' : 'Client';
+        return `Cancelled by ${roleLabel}${appointment.cancelledBy.name ? ` (${appointment.cancelledBy.name})` : ''}`;
+      }
+      return null;
+    };
+
+    const getRescheduledByLabel = () => {
+      if (appointment.rescheduledBy) {
+        const roleLabel = appointment.rescheduledBy.role === 'dietitian' ? 'Dietitian' :
+                         appointment.rescheduledBy.role === 'health_counselor' ? 'Health Counselor' :
+                         appointment.rescheduledBy.role === 'admin' ? 'Admin' : 'Client';
+        return `Rescheduled by ${roleLabel}${appointment.rescheduledBy.name ? ` (${appointment.rescheduledBy.name})` : ''}`;
+      }
+      return null;
+    };
+
+    const createdByLabel = getCreatedByLabel();
+    const cancelledByLabel = getCancelledByLabel();
+    const rescheduledByLabel = getRescheduledByLabel();
+
     return (
       <Card className={`border-0 shadow-sm ${isUpcoming ? 'bg-white' : 'bg-gray-50'}`}>
         <CardContent className="p-4">
@@ -191,6 +245,27 @@ export default function UserAppointmentsPage() {
               </span>
             </div>
           </div>
+
+          {/* Audit Tags */}
+          {(createdByLabel || rescheduledByLabel || cancelledByLabel) && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {createdByLabel && (
+                <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  📝 {createdByLabel}
+                </span>
+              )}
+              {rescheduledByLabel && (
+                <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                  🔄 {rescheduledByLabel}
+                </span>
+              )}
+              {cancelledByLabel && (
+                <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-50 text-red-700 border border-red-200">
+                  ❌ {cancelledByLabel}
+                </span>
+              )}
+            </div>
+          )}
 
           {appointment.notes && (
             <p className="text-sm text-gray-500 mb-3">{appointment.notes}</p>

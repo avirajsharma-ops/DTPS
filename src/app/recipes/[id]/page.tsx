@@ -239,8 +239,8 @@ export default function RecipeViewPage() {
   const canEditRecipe = () => {
     if (!session?.user) return false;
 
-    // Allow any dietitian, health counselor, or admin to edit any recipe
-    const allowedRoles = ['dietitian', 'health_counselor', 'admin'];
+    // Only dietitians and admins can edit/delete recipes (health counselors can only view)
+    const allowedRoles = ['dietitian', 'admin'];
     return allowedRoles.includes(session.user.role?.toLowerCase());
   };
 

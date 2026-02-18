@@ -79,7 +79,23 @@ export enum AppointmentStatus {
   SCHEDULED = 'scheduled',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
-  NO_SHOW = 'no_show'
+  NO_SHOW = 'no_show',
+  RESCHEDULED = 'rescheduled'
+}
+
+// Lifecycle tracking - who performed the action
+export type AppointmentActorRole = 'client' | 'dietitian' | 'health_counselor' | 'admin';
+
+export interface IAppointmentLifecycleEvent {
+  action: 'created' | 'cancelled' | 'rescheduled' | 'completed';
+  performedBy: string; // User ID
+  performedByRole: AppointmentActorRole;
+  performedByName: string;
+  reason?: string;
+  previousScheduledAt?: Date; // For reschedule
+  newScheduledAt?: Date; // For reschedule
+  timestamp: Date;
+  details?: Record<string, any>; // Additional details for the event
 }
 
 export enum AppointmentType {
@@ -115,6 +131,35 @@ export interface IAppointment extends Document {
     dietitian?: string;
     client?: string;
   };
+  // Lifecycle tracking
+  lifecycleHistory?: IAppointmentLifecycleEvent[];
+  cancelledBy?: {
+    userId: string;
+    role: AppointmentActorRole;
+    name: string;
+    reason?: string;
+    timestamp: Date;
+  };
+  rescheduledBy?: {
+    userId: string;
+    role: AppointmentActorRole;
+    name: string;
+    previousScheduledAt: Date;
+    timestamp: Date;
+  };
+  // Reference to appointment type and mode
+  appointmentTypeId?: string;
+  appointmentModeId?: string;
+  modeName?: string;
+  location?: string;
+  // Email notification tracking
+  emailsSent?: {
+    confirmation?: boolean;
+    reminder?: boolean;
+    cancellation?: boolean;
+    reschedule?: boolean;
+  };
+  createdBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }

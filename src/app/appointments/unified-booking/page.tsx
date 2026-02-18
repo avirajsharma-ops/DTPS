@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useRealtime } from '@/hooks/useRealtime';
 import { 
   CalendarPlus, 
   User, 
@@ -24,7 +25,11 @@ import {
   ArrowRight,
   Check,
   Search,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  AlertCircle,
+  RefreshCw,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -69,7 +74,9 @@ interface AppointmentMode {
 
 interface TimeSlot {
   time: string;
+  endTime?: string;
   available: boolean;
+  isBooked?: boolean;
 }
 
 const STEPS = [
@@ -93,6 +100,7 @@ export default function UnifiedAppointmentBookingPage() {
   const [appointmentModes, setAppointmentModes] = useState<AppointmentMode[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [lunchBreakInfo, setLunchBreakInfo] = useState<{ start: string; end: string; message?: string } | null>(null);
 
   // Selection states
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -112,17 +120,90 @@ export default function UnifiedAppointmentBookingPage() {
   const isDietitian = session?.user?.role === 'dietitian';
   const isHealthCounselor = session?.user?.role === 'health_counselor';
 
+  // Real-time updates via SSE
+  const { isConnected } = useRealtime({
+    onMessage: (event) => {
+      // Refresh slots when appointment is booked/cancelled/rescheduled
+      if (
+        event.type === 'appointment_booked' || 
+        event.type === 'appointment_cancelled' ||
+        event.type === 'appointment_rescheduled'
+      ) {
+        // Only refresh if we're on the date/time step and have selected a date
+        if (step === 3 && selectedDate) {
+          fetchAvailableSlots();
+          toast.info(
+            event.type === 'appointment_booked' 
+              ? '🔔 A slot was just booked - refreshing availability' 
+              : event.type === 'appointment_cancelled'
+              ? '🔔 A slot was just freed - refreshing availability'
+              : '🔔 An appointment was rescheduled - refreshing availability'
+          );
+        }
+      }
+    }
+  });
+
+  // Fetch available slots function - memoized with useCallback
+  const fetchAvailableSlots = useCallback(async () => {
+    const providerId = isAdmin ? selectedProvider?._id : session?.user?.id;
+    if (!providerId || !selectedDate) return;
+
+    try {
+      setLoadingSlots(true);
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      
+      // Build URL with appointmentTypeId if selected (for duration-based slots)
+      let url = `/api/appointments/available-slots?providerId=${providerId}&date=${dateStr}`;
+      if (selectedType?._id) {
+        url += `&appointmentTypeId=${selectedType._id}`;
+      }
+      
+      const res = await fetch(url);
+      
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Map slots to include booked status
+        const mappedSlots: TimeSlot[] = (data.slots || []).map((slot: any) => ({
+          time: slot.time,
+          endTime: slot.endTime,
+          available: slot.available,
+          isBooked: !slot.available
+        }));
+        
+        setTimeSlots(mappedSlots);
+        setLunchBreakInfo(data.lunchBreak || null);
+        
+        // Clear selected time if it's no longer available
+        if (selectedTime) {
+          const stillAvailable = mappedSlots.find(s => s.time === selectedTime && s.available);
+          if (!stillAvailable) {
+            setSelectedTime('');
+            toast.warning('Your selected time slot is no longer available');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching slots:', error);
+      toast.error('Failed to load time slots');
+    } finally {
+      setLoadingSlots(false);
+    }
+  }, [isAdmin, selectedProvider?._id, session?.user?.id, selectedDate, selectedType?._id, selectedTime]);
+
   useEffect(() => {
     if (session?.user) {
       fetchInitialData();
     }
   }, [session]);
 
+  // Fetch slots when date or type changes
   useEffect(() => {
     if (selectedDate && (selectedProvider || (!isAdmin && session?.user?.id))) {
       fetchAvailableSlots();
     }
-  }, [selectedDate, selectedProvider]);
+  }, [selectedDate, selectedProvider, selectedType, fetchAvailableSlots]);
 
   const fetchInitialData = async () => {
     try {
@@ -190,26 +271,6 @@ export default function UnifiedAppointmentBookingPage() {
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
-    }
-  };
-
-  const fetchAvailableSlots = async () => {
-    try {
-      setLoadingSlots(true);
-      const providerId = isAdmin ? selectedProvider?._id : session?.user?.id;
-      if (!providerId || !selectedDate) return;
-
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const res = await fetch(`/api/appointments/provider-availability?providerId=${providerId}&date=${dateStr}`);
-      
-      if (res.ok) {
-        const data = await res.json();
-        setTimeSlots(data.slots || []);
-      }
-    } catch (error) {
-      console.error('Error fetching slots:', error);
-    } finally {
-      setLoadingSlots(false);
     }
   };
 
@@ -502,7 +563,53 @@ export default function UnifiedAppointmentBookingPage() {
                   />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium mb-4">Select Time</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium">Select Time</h3>
+                    <div className="flex items-center gap-2">
+                      {/* Real-time indicator */}
+                      {isConnected ? (
+                        <span className="flex items-center gap-1 text-xs text-green-600">
+                          <Wifi className="h-3 w-3" />
+                          Live
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-xs text-gray-400">
+                          <WifiOff className="h-3 w-3" />
+                        </span>
+                      )}
+                      {selectedDate && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => fetchAvailableSlots()}
+                          disabled={loadingSlots}
+                        >
+                          <RefreshCw className={`h-4 w-4 ${loadingSlots ? 'animate-spin' : ''}`} />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Duration info */}
+                  {selectedType && (
+                    <div className="mb-4 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        <Clock className="h-4 w-4 inline mr-1" />
+                        {selectedType.duration} minute slots for <strong>{selectedType.name}</strong>
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Lunch break info */}
+                  {lunchBreakInfo && (
+                    <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-100 rounded-lg">
+                      <p className="text-xs text-amber-700">
+                        <AlertCircle className="h-3 w-3 inline mr-1" />
+                        Lunch break: {lunchBreakInfo.start} - {lunchBreakInfo.end} (No appointments)
+                      </p>
+                    </div>
+                  )}
+                  
                   {!selectedDate ? (
                     <p className="text-gray-500">Please select a date first</p>
                   ) : loadingSlots ? (
@@ -530,23 +637,50 @@ export default function UnifiedAppointmentBookingPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto">
-                      {timeSlots.map((slot) => (
-                        <button
-                          key={slot.time}
-                          disabled={!slot.available}
-                          className={`p-2 text-sm border rounded-lg transition-colors ${
-                            selectedTime === slot.time
-                              ? 'border-blue-500 bg-blue-50 text-blue-700'
-                              : slot.available
-                              ? 'hover:bg-gray-50'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          }`}
-                          onClick={() => slot.available && setSelectedTime(slot.time)}
-                        >
-                          {slot.time}
-                        </button>
-                      ))}
+                    <div className="space-y-3">
+                      {/* Legend */}
+                      <div className="flex items-center gap-4 text-xs mb-2">
+                        <span className="flex items-center gap-1">
+                          <span className="w-3 h-3 rounded bg-green-100 border border-green-300"></span>
+                          Available
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-3 h-3 rounded bg-red-100 border border-red-300"></span>
+                          Booked
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-3 h-3 rounded bg-blue-500"></span>
+                          Selected
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto">
+                        {timeSlots.map((slot) => (
+                          <button
+                            key={slot.time}
+                            disabled={!slot.available}
+                            className={`p-2 text-sm border rounded-lg transition-all ${
+                              selectedTime === slot.time
+                                ? 'border-blue-500 bg-blue-500 text-white font-medium shadow-md'
+                                : slot.available
+                                ? 'border-green-200 bg-green-50 hover:bg-green-100 hover:border-green-300 text-green-800'
+                                : 'border-red-200 bg-red-50 text-red-400 cursor-not-allowed line-through'
+                            }`}
+                            onClick={() => slot.available && setSelectedTime(slot.time)}
+                            title={slot.available ? `Available: ${slot.time} - ${slot.endTime || ''}` : 'Already booked'}
+                          >
+                            <span className="block">{slot.time}</span>
+                            {slot.endTime && (
+                              <span className="block text-xs opacity-70">to {slot.endTime}</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Available count */}
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        {timeSlots.filter(s => s.available).length} of {timeSlots.length} slots available
+                      </p>
                     </div>
                   )}
                 </div>
@@ -559,38 +693,75 @@ export default function UnifiedAppointmentBookingPage() {
                 <div>
                   <h3 className="text-lg font-medium mb-4">Select Appointment Mode</h3>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {appointmentModes.map((mode) => (
-                      <div
-                        key={mode._id}
-                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                          selectedMode?._id === mode._id 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'hover:bg-gray-50'
-                        }`}
-                        onClick={() => setSelectedMode(mode)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                            {mode.icon === 'video' && <Video className="h-6 w-6 text-blue-600" />}
-                            {mode.icon === 'phone' && <Phone className="h-6 w-6 text-blue-600" />}
-                            {mode.icon === 'map-pin' && <MapPin className="h-6 w-6 text-blue-600" />}
-                            {!['video', 'phone', 'map-pin'].includes(mode.icon || '') && (
-                              <CalendarIcon className="h-6 w-6 text-blue-600" />
+                    {appointmentModes.map((mode) => {
+                      const isOnlineMode = mode.requiresMeetingLink || 
+                        ['google meet', 'zoom', 'video', 'online'].some(m => 
+                          mode.name.toLowerCase().includes(m)
+                        );
+                      
+                      return (
+                        <div
+                          key={mode._id}
+                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                            selectedMode?._id === mode._id 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => setSelectedMode(mode)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                              isOnlineMode ? 'bg-blue-100' : 'bg-green-100'
+                            }`}>
+                              {mode.icon === 'video' && <Video className={`h-6 w-6 ${isOnlineMode ? 'text-blue-600' : 'text-green-600'}`} />}
+                              {mode.icon === 'phone' && <Phone className={`h-6 w-6 ${isOnlineMode ? 'text-blue-600' : 'text-green-600'}`} />}
+                              {mode.icon === 'map-pin' && <MapPin className="h-6 w-6 text-green-600" />}
+                              {!['video', 'phone', 'map-pin'].includes(mode.icon || '') && (
+                                <CalendarIcon className={`h-6 w-6 ${isOnlineMode ? 'text-blue-600' : 'text-green-600'}`} />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium">{mode.name}</p>
+                              {mode.description && (
+                                <p className="text-xs text-gray-400 mt-1">{mode.description}</p>
+                              )}
+                              {isOnlineMode && (
+                                <p className="text-xs text-blue-500 mt-1 flex items-center gap-1">
+                                  <Video className="h-3 w-3" />
+                                  Meeting link will be generated automatically
+                                </p>
+                              )}
+                            </div>
+                            {selectedMode?._id === mode._id && (
+                              <Check className="h-5 w-5 text-blue-600" />
                             )}
                           </div>
-                          <div className="flex-1">
-                            <p className="font-medium">{mode.name}</p>
-                            {mode.description && (
-                              <p className="text-xs text-gray-400 mt-1">{mode.description}</p>
-                            )}
-                          </div>
-                          {selectedMode?._id === mode._id && (
-                            <Check className="h-5 w-5 text-blue-600" />
-                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Meeting link info */}
+                  {selectedMode && (selectedMode.requiresMeetingLink || 
+                    ['google meet', 'zoom', 'video', 'online'].some(m => 
+                      selectedMode.name.toLowerCase().includes(m)
+                    )) && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Video className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-blue-800">Online Appointment</p>
+                          <p className="text-sm text-blue-600 mt-1">
+                            {selectedMode.name.toLowerCase().includes('google') || selectedMode.name.toLowerCase().includes('meet') 
+                              ? 'A Google Meet link will be generated and sent to both you and the client.'
+                              : selectedMode.name.toLowerCase().includes('zoom')
+                              ? 'A Zoom meeting link will be generated and sent to both you and the client.'
+                              : 'A meeting link will be generated and included in the confirmation email.'}
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Location input for offline appointments */}
@@ -650,6 +821,18 @@ export default function UnifiedAppointmentBookingPage() {
                     <span className="text-gray-600">Duration:</span>
                     <span className="font-medium">{selectedType?.duration} minutes</span>
                   </div>
+                </div>
+
+                {/* Audit Info - Who is creating this appointment */}
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                  <p className="text-sm text-blue-700">
+                    <strong>Created by:</strong>{' '}
+                    {isAdmin ? 'Admin' : isDietitian ? 'Dietitian' : isHealthCounselor ? 'Health Counselor' : 'User'}
+                    {session?.user?.name && ` (${session.user.name})`}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    This information will be recorded in the appointment history.
+                  </p>
                 </div>
 
                 <div>

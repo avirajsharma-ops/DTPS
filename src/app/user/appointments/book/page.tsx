@@ -20,7 +20,10 @@ import {
   Video,
   Phone,
   MapPin,
-  Check
+  Check,
+  Wifi,
+  WifiOff,
+  RefreshCw
 } from 'lucide-react';
 import { format, addDays, isBefore, isAfter } from 'date-fns';
 import { toast } from 'sonner';
@@ -71,6 +74,8 @@ interface TimeSlot {
   time: string;
   display: string;
   available: boolean;
+  endTime?: string;
+  isBooked?: boolean;
 }
 
 export default function BookAppointmentPage() {
@@ -85,14 +90,22 @@ export default function BookAppointmentPage() {
   const [booking, setBooking] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [step, setStep] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Use SSE for real-time slot updates (when someone else books)
   const { isConnected } = useRealtime({
     onMessage: (event) => {
-      if (event.type === 'appointment_booked' || event.type === 'appointment_cancelled') {
+      if (event.type === 'appointment_booked' || event.type === 'appointment_cancelled' || event.type === 'appointment_rescheduled') {
         // Refresh slots when any appointment changes
         if (dietitian && selectedDate) {
           generateTimeSlots();
+          toast.info(
+            event.type === 'appointment_booked' 
+              ? '🔔 A slot was just booked - refreshing availability' 
+              : event.type === 'appointment_cancelled'
+              ? '🔔 A slot was just freed - refreshing availability'
+              : '🔔 An appointment was rescheduled - refreshing availability'
+          );
         }
       }
     }
@@ -162,97 +175,53 @@ export default function BookAppointmentPage() {
     }
   };
 
-  const generateTimeSlots = async () => {
+  const generateTimeSlots = useCallback(async () => {
     if (!dietitian || !selectedDate) {
       setAvailableSlots([]);
       return;
     }
 
     try {
+      setRefreshing(true);
       // Fetch available slots from API (checks against existing appointments)
       const dateStr = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD
       const response = await fetch(
-        `/api/appointments/available-slots?dietitianId=${dietitian._id}&date=${dateStr}&duration=30`
+        `/api/appointments/available-slots?providerId=${dietitian._id}&date=${dateStr}&duration=30`
       );
 
       if (response.ok) {
         const data = await response.json();
-        const availableSlotTimes = new Set(data.availableSlots || []);
-
-        // Generate display slots from dietitian's availability
-        const dayOfWeek = selectedDate.getDay();
-        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const dayName = dayNames[dayOfWeek];
         
-        // Find ALL schedules for this day (can have multiple like morning + afternoon)
-        const daySchedules = dietitian.availability?.filter(
-          (avail: any) => avail.day === dayName || avail.dayOfWeek === dayOfWeek
-        ) || [];
+        // Map slots from API response
+        const slots: TimeSlot[] = (data.slots || []).map((slot: any) => ({
+          time: slot.time,
+          display: slot.time,
+          endTime: slot.endTime,
+          available: slot.available,
+          isBooked: !slot.available
+        }));
 
-        if (daySchedules.length === 0) {
-          setAvailableSlots([]);
-          return;
-        }
-
-        const slots: TimeSlot[] = [];
-        
-        // Process each schedule for the day
-        for (const schedule of daySchedules) {
-          const startParsed = parse12HourTime(schedule.startTime || '9:00 AM');
-          const endParsed = parse12HourTime(schedule.endTime || '5:00 PM');
-          
-          let currentHour = startParsed.hour;
-          let currentMin = startParsed.min;
-          const now = new Date();
-
-          while (currentHour < endParsed.hour || (currentHour === endParsed.hour && currentMin < endParsed.min)) {
-            const hour12 = currentHour > 12 ? currentHour - 12 : currentHour === 0 ? 12 : currentHour;
-            const ampm = currentHour >= 12 ? 'PM' : 'AM';
-            const display = `${hour12}:${currentMin.toString().padStart(2, '0')} ${ampm}`;
-            
-            // Check if slot time has passed
-            const slotDateTime = new Date(selectedDate);
-            slotDateTime.setHours(currentHour, currentMin, 0, 0);
-            const isPastTime = slotDateTime <= now;
-
-            // Only add if not already in the list (use display format as time)
-            if (!slots.some(s => s.time === display)) {
-              // Available if: in availableSlots API response AND time hasn't passed
-              // If time has passed, mark as not available (will show as white/disabled)
-              // Check both 12-hour and legacy 24-hour formats in availableSlotTimes
-              const time24Legacy = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
-              const isAvailable = availableSlotTimes.has(display) || availableSlotTimes.has(time24Legacy);
-              slots.push({
-                time: display,
-                display,
-                available: !isPastTime && isAvailable
-              });
-            }
-            
-            currentMin += 30;
-            if (currentMin >= 60) {
-              currentMin = 0;
-              currentHour += 1;
-            }
+        // Clear selected time if it's no longer available
+        if (selectedTime) {
+          const stillAvailable = slots.find(s => s.time === selectedTime && s.available);
+          if (!stillAvailable) {
+            setSelectedTime('');
+            toast.warning('Your selected time slot is no longer available');
           }
         }
 
-        // Sort slots by parsing the time
-        slots.sort((a, b) => {
-          const aTime = parse12HourTime(a.time);
-          const bTime = parse12HourTime(b.time);
-          return (aTime.hour * 60 + aTime.min) - (bTime.hour * 60 + bTime.min);
-        });
         setAvailableSlots(slots);
       } else {
-        // Fallback to local generation if API fails
+        // Fallback to empty if API fails
         setAvailableSlots([]);
       }
     } catch (error) {
       console.error('Error fetching available slots:', error);
       setAvailableSlots([]);
+    } finally {
+      setRefreshing(false);
     }
-  };
+  }, [dietitian, selectedDate, selectedTime]);
 
   const isDateDisabled = (date: Date) => {
     // Disable past dates (but allow today)
@@ -443,13 +412,39 @@ export default function BookAppointmentPage() {
           <>
             <Card className="border-0 shadow-sm">
               <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-[#E06A26]" />
-                  Select Time - {selectedDate && format(selectedDate, 'EEE, MMM d')}
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-[#E06A26]" />
+                    Select Time - {selectedDate && format(selectedDate, 'EEE, MMM d')}
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    {/* Real-time indicator */}
+                    {isConnected ? (
+                      <span className="flex items-center gap-1 text-xs text-green-600">
+                        <Wifi className="h-3 w-3" />
+                        Live
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                        <WifiOff className="h-3 w-3" />
+                      </span>
+                    )}
+                    <button
+                      onClick={() => generateTimeSlots()}
+                      disabled={refreshing}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <RefreshCw className={`h-4 w-4 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-4 pt-2">
-                {availableSlots.length > 0 ? (
+                {refreshing ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="h-8 w-8 text-[#E06A26] animate-spin" />
+                  </div>
+                ) : availableSlots.length > 0 ? (
                   <>
                     {/* Legend */}
                     <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
@@ -458,8 +453,8 @@ export default function BookAppointmentPage() {
                         Available
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-gray-200"></span>
-                        Unavailable
+                        <span className="w-3 h-3 rounded-full bg-red-400"></span>
+                        Booked
                       </span>
                       <span className="flex items-center gap-1">
                         <span className="w-3 h-3 rounded-full bg-[#E06A26]"></span>
@@ -470,20 +465,28 @@ export default function BookAppointmentPage() {
                       {availableSlots.map((slot) => (
                         <button
                           key={slot.time}
-                          onClick={() => setSelectedTime(slot.time)}
+                          onClick={() => slot.available && setSelectedTime(slot.time)}
                           disabled={!slot.available}
                           className={`py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${
                             selectedTime === slot.time
-                              ? 'bg-[#E06A26] text-white'
+                              ? 'bg-[#E06A26] text-white shadow-md'
                               : slot.available
                               ? 'bg-green-100 text-green-700 border border-green-300 hover:bg-green-200'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : 'bg-red-50 text-red-400 border border-red-200 cursor-not-allowed line-through'
                           }`}
+                          title={slot.available ? `Available: ${slot.time}${slot.endTime ? ` - ${slot.endTime}` : ''}` : 'Already booked'}
                         >
-                          {slot.display}
+                          <span className="block">{slot.display}</span>
+                          {slot.endTime && (
+                            <span className="block text-[10px] opacity-70">to {slot.endTime}</span>
+                          )}
                         </button>
                       ))}
                     </div>
+                    {/* Available count */}
+                    <p className="text-xs text-gray-500 text-center mt-3">
+                      {availableSlots.filter(s => s.available).length} of {availableSlots.length} slots available
+                    </p>
                   </>
                 ) : (
                   <div className="text-center py-8 text-gray-500">

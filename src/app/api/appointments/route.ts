@@ -7,13 +7,15 @@ import User from '@/lib/db/models/User';
 import { AppointmentType, AppointmentMode } from '@/lib/db/models/AppointmentConfig';
 import zoomService from '@/lib/services/zoom';
 import { syncAppointmentToCalendars } from '@/lib/services/googleCalendar';
-import { UserRole, AppointmentStatus } from '@/types';
+import { UserRole, AppointmentStatus, AppointmentActorRole } from '@/types';
 import { logHistoryServer } from '@/lib/server/history';
 import { logActivity, logApiError } from '@/lib/utils/activityLogger';
 import { SSEManager } from '@/lib/realtime/sse-manager';
 import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 import mongoose from 'mongoose';
+import { generateMeetingLink, requiresMeetingLink } from '@/lib/services/meetingLink';
+import { sendAppointmentConfirmationEmail, AppointmentEmailData } from '@/lib/services/appointmentEmail';
 
 // Lean result type for User fields used in access checks
 interface LeanClientDoc {
@@ -169,8 +171,10 @@ export async function GET(request: NextRequest) {
         const appointments = await Appointment.find(query)
           .populate('dietitian', 'firstName lastName email avatar')
           .populate('client', 'firstName lastName email avatar')
+          .populate('createdBy', 'firstName lastName role')
           .populate('appointmentTypeId', 'name slug color icon')
           .populate('appointmentModeId', 'name slug icon')
+          .select('+lifecycleHistory +cancelledBy +rescheduledBy')
           .sort({ scheduledAt: 1 })
           .limit(limit)
           .skip((page - 1) * limit)
@@ -222,6 +226,11 @@ export async function POST(request: NextRequest) {
       modeName,
       location
     } = body;
+
+    console.log('[Appointment POST] Request body:', JSON.stringify({ 
+      dietitianId, clientId, scheduledAt, duration, type, 
+      appointmentTypeId, appointmentModeId, modeName, location 
+    }, null, 2));
 
     await connectDB();
 
@@ -317,15 +326,34 @@ export async function POST(request: NextRequest) {
       'in-person': 'consultation',
       'follow-up': 'follow_up',
       'followup': 'follow_up',
+      'initial-consultation': 'initial_consultation',
+      'initial_consultation': 'initial_consultation',
+      'nutrition-assessment': 'nutrition_assessment',
+      'nutrition_assessment': 'nutrition_assessment',
+      'group-session': 'group_session',
+      'group_session': 'group_session',
+      'video-consultation': 'video_consultation',
+      'video_consultation': 'video_consultation',
     };
+
+    // Valid appointment types from the enum
+    const validTypes = [
+      'consultation',
+      'follow_up',
+      'follow-up',
+      'group_session',
+      'video_consultation',
+      'initial_consultation',
+      'nutrition_assessment'
+    ];
 
     // If type is provided and needs mapping, map it
     if (type && typeMapping[type.toLowerCase()]) {
       type = typeMapping[type.toLowerCase()];
     }
 
-    // Default to consultation if no type provided
-    if (!type) {
+    // Default to consultation if no type provided or invalid type
+    if (!type || !validTypes.includes(type)) {
       type = 'consultation';
     }
 
@@ -353,55 +381,139 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create appointment
+    // Get appointment type and mode details for meeting link generation and emails
+    let appointmentTypeName = type;
+    let appointmentModeName = modeName || '';
+    let appointmentDuration = typeof duration === 'number' ? duration : parseInt(duration) || 60;
+    
+    if (appointmentTypeId) {
+      const appointmentTypeDoc = await AppointmentType.findById(appointmentTypeId);
+      if (appointmentTypeDoc) {
+        appointmentTypeName = appointmentTypeDoc.name;
+        appointmentDuration = appointmentTypeDoc.duration || appointmentDuration;
+      }
+    }
+    
+    if (appointmentModeId) {
+      const appointmentModeDoc = await AppointmentMode.findById(appointmentModeId);
+      if (appointmentModeDoc) {
+        appointmentModeName = appointmentModeDoc.name;
+      }
+    }
+
+    // Validate duration is within acceptable range
+    if (appointmentDuration < 15 || appointmentDuration > 180) {
+      appointmentDuration = 60; // Default to 60 minutes if out of range
+    }
+
+    // Determine actor role for lifecycle tracking
+    const getActorRole = (role: string): AppointmentActorRole => {
+      if (role === UserRole.ADMIN || role === 'admin') return 'admin';
+      if (role === UserRole.DIETITIAN || role === 'dietitian') return 'dietitian';
+      if (role === UserRole.HEALTH_COUNSELOR || role === 'health_counselor') return 'health_counselor';
+      return 'client';
+    };
+
+    // Ensure we have a valid user ID for lifecycle tracking
+    const performerUserId = session.user.id;
+    if (!performerUserId) {
+      return NextResponse.json(
+        { error: 'Invalid session - missing user ID' },
+        { status: 401 }
+      );
+    }
+
+    console.log('[Appointment POST] Creating appointment with:', {
+      dietitian: dietitianId,
+      client: clientId,
+      scheduledAt: new Date(scheduledAt),
+      duration: appointmentDuration,
+      type,
+      performerUserId
+    });
+
+    // Create appointment with lifecycle tracking
     const appointment = new Appointment({
       dietitian: dietitianId,
       client: clientId,
       scheduledAt: new Date(scheduledAt),
-      duration: duration || 60,
+      duration: appointmentDuration,
       type,
       notes,
       status: AppointmentStatus.SCHEDULED,
-      createdBy: session.user.id, // Track who created this appointment
+      createdBy: performerUserId,
       // New unified booking fields
       appointmentTypeId: appointmentTypeId || undefined,
       appointmentModeId: appointmentModeId || undefined,
-      modeName: modeName || undefined,
+      modeName: appointmentModeName || undefined,
       location: location || undefined,
+      // Lifecycle tracking
+      lifecycleHistory: [{
+        action: 'created',
+        performedBy: performerUserId,
+        performedByRole: getActorRole(session.user.role as string),
+        performedByName: session.user.name || `${dietitian.firstName} ${dietitian.lastName}`,
+        timestamp: new Date(),
+        details: { scheduledAt: new Date(scheduledAt).toISOString(), duration: appointmentDuration }
+      }],
     }) as any;
 
-    // Try to create Zoom meeting
-    try {
-      const meetingTopic = `${type === 'consultation' ? 'Consultation' : 'Follow-up'} with ${client.firstName} ${client.lastName}`;
-      const meetingConfig = zoomService.generateMeetingConfig(
-        meetingTopic,
-        new Date(scheduledAt),
-        duration || 60,
-        notes || `Nutrition ${type} session between ${dietitian.firstName} ${dietitian.lastName} and ${client.firstName} ${client.lastName}`
-      );
+    // Generate meeting link if the appointment mode requires it
+    let generatedMeetingLink: string | undefined;
+    
+    if (appointmentModeName && requiresMeetingLink(appointmentModeName)) {
+      try {
+        const meetingTopic = `${appointmentTypeName || 'Consultation'} - ${client.firstName} ${client.lastName}`;
+        const meetingResult = await generateMeetingLink(appointmentModeName, {
+          topic: meetingTopic,
+          scheduledAt: new Date(scheduledAt),
+          duration: appointmentDuration,
+          description: notes || `Appointment: ${appointmentTypeName || 'Consultation'}`,
+          hostEmail: dietitian.email,
+          attendees: [
+            { email: dietitian.email, name: `${dietitian.firstName} ${dietitian.lastName}` },
+            { email: client.email, name: `${client.firstName} ${client.lastName}` }
+          ]
+        });
 
-      // Use dietitian's email as the host
-      const zoomMeeting = await zoomService.createMeeting(dietitian.email, meetingConfig);
-
-      // Store Zoom meeting details
-      appointment.zoomMeeting = {
-        meetingId: zoomMeeting.id.toString(),
-        meetingUuid: zoomMeeting.uuid,
-        joinUrl: zoomMeeting.join_url,
-        startUrl: zoomMeeting.start_url,
-        password: zoomMeeting.password,
-        hostEmail: zoomMeeting.host_email
-      };
-
-      // Also set the legacy meetingLink field for backward compatibility
-      appointment.meetingLink = zoomMeeting.join_url;
-    } catch (zoomError) {
-      console.error('Failed to create Zoom meeting:', zoomError);
-      // Continue without Zoom meeting - don't fail the appointment creation
-      // You might want to send a notification to admin about this failure
+        if (meetingResult.success && meetingResult.meetingLink) {
+          generatedMeetingLink = meetingResult.meetingLink;
+          appointment.meetingLink = meetingResult.meetingLink;
+          
+          if (meetingResult.meetingDetails) {
+            if (meetingResult.meetingDetails.provider === 'zoom') {
+              appointment.zoomMeeting = {
+                meetingId: meetingResult.meetingDetails.meetingId,
+                meetingUuid: meetingResult.meetingDetails.meetingUuid,
+                joinUrl: meetingResult.meetingDetails.joinUrl,
+                startUrl: meetingResult.meetingDetails.startUrl,
+                password: meetingResult.meetingDetails.password,
+                hostEmail: meetingResult.meetingDetails.hostEmail
+              };
+            }
+            appointment.meetingProvider = meetingResult.meetingDetails.provider;
+          }
+        } else if (!meetingResult.success) {
+          console.warn('Failed to generate meeting link:', meetingResult.error);
+        }
+      } catch (meetingError) {
+        console.error('Failed to generate meeting link:', meetingError);
+        // Continue without meeting link - don't fail the appointment creation
+      }
     }
 
-    await appointment.save();
+    try {
+      console.log('[Appointment POST] Saving appointment...');
+      await appointment.save();
+      console.log('[Appointment POST] Appointment saved successfully:', appointment._id);
+    } catch (saveError: any) {
+      console.error('[Appointment POST] Failed to save appointment:', saveError);
+      console.error('[Appointment POST] Validation errors:', saveError?.errors);
+      return NextResponse.json(
+        { error: saveError?.message || 'Failed to save appointment', validationErrors: saveError?.errors },
+        { status: 400 }
+      );
+    }
 
     // Clear appointments cache after creation
     clearCacheByTag('appointments');
@@ -410,14 +522,57 @@ export async function POST(request: NextRequest) {
     await appointment.populate('dietitian', 'firstName lastName email avatar');
     await appointment.populate('client', 'firstName lastName email avatar');
 
+    // Send appointment confirmation emails
+    try {
+      const providerRole: 'dietitian' | 'health_counselor' = 
+        session.user.role === UserRole.HEALTH_COUNSELOR || session.user.role === 'health_counselor' 
+          ? 'health_counselor' 
+          : 'dietitian';
+
+      const emailData: AppointmentEmailData = {
+        appointmentId: appointment._id.toString(),
+        clientName: `${client.firstName} ${client.lastName}`,
+        clientEmail: client.email,
+        providerName: `${dietitian.firstName} ${dietitian.lastName}`,
+        providerEmail: dietitian.email,
+        providerRole,
+        appointmentType: appointmentTypeName || type,
+        appointmentMode: appointmentModeName || 'In-Person',
+        scheduledAt: new Date(scheduledAt),
+        duration: appointmentDuration,
+        meetingLink: generatedMeetingLink || appointment.meetingLink,
+        location: location,
+        notes: notes,
+      };
+
+      const emailResult = await sendAppointmentConfirmationEmail(emailData);
+      
+      // Track email sent status in the appointment
+      appointment.emailsSent = {
+        confirmation: {
+          sentAt: new Date(),
+          success: emailResult.success,
+          errors: emailResult.errors
+        }
+      };
+      await appointment.save();
+
+      if (!emailResult.success) {
+        console.warn('Some appointment emails failed:', emailResult.errors);
+      }
+    } catch (emailError) {
+      console.error('Failed to send appointment confirmation emails:', emailError);
+      // Don't fail the appointment creation if emails fail
+    }
+
     // Sync appointment to Google Calendar for both dietitian and client
     try {
       const appointmentCalendarData = {
-        title: `${type === 'consultation' ? 'Consultation' : 'Follow-up'}: ${client.firstName} ${client.lastName} & ${dietitian.firstName} ${dietitian.lastName}`,
-        description: notes || `Nutrition ${type} session`,
+        title: `${appointmentTypeName || 'Consultation'}: ${client.firstName} ${client.lastName} & ${dietitian.firstName} ${dietitian.lastName}`,
+        description: notes || `Appointment: ${appointmentTypeName || 'Consultation'}`,
         scheduledAt: new Date(scheduledAt),
-        duration: duration || 60,
-        meetingLink: appointment.zoomMeeting?.joinUrl || appointment.meetingLink
+        duration: appointmentDuration,
+        meetingLink: generatedMeetingLink || appointment.meetingLink
       };
 
       const calendarResult = await syncAppointmentToCalendars(
@@ -560,10 +715,16 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ appointment }, { status: 201 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating appointment:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+      code: error?.code
+    });
     return NextResponse.json(
-      { error: 'Failed to create appointment' },
+      { error: error?.message || 'Failed to create appointment' },
       { status: 500 }
     );
   }

@@ -1,5 +1,5 @@
 import mongoose, { Schema, Model } from 'mongoose';
-import { IAppointment, AppointmentStatus, AppointmentType, IZoomMeetingDetails } from '@/types';
+import { IAppointment, AppointmentStatus, AppointmentType, IZoomMeetingDetails, AppointmentActorRole } from '@/types';
 
 interface IAppointmentMethods {
   endTime: Date;
@@ -15,6 +15,40 @@ interface IAppointmentStatics {
 }
 
 type AppointmentModel = Model<IAppointment, {}, IAppointmentMethods> & IAppointmentStatics;
+
+// Lifecycle event schema for tracking appointment history
+const lifecycleEventSchema = new Schema({
+  action: {
+    type: String,
+    enum: ['created', 'cancelled', 'rescheduled', 'completed'],
+    required: true
+  },
+  performedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  performedByRole: {
+    type: String,
+    enum: ['client', 'dietitian', 'health_counselor', 'admin'],
+    required: true
+  },
+  performedByName: {
+    type: String,
+    required: true
+  },
+  reason: String,
+  previousScheduledAt: Date,
+  newScheduledAt: Date,
+  timestamp: {
+    type: Date,
+    default: Date.now
+  },
+  // Flexible details field for storing additional context
+  details: {
+    type: Schema.Types.Mixed
+  }
+}, { _id: false });
 
 const appointmentSchema = new Schema({
   dietitian: {
@@ -106,6 +140,50 @@ const appointmentSchema = new Schema({
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: 'User'
+  },
+  // Lifecycle tracking
+  lifecycleHistory: [lifecycleEventSchema],
+  cancelledBy: {
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
+    role: { type: String, enum: ['client', 'dietitian', 'health_counselor', 'admin'] },
+    name: String,
+    reason: String,
+    timestamp: Date
+  },
+  rescheduledBy: {
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
+    role: { type: String, enum: ['client', 'dietitian', 'health_counselor', 'admin'] },
+    name: String,
+    previousScheduledAt: Date,
+    timestamp: Date
+  },
+  // Meeting provider type
+  meetingProvider: {
+    type: String,
+    enum: ['zoom', 'google_meet', 'teams', 'other']
+  },
+  // Email notification tracking
+  emailsSent: {
+    confirmation: {
+      sentAt: Date,
+      success: Boolean,
+      errors: [String]
+    },
+    reminder: {
+      sentAt: Date,
+      success: Boolean,
+      errors: [String]
+    },
+    cancellation: {
+      sentAt: Date,
+      success: Boolean,
+      errors: [String]
+    },
+    reschedule: {
+      sentAt: Date,
+      success: Boolean,
+      errors: [String]
+    }
   }
 }, {
   timestamps: true,
