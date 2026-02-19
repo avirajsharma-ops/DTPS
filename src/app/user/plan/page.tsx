@@ -1176,26 +1176,22 @@ export default function UserPlanPage() {
                             </div>
                             
                             {/* Nutrition Grid - Always show */}
-                            <div className={`grid grid-cols-5 gap-1 mt-3 p-2 rounded-lg ${isDarkMode ? 'bg-black/30' : 'bg-gray-50'}`}>
+                            <div className={`grid grid-cols-4 gap-1 mt-3 p-2 rounded-lg ${isDarkMode ? 'bg-black/30' : 'bg-gray-50'}`}>
                               <div className="text-center">
                                 <p className="text-xs font-bold text-red-500">{item.calories || 0}</p>
                                 <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>kcal</p>
                               </div>
                               <div className="text-center">
-                                <p className="text-xs font-bold text-blue-500">{item.protein || 0}g</p>
+                                <p className="text-xs font-bold text-blue-500">{(item.protein || 0).toFixed(2)}g</p>
                                 <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Protein</p>
                               </div>
                               <div className="text-center">
-                                <p className="text-xs font-bold text-yellow-500">{item.carbs || 0}g</p>
+                                <p className="text-xs font-bold text-yellow-500">{(item.carbs || 0).toFixed(2)}g</p>
                                 <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Carbs</p>
                               </div>
                               <div className="text-center">
-                                <p className="text-xs font-bold text-orange-500">{item.fats || 0}g</p>
+                                <p className="text-xs font-bold text-orange-500">{(item.fats || 0).toFixed(2)}g</p>
                                 <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Fat</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-xs font-bold text-green-500">{item.fiber || 0}g</p>
-                                <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Fiber</p>
                               </div>
                             </div>
                             
@@ -1404,15 +1400,15 @@ export default function UserPlanPage() {
                           <p className="text-xs text-gray-500">kcal</p>
                         </div>
                         <div className="text-center p-2 bg-blue-50 rounded-lg">
-                          <p className="text-lg font-bold text-blue-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.protein || 0}g</p>
+                          <p className="text-lg font-bold text-blue-600">{((fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.protein || 0).toFixed(2)}g</p>
                           <p className="text-xs text-gray-500">Protein</p>
                         </div>
                         <div className="text-center p-2 bg-yellow-50 rounded-lg">
-                          <p className="text-lg font-bold text-yellow-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.carbs || 0}g</p>
+                          <p className="text-lg font-bold text-yellow-600">{((fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.carbs || 0).toFixed(2)}g</p>
                           <p className="text-xs text-gray-500">Carbs</p>
                         </div>
                         <div className="text-center p-2 bg-orange-50 rounded-lg">
-                          <p className="text-lg font-bold text-orange-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.fat || 0}g</p>
+                          <p className="text-lg font-bold text-orange-600">{((fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.fat || 0).toFixed(2)}g</p>
                           <p className="text-xs text-gray-500">Fat</p>
                         </div>
                       </div>
@@ -1680,7 +1676,7 @@ export default function UserPlanPage() {
                         <p className="font-bold text-[#E06A26]">{item.calories} kcal</p>
                         {(item.protein || item.carbs || item.fats) && (
                           <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>
-                            P:{item.protein || 0}g C:{item.carbs || 0}g F:{item.fats || 0}g
+                            P:{(item.protein || 0).toFixed(2)}g C:{(item.carbs || 0).toFixed(2)}g F:{(item.fats || 0).toFixed(2)}g
                           </p>
                         )}
                       </div>

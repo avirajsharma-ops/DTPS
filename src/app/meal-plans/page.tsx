@@ -474,7 +474,7 @@ function MealPlansPageContent() {
                           <div className="text-sm">
                             <div className="font-medium">{plan.targetCalories} cal</div>
                             <div className="text-gray-500">
-                              P:{plan.targetMacros.protein}g C:{plan.targetMacros.carbs}g F:{plan.targetMacros.fat}g
+                              P:{(plan.targetMacros.protein || 0).toFixed(2)}g C:{(plan.targetMacros.carbs || 0).toFixed(2)}g F:{(plan.targetMacros.fat || 0).toFixed(2)}g
                             </div>
                           </div>
                         </td>

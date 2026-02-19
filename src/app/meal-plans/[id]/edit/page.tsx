@@ -601,7 +601,7 @@ export default function EditMealPlanPage({ params }: { params: Promise<{ id: str
                         >
                           <p className="font-medium">{recipe.name}</p>
                           <p className="text-xs text-gray-500">
-                            {recipe.calories} cal | P: {recipe.macros?.protein}g | C: {recipe.macros?.carbs}g | F: {recipe.macros?.fat}g
+                            {recipe.calories} cal | P: {(recipe.macros?.protein || 0).toFixed(2)}g | C: {(recipe.macros?.carbs || 0).toFixed(2)}g | F: {(recipe.macros?.fat || 0).toFixed(2)}g
                           </p>
                         </div>
                       ))}
