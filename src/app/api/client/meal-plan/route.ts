@@ -365,11 +365,15 @@ function extractFoodItems(meal: any, planId: string, dayIndex: number, mealIndex
       name: foodName || 'Food Item',
       portion: food.unit || food.portion || food.quantity || food.servingSize || '1 serving',
       calories: Number(food.calories) || Number(food.cal) || 0,
-      // Alternatives - ensure proper structure
+      // Alternatives - ensure proper structure with full nutrition
       alternatives: Array.isArray(food.alternatives) ? food.alternatives.map((alt: any) => ({
         name: alt.name || alt.food || 'Alternative',
         portion: alt.portion || alt.unit || '1 serving',
-        calories: Number(alt.calories) || 0
+        calories: Number(alt.calories) || 0,
+        protein: Number(alt.protein) || 0,
+        carbs: Number(alt.carbs) || 0,
+        fats: Number(alt.fats) || Number(alt.fat) || 0,
+        fiber: Number(alt.fiber) || 0
       })) : [],
       // Recipe data - include if present
       recipe: food.recipe || null,

@@ -11,6 +11,14 @@ import { compressImageServer } from '@/lib/imageCompressionServer';
 import mongoose from 'mongoose';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 import { findSimilarRecipes, compareIngredients } from '@/lib/recipe-dedup';
+import { 
+  normalizeToArray, 
+  normalizeServings, 
+  normalizeNutritionValue,
+  cleanDoubleEncodedString,
+  VALID_DIETARY_RESTRICTIONS,
+  VALID_MEDICAL_CONTRAINDICATIONS
+} from '@/lib/recipe-normalize';
 
 // Recipe validation schema - flexible to handle both old and new formats (no word limits)
 const recipeSchema = z.object({
@@ -477,15 +485,15 @@ export async function POST(request: NextRequest) {
     }
 
     const recipeData: any = {
-      name: validatedData.name,
-      description: validatedData.description || '',
+      name: cleanDoubleEncodedString(validatedData.name),
+      description: cleanDoubleEncodedString(validatedData.description || ''),
       ingredients: validatedIngredients,
-      instructions: validatedData.instructions,
-      prepTime: validatedData.prepTime,
-      cookTime: validatedData.cookTime,
-      totalTime: (validatedData.prepTime || 0) + (validatedData.cookTime || 0),
-      servings: servingsValue,
-      servingSize: servingSizeValue,
+      instructions: validatedData.instructions.map((i: string) => cleanDoubleEncodedString(i)),
+      prepTime: normalizeNutritionValue(validatedData.prepTime),
+      cookTime: normalizeNutritionValue(validatedData.cookTime),
+      totalTime: normalizeNutritionValue(validatedData.prepTime) + normalizeNutritionValue(validatedData.cookTime),
+      servings: servingsValue > 0 ? servingsValue : 1,
+      servingSize: cleanDoubleEncodedString(servingSizeValue) || '1 serving',
       // Flat nutrition values for queries
       calories: caloriesValue,
       protein: proteinValue,
@@ -494,31 +502,25 @@ export async function POST(request: NextRequest) {
       createdBy: session.user.id
     };
 
-    // Handle tags
-    if (validatedData.tags) {
-      recipeData.tags = validatedData.tags;
-    } else {
-      recipeData.tags = [];
-    }
+    // Handle tags - normalize to array
+    recipeData.tags = normalizeToArray(validatedData.tags);
 
-    // Handle dietary restrictions
-    if (validatedData.dietaryRestrictions) {
-      recipeData.dietaryRestrictions = validatedData.dietaryRestrictions;
-    } else {
-      recipeData.dietaryRestrictions = [];
-    }
+    // Handle dietary restrictions - normalize and validate
+    recipeData.dietaryRestrictions = normalizeToArray(
+      validatedData.dietaryRestrictions,
+      VALID_DIETARY_RESTRICTIONS
+    );
 
-    // Handle medical contraindications
-    if (validatedData.medicalContraindications) {
-      recipeData.medicalContraindications = validatedData.medicalContraindications;
-    } else {
-      recipeData.medicalContraindications = [];
-    }
+    // Handle medical contraindications - normalize and validate
+    recipeData.medicalContraindications = normalizeToArray(
+      validatedData.medicalContraindications,
+      VALID_MEDICAL_CONTRAINDICATIONS
+    );
 
 
     // Always upload the image to ImageKit if provided
     if (validatedData.image && validatedData.image.trim() !== '') {
-      const imageValue = validatedData.image.trim();
+      const imageValue = cleanDoubleEncodedString(validatedData.image);
       try {
         let compressedBase64: string;
         

@@ -63,9 +63,9 @@ interface Recipe {
   };
   tags: string[];
   cuisine: string;
-  dietaryRestrictions: string[];
-  allergens: string[];
-  medicalContraindications?: string[];
+  dietaryRestrictions: string | string[] | null | undefined;
+  allergens: string | string[] | null | undefined;
+  medicalContraindications?: string | string[] | null | undefined;
   difficulty: string;
   image?: string;
   images?: {
@@ -466,50 +466,71 @@ export default function RecipeViewPage() {
                 </div>
               )}
 
-              {recipe.dietaryRestrictions && recipe.dietaryRestrictions.length > 0 && (
+              {recipe.dietaryRestrictions && (Array.isArray(recipe.dietaryRestrictions) ? recipe.dietaryRestrictions : [recipe.dietaryRestrictions]).filter(Boolean).length > 0 && (
                 <div>
                   <p className="text-sm font-medium mb-2">Dietary Restrictions</p>
                   <div className="flex flex-wrap gap-1">
-                    {recipe.dietaryRestrictions.map((restriction, index) => (
-                      <Badge
-                        key={index}
-                        className={getDietaryRestrictionColor(restriction)}
-                      >
-                        {restriction}
-                      </Badge>
-                    ))}
+                    {(() => {
+                      const restrictions = Array.isArray(recipe.dietaryRestrictions)
+                        ? recipe.dietaryRestrictions
+                        : typeof recipe.dietaryRestrictions === 'string'
+                          ? (recipe.dietaryRestrictions as string).split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean)
+                          : [];
+                      return (restrictions as string[]).map((restriction: string, index: number) => (
+                        <Badge
+                          key={index}
+                          className={getDietaryRestrictionColor(restriction)}
+                        >
+                          {restriction}
+                        </Badge>
+                      ));
+                    })()}
                   </div>
                 </div>
               )}
 
-              {recipe.allergens && recipe.allergens.length > 0 && (
+              {recipe.allergens && (Array.isArray(recipe.allergens) ? recipe.allergens : [recipe.allergens]).filter(Boolean).length > 0 && (
                 <div>
                   <p className="text-sm font-medium mb-2 flex items-center">
                     <Shield className="h-4 w-4 mr-1" />
                     Allergens
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {recipe.allergens.map((allergen, index) => (
-                      <Badge key={index} variant="destructive" className="text-xs">
-                        {allergen}
-                      </Badge>
-                    ))}
+                    {(() => {
+                      const allergens = Array.isArray(recipe.allergens)
+                        ? recipe.allergens
+                        : typeof recipe.allergens === 'string'
+                          ? (recipe.allergens as string).split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean)
+                          : [];
+                      return (allergens as string[]).map((allergen: string, index: number) => (
+                        <Badge key={index} variant="destructive" className="text-xs">
+                          {allergen}
+                        </Badge>
+                      ));
+                    })()}
                   </div>
                 </div>
               )}
 
-              {recipe.medicalContraindications && recipe.medicalContraindications.length > 0 && (
+              {recipe.medicalContraindications && (Array.isArray(recipe.medicalContraindications) ? recipe.medicalContraindications : [recipe.medicalContraindications]).filter(Boolean).length > 0 && (
                 <div>
                   <p className="text-sm font-medium mb-2 flex items-center">
                     <AlertCircle className="h-4 w-4 mr-1 text-red-500" />
                     Medical Contraindications
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {recipe.medicalContraindications.map((condition, index) => (
-                      <Badge key={index} variant="outline" className="text-xs border-red-200 text-red-700 bg-red-50">
-                        {condition.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </Badge>
-                    ))}
+                    {(() => {
+                      const contraindications = Array.isArray(recipe.medicalContraindications)
+                        ? recipe.medicalContraindications
+                        : typeof recipe.medicalContraindications === 'string'
+                          ? (recipe.medicalContraindications as string).split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean)
+                          : [];
+                      return (contraindications as string[]).map((condition: string, index: number) => (
+                        <Badge key={index} variant="outline" className="text-xs border-red-200 text-red-700 bg-red-50">
+                          {String(condition).replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                        </Badge>
+                      ));
+                    })()}
                   </div>
                   <p className="text-xs text-red-600 mt-1">
                     ⚠️ Not recommended for individuals with these conditions

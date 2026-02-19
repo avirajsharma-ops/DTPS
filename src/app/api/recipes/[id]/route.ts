@@ -6,6 +6,7 @@ import Recipe from '@/lib/db/models/Recipe';
 import User from '@/lib/db/models/User';
 import mongoose from 'mongoose';
 import { clearCacheByTag } from '@/lib/api/utils';
+import { normalizeToArray, normalizeNutritionValue } from '@/lib/recipe-normalize';
 
 /**
  * Parse servings string to extract numeric value
@@ -97,6 +98,12 @@ export async function GET(
         fat: recipeData.fat || 0,
       };
     }
+
+    // Normalize array fields to ensure they render safely (handles string values from AI)
+    recipeData.dietaryRestrictions = normalizeToArray(recipeData.dietaryRestrictions);
+    recipeData.medicalContraindications = normalizeToArray(recipeData.medicalContraindications);
+    recipeData.allergens = normalizeToArray(recipeData.allergens);
+    recipeData.tags = normalizeToArray(recipeData.tags);
 
     await Recipe.findByIdAndUpdate(id, { $inc: { views: 1 } });
 
