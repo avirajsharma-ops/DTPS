@@ -12,6 +12,7 @@ interface User {
   avatar?: string;
   role: string;
   email?: string;
+  clientStatus?: 'lead' | 'active' | 'inactive';
 }
 
 interface BulkMessageModalProps {
@@ -30,6 +31,7 @@ export default function BulkMessageModal({ isOpen, onClose, currentUserId }: Bul
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState<{ sent: number; failed: number; skipped: number } | null>(null);
   const [filterRole, setFilterRole] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
     if (isOpen) {
@@ -111,8 +113,10 @@ export default function BulkMessageModal({ isOpen, onClose, currentUserId }: Bul
     const matchesSearch = `${user.firstName} ${user.lastName} ${user.email || ''}`
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    // No role filter needed - API returns only assigned clients for bulk messages
-    return matchesSearch;
+    
+    const matchesStatus = filterStatus === 'all' || user.clientStatus === filterStatus;
+    
+    return matchesSearch && matchesStatus;
   });
 
   if (!isOpen) return null;
@@ -146,6 +150,43 @@ export default function BulkMessageModal({ isOpen, onClose, currentUserId }: Bul
                   className="pl-10"
                 />
               </div>
+              
+              {/* Status Filter */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setFilterStatus('all')}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    filterStatus === 'all' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setFilterStatus('active')}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    filterStatus === 'active' ? 'bg-green-100 text-green-700 border-2 border-green-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Active
+                </button>
+                <button
+                  onClick={() => setFilterStatus('inactive')}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    filterStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-2 border-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Inactive
+                </button>
+                <button
+                  onClick={() => setFilterStatus('lead')}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    filterStatus === 'lead' ? 'bg-blue-100 text-blue-700 border-2 border-blue-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Lead
+                </button>
+              </div>
+
               <p className="text-xs text-gray-500">
                 Bulk messages can only be sent to your assigned clients.
               </p>
@@ -211,7 +252,18 @@ export default function BulkMessageModal({ isOpen, onClose, currentUserId }: Bul
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm">{user.firstName} {user.lastName}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900 text-sm">{user.firstName} {user.lastName}</p>
+                        {user.clientStatus && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${
+                            user.clientStatus === 'active' ? 'bg-green-100 text-green-700' :
+                            user.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                            {user.clientStatus.charAt(0).toUpperCase() + user.clientStatus.slice(1)}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-500 capitalize">{user.role.replace('_', ' ')}</p>
                     </div>
                   </div>

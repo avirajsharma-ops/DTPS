@@ -80,6 +80,7 @@ interface Conversation {
     lastName: string;
     avatar?: string;
     role: string;
+    clientStatus?: 'lead' | 'active' | 'inactive';
   };
   lastMessage: Message;
   unreadCount: number;
@@ -94,6 +95,7 @@ interface AvailableUser {
   email: string;
   avatar?: string;
   role: string;
+  clientStatus?: 'lead' | 'active' | 'inactive';
   hasExistingConversation: boolean;
 }
 
@@ -1437,16 +1439,27 @@ function MessagesContent() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {conversation.user.firstName} {conversation.user.lastName}
-                        </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {conversation.user.firstName} {conversation.user.lastName}
+                          </p>
+                          {conversation.user.clientStatus && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${
+                              conversation.user.clientStatus === 'active' ? 'bg-green-100 text-green-700' :
+                              conversation.user.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700' :
+                              'bg-blue-100 text-blue-700'
+                            }`}>
+                              {conversation.user.clientStatus.charAt(0).toUpperCase() + conversation.user.clientStatus.slice(1)}
+                            </span>
+                          )}
+                        </div>
                         {conversation.lastMessage?.createdAt && (() => {
                           try {
                             const date = new Date(conversation.lastMessage.createdAt);
                             if (!isNaN(date.getTime())) {
                               return (
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-gray-500 shrink-0">
                                   {format(date, 'HH:mm')}
                                 </p>
                               );
@@ -1499,9 +1512,20 @@ function MessagesContent() {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-medium">
-                      {selectedUser.user.firstName} {selectedUser.user.lastName}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium">
+                        {selectedUser.user.firstName} {selectedUser.user.lastName}
+                      </h3>
+                      {selectedUser.user.clientStatus && (
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          selectedUser.user.clientStatus === 'active' ? 'bg-green-100 text-green-700' :
+                          selectedUser.user.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {selectedUser.user.clientStatus.charAt(0).toUpperCase() + selectedUser.user.clientStatus.slice(1)}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500">
                       {selectedUser.user.role} • {selectedUser.isOnline ? 'Online' : selectedUser.lastSeen ? `Last seen ${selectedUser.lastSeen}` : 'Offline'}
                     </p>
