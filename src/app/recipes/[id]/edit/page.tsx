@@ -197,13 +197,22 @@ export default function EditRecipePage() {
   const fetchRecipe = async () => {
     try {
       setLoading(true);
+      setError('');
       const response = await fetch(`/api/recipes/${recipeId}`);
       
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.error || errorData.message || 'Failed to load recipe';
+        console.error('Recipe fetch error:', { status: response.status, error: errorMsg });
+        
         if (response.status === 404) {
-          setError('Recipe not found');
+          setError('Recipe not found. It may have been deleted.');
+        } else if (response.status === 401) {
+          setError('You are not authenticated. Please log in again.');
+        } else if (response.status === 403) {
+          setError('You do not have permission to edit this recipe.');
         } else {
-          setError('Failed to load recipe');
+          setError(errorMsg);
         }
         return;
       }
@@ -213,31 +222,95 @@ export default function EditRecipePage() {
         const recipeData = data.recipe;
         setRecipe(recipeData);
         
-        // Populate form fields
+        // Populate form fields with proper type handling
         setName(recipeData.name || '');
         setDescription(recipeData.description || '');
-        // setCategory(recipeData.category || '');
-        setPrepTime(recipeData.prepTime?.toString() || '');
-        setCookTime(recipeData.cookTime?.toString() || '');
-        // Use servingSize (display string) if available, otherwise fall back to servings
-        setServings(recipeData.servingSize || recipeData.servings?.toString() || '');
-        setCalories(recipeData.nutrition?.calories?.toString() || recipeData.calories?.toString() || '');
-        setProtein(recipeData.nutrition?.protein?.toString() || recipeData.protein?.toString() || '');
-        setCarbs(recipeData.nutrition?.carbs?.toString() || recipeData.carbs?.toString() || '');
-        setFat(recipeData.nutrition?.fat?.toString() || recipeData.fat?.toString() || '');
+        setPrepTime(String(recipeData.prepTime || '').trim() || '');
+        setCookTime(String(recipeData.cookTime || '').trim() || '');
+        
+        // Handle servings - use servingSize if available, otherwise format servings number
+        if (recipeData.servingSize) {
+          setServings(recipeData.servingSize);
+        } else if (recipeData.servings) {
+          setServings(String(recipeData.servings));
+        } else {
+          setServings('');
+        }
+        
+        // Handle nutrition from nested object or flat fields
+        const calories = recipeData.nutrition?.calories || recipeData.calories || '';
+        const protein = recipeData.nutrition?.protein || recipeData.protein || '';
+        const carbs = recipeData.nutrition?.carbs || recipeData.carbs || '';
+        const fat = recipeData.nutrition?.fat || recipeData.fat || '';
+        
+        setCalories(String(calories).trim() || '');
+        setProtein(String(protein).trim() || '');
+        setCarbs(String(carbs).trim() || '');
+        setFat(String(fat).trim() || '');
+        
         setImage(recipeData.image || '');
         setImagePreview(recipeData.image || '');
-        setIsActive(recipeData.isActive !== false); // Default to true if not set
-        setIngredients(recipeData.ingredients?.length > 0 ? recipeData.ingredients : [{ name: '', quantity: 0, unit: '', remarks: '' }]);
-        setInstructions(recipeData.instructions?.length > 0 ? recipeData.instructions : ['']);
-        setDietaryRestrictions(recipeData.dietaryRestrictions || []);
-        setMedicalContraindications(recipeData.medicalContraindications || []);
+        setIsActive(recipeData.isActive !== false);
+        
+        // Set ingredients - ensure proper array structure
+        try {
+          let ingredientsArray: Ingredient[] = [];
+          
+          if (Array.isArray(recipeData.ingredients)) {
+            ingredientsArray = recipeData.ingredients
+              .filter((ing: any) => ing && typeof ing === 'object')
+              .map((ing: any) => ({
+                name: String(ing.name || '').trim(),
+                quantity: Number(ing.quantity) || 0,
+                unit: String(ing.unit || '').trim(),
+                remarks: String(ing.remarks || '').trim()
+              }));
+          }
+          
+          if (ingredientsArray.length === 0) {
+            ingredientsArray = [{ name: '', quantity: 0, unit: '', remarks: '' }];
+          }
+          
+          setIngredients(ingredientsArray);
+        } catch (err) {
+          console.error('Error processing ingredients:', err);
+          setIngredients([{ name: '', quantity: 0, unit: '', remarks: '' }]);
+        }
+        
+        // Set instructions - ensure proper array structure
+        if (Array.isArray(recipeData.instructions) && recipeData.instructions.length > 0) {
+          setInstructions(recipeData.instructions.filter((i: any) => typeof i === 'string'));
+        } else {
+          setInstructions(['']);
+        }
+        
+        // Set dietary restrictions - handle both arrays and strings
+        const restrictions = recipeData.dietaryRestrictions;
+        if (Array.isArray(restrictions)) {
+          setDietaryRestrictions(restrictions.filter((r: any) => typeof r === 'string'));
+        } else if (typeof restrictions === 'string') {
+          setDietaryRestrictions(restrictions.split(',').map((r: string) => r.trim()).filter(Boolean));
+        } else {
+          setDietaryRestrictions([]);
+        }
+        
+        // Set medical contraindications - handle both arrays and strings
+        const contraindications = recipeData.medicalContraindications;
+        if (Array.isArray(contraindications)) {
+          setMedicalContraindications(contraindications.filter((c: any) => typeof c === 'string'));
+        } else if (typeof contraindications === 'string') {
+          setMedicalContraindications(contraindications.split(',').map((c: string) => c.trim()).filter(Boolean));
+        } else {
+          setMedicalContraindications([]);
+        }
       } else {
-        setError('Invalid recipe data received');
+        setError('Invalid recipe data received from server');
+        console.error('Invalid recipe data:', data);
       }
     } catch (error) {
       console.error('Error fetching recipe:', error);
-      setError('Failed to load recipe');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to load recipe';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -246,45 +319,63 @@ export default function EditRecipePage() {
   
 
   const canEditRecipe = () => {
-    if (!session?.user || !recipe) return false;
+    if (!session?.user || !recipe) {
+      console.log('canEditRecipe: session or recipe missing', { hasSession: !!session, hasUser: !!session?.user, hasRecipe: !!recipe });
+      return false;
+    }
 
     // Allow any dietitian, health counselor, or admin to edit any recipe
+    const userRole = session.user.role;
     const allowedRoles = [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR, UserRole.ADMIN];
-    return allowedRoles.includes(session.user.role);
+    const canEdit = allowedRoles.includes(userRole);
+    
+    if (!canEdit) {
+      console.log('canEditRecipe: user role not allowed', { userRole, allowedRoles });
+    }
+    
+    return canEdit;
   };
 
   // Ingredient management
   const addIngredient = () => {
-    setIngredients([...ingredients, { name: '', quantity: 0, unit: '', remarks: '' }]);
+    const currentIngredients = Array.isArray(ingredients) ? ingredients : [];
+    setIngredients([...currentIngredients, { name: '', quantity: 0, unit: '', remarks: '' }]);
   };
 
   const removeIngredient = (index: number) => {
-    if (ingredients.length > 1) {
-      setIngredients(ingredients.filter((_, i) => i !== index));
+    const currentIngredients = Array.isArray(ingredients) ? ingredients : [];
+    if (currentIngredients.length > 1) {
+      setIngredients(currentIngredients.filter((_, i) => i !== index));
     }
   };
 
   const updateIngredient = (index: number, field: keyof Ingredient, value: string | number) => {
-    const updated = [...ingredients];
-    updated[index] = { ...updated[index], [field]: value };
-    setIngredients(updated);
+    const currentIngredients = Array.isArray(ingredients) ? [...ingredients] : [];
+    if (currentIngredients.length > 0 && index < currentIngredients.length) {
+      currentIngredients[index] = { ...currentIngredients[index], [field]: value };
+      setIngredients(currentIngredients);
+    }
   };
 
   // Instruction management
   const addInstruction = () => {
-    setInstructions([...instructions, '']);
+    const currentInstructions = Array.isArray(instructions) ? instructions : [];
+    setInstructions([...currentInstructions, '']);
   };
 
   const removeInstruction = (index: number) => {
-    if (instructions.length > 1) {
-      setInstructions(instructions.filter((_, i) => i !== index));
+    const currentInstructions = Array.isArray(instructions) ? instructions : [];
+    if (currentInstructions.length > 1) {
+      setInstructions(currentInstructions.filter((_, i) => i !== index));
     }
   };
 
   const updateInstruction = (index: number, value: string) => {
-    const updated = [...instructions];
-    updated[index] = value;
-    setInstructions(updated);
+    const currentInstructions = Array.isArray(instructions) ? [...instructions] : [];
+    if (currentInstructions.length > 0 && index < currentInstructions.length) {
+      currentInstructions[index] = value;
+      setInstructions(currentInstructions);
+    }
   };
 
   const toggleDietaryRestriction = (restriction: string) => {
@@ -383,76 +474,232 @@ export default function EditRecipePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     
     if (!canEditRecipe()) {
-      toast.error('You do not have permission to edit this recipe');
+      const msg = 'You do not have permission to edit this recipe';
+      setError(msg);
+      toast.error(msg);
       return;
     }
     
-    if (!name || !servings || ingredients.some(ing => !ing.name || !ing.unit)) {
-      toast.error('Please fill in all required fields (name, portion size, and complete ingredient details)');
+    // Validate required fields
+    if (!name || !name.trim()) {
+      toast.error('Recipe name is required');
       return;
     }
 
-    const validInstructions = instructions.filter(inst => inst.trim() !== '');
+    if (!servings || !servings.trim()) {
+      toast.error('Portion size is required');
+      return;
+    }
+
+    const validIngredients = ingredients.filter(ing => ing.name && ing.name.trim() !== '');
+    if (validIngredients.length === 0) {
+      toast.error('Please add at least one ingredient with a name');
+      return;
+    }
+
+    if (ingredients.some(ing => ing.name.trim() !== '' && !ing.unit)) {
+      toast.error('All ingredients must have a unit specified');
+      return;
+    }
+
+    const validInstructions = instructions.filter(inst => inst && inst.trim() !== '');
     if (validInstructions.length === 0) {
-      toast.error('Please add at least one instruction');
+      toast.error('Please add at least one cooking instruction');
       return;
     }
 
-    // Validate required nutrition fields
-    if (!calories || !protein || !carbs || !fat) {
-      toast.error('Please fill in all nutrition fields (calories, protein, carbs, fat)');
+    // Validate nutrition fields
+    const caloriesNum = parseInt(calories || '0');
+    const proteinNum = parseFloat(protein || '0');
+    const carbsNum = parseFloat(carbs || '0');
+    const fatNum = parseFloat(fat || '0');
+
+    if (caloriesNum <= 0 || proteinNum < 0 || carbsNum < 0 || fatNum < 0) {
+      toast.error('Nutrition values must be valid (calories must be positive, others non-negative)');
       return;
     }
 
-    // Validate required time fields
-    if (!prepTime || !cookTime) {
-      toast.error('Please fill in prep time and cook time');
+    const prepTimeNum = parseInt(prepTime || '0');
+    const cookTimeNum = parseInt(cookTime || '0');
+
+    if (prepTimeNum < 0 || cookTimeNum < 0) {
+      toast.error('Prep time and cook time must be non-negative');
       return;
     }
 
     setSaving(true);
-    setError('');
 
     try {
       toast.loading('Updating recipe...', { id: 'update-recipe' });
       
+      const updatePayload = {
+        name: name.trim(),
+        description: description.trim(),
+        prepTime: prepTimeNum,
+        cookTime: cookTimeNum,
+        servings: servings.trim(),
+        isActive,
+        nutrition: {
+          calories: caloriesNum,
+          protein: proteinNum,
+          carbs: carbsNum,
+          fat: fatNum
+        },
+        ingredients: validIngredients.map(ing => ({
+          name: ing.name.trim(),
+          quantity: ing.quantity || 0,
+          unit: ing.unit || '',
+          remarks: (ing.remarks || '').trim()
+        })),
+        instructions: validInstructions.map(i => i.trim()),
+        dietaryRestrictions: dietaryRestrictions.filter(Boolean),
+        medicalContraindications: medicalContraindications.filter(Boolean)
+      };
+
+      console.log('Submitting recipe update:', updatePayload);
+      
       const response = await fetch(`/api/recipes/${recipeId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name, description,
-          prepTime: prepTime ? parseInt(prepTime) : 0,
-          cookTime: cookTime ? parseInt(cookTime) : 0,
-          servings: servings,
-          isActive,
-          nutrition: {
-            calories: calories ? parseInt(calories) : 0,
-            protein: protein ? parseFloat(protein) : 0,
-            carbs: carbs ? parseFloat(carbs) : 0,
-            fat: fat ? parseFloat(fat) : 0
-          },
-          ingredients: ingredients.filter(ing => ing.name.trim() !== ''),
-          instructions: validInstructions,
-          dietaryRestrictions,
-          medicalContraindications
-        }),
+        body: JSON.stringify(updatePayload),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update recipe');
+        const errorMsg = responseData.message || responseData.error || 'Failed to update recipe';
+        console.error('Recipe update error:', { status: response.status, error: errorMsg, data: responseData });
+        throw new Error(errorMsg);
       }
 
       toast.success('Recipe updated successfully!', { id: 'update-recipe' });
       router.push(`/recipes/${recipeId}`);
     } catch (error) {
       console.error('Error updating recipe:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update recipe', { id: 'update-recipe' });
+      const errorMsg = error instanceof Error ? error.message : 'Failed to update recipe. Please try again.';
+      setError(errorMsg);
+      toast.error(errorMsg, { id: 'update-recipe' });
     } finally {
       setSaving(false);
     }
+  };
+
+  // Render ingredients list
+  const renderIngredients = () => {
+    if (!Array.isArray(ingredients) || ingredients.length === 0) {
+      return (
+        <div className="text-gray-500 text-sm py-4">
+          No ingredients added. Click "Add Ingredient" to get started.
+        </div>
+      );
+    }
+
+    return ingredients.map((ingredient, index) => (
+      <div key={index} className="space-y-3">
+        <div className="flex items-end space-x-4">
+          <div className="flex-1">
+            <Label>Ingredient Name</Label>
+            <Input
+              placeholder="e.g., Chicken breast"
+              value={ingredient.name}
+              onChange={(e) => updateIngredient(index, 'name', e.target.value)}
+              required
+            />
+          </div>
+          <div className="w-24">
+            <Label>Quantity</Label>
+            <Input
+              type="number"
+              step="0.1"
+              placeholder="2"
+              value={ingredient.quantity || ''}
+              onChange={(e) => updateIngredient(index, 'quantity', parseFloat(e.target.value) || 0)}
+              required
+            />
+          </div>
+          <div className="w-24">
+            <Label>Unit</Label>
+            <Select
+              value={ingredient.unit}
+              onValueChange={(value) => updateIngredient(index, 'unit', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Unit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cups">cups</SelectItem>
+                <SelectItem value="tbsp">tbsp</SelectItem>
+                <SelectItem value="tsp">tsp</SelectItem>
+                <SelectItem value="oz">oz</SelectItem>
+                <SelectItem value="lbs">lbs</SelectItem>
+                <SelectItem value="g">g</SelectItem>
+                <SelectItem value="kg">kg</SelectItem>
+                <SelectItem value="ml">ml</SelectItem>
+                <SelectItem value="l">l</SelectItem>
+                <SelectItem value="pieces">pieces</SelectItem>
+                <SelectItem value="slices">slices</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-32">
+            <Label>Remarks</Label>
+            <Input
+              placeholder="Optional notes"
+              value={ingredient.remarks || ''}
+              onChange={(e) => updateIngredient(index, 'remarks', e.target.value)}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => removeIngredient(index)}
+            disabled={ingredients.length === 1}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    ));
+  };
+
+  // Render instructions list
+  const renderInstructions = () => {
+    if (!Array.isArray(instructions) || instructions.length === 0) {
+      return (
+        <div className="text-gray-500 text-sm py-4">
+          No instructions added. Click "Add Step" to get started.
+        </div>
+      );
+    }
+
+    return instructions.map((instruction, index) => (
+      <div key={index} className="flex items-start space-x-4">
+        <div className="shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
+          {index + 1}
+        </div>
+        <div className="flex-1">
+          <Textarea
+            placeholder={`Step ${index + 1} instructions...`}
+            value={instruction || ''}
+            onChange={(e) => updateInstruction(index, e.target.value)}
+            rows={2}
+          />
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => removeInstruction(index)}
+          disabled={instructions.length === 1}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+    ));
   };
 
   if (loading) {
@@ -827,78 +1074,11 @@ export default function EditRecipePage() {
                 </>
               ) : (
                 <>
-              {ingredients.map((ingredient, index) => (
-                <div key={index} className="space-y-3">
-                  <div className="flex items-end space-x-4">
-                    <div className="flex-1">
-                      <Label>Ingredient Name</Label>
-                      <Input
-                        placeholder="e.g., Chicken breast"
-                        value={ingredient.name}
-                        onChange={(e) => updateIngredient(index, 'name', e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="w-24">
-                      <Label>Quantity</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="2"
-                        value={ingredient.quantity || ''}
-                        onChange={(e) => updateIngredient(index, 'quantity', parseFloat(e.target.value) || 0)}
-                        required
-                      />
-                    </div>
-                    <div className="w-24">
-                      <Label>Unit</Label>
-                      <Select
-                        value={ingredient.unit}
-                        onValueChange={(value) => updateIngredient(index, 'unit', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Unit" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cups">cups</SelectItem>
-                          <SelectItem value="tbsp">tbsp</SelectItem>
-                          <SelectItem value="tsp">tsp</SelectItem>
-                          <SelectItem value="oz">oz</SelectItem>
-                          <SelectItem value="lbs">lbs</SelectItem>
-                          <SelectItem value="g">g</SelectItem>
-                          <SelectItem value="kg">kg</SelectItem>
-                          <SelectItem value="ml">ml</SelectItem>
-                          <SelectItem value="l">l</SelectItem>
-                          <SelectItem value="pieces">pieces</SelectItem>
-                          <SelectItem value="slices">slices</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="w-32">
-                      <Label>Remarks</Label>
-                      <Input
-                        placeholder="Optional notes"
-                        value={ingredient.remarks || ''}
-                        onChange={(e) => updateIngredient(index, 'remarks', e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeIngredient(index)}
-                      disabled={ingredients.length === 1}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-
-              <Button type="button" variant="outline" onClick={addIngredient}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Ingredient
-              </Button>
+                  {renderIngredients()}
+                  <Button type="button" variant="outline" onClick={addIngredient}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Ingredient
+                  </Button>
                 </>
               )}
             </CardContent>
@@ -918,35 +1098,11 @@ export default function EditRecipePage() {
                 </>
               ) : (
                 <>
-              {instructions.map((instruction, index) => (
-                <div key={index} className="flex items-start space-x-4">
-                  <div className="shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <Textarea
-                      placeholder={`Step ${index + 1} instructions...`}
-                      value={instruction}
-                      onChange={(e) => updateInstruction(index, e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeInstruction(index)}
-                    disabled={instructions.length === 1}
-                  >
-                    <Trash2 className="h-3 w-3" />
+                  {renderInstructions()}
+                  <Button type="button" variant="outline" onClick={addInstruction}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Step
                   </Button>
-                </div>
-              ))}
-
-              <Button type="button" variant="outline" onClick={addInstruction}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Step
-              </Button>
                 </>
               )}
             </CardContent>
@@ -978,56 +1134,56 @@ export default function EditRecipePage() {
                 </>
               ) : (
                 <>
-              <div>
-                <Label>Dietary Restrictions</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {availableDietaryRestrictions.map((restriction) => (
-                    <Badge
-                      key={restriction}
-                      variant={dietaryRestrictions.includes(restriction) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => toggleDietaryRestriction(restriction)}
-                    >
-                      {restriction}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label>Medical Contraindications</Label>
-                <p className="text-sm text-gray-600 mb-2">
-                  Select medical conditions for which this recipe should NOT be recommended
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {availableMedicalContraindications.map((condition) => (
-                    <div
-                      key={condition}
-                      className={`p-2 rounded-lg border cursor-pointer transition-colors ${
-                        medicalContraindications.includes(condition)
-                          ? 'bg-red-50 border-red-200 text-red-800'
-                          : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                      }`}
-                      onClick={() => toggleMedicalContraindication(condition)}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                          medicalContraindications.includes(condition)
-                            ? 'bg-red-500 border-red-500'
-                            : 'border-gray-300'
-                        }`}>
-                          {medicalContraindications.includes(condition) && (
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
-                        <span className="text-sm font-medium">{condition}</span>
-                      </div>
+                  <div>
+                    <Label>Dietary Restrictions</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {availableDietaryRestrictions.map((restriction) => (
+                        <Badge
+                          key={restriction}
+                          variant={dietaryRestrictions.includes(restriction) ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => toggleDietaryRestriction(restriction)}
+                        >
+                          {restriction}
+                        </Badge>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+
+                  <div>
+                    <Label>Medical Contraindications</Label>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Select medical conditions for which this recipe should NOT be recommended
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {availableMedicalContraindications.map((condition) => (
+                        <div
+                          key={condition}
+                          className={`p-2 rounded-lg border cursor-pointer transition-colors ${
+                            medicalContraindications.includes(condition)
+                              ? 'bg-red-50 border-red-200 text-red-800'
+                              : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                          }`}
+                          onClick={() => toggleMedicalContraindication(condition)}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                              medicalContraindications.includes(condition)
+                                ? 'bg-red-500 border-red-500'
+                                : 'border-gray-300'
+                            }`}>
+                              {medicalContraindications.includes(condition) && (
+                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            <span className="text-sm font-medium">{condition}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </>
               )}
             </CardContent>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   Search,
   Plus,
@@ -74,6 +75,7 @@ function RecipesPageContent() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecipes, setTotalRecipes] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -88,6 +90,13 @@ function RecipesPageContent() {
   const [sortBy, setSortBy] = useState('name');
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Debounce search term to prevent excessive API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  
+  // Track if this is the initial load or a search
+  const isInitialLoad = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Bulk AI add state
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkRecipeNames, setBulkRecipeNames] = useState('');
@@ -97,11 +106,20 @@ function RecipesPageContent() {
 
   const RECIPES_PER_PAGE = 50;
 
+  // Show searching indicator when user is typing
+  useEffect(() => {
+    if (searchTerm !== debouncedSearchTerm) {
+      setIsSearching(true);
+    } else {
+      setIsSearching(false);
+    }
+  }, [searchTerm, debouncedSearchTerm]);
+
   useEffect(() => {
     // Reset to first page when filters change
     setCurrentPage(1);
     fetchRecipes(1);
-  }, [searchTerm, selectedCategory, selectedCuisine, selectedDifficulty, selectedDietaryRestrictions, maxCalories, minProtein, maxPrepTime, sortBy]);
+  }, [debouncedSearchTerm, selectedCategory, selectedCuisine, selectedDifficulty, selectedDietaryRestrictions, maxCalories, minProtein, maxPrepTime, sortBy]);
 
   useEffect(() => {
     // Check for success message
@@ -112,12 +130,26 @@ function RecipesPageContent() {
     }
   }, [searchParams]);
 
-  const fetchRecipes = async (pageNum: number) => {
+  const fetchRecipes = useCallback(async (pageNum: number) => {
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     try {
       setLoading(true);
 
       const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
+      if (debouncedSearchTerm) {
+        params.append('search', debouncedSearchTerm);
+        // When searching, use relevance-based sorting instead of alphabetical
+        params.append('sortBy', 'relevance');
+      } else if (sortBy) {
+        params.append('sortBy', sortBy);
+      }
       if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory);
       if (selectedCuisine && selectedCuisine !== 'all') params.append('cuisine', selectedCuisine);
       if (selectedDifficulty && selectedDifficulty !== 'all') params.append('difficulty', selectedDifficulty);
@@ -125,11 +157,13 @@ function RecipesPageContent() {
       if (maxCalories) params.append('maxCalories', maxCalories);
       if (minProtein) params.append('minProtein', minProtein);
       if (maxPrepTime) params.append('maxPrepTime', maxPrepTime);
-      if (sortBy) params.append('sortBy', sortBy);
       params.append('limit', String(RECIPES_PER_PAGE));
       params.append('page', String(pageNum));
 
-      const response = await fetch(`/api/recipes?${params.toString()}`);
+      const response = await fetch(`/api/recipes?${params.toString()}`, {
+        signal: abortControllerRef.current.signal
+      });
+      
       if (response.ok) {
         const data = await response.json();
         const fetchedRecipes: Recipe[] = data.recipes || [];
@@ -149,6 +183,7 @@ function RecipesPageContent() {
         setCategories(data.categories || data.tags || []);
         setTotalRecipes(total);
         setTotalPages(Math.ceil(total / RECIPES_PER_PAGE));
+        isInitialLoad.current = false;
       } else {
         console.error('Failed to fetch recipes:', response.status, response.statusText);
         setRecipes([]);
@@ -156,7 +191,11 @@ function RecipesPageContent() {
         setTotalRecipes(0);
         setTotalPages(1);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Ignore abort errors - they're expected when cancelling requests
+      if (error.name === 'AbortError') {
+        return;
+      }
       console.error('Error fetching recipes:', error);
       setRecipes([]);
       setCategories([]);
@@ -165,7 +204,16 @@ function RecipesPageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearchTerm, selectedCategory, selectedCuisine, selectedDifficulty, selectedDietaryRestrictions, maxCalories, minProtein, maxPrepTime, sortBy]);
+
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const goToPage = (pageNum: number) => {
     if (pageNum >= 1 && pageNum <= totalPages && pageNum !== currentPage) {
@@ -365,8 +413,19 @@ function RecipesPageContent() {
                   placeholder="Search recipes..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 pr-10"
                 />
+                {isSearching && (
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 animate-spin" />
+                )}
+                {searchTerm && !isSearching && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
               
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>

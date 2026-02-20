@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Trash2, Eye, Plus, Edit } from "lucide-react";
+import { Trash2, Eye, Plus, Edit, Loader2, X } from "lucide-react";
 import Link from "next/link";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Recipe {
   _id: string;
@@ -27,13 +28,20 @@ interface Recipe {
     carbs: number;
     fat: number;
   };
+  // Flat nutrition fields (from API)
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
   servings?: number | string;
+  servingSize?: string;
   isActive?: boolean;
 }
 
 export default function AdminRecipesPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,12 +52,28 @@ export default function AdminRecipesPage() {
   const [deleting, setDeleting] = useState(false);
   const itemsPerPage = 20;
 
-  async function fetchRecipes(page = 1, searchQuery = '') {
+  // Debounce search term
+  const debouncedSearch = useDebounce(search, 400);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const fetchRecipes = useCallback(async (page = 1, searchQuery = '') => {
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     try {
       setLoading(true);
       setError(null);
+      
+      // Use relevance sorting when searching
+      const sortParam = searchQuery ? 'sortBy=relevance' : 'sortBy=uuid';
       const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
-      const res = await fetch(`/api/recipes?limit=${itemsPerPage}&page=${page}&sortBy=uuid${searchParam}`);
+      const res = await fetch(
+        `/api/recipes?limit=${itemsPerPage}&page=${page}&${sortParam}${searchParam}`,
+        { signal: abortControllerRef.current.signal }
+      );
       const body = await res.json();
       
       if (!res.ok) {
@@ -70,26 +94,42 @@ export default function AdminRecipesPage() {
       
       console.log(`Fetched ${recipesData.length} recipes from total ${body.pagination?.total}`);
     } catch (e: any) {
+      // Ignore abort errors
+      if (e.name === 'AbortError') return;
       console.error('Error fetching recipes:', e);
       setError(e?.message || "Failed to load recipes");
       setRecipes([]);
     } finally {
       setLoading(false);
     }
-  }
+  }, [itemsPerPage]);
+
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetchRecipes();
-  }, []);
+  }, [fetchRecipes]);
 
-  // Debounced search effect
+  // Show searching indicator when user is typing
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchRecipes(1, search);
-    }, 500);
+    if (search !== debouncedSearch) {
+      setIsSearching(true);
+    } else {
+      setIsSearching(false);
+    }
+  }, [search, debouncedSearch]);
 
-    return () => clearTimeout(timer);
-  }, [search]);
+  // Fetch recipes when debounced search changes
+  useEffect(() => {
+    fetchRecipes(1, debouncedSearch);
+  }, [debouncedSearch, fetchRecipes]);
 
   async function handleDelete() {
     if (!deletingRecipe) return;
@@ -143,11 +183,6 @@ export default function AdminRecipesPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Recipe Management</h1>
             <p className="text-gray-600 mt-1">Manage all recipes in the system</p>
-            {!loading && (
-              <p className="text-sm text-gray-500 mt-2">
-                Total Recipes: <span className="font-semibold text-gray-900">{totalRecipes}</span>
-              </p>
-            )}
           </div>
           <Link href="/recipes/create">
             <Button className="bg-green-600 hover:bg-green-700">
@@ -170,12 +205,25 @@ export default function AdminRecipesPage() {
             <CardTitle>Search Recipes</CardTitle>
           </CardHeader>
           <CardContent>
-            <Input
-              placeholder="Search by UUID, recipe name, dietitian, or ingredients..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full"
-            />
+            <div className="relative">
+              <Input
+                placeholder="Search by UUID, recipe name, dietitian, or ingredients..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pr-10"
+              />
+              {isSearching && (
+                <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 animate-spin" />
+              )}
+              {search && !isSearching && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -205,7 +253,7 @@ export default function AdminRecipesPage() {
                       <th className="p-3 text-left font-semibold text-gray-900">Protein (g)</th>
                       <th className="p-3 text-left font-semibold text-gray-900">Carbs (g)</th>
                       <th className="p-3 text-left font-semibold text-gray-900">Fat (g)</th>
-                      <th className="p-3 text-left font-semibold text-gray-900">Servings</th>
+                      <th className="p-3 text-left font-semibold text-gray-900">Serving Size</th>
                       <th className="p-3 text-left font-semibold text-gray-900">Actions</th>
                     </tr>
                   </thead>
@@ -230,19 +278,19 @@ export default function AdminRecipesPage() {
                           <span className="text-gray-700">{formatDate(recipe.createdAt)}</span>
                         </td>
                         <td className="p-3">
-                          <span className="text-gray-700">{recipe.nutrition?.calories || '-'}</span>
+                          <span className="text-gray-700">{recipe?.calories ||  '-'}</span>
                         </td>
                         <td className="p-3">
-                          <span className="text-gray-700">{recipe.nutrition?.protein || '-'}</span>
+                          <span className="text-gray-700">{recipe?.protein ||  '-'}</span>
                         </td>
                         <td className="p-3">
-                          <span className="text-gray-700">{recipe.nutrition?.carbs || '-'}</span>
+                          <span className="text-gray-700">{recipe?.carbs ||  '-'}</span>
                         </td>
                         <td className="p-3">
-                          <span className="text-gray-700">{recipe.nutrition?.fat || '-'}</span>
+                          <span className="text-gray-700">{recipe?.fat || '-'}</span>
                         </td>
                         <td className="p-3">
-                          <span className="text-gray-700">{recipe.servings || '-'}</span>
+                          <span className="text-gray-700">{recipe?.servingSize  || '-'}</span>
                         </td>
                         <td className="p-3 flex gap-2">
                           <Link
@@ -288,7 +336,7 @@ export default function AdminRecipesPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => fetchRecipes(currentPage - 1, search)}
+                    onClick={() => fetchRecipes(currentPage - 1, debouncedSearch)}
                     disabled={currentPage === 1}
                   >
                     Previous
@@ -310,7 +358,7 @@ export default function AdminRecipesPage() {
                           key={pageNum}
                           variant={currentPage === pageNum ? "default" : "outline"}
                           size="sm"
-                          onClick={() => fetchRecipes(pageNum, search)}
+                          onClick={() => fetchRecipes(pageNum, debouncedSearch)}
                           className="w-10"
                         >
                           {pageNum}
@@ -321,7 +369,7 @@ export default function AdminRecipesPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => fetchRecipes(currentPage + 1, search)}
+                    onClick={() => fetchRecipes(currentPage + 1, debouncedSearch)}
                     disabled={currentPage === totalPages}
                   >
                     Next

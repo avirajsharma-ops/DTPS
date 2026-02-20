@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import PageTransition from '@/components/animations/PageTransition';
 import { useTheme } from '@/contexts/ThemeContext';
-import { ArrowLeft, Clock, Users, Flame, Search } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Flame, Search, X, Loader2 } from 'lucide-react';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { useRouter } from 'next/navigation';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Recipe {
   _id: string;
@@ -32,6 +33,7 @@ export default function RecipesPage() {
   const { isDarkMode } = useTheme();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -41,17 +43,41 @@ export default function RecipesPage() {
   const [imageLoading, setImageLoading] = useState<Record<string, boolean>>({});
   const ITEMS_PER_PAGE = 25;
 
+  // Debounce search term to prevent excessive API calls (400ms delay)
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  
+  // Track abort controller for cancelling in-flight requests
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Fetch categories on mount
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // Fetch recipes when page, search, or category changes
+  // Show searching indicator when user is typing
+  useEffect(() => {
+    if (searchTerm !== debouncedSearchTerm) {
+      setIsSearching(true);
+    } else {
+      setIsSearching(false);
+    }
+  }, [searchTerm, debouncedSearchTerm]);
+
+  // Fetch recipes when debounced search or category changes
   useEffect(() => {
     setRecipes([]);
     setPage(1);
     fetchRecipes(1);
-  }, [searchTerm, selectedCategory]);
+  }, [debouncedSearchTerm, selectedCategory]);
+
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const fetchCategories = async () => {
     try {
@@ -65,7 +91,15 @@ export default function RecipesPage() {
     }
   };
 
-  const fetchRecipes = async (pageNum: number) => {
+  const fetchRecipes = useCallback(async (pageNum: number) => {
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     try {
       setLoading(true);
 
@@ -73,14 +107,19 @@ export default function RecipesPage() {
       params.append('page', pageNum.toString());
       params.append('limit', ITEMS_PER_PAGE.toString());
       
-      if (searchTerm) {
-        params.append('search', searchTerm);
+      if (debouncedSearchTerm) {
+        params.append('search', debouncedSearchTerm);
+        // When searching, use relevance-based sorting
+        params.append('sortBy', 'relevance');
       }
       if (selectedCategory) {
         params.append('category', selectedCategory);
       }
 
-      const response = await fetch(`/api/recipes?${params.toString()}`);
+      const response = await fetch(`/api/recipes?${params.toString()}`, {
+        signal: abortControllerRef.current.signal
+      });
+      
       if (response.ok) {
         const data = await response.json();
         const newRecipes = data.recipes || [];
@@ -93,14 +132,19 @@ export default function RecipesPage() {
         setTotalPages(pages);
         setPage(pageNum);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Ignore abort errors - they're expected when cancelling requests
+      if (error.name === 'AbortError') {
+        return;
+      }
       console.error('Error fetching recipes:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearchTerm, selectedCategory]);
 
-  if (loading) {
+  // Show full-page loading only on initial load, not during searches
+  if (loading && recipes.length === 0 && !searchTerm) {
     return (
       <div className={`fixed inset-0 flex items-center justify-center z-100 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
         <SpoonGifLoader size="lg" />
@@ -133,12 +177,23 @@ export default function RecipesPage() {
             placeholder="Search recipes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pl-12 pr-4 py-3 rounded-xl focus:outline-none focus:border-[#3AB1A0] focus:ring-1 focus:ring-[#3AB1A0]/20 transition-all ${
+            className={`w-full pl-12 pr-12 py-3 rounded-xl focus:outline-none focus:border-[#3AB1A0] focus:ring-1 focus:ring-[#3AB1A0]/20 transition-all ${
               isDarkMode
                 ? 'bg-gray-900 border border-gray-700 text-white placeholder:text-gray-400'
                 : 'bg-white border border-gray-200 text-gray-900'
             }`}
           />
+          {isSearching && (
+            <Loader2 className={`absolute right-4 top-3.5 w-5 h-5 animate-spin ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
+          )}
+          {searchTerm && !isSearching && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className={`absolute right-4 top-3.5 ${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Category Filter - Horizontal Scroll */}

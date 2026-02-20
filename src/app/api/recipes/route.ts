@@ -169,6 +169,7 @@ export async function GET(request: NextRequest) {
     // Sort options - always include _id as secondary sort for stable pagination
     let sortOptions: any = {};
     let isNumericUuidSort = false;
+    let isRelevanceSort = false;
     
     switch (sortBy) {
       case 'rating':
@@ -197,6 +198,16 @@ export async function GET(request: NextRequest) {
         sortOptions = { _id: 1 }; // Use _id for DB sort, we'll sort by UUID numerically after fetch
         isNumericUuidSort = true;
         break;
+      case 'relevance':
+        // For relevance sorting, we use MongoDB text search scoring if available,
+        // otherwise we'll do post-processing relevance scoring
+        if (search) {
+          isRelevanceSort = true;
+          sortOptions = { _id: 1 }; // Initial sort, will be re-sorted after fetch
+        } else {
+          sortOptions = { name: 1, _id: 1 };
+        }
+        break;
       default:
         sortOptions = { name: 1, _id: 1 };
     }
@@ -216,8 +227,8 @@ export async function GET(request: NextRequest) {
           // First fetch recipes without populate to avoid ObjectId cast errors
           let recipesQuery = Recipe.find(query).sort(sortOptions);
 
-          // For numeric UUID sorting, don't use limit/skip yet - we'll do it after sorting
-          if (!isNumericUuidSort && limit > 0) {
+          // For numeric UUID sorting or relevance sorting, don't use limit/skip yet - we'll do it after sorting
+          if (!isNumericUuidSort && !isRelevanceSort && limit > 0) {
             recipesQuery = recipesQuery.limit(limit).skip((page - 1) * limit);
           }
 
@@ -270,6 +281,85 @@ export async function GET(request: NextRequest) {
             });
             
             // Apply pagination after sorting
+            if (limit > 0) {
+              const startIdx = (page - 1) * limit;
+              const endIdx = startIdx + limit;
+              recipesData = recipesData.slice(startIdx, endIdx);
+            }
+          }
+
+          // Relevance-based sorting for search results
+          // Prioritizes: exact match > starts with > contains in name > contains in description > contains in ingredients
+          if (isRelevanceSort && search) {
+            const searchLower = search.toLowerCase().trim();
+            const searchTerms = searchLower.split(/\s+/).filter(t => t.length > 0);
+            
+            recipesData = recipesData.map((recipe: any) => {
+              const nameLower = (recipe.name || '').toLowerCase();
+              const descLower = (recipe.description || '').toLowerCase();
+              const ingredientsText = (recipe.ingredients || [])
+                .map((ing: any) => (ing.name || '').toLowerCase())
+                .join(' ');
+              const tagsText = (recipe.tags || []).join(' ').toLowerCase();
+              
+              let score = 0;
+              
+              // Exact name match (highest priority)
+              if (nameLower === searchLower) {
+                score += 1000;
+              }
+              // Name starts with search term
+              else if (nameLower.startsWith(searchLower)) {
+                score += 500;
+              }
+              // Name contains exact search term
+              else if (nameLower.includes(searchLower)) {
+                score += 300;
+              }
+              
+              // Check individual search terms for partial matches
+              for (const term of searchTerms) {
+                // Term in name
+                if (nameLower.includes(term)) {
+                  score += 100;
+                  // Bonus for word boundary match
+                  if (new RegExp(`\\b${term}`, 'i').test(nameLower)) {
+                    score += 50;
+                  }
+                }
+                // Term in tags
+                if (tagsText.includes(term)) {
+                  score += 80;
+                }
+                // Term in description
+                if (descLower.includes(term)) {
+                  score += 30;
+                }
+                // Term in ingredients
+                if (ingredientsText.includes(term)) {
+                  score += 20;
+                }
+              }
+              
+              // Boost shorter names (more likely to be exact matches)
+              if (nameLower.includes(searchLower)) {
+                const lengthRatio = searchLower.length / nameLower.length;
+                score += Math.floor(lengthRatio * 50);
+              }
+              
+              return { ...recipe, _relevanceScore: score };
+            });
+            
+            // Sort by relevance score (highest first), then by name for ties
+            recipesData.sort((a: any, b: any) => {
+              const scoreDiff = (b._relevanceScore || 0) - (a._relevanceScore || 0);
+              if (scoreDiff !== 0) return scoreDiff;
+              return (a.name || '').localeCompare(b.name || '');
+            });
+            
+            // Remove the score from results and apply pagination
+            recipesData = recipesData.map(({ _relevanceScore, ...rest }: any) => rest);
+            
             if (limit > 0) {
               const startIdx = (page - 1) * limit;
               const endIdx = startIdx + limit;
