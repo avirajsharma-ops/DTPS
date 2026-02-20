@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       }
 
       const clients = await User.find(clientQuery)
-        .select('firstName lastName email avatar role')
+        .select('firstName lastName email avatar role clientStatus')
         .sort({ firstName: 1, lastName: 1 })
         .limit(limit);
 
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
     const users = await withCache(
       `users:available-for-chat:${JSON.stringify(query)}`,
       async () => await User.find(query)
-      .select('firstName lastName email avatar role assignedDietitian')
+      .select('firstName lastName email avatar role assignedDietitian clientStatus')
       .sort({ firstName: 1, lastName: 1 })
       .limit(limit),
       { ttl: 120000, tags: ['users'] }
