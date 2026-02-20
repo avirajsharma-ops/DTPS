@@ -8,14 +8,24 @@ import User from '@/lib/db/models/User';
 import mongoose from 'mongoose';
 import { z } from 'zod';
 
+// Group chat functionality is disabled
+// All group-related routes return 403 Forbidden
+
 const createGroupSchema = z.object({
   name: z.string().min(1, 'Group name is required').max(100),
   description: z.string().max(500).optional(),
   memberIds: z.array(z.string().min(1)).min(1, 'At least one member is required')
 });
 
-// GET /api/messages/groups - List groups the user belongs to
+// GET /api/messages/groups - DISABLED: Group chat is not available
 export async function GET(request: NextRequest) {
+  return NextResponse.json(
+    { error: 'Group chat functionality is disabled', groups: [] },
+    { status: 403 }
+  );
+  
+  // Original implementation kept for reference but disabled
+  /*
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -150,81 +160,13 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching groups:', error);
     return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 });
   }
+  */
 }
 
-// POST /api/messages/groups - Create a new group
+// POST /api/messages/groups - DISABLED: Group chat is not available
 export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Only staff can create groups
-    const allowedRoles = ['admin', 'dietitian', 'health_counselor'];
-    if (!allowedRoles.includes(session.user.role?.toLowerCase())) {
-      return NextResponse.json({ error: 'Only staff can create groups' }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const validatedData = createGroupSchema.parse(body);
-
-    await connectDB();
-
-    // Verify all members exist
-    const members = await User.find({ _id: { $in: validatedData.memberIds } })
-      .select('_id')
-      .lean();
-
-    const validMemberIds = members.map((m: any) => m._id.toString());
-
-    // Build members array - creator is admin, others are members
-    const memberEntries = [
-      { user: session.user.id, role: 'admin', joinedAt: new Date() },
-      ...validMemberIds
-        .filter(id => id !== session.user.id)
-        .map(id => ({ user: id, role: 'member' as const, joinedAt: new Date() }))
-    ];
-
-    const group = new MessageGroup({
-      name: validatedData.name,
-      description: validatedData.description,
-      createdBy: session.user.id,
-      members: memberEntries,
-      isActive: true
-    });
-
-    await group.save();
-
-    // Populate for response
-    const populatedGroup = await MessageGroup.findById(group._id)
-      .populate('members.user', 'firstName lastName avatar role')
-      .populate('createdBy', 'firstName lastName avatar')
-      .lean();
-
-    // Notify all members via SSE
-    const { SSEManager } = await import('@/lib/realtime/sse-manager');
-    const sseManager = SSEManager.getInstance();
-
-    validMemberIds.forEach(memberId => {
-      sseManager.sendToUser(memberId, 'group_created', {
-        group: populatedGroup,
-        timestamp: Date.now()
-      });
-    });
-
-    return NextResponse.json({ group: populatedGroup }, { status: 201 });
-
-  } catch (error: any) {
-    console.error('Error creating group:', error);
-
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({ error: 'Failed to create group' }, { status: 500 });
-  }
+  return NextResponse.json(
+    { error: 'Group chat functionality is disabled' },
+    { status: 403 }
+  );
 }

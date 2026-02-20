@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { logHistoryServer } from '@/lib/server/history';
 import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { updateClientStatusFromMealPlan } from '@/lib/status/computeClientStatus';
 
 // Validation schema for client meal plan assignment
 const clientMealPlanSchema = z.object({
@@ -431,6 +432,15 @@ export async function POST(request: NextRequest) {
       });
     } catch (notificationError) {
       console.error('Failed to send meal plan notification:', notificationError);
+    }
+
+    // Update client status based on the new meal plan
+    try {
+      const newStatus = await updateClientStatusFromMealPlan(validatedData.clientId);
+      console.log(`[ClientMealPlan] Client ${validatedData.clientId} status updated to: ${newStatus}`);
+    } catch (statusError) {
+      console.error('Failed to update client status:', statusError);
+      // Don't fail the request - meal plan was created successfully
     }
 
     return NextResponse.json({

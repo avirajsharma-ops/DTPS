@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
     // Fetch meal plan data for all clients to get programStart, programEnd, lastDiet
     const clientIds = clientsData.map((c: any) => c._id);
     
-    // Get meal plan info for each client
+    // Get meal plan info for each client - we need both overall program dates and active plan dates
     const mealPlanData = await ClientMealPlan.aggregate([
       { $match: { clientId: { $in: clientIds } } },
       { $sort: { startDate: 1 } },
@@ -120,18 +120,41 @@ export async function GET(request: NextRequest) {
           // Last meal plan info for lastDiet display
           lastPlanDate: { $last: '$updatedAt' },
           lastPlanName: { $last: '$name' },
-          lastPlanStatus: { $last: '$status' }
+          lastPlanStatus: { $last: '$status' },
+          // Collect all plans for active plan detection
+          allPlans: { 
+            $push: { 
+              startDate: '$startDate', 
+              endDate: '$endDate', 
+              status: '$status',
+              name: '$name'
+            } 
+          }
         }
       }
     ]);
 
     // Create a map of clientId to meal plan data
     const mealPlanMap = new Map();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     mealPlanData.forEach((mp: any) => {
+      // Find the active plan with endDate in the future (for status display)
+      const activePlan = mp.allPlans?.find((plan: any) => {
+        const end = new Date(plan.endDate);
+        end.setHours(23, 59, 59, 999);
+        return plan.status === 'active' && end >= today;
+      });
+      
       mealPlanMap.set(mp._id.toString(), {
         programStart: mp.programStart,
         programEnd: mp.programEnd,
-        lastDiet: mp.lastPlanDate ? `${mp.lastPlanName || 'Diet Plan'}` : null
+        lastDiet: mp.lastPlanDate ? `${mp.lastPlanName || 'Diet Plan'}` : null,
+        // Active plan dates - these are used to determine status
+        activePlanStartDate: activePlan?.startDate || null,
+        activePlanEndDate: activePlan?.endDate || null,
+        activePlanName: activePlan?.name || null
       });
     });
 
@@ -183,8 +206,13 @@ export async function GET(request: NextRequest) {
       return {
         ...client,
         clientStatus: computedStatus,
+        // Overall program dates (first start to last end)
         programStart: mealData?.programStart || null,
         programEnd: mealData?.programEnd || null,
+        // Active plan dates - these determine the status
+        mealPlanStartDate: mealData?.activePlanStartDate || null,
+        mealPlanEndDate: mealData?.activePlanEndDate || null,
+        activePlanName: mealData?.activePlanName || null,
         lastDiet: mealData?.lastDiet || null
       };
     });

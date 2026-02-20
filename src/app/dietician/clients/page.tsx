@@ -57,6 +57,10 @@ interface Client {
   }>;
   programStart?: string;
   programEnd?: string;
+  // Active meal plan dates (used for status computation)
+  mealPlanStartDate?: string;
+  mealPlanEndDate?: string;
+  activePlanName?: string;
   lastDiet?: string;
   assignedDietitian?: {
     _id: string;
@@ -339,8 +343,8 @@ export default function DieticianClientsPage() {
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Email</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Tags</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Status</TableHead>
-                        <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Start</TableHead>
-                        <TableHead className="font-semibold text-xs whitespace-nowrap px-3">End</TableHead>
+                        <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Plan Start</TableHead>
+                        <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Plan End</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Last Diet</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Created By</TableHead>
                         <TableHead className="font-semibold text-xs whitespace-nowrap px-3">Joined</TableHead>
@@ -416,8 +420,12 @@ export default function DieticianClientsPage() {
                                 </span>
                               </Badge>
                             </TableCell>
-                            <TableCell className="px-3 text-sm whitespace-nowrap">{client.programStart ? formatDate(client.programStart) : '-'}</TableCell>
-                            <TableCell className="px-3 text-sm whitespace-nowrap">{client.programEnd ? formatDate(client.programEnd) : '-'}</TableCell>
+                            <TableCell className="px-3 text-sm whitespace-nowrap">
+                              {client.mealPlanStartDate ? formatDate(client.mealPlanStartDate) : (client.programStart ? formatDate(client.programStart) : '-')}
+                            </TableCell>
+                            <TableCell className="px-3 text-sm whitespace-nowrap">
+                              {client.mealPlanEndDate ? formatDate(client.mealPlanEndDate) : (client.programEnd ? formatDate(client.programEnd) : '-')}
+                            </TableCell>
                             <TableCell className="px-3 text-sm whitespace-nowrap">{client.lastDiet || '-'}</TableCell>
                             <TableCell className="px-3 text-sm">
                               {client.createdBy?.role ? (

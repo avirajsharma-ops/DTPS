@@ -146,10 +146,10 @@ async function handlePaymentSuccess(payload: any) {
       if (clientId) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        // Find active plan with endDate in the future (regardless of startDate)
         const activePlan = await ClientMealPlan.findOne({
           clientId,
           status: 'active',
-          startDate: { $lte: today },
           endDate: { $gte: today }
         });
         const newStatus = computeClientStatus({

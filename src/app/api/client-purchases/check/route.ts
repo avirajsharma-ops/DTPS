@@ -35,17 +35,16 @@ async function updateClientStatusBasedOnMealPlan(clientId: string): Promise<stri
     });
 
     // Check both MealPlan and ClientMealPlan for active plans
+    // A plan is valid if status is 'active' AND endDate is in the future (regardless of startDate)
     const activeMealPlan = await MealPlan.findOne({
       client: clientId,
       status: 'active',
-      startDate: { $lte: today },
       endDate: { $gte: today }
     });
 
     const activeClientMealPlan = !activeMealPlan ? await ClientMealPlan.findOne({
       clientId,
       status: 'active',
-      startDate: { $lte: today },
       endDate: { $gte: today }
     }) : null;
 

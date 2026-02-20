@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/connection';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { updateClientStatusFromMealPlan } from '@/lib/status/computeClientStatus';
 
 // GET single meal plan by ID
 export async function GET(
@@ -102,6 +103,20 @@ export async function PUT(
       );
     }
     
+    // Update client status if status or dates changed (could affect active status)
+    if (status || startDate || endDate) {
+      try {
+        const clientId = updatedPlan.clientId?.toString();
+        if (clientId) {
+          const newStatus = await updateClientStatusFromMealPlan(clientId);
+          console.log(`[ClientMealPlan] Client ${clientId} status updated to: ${newStatus}`);
+        }
+      } catch (statusError) {
+        console.error('Failed to update client status:', statusError);
+        // Don't fail the request - meal plan was updated successfully
+      }
+    }
+    
     return NextResponse.json({
       success: true,
       message: 'Meal plan updated successfully',
@@ -133,13 +148,30 @@ export async function DELETE(
     
     const { id } = await context.params;
     
-    const deletedPlan = await ClientMealPlan.findByIdAndDelete(id);
+    // First, get the meal plan to know the clientId before deleting
+    const mealPlan = await ClientMealPlan.findById(id);
     
-    if (!deletedPlan) {
+    if (!mealPlan) {
       return NextResponse.json(
         { success: false, error: 'Meal plan not found' },
         { status: 404 }
       );
+    }
+    
+    const clientId = mealPlan.clientId?.toString();
+    
+    // Now delete the meal plan
+    await ClientMealPlan.findByIdAndDelete(id);
+    
+    // Update client status after deletion
+    if (clientId) {
+      try {
+        const newStatus = await updateClientStatusFromMealPlan(clientId);
+        console.log(`[ClientMealPlan] Client ${clientId} status updated to: ${newStatus} after meal plan deletion`);
+      } catch (statusError) {
+        console.error('Failed to update client status after deletion:', statusError);
+        // Don't fail the request - meal plan was deleted successfully
+      }
     }
     
     return NextResponse.json({

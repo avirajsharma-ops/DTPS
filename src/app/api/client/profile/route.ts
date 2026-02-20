@@ -5,6 +5,7 @@ import dbConnect from "@/lib/db/connection";
 import User from "@/lib/db/models/User";
 import { SSEManager } from "@/lib/realtime/sse-manager";
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { getClientStatusInfo } from '@/lib/status/computeClientStatus';
 
 // BMI Calculation Helper
 function calculateBMI(weightKg: number, heightCm: number): { bmi: string; bmiCategory: string } {
@@ -48,7 +49,7 @@ export async function GET() {
       async () => {
         const user = await User.findById(session.user.id)
           .select(
-            "name firstName lastName email phone dateOfBirth gender address city state pincode profileImage avatar createdAt heightCm weightKg targetWeightKg activityLevel generalGoal dietType alternativeEmail alternativePhone anniversary source referralSource assignedDietitian bmi bmiCategory height weight"
+            "name firstName lastName email phone dateOfBirth gender address city state pincode profileImage avatar createdAt heightCm weightKg targetWeightKg activityLevel generalGoal dietType alternativeEmail alternativePhone anniversary source referralSource assignedDietitian bmi bmiCategory height weight clientStatus"
           )
           .populate('assignedDietitian', 'firstName lastName email phone')
           .lean();
@@ -94,7 +95,21 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(userData);
+    // Get computed client status based on meal plan validity
+    let statusInfo = null;
+    try {
+      statusInfo = await getClientStatusInfo(session.user.id);
+    } catch (statusError) {
+      console.error("Error getting client status:", statusError);
+    }
+
+    return NextResponse.json({
+      ...userData,
+      clientStatus: statusInfo?.clientStatus || userData.clientStatus,
+      hasActivePlan: statusInfo?.hasActivePlan || false,
+      mealPlanStartDate: statusInfo?.activePlanStartDate,
+      mealPlanEndDate: statusInfo?.activePlanEndDate
+    });
   } catch (error) {
     console.error("Error fetching profile:", error);
     return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 });
