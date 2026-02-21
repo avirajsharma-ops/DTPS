@@ -4,15 +4,69 @@ import { authOptions } from '@/lib/auth/config';
 import dbConnect from '@/lib/db/connect';
 import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
+import ServicePlan, { ClientPurchase } from '@/lib/db/models/ServicePlan';
 import { addDays, format, differenceInDays, startOfDay, parseISO } from 'date-fns';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
-// Helper function to calculate allowed freeze days based on plan duration in months
-function calculateAllowedFreezeDays(durationDays: number): number {
+// Helper function to calculate allowed freeze days based on plan duration in months (fallback)
+function calculateAllowedFreezeDaysFallback(durationDays: number): number {
   // Calculate months (approximately 30 days per month)
   const months = Math.ceil(durationDays / 30);
-  // Each month allows 10 days of freeze
+  // Each month allows 10 days of freeze (fallback if not set in service plan)
   return months * 10;
+}
+
+// Helper function to get freeze days from purchase/service plan
+// Checks: 1. ClientPurchase.selectedTier.freezeDays
+//         2. UnifiedPayment → ServicePlan.pricingTiers (matching durationDays)
+//         3. Falls back to calculated value
+async function getFreezeDaysFromPurchase(purchaseId: string | null, durationDays: number): Promise<number> {
+  if (!purchaseId) {
+    return calculateAllowedFreezeDaysFallback(durationDays);
+  }
+
+  try {
+    // First, try ClientPurchase model
+    const clientPurchase: any = await ClientPurchase.findById(purchaseId).lean();
+    if (clientPurchase?.selectedTier?.freezeDays && clientPurchase.selectedTier.freezeDays > 0) {
+      return clientPurchase.selectedTier.freezeDays;
+    }
+
+    // Second, try UnifiedPayment model and fetch from ServicePlan
+    const unifiedPayment: any = await UnifiedPayment.findById(purchaseId)
+      .populate('servicePlan')
+      .lean();
+    
+    if (unifiedPayment?.servicePlan) {
+      const servicePlan = unifiedPayment.servicePlan;
+      // Find the matching pricing tier based on duration
+      const matchingTier = servicePlan.pricingTiers?.find(
+        (tier: any) => tier.durationDays === (unifiedPayment.durationDays || durationDays) && tier.isActive
+      );
+      
+      if (matchingTier?.freezeDays && matchingTier.freezeDays > 0) {
+        return matchingTier.freezeDays;
+      }
+    }
+    
+    // Third, if UnifiedPayment has servicePlan reference, try direct ServicePlan lookup
+    if (!unifiedPayment && clientPurchase?.servicePlan) {
+      const servicePlan: any = await ServicePlan.findById(clientPurchase.servicePlan).lean();
+      if (servicePlan?.pricingTiers) {
+        const matchingTier = servicePlan.pricingTiers.find(
+          (tier: any) => tier.durationDays === durationDays && tier.isActive
+        );
+        if (matchingTier?.freezeDays && matchingTier.freezeDays > 0) {
+          return matchingTier.freezeDays;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching purchase for freeze days:', error);
+  }
+
+  // Fallback to calculated value if not found in any source
+  return calculateAllowedFreezeDaysFallback(durationDays);
 }
 
 // Helper function to get aggregated freeze info from all plans linked to the same purchase
@@ -85,7 +139,9 @@ export async function GET(
     const purchaseId = mealPlan.purchaseId?.toString() || null;
     let totalFreezeCount = mealPlan.totalFreezeCount || 0;
     let freezedDays = mealPlan.freezedDays || [];
-    let allowedFreezeDays = calculateAllowedFreezeDays(durationDays);
+    
+    // Get allowed freeze days from the purchase/service plan (database value)
+    let allowedFreezeDays = await getFreezeDaysFromPurchase(purchaseId, durationDays);
     let isSharedFreeze = false;
     let linkedPlanCount = 0;
 
@@ -99,8 +155,8 @@ export async function GET(
         linkedPlanCount = sharedInfo.linkedPlanIds.length;
         totalFreezeCount = sharedInfo.totalFreezeCount;
         freezedDays = sharedInfo.allFreezedDays;
-        // Calculate allowed freeze days based on total duration of all linked plans
-        allowedFreezeDays = calculateAllowedFreezeDays(sharedInfo.totalDurationDays);
+        // For shared plans, still use the freeze days from purchase (not recalculated)
+        // The allowedFreezeDays is already fetched from purchase above
       }
     }
 
@@ -178,7 +234,9 @@ export async function POST(
     // Check for shared freeze tracking
     const purchaseId = mealPlan.purchaseId?.toString() || null;
     let currentFreezeCount = mealPlan.totalFreezeCount || 0;
-    let allowedFreezeDays = calculateAllowedFreezeDays(durationDays);
+    
+    // Get allowed freeze days from the purchase/service plan (database value)
+    let allowedFreezeDays = await getFreezeDaysFromPurchase(purchaseId, durationDays);
     let existingFreezeSet = new Set(
       (mealPlan.freezedDays || []).map((fd: any) => format(new Date(fd.date), 'yyyy-MM-dd'))
     );
@@ -190,7 +248,7 @@ export async function POST(
       if (sharedInfo.linkedPlanIds.length > 1) {
         // Use aggregated freeze count from all linked plans
         currentFreezeCount = sharedInfo.totalFreezeCount;
-        allowedFreezeDays = calculateAllowedFreezeDays(sharedInfo.totalDurationDays);
+        // For shared plans, still use the freeze days from purchase (not recalculated)
         // Build set of all frozen dates across all linked plans
         existingFreezeSet = new Set(
           sharedInfo.allFreezedDays.map((fd: any) => format(new Date(fd.date), 'yyyy-MM-dd'))
@@ -534,7 +592,7 @@ export async function DELETE(
 
     // Recalculate allowed freeze days based on original duration
     const startDate = startOfDay(new Date(mealPlan.startDate));
-    const allowedFreezeDays = calculateAllowedFreezeDays(mealPlan.duration || differenceInDays(newEndDate, startDate) + 1);
+    const allowedFreezeDays = calculateAllowedFreezeDaysFallback(mealPlan.duration || differenceInDays(newEndDate, startDate) + 1);
 
     return NextResponse.json({
       success: true,

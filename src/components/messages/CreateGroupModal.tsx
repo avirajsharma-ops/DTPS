@@ -249,6 +249,8 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated, curr
                       {selectedUsers.includes(user._id) && <Check className="h-3 w-3 text-white" />}
                     </div>
                     <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-medium text-sm flex-shrink-0">
+
+                      
                       {user.avatar ? (
                         <img src={user.avatar} className="h-10 w-10 rounded-full object-cover" alt="" />
                       ) : (

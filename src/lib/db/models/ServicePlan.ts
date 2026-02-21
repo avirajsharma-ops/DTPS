@@ -6,6 +6,8 @@ export interface IPricingTier {
   durationLabel: string; // e.g., "7 Days", "1 Month", "3 Months"
   amount: number;
   maxDiscount: number; // Max discount percentage for this tier (0-100%)
+  extendDays?: number; // Number of days to extend the plan
+  freezeDays?: number; // Number of days the plan can be frozen
   isActive: boolean;
 }
 
@@ -45,6 +47,8 @@ export interface IClientPurchase extends Document {
     durationDays: number;
     durationLabel: string;
     amount: number;
+    extendDays?: number;
+    freezeDays?: number;
   };
   
   baseAmount?: number;
@@ -107,6 +111,18 @@ const pricingTierSchema = new Schema({
     default: 0,
     min: 0,
     max: 100
+  },
+  extendDays: {
+    type: Number,
+    default: 0,
+    min: 0,
+    description: 'Number of days to extend the plan'
+  },
+  freezeDays: {
+    type: Number,
+    default: 0,
+    min: 0,
+    description: 'Number of days the plan can be frozen'
   },
   isActive: {
     type: Boolean,
@@ -216,7 +232,9 @@ const clientPurchaseSchema = new Schema({
   selectedTier: {
     durationDays: { type: Number },
     durationLabel: { type: String },
-    amount: { type: Number }
+    amount: { type: Number },
+    extendDays: { type: Number, default: 0 },
+    freezeDays: { type: Number, default: 0 }
   },
   
   baseAmount: {

@@ -30,6 +30,8 @@ interface PricingTier {
   durationLabel: string;
   amount: number;
   maxDiscount: number;
+  extendDays?: number;
+  freezeDays?: number;
   isActive: boolean;
 }
 
@@ -91,7 +93,9 @@ export default function AdminServicePlansPage() {
   const [newTier, setNewTier] = useState({
     durationDays: 30,
     amount: 0,
-    maxDiscount: 0
+    maxDiscount: 0,
+    extendDays: 0,
+    freezeDays: 0
   });
 
   useEffect(() => {
@@ -124,7 +128,7 @@ export default function AdminServicePlansPage() {
       pricingTiers: []
     });
     setEditingPlan(null);
-    setNewTier({ durationDays: 30, amount: 0, maxDiscount: 0 });
+    setNewTier({ durationDays: 30, amount: 0, maxDiscount: 0, extendDays: 0, freezeDays: 0 });
   };
 
   // Auto-generate label from days
@@ -235,7 +239,7 @@ export default function AdminServicePlansPage() {
         isActive: true
       }].sort((a, b) => a.durationDays - b.durationDays)
     });
-    setNewTier({ durationDays: 30, amount: 0, maxDiscount: 40 });
+    setNewTier({ durationDays: 30, amount: 0, maxDiscount: 40, extendDays: 0, freezeDays: 0 });
   };
 
   const removePricingTier = (index: number) => {
@@ -299,18 +303,7 @@ export default function AdminServicePlansPage() {
                 Create Service Plan
               </Button>
             </DialogTrigger>
-<DialogContent
-  className="
-    w-[70vw]
-    sm:max-w-xl
-    md:max-w-4xl
-    lg:max-w-6xl
-    xl:max-w-7xl
-    max-h-[95vh]
-    overflow-y-auto
-  "
->
-
+            <DialogContent className="w-[70vw] sm:max-w-xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl max-h-[95vh] overflow-y-auto">
               <DialogHeader className="pb-4">
                 <DialogTitle className="text-2xl font-bold">{editingPlan ? 'Edit Service Plan' : 'Create Service Plan'}</DialogTitle>
                 <DialogDescription className="text-base">
@@ -379,15 +372,17 @@ export default function AdminServicePlansPage() {
                   {/* Existing Tiers */}
                   {formData.pricingTiers.length > 0 && (
                     <div className="space-y-3 mb-8">
-                      <div className="hidden sm:grid grid-cols-4 gap-4 mb-3 px-4 py-3 bg-amber-100 rounded-lg text-xs font-bold text-amber-900">
+                      <div className="hidden sm:grid grid-cols-6 gap-4 mb-3 px-4 py-3 bg-amber-100 rounded-lg text-xs font-bold text-amber-900">
                         <div>Duration (Days)</div>
                         <div>Amount (₹)</div>
                         <div>Max Discount %</div>
+                        <div>Extend Days</div>
+                        <div>Freeze Days</div>
                         <div>Status</div>
                       </div>
                       {formData.pricingTiers.map((tier, index) => (
                         <div key={index} className="bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-amber-300 hover:shadow-md transition">
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 items-center">
+                          <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 items-center">
                             <div>
                               <Label className="text-xs text-gray-500 sm:hidden">Duration (Days)</Label>
                               <Input
@@ -423,6 +418,26 @@ export default function AdminServicePlansPage() {
                                 className="mt-1 sm:mt-0"
                               />
                             </div>
+                            <div>
+                              <Label className="text-xs text-gray-500 sm:hidden">Extend Days</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={tier.extendDays || 0}
+                                onChange={(e) => updatePricingTier(index, 'extendDays', parseInt(e.target.value) || 0)}
+                                className="mt-1 sm:mt-0"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500 sm:hidden">Freeze Days</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={tier.freezeDays || 0}
+                                onChange={(e) => updatePricingTier(index, 'freezeDays', parseInt(e.target.value) || 0)}
+                                className="mt-1 sm:mt-0"
+                              />
+                            </div>
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
                                 <Switch
@@ -454,60 +469,86 @@ export default function AdminServicePlansPage() {
                   )}
 
                   {/* Add New Tier */}
-                  <div className="p-4   bg-green-50 rounded-xl border-2 border-green-300 shadow-sm">
+                  <div className="p-4 bg-green-50 rounded-xl border-2 border-green-300 shadow-sm">
                     <p className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
                       <Plus className="h-4 w-4 text-green-600" />
                       Add New Pricing Tier
                     </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 items-end">
-                      <div>
-                        <Label className="text-xs font-semibold text-gray-700 mb-2 block">Duration</Label>
-                        <Select
-                          value={newTier.durationDays.toString()}
-                          onValueChange={(value) => setNewTier({ ...newTier, durationDays: parseInt(value) })}
-                        >
-                          <SelectTrigger className="bg-white h-10 text-base">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {DURATION_PRESETS.map(preset => (
-                              <SelectItem key={preset.days} value={preset.days.toString()}>
-                                {preset.label} ({preset.days} days)
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 items-end">
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-700 mb-2 block">Duration</Label>
+                          <Select
+                            value={newTier.durationDays.toString()}
+                            onValueChange={(value) => setNewTier({ ...newTier, durationDays: parseInt(value) })}
+                          >
+                            <SelectTrigger className="bg-white h-10 text-base">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {DURATION_PRESETS.map(preset => (
+                                <SelectItem key={preset.days} value={preset.days.toString()}>
+                                  {preset.label} ({preset.days} days)
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-700 mb-2 block">Amount (₹)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={newTier.amount}
+                            onChange={(e) => setNewTier({ ...newTier, amount: parseInt(e.target.value) || 0 })}
+                            placeholder="0"
+                            className="bg-white h-10 text-base"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-700 mb-2 block">Max Discount %</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={newTier.maxDiscount}
+                            onChange={(e) => setNewTier({ ...newTier, maxDiscount: Math.min(100, parseInt(e.target.value) || 0) })}
+                            placeholder="0"
+                            className="bg-white h-10 text-base"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-700 mb-2 block">Extend Days</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={newTier.extendDays || 0}
+                            onChange={(e) => setNewTier({ ...newTier, extendDays: parseInt(e.target.value) || 0 })}
+                            placeholder="0"
+                            className="bg-white h-10 text-base"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-700 mb-2 block">Freeze Days</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={newTier.freezeDays || 0}
+                            onChange={(e) => setNewTier({ ...newTier, freezeDays: parseInt(e.target.value) || 0 })}
+                            placeholder="0"
+                            className="bg-white h-10 text-base"
+                          />
+                        </div>
+                        <div>
+                          <Button 
+                            type="button" 
+                            onClick={addPricingTier} 
+                            className="bg-green-600 hover:bg-green-700 text-white font-medium w-full h-10 flex items-center justify-center gap-2"
+                          >
+                            <Plus className="h-4 w-4" /> Add
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-xs font-semibold text-gray-700 mb-2 block">Amount (₹)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={newTier.amount}
-                          onChange={(e) => setNewTier({ ...newTier, amount: parseInt(e.target.value) || 0 })}
-                          placeholder="0"
-                          className="bg-white h-10 text-base"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs font-semibold text-gray-700 mb-2 block">Max Discount %</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={newTier.maxDiscount}
-                          onChange={(e) => setNewTier({ ...newTier, maxDiscount: Math.min(100, parseInt(e.target.value) || 0) })}
-                          placeholder="0"
-                          className="bg-white h-10 text-base"
-                        />
-                      </div>
-                      <Button 
-                        type="button" 
-                        onClick={addPricingTier} 
-                        className="bg-green-600 hover:bg-green-700 text-white font-medium w-full sm:w-auto h-10 flex items-center justify-center gap-2"
-                      >
-                        <Plus className="h-4 w-4" /> Add
-                      </Button>
                     </div>
                   </div>
                 </div>
