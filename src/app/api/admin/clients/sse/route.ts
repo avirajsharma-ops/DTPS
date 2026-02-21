@@ -87,8 +87,7 @@ export async function GET(request: NextRequest) {
               select: 'firstName lastName role',
               strictPopulate: false
             })
-            .sort({ createdAt: -1 })
-            .limit(100);
+            .sort({ createdAt: -1 });
 
           const total = await User.countDocuments({ role: UserRole.CLIENT });
           const assignedCount = await User.countDocuments({ 

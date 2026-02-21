@@ -102,7 +102,8 @@ export async function GET(request: NextRequest) {
     }
 
     // For admin users, include password field; for others, exclude it
-    const selectFields = session.user.role === UserRole.ADMIN ? '' : '-password';
+    // Always include clientStatus for proper client engagement tracking
+    const selectFields = session.user.role === UserRole.ADMIN ? '+clientStatus' : '-password +clientStatus';
 
     // Generate cache key based on role and query params
     const cacheKey = `users:${session.user.role}:${role || 'all'}:${search || ''}:${page}:${limit}`;

@@ -348,10 +348,15 @@ export default function AdminAllClientsPage() {
       const response = await fetch('/api/admin/dietitians');
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched dietitians:', data.dietitians?.length || 0);
         setDietitians(data.dietitians || []);
+      } else {
+        console.error('Failed to fetch dietitians:', response.status);
+        toast.error('Failed to load dietitians');
       }
     } catch (error) {
       console.error('Error fetching dietitians:', error);
+      toast.error('Error loading dietitians');
     }
   };
 
@@ -360,10 +365,15 @@ export default function AdminAllClientsPage() {
       const response = await fetch('/api/admin/health-counselors');
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched health counselors:', data.healthCounselors?.length || 0);
         setHealthCounselors(data.healthCounselors || []);
+      } else {
+        console.error('Failed to fetch health counselors:', response.status);
+        toast.error('Failed to load health counselors');
       }
     } catch (error) {
       console.error('Error fetching health counselors:', error);
+      toast.error('Error loading health counselors');
     }
   };
 
@@ -373,6 +383,9 @@ export default function AdminAllClientsPage() {
   };
 
   const openAssignDialog = (client: Client) => {
+    console.log('Opening assign dialog for client:', client._id);
+    console.log('Available dietitians:', dietitians.length);
+    console.log('Available health counselors:', healthCounselors.length);
     setSelectedClient(client);
     setSelectedDietitianId('');
     setSelectedHealthCounselorId('');
@@ -1295,74 +1308,82 @@ export default function AdminAllClientsPage() {
               <div className="border-t pt-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Dietitian Assignment</h4>
                 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Select Dietitian to Add
-                  </label>
-                  <div className="relative mb-2">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search dietitians..."
-                      value={dietitianSearchTerm}
-                      onChange={(e) => setDietitianSearchTerm(e.target.value)}
-                      className="pl-9"
-                    />
+                {dietitians.length === 0 ? (
+                  <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-yellow-700">No dietitians available. Please add dietitians first.</p>
                   </div>
-                  <Select value={selectedDietitianId} onValueChange={setSelectedDietitianId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a dietitian..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dietitians
-                        .filter(d => assignMode === 'replace' || !selectedClient?.assignedDietitians?.some(ad => ad._id === d._id))
-                        .filter(d => {
-                          if (!dietitianSearchTerm.trim()) return true;
-                          const searchLower = dietitianSearchTerm.toLowerCase();
-                          const fullName = `${d.firstName} ${d.lastName}`.toLowerCase();
-                          return fullName.includes(searchLower) || d.email?.toLowerCase().includes(searchLower);
-                        })
-                        .map((dietitian) => (
-                        <SelectItem key={dietitian._id} value={dietitian._id}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{dietitian.firstName} {dietitian.lastName}</span>
-                            <Badge variant="outline" className="ml-2">
-                              {dietitian.clientCount} clients
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Select Dietitian to Add
+                      </label>
+                      <div className="relative mb-2">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Search dietitians..."
+                          value={dietitianSearchTerm}
+                          onChange={(e) => setDietitianSearchTerm(e.target.value)}
+                          className="pl-9"
+                        />
+                      </div>
+                      <Select value={selectedDietitianId} onValueChange={setSelectedDietitianId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a dietitian..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dietitians
+                            .filter(d => assignMode === 'replace' || !selectedClient?.assignedDietitians?.some(ad => ad._id === d._id))
+                            .filter(d => {
+                              if (!dietitianSearchTerm.trim()) return true;
+                              const searchLower = dietitianSearchTerm.toLowerCase();
+                              const fullName = `${d.firstName} ${d.lastName}`.toLowerCase();
+                              return fullName.includes(searchLower) || d.email?.toLowerCase().includes(searchLower);
+                            })
+                            .map((dietitian) => (
+                            <SelectItem key={dietitian._id} value={dietitian._id}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{dietitian.firstName} {dietitian.lastName}</span>
+                                <Badge variant="outline" className="ml-2">
+                                  {dietitian.clientCount} clients
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                {selectedDietitianId && (
-                  <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                    {(() => {
-                      const dietitian = dietitians.find(d => d._id === selectedDietitianId);
-                      if (!dietitian) return null;
-                      return (
-                        <div>
-                          <p className="text-sm text-green-900 mb-1">Selected dietitian:</p>
-                          <div className="flex items-center">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={dietitian.avatar} />
-                              <AvatarFallback className="bg-green-200 text-green-800 text-xs">
-                                {dietitian.firstName?.[0]}{dietitian.lastName?.[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="ml-2">
-                              <p className="text-sm font-medium text-green-900">
-                                {dietitian.firstName} {dietitian.lastName}
-                              </p>
-                              <p className="text-xs text-green-700">
-                                {dietitian.email} • {dietitian.clientCount} clients
-                              </p>
+                    {selectedDietitianId && (
+                      <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                        {(() => {
+                          const dietitian = dietitians.find(d => d._id === selectedDietitianId);
+                          if (!dietitian) return null;
+                          return (
+                            <div>
+                              <p className="text-sm text-green-900 mb-1">Selected dietitian:</p>
+                              <div className="flex items-center">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={dietitian.avatar} />
+                                  <AvatarFallback className="bg-green-200 text-green-800 text-xs">
+                                    {dietitian.firstName?.[0]}{dietitian.lastName?.[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="ml-2">
+                                  <p className="text-sm font-medium text-green-900">
+                                    {dietitian.firstName} {dietitian.lastName}
+                                  </p>
+                                  <p className="text-xs text-green-700">
+                                    {dietitian.email} • {dietitian.clientCount} clients
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -1370,74 +1391,82 @@ export default function AdminAllClientsPage() {
               <div className="border-t pt-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Health Counselor Assignment</h4>
                 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Select Health Counselor
-                  </label>
-                  <div className="relative mb-2">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search health counselors..."
-                      value={healthCounselorSearchTerm}
-                      onChange={(e) => setHealthCounselorSearchTerm(e.target.value)}
-                      className="pl-9"
-                    />
+                {healthCounselors.length === 0 ? (
+                  <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-yellow-700">No health counselors available. Please add health counselors first.</p>
                   </div>
-                  <Select value={selectedHealthCounselorId} onValueChange={setSelectedHealthCounselorId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a health counselor or leave empty for none..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">None (No Health Counselor)</SelectItem>
-                      {healthCounselors
-                        .filter(hc => {
-                          if (!healthCounselorSearchTerm.trim()) return true;
-                          const searchLower = healthCounselorSearchTerm.toLowerCase();
-                          const fullName = `${hc.firstName} ${hc.lastName}`.toLowerCase();
-                          return fullName.includes(searchLower) || hc.email?.toLowerCase().includes(searchLower);
-                        })
-                        .map((hc) => (
-                        <SelectItem key={hc._id} value={hc._id}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{hc.firstName} {hc.lastName}</span>
-                            <Badge variant="outline" className="ml-2">
-                              {hc.clientCount} clients
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Select Health Counselor
+                      </label>
+                      <div className="relative mb-2">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Search health counselors..."
+                          value={healthCounselorSearchTerm}
+                          onChange={(e) => setHealthCounselorSearchTerm(e.target.value)}
+                          className="pl-9"
+                        />
+                      </div>
+                      <Select value={selectedHealthCounselorId} onValueChange={setSelectedHealthCounselorId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a health counselor or leave empty for none..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">None (No Health Counselor)</SelectItem>
+                          {healthCounselors
+                            .filter(hc => {
+                              if (!healthCounselorSearchTerm.trim()) return true;
+                              const searchLower = healthCounselorSearchTerm.toLowerCase();
+                              const fullName = `${hc.firstName} ${hc.lastName}`.toLowerCase();
+                              return fullName.includes(searchLower) || hc.email?.toLowerCase().includes(searchLower);
+                            })
+                            .map((hc) => (
+                            <SelectItem key={hc._id} value={hc._id}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{hc.firstName} {hc.lastName}</span>
+                                <Badge variant="outline" className="ml-2">
+                                  {hc.clientCount} clients
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                {selectedHealthCounselorId && (
-                  <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                    {(() => {
-                      const hc = healthCounselors.find(h => h._id === selectedHealthCounselorId);
-                      if (!hc) return null;
-                      return (
-                        <div>
-                          <p className="text-sm text-purple-900 mb-1">Selected health counselor:</p>
-                          <div className="flex items-center">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={hc.avatar} />
-                              <AvatarFallback className="bg-purple-200 text-purple-800 text-xs">
-                                {hc.firstName?.[0]}{hc.lastName?.[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="ml-2">
-                              <p className="text-sm font-medium text-purple-900">
-                                {hc.firstName} {hc.lastName}
-                              </p>
-                              <p className="text-xs text-purple-700">
-                                {hc.email} • {hc.clientCount} clients
-                              </p>
+                    {selectedHealthCounselorId && (
+                      <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        {(() => {
+                          const hc = healthCounselors.find(h => h._id === selectedHealthCounselorId);
+                          if (!hc) return null;
+                          return (
+                            <div>
+                              <p className="text-sm text-purple-900 mb-1">Selected health counselor:</p>
+                              <div className="flex items-center">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={hc.avatar} />
+                                  <AvatarFallback className="bg-purple-200 text-purple-800 text-xs">
+                                    {hc.firstName?.[0]}{hc.lastName?.[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="ml-2">
+                                  <p className="text-sm font-medium text-purple-900">
+                                    {hc.firstName} {hc.lastName}
+                                  </p>
+                                  <p className="text-xs text-purple-700">
+                                    {hc.email} • {hc.clientCount} clients
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

@@ -6,11 +6,14 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { UserRole, UserStatus } from "@/types";
-import { Copy, Eye } from "lucide-react";
+import { Copy, Eye, AlertCircle, CheckCircle, Clock, User, Briefcase, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { formatUserId } from "@/lib/utils";
 import { COUNTRY_CODES } from "@/lib/constants/countries";
@@ -22,11 +25,67 @@ interface AdminUser {
   lastName: string;
   role: UserRole;
   status: UserStatus;
+  clientStatus?: string; // 'lead', 'active', 'inactive' for clients
   phone?: string;
   avatar?: string;
   password?: string;
   createdAt?: string;
   updatedAt?: string;
+  // Additional fields for comprehensive editing
+  bio?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  // Professional fields
+  credentials?: string[];
+  specializations?: string[];
+  experience?: number;
+  consultationFee?: number;
+  timezone?: string;
+}
+
+// Helper function to get status display info - unified for all users
+function getStatusDisplay(status: UserStatus, clientStatus?: string, role?: UserRole) {
+  // Status configuration for all users - unified client-like status
+  const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
+    'lead': {
+      label: 'Lead',
+      color: 'text-yellow-700',
+      bgColor: 'bg-yellow-100',
+      icon: <Clock className="h-4 w-4" />
+    },
+    'active': {
+      label: 'Active',
+      color: 'text-emerald-700',
+      bgColor: 'bg-emerald-100',
+      icon: <CheckCircle className="h-4 w-4" />
+    },
+    'inactive': {
+      label: 'Inactive',
+      color: 'text-orange-700',
+      bgColor: 'bg-orange-100',
+      icon: <AlertCircle className="h-4 w-4" />
+    },
+    'suspended': {
+      label: 'Suspended',
+      color: 'text-red-700',
+      bgColor: 'bg-red-100',
+      icon: <AlertCircle className="h-4 w-4" />
+    }
+  };
+
+  // For clients, use clientStatus if available, otherwise fall back to account status
+  if (role === UserRole.CLIENT) {
+    if (clientStatus && statusConfig[clientStatus]) {
+      return { status: statusConfig[clientStatus] };
+    }
+    // Fallback: map account status to client-like status for clients
+    const fallback = status === 'suspended' ? 'suspended' : status === 'inactive' ? 'inactive' : 'lead';
+    return { status: statusConfig[fallback] };
+  }
+
+  // For non-clients (dietitians, health counselors, admins), show account status
+  const accountStatus = statusConfig[status] || statusConfig['active'];
+  return { status: accountStatus };
 }
 
 export default function AdminUsersPage() {
@@ -61,8 +120,19 @@ export default function AdminUsersPage() {
     lastName: "",
     role: UserRole.CLIENT as UserRole,
     status: UserStatus.ACTIVE as UserStatus,
+    clientStatus: "lead" as string,
     phone: "",
     countryCode: "+91",
+    // Additional fields
+    bio: "",
+    dateOfBirth: "",
+    gender: "",
+    // Professional fields
+    credentials: "",
+    specializations: "",
+    experience: "",
+    consultationFee: "",
+    timezone: "Asia/Kolkata",
   });
 
   const filtered = useMemo(() => users, [users]);
@@ -103,7 +173,26 @@ export default function AdminUsersPage() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ email: "", password: "", confirmPassword: "", firstName: "", lastName: "", role: UserRole.CLIENT, status: UserStatus.ACTIVE, phone: "", countryCode: "+91" });
+    setForm({ 
+      email: "", 
+      password: "", 
+      confirmPassword: "", 
+      firstName: "", 
+      lastName: "", 
+      role: UserRole.CLIENT, 
+      status: UserStatus.ACTIVE, 
+      clientStatus: "lead",
+      phone: "", 
+      countryCode: "+91",
+      bio: "",
+      dateOfBirth: "",
+      gender: "",
+      credentials: "",
+      specializations: "",
+      experience: "",
+      consultationFee: "",
+      timezone: "Asia/Kolkata",
+    });
     setOpen(true);
   }
 
@@ -128,8 +217,17 @@ export default function AdminUsersPage() {
       lastName: u.lastName,
       role: u.role,
       status: u.status,
+      clientStatus: u.clientStatus || "lead",
       phone: phoneNumber,
       countryCode: countryCode,
+      bio: u.bio || "",
+      dateOfBirth: u.dateOfBirth ? u.dateOfBirth.split('T')[0] : "",
+      gender: u.gender || "",
+      credentials: u.credentials?.join(', ') || "",
+      specializations: u.specializations?.join(', ') || "",
+      experience: u.experience?.toString() || "",
+      consultationFee: u.consultationFee?.toString() || "",
+      timezone: u.timezone || "Asia/Kolkata",
     });
     setOpen(true);
   }
@@ -188,7 +286,34 @@ export default function AdminUsersPage() {
           role: form.role,
           status: form.status,
           phone: fullPhone,
+          // Additional fields
+          bio: form.bio || undefined,
+          dateOfBirth: form.dateOfBirth || undefined,
+          gender: form.gender || undefined,
+          timezone: form.timezone || undefined,
         };
+
+        // Add client status for clients
+        if (form.role === UserRole.CLIENT && form.clientStatus) {
+          body.clientStatus = form.clientStatus;
+        }
+
+        // Add professional fields for dietitians and health counselors
+        if (form.role === UserRole.DIETITIAN || form.role === UserRole.HEALTH_COUNSELOR) {
+          if (form.credentials) {
+            body.credentials = form.credentials.split(',').map((c: string) => c.trim()).filter(Boolean);
+          }
+          if (form.specializations) {
+            body.specializations = form.specializations.split(',').map((s: string) => s.trim()).filter(Boolean);
+          }
+          if (form.experience) {
+            body.experience = parseInt(form.experience);
+          }
+          if (form.consultationFee) {
+            body.consultationFee = parseFloat(form.consultationFee);
+          }
+        }
+
         res = await fetch(`/api/users/${editing._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -206,6 +331,7 @@ export default function AdminUsersPage() {
       }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");
+      toast.success(editing ? "User updated successfully" : "User created successfully");
       setOpen(false);
       await fetchUsers();
     } catch (e: any) {
@@ -217,14 +343,45 @@ export default function AdminUsersPage() {
 
   async function handleStatusToggle(id: string, currentStatus: string) {
     const action = currentStatus === 'active' ? 'deactivate' : 'activate';
-    if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+    const confirmMsg = currentStatus === 'active' 
+      ? 'Are you sure you want to deactivate this user?\n\n⚠️ They will be logged out immediately and unable to log in until reactivated.' 
+      : 'Are you sure you want to reactivate this user?\n\n✓ They will be able to log in again.';
+    
+    if (!confirm(confirmMsg)) return;
 
     try {
       const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error((await res.json()).error || "Status update failed");
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Status update failed");
+      }
+
+      // Show detailed success message
+      const message = data.message || `User ${action}d successfully`;
+      toast.success(message);
+      
+      // Log detailed action
+      console.log(`[Admin Action] User ${action}d:`, {
+        userEmail: data.userEmail,
+        userName: data.userName,
+        userRole: data.userRole,
+        newStatus: data.status,
+        message: data.message
+      });
+      
       await fetchUsers();
     } catch (e: any) {
-      setError(e?.message || "Status update failed");
+      const errorMsg = e?.message || "Status update failed";
+      
+      // Show detailed error message
+      if (currentStatus === 'active') {
+        toast.error(`Failed to deactivate: ${errorMsg}`);
+      } else {
+        toast.error(`Failed to reactivate: ${errorMsg}`);
+      }
+      
+      setError(errorMsg);
     }
   }
 
@@ -252,6 +409,16 @@ export default function AdminUsersPage() {
           <Button onClick={openCreate}>New User</Button>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="text-red-600 font-semibold">⚠️ Error</div>
+          <div className="flex-1">
+            <p className="text-red-800 text-sm">{error}</p>
+          </div>
+          <button onClick={() => setError('')} className="text-red-600 hover:text-red-800">✕</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <Card>
@@ -289,11 +456,9 @@ export default function AdminUsersPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-              <th className="text-left p-3">ID</th>
-
+                    <th className="text-left p-3">ID</th>
                     <th className="text-left p-3">Name</th>
                     <th className="text-left p-3">Email</th>
-                    
                     <th className="text-left p-3">Role</th>
                     <th className="text-left p-3">Status</th>
                     <th className="text-left p-3">Created</th>
@@ -301,48 +466,73 @@ export default function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(u => (
-                    <tr key={u._id} className="border-b hover:bg-gray-50">
-                      <td className="p-3">
-                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                          u.role === 'dietitian' ? 'bg-teal-100 text-teal-700' :
-                          u.role === 'client' ? 'bg-blue-100 text-blue-700' :
-                          u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                          'bg-orange-100 text-orange-700'
-                        }`}>
-                          {formatUserId(u._id, u.role)}
-                        </span>
-                      </td>
-                      <td className="p-3">{u.firstName} {u.lastName}</td>
-                      <td className="p-3">{u.email}</td>
-                     
-                      <td className="p-3 capitalize">{u.role}</td>
-                      <td className="p-3 capitalize">{u.status}</td>
-                      <td className="p-3">{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
-                      <td className="p-3 flex gap-2">
-                        {u.role === 'client' && (
+                  {filtered.map(u => {
+                    const statusDisplay = getStatusDisplay(u.status, u.clientStatus, u.role as UserRole);
+                    const roleNames: Record<string, string> = {
+                      'admin': 'Admin',
+                      'dietitian': 'Dietitian',
+                      'health_counselor': 'Health Counselor',
+                      'client': 'Client'
+                    };
+                    return (
+                      <tr key={u._id} className="border-b hover:bg-gray-50">
+                        <td className="p-3">
+                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                            u.role === 'dietitian' ? 'bg-teal-100 text-teal-700' :
+                            u.role === 'client' ? 'bg-blue-100 text-blue-700' :
+                            u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                            'bg-orange-100 text-orange-700'
+                          }`}>
+                            {formatUserId(u._id, u.role)}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="font-medium">{u.firstName} {u.lastName}</div>
+                          <div className="text-xs text-gray-500">{u.phone || '-'}</div>
+                        </td>
+                        <td className="p-3 text-sm">{u.email}</td>
+                        <td className="p-3">
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                            u.role === 'dietitian' ? 'bg-teal-100 text-teal-700' :
+                            u.role === 'client' ? 'bg-blue-100 text-blue-700' :
+                            u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                            'bg-orange-100 text-orange-700'
+                          }`}>
+                            {roleNames[u.role] || u.role}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <Badge className={`flex items-center gap-1 w-fit ${statusDisplay.status.bgColor} ${statusDisplay.status.color} border-0`}>
+                            {statusDisplay.status.icon}
+                            <span className="text-xs">{statusDisplay.status.label}</span>
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-sm">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</td>
+                        <td className="p-3 flex gap-2 flex-wrap">
+                          {u.role === 'client' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="View client dashboard"
+                              onClick={() => router.push(`/dietician/clients/${u._id}`)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button variant="outline" size="sm" onClick={() => openEdit(u)}>Edit</Button>
+                          <Button variant="outline" size="sm" onClick={() => openActivity(u)}>Activity</Button>
                           <Button
-                            variant="outline"
+                            variant={u.status === 'active' ? 'destructive' : 'default'}
                             size="sm"
-                            onClick={() => router.push(`/dietician/clients/${u._id}`)}
+                            onClick={() => handleStatusToggle(u._id, u.status)}
+                            className={u.status === 'inactive' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
                           >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Dashboard
+                            {u.status === 'active' ? 'Deactivate' : 'Activate'}
                           </Button>
-                        )}
-                        <Button variant="outline" size="sm" onClick={() => openEdit(u)}>Edit</Button>
-                        <Button variant="outline" size="sm" onClick={() => openActivity(u)}>Activity</Button>
-                        <Button
-                          variant={u.status === 'active' ? 'destructive' : 'default'}
-                          size="sm"
-                          onClick={() => handleStatusToggle(u._id, u.status)}
-                          className={u.status === 'inactive' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
-                        >
-                          {u.status === 'active' ? 'Deactivate' : 'Activate'}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -397,92 +587,294 @@ export default function AdminUsersPage() {
 
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit User" : "Create User"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {editing ? (
+                <>
+                  <Settings className="h-5 w-5" />
+                  Edit User: {editing.firstName} {editing.lastName}
+                </>
+              ) : (
+                <>
+                  <User className="h-5 w-5" />
+                  Create New User
+                </>
+              )}
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic" className="flex items-center gap-1">
+                <User className="h-4 w-4" />
+                Basic Info
+              </TabsTrigger>
+              <TabsTrigger value="account" className="flex items-center gap-1">
+                <Settings className="h-4 w-4" />
+                Account
+              </TabsTrigger>
+              <TabsTrigger value="professional" className="flex items-center gap-1">
+                <Briefcase className="h-4 w-4" />
+                Professional
+              </TabsTrigger>
+            </TabsList>
 
+            {/* Basic Info Tab */}
+            <TabsContent value="basic" className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">First Name <span className="text-red-500">*</span></label>
+                  <Input value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} placeholder="Enter first name" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Last Name <span className="text-red-500">*</span></label>
+                  <Input value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} placeholder="Enter last name" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-gray-700">Email <span className="text-red-500">*</span></label>
+                  <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="user@example.com" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-gray-700">Phone <span className="text-red-500">*</span></label>
+                  <div className="flex gap-2">
+                    <Select value={form.countryCode} onValueChange={(v) => setForm(f => ({ ...f, countryCode: v }))}>
+                      <SelectTrigger className="w-28">
+                        <SelectValue placeholder="Code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNTRY_CODES.map((c) => (
+                          <SelectItem key={c.code} value={c.code}>
+                            {c.code} {c.country}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input 
+                      type="tel"
+                      placeholder="Phone number"
+                      value={form.phone} 
+                      onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Date of Birth</label>
+                  <Input type="date" value={form.dateOfBirth} onChange={e => setForm(f => ({ ...f, dateOfBirth: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Gender</label>
+                  <Select value={form.gender} onValueChange={(v) => setForm(f => ({ ...f, gender: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-gray-700">Bio</label>
+                  <Textarea 
+                    value={form.bio} 
+                    onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} 
+                    placeholder="Enter bio or description..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </TabsContent>
 
-            <div className="col-span-2">
-              <label className="text-sm text-gray-600">Email</label>
-              <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-            </div>
-            {!editing && (
-              <>
-              <div className="col-span-2">
-                <label className="text-sm text-gray-600">Password <span className="text-red-500">*</span></label>
-                <Input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
-              </div>
-              <div className="col-span-2">
-                <label className="text-sm text-gray-600">Confirm Password <span className="text-red-500">*</span></label>
-                <Input type="password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} />
-              </div>
-              </>
-            )}
-            <div>
-              <label className="text-sm text-gray-600">First Name</label>
-              <Input value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Last Name</label>
-              <Input value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Role</label>
-              <Select value={form.role} onValueChange={(v) => setForm(f => ({ ...f, role: v as UserRole }))}>
-                <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
-                  <SelectItem value={UserRole.DIETITIAN}>Dietitian</SelectItem>
-                  <SelectItem value={UserRole.HEALTH_COUNSELOR}>Health Counselor</SelectItem>
-                  <SelectItem value={UserRole.CLIENT}>Client</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Status</label>
-              <Select value={form.status} onValueChange={(v) => setForm(f => ({ ...f, status: v as UserStatus }))}>
-                <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={UserStatus.ACTIVE}>Active</SelectItem>
-                  <SelectItem value={UserStatus.INACTIVE}>Inactive</SelectItem>
-                  <SelectItem value={UserStatus.SUSPENDED}>Suspended</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-sm text-gray-600">Phone <span className="text-red-500">*</span></label>
-              <div className="flex gap-2">
-                <Select value={form.countryCode} onValueChange={(v) => setForm(f => ({ ...f, countryCode: v }))}>
-                  <SelectTrigger className="w-25">
-                    <SelectValue placeholder="Code" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COUNTRY_CODES.map((c) => (
-                      <SelectItem key={c.code} value={c.code}>
-                        {c.code} {c.country}
+            {/* Account Tab */}
+            <TabsContent value="account" className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {!editing && (
+                  <>
+                    <div className="md:col-span-2">
+                      <label className="text-sm font-medium text-gray-700">Password <span className="text-red-500">*</span></label>
+                      <Input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="Enter password" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-sm font-medium text-gray-700">Confirm Password <span className="text-red-500">*</span></label>
+                      <Input type="password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} placeholder="Confirm password" />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Role <span className="text-red-500">*</span></label>
+                  <Select value={form.role} onValueChange={(v) => setForm(f => ({ ...f, role: v as UserRole }))}>
+                    <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
+                      <SelectItem value={UserRole.DIETITIAN}>Dietitian</SelectItem>
+                      <SelectItem value={UserRole.HEALTH_COUNSELOR}>Health Counselor</SelectItem>
+                      <SelectItem value={UserRole.CLIENT}>Client</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Account Status <span className="text-red-500">*</span></label>
+                  <Select value={form.status} onValueChange={(v) => setForm(f => ({ ...f, status: v as UserStatus }))}>
+                    <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={UserStatus.ACTIVE}>
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                          Active
+                        </div>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input 
-                  type="tel"
-                  placeholder="Phone number"
-                  value={form.phone} 
-                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                  className="flex-1"
-                />
+                      <SelectItem value={UserStatus.INACTIVE}>
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-orange-500"></span>
+                          Inactive (Cannot Login)
+                        </div>
+                      </SelectItem>
+                      <SelectItem value={UserStatus.SUSPENDED}>
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          Suspended
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {form.status === 'inactive' && "⚠️ User won't be able to log in"}
+                    {form.status === 'suspended' && "⚠️ User account is suspended"}
+                  </p>
+                </div>
+                {form.role === UserRole.CLIENT && (
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Client Status</label>
+                    <Select value={form.clientStatus} onValueChange={(v) => setForm(f => ({ ...f, clientStatus: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select client status" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lead">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+                            Lead (No Payment Yet)
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="active">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                            Active (Has Active Plan)
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="inactive">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-orange-500"></span>
+                            Inactive (Plans Expired)
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      This tracks client engagement status (payment/plan status)
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Timezone</label>
+                  <Select value={form.timezone} onValueChange={(v) => setForm(f => ({ ...f, timezone: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select timezone" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
+                      <SelectItem value="UTC">UTC</SelectItem>
+                      <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
+                      <SelectItem value="America/Los_Angeles">America/Los_Angeles (PST)</SelectItem>
+                      <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
+                      <SelectItem value="Europe/Paris">Europe/Paris (CET)</SelectItem>
+                      <SelectItem value="Asia/Dubai">Asia/Dubai (GST)</SelectItem>
+                      <SelectItem value="Asia/Singapore">Asia/Singapore (SGT)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+              
+              {editing && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Account Information</h4>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <p>ID: {editing._id}</p>
+                    <p>Created: {editing.createdAt ? new Date(editing.createdAt).toLocaleString() : 'N/A'}</p>
+                    <p>Updated: {editing.updatedAt ? new Date(editing.updatedAt).toLocaleString() : 'N/A'}</p>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Professional Tab */}
+            <TabsContent value="professional" className="space-y-4 mt-4">
+              {form.role === UserRole.CLIENT ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Briefcase className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Professional fields are not applicable for clients.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Credentials</label>
+                    <Input 
+                      value={form.credentials} 
+                      onChange={e => setForm(f => ({ ...f, credentials: e.target.value }))} 
+                      placeholder="e.g., RD, CDE, CNS (comma-separated)"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Enter credentials separated by commas</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Specializations</label>
+                    <Input 
+                      value={form.specializations} 
+                      onChange={e => setForm(f => ({ ...f, specializations: e.target.value }))} 
+                      placeholder="e.g., Weight Loss, Diabetes Management, Sports Nutrition (comma-separated)"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Enter specializations separated by commas</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Experience (Years)</label>
+                    <Input 
+                      type="number" 
+                      min="0"
+                      value={form.experience} 
+                      onChange={e => setForm(f => ({ ...f, experience: e.target.value }))} 
+                      placeholder="Years of experience"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Consultation Fee (₹)</label>
+                    <Input 
+                      type="number" 
+                      min="0"
+                      value={form.consultationFee} 
+                      onChange={e => setForm(f => ({ ...f, consultationFee: e.target.value }))} 
+                      placeholder="Consultation fee"
+                    />
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-600 mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error}
             </div>
-          </div>
+          )}
 
-          {error && <div className="text-sm text-red-600 mt-2">{error}</div>}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => { setOpen(false); setError(null); }}>Cancel</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? (
+                <>
+                  <LoadingSpinner className="h-4 w-4 mr-2" />
+                  Saving...
+                </>
+              ) : (
+                editing ? 'Update User' : 'Create User'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

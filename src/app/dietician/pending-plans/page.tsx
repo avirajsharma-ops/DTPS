@@ -222,9 +222,11 @@ export default function PendingPlansPage() {
           <Card>
             <CardContent className="text-center py-12">
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700">All Caught Up!</h3>
+              <h3 className="text-lg font-semibold text-gray-700">
+                {searchQuery ? 'No Results Found' : 'No Pending Plans Available'}
+              </h3>
               <p className="text-gray-500 mt-2">
-                {searchQuery ? 'No clients match your search' : 'No pending plans requiring attention'}
+                {searchQuery ? 'No clients match your search criteria.' : 'No pending plans available.'}
               </p>
             </CardContent>
           </Card>
@@ -242,7 +244,7 @@ export default function PendingPlansPage() {
                   }`}
                 >
                   <CardContent className="p-4">
-                    {/* Header with ID and Urgency */}
+                    {/* Header with ID and Priority Badge */}
                     <div className="flex items-center justify-between mb-3">
                       <Link 
                         href={`/dietician/clients/${plan.clientId}`}
@@ -250,12 +252,18 @@ export default function PendingPlansPage() {
                       >
                         P-{plan.clientId.toString().slice(-4).toUpperCase()}
                       </Link>
-                      <Badge className={`text-xs ${
-                        plan.urgency === 'critical' ? 'bg-red-500 text-white' :
-                        plan.urgency === 'high' ? 'bg-amber-500 text-white' :
-                        'bg-green-500 text-white'
+                      <Badge className={`text-xs font-semibold ${
+                        plan.urgency === 'critical' || plan.currentPlanRemainingDays <= 0 
+                          ? 'bg-red-600 text-white border border-red-700' :
+                        plan.urgency === 'high' || (plan.currentPlanRemainingDays >= 1 && plan.currentPlanRemainingDays <= 3)
+                          ? 'bg-orange-500 text-white border border-orange-600' :
+                          'bg-yellow-500 text-gray-900 border border-yellow-600'
                       }`}>
-                        {plan.urgency.charAt(0).toUpperCase() + plan.urgency.slice(1)}
+                        {plan.urgency === 'critical' || plan.currentPlanRemainingDays <= 0 
+                          ? '🔴 Critical' :
+                        plan.urgency === 'high' || (plan.currentPlanRemainingDays >= 1 && plan.currentPlanRemainingDays <= 3)
+                          ? '🟠 High Priority' :
+                          '🟡 Medium Priority'}
                       </Badge>
                     </div>
 
@@ -283,12 +291,12 @@ export default function PendingPlansPage() {
                       </div>
                       <div>
                         <p className="text-gray-500 font-medium">Remaining</p>
-                        <Badge className={`text-xs ${
-                          plan.currentPlanRemainingDays <= 2 ? 'bg-red-500 text-white' :
-                          plan.currentPlanRemainingDays <= 4 ? 'bg-amber-500 text-white' :
-                          'bg-green-500 text-white'
+                        <Badge className={`text-xs font-semibold ${
+                          plan.currentPlanRemainingDays <= 0 ? 'bg-red-600 text-white' :
+                          plan.currentPlanRemainingDays <= 3 ? 'bg-orange-500 text-white' :
+                          'bg-yellow-500 text-gray-900'
                         }`}>
-                          {plan.currentPlanRemainingDays} days
+                          {plan.currentPlanRemainingDays <= 0 ? 'Expired' : `${plan.currentPlanRemainingDays} days`}
                         </Badge>
                       </div>
                       <div>
@@ -468,19 +476,19 @@ export default function PendingPlansPage() {
                           </td>
                           {/* Remaining Days */}
                           <td className="px-4 py-3 text-center">
-                            {plan.currentPlanRemainingDays > 0 ? (
-                              <Badge className={`${
-                                plan.currentPlanRemainingDays <= 2 ? 'bg-red-500 text-white' :
-                                plan.currentPlanRemainingDays <= 4 ? 'bg-amber-500 text-white' :
-                                'bg-green-500 text-white'
-                              }`}>
-                                {plan.currentPlanRemainingDays} days left
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-gray-200 text-gray-600">
-                                0 days
-                              </Badge>
-                            )}
+                            <Badge className={`font-semibold ${
+                              plan.currentPlanRemainingDays <= 0 
+                                ? 'bg-red-600 text-white border border-red-700' :
+                              plan.currentPlanRemainingDays <= 3 
+                                ? 'bg-orange-500 text-white border border-orange-600' :
+                                'bg-yellow-500 text-gray-900 border border-yellow-600'
+                            }`}>
+                              {plan.currentPlanRemainingDays <= 0 
+                                ? '🔴 Expired' 
+                                : plan.currentPlanRemainingDays <= 3 
+                                  ? `🟠 ${plan.currentPlanRemainingDays} days left` 
+                                  : `🟡 ${plan.currentPlanRemainingDays} days left`}
+                            </Badge>
                           </td>
                           {/* Pending Meal Days */}
                           <td className="px-4 py-3 text-center">

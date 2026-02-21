@@ -2,9 +2,20 @@
 
 import { SessionProvider as NextAuthSessionProvider } from 'next-auth/react';
 import { type ReactNode } from 'react';
+import { useLogoutNotification } from '@/hooks/useLogoutNotification';
 
 interface SessionProviderProps {
   children: ReactNode;
+}
+
+/**
+ * Wrapper component for logout notification hook
+ * Runs inside SessionProvider so it has access to useSession
+ */
+function LogoutNotificationListener({ children }: { children: ReactNode }) {
+  // This hook will listen for deactivation notifications
+  useLogoutNotification();
+  return <>{children}</>;
 }
 
 export default function SessionProvider({ children }: SessionProviderProps) {
@@ -17,7 +28,9 @@ export default function SessionProvider({ children }: SessionProviderProps) {
       // Also refetch when the browser comes back online
       refetchWhenOffline={false}
     >
-      {children}
+      <LogoutNotificationListener>
+        {children}
+      </LogoutNotificationListener>
     </NextAuthSessionProvider>
   );
 }

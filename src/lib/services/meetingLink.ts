@@ -40,7 +40,9 @@ export async function generateMeetingLink(
     return generateZoomMeeting(meetingConfig);
   }
 
-  if (lowerModeName.includes('google') || lowerModeName.includes('meet')) {
+  // Generate Google Meet for google meet, video, or online modes
+  if (lowerModeName.includes('google') || lowerModeName.includes('meet') || 
+      lowerModeName.includes('video') || lowerModeName.includes('online')) {
     return generateGoogleMeetLink(meetingConfig);
   }
 
@@ -270,7 +272,8 @@ export function requiresMeetingLink(modeName: string): boolean {
     lowerModeName.includes('zoom') ||
     lowerModeName.includes('google') ||
     lowerModeName.includes('meet') ||
-    lowerModeName.includes('video')
+    lowerModeName.includes('video') ||
+    lowerModeName.includes('online')
   );
 }
 

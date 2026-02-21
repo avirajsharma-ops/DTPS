@@ -461,7 +461,10 @@ export async function POST(request: NextRequest) {
     // Generate meeting link if the appointment mode requires it
     let generatedMeetingLink: string | undefined;
     
+    console.log('[Appointment POST] Checking meeting link requirement for mode:', appointmentModeName);
+    
     if (appointmentModeName && requiresMeetingLink(appointmentModeName)) {
+      console.log('[Appointment POST] Mode requires meeting link, generating...');
       try {
         const meetingTopic = `${appointmentTypeName || 'Consultation'} - ${client.firstName} ${client.lastName}`;
         const meetingResult = await generateMeetingLink(appointmentModeName, {
@@ -474,6 +477,13 @@ export async function POST(request: NextRequest) {
             { email: dietitian.email, name: `${dietitian.firstName} ${dietitian.lastName}` },
             { email: client.email, name: `${client.firstName} ${client.lastName}` }
           ]
+        });
+
+        console.log('[Appointment POST] Meeting link result:', { 
+          success: meetingResult.success, 
+          meetingLink: meetingResult.meetingLink,
+          provider: meetingResult.meetingDetails?.provider,
+          error: meetingResult.error 
         });
 
         if (meetingResult.success && meetingResult.meetingLink) {
@@ -493,13 +503,16 @@ export async function POST(request: NextRequest) {
             }
             appointment.meetingProvider = meetingResult.meetingDetails.provider;
           }
+          console.log('[Appointment POST] Meeting link saved to appointment:', generatedMeetingLink);
         } else if (!meetingResult.success) {
-          console.warn('Failed to generate meeting link:', meetingResult.error);
+          console.warn('[Appointment POST] Failed to generate meeting link:', meetingResult.error);
         }
       } catch (meetingError) {
-        console.error('Failed to generate meeting link:', meetingError);
+        console.error('[Appointment POST] Failed to generate meeting link:', meetingError);
         // Continue without meeting link - don't fail the appointment creation
       }
+    } else {
+      console.log('[Appointment POST] Mode does not require meeting link');
     }
 
     try {

@@ -47,6 +47,15 @@ export const authOptions: NextAuthOptions = {
               throw new Error('Wrong email or password');
             }
 
+            // Check account status and provide specific error messages
+            if (user.status === 'inactive') {
+              throw new Error('Your account has been deactivated. Please contact admin.');
+            }
+            
+            if (user.status === 'suspended') {
+              throw new Error('Your account has been suspended. Please contact admin for assistance.');
+            }
+
             if (user.status !== 'active') {
               throw new Error('Account is not active. Please contact support.');
             }
@@ -251,6 +260,20 @@ export const authOptions: NextAuthOptions = {
           session.user.country = token.country as string;
           session.user.totalOrders = token.totalOrders as number;
           session.user.totalSpent = token.totalSpent as number;
+        }
+
+        // Check if user is still active - if deactivated, invalidate session
+        try {
+          await connectDB();
+          const user = await User.findById(token.sub);
+          if (user && user.status !== 'active') {
+            // User has been deactivated/suspended - invalidate the session
+            // Return null to trigger logout
+            return null as any;
+          }
+        } catch (error) {
+          console.error('Error checking user status in session:', error);
+          // Don't fail the session on error - just continue
         }
       }
       return session;

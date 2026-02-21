@@ -77,13 +77,14 @@ const generateTimeOptions = () => {
 
 const TIME_OPTIONS = generateTimeOptions();
 
-// Default timing: 10:00 AM to 6:00 PM for all weekdays
+// Default timing: 10:00 AM to 6:00 PM for Monday to Saturday (including Saturday)
 const DEFAULT_TIMING: Omit<AvailabilitySlot, '_id'>[] = [
-  { dayOfWeek: 1, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true },
-  { dayOfWeek: 2, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true },
-  { dayOfWeek: 3, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true },
-  { dayOfWeek: 4, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true },
-  { dayOfWeek: 5, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true },
+  { dayOfWeek: 1, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true }, // Monday
+  { dayOfWeek: 2, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true }, // Tuesday
+  { dayOfWeek: 3, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true }, // Wednesday
+  { dayOfWeek: 4, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true }, // Thursday
+  { dayOfWeek: 5, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true }, // Friday
+  { dayOfWeek: 6, startTime: '10:00', endTime: '18:00', slotDuration: 60, isActive: true }, // Saturday
 ];
 
 export default function TimeSlotManagement({ providerId, isAdmin = false }: TimeSlotManagementProps) {
@@ -339,7 +340,7 @@ export default function TimeSlotManagement({ providerId, isAdmin = false }: Time
                   <div className="flex gap-2 mt-3">
                     <Button size="sm" onClick={() => setShowDefaultConfirm(true)}>
                       <Wand2 className="h-4 w-4 mr-2" />
-                      Set Default (10 AM - 6 PM, Mon-Fri)
+                      Set Default (10:00 AM - 6:00 PM, Mon-Sat)
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => setShowAddDialog(true)}>
                       <Plus className="h-4 w-4 mr-2" />
@@ -476,7 +477,7 @@ export default function TimeSlotManagement({ providerId, isAdmin = false }: Time
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-800 mb-2">Default Schedule</h4>
               <ul className="space-y-1 text-sm text-blue-700">
-                <li>• Monday - Friday</li>
+                <li>• Monday - Saturday</li>
                 <li>• 10:00 AM to 6:00 PM</li>
                 <li>• 60-minute appointment slots</li>
               </ul>
