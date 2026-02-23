@@ -437,6 +437,15 @@ const userSchema = new Schema({
 userSchema.index({ role: 1 });
 userSchema.index({ assignedDietitian: 1 });
 userSchema.index({ assignedDietitians: 1 });
+userSchema.index({ clientStatus: 1 }); // For filtering by status
+userSchema.index({ createdAt: -1 }); // For sorting by newest
+userSchema.index({ email: 1 }); // For email lookups
+// Compound indexes for common queries in admin panel
+userSchema.index({ role: 1, clientStatus: 1 });
+userSchema.index({ role: 1, assignedDietitian: 1 });
+userSchema.index({ role: 1, createdAt: -1 });
+// Text index for search functionality
+userSchema.index({ firstName: 'text', lastName: 'text', email: 'text' });
 
 // Pre-save hook to hash password with bcrypt
 userSchema.pre('save', async function (next) {

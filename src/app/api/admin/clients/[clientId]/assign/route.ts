@@ -7,6 +7,7 @@ import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { UserRole } from '@/types';
 import { logActivity } from '@/lib/utils/activityLogger';
 import { adminSSEManager } from '@/lib/realtime/admin-sse-manager';
+import { clearCacheByTag } from '@/lib/api/utils';
 
 // PATCH /api/admin/clients/[clientId]/assign - Assign/Add dietitian to client
 export async function PATCH(
@@ -263,6 +264,10 @@ export async function PATCH(
       },
       timestamp: Date.now()
     });
+
+    // Clear cache to refresh client list
+    clearCacheByTag('clients');
+    clearCacheByTag('stats');
 
     return NextResponse.json({
       success: true,

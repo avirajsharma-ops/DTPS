@@ -143,9 +143,11 @@ export default function AdminAllClientsPage() {
   const [stats, setStats] = useState({ total: 0, assigned: 0, unassigned: 0 });
   const [isSSEConnected, setIsSSEConnected] = useState(false);
   
-  // Pagination state
+  // Pagination state - server-side
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20); // Show 20 items per page
+  const [pageSize] = useState(20); // Fixed page size
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalResults, setTotalResults] = useState(0);
   
   // Debounce search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -174,127 +176,61 @@ export default function AdminAllClientsPage() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailClient, setDetailClient] = useState<Client | null>(null);
 
-  // SSE connection for real-time updates
-  const connectSSE = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
-
-    const eventSource = new EventSource('/api/admin/clients/sse');
-    eventSourceRef.current = eventSource;
-
-    eventSource.onopen = () => {
-      console.log('Admin SSE connected');
-      setIsSSEConnected(true);
-    };
-
-    eventSource.onerror = (error) => {
-      console.error('Admin SSE error:', error);
-      setIsSSEConnected(false);
-      // EventSource will auto-reconnect
-    };
-
-    // Handle initial data
-    eventSource.addEventListener('initial_data', (event) => {
-      try {
-        const data = JSON.parse(event.data);
+  // Fetch clients with server-side pagination
+  const fetchClients = useCallback(async (resetPage = false) => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      // Use server-side search, filtering, and pagination
+      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
+      if (filterStatus !== 'all') params.append('status', filterStatus);
+      if (filterAssigned !== 'all') params.append('assigned', filterAssigned);
+      params.append('page', resetPage ? '1' : String(currentPage));
+      params.append('limit', String(pageSize));
+      
+      const response = await fetch(`/api/admin/clients?${params.toString()}`);
+      
+      if (response.ok) {
+        const data = await response.json();
         setClients(data.clients || []);
         setStats(data.stats || { total: 0, assigned: 0, unassigned: 0 });
-        setLoading(false);
-      } catch (error) {
-        console.error('Error parsing initial data:', error);
-      }
-    });
-
-    // Handle client updates
-    eventSource.addEventListener('client_updated', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        const updatedClient = data.client;
+        setTotalResults(data.pagination?.total || 0);
+        setTotalPages(data.pagination?.pages || 0);
         
-        // Update the client in the list
-        setClients(prevClients =>
-          prevClients.map(c =>
-            c._id === updatedClient._id ? updatedClient : c
-          )
-        );
-        
-        // Update stats
-        if (data.stats) {
-          setStats(data.stats);
+        if (resetPage) {
+          setCurrentPage(1);
         }
-        
-        // Show toast notification for the update
-        toast.success(`Client ${updatedClient.firstName} ${updatedClient.lastName} updated`);
-      } catch (error) {
-        console.error('Error parsing client update:', error);
+        setIsSSEConnected(true);
+      } else {
+        toast.error('Failed to fetch clients');
+        setIsSSEConnected(false);
       }
-    });
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      toast.error('Failed to fetch clients');
+      setIsSSEConnected(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearchTerm, filterStatus, filterAssigned, currentPage, pageSize]);
 
-    // Handle new client added
-    eventSource.addEventListener('client_added', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        const newClient = data.client;
-        
-        // Add new client to the top of the list
-        setClients(prevClients => [newClient, ...prevClients]);
-        
-        // Update stats
-        if (data.stats) {
-          setStats(data.stats);
-        }
-        
-        toast.success(`New client ${newClient.firstName} ${newClient.lastName} added`);
-      } catch (error) {
-        console.error('Error parsing new client:', error);
-      }
-    });
-
-    // Handle client deleted
-    eventSource.addEventListener('client_deleted', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        const clientId = data.clientId;
-        
-        // Remove client from the list
-        setClients(prevClients => prevClients.filter(c => c._id !== clientId));
-        
-        // Update stats
-        if (data.stats) {
-          setStats(data.stats);
-        }
-      } catch (error) {
-        console.error('Error parsing client deletion:', error);
-      }
-    });
-
-    // Handle heartbeat (just to keep connection alive)
-    eventSource.addEventListener('heartbeat', () => {
-      // Connection is alive
-    });
-
-    return eventSource;
-  }, []);
-
+  // Initial load
   useEffect(() => {
     if (status === 'authenticated') {
-      // Connect to SSE for real-time updates
-      const eventSource = connectSSE();
-      
-      // Also fetch dietitians and health counselors (these don't need real-time)
       fetchDietitians();
       fetchHealthCounselors();
-
-      return () => {
-        if (eventSource) {
-          eventSource.close();
-        }
-      };
     }
-  }, [status, connectSSE]);
+  }, [status]);
 
-  // Debounce search term - only update every 500ms
+  // Fetch clients when dependencies change
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchClients();
+    }
+  }, [status, fetchClients]);
+
+  // Debounce search term - only update every 300ms for faster response
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -303,7 +239,7 @@ export default function AdminAllClientsPage() {
     searchTimeoutRef.current = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setCurrentPage(1); // Reset to first page when search changes
-    }, 500);
+    }, 300);
 
     return () => {
       if (searchTimeoutRef.current) {
@@ -312,35 +248,11 @@ export default function AdminAllClientsPage() {
     };
   }, [searchTerm]);
 
-  // Fetch clients with filters (for when filters change)
-  const fetchClients = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filterStatus !== 'all') params.append('status', filterStatus);
-      if (filterAssigned !== 'all') params.append('assigned', filterAssigned);
-      
-      const response = await fetch(`/api/admin/clients?${params.toString()}`);
-      if (response.ok) {
-        const data = await response.json();
-        setClients(data.clients || []);
-        setStats(data.stats || { total: 0, assigned: 0, unassigned: 0 });
-        setCurrentPage(1); // Reset pagination when filters change
-      }
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-      toast.error('Failed to fetch clients');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Re-fetch when filters change
+  // Reset to page 1 when filters change
   useEffect(() => {
-    if (status === 'authenticated' && (filterStatus !== 'all' || filterAssigned !== 'all')) {
-      fetchClients();
+    if (status === 'authenticated') {
+      setCurrentPage(1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStatus, filterAssigned, status]);
 
   const fetchDietitians = async () => {
@@ -419,15 +331,10 @@ export default function AdminAllClientsPage() {
         console.log('Assignment response:', data);
         toast.success(data.message);
         
-        // Update the client in the list immediately (SSE will also update, but this is faster for UX)
-        setClients(prevClients =>
-          prevClients.map(c =>
-            c._id === selectedClient._id ? data.client : c
-          )
-        );
+        // Refresh the client list to show updated assignments
+        await fetchClients();
         
         setAssignDialogOpen(false);
-        // No need to call fetchClients - SSE will broadcast the update with stats
       } else {
         const error = await response.json();
         console.error('Assignment error:', error);
@@ -458,12 +365,8 @@ export default function AdminAllClientsPage() {
         const data = await response.json();
         toast.success('Dietitian removed successfully');
         
-        // Update the client in the list
-        setClients(prevClients =>
-          prevClients.map(c =>
-            c._id === clientId ? data.client : c
-          )
-        );
+        // Refresh the list
+        await fetchClients();
         
         // Update selected client if it's the same
         if (selectedClient?._id === clientId) {
@@ -497,12 +400,8 @@ export default function AdminAllClientsPage() {
         const data = await response.json();
         toast.success('Health counselor removed successfully');
         
-        // Update the client in the list
-        setClients(prevClients =>
-          prevClients.map(c =>
-            c._id === clientId ? data.client : c
-          )
-        );
+        // Refresh the list
+        await fetchClients();
         
         // Update selected client if it's the same
         if (selectedClient?._id === clientId) {
@@ -529,12 +428,12 @@ export default function AdminAllClientsPage() {
     );
   };
 
-  // Select all visible clients
+  // Select all visible clients on current page
   const selectAllClients = () => {
-    if (selectedClients.length === filteredClients.length) {
+    if (selectedClients.length === paginatedClients.length) {
       setSelectedClients([]);
     } else {
-      setSelectedClients(filteredClients.map(c => c._id));
+      setSelectedClients(paginatedClients.map(c => c._id));
     }
   };
 
@@ -577,7 +476,8 @@ export default function AdminAllClientsPage() {
       setTransferDialogOpen(false);
       setSelectedClients([]);
       setTransferDietitianId('');
-      // No need to call fetchClients - SSE will broadcast the updates
+      // Refresh page data after bulk transfer
+      await fetchClients();
     } catch (error) {
       console.error('Error transferring clients:', error);
       toast.error('Failed to transfer clients');
@@ -586,28 +486,8 @@ export default function AdminAllClientsPage() {
     }
   };
 
-  // Optimized filtering with memoization
-  const filteredClients = useMemo(() => {
-    return clients.filter(client => {
-      const searchLower = debouncedSearchTerm.toLowerCase();
-      if (!searchLower) return true;
-      
-      return (
-        client.firstName?.toLowerCase().includes(searchLower) ||
-        client.lastName?.toLowerCase().includes(searchLower) ||
-        client.email?.toLowerCase().includes(searchLower) ||
-        client.phone?.toLowerCase().includes(searchLower)
-      );
-    });
-  }, [clients, debouncedSearchTerm]);
-
-  // Pagination calculation
-  const totalPages = Math.ceil(filteredClients.length / pageSize);
-  const paginatedClients = useMemo(() => {
-    const startIdx = (currentPage - 1) * pageSize;
-    const endIdx = startIdx + pageSize;
-    return filteredClients.slice(startIdx, endIdx);
-  }, [filteredClients, currentPage, pageSize]);
+  // No client-side filtering needed - it's all server-side now!
+  const paginatedClients = clients;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -776,10 +656,113 @@ export default function AdminAllClientsPage() {
 
         {/* Clients Table */}
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <LoadingSpinner />
-          </div>
-        ) : filteredClients.length === 0 ? (
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left">
+                        <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Client
+                      </th>
+                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Health Info
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Dietitian
+                      </th>
+                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Health Counselor
+                      </th>
+                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created By
+                      </th>
+                      <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {/* Skeleton rows */}
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse" />
+                            <div className="ml-4 space-y-2">
+                              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                              <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2">
+                            <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+                            <div className="h-3 w-28 bg-gray-100 rounded animate-pulse" />
+                          </div>
+                        </td>
+                        <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2">
+                            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                            <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="h-6 w-28 bg-gray-200 rounded animate-pulse" />
+                        </td>
+                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
+                          <div className="h-6 w-28 bg-gray-200 rounded animate-pulse" />
+                        </td>
+                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
+                          <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse" />
+                        </td>
+                        <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
+                          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                        </td>
+                        <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
+                          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse" />
+                            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+            
+            {/* Skeleton Pagination */}
+            <div className="flex items-center justify-between border-t px-4 py-4">
+              <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+              <div className="flex items-center gap-2">
+                <div className="h-10 w-24 bg-gray-200 rounded animate-pulse" />
+                <div className="h-10 w-10 bg-gray-200 rounded animate-pulse" />
+                <div className="h-10 w-10 bg-gray-200 rounded animate-pulse" />
+                <div className="h-10 w-10 bg-gray-200 rounded animate-pulse" />
+                <div className="h-10 w-24 bg-gray-200 rounded animate-pulse" />
+              </div>
+            </div>
+          </Card>
+        ) : clients.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1082,7 +1065,7 @@ export default function AdminAllClientsPage() {
             {/* Pagination Controls */}
             <div className="flex items-center justify-between border-t px-4 py-4">
               <div className="text-sm text-gray-600">
-                Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredClients.length)} of {filteredClients.length} clients
+                Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalResults)} of {totalResults} clients
               </div>
               <div className="flex items-center gap-2">
                 <Button
