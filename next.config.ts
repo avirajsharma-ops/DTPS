@@ -7,6 +7,12 @@ const noCacheHeaders = [
   { key: 'Expires', value: '0' },
 ];
 
+// Pages can be cached briefly — service worker + WebView can serve stale while revalidating
+const pageCacheHeaders = [
+  { key: 'Cache-Control', value: 'private, no-cache, must-revalidate' },
+  { key: 'Pragma', value: 'no-cache' },
+];
+
 const nextConfig: NextConfig = {
   // Docker deployment configuration
   output: 'standalone',
@@ -104,10 +110,10 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         headers: noCacheHeaders,
       },
-      // Disable caching for all authenticated app pages (staff + clients)
+      // Pages: allow caching with revalidation (so WebView/SW can serve stale while revalidating)
       {
         source: '/(admin|dashboard|dietician|health-counselor|messages|appointments|clients|recipes|meal-plans|meal-plan-templates|billing|subscriptions|analytics|profile|settings|revenue-report|user)/:path*',
-        headers: noCacheHeaders,
+        headers: pageCacheHeaders,
       },
       // Cache static assets aggressively
       {
@@ -120,6 +126,14 @@ const nextConfig: NextConfig = {
         source: '/favicon.ico',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=86400' },
+        ],
+      },
+      // Service worker must not be cached long to allow updates
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
         ],
       },
       {

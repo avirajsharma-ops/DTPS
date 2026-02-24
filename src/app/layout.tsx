@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import PushNotificationProvider from "@/components/providers/PushNotificationProvider";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import GlobalFetchInterceptor from "@/components/providers/GlobalFetchInterceptor";
+import ServiceWorkerProvider from "@/components/providers/ServiceWorkerProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,6 +62,9 @@ export default function RootLayout({
         {/* Theme Color */}
         <meta name="theme-color" content="#ffffff" />
 
+        {/* PWA Manifest */}
+        <link rel="manifest" href="/manifest.json" />
+
         {/* Favicon */}
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-192x192.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-192x192.png" />
@@ -72,6 +76,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>
+          <ServiceWorkerProvider />
           <GlobalFetchInterceptor />
           <ThemeProvider>
             <PushNotificationProvider autoRegister={true}>

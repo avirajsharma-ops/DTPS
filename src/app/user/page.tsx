@@ -387,7 +387,7 @@ export default function UserHomePage() {
   // Helper to load service plans (used by onboarding check fast path)
   const loadServicePlans = async () => {
     try {
-      const planRes = await fetchWithTimeout('/api/client/service-plans', undefined, 6000);
+      const planRes = await fetchWithTimeout('/api/client/service-plans', undefined, 4000);
       if (planRes.ok) {
         const planData = await planRes.json();
         setHasActivePlan(planData.hasActivePlan || false);
@@ -399,7 +399,7 @@ export default function UserHomePage() {
       // Also load profile and health data
       fetchHealthData();
       
-      const profileRes = await fetchWithTimeout('/api/client/profile', undefined, 6000);
+      const profileRes = await fetchWithTimeout('/api/client/profile', undefined, 4000);
       if (profileRes.ok && !unmountedRef.current) {
         const profileData = await profileRes.json();
         setUserProfile({
@@ -514,13 +514,13 @@ export default function UserHomePage() {
       // Hard stop: never block the UI forever on slow networks/proxy issues
       const hardStop = setTimeout(() => {
         if (!unmountedRef.current) setCheckingOnboarding(false);
-      }, 8000);
+      }, 3000);
 
       try {
         // Check onboarding and active plan in parallel
         const [onboardingRes, planRes] = await Promise.all([
-          fetchWithTimeout('/api/client/onboarding', undefined, 6000),
-          fetchWithTimeout('/api/client/service-plans', undefined, 6000)
+          fetchWithTimeout('/api/client/onboarding', undefined, 3000),
+          fetchWithTimeout('/api/client/service-plans', undefined, 3000)
         ]);
 
         if (onboardingRes.ok) {
@@ -549,7 +549,7 @@ export default function UserHomePage() {
         // Fetch user profile data (BMI, weight, height, etc.)
         (async () => {
           try {
-            const profileRes = await fetchWithTimeout('/api/client/profile', undefined, 6000);
+            const profileRes = await fetchWithTimeout('/api/client/profile', undefined, 4000);
             if (profileRes.ok && !unmountedRef.current) {
               const profileData = await profileRes.json();
               setUserProfile({
@@ -593,7 +593,7 @@ export default function UserHomePage() {
           setBlogsLoading(true);
           setBlogsError('');
         }
-        const blogsRes = await fetchWithTimeout('/api/client/blogs?limit=5', undefined, 6000);
+        const blogsRes = await fetchWithTimeout('/api/client/blogs?limit=5', undefined, 4000);
         if (!blogsRes.ok) {
           throw new Error(`Failed to fetch blogs (${blogsRes.status})`);
         }
