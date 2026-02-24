@@ -33,13 +33,15 @@ function calculateBMI(weightKg: number, heightCm: number): { bmi: string; bmiCat
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    // Run auth + DB connection in PARALLEL (saves ~50-100ms)
+    const [session] = await Promise.all([
+      getServerSession(authOptions),
+      dbConnect()
+    ]);
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    await dbConnect();
 
     // Generate cache key based on user ID
     const cacheKey = `client-profile:${session.user.id}`;
@@ -95,10 +97,14 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Get computed client status based on meal plan validity
+    // Get computed client status based on meal plan validity (cached)
     let statusInfo = null;
     try {
-      statusInfo = await getClientStatusInfo(session.user.id);
+      statusInfo = await withCache(
+        `client-status:${session.user.id}`,
+        () => getClientStatusInfo(session.user.id),
+        { ttl: 120000, tags: ['client-profile', `client-profile:${session.user.id}`] }
+      );
     } catch (statusError) {
       console.error("Error getting client status:", statusError);
     }

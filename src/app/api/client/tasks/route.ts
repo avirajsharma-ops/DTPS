@@ -9,13 +9,15 @@ import { withCache, clearCacheByTag } from '@/lib/api/utils';
 // GET - Get all assigned tasks for a date
 export async function GET(request: Request) {
     try {
-        const session = await getServerSession(authOptions);
+        // Run auth + DB connection in PARALLEL
+        const [session] = await Promise.all([
+            getServerSession(authOptions),
+            dbConnect()
+        ]);
 
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
-
-        await dbConnect();
 
         // Get date from query params
         const { searchParams } = new URL(request.url);

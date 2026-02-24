@@ -9,12 +9,14 @@ import { withCache, clearCacheByTag } from '@/lib/api/utils';
 // GET /api/client/appointments - Get appointments for current client user
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Run auth + DB connection in PARALLEL
+    const [session] = await Promise.all([
+      getServerSession(authOptions),
+      connectDB()
+    ]);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    await connectDB();
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 
     const appointments = await withCache(
-      `client:appointments:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
+      `client-appointments:${session.user.id}:${status || 'all'}:p${page}:l${limit}`,
       async () => await Appointment.find(query)
       .populate('dietitian', 'firstName lastName email avatar')
       .populate('client', 'firstName lastName email avatar')
@@ -40,7 +42,8 @@ export async function GET(request: NextRequest) {
       .select('+lifecycleHistory +cancelledBy +rescheduledBy')
       .sort({ scheduledAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit),
+      .skip((page - 1) * limit)
+      .lean(),
       { ttl: 60000, tags: ['client'] }
     );
 

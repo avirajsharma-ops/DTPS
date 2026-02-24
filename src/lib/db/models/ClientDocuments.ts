@@ -10,5 +10,9 @@ const ClientDocumentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for fast client document lookups
+ClientDocumentSchema.index({ clientId: 1, type: 1 });
+ClientDocumentSchema.index({ clientId: 1, createdAt: -1 });
+
 export default mongoose.models.ClientDocument ||
   mongoose.model("ClientDocument", ClientDocumentSchema);

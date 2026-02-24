@@ -62,6 +62,11 @@ const activityAssignmentSchema = new Schema<IActivityAssignment>(
   { timestamps: true, autoIndex: false }
 );
 
+// Indexes for fast activity assignment queries
+activityAssignmentSchema.index({ client: 1, date: -1 });
+activityAssignmentSchema.index({ client: 1, status: 1 });
+activityAssignmentSchema.index({ assignedBy: 1, date: -1 });
+
 const ActivityAssignment: Model<IActivityAssignment> =
   mongoose.models.ActivityAssignment ||
   mongoose.model('ActivityAssignment', activityAssignmentSchema);

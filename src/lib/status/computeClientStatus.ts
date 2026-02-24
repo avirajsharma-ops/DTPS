@@ -183,21 +183,23 @@ export async function getClientStatusInfo(clientId: string): Promise<{
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  // Find active plan with endDate in the future (including upcoming plans)
-  const activePlan = await ClientMealPlan.findOne({
-    clientId,
-    status: 'active',
-    endDate: { $gte: today }
-  }).lean();
-  
-  // Check for payment
-  const hasPayment = await UnifiedPayment.exists({
-    client: clientId,
-    $or: [
-      { status: { $in: ['paid', 'completed', 'active'] } },
-      { paymentStatus: 'paid' }
-    ]
-  });
+  // Run both queries in PARALLEL for faster response
+  const [activePlan, hasPayment] = await Promise.all([
+    // Find active plan with endDate in the future (including upcoming plans)
+    ClientMealPlan.findOne({
+      clientId,
+      status: 'active',
+      endDate: { $gte: today }
+    }).select('startDate endDate status').lean(),
+    // Check for payment
+    UnifiedPayment.exists({
+      client: clientId,
+      $or: [
+        { status: { $in: ['paid', 'completed', 'active'] } },
+        { paymentStatus: 'paid' }
+      ]
+    })
+  ]);
   
   const hasSuccessfulPayment = !!hasPayment;
   const hasActivePlan = !!activePlan;

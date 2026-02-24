@@ -19,7 +19,11 @@ import {
 // GET /api/client/meal-plan - Get client's meal plan for a specific date
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Run auth + DB connection in PARALLEL
+    const [session] = await Promise.all([
+      getServerSession(authOptions),
+      connectDB()
+    ]);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -27,8 +31,6 @@ export async function GET(request: NextRequest) {
     if (session.user.role !== UserRole.CLIENT) {
       return NextResponse.json({ error: 'Only clients can access this endpoint' }, { status: 403 });
     }
-
-    await connectDB();
 
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date');

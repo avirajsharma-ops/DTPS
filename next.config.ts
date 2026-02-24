@@ -61,7 +61,19 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-label',
       '@radix-ui/react-progress',
       '@radix-ui/react-switch',
-    ]
+      'firebase',
+      'firebase/app',
+      'firebase/messaging',
+      'emoji-picker-react',
+      'html2canvas',
+      'jspdf',
+      'sonner',
+    ],
+    // Client-side router cache — keep prefetched pages alive longer
+    staleTimes: {
+      dynamic: 30,  // Cache dynamic pages for 30s on client router
+      static: 300,  // Cache static pages for 5min on client router
+    },
   } as any,
 
   // Webpack optimizations for better build performance

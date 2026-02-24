@@ -4,7 +4,7 @@
             "outputFile": "mw.dtps.app-mergeReleaseResources-43:/values-v27/values-v27.xml",
             "map": [
                 {
-                    "source": "/Users/lokeshdhote/.gradle/caches/8.11.1/transforms/207942bb1927d0d0e584496804346d22/transformed/core-splashscreen-1.2.0-alpha02/res/values-v27/values-v27.xml",
+                    "source": "/Users/aviraj/.gradle/caches/8.11.1/transforms/207942bb1927d0d0e584496804346d22/transformed/core-splashscreen-1.2.0-alpha02/res/values-v27/values-v27.xml",
                     "from": {
                         "startLines": "2,3,4,7",
                         "startColumns": "4,4,4,4",

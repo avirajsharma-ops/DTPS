@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import Message from '@/lib/db/models/Message';
-import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { withCache } from '@/lib/api/utils';
 
 /**
  * GET /api/client/messages/unread-count
@@ -11,19 +11,25 @@ import { withCache, clearCacheByTag } from '@/lib/api/utils';
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Run auth + DB connection in PARALLEL
+    const [session] = await Promise.all([
+      getServerSession(authOptions),
+      connectDB()
+    ]);
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectDB();
-
-    // Count all unread messages where current user is the receiver
-    const count = await Message.countDocuments({
-      receiver: session.user.id,
-      isRead: false
-    });
+    // Cache unread count for 10 seconds
+    const count = await withCache(
+      `message-unread:${session.user.id}`,
+      () => Message.countDocuments({
+        receiver: session.user.id,
+        isRead: false
+      }),
+      { ttl: 10000, tags: ['messages'] }
+    );
 
     return NextResponse.json({ count });
   } catch (error) {

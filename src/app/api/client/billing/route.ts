@@ -9,24 +9,25 @@ import { withCache, clearCacheByTag } from '@/lib/api/utils';
 // GET /api/client/billing - Get billing information for the client
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Run auth + DB connection in PARALLEL
+    const [session] = await Promise.all([
+      getServerSession(authOptions),
+      connectDB()
+    ]);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectDB();
-
     // Get all payments for this client
     const payments = await withCache(
-      `client:billing:${JSON.stringify({
-      client: session.user.id
-    })}`,
+      `client-billing:${session.user.id}`,
       async () => await UnifiedPayment.find({
       client: session.user.id
     })
       .populate('dietitian', 'firstName lastName')
       .sort({ createdAt: -1 })
-      .limit(50),
+      .limit(50)
+      .lean(),
       { ttl: 120000, tags: ['client'] }
     );
 

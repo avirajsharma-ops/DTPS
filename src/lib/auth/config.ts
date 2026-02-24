@@ -7,6 +7,42 @@ import WooCommerceClient from '@/lib/db/models/WooCommerceClient';
 import { UserRole } from '@/types';
 import { getBaseUrl } from '@/lib/config';
 
+/**
+ * In-memory cache for user active-status checks in the session callback.
+ * Avoids hitting MongoDB on EVERY getServerSession() call.
+ * Cache TTL: 5 minutes — a user deactivated by admin will be locked out within 5 min.
+ */
+const userStatusCache = new Map<string, { status: string; expiresAt: number }>();
+const USER_STATUS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCachedUserStatus(userId: string): string | null {
+  const entry = userStatusCache.get(userId);
+  if (entry && entry.expiresAt > Date.now()) {
+    return entry.status;
+  }
+  // Expired or not found — clean up
+  if (entry) userStatusCache.delete(userId);
+  return null;
+}
+
+function setCachedUserStatus(userId: string, status: string): void {
+  // Cap cache size to prevent memory leaks
+  if (userStatusCache.size > 5000) {
+    // Evict oldest 1000 entries
+    const keys = userStatusCache.keys();
+    for (let i = 0; i < 1000; i++) {
+      const k = keys.next().value;
+      if (k) userStatusCache.delete(k);
+    }
+  }
+  userStatusCache.set(userId, { status, expiresAt: Date.now() + USER_STATUS_CACHE_TTL });
+}
+
+/** Invalidate cached status when a user is deactivated/suspended */
+export function invalidateUserStatusCache(userId: string): void {
+  userStatusCache.delete(userId);
+}
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
@@ -262,18 +298,31 @@ export const authOptions: NextAuthOptions = {
           session.user.totalSpent = token.totalSpent as number;
         }
 
-        // Check if user is still active - if deactivated, invalidate session
-        try {
-          await connectDB();
-          const user = await User.findById(token.sub);
-          if (user && user.status !== 'active') {
-            // User has been deactivated/suspended - invalidate the session
-            // Return null to trigger logout
-            return null as any;
+        // Check if user is still active — uses in-memory cache to avoid DB hit on every request
+        const userId = token.sub;
+        if (userId) {
+          const cachedStatus = getCachedUserStatus(userId);
+          if (cachedStatus !== null) {
+            // Cache hit — check status without DB call
+            if (cachedStatus !== 'active') {
+              return null as any;
+            }
+          } else {
+            // Cache miss — check DB and cache result
+            try {
+              await connectDB();
+              const user = await User.findById(userId).select('status').lean();
+              if (user) {
+                setCachedUserStatus(userId, user.status || 'active');
+                if (user.status !== 'active') {
+                  return null as any;
+                }
+              }
+            } catch (error) {
+              console.error('Error checking user status in session:', error);
+              // Don't fail the session on error - just continue
+            }
           }
-        } catch (error) {
-          console.error('Error checking user status in session:', error);
-          // Don't fail the session on error - just continue
         }
       }
       return session;
