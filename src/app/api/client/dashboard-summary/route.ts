@@ -5,14 +5,6 @@ import dbConnect from "@/lib/db/connection";
 import JournalTracking from "@/lib/db/models/JournalTracking";
 import User from "@/lib/db/models/User";
 import { withCache } from '@/lib/api/utils';
-
-/**
- * Aggregated dashboard API — returns ALL health data in a single request.
- * Replaces 6 separate API calls (hydration, sleep, activity, steps, meal-plan, profile)
- * with one DB query for JournalTracking + one for User.
- *
- * Saves ~5 HTTP round-trips on slow networks.
- */
 export async function GET(request: Request) {
   try {
     const [session] = await Promise.all([

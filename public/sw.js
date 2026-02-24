@@ -1,11 +1,9 @@
 // App-Shell Service Worker for DTPS
-// Caches static assets + page shells for fast loads and offline support
+// Caches ONLY static assets for fast loads. Pages are always fetched from network.
 // Works alongside firebase-messaging-sw.js (which handles push notifications)
 
-const CACHE_VERSION = 'dtps-v1';
+const CACHE_VERSION = 'dtps-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
-const PAGE_CACHE = `${CACHE_VERSION}-pages`;
-const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 const API_CACHE = `${CACHE_VERSION}-api`;
 
 // Static assets to pre-cache on install (app shell)
@@ -15,7 +13,7 @@ const PRECACHE_URLS = [
   '/images/dtps-logo.png',
 ];
 
-// URL patterns that should use cache-first strategy (static assets)
+// URL patterns that should use cache-first strategy (immutable static assets)
 const STATIC_PATTERNS = [
   /^\/_next\/static\//,
   /^\/icons\//,
@@ -25,18 +23,10 @@ const STATIC_PATTERNS = [
   /\.ttf$/,
 ];
 
-// Page routes that should use stale-while-revalidate strategy
-const PAGE_PATTERNS = [
-  /^\/user(\/|$)/,
-  /^\/client-auth\//,
-];
-
 // API routes that can be briefly cached for offline resilience (GET only)
 const CACHEABLE_API_PATTERNS = [
   /^\/api\/client\/blogs/,
-  /^\/api\/client\/profile/,
   /^\/api\/client\/service-plans$/,
-  /^\/api\/client\/meal-plan/,
 ];
 
 // API routes that should NEVER be cached
@@ -61,7 +51,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: clean up old caches
+// Activate: clean up ALL old caches (including v1 page cache)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
@@ -85,22 +75,18 @@ function getStrategy(url) {
     return 'network-only';
   }
 
-  // Static assets: cache-first (immutable)
+  // Static assets: cache-first (immutable, hashed filenames)
   if (STATIC_PATTERNS.some((p) => p.test(pathname))) {
     return 'cache-first';
   }
 
-  // Page navigations: stale-while-revalidate
-  if (PAGE_PATTERNS.some((p) => p.test(pathname))) {
-    return 'stale-while-revalidate';
-  }
-
-  // Cacheable GET APIs: network-first with short cache fallback
+  // Cacheable GET APIs: network-first with cache fallback for offline
   if (CACHEABLE_API_PATTERNS.some((p) => p.test(pathname))) {
     return 'network-first';
   }
 
-  // Everything else: network only
+  // Everything else (pages, other APIs): network only
+  // Pages MUST go to network to get fresh HTML with correct auth state
   return 'network-only';
 }
 
@@ -109,8 +95,6 @@ function getCacheName(strategy) {
   switch (strategy) {
     case 'cache-first':
       return STATIC_CACHE;
-    case 'stale-while-revalidate':
-      return PAGE_CACHE;
     case 'network-first':
       return API_CACHE;
     default:
@@ -118,14 +102,15 @@ function getCacheName(strategy) {
   }
 }
 
-// Cache-first: serve from cache, fallback to network
+// Cache-first: serve from cache, fallback to network (for immutable static assets)
 async function cacheFirst(request, cacheName) {
   const cached = await caches.match(request);
   if (cached) return cached;
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    // Only cache successful, non-redirected responses
+    if (response.ok && !response.redirected) {
       const cache = await caches.open(cacheName);
       cache.put(request, response.clone());
     }
@@ -136,46 +121,17 @@ async function cacheFirst(request, cacheName) {
   }
 }
 
-// Stale-while-revalidate: serve from cache immediately, update cache in background
-async function staleWhileRevalidate(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-
-  // Always fetch fresh version in background
-  const fetchPromise = fetch(request)
-    .then((response) => {
-      if (response.ok && response.type !== 'opaqueredirect') {
-        // Only cache HTML responses for pages, not redirects
-        const contentType = response.headers.get('content-type') || '';
-        if (contentType.includes('text/html') || contentType.includes('application/json')) {
-          cache.put(request, response.clone());
-        }
-      }
-      return response;
-    })
-    .catch((error) => {
-      // Network failed — if we have a cached version, that was already returned
-      // If not, return an offline page
-      if (!cached) {
-        return new Response(getOfflineHTML(), {
-          status: 200,
-          headers: { 'Content-Type': 'text/html' },
-        });
-      }
-      return cached;
-    });
-
-  // Return cached version immediately if available, otherwise wait for network
-  return cached || fetchPromise;
-}
-
 // Network-first: try network, fallback to cache (for API data)
 async function networkFirst(request, cacheName) {
   try {
     const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
+    // Only cache successful, non-redirected JSON responses
+    if (response.ok && !response.redirected) {
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const cache = await caches.open(cacheName);
+        cache.put(request, response.clone());
+      }
     }
     return response;
   } catch (error) {
@@ -198,10 +154,13 @@ self.addEventListener('fetch', (event) => {
   // Skip chrome-extension, data URLs, etc.
   if (!request.url.startsWith('http')) return;
 
-  // Skip cross-origin requests (CDN scripts, analytics, etc.)
-  // but allow same-origin
+  // Skip cross-origin requests
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  // NEVER intercept navigation requests (page loads)
+  // These must always go to the server for correct auth redirects
+  if (request.mode === 'navigate') return;
 
   const strategy = getStrategy(request.url);
   const cacheName = getCacheName(strategy);
@@ -210,8 +169,6 @@ self.addEventListener('fetch', (event) => {
 
   if (strategy === 'cache-first') {
     event.respondWith(cacheFirst(request, cacheName));
-  } else if (strategy === 'stale-while-revalidate') {
-    event.respondWith(staleWhileRevalidate(request, cacheName));
   } else if (strategy === 'network-first') {
     event.respondWith(networkFirst(request, cacheName));
   }
@@ -228,10 +185,6 @@ self.addEventListener('message', (event) => {
       self.skipWaiting();
       break;
 
-    case 'CLEAR_PAGE_CACHE':
-      caches.delete(PAGE_CACHE);
-      break;
-
     case 'CLEAR_API_CACHE':
       caches.delete(API_CACHE);
       break;
@@ -243,9 +196,9 @@ self.addEventListener('message', (event) => {
       break;
 
     case 'CACHE_URLS':
-      // Pre-cache specific URLs (e.g., after navigation)
+      // Pre-cache specific static URLs
       if (payload && Array.isArray(payload.urls)) {
-        caches.open(PAGE_CACHE).then((cache) => {
+        caches.open(STATIC_CACHE).then((cache) => {
           payload.urls.forEach((url) => cache.add(url).catch(() => {}));
         });
       }

@@ -73,12 +73,6 @@ export default function ServiceWorkerProvider() {
 }
 
 // Utility functions to communicate with the service worker
-export function clearPageCache() {
-  if (navigator.serviceWorker?.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_PAGE_CACHE' });
-  }
-}
-
 export function clearApiCache() {
   if (navigator.serviceWorker?.controller) {
     navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_API_CACHE' });
