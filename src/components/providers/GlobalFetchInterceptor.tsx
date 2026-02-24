@@ -42,14 +42,20 @@ export function GlobalFetchInterceptor() {
         return originalFetch(input, init);
       }
 
-      // Only add cache-busting headers to API calls (not page navigations or static assets)
+      // Only add cache-busting headers to mutating API calls (POST, PUT, DELETE)
+      // GET requests are allowed to be cached by the service worker for offline support
+      const method = (init?.method || 'GET').toUpperCase();
+      const needsCacheBust = method !== 'GET' && method !== 'HEAD';
+
       const modifiedInit: RequestInit = {
         ...init,
         credentials: 'same-origin',
         headers: {
           ...init?.headers,
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
+          ...(needsCacheBust ? {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          } : {}),
         },
       };
 
@@ -63,7 +69,6 @@ export function GlobalFetchInterceptor() {
         }
         
         // Retry on server errors — only for GET requests
-        const method = (init?.method || 'GET').toUpperCase();
         if (response.status >= 500 && retriesLeft > 0 && method === 'GET') {
           await sleep(RETRY_DELAY);
           return fetchWithRetry(input, init, retriesLeft - 1);
