@@ -7,12 +7,6 @@ const noCacheHeaders = [
   { key: 'Expires', value: '0' },
 ];
 
-// Pages can be cached briefly — service worker + WebView can serve stale while revalidating
-const pageCacheHeaders = [
-  { key: 'Cache-Control', value: 'private, no-cache, must-revalidate' },
-  { key: 'Pragma', value: 'no-cache' },
-];
-
 const nextConfig: NextConfig = {
   // Docker deployment configuration
   output: 'standalone',
@@ -110,10 +104,11 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         headers: noCacheHeaders,
       },
-      // Pages: allow caching with revalidation (so WebView/SW can serve stale while revalidating)
+      // Pages: no caching — prevents stale HTML from being served after deployments
+      // This is critical for WebViews (Android app) which can aggressively cache HTML
       {
         source: '/(admin|dashboard|dietician|health-counselor|messages|appointments|clients|recipes|meal-plans|meal-plan-templates|billing|subscriptions|analytics|profile|settings|revenue-report|user)/:path*',
-        headers: pageCacheHeaders,
+        headers: noCacheHeaders,
       },
       // Cache static assets aggressively
       {
@@ -139,7 +134,7 @@ const nextConfig: NextConfig = {
       {
         source: '/:path*',
         headers: [
-          { key: 'Content-Security-Policy', value: 'frame-ancestors *' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors *; upgrade-insecure-requests" },
         ],
       },
     ];

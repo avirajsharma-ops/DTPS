@@ -6,9 +6,10 @@ import { useEffect, useRef } from 'react';
  * ServiceWorkerProvider - Registers the app-shell service worker
  * 
  * This handles:
- * - Registering sw.js for caching static assets and page shells
+ * - Purging stale caches from old SW versions immediately on load
+ * - Registering sw.js for caching static assets only
  * - Auto-updating the service worker when a new version is available
- * - Exposing methods to communicate with the SW (cache invalidation)
+ * - Auto-recovering from ChunkLoadError (stale chunk references after deploy)
  * 
  * Works alongside firebase-messaging-sw.js (separate scope for /firebase-*)
  */
@@ -17,21 +18,98 @@ export default function ServiceWorkerProvider() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // --- 1. Purge ALL old page caches immediately (even before SW registers) ---
+    // This fixes white-screen caused by stale cached HTML pointing to old JS chunks
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          // Delete old v1 page/image caches and any non-v2 dtps caches
+          if (name.includes('pages') || name.includes('images') || 
+              (name.startsWith('dtps-') && !name.startsWith('dtps-v2'))) {
+            caches.delete(name);
+            console.log('[SW] Purged stale cache:', name);
+          }
+        });
+      }).catch(() => {});
+    }
+
+    // --- 2. ChunkLoadError recovery: reload page on stale chunk 404 ---
+    const handleChunkError = (event: ErrorEvent) => {
+      const msg = event.message || '';
+      const error = event.error;
+      if (
+        msg.includes('ChunkLoadError') ||
+        msg.includes('Loading chunk') ||
+        msg.includes('Failed to fetch dynamically imported module') ||
+        (error && error.name === 'ChunkLoadError')
+      ) {
+        // Avoid infinite reload loop: only reload once per session
+        const key = 'dtps-chunk-reload';
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          console.log('[SW] ChunkLoadError detected — reloading page');
+          // Clear all caches before reload to get completely fresh content
+          const doReload = () => location.reload();
+          if ('caches' in window) {
+            caches.keys().then((names) => {
+              Promise.all(names.filter(n => n.startsWith('dtps-')).map(n => caches.delete(n)))
+                .then(doReload);
+            }).catch(doReload);
+          } else {
+            doReload();
+          }
+          return;
+        }
+      }
+    };
+    window.addEventListener('error', handleChunkError);
+
+    // Also catch unhandled promise rejections (dynamic import failures)
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const msg = reason?.message || String(reason || '');
+      if (
+        msg.includes('ChunkLoadError') ||
+        msg.includes('Loading chunk') ||
+        msg.includes('Failed to fetch dynamically imported module')
+      ) {
+        const key = 'dtps-chunk-reload';
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          console.log('[SW] Dynamic import failure — reloading page');
+          const doReload = () => location.reload();
+          if ('caches' in window) {
+            caches.keys().then((names) => {
+              Promise.all(names.filter(n => n.startsWith('dtps-')).map(n => caches.delete(n)))
+                .then(doReload);
+            }).catch(doReload);
+          } else {
+            doReload();
+          }
+        }
+      }
+    };
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    // --- 3. Register/update service worker ---
     if (!('serviceWorker' in navigator)) return;
 
     const registerSW = async () => {
       try {
-        // Register with a specific scope to not conflict with firebase SW
         const registration = await navigator.serviceWorker.register('/sw.js', {
           scope: '/',
         });
 
         registrationRef.current = registration;
 
-        // Check for updates periodically (every 30 minutes)
+        // Force immediate update check on every page load
+        registration.update().catch(() => {});
+
+        // Check for updates periodically (every 15 minutes)
         const updateInterval = setInterval(() => {
           registration.update().catch(() => {});
-        }, 30 * 60 * 1000);
+        }, 15 * 60 * 1000);
 
         // When a new SW is waiting, activate it immediately
         registration.addEventListener('updatefound', () => {
@@ -46,27 +124,24 @@ export default function ServiceWorkerProvider() {
           });
         });
 
-        // Reload page when new SW takes control (after update)
-        let refreshing = false;
+        // When new SW takes control, clear the chunk-reload flag
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return;
-          refreshing = true;
-          // Don't force reload — the new SW will serve updated content on next navigation
+          sessionStorage.removeItem('dtps-chunk-reload');
         });
 
         return () => clearInterval(updateInterval);
       } catch (error) {
-        // SW registration failure is non-critical — app works without it
         console.warn('[SW] Registration failed:', error);
       }
     };
 
-    // Register after the page has loaded to not block initial render
-    if (document.readyState === 'complete') {
-      registerSW();
-    } else {
-      window.addEventListener('load', () => registerSW(), { once: true });
-    }
+    // Register immediately — don't wait for load event
+    registerSW();
+
+    return () => {
+      window.removeEventListener('error', handleChunkError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   return null;

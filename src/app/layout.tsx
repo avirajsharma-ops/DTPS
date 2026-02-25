@@ -62,6 +62,11 @@ export default function RootLayout({
         {/* Theme Color */}
         <meta name="theme-color" content="#ffffff" />
 
+        {/* Prevent WebView/browser from serving stale HTML after deployments */}
+        <meta httpEquiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+
         {/* PWA Manifest */}
         <link rel="manifest" href="/manifest.json" />
 
