@@ -20,7 +20,9 @@ import {
   Mail,
   Volume2,
   Eye,
-  Loader2
+  Loader2,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 import UserNavBar from '@/components/client/UserNavBar';
@@ -47,6 +49,10 @@ export default function UserSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [settings, setSettings] = useState<UserSettings>({
     pushNotifications: true,
     emailNotifications: true,
@@ -96,6 +102,48 @@ export default function UserSettingsPage() {
       setLoggingOut(false);
     }
   }, []);
+
+  // Handle account deletion
+  const handleDeleteAccount = useCallback(async () => {
+    if (!deletePassword.trim()) {
+      setDeleteError('Please enter your password to confirm.');
+      return;
+    }
+
+    setDeleting(true);
+    setDeleteError('');
+
+    try {
+      const response = await fetch('/api/client/delete-account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deletePassword }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDeleteError(data.error || 'Failed to delete account.');
+        return;
+      }
+
+      toast.success('Account deleted successfully.');
+
+      // Clear local storage and sign out
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+
+      const fullSigninUrl = `${window.location.origin}/client-auth/signin`;
+      await signOut({ callbackUrl: fullSigninUrl, redirect: true });
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      setDeleteError('An error occurred. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  }, [deletePassword]);
 
   // Fetch settings on mount
   useEffect(() => {
@@ -494,6 +542,88 @@ export default function UserSettingsPage() {
             </>
           )}
         </Button>
+
+        {/* Delete Account Section */}
+        <Card className={`border-0 shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <CardContent className="p-4">
+            {!showDeleteDialog ? (
+              <button
+                onClick={() => setShowDeleteDialog(true)}
+                className="flex items-center gap-3 w-full text-left"
+              >
+                <div className="h-10 w-10 rounded-xl bg-red-100 flex items-center justify-center">
+                  <Trash2 className="h-5 w-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-red-600">Delete Account</p>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Permanently delete your account and all data
+                  </p>
+                </div>
+              </button>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-3 bg-red-50 rounded-xl">
+                  <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-red-700">Delete your account?</p>
+                    <p className="text-xs text-red-600 mt-1">
+                      This action is permanent and cannot be undone. All your data including meal plans, 
+                      progress records, appointments, and messages will be permanently deleted.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Enter your password to confirm
+                  </label>
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => { setDeletePassword(e.target.value); setDeleteError(''); }}
+                    placeholder="Enter your password"
+                    className={`w-full h-12 px-4 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-300 ${
+                      deleteError ? 'border-red-400' : 'border-gray-300'
+                    }`}
+                  />
+                  {deleteError && (
+                    <p className="text-xs text-red-500">{deleteError}</p>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-11 rounded-xl"
+                    onClick={() => {
+                      setShowDeleteDialog(false);
+                      setDeletePassword('');
+                      setDeleteError('');
+                    }}
+                    disabled={deleting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white"
+                    onClick={handleDeleteAccount}
+                    disabled={deleting || !deletePassword.trim()}
+                  >
+                    {deleting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete Account'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Support Contact Details */}
         <Card className="border-0 shadow-sm bg-white">

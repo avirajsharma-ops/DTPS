@@ -357,6 +357,25 @@ export default function ServiceDetailPage() {
 
         
 
+        {/* Nutritional Disclaimer & Citations */}
+        <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-gray-800/50 ring-1 ring-white/5' : 'bg-gray-50'}`}>
+          <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <span className="font-semibold">Disclaimer:</span> All diet plans and nutritional recommendations are prepared 
+            by certified dietitians at DTPS using evidence-based guidelines from{' '}
+            <a href="https://www.ifct2017.com/" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
+              Indian Food Composition Tables (IFCT 2017, NIN)
+            </a>,{' '}
+            <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
+              USDA FoodData Central
+            </a>, and{' '}
+            <a href="https://www.who.int/publications/i/item/9241546123" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
+              WHO/FAO dietary guidelines
+            </a>.
+            Plans are personalized and do not replace professional medical advice. Consult your healthcare 
+            provider before making significant dietary changes.
+          </p>
+        </div>
+
         {/* Purchase Button */}
         <div className={`sticky bottom-8 left-0 right-0 pt-4 pb-6 -mx-4 px-4 ${isDarkMode ? 'bg-linear-to-t from-gray-900 via-gray-900 to-transparent' : 'bg-linear-to-t from-white via-white to-transparent'}`}>
           <button 

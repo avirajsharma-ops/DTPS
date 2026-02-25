@@ -1303,6 +1303,30 @@ export default function UserPlanPage() {
         )}
       </div>
 
+      {/* Nutritional Information Disclaimer & Citations */}
+      {dayPlan && (
+        <div className={`mx-1 mb-4 p-4 rounded-2xl ${isDarkMode ? 'bg-gray-900/50 ring-1 ring-white/5' : 'bg-gray-50'}`}>
+          <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <span className="font-semibold">Disclaimer:</span> All meal plans, nutritional values, and dietary recommendations 
+            are prepared by certified dietitians and nutritionists at DTPS. Calorie counts and macronutrient values are estimates 
+            based on standard food composition databases including{' '}
+            <a href="https://www.ifct2017.com/" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
+              Indian Food Composition Tables (IFCT 2017, NIN)
+            </a>,{' '}
+            <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
+              USDA FoodData Central
+            </a>, and{' '}
+            <a href="https://www.who.int/publications/i/item/9241546123" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
+              WHO/FAO dietary guidelines
+            </a>.
+            Actual nutritional content may vary based on preparation methods and ingredient sourcing. 
+            This plan is personalized for you and should not replace professional medical advice. 
+            Please consult your healthcare provider before making significant dietary changes, especially 
+            if you have any medical conditions.
+          </p>
+        </div>
+      )}
+
       {/* Recipe Modal */}
       {recipeModal.isOpen && (
         <div 
