@@ -89,9 +89,9 @@ export default function ServiceDetailPage() {
     }
 
     const tier = service.pricingTiers[selectedTier];
-    
+
     setIsPurchasing(true);
-    
+
     try {
       // Create order via API
       const response = await fetch('/api/client/service-plans/purchase', {
@@ -165,7 +165,7 @@ export default function ServiceDetailPage() {
             color: '#3AB1A0'
           },
           modal: {
-            ondismiss: function() {
+            ondismiss: function () {
               setIsPurchasing(false);
               toast.info('Payment cancelled');
             }
@@ -245,13 +245,13 @@ export default function ServiceDetailPage() {
           <h2 className="text-4xl font-bold mb-3">{service.name}</h2>
           <div className="text-lg text-white/90 mb-6 max-w-3xl leading-relaxed">
             {service.description ? (
-              <div 
+              <div
                 className="prose prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ 
+                dangerouslySetInnerHTML={{
                   __html: service.description
                     .replace(/<strong>/g, `<strong class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`)
                     .replace(/<b>/g, `<b class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`)
-                }} 
+                }}
               />
             ) : (
               <p>No description available</p>
@@ -268,26 +268,24 @@ export default function ServiceDetailPage() {
                 <button
                   key={index}
                   onClick={() => setSelectedTier(index)}
-                  className={`w-full p-6 rounded-2xl border-2 transition-all ${
-                    selectedTier === index
-                      ? 'border-[#3AB1A0] bg-linear-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/5 shadow-md'
-                      : isDarkMode
-                        ? 'border-gray-700 hover:border-[#3AB1A0] bg-gray-800'
-                        : 'border-gray-200 hover:border-[#3AB1A0] bg-white'
-                  }`}
+                  className={`w-full p-6 rounded-2xl border-2 transition-all ${selectedTier === index
+                    ? 'border-[#3AB1A0] bg-linear-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/5 shadow-md'
+                    : isDarkMode
+                      ? 'border-gray-700 hover:border-[#3AB1A0] bg-gray-800'
+                      : 'border-gray-200 hover:border-[#3AB1A0] bg-white'
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="text-left">
                       <p className={`text-sm font-semibold mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{tier.durationLabel}</p>
                       <p className="text-3xl font-bold text-[#E06A26]">₹{tier.amount}</p>
                     </div>
-                    <div className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${
-                      selectedTier === index
-                        ? 'bg-[#3AB1A0] text-white'
-                        : isDarkMode
-                          ? 'bg-gray-700 text-gray-100'
-                          : 'bg-gray-100 text-gray-700'
-                    }`}>
+                    <div className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${selectedTier === index
+                      ? 'bg-[#3AB1A0] text-white'
+                      : isDarkMode
+                        ? 'bg-gray-700 text-gray-100'
+                        : 'bg-gray-100 text-gray-700'
+                      }`}>
                       {selectedTier === index ? '✓ Selected' : 'Select'}
                     </div>
                   </div>
@@ -309,12 +307,12 @@ export default function ServiceDetailPage() {
                 >
                   <Check className="w-6 h-6 text-[#3AB1A0] mt-0.5 shrink-0 font-bold" />
                   <div className="prose prose-sm max-w-none">
-                    <span 
+                    <span
                       className={`${isDarkMode ? 'text-white' : 'text-gray-700'} font-medium leading-relaxed`}
-                      dangerouslySetInnerHTML={{ 
+                      dangerouslySetInnerHTML={{
                         __html: feature
                           .replace(/<strong>/g, `<strong class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`)
-                          .replace(/<b>/g, `<b class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`) 
+                          .replace(/<b>/g, `<b class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`)
                       }}
                     />
                   </div>
@@ -339,12 +337,12 @@ export default function ServiceDetailPage() {
                       <Star className="w-6 h-6 text-[#3AB1A0]" />
                     </div>
                     <div className="flex-1">
-                      <div 
+                      <div
                         className={`${isDarkMode ? 'text-white prose-invert' : 'text-gray-700'} font-medium leading-relaxed prose prose-sm max-w-none`}
-                        dangerouslySetInnerHTML={{ 
+                        dangerouslySetInnerHTML={{
                           __html: benefit
                             .replace(/<strong>/g, `<strong class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`)
-                            .replace(/<b>/g, `<b class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`) 
+                            .replace(/<b>/g, `<b class=\"${isDarkMode ? 'text-white' : 'text-black'} font-bold\">`)
                         }}
                       />
                     </div>
@@ -355,12 +353,12 @@ export default function ServiceDetailPage() {
           </div>
         )}
 
-        
+
 
         {/* Nutritional Disclaimer & Citations */}
         <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-gray-800/50 ring-1 ring-white/5' : 'bg-gray-50'}`}>
           <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            <span className="font-semibold">Disclaimer:</span> All diet plans and nutritional recommendations are prepared 
+            <span className="font-semibold">Disclaimer:</span> All diet plans and nutritional recommendations are prepared
             by certified dietitians at DTPS using evidence-based guidelines from{' '}
             <a href="https://www.ifct2017.com/" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
               Indian Food Composition Tables (IFCT 2017, NIN)
@@ -371,20 +369,39 @@ export default function ServiceDetailPage() {
             <a href="https://www.who.int/publications/i/item/9241546123" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
               WHO/FAO dietary guidelines
             </a>.
-            Plans are personalized and do not replace professional medical advice. Consult your healthcare 
+            Plans are personalized and do not replace professional medical advice. Consult your healthcare
+            provider before making significant dietary changes.
+          </p>
+        </div>
+
+        {/* Nutritional Disclaimer & Citations */}
+        <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-gray-800/50 ring-1 ring-white/5' : 'bg-gray-50'}`}>
+          <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <span className="font-semibold">Disclaimer:</span> All diet plans and nutritional recommendations are prepared
+            by certified dietitians at DTPS using evidence-based guidelines from{' '}
+            <a href="https://www.ifct2017.com/" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
+              Indian Food Composition Tables (IFCT 2017, NIN)
+            </a>,{' '}
+            <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
+              USDA FoodData Central
+            </a>, and{' '}
+            <a href="https://www.who.int/publications/i/item/9241546123" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
+              WHO/FAO dietary guidelines
+            </a>.
+            Plans are personalized and do not replace professional medical advice. Consult your healthcare
             provider before making significant dietary changes.
           </p>
         </div>
 
         {/* Purchase Button */}
         <div className={`sticky bottom-8 left-0 right-0 pt-4 pb-6 -mx-4 px-4 ${isDarkMode ? 'bg-linear-to-t from-gray-900 via-gray-900 to-transparent' : 'bg-linear-to-t from-white via-white to-transparent'}`}>
-          <button 
+          <button
             onClick={handlePurchase}
             disabled={isPurchasing || selectedTier === null}
             className="w-full py-4 px-6 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B] text-white rounded-2xl font-bold text-lg hover:shadow-lg transition-all max-w-5xl mx-auto disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
 
-            
+
             {isPurchasing ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />

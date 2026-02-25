@@ -92,14 +92,14 @@ export default function ClientSignInPage() {
         // Login succeeded! Mark that we're redirecting to prevent loops
         redirectAttemptedRef.current = true;
         sessionStorage.setItem('dtps:authRedirectLockUntil', String(Date.now() + 3000));
-        
+
         // Try to get session to verify role, but don't block on it
         try {
           const sessionData = await Promise.race([
             getSession(),
             new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
           ]) as any;
-          
+
           // If we got session and user is NOT a client, show error
           if (sessionData?.user && sessionData.user.role !== 'client') {
             setError('This login is for clients only. Please use the main login page.');
@@ -109,7 +109,7 @@ export default function ClientSignInPage() {
         } catch {
           // Ignore - we'll navigate anyway
         }
-        
+
         // Use window.location for reliable full page navigation
         // This ensures cookies are properly set and session is established
         // Works better than router.replace() in webviews and avoids "stuck loading" issue
@@ -152,9 +152,9 @@ export default function ClientSignInPage() {
     <div className="flex flex-col min-h-screen bg-white md:bg-gray-50">
       {/* Header - Hidden on larger screens */}
       <div className="flex items-center justify-center p-4 md:hidden">
-        
+
         <h1 className="text-[#E06A26] text-center  font-semibold text-lg">Log In</h1>
-      
+
       </div>
 
       {/* Main Content */}
@@ -178,90 +178,92 @@ export default function ClientSignInPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-4">
-          {error && (
-            <Alert variant="destructive" className="text-red-700 border-red-200 bg-red-50">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* Email Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Email</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                <Mail className="w-5 h-5 text-gray-500" />
-              </div>
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                {...register('email')}
-                className={`h-12 sm:h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.email ? 'border-red-500' : ''}`}
-              />
-            </div>
-            {errors.email && (
-              <p className="text-sm text-red-400">{errors.email.message}</p>
+            {error && (
+              <Alert variant="destructive" className="text-red-700 border-red-200 bg-red-50">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
-          </div>
 
-          {/* Password Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Password</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                <Lock className="w-5 h-5 text-gray-500" />
+            {/* Email Input */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                  <Mail className="w-5 h-5 text-gray-500" />
+                </div>
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  {...register('email')}
+                  className={`h-12 sm:h-14 pl-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.email ? 'border-red-500' : ''}`}
+                />
               </div>
-              <Input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                {...register('password')}
-                className={`h-12 sm:h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.password ? 'border-red-500' : ''}`}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 flex items-center pr-4"
-                onClick={() => setShowPassword(!showPassword)}
+              {errors.email && (
+                <p className="text-sm text-red-400">{errors.email.message}</p>
+              )}
+            </div>
+
+            {/* Password Input */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                  <Lock className="w-5 h-5 text-gray-500" />
+                </div>
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  {...register('password')}
+                  className={`h-12 sm:h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white ${errors.password ? 'border-red-500' : ''}`}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 flex items-center pr-4"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <Eye className="w-5 h-5 text-gray-500" />
+                  ) : (
+                    <EyeOff className="w-5 h-5 text-gray-500" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-red-400">{errors.password.message}</p>
+              )}
+            </div>
+
+            {/* Forgot Password */}
+            <div className="text-right">
+              <Link
+                href="/client-auth/forget-password"
+                className="text-[#E06A26] text-sm hover:underline"
               >
-                {showPassword ? (
-                  <Eye className="w-5 h-5 text-gray-500" />
-                ) : (
-                  <EyeOff className="w-5 h-5 text-gray-500" />
-                )}
-              </button>
+                Forgot Password?
+              </Link>
             </div>
-            {errors.password && (
-              <p className="text-sm text-red-400">{errors.password.message}</p>
-            )}
-          </div>
 
-          {/* Forgot Password */}
-          <div className="text-right">
-            <Link
-              href="/client-auth/forget-password"
-              className="text-[#E06A26] text-sm hover:underline"
+            {/* Login Button */}
+            <Button
+              type="submit"
+              className="w-full h-12 sm:h-14 bg-[#61a035] hover:bg-[#60953a] text-white font-semibold text-base sm:text-lg rounded-xl shadow-lg"
+              disabled={isLoading}
             >
-              Forgot Password?
-            </Link>
-          </div>
+              {isLoading ? (
+                <>
 
-          {/* Login Button */}
-          <Button
-            type="submit"
-            className="w-full h-12 sm:h-14 bg-[#61a035] hover:bg-[#60953a] text-white font-semibold text-base sm:text-lg rounded-xl shadow-lg"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-               
-                Logging in...
-              </>
-            ) : (
-              <>
-                Log In
-               
-              </>
-            )}
-          </Button>
-        </form>
+                  Logging in...
+                </>
+              ) : (
+                <>
+                  Log In
+
+                </>
+              )}
+            </Button>
+          </form>
+
+
 
           {/* Sign Up Link */}
           <p className="mt-6 text-center text-gray-500 text-sm sm:text-base sm:mt-8">

@@ -5,9 +5,9 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
-import { 
-  Clock, 
-  Check, 
+import {
+  Clock,
+  Check,
   ChevronRight,
   BookOpen,
   X,
@@ -65,22 +65,16 @@ interface MealItem {
   carbs?: number;
   fats?: number;
   fiber?: number;
-  // Additional fields for full detail view
-  notes?: string;
-  timing?: string;
-  quantity?: string;
-  isRecipe?: boolean;
 }
 
 interface Meal {
   id: string;
-  type: string; // Dynamic meal types from API (BREAKFAST, MID_MORNING, LUNCH, etc.)
+  type: 'breakfast' | 'morningSnack' | 'lunch' | 'afternoonSnack' | 'dinner' | 'eveningSnack';
   time: string;
   totalCalories: number;
   items: MealItem[];
   isCompleted: boolean;
   notes?: string;
-  itemCount?: number; // Explicit count from backend
 }
 
 interface DayPlan {
@@ -156,34 +150,15 @@ interface FoodItemSelectorModalData {
   isOpen: boolean;
 }
 
-// Default meal slots with fixed times - canonical 8 meal types (UPPERCASE to match API)
-const DEFAULT_MEAL_SLOTS: { type: string; time: string; label: string }[] = [
-  { type: 'EARLY_MORNING', time: '06:00 AM', label: 'Early Morning' },
-  { type: 'BREAKFAST', time: '09:00 AM', label: 'Breakfast' },
-  { type: 'MID_MORNING', time: '11:00 AM', label: 'Mid Morning' },
-  { type: 'LUNCH', time: '01:00 PM', label: 'Lunch' },
-  { type: 'MID_EVENING', time: '04:00 PM', label: 'Mid Evening' },
-  { type: 'EVENING', time: '06:00 PM', label: 'Evening' },
-  { type: 'DINNER', time: '08:00 PM', label: 'Dinner' },
-  { type: 'PAST_DINNER', time: '09:30 PM', label: 'Past Dinner' },
+// Default meal slots with fixed times - 6 meal types
+const DEFAULT_MEAL_SLOTS: { type: Meal['type']; time: string; label: string }[] = [
+  { type: 'breakfast', time: '7:00 AM', label: 'Breakfast' },
+  { type: 'morningSnack', time: '10:00 AM', label: 'Mid Morning' },
+  { type: 'lunch', time: '12:30 PM', label: 'Lunch' },
+  { type: 'afternoonSnack', time: '4:00 PM', label: 'Evening Snack' },
+  { type: 'dinner', time: '7:30 PM', label: 'Dinner' },
+  { type: 'eveningSnack', time: '9:00 PM', label: 'Bedtime' },
 ];
-
-// Normalize meal type to UPPERCASE canonical form
-const normalizeMealType = (type: string): string => {
-  if (!type) return 'BREAKFAST';
-  const upper = type.toUpperCase().replace(/\s+/g, '_');
-  // Map legacy camelCase to canonical types
-  const legacyMap: Record<string, string> = {
-    'MORNINGSNACK': 'MID_MORNING',
-    'AFTERNOONSNACK': 'MID_EVENING',
-    'EVENINGSNACK': 'PAST_DINNER',
-    'MIDMORNING': 'MID_MORNING',
-    'MIDEVENING': 'MID_EVENING',
-    'PASTDINNER': 'PAST_DINNER',
-    'EARLYMORNING': 'EARLY_MORNING',
-  };
-  return legacyMap[upper] || upper;
-};
 
 // Helper function to format notes with period as line break
 function formatNotesWithLineBreaks(note: string): string[] {
@@ -210,10 +185,10 @@ export default function UserPlanPage() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerValue, setDatePickerValue] = useState('');
   const dateScrollRef = useRef<HTMLDivElement>(null);
-  
+
   // Cache for meal plans - key: date string, value: DayPlan
   const mealPlanCache = useRef<Map<string, DayPlan>>(new Map());
-  
+
   // Completion modal state
   const [completionModal, setCompletionModal] = useState<CompletionModalData>({ meal: null, isOpen: false });
   const [completionNotes, setCompletionNotes] = useState('');
@@ -226,7 +201,7 @@ export default function UserPlanPage() {
     // Generate dates: today at START (index 0) + 30 future days + 15 previous days at end (for scrolling back)
     const today = new Date();
     const dates: Date[] = [];
-    
+
     // Add today first (index 0) - will be at START
     dates.push(today);
     // Add 30 future days
@@ -237,11 +212,11 @@ export default function UserPlanPage() {
     for (let i = 1; i <= 15; i++) {
       dates.unshift(addDays(today, -i));
     }
-    
+
     setWeekDates(dates);
     setDatePickerValue(format(today, 'yyyy-MM-dd'));
     fetchDayPlan(today, true); // Fetch today's plan (initial load)
-    
+
     // Pre-fetch next 3 days and previous 3 days for faster navigation
     setTimeout(() => {
       [-3, -2, -1, 1, 2, 3].forEach(offset => {
@@ -274,7 +249,7 @@ export default function UserPlanPage() {
 
   useEffect(() => {
     fetchDayPlan(selectedDate, false);
-    
+
     // Pre-fetch adjacent days when date changes
     setTimeout(() => {
       [-1, 1].forEach(offset => {
@@ -329,11 +304,11 @@ export default function UserPlanPage() {
         setFullRecipeData(null);
         return;
       }
-      
+
       setLoadingRecipe(true);
       try {
         let recipeData = null;
-        
+
         // First try to fetch by recipeId if available
         if (recipeModal.item.recipeId) {
           const response = await fetch(`/api/recipes/${recipeModal.item.recipeId}`);
@@ -344,7 +319,7 @@ export default function UserPlanPage() {
             }
           }
         }
-        
+
         // If no recipeId or fetch failed, search by food name
         if (!recipeData && recipeModal.item.name) {
           const searchName = encodeURIComponent(recipeModal.item.name.trim());
@@ -360,7 +335,7 @@ export default function UserPlanPage() {
             }
           }
         }
-        
+
         if (recipeData) {
           setFullRecipeData(recipeData);
         }
@@ -398,28 +373,28 @@ export default function UserPlanPage() {
   // Pre-fetch meal plan without updating UI (for caching)
   const prefetchDayPlan = async (date: Date) => {
     const dateKey = format(date, 'yyyy-MM-dd');
-    
+
     // Skip if already in cache
     if (mealPlanCache.current.has(dateKey)) return;
-    
+
     try {
       const response = await fetch(`/api/client/meal-plan?date=${dateKey}`);
       if (response.ok) {
         const data = await response.json();
-        const plan: DayPlan = data.success && data.hasPlan 
+        const plan: DayPlan = data.success && data.hasPlan
           ? {
-              date: new Date(data.date),
-              meals: data.meals || [],
-              totalCalories: data.totalCalories || 0,
-              hasPlan: true,
-              planDetails: data.planDetails
-            }
+            date: new Date(data.date),
+            meals: data.meals || [],
+            totalCalories: data.totalCalories || 0,
+            hasPlan: true,
+            planDetails: data.planDetails
+          }
           : {
-              date: date,
-              meals: [],
-              totalCalories: 0,
-              hasPlan: false
-            };
+            date: date,
+            meals: [],
+            totalCalories: 0,
+            hasPlan: false
+          };
         mealPlanCache.current.set(dateKey, plan);
       }
     } catch (error) {
@@ -429,64 +404,47 @@ export default function UserPlanPage() {
 
   const fetchDayPlan = async (date: Date, isInitialLoad = false) => {
     const dateKey = format(date, 'yyyy-MM-dd');
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[fetchDayPlan] Fetching for date:', dateKey);
-    }
-    
+
     // Check cache first - instant load!
     if (mealPlanCache.current.has(dateKey)) {
-      const cachedPlan = mealPlanCache.current.get(dateKey)!;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[fetchDayPlan] Using cached plan:', { dateKey, hasPlan: cachedPlan.hasPlan, mealsCount: cachedPlan.meals?.length });
-      }
-      setDayPlan(cachedPlan);
+      setDayPlan(mealPlanCache.current.get(dateKey)!);
       if (isInitialLoad) setLoading(false);
       return;
     }
-    
+
     // Show skeleton for date changes, full loader for initial
     if (isInitialLoad) {
       setLoading(true);
     } else {
       setIsChangingDate(true);
     }
-    
+
     try {
       const response = await fetch(`/api/client/meal-plan?date=${dateKey}`);
       if (response.ok) {
         const data = await response.json();
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[fetchDayPlan] API response for', dateKey, ':', {
-            success: data.success,
-            hasPlan: data.hasPlan,
-            mealsCount: data.meals?.length,
-            meals: data.meals?.map((m: any) => ({ type: m.type, itemsCount: m.items?.length, items: m.items }))
-          });
-        }
-        
-        const plan: DayPlan = data.success && data.hasPlan 
+
+        const plan: DayPlan = data.success && data.hasPlan
           ? {
-              date: new Date(data.date),
-              meals: data.meals || [],
-              totalCalories: data.totalCalories || 0,
-              hasPlan: true,
-              dailyNote: data.dailyNote || '',
-              isFrozen: data.isFrozen || false,
-              freezeInfo: data.freezeInfo || null,
-              planDetails: data.planDetails
-            }
+            date: new Date(data.date),
+            meals: data.meals || [],
+            totalCalories: data.totalCalories || 0,
+            hasPlan: true,
+            dailyNote: data.dailyNote || '',
+            isFrozen: data.isFrozen || false,
+            freezeInfo: data.freezeInfo || null,
+            planDetails: data.planDetails
+          }
           : {
-              date: date,
-              meals: [],
-              totalCalories: 0,
-              hasPlan: false,
-              dailyNote: '',
-              isFrozen: false,
-              freezeInfo: null
-            };
-        
+            date: date,
+            meals: [],
+            totalCalories: 0,
+            hasPlan: false,
+            dailyNote: '',
+            isFrozen: false,
+            freezeInfo: null
+          };
+
         // Cache the result
         mealPlanCache.current.set(dateKey, plan);
         setDayPlan(plan);
@@ -558,7 +516,7 @@ export default function UserPlanPage() {
   // Submit meal completion with image
   const handleSubmitCompletion = async () => {
     if (!completionModal.meal) return;
-    
+
     if (!completionImage) {
       toast.error('Please add a photo of your meal');
       return;
@@ -585,13 +543,13 @@ export default function UserPlanPage() {
         const dateKey = format(selectedDate, 'yyyy-MM-dd');
         mealPlanCache.current.delete(dateKey);
         await fetchDayPlan(selectedDate);
-        
+
         // Emit events to notify other components about the change
-        window.dispatchEvent(new CustomEvent('meal-plan-updated', { 
-          detail: { mealId: completionModal.meal.id, date: dateKey } 
+        window.dispatchEvent(new CustomEvent('meal-plan-updated', {
+          detail: { mealId: completionModal.meal.id, date: dateKey }
         }));
-        window.dispatchEvent(new CustomEvent('user-data-changed', { 
-          detail: { dataType: 'meal' } 
+        window.dispatchEvent(new CustomEvent('user-data-changed', {
+          detail: { dataType: 'meal' }
         }));
       } else {
         const data = await response.json();
@@ -620,13 +578,13 @@ export default function UserPlanPage() {
         mealPlanCache.current.delete(dateKey);
         // Refresh the plan
         await fetchDayPlan(selectedDate);
-        
+
         // Emit events to notify other components about the change
-        window.dispatchEvent(new CustomEvent('meal-plan-updated', { 
-          detail: { mealId, date: dateKey } 
+        window.dispatchEvent(new CustomEvent('meal-plan-updated', {
+          detail: { mealId, date: dateKey }
         }));
-        window.dispatchEvent(new CustomEvent('user-data-changed', { 
-          detail: { dataType: 'meal' } 
+        window.dispatchEvent(new CustomEvent('user-data-changed', {
+          detail: { dataType: 'meal' }
         }));
       } else {
         toast.error('Failed to mark meal as complete');
@@ -640,31 +598,25 @@ export default function UserPlanPage() {
   };
 
   const getMealIcon = (type: string) => {
-    const normalized = normalizeMealType(type);
-    switch (normalized) {
-      case 'EARLY_MORNING': return '🌅';
-      case 'BREAKFAST': return '🍳';
-      case 'MID_MORNING': return '🍎';
-      case 'LUNCH': return '☀️';
-      case 'MID_EVENING': return '🥜';
-      case 'EVENING': return '🫖';
-      case 'DINNER': return '🌙';
-      case 'PAST_DINNER': return '🍵';
+    switch (type) {
+      case 'breakfast': return '🌅';
+      case 'morningSnack': return '🍎';
+      case 'lunch': return '☀️';
+      case 'afternoonSnack': return '🥜';
+      case 'dinner': return '🌙';
+      case 'eveningSnack': return '🍵';
       default: return '🍽️';
     }
   };
 
   const getMealLabel = (type: string) => {
-    const normalized = normalizeMealType(type);
-    switch (normalized) {
-      case 'EARLY_MORNING': return 'Early Morning';
-      case 'BREAKFAST': return 'Breakfast';
-      case 'MID_MORNING': return 'Mid Morning';
-      case 'LUNCH': return 'Lunch';
-      case 'MID_EVENING': return 'Mid Evening';
-      case 'EVENING': return 'Evening';
-      case 'DINNER': return 'Dinner';
-      case 'PAST_DINNER': return 'Past Dinner';
+    switch (type) {
+      case 'breakfast': return 'Breakfast';
+      case 'morningSnack': return 'Mid Morning';
+      case 'lunch': return 'Lunch';
+      case 'afternoonSnack': return 'Evening Snack';
+      case 'dinner': return 'Dinner';
+      case 'eveningSnack': return 'Bedtime';
       default: return type;
     }
   };
@@ -674,69 +626,20 @@ export default function UserPlanPage() {
     return slot?.time || '';
   };
 
-  // Get all meal slots - merge defaults with actual meals from API
-  // CRITICAL: Never overwrite meals with items, never filter out data
+  // Get all 6 meal slots - merge defaults with actual meals
   const getAllMealSlots = (): Meal[] => {
     if (!dayPlan?.hasPlan) return [];
-    
-    // Debug log to see raw API data
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[getAllMealSlots] RAW dayPlan.meals:', dayPlan.meals);
-      console.log('[getAllMealSlots] Meals with items:', dayPlan.meals?.filter(m => m.items?.length > 0).map(m => ({
-        type: m.type,
-        itemCount: m.items?.length,
-        items: m.items?.map(i => i.name)
-      })));
-    }
-    
-    // Use meals directly from API - they are already properly structured
-    // The API now returns complete data without filtering
-    const apiMeals = dayPlan.meals || [];
-    
-    // Create a map of API meals by normalized type
-    const apiMealsMap = new Map<string, Meal>();
-    
-    apiMeals.forEach(meal => {
-      if (meal && meal.type) {
-        const normalizedType = normalizeMealType(meal.type);
-        const existingMeal = apiMealsMap.get(normalizedType);
-        
-        // CRITICAL: If we already have this meal type with items, DON'T overwrite
-        // Only overwrite if the new meal has MORE items
-        if (!existingMeal || (meal.items?.length || 0) > (existingMeal.items?.length || 0)) {
-          apiMealsMap.set(normalizedType, {
-            ...meal,
-            type: normalizedType,
-            items: Array.isArray(meal.items) ? meal.items : [],
-            time: meal.time || DEFAULT_MEAL_SLOTS.find(s => s.type === normalizedType)?.time || '12:00 PM'
-          });
-        }
-      }
-    });
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[getAllMealSlots] After mapping:', Array.from(apiMealsMap.entries()).map(([type, meal]) => ({
-        type,
-        itemCount: meal.items?.length,
-        items: meal.items?.map(i => i.name)
-      })));
-    }
-    
-    // Build final slots: Start with default slots, overlay with API data
+
+    // Start with the 6 default meal slots
     const slots: Meal[] = DEFAULT_MEAL_SLOTS.map(slot => {
-      const apiMeal = apiMealsMap.get(slot.type);
-      if (apiMeal && apiMeal.items && apiMeal.items.length > 0) {
-        // Use API meal data
-        return apiMeal;
-      }
-      // If API has this meal but no items, still use API data (might have notes, etc.)
-      if (apiMeal) {
+      const existingMeal = dayPlan.meals.find(m => m.type === slot.type);
+      if (existingMeal) {
         return {
-          ...apiMeal,
-          items: apiMeal.items || []
+          ...existingMeal,
+          time: existingMeal.time || slot.time
         };
       }
-      // Return empty slot for meal types not in API
+      // Create empty meal slot for default types
       return {
         id: `empty-${slot.type}`,
         type: slot.type,
@@ -746,22 +649,6 @@ export default function UserPlanPage() {
         isCompleted: false
       };
     });
-    
-    // Also include any custom meal types from API not in defaults
-    apiMealsMap.forEach((meal, type) => {
-      if (!DEFAULT_MEAL_SLOTS.find(s => s.type === type)) {
-        slots.push(meal);
-      }
-    });
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[getAllMealSlots] FINAL slots:', slots.map(s => ({ 
-        type: s.type, 
-        itemCount: s.items?.length,
-        calories: s.totalCalories,
-        items: s.items?.map(i => i.name)
-      })));
-    }
 
     return slots;
   };
@@ -782,9 +669,8 @@ export default function UserPlanPage() {
   if (status === 'loading' || loading) {
     return (
       <div
-        className={`fixed inset-0 flex items-center justify-center z-50 ${
-          isDarkMode ? 'bg-gray-950' : 'bg-white'
-        }`}
+        className={`fixed inset-0 flex items-center justify-center z-50 ${isDarkMode ? 'bg-gray-950' : 'bg-white'
+          }`}
       >
         <SpoonGifLoader size="lg" />
       </div>
@@ -793,7 +679,7 @@ export default function UserPlanPage() {
 
   return (
     <div className={`min-h-screen pb-24 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-     
+
       {/* Header */}
       <div className={`px-4 py-4 border-b transition-colors duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
         <div className="flex items-center justify-between">
@@ -805,7 +691,7 @@ export default function UserPlanPage() {
             <p className={`text-xs uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{format(selectedDate, 'EEEE, MMMM d')}</p>
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => {
                 setDatePickerValue(format(selectedDate, 'yyyy-MM-dd'));
                 setShowDatePicker(true);
@@ -815,7 +701,7 @@ export default function UserPlanPage() {
             >
               <CalendarDays className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`} />
             </button>
-            <button 
+            <button
               onClick={handleRefresh}
               className="p-2"
               disabled={refreshing}
@@ -848,33 +734,31 @@ export default function UserPlanPage() {
 
       {/* Week Date Selector */}
       <div className={`px-4 py-3 border-b ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-100'}`}>
-        <div 
+        <div
           ref={dateScrollRef}
           className="flex gap-2 overflow-x-auto hide-scrollbar scroll-smooth"
         >
           {weekDates.map((date) => {
             const isSelected = isSameDay(date, selectedDate);
             const today = isToday(date);
-            
+
             return (
               <button
                 key={date.toISOString()}
                 onClick={() => setSelectedDate(date)}
-                className={`flex flex-col items-center py-2 px-4 rounded-2xl min-w-12.5 transition-all ${
-                  isSelected 
-                    ? 'bg-[#3AB1A0] text-white' 
-                    : isDarkMode
-                      ? 'bg-transparent text-gray-300 hover:bg-white/10'
-                      : 'bg-transparent text-gray-600 hover:bg-gray-100'
-                }`}
+                className={`flex flex-col items-center py-2 px-4 rounded-2xl min-w-12.5 transition-all ${isSelected
+                  ? 'bg-[#3AB1A0] text-white'
+                  : isDarkMode
+                    ? 'bg-transparent text-gray-300 hover:bg-white/10'
+                    : 'bg-transparent text-gray-600 hover:bg-gray-100'
+                  }`}
               >
                 <span className={`text-xs font-medium ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>
                   {format(date, 'EEE')}
                 </span>
                 <span
-                  className={`text-lg font-bold ${
-                    isSelected ? 'text-white' : isDarkMode ? 'text-gray-200' : 'text-gray-700'
-                  }`}
+                  className={`text-lg font-bold ${isSelected ? 'text-white' : isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                    }`}
                 >
                   {format(date, 'd')}
                 </span>
@@ -909,7 +793,7 @@ export default function UserPlanPage() {
                 ))}
               </div>
             </div>
-            
+
             {/* Meal cards skeleton */}
             {[1, 2, 3].map(i => (
               <div key={i} className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}>
@@ -939,9 +823,8 @@ export default function UserPlanPage() {
         ) : dayPlan?.isFrozen ? (
           /* Frozen Day Message */
           <div
-            className={`p-8 text-center shadow-sm rounded-2xl border-2 relative overflow-hidden ${
-              isDarkMode ? 'bg-gray-900 border-blue-500/40 ring-1 ring-white/10' : 'bg-white border-blue-200'
-            }`}
+            className={`p-8 text-center shadow-sm rounded-2xl border-2 relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-blue-500/40 ring-1 ring-white/10' : 'bg-white border-blue-200'
+              }`}
           >
             {/* <style>{`@keyframes snowFall { to { transform: translateY(350px) rotateZ(360deg); opacity: 0; } } .snowflake-anim { position: absolute; color: #b3d9ff; font-size: 1.5rem; pointer-events: none; animation: snowFall 5s linear infinite; }`}</style> */}
             {/* {[...Array(6)].map((_, i) => (<div key={i} className="snowflake-anim" style={{left: `${15 + i * 15}%`, top: `-10px`, animationDelay: `${i * 0.8}s`}}>❄️</div>))} */}
@@ -960,16 +843,15 @@ export default function UserPlanPage() {
               </p>
               {dayPlan?.freezeInfo?.reason && (
                 <div
-                  className={`rounded-xl p-4 mb-4 text-left border ${
-                    isDarkMode ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'
-                  }`}
+                  className={`rounded-xl p-4 mb-4 text-left border ${isDarkMode ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'
+                    }`}
                 >
                   <p className={`text-xs font-semibold uppercase mb-1 ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>Reason</p>
                   <p className={`text-sm ${isDarkMode ? 'text-blue-100' : 'text-blue-800'}`}>{dayPlan?.freezeInfo?.reason}</p>
                 </div>
               )}
               <div className="flex flex-col gap-3">
-                <button 
+                <button
                   onClick={() => {
                     const nextDate = addDays(selectedDate, 1);
                     setSelectedDate(nextDate);
@@ -979,11 +861,10 @@ export default function UserPlanPage() {
                   View Next Day
                   <ChevronRight className="w-4 h-4" />
                 </button>
-                <Link 
+                <Link
                   href="/user/messages"
-                  className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                    isDarkMode ? 'bg-blue-500/10 text-blue-200 hover:bg-blue-500/15' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                  }`}
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isDarkMode ? 'bg-blue-500/10 text-blue-200 hover:bg-blue-500/15' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                    }`}
                 >
                   💬 Contact Dietitian
                 </Link>
@@ -1004,14 +885,14 @@ export default function UserPlanPage() {
               You don't have a meal plan for this date. Get a personalized diet plan from our expert dietitians!
             </p>
             <div className="flex flex-col gap-3">
-              <Link 
+              <Link
                 href="/user/services"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-[#E06A26] to-[#DB9C6E] text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg"
               >
                 🛒 Buy a Plan
                 <ChevronRight className="w-4 h-4" />
               </Link>
-              <Link 
+              <Link
                 href="/user/messages"
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-xl text-sm font-medium hover:bg-[#3AB1A0]/20 transition-colors"
               >
@@ -1037,25 +918,23 @@ export default function UserPlanPage() {
                   </p>
                 </div>
               </div>
-              
+
               {/* Progress Bar - Segmented */}
               <div className="flex gap-1">
                 {progressSegments.map((segment, index) => (
-                  <div 
+                  <div
                     key={index}
-                    className={`h-2 flex-1 rounded-full transition-all ${
-                      segment.isCompleted ? 'bg-[#3AB1A0]' : isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
-                    }`}
+                    className={`h-2 flex-1 rounded-full transition-all ${segment.isCompleted ? 'bg-[#3AB1A0]' : isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
+                      }`}
                   />
                 ))}
               </div>
-              
+
               {/* Daily Note from Dietitian */}
               {dayPlan?.dailyNote && (
                 <div
-                  className={`mt-4 p-4 rounded-xl border ${
-                    isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'
-                  }`}
+                  className={`mt-4 p-4 rounded-xl border ${isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'
+                    }`}
                 >
                   <div className="flex items-start gap-2">
                     <span className="text-lg">📝</span>
@@ -1074,8 +953,8 @@ export default function UserPlanPage() {
 
             {/* Meals List - Show all 6 meal slots */}
             {allMealSlots.map((meal) => (
-              <div 
-                key={meal.id} 
+              <div
+                key={meal.id}
                 className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}
               >
                 {/* Meal Header */}
@@ -1121,104 +1000,57 @@ export default function UserPlanPage() {
                   </div>
                 )}
 
-                {/* Meal Items - ALWAYS show all items individually, numbered, line by line */}
-                {meal.items && meal.items.length > 0 ? (
+                {/* Meal Items - Show food if assigned, otherwise show empty message */}
+                {meal.items.length > 0 ? (
                   <div className="mb-4 space-y-3">
-                    {/* Item count header */}
-                    <div className={`flex items-center justify-between px-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      <span className="text-xs font-medium">{meal.items.length} item{meal.items.length !== 1 ? 's' : ''} assigned</span>
-                      <span className="text-xs">Tap any item for details</span>
-                    </div>
-                    
-                    {/* Render EACH item individually - NEVER group or collapse */}
-                    {meal.items.map((item, itemIndex) => (
-                      <div 
-                        key={item.id || `item-${itemIndex}`}
-                        onClick={() => openRecipeModal(item)}
-                        className={`p-4 rounded-xl cursor-pointer transition-all border hover:shadow-md ${
-                          isDarkMode 
-                            ? 'bg-gray-800/80 border-gray-700 hover:border-[#3AB1A0]/50' 
-                            : 'bg-white border-gray-100 hover:border-[#3AB1A0]/50'
-                        }`}
+                    {meal.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`p-3 rounded-xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}
                       >
-                        {/* Item Header with Number */}
-                        <div className="flex items-start gap-3">
-                          {/* Item Number Badge */}
-                          <div className={`flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold shrink-0 ${
-                            item.isRecipe 
-                              ? 'bg-[#E06A26]/20 text-[#E06A26]' 
-                              : 'bg-[#3AB1A0]/20 text-[#3AB1A0]'
-                          }`}>
-                            {itemIndex + 1}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center flex-1 gap-3">
+                            <div className="w-2 h-2 rounded-full bg-[#3AB1A0]" />
+                            <div className="flex-1">
+                              <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{item.name}</span>
+                              {/* Tags */}
+                              {item.tags && item.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {item.tags.map((tag, i) => (
+                                    <span
+                                      key={i}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#DB9C6E]/20 text-[#DB9C6E] rounded-full text-xs"
+                                    >
+                                      <Tag className="w-2.5 h-2.5" />
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          
-                          {/* Item Details */}
-                          <div className="flex-1 min-w-0">
-                            {/* Name and Type Badge */}
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                <h4 className={`font-semibold text-sm leading-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                  {item.name}
-                                </h4>
-                                {/* Recipe/Food indicator */}
-                                <span className={`inline-flex items-center gap-1 mt-1 text-xs ${
-                                  item.isRecipe ? 'text-[#E06A26]' : 'text-[#3AB1A0]'
-                                }`}>
-                                  {item.isRecipe ? '📖 Recipe' : '🍽️ Food'}
-                                  {item.portion && <span className="opacity-70">• {item.portion}</span>}
-                                </span>
-                              </div>
-                              
-                              {/* View Details Indicator */}
-                              <div className={`shrink-0 p-1.5 rounded-lg ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
-                                <ChevronRight className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
-                              </div>
-                            </div>
-                            
-                            {/* Nutrition Grid - Always show */}
-                            <div className={`grid grid-cols-4 gap-1 mt-3 p-2 rounded-lg ${isDarkMode ? 'bg-black/30' : 'bg-gray-50'}`}>
-                              <div className="text-center">
-                                <p className="text-xs font-bold text-red-500">{item.calories || 0}</p>
-                                <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>kcal</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-xs font-bold text-blue-500">{(item.protein || 0).toFixed(2)}g</p>
-                                <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Protein</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-xs font-bold text-yellow-500">{(item.carbs || 0).toFixed(2)}g</p>
-                                <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Carbs</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-xs font-bold text-orange-500">{(item.fats || 0).toFixed(2)}g</p>
-                                <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Fat</p>
-                              </div>
-                            </div>
-                            
-                            {/* Tags */}
-                            {item.tags && item.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {item.tags.map((tag, i) => (
-                                  <span 
-                                    key={i}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#DB9C6E]/15 text-[#DB9C6E] rounded-full text-[10px] font-medium"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            
-                            {/* Alternatives Count Badge */}
-                            {item.alternatives && item.alternatives.length > 0 && (
-                              <div className={`mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs ${
-                                isDarkMode ? 'bg-[#3AB1A0]/10 text-[#3AB1A0]' : 'bg-[#3AB1A0]/10 text-[#3AB1A0]'
-                              }`}>
-                                🔄 {item.alternatives.length} alternative{item.alternatives.length !== 1 ? 's' : ''} available
-                              </div>
-                            )}
+                          <div className="text-right">
+                            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{item.portion}</span>
+                            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>({item.calories} kcal)</p>
                           </div>
                         </div>
+
+                        {/* Alternatives - Show inline */}
+                        {item.alternatives && item.alternatives.length > 0 && (
+                          <div className={`mt-2 pt-2 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                            <p className={`text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>🔄 Alternatives:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {item.alternatives.map((alt, altIndex) => (
+                                <span
+                                  key={altIndex}
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-lg text-xs"
+                                >
+                                  {alt.name} ({alt.portion}) - {alt.calories} kcal
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1237,11 +1069,10 @@ export default function UserPlanPage() {
                     </button>
                   ) : !isTodaySelected ? (
                     /* Disabled for past/future dates */
-                    <button 
+                    <button
                       disabled
-                      className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold cursor-not-allowed flex items-center justify-center gap-2 ${
-                        isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-500'
-                      }`}
+                      className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold cursor-not-allowed flex items-center justify-center gap-2 ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-500'
+                        }`}
                       title={selectedDate < new Date() ? 'Cannot mark past meals as complete' : 'Cannot mark future meals as complete'}
                     >
                       <Clock className="w-4 h-4" />
@@ -1249,13 +1080,12 @@ export default function UserPlanPage() {
                     </button>
                   ) : meal.items.length === 0 ? (
                     /* Hide complete button when no food is allotted */
-                    <div className={`flex-1 min-w-30 py-2.5 px-4 rounded-xl text-sm font-medium text-center ${
-                      isDarkMode ? 'bg-gray-900 text-gray-500 ring-1 ring-white/10' : 'bg-gray-100 text-gray-400'
-                    }`}>
+                    <div className={`flex-1 min-w-30 py-2.5 px-4 rounded-xl text-sm font-medium text-center ${isDarkMode ? 'bg-gray-900 text-gray-500 ring-1 ring-white/10' : 'bg-gray-100 text-gray-400'
+                      }`}>
                       No food to mark as complete
                     </div>
                   ) : (
-                    <button 
+                    <button
                       onClick={() => openCompletionModal(meal)}
                       disabled={completingMeal === meal.id}
                       className="flex-1 min-w-30 py-2.5 px-4 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[#2A9A8B] transition-colors disabled:opacity-50"
@@ -1270,10 +1100,10 @@ export default function UserPlanPage() {
                       )}
                     </button>
                   )}
-                  
+
                   {/* View Recipe Button - Show next to Complete if items exist */}
                   {meal.items.length > 0 && (
-                    <button 
+                    <button
                       onClick={() => {
                         // Open food selector modal to show all items
                         setFoodSelectorModal({ meal, isOpen: true });
@@ -1285,10 +1115,10 @@ export default function UserPlanPage() {
                       <span>View Recipe</span>
                     </button>
                   )}
-                  
+
                   {/* View Alternatives */}
                   {meal.items.some(item => item.alternatives && item.alternatives.length > 0) && (
-                    <button 
+                    <button
                       onClick={() => setAlternativesModal({ item: meal.items[0], isOpen: true })}
                       className="py-2.5 px-4 border border-[#DB9C6E] rounded-xl text-sm font-medium text-[#DB9C6E] flex items-center gap-2 hover:bg-[#DB9C6E]/10 transition-colors"
                     >
@@ -1307,8 +1137,8 @@ export default function UserPlanPage() {
       {dayPlan && (
         <div className={`mx-1 mb-4 p-4 rounded-2xl ${isDarkMode ? 'bg-gray-900/50 ring-1 ring-white/5' : 'bg-gray-50'}`}>
           <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            <span className="font-semibold">Disclaimer:</span> All meal plans, nutritional values, and dietary recommendations 
-            are prepared by certified dietitians and nutritionists at DTPS. Calorie counts and macronutrient values are estimates 
+            <span className="font-semibold">Disclaimer:</span> All meal plans, nutritional values, and dietary recommendations
+            are prepared by certified dietitians and nutritionists at DTPS. Calorie counts and macronutrient values are estimates
             based on standard food composition databases including{' '}
             <a href="https://www.ifct2017.com/" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
               Indian Food Composition Tables (IFCT 2017, NIN)
@@ -1319,9 +1149,9 @@ export default function UserPlanPage() {
             <a href="https://www.who.int/publications/i/item/9241546123" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
               WHO/FAO dietary guidelines
             </a>.
-            Actual nutritional content may vary based on preparation methods and ingredient sourcing. 
-            This plan is personalized for you and should not replace professional medical advice. 
-            Please consult your healthcare provider before making significant dietary changes, especially 
+            Actual nutritional content may vary based on preparation methods and ingredient sourcing.
+            This plan is personalized for you and should not replace professional medical advice.
+            Please consult your healthcare provider before making significant dietary changes, especially
             if you have any medical conditions.
           </p>
         </div>
@@ -1329,7 +1159,7 @@ export default function UserPlanPage() {
 
       {/* Recipe Modal */}
       {recipeModal.isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-hidden"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -1348,14 +1178,14 @@ export default function UserPlanPage() {
                   </p>
                 )}
               </div>
-              <button 
+              <button
                 onClick={closeRecipeModal}
                 className="p-2 rounded-full hover:bg-white/20 transition-colors"
               >
                 <X className="w-5 h-5 text-white" />
               </button>
             </div>
-            
+
             {/* Modal Content - Scrollable */}
             <div className="overflow-y-auto flex-1 overscroll-contain">
               {loadingRecipe ? (
@@ -1368,8 +1198,8 @@ export default function UserPlanPage() {
                   {/* Recipe Image */}
                   {(fullRecipeData?.image || recipeModal.item.recipe?.image) && (
                     <div className="rounded-xl overflow-hidden -mx-5 -mt-5">
-                      <img 
-                        src={fullRecipeData?.image || recipeModal.item.recipe?.image} 
+                      <img
+                        src={fullRecipeData?.image || recipeModal.item.recipe?.image}
                         alt={fullRecipeData?.name || recipeModal.item.name}
                         loading="lazy"
                         className="w-full h-52 object-cover"
@@ -1424,15 +1254,15 @@ export default function UserPlanPage() {
                           <p className="text-xs text-gray-500">kcal</p>
                         </div>
                         <div className="text-center p-2 bg-blue-50 rounded-lg">
-                          <p className="text-lg font-bold text-blue-600">{((fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.protein || 0).toFixed(2)}g</p>
+                          <p className="text-lg font-bold text-blue-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.protein || 0}g</p>
                           <p className="text-xs text-gray-500">Protein</p>
                         </div>
                         <div className="text-center p-2 bg-yellow-50 rounded-lg">
-                          <p className="text-lg font-bold text-yellow-600">{((fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.carbs || 0).toFixed(2)}g</p>
+                          <p className="text-lg font-bold text-yellow-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.carbs || 0}g</p>
                           <p className="text-xs text-gray-500">Carbs</p>
                         </div>
                         <div className="text-center p-2 bg-orange-50 rounded-lg">
-                          <p className="text-lg font-bold text-orange-600">{((fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.fat || 0).toFixed(2)}g</p>
+                          <p className="text-lg font-bold text-orange-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.fat || 0}g</p>
                           <p className="text-xs text-gray-500">Fat</p>
                         </div>
                       </div>
@@ -1440,17 +1270,17 @@ export default function UserPlanPage() {
                   )}
 
                   {/* Dietary Restrictions */}
-                  {((fullRecipeData?.dietaryRestrictions && fullRecipeData.dietaryRestrictions.length > 0) || 
+                  {((fullRecipeData?.dietaryRestrictions && fullRecipeData.dietaryRestrictions.length > 0) ||
                     (recipeModal.item?.recipe?.dietaryRestrictions && recipeModal.item.recipe.dietaryRestrictions.length > 0)) && (
-                    <div>
-                      <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🥗 Dietary Restrictions</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {(fullRecipeData?.dietaryRestrictions || recipeModal.item.recipe?.dietaryRestrictions)?.map((restriction, i) => (
-                          <span key={i} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">{restriction}</span>
-                        ))}
+                      <div>
+                        <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🥗 Dietary Info</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {(fullRecipeData?.dietaryRestrictions || recipeModal.item.recipe?.dietaryRestrictions)?.map((restriction, i) => (
+                            <span key={i} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">{restriction}</span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Medical Contraindications */}
                   {fullRecipeData?.medicalContraindications && fullRecipeData.medicalContraindications.length > 0 && (
@@ -1465,99 +1295,99 @@ export default function UserPlanPage() {
                   )}
 
                   {/* Ingredients */}
-                  {((fullRecipeData?.ingredients && fullRecipeData.ingredients.length > 0) || 
+                  {((fullRecipeData?.ingredients && fullRecipeData.ingredients.length > 0) ||
                     (recipeModal.item.recipe?.ingredients && recipeModal.item.recipe.ingredients.length > 0)) && (
-                    <div>
-                      <h4 className={`mb-3 text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🥗 Ingredients</h4>
-                      <ul className="space-y-2">
-                        {fullRecipeData?.ingredients ? (
-                          fullRecipeData.ingredients.map((ing, i) => (
-                            <li key={i} className="flex items-start gap-3 p-3 bg-[#3AB1A0]/5 rounded-lg">
-                              <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 shrink-0" />
-                              <div className="flex-1">
-                                <span className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{ing.name}</span>
-                                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}> - {ing.quantity} {ing.unit}</span>
-                                {ing.remarks && <span className={`text-xs ml-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>({ing.remarks})</span>}
-                              </div>
-                            </li>
-                          ))
-                        ) : (
-                          recipeModal.item.recipe?.ingredients?.map((ing, i) => (
-                            <li key={i} className="flex items-start gap-3 p-3 bg-[#3AB1A0]/5 rounded-lg">
-                              <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 shrink-0" />
-                              <span className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{ing}</span>
-                            </li>
-                          ))
-                        )}
-                      </ul>
-                    </div>
-                  )}
+                      <div>
+                        <h4 className={`mb-3 text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🥗 Ingredients</h4>
+                        <ul className="space-y-2">
+                          {fullRecipeData?.ingredients ? (
+                            fullRecipeData.ingredients.map((ing, i) => (
+                              <li key={i} className="flex items-start gap-3 p-3 bg-[#3AB1A0]/5 rounded-lg">
+                                <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 shrink-0" />
+                                <div className="flex-1">
+                                  <span className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{ing.name}</span>
+                                  <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}> - {ing.quantity} {ing.unit}</span>
+                                  {ing.remarks && <span className={`text-xs ml-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>({ing.remarks})</span>}
+                                </div>
+                              </li>
+                            ))
+                          ) : (
+                            recipeModal.item.recipe?.ingredients?.map((ing, i) => (
+                              <li key={i} className="flex items-start gap-3 p-3 bg-[#3AB1A0]/5 rounded-lg">
+                                <div className="w-2 h-2 rounded-full bg-[#3AB1A0] mt-1.5 shrink-0" />
+                                <span className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{ing}</span>
+                              </li>
+                            ))
+                          )}
+                        </ul>
+                      </div>
+                    )}
 
                   {/* Instructions */}
-                  {((fullRecipeData?.instructions && fullRecipeData.instructions.length > 0) || 
+                  {((fullRecipeData?.instructions && fullRecipeData.instructions.length > 0) ||
                     (recipeModal.item.recipe?.instructions && recipeModal.item.recipe.instructions.length > 0)) && (
-                    <div>
-                      <h4 className={`mb-3 text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>👨‍🍳 Instructions</h4>
-                      <ol className="space-y-3">
-                        {(fullRecipeData?.instructions || recipeModal.item.recipe?.instructions)?.map((step, i) => (
-                          <li key={i} className="flex gap-3">
-                            <span className="shrink-0 w-7 h-7 rounded-full bg-[#E06A26] text-white flex items-center justify-center text-xs font-bold">
-                              {i + 1}
-                            </span>
-                            <span className={`text-sm pt-0.5 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{step}</span>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
+                      <div>
+                        <h4 className={`mb-3 text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>👨‍🍳 Instructions</h4>
+                        <ol className="space-y-3">
+                          {(fullRecipeData?.instructions || recipeModal.item.recipe?.instructions)?.map((step, i) => (
+                            <li key={i} className="flex gap-3">
+                              <span className="shrink-0 w-7 h-7 rounded-full bg-[#E06A26] text-white flex items-center justify-center text-xs font-bold">
+                                {i + 1}
+                              </span>
+                              <span className={`text-sm pt-0.5 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
 
                   {/* Tips */}
-                  {((fullRecipeData?.tips && fullRecipeData.tips.length > 0) || 
+                  {((fullRecipeData?.tips && fullRecipeData.tips.length > 0) ||
                     (recipeModal.item.recipe?.tips && recipeModal.item.recipe.tips.length > 0)) && (
-                    <div className="p-4 bg-blue-50 rounded-xl">
-                      <h4 className="mb-2 text-sm font-bold text-blue-900">💡 Pro Tips</h4>
-                      <ul className="space-y-1">
-                        {(fullRecipeData?.tips || recipeModal.item.recipe?.tips)?.map((tip, i) => (
-                          <li key={i} className="text-sm text-blue-800 flex items-start gap-2">
-                            <span>•</span>
-                            <span>{tip}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                      <div className="p-4 bg-blue-50 rounded-xl">
+                        <h4 className="mb-2 text-sm font-bold text-blue-900">💡 Pro Tips</h4>
+                        <ul className="space-y-1">
+                          {(fullRecipeData?.tips || recipeModal.item.recipe?.tips)?.map((tip, i) => (
+                            <li key={i} className="text-sm text-blue-800 flex items-start gap-2">
+                              <span>•</span>
+                              <span>{tip}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
                   {/* Equipment */}
-                  {((fullRecipeData?.equipment && fullRecipeData.equipment.length > 0) || 
+                  {((fullRecipeData?.equipment && fullRecipeData.equipment.length > 0) ||
                     (recipeModal.item.recipe?.equipment && recipeModal.item.recipe.equipment.length > 0)) && (
-                    <div>
-                      <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🔧 Equipment Needed</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {(fullRecipeData?.equipment || recipeModal.item.recipe?.equipment)?.map((eq, i) => (
-                          <span key={i} className={`px-3 py-1 rounded-full text-xs ${isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>{eq}</span>
-                        ))}
+                      <div>
+                        <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🔧 Equipment Needed</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {(fullRecipeData?.equipment || recipeModal.item.recipe?.equipment)?.map((eq, i) => (
+                            <span key={i} className={`px-3 py-1 rounded-full text-xs ${isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>{eq}</span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Storage Info */}
-                  {((fullRecipeData?.storage && (fullRecipeData.storage.refrigerator || fullRecipeData.storage.freezer)) || 
+                  {((fullRecipeData?.storage && (fullRecipeData.storage.refrigerator || fullRecipeData.storage.freezer)) ||
                     (recipeModal.item.recipe?.storage && (recipeModal.item.recipe.storage.refrigerator || recipeModal.item.recipe.storage.freezer))) && (
-                    <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}>
-                      <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🧊 Storage</h4>
-                      <div className={`space-y-1 text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                        {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.refrigerator && (
-                          <p>🥶 Refrigerator: {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.refrigerator}</p>
-                        )}
-                        {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.freezer && (
-                          <p>❄️ Freezer: {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.freezer}</p>
-                        )}
-                        {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.instructions && (
-                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.instructions}</p>
-                        )}
+                      <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}>
+                        <h4 className={`mb-2 text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🧊 Storage</h4>
+                        <div className={`space-y-1 text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                          {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.refrigerator && (
+                            <p>🥶 Refrigerator: {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.refrigerator}</p>
+                          )}
+                          {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.freezer && (
+                            <p>❄️ Freezer: {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.freezer}</p>
+                          )}
+                          {(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.instructions && (
+                            <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{(fullRecipeData?.storage || recipeModal.item.recipe?.storage)?.instructions}</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Alternatives */}
                   {recipeModal.item.alternatives && recipeModal.item.alternatives.length > 0 && (
@@ -1588,7 +1418,7 @@ export default function UserPlanPage() {
                 </div>
               )}
             </div>
-            
+
             {/* Modal Footer - Close Button */}
             <div className={`p-4 border-t ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
               <button
@@ -1608,7 +1438,7 @@ export default function UserPlanPage() {
           <div className={`w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[80vh] overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white ring-1 ring-white/10' : 'bg-white'}`}>
             <div className={`sticky top-0 flex items-center justify-between p-4 border-b ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
               <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Alternative Foods</h3>
-              <button 
+              <button
                 onClick={() => setAlternativesModal({ item: {} as MealItem, isOpen: false })}
                 className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
               >
@@ -1637,7 +1467,7 @@ export default function UserPlanPage() {
 
       {/* Food Item Selector Modal - Shows all food items in a meal with recipes */}
       {foodSelectorModal.isOpen && foodSelectorModal.meal && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -1652,14 +1482,14 @@ export default function UserPlanPage() {
                 <h3 className="text-lg font-bold text-white">{foodSelectorModal.meal ? getMealLabel(foodSelectorModal.meal.type) : ''}</h3>
                 <p className="text-sm text-white/80">Select a food to view recipe</p>
               </div>
-              <button 
+              <button
                 onClick={() => setFoodSelectorModal({ meal: null, isOpen: false })}
                 className="p-2 rounded-full hover:bg-white/20 transition-colors"
               >
                 <X className="w-5 h-5 text-white" />
               </button>
             </div>
-            
+
             {/* Food Items List */}
             <div className="overflow-y-auto flex-1 p-4 space-y-3">
               {/* Meal Notes */}
@@ -1671,7 +1501,7 @@ export default function UserPlanPage() {
               )}
 
               <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Tap on a food item to view its recipe:</p>
-              
+
               {foodSelectorModal.meal?.items.map((item, index) => (
                 <div key={item.id || index} className="space-y-2">
                   {/* Main Food Item */}
@@ -1680,11 +1510,10 @@ export default function UserPlanPage() {
                       openRecipeModal(item);
                       setFoodSelectorModal({ meal: null, isOpen: false });
                     }}
-                    className={`w-full p-4 rounded-xl text-left transition-colors border hover:border-[#3AB1A0]/30 ${
-                      isDarkMode
-                        ? 'bg-black/40 border-gray-800 hover:bg-[#3AB1A0]/10'
-                        : 'bg-gray-50 border-gray-100 hover:bg-[#3AB1A0]/10'
-                    }`}
+                    className={`w-full p-4 rounded-xl text-left transition-colors border hover:border-[#3AB1A0]/30 ${isDarkMode
+                      ? 'bg-black/40 border-gray-800 hover:bg-[#3AB1A0]/10'
+                      : 'bg-gray-50 border-gray-100 hover:bg-[#3AB1A0]/10'
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1700,17 +1529,17 @@ export default function UserPlanPage() {
                         <p className="font-bold text-[#E06A26]">{item.calories} kcal</p>
                         {(item.protein || item.carbs || item.fats) && (
                           <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>
-                            P:{(item.protein || 0).toFixed(2)}g C:{(item.carbs || 0).toFixed(2)}g F:{(item.fats || 0).toFixed(2)}g
+                            P:{item.protein || 0}g C:{item.carbs || 0}g F:{item.fats || 0}g
                           </p>
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Tags */}
                     {item.tags && item.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {item.tags.map((tag, i) => (
-                          <span 
+                          <span
                             key={i}
                             className="px-2 py-0.5 bg-[#DB9C6E]/20 text-[#DB9C6E] rounded-full text-xs"
                           >
@@ -1719,21 +1548,21 @@ export default function UserPlanPage() {
                         ))}
                       </div>
                     )}
-                    
+
                     {/* Recipe indicator */}
                     <div className="mt-2 flex items-center gap-1 text-xs text-[#3AB1A0]">
                       <ChevronRight className="w-3 h-3" />
                       <span>{item.recipe ? 'View full recipe' : 'View details'}</span>
                     </div>
                   </button>
-                  
+
                   {/* Alternatives for this item */}
                   {item.alternatives && item.alternatives.length > 0 && (
                     <div className="ml-6 p-3 bg-[#3AB1A0]/5 rounded-xl border-l-2 border-[#3AB1A0]">
                       <p className="text-xs font-semibold text-[#3AB1A0] mb-2">🔄 Alternatives:</p>
                       <div className="space-y-2">
                         {item.alternatives.map((alt, altIndex) => (
-                          <div 
+                          <div
                             key={altIndex}
                             className={`flex items-center justify-between p-2 rounded-lg ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}
                           >
@@ -1750,7 +1579,7 @@ export default function UserPlanPage() {
                 </div>
               ))}
             </div>
-            
+
             {/* Modal Footer */}
             <div className={`p-4 border-t ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
               <button
@@ -1775,14 +1604,14 @@ export default function UserPlanPage() {
                   {completionModal.meal ? getMealLabel(completionModal.meal.type) : ''} • {completionModal.meal?.time}
                 </p>
               </div>
-              <button 
+              <button
                 onClick={closeCompletionModal}
                 className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
               >
                 <X className={`w-5 h-5 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`} />
               </button>
             </div>
-            
+
             <div className="p-4 overflow-y-auto max-h-[70vh] space-y-5">
               {/* Meal Type - Auto fetched */}
               <div className="bg-linear-to-r from-[#3AB1A0]/10 to-[#E06A26]/10 rounded-xl p-4">
@@ -1818,11 +1647,10 @@ export default function UserPlanPage() {
                   value={completionNotes}
                   onChange={(e) => setCompletionNotes(e.target.value)}
                   placeholder="Any notes about this meal? (e.g., substitutions made, how you felt)"
-                  className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent resize-none ${
-                    isDarkMode
-                      ? 'border border-gray-800 bg-gray-950 text-white placeholder:text-gray-500'
-                      : 'border border-gray-200'
-                  }`}
+                  className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3AB1A0] focus:border-transparent resize-none ${isDarkMode
+                    ? 'border border-gray-800 bg-gray-950 text-white placeholder:text-gray-500'
+                    : 'border border-gray-200'
+                    }`}
                   rows={3}
                   maxLength={300}
                 />
@@ -1837,7 +1665,7 @@ export default function UserPlanPage() {
                 <p className={`mb-3 text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                   Please upload a photo of your meal as proof of completion
                 </p>
-                
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -1846,7 +1674,7 @@ export default function UserPlanPage() {
                   className="hidden"
                   capture="environment"
                 />
-                
+
                 {completionImagePreview ? (
                   <div className="relative">
                     <div className={`relative w-full h-48 overflow-hidden rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
@@ -1871,9 +1699,8 @@ export default function UserPlanPage() {
                     </button>
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className={`absolute bottom-2 right-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
-                        isDarkMode ? 'bg-black/60 text-white hover:bg-black/70' : 'bg-white/90 text-gray-700 hover:bg-white'
-                      }`}
+                      className={`absolute bottom-2 right-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${isDarkMode ? 'bg-black/60 text-white hover:bg-black/70' : 'bg-white/90 text-gray-700 hover:bg-white'
+                        }`}
                     >
                       <Camera className="w-4 h-4" />
                       Change
@@ -1882,9 +1709,8 @@ export default function UserPlanPage() {
                 ) : (
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className={`w-full h-48 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 hover:border-[#3AB1A0] hover:bg-[#3AB1A0]/5 transition-all ${
-                      isDarkMode ? 'border-gray-700' : 'border-gray-300'
-                    }`}
+                    className={`w-full h-48 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 hover:border-[#3AB1A0] hover:bg-[#3AB1A0]/5 transition-all ${isDarkMode ? 'border-gray-700' : 'border-gray-300'
+                      }`}
                   >
                     <div className="w-16 h-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
                       <Camera className="w-8 h-8 text-[#3AB1A0]" />
@@ -1926,25 +1752,25 @@ export default function UserPlanPage() {
 
       {/* Date Picker Modal */}
       {showDatePicker && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={() => setShowDatePicker(false)}
         >
-          <div 
+          <div
             className={`w-full max-w-sm mx-4 rounded-3xl shadow-2xl overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white ring-1 ring-white/10' : 'bg-white'}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-5 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B]">
               <h3 className="text-lg font-bold text-white">📅 Select Date</h3>
-              <button 
+              <button
                 onClick={() => setShowDatePicker(false)}
                 className="p-2 rounded-full hover:bg-white/20 transition-colors"
               >
                 <X className="w-5 h-5 text-white" />
               </button>
             </div>
-            
+
             {/* Date Input */}
             <div className="p-6 space-y-4">
               <p className={`text-sm text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -1954,16 +1780,14 @@ export default function UserPlanPage() {
                 type="date"
                 value={datePickerValue}
                 onChange={(e) => setDatePickerValue(e.target.value)}
-                className={`w-full px-4 py-3 border-2 rounded-xl text-center text-lg font-medium focus:outline-none focus:border-[#3AB1A0] transition-colors ${
-                  isDarkMode ? 'border-gray-800 bg-gray-950 text-white' : 'border-gray-200 text-gray-700'
-                }`}
+                className={`w-full px-4 py-3 border-2 rounded-xl text-center text-lg font-medium focus:outline-none focus:border-[#3AB1A0] transition-colors ${isDarkMode ? 'border-gray-800 bg-gray-950 text-white' : 'border-gray-200 text-gray-700'
+                  }`}
               />
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setShowDatePicker(false)}
-                  className={`flex-1 py-3 border-2 rounded-xl font-semibold transition-colors ${
-                    isDarkMode ? 'border-gray-700 text-gray-200 hover:bg-white/10' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className={`flex-1 py-3 border-2 rounded-xl font-semibold transition-colors ${isDarkMode ? 'border-gray-700 text-gray-200 hover:bg-white/10' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
                 >
                   Cancel
                 </button>
