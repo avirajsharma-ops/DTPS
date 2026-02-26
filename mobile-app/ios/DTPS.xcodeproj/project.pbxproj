@@ -286,8 +286,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = DTPS/DTPS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
-				DEVELOPMENT_TEAM = 37R3XLT7BG;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = AQTB4VFXAP;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DTPS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "DTPS - Health & Nutrition";
@@ -300,8 +300,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mw.dtps;
+				MARKETING_VERSION = 1.7.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dtps.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -321,8 +321,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = DTPS/DTPS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
-				DEVELOPMENT_TEAM = 37R3XLT7BG;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = AQTB4VFXAP;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DTPS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "DTPS - Health & Nutrition";
@@ -335,8 +335,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mw.dtps;
+				MARKETING_VERSION = 1.7.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dtps.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

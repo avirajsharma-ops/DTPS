@@ -1,13 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 
 /**
- * Hook to listen for account deactivation/suspension notifications
- * Automatically logs out user if their account is deactivated
+ * Hook to listen for account deactivation/suspension notifications.
+ * Uses lightweight polling (every 5 min) instead of a persistent SSE connection
+ * to reduce network overhead — especially important on mobile/slow networks.
  */
 export function useLogoutNotification() {
   const { data: session, status } = useSession();
+  const checkingRef = useRef(false);
 
   useEffect(() => {
     // Only set up listener if user is authenticated
@@ -15,64 +17,50 @@ export function useLogoutNotification() {
       return;
     }
 
-    let eventSource: EventSource | null = null;
-    let reconnectAttempts = 0;
-    const MAX_RECONNECT_ATTEMPTS = 5;
-    const RECONNECT_DELAY = 3000; // 3 seconds
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
-    const setupConnection = () => {
+    const checkAccountStatus = async () => {
+      if (checkingRef.current) return;
+      checkingRef.current = true;
+
       try {
-        eventSource = new EventSource('/api/auth/logout-notification');
-
-        eventSource.onopen = () => {
-          console.log('[LogoutNotification] Connected to server');
-          reconnectAttempts = 0;
-        };
-
-        eventSource.addEventListener('logout', (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === 'deactivated' || data.type === 'suspended') {
-              console.log('[LogoutNotification] Account deactivated/suspended, logging out');
-              // Close the event source before signing out
-              if (eventSource) {
-                eventSource.close();
-              }
-              // Sign out the user
-              signOut({ 
-                redirect: true, 
-                callbackUrl: '/auth/signin?reason=deactivated' 
-              });
-            }
-          } catch (error) {
-            console.error('Error parsing logout event:', error);
-          }
+        const res = await fetch('/api/auth/logout-notification?check=1', {
+          method: 'GET',
+          credentials: 'same-origin',
         });
 
-        eventSource.onerror = () => {
-          console.log('[LogoutNotification] Connection error, attempting to reconnect');
-          if (eventSource) {
-            eventSource.close();
-            eventSource = null;
+        if (res.ok) {
+          const data = await res.json();
+          if (data.type === 'deactivated' || data.type === 'suspended') {
+            console.log('[LogoutNotification] Account deactivated/suspended, logging out');
+            if (intervalId) clearInterval(intervalId);
+            signOut({ 
+              redirect: true, 
+              callbackUrl: '/auth/signin?reason=deactivated' 
+            });
           }
-
-          if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            reconnectAttempts++;
-            setTimeout(setupConnection, RECONNECT_DELAY);
-          }
-        };
-      } catch (error) {
-        console.error('Error setting up logout notification:', error);
+        }
+      } catch {
+        // Silently ignore — will retry on next interval
+      } finally {
+        checkingRef.current = false;
       }
     };
 
-    setupConnection();
+    // Check every 5 minutes (aligned with session refetch interval)
+    intervalId = setInterval(checkAccountStatus, 5 * 60 * 1000);
 
-    // Cleanup on unmount or session change
-    return () => {
-      if (eventSource) {
-        eventSource.close();
+    // Also check on visibility change (user comes back to app)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkAccountStatus();
       }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [session?.user?.id, status]);
 }

@@ -197,51 +197,58 @@ export default function UserHomePage() {
   }, [mounted, status, router]);
 
   // Function to fetch real-time health data (water, sleep, activity, steps, calories)
+  // Uses aggregated dashboard-summary API to reduce round-trips (1 call instead of 4+)
   const fetchHealthData = useCallback(async () => {
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
-      const [hydrationRes, sleepRes, activityRes, stepsRes, mealPlanRes, foodLogRes] = await Promise.all([
-        fetch(`/api/client/hydration?date=${today}`),
-        fetch(`/api/client/sleep?date=${today}`),
-        fetch(`/api/client/activity?date=${today}`),
-        fetch(`/api/client/steps?date=${today}`),
+      // Fetch aggregated health data + meal plan + food log in parallel (3 calls instead of 6)
+      const [summaryRes, mealPlanRes, foodLogRes] = await Promise.all([
+        fetch(`/api/client/dashboard-summary?date=${today}`),
         fetch(`/api/client/meal-plan?date=${today}`),
         fetch(`/api/food-logs?date=${today}`)
       ]);
 
       const newData = { ...data };
 
-      if (hydrationRes.ok) {
-        const hydrationData = await hydrationRes.json();
+      // Process aggregated health summary (hydration, sleep, activity, steps, profile)
+      if (summaryRes.ok) {
+        const summary = await summaryRes.json();
+        
+        // Hydration
         newData.water = {
-          current: (hydrationData.totalToday / 1000) || 0, // Convert ml to L
-          goal: (hydrationData.goal / 1000) || 2.5
+          current: (summary.hydration?.totalToday / 1000) || 0,
+          goal: (summary.hydration?.goal / 1000) || 2.5
         };
-      }
 
-      if (sleepRes.ok) {
-        const sleepData = await sleepRes.json();
-        const totalHours = sleepData.totalToday || 0;
+        // Sleep
+        const totalHours = summary.sleep?.totalToday || 0;
         const hours = Math.floor(totalHours);
         const minutes = Math.round((totalHours - hours) * 60);
-        const quality = sleepData.goal > 0 ? Math.round((totalHours / sleepData.goal) * 100) : 0;
+        const quality = summary.sleep?.goal > 0 ? Math.round((totalHours / summary.sleep.goal) * 100) : 0;
         newData.sleep = { hours, minutes, quality: Math.min(quality, 100) };
-      }
 
-      if (activityRes.ok) {
-        const activityData = await activityRes.json();
+        // Activity
         newData.activity = {
-          minutes: Math.round(activityData.totalToday || 0),
-          active: (activityData.totalToday || 0) > 0
+          minutes: Math.round(summary.activity?.totalToday || 0),
+          active: (summary.activity?.totalToday || 0) > 0
         };
-      }
 
-      if (stepsRes.ok) {
-        const stepsData = await stepsRes.json();
+        // Steps
         newData.steps = {
-          current: stepsData.totalToday || 0,
-          goal: stepsData.goal || 10000
+          current: summary.steps?.totalToday || 0,
+          goal: summary.steps?.goal || 10000
         };
+
+        // Update profile if available from summary
+        if (summary.profile && !unmountedRef.current) {
+          setUserProfile(prev => prev || {
+            bmi: summary.profile.bmi || '',
+            bmiCategory: summary.profile.bmiCategory || '',
+            weightKg: summary.profile.weightKg || '',
+            heightCm: summary.profile.heightCm || '',
+            generalGoal: summary.profile.generalGoal || ''
+          });
+        }
       }
 
       // Calculate calories from meal plan and food log
@@ -350,12 +357,10 @@ export default function UserHomePage() {
   const refreshAllData = useCallback(async () => {
     console.log('Refreshing all user data...');
     try {
-      const [planRes, profileRes] = await Promise.all([
-        fetch('/api/client/service-plans'),
-        fetch('/api/client/profile')
-      ]);
+      // Fetch service plans + health data (which includes profile)
+      const planRes = await fetch('/api/client/service-plans');
       
-      // Also fetch health data
+      // Also fetch health data (includes profile via dashboard-summary)
       fetchHealthData();
 
       if (planRes.ok) {
@@ -364,17 +369,6 @@ export default function UserHomePage() {
         setHasAnyPurchase(planData.hasAnyPurchase || false);
         setHasPendingDietitianAssignment(planData.hasPendingDietitianAssignment || false);
         setActivePurchases(planData.activePurchases || []);
-      }
-
-      if (profileRes.ok) {
-        const profileData = await profileRes.json();
-        setUserProfile({
-          bmi: profileData.bmi || '',
-          bmiCategory: profileData.bmiCategory || '',
-          weightKg: profileData.weightKg || '',
-          heightCm: profileData.heightCm || '',
-          generalGoal: profileData.generalGoal || ''
-        });
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -387,7 +381,7 @@ export default function UserHomePage() {
   // Helper to load service plans (used by onboarding check fast path)
   const loadServicePlans = async () => {
     try {
-      const planRes = await fetchWithTimeout('/api/client/service-plans', undefined, 6000);
+      const planRes = await fetchWithTimeout('/api/client/service-plans', undefined, 4000);
       if (planRes.ok) {
         const planData = await planRes.json();
         setHasActivePlan(planData.hasActivePlan || false);
@@ -396,20 +390,8 @@ export default function UserHomePage() {
         setActivePurchases(planData.activePurchases || []);
       }
       
-      // Also load profile and health data
+      // Fetch health data (which includes profile from dashboard-summary)
       fetchHealthData();
-      
-      const profileRes = await fetchWithTimeout('/api/client/profile', undefined, 6000);
-      if (profileRes.ok && !unmountedRef.current) {
-        const profileData = await profileRes.json();
-        setUserProfile({
-          bmi: profileData.bmi || '',
-          bmiCategory: profileData.bmiCategory || '',
-          weightKg: profileData.weightKg || '',
-          heightCm: profileData.heightCm || '',
-          generalGoal: profileData.generalGoal || ''
-        });
-      }
     } catch (error) {
       console.error('Error loading service plans:', error);
     }
@@ -514,13 +496,13 @@ export default function UserHomePage() {
       // Hard stop: never block the UI forever on slow networks/proxy issues
       const hardStop = setTimeout(() => {
         if (!unmountedRef.current) setCheckingOnboarding(false);
-      }, 8000);
+      }, 3000);
 
       try {
         // Check onboarding and active plan in parallel
         const [onboardingRes, planRes] = await Promise.all([
-          fetchWithTimeout('/api/client/onboarding', undefined, 6000),
-          fetchWithTimeout('/api/client/service-plans', undefined, 6000)
+          fetchWithTimeout('/api/client/onboarding', undefined, 3000),
+          fetchWithTimeout('/api/client/service-plans', undefined, 3000)
         ]);
 
         if (onboardingRes.ok) {
@@ -549,7 +531,7 @@ export default function UserHomePage() {
         // Fetch user profile data (BMI, weight, height, etc.)
         (async () => {
           try {
-            const profileRes = await fetchWithTimeout('/api/client/profile', undefined, 6000);
+            const profileRes = await fetchWithTimeout('/api/client/profile', undefined, 4000);
             if (profileRes.ok && !unmountedRef.current) {
               const profileData = await profileRes.json();
               setUserProfile({
@@ -593,7 +575,7 @@ export default function UserHomePage() {
           setBlogsLoading(true);
           setBlogsError('');
         }
-        const blogsRes = await fetchWithTimeout('/api/client/blogs?limit=5', undefined, 6000);
+        const blogsRes = await fetchWithTimeout('/api/client/blogs?limit=5', undefined, 4000);
         if (!blogsRes.ok) {
           throw new Error(`Failed to fetch blogs (${blogsRes.status})`);
         }
@@ -1241,14 +1223,14 @@ export default function UserHomePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=200&h=150&fit=crop" alt="Healthy breakfast" loading="lazy" className="object-cover w-full h-full rounded-xl" />
+                      <span className="text-4xl" role="img" aria-label="Healthy breakfast">🥗</span>
                     </div>
                     <p className="text-sm font-semibold">Healthy Breakfast</p>
                     <p className="mt-1 text-xs text-white/80">Start your day right</p>
                   </div>
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&h=150&fit=crop" alt="Fresh salad" loading="lazy" className="object-cover w-full h-full rounded-xl" />
+                      <span className="text-4xl" role="img" aria-label="Fresh salad">🥬</span>
                     </div>
                     <p className="text-sm font-semibold">Fresh Salads</p>
                     <p className="mt-1 text-xs text-white/80">Colorful vegetables</p>
@@ -1262,14 +1244,14 @@ export default function UserHomePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200&h=150&fit=crop" alt="Workout" loading="lazy" className="object-cover w-full h-full rounded-xl" />
+                      <span className="text-4xl" role="img" aria-label="Workout">🏋️</span>
                     </div>
                     <p className="text-sm font-semibold">Daily Workout</p>
                     <p className="mt-1 text-xs text-white/80">30 mins exercise</p>
                   </div>
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=200&h=150&fit=crop" alt="Running" loading="lazy" className="object-cover w-full h-full rounded-xl" />
+                      <span className="text-4xl" role="img" aria-label="Running">🏃</span>
                     </div>
                     <p className="text-sm font-semibold">Cardio Run</p>
                     <p className="mt-1 text-xs text-white/80">Build endurance</p>
@@ -1283,14 +1265,14 @@ export default function UserHomePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=200&h=150&fit=crop" alt="Yoga" loading="lazy" className="object-cover w-full h-full rounded-xl" />
+                      <span className="text-4xl" role="img" aria-label="Yoga">🧘</span>
                     </div>
                     <p className="text-sm font-semibold">Morning Yoga</p>
                     <p className="mt-1 text-xs text-white/80">Stretch & relax</p>
                   </div>
                   <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-center h-24 mb-3 overflow-hidden bg-white/30 rounded-xl">
-                      <img src="https://images.unsplash.com/photo-1531353826977-0941b4779a1c?w=200&h=150&fit=crop" alt="Sleep" loading="lazy" className="object-cover w-full h-full rounded-xl" />
+                      <span className="text-4xl" role="img" aria-label="Sleep">😴</span>
                     </div>
                     <p className="text-sm font-semibold">Quality Sleep</p>
                     <p className="mt-1 text-xs text-white/80">7-8 hours rest</p>

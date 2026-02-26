@@ -26,18 +26,20 @@ interface CacheOptions {
 
 class MemoryCache {
   private cache: Map<string, CacheEntry<unknown>> = new Map();
-  private maxSize: number = 1000; // Maximum cache entries
+  private maxSize: number = 5000; // Maximum cache entries (was 1000)
   private cleanupInterval: NodeJS.Timeout | null = null;
+  private pendingFetches: Map<string, Promise<unknown>> = new Map(); // Deduplicate concurrent fetches
 
   constructor() {
-    // Run cleanup every 60 seconds
+    // Run cleanup every 2 minutes (was 60s — reduce overhead)
     if (typeof setInterval !== 'undefined') {
-      this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
+      this.cleanupInterval = setInterval(() => this.cleanup(), 120000);
     }
   }
 
   /**
-   * Get cached data or execute fetcher if not cached/expired
+   * Get cached data or execute fetcher if not cached/expired.
+   * Deduplicates concurrent fetches for the same key (thundering herd protection).
    */
   async getOrSet<T>(
     key: string,
@@ -53,13 +55,24 @@ class MemoryCache {
       return cached.data as T;
     }
 
-    // Fetch fresh data
-    const data = await fetcher();
+    // Deduplicate concurrent fetches for same key
+    const pending = this.pendingFetches.get(cacheKey);
+    if (pending) {
+      return pending as Promise<T>;
+    }
 
-    // Store in cache
-    this.set(cacheKey, data, ttl);
+    // Fetch fresh data with dedup
+    const fetchPromise = fetcher().then((data) => {
+      this.set(cacheKey, data, ttl);
+      this.pendingFetches.delete(cacheKey);
+      return data;
+    }).catch((err) => {
+      this.pendingFetches.delete(cacheKey);
+      throw err;
+    });
 
-    return data;
+    this.pendingFetches.set(cacheKey, fetchPromise);
+    return fetchPromise;
   }
 
   /**
@@ -169,12 +182,13 @@ class MemoryCache {
   }
 }
 
-// Global cache instance (singleton)
-let globalCache: MemoryCache | null = null;
+// Global cache instance (singleton — survives hot reloads in dev)
+let globalCache: MemoryCache | null = (global as any).__memoryCache || null;
 
 function getCache(): MemoryCache {
   if (!globalCache) {
     globalCache = new MemoryCache();
+    (global as any).__memoryCache = globalCache;
   }
   return globalCache;
 }

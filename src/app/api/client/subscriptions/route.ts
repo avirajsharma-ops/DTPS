@@ -3,25 +3,23 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
-import User from '@/lib/db/models/User';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET /api/client/subscriptions - Get client's subscriptions
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Run auth + DB connection in PARALLEL
+    const [session] = await Promise.all([
+      getServerSession(authOptions),
+      connectDB()
+    ]);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectDB();
-
     // Get all payments for this client that are subscription-related
     const payments = await withCache(
-      `client:subscriptions:${JSON.stringify({
-      client: session.user.id,
-      type: { $in: ['service_plan', 'subscription', 'consultation'] }
-    })}`,
+      `client-subscriptions:${session.user.id}`,
       async () => await UnifiedPayment.find({
       client: session.user.id,
       type: { $in: ['service_plan', 'subscription', 'consultation'] }

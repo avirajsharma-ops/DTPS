@@ -620,19 +620,13 @@
   .animate-stagger-5 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.25s forwards; opacity: 0; }
   .animate-stagger-6 { animation: stagger-fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s forwards; opacity: 0; }
 
-  /* Smooth transition defaults for better UX */
-  * {
-    @apply transition-all duration-200 ease-out;
+  /* Smooth transitions only for interactive elements (NOT global * which causes layout thrashing) */
+  button, a, [role="button"] {
+    @apply transition-colors duration-150 ease-out;
   }
 
-  /* Override transition for specific interactive elements */
-  button, a, input, select, textarea {
-    @apply transition-all duration-150 ease-out;
-  }
-
-  /* Smooth hover and focus states */
-  button:hover {
-    @apply transition-all duration-150;
+  input, select, textarea {
+    @apply transition-[border-color,box-shadow] duration-150 ease-out;
   }
 
   button:active {

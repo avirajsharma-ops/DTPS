@@ -1,6 +1,5 @@
-// SpoonGifLoader.tsx
+// SpoonGifLoader.tsx — lightweight CSS-based loader (replaces 267KB GIF)
 'use client';
-import Image from 'next/image';
 
 interface SpoonGifLoaderProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -14,33 +13,42 @@ export default function SpoonGifLoader({
   showText = true 
 }: SpoonGifLoaderProps) {
   const sizes = {
-    sm: 60,
-    md: 100,
-    lg: 150,
-    xl: 200,
+    sm: 40,
+    md: 60,
+    lg: 80,
+    xl: 100,
   };
   
   const px = sizes[size] || sizes.md;
+  const borderWidth = Math.max(3, Math.round(px / 16));
   
   return (
     <div className="flex flex-col items-center justify-center gap-3">
-      {/* Spoon GIF - displayed directly without extra animation */}
+      {/* Animated spoon/plate spinner — pure CSS, < 1KB */}
       <div 
-        className="relative"
-        style={{ width: px, height: px * 1.5 }}
+        className="relative flex items-center justify-center"
+        style={{ width: px, height: px }}
       >
-        <Image
-          src="/images/spoon-loader.gif"
-          alt="Loading..."
-          fill
-          priority
-          unoptimized
-          className="object-contain"
+        {/* Outer spinning ring */}
+        <div
+          className="absolute inset-0 rounded-full animate-spin"
+          style={{
+            border: `${borderWidth}px solid #f3e8e0`,
+            borderTopColor: '#E06A26',
+            animationDuration: '0.8s',
+          }}
+        />
+        {/* Inner pulsing dot */}
+        <div 
+          className="rounded-full animate-pulse"
+          style={{
+            width: px * 0.3,
+            height: px * 0.3,
+            backgroundColor: '#E06A26',
+            animationDuration: '1s',
+          }}
         />
       </div>
-      {/* {showText && text && (
-        <span className="text-[#E06A26] font-medium text-base mt-2">{text}</span>
-      )} */}
     </div>
   );
 }

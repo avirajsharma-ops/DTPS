@@ -9,13 +9,14 @@ import { withCache, clearCacheByTag } from '@/lib/api/utils';
 // GET /api/analytics/stats - Get real analytics data
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Run auth + DB connection in PARALLEL
+    const [session] = await Promise.all([
+      getServerSession(authOptions),
+      connectDB()
+    ]);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // Connect to MongoDB
-    await connectDB();
 
     const isAdmin = session.user.role === 'admin';
     const today = new Date();

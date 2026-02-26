@@ -19,6 +19,9 @@ class SplashViewController: UIViewController {
 
     private var animationFinished = false
     private var hasTransitioned = false
+    /// Maximum time the splash can stay on screen before auto-dismissing
+    private var maxDisplayTimer: Timer?
+    private let maxSplashDuration: TimeInterval = 5.0
 
     // MARK: - Lifecycle
 
@@ -30,17 +33,28 @@ class SplashViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         startAnimation()
+
+        // Safety net: auto-dismiss splash after max duration even if animation
+        // callback didn't fire (prevents indefinite loading on reviewers' devices)
+        maxDisplayTimer = Timer.scheduledTimer(withTimeInterval: maxSplashDuration, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            print("[DTPS] Splash max duration reached — force dismissing")
+            self.animationFinished = true
+            self.checkTransition()
+        }
     }
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
 
     deinit {
+        maxDisplayTimer?.invalidate()
         NotificationCenter.default.removeObserver(self)
     }
 
     private func checkTransition() {
         guard animationFinished, !hasTransitioned else { return }
         hasTransitioned = true
+        maxDisplayTimer?.invalidate()
         onReadyToTransition?()
     }
 

@@ -88,34 +88,35 @@ const connectionOptions: mongoose.ConnectOptions = {
   // Buffer commands when disconnected - mongoose will auto-reconnect
   bufferCommands: true,
   
-  // Timeouts — keep tight for faster failure detection
-  serverSelectionTimeoutMS: 15000,  // 15s to find a server
-  socketTimeoutMS: 30000,           // 30s socket timeout
-  connectTimeoutMS: 15000,          // 15s to establish connection
+  // Timeouts — aggressive for fast failure detection
+  serverSelectionTimeoutMS: 5000,   // 5s to find a server (was 15s)
+  socketTimeoutMS: 20000,           // 20s socket timeout (was 30s)
+  connectTimeoutMS: 5000,           // 5s to establish connection (was 15s)
   
   // Force IPv4 - helps with some DNS issues
   family: 4,
   
-  // Connection pool — right-sized for Atlas shared tier
-  maxPoolSize: 10,                  // Avoid exhausting Atlas connection limits
-  minPoolSize: 2,                   // Keep 2 connections warm
-  maxIdleTimeMS: 30000,             // Close idle connections after 30s
+  // Connection pool — optimized for throughput
+  maxPoolSize: 20,                  // Handle concurrent requests (was 10)
+  minPoolSize: 5,                   // Keep 5 connections warm (was 2)
+  maxIdleTimeMS: 60000,             // Close idle connections after 60s (was 30s)
+  waitQueueTimeoutMS: 5000,         // Max wait for pool connection
   
   // Retry settings (MongoDB driver handles these)
   retryWrites: true,
   retryReads: true,
   
   // Heartbeat to detect dead connections
-  heartbeatFrequencyMS: 15000,      // Check every 15s (reduce overhead)
+  heartbeatFrequencyMS: 10000,      // Check every 10s
   
   // Auto-index in development only
   autoIndex: process.env.NODE_ENV !== 'production',
 };
 
 // Retry configuration
-const MAX_RETRIES = 3;
-const BASE_DELAY_MS = 1000;
-const MAX_DELAY_MS = 10000;
+const MAX_RETRIES = 2;
+const BASE_DELAY_MS = 500;
+const MAX_DELAY_MS = 3000;
 
 /**
  * Calculate delay with exponential backoff and jitter

@@ -41,6 +41,7 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   const [showLoader, setShowLoader] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
   const redirectingRef = useRef(false);
+  const [sessionTimedOut, setSessionTimedOut] = useState(false);
 
   // Enable scroll restoration
   useScrollRestoration(!pathname.startsWith('/user/recipes'));
@@ -49,15 +50,36 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
     setMounted(true);
   }, []);
 
+  // Session loading timeout — don't show FullPageLoader forever
+  // On WebViews, useSession can get stuck in 'loading' state if cookies are flaky
+  useEffect(() => {
+    if (status !== 'loading') {
+      setSessionTimedOut(false);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      setSessionTimedOut(true);
+    }, 4000); // 4s max for session resolution
+
+    return () => clearTimeout(timeout);
+  }, [status]);
+
   // Redirect if not authenticated (in effect to avoid navigation flooding)
   useEffect(() => {
     if (!mounted) return;
+    // If session timed out, redirect to sign in
+    if (sessionTimedOut && status === 'loading') {
+      if (redirectingRef.current) return;
+      redirectingRef.current = true;
+      router.replace('/client-auth/signin');
+      return;
+    }
     if (status !== 'unauthenticated') return;
     if (redirectingRef.current) return;
 
     redirectingRef.current = true;
     router.replace('/client-auth/signin');
-  }, [mounted, status, router]);
+  }, [mounted, status, router, sessionTimedOut]);
 
   // Handle route changes - show loader only after delay
   useEffect(() => {
@@ -91,7 +113,8 @@ export default function UserLayoutClient({ children }: UserLayoutClientProps) {
   const showNavigation = !PAGES_WITHOUT_NAV.some(page => pathname.startsWith(page));
 
   // Show loading state only on initial mount, not on route changes
-  if (!mounted || status === 'loading') {
+  // Cap at 4s to avoid infinite loader on WebViews with flaky cookies
+  if (!mounted || (status === 'loading' && !sessionTimedOut)) {
     return <FullPageLoader size="lg" text="Loading..." />;
   }
 

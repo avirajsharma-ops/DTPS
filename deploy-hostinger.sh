@@ -190,6 +190,64 @@ install_certbot() {
     log_success "Certbot installed successfully"
 }
 
+# Stop conflicting web servers (LiteSpeed, Apache, etc.)
+stop_conflicting_servers() {
+    log_step "Stopping Conflicting Web Servers"
+    
+    # Stop and disable LiteSpeed (Hostinger VPS default)
+    if systemctl is-active --quiet lsws 2>/dev/null; then
+        log_info "Stopping LiteSpeed Web Server (lsws)..."
+        systemctl stop lsws
+        systemctl disable lsws
+        log_success "LiteSpeed (lsws) stopped and disabled"
+    elif systemctl is-active --quiet lshttpd 2>/dev/null; then
+        log_info "Stopping OpenLiteSpeed (lshttpd)..."
+        systemctl stop lshttpd
+        systemctl disable lshttpd
+        log_success "OpenLiteSpeed (lshttpd) stopped and disabled"
+    elif systemctl is-active --quiet openlitespeed 2>/dev/null; then
+        log_info "Stopping OpenLiteSpeed..."
+        systemctl stop openlitespeed
+        systemctl disable openlitespeed
+        log_success "OpenLiteSpeed stopped and disabled"
+    fi
+    
+    # Stop Apache if running
+    if systemctl is-active --quiet apache2 2>/dev/null; then
+        log_info "Stopping Apache2..."
+        systemctl stop apache2
+        systemctl disable apache2
+        log_success "Apache2 stopped and disabled"
+    fi
+    
+    # Stop any nginx installed on host (not Docker)
+    if systemctl is-active --quiet nginx 2>/dev/null; then
+        log_info "Stopping host Nginx (Docker Nginx will be used instead)..."
+        systemctl stop nginx
+        systemctl disable nginx
+        log_success "Host Nginx stopped and disabled"
+    fi
+    
+    # Kill anything still holding ports 80/443
+    log_info "Ensuring ports 80/443 are free for Docker..."
+    fuser -k 80/tcp 2>/dev/null || true
+    fuser -k 443/tcp 2>/dev/null || true
+    sleep 1
+    
+    # Verify ports are free
+    PORT_80_PID=$(fuser 80/tcp 2>/dev/null || true)
+    PORT_443_PID=$(fuser 443/tcp 2>/dev/null || true)
+    
+    if [ -n "$PORT_80_PID" ] || [ -n "$PORT_443_PID" ]; then
+        log_warning "Ports 80/443 may still be in use. Trying harder..."
+        fuser -k -9 80/tcp 2>/dev/null || true
+        fuser -k -9 443/tcp 2>/dev/null || true
+        sleep 2
+    fi
+    
+    log_success "Ports 80/443 are available for Docker"
+}
+
 # Configure firewall
 configure_firewall() {
     log_step "Configuring Firewall"
@@ -315,8 +373,16 @@ obtain_ssl_certificate() {
     docker stop ${NGINX_CONTAINER} 2>/dev/null || true
     docker rm ${NGINX_CONTAINER} 2>/dev/null || true
     
-    # Kill anything on port 80
+    # Stop LiteSpeed/Apache that Hostinger pre-installs
+    systemctl stop lsws 2>/dev/null || true
+    systemctl stop lshttpd 2>/dev/null || true
+    systemctl stop openlitespeed 2>/dev/null || true
+    systemctl stop apache2 2>/dev/null || true
+    systemctl stop nginx 2>/dev/null || true
+    
+    # Kill anything on port 80 and 443
     fuser -k 80/tcp 2>/dev/null || true
+    fuser -k 443/tcp 2>/dev/null || true
     sleep 2
     
     log_info "Obtaining SSL certificate for ${DOMAIN}..."
@@ -586,10 +652,20 @@ health_check() {
     # Check HTTPS if SSL is enabled
     if [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
         HTTPS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -k https://localhost 2>/dev/null || echo "000")
-        if [ "$HTTPS_CODE" = "200" ] || [ "$HTTPS_CODE" = "301" ] || [ "$HTTPS_CODE" = "302" ]; then
+        if [ "$HTTPS_CODE" = "200" ] || [ "$HTTPS_CODE" = "301" ] || [ "$HTTPS_CODE" = "302" ] || [ "$HTTPS_CODE" = "307" ]; then
             log_success "HTTPS is working (HTTP $HTTPS_CODE)"
         else
             log_warning "HTTPS check returned $HTTPS_CODE"
+        fi
+        
+        # Verify the correct certificate is being served (not LiteSpeed default)
+        CERT_CN=$(echo | openssl s_client -connect localhost:443 -servername ${DOMAIN} 2>/dev/null | openssl x509 -noout -subject 2>/dev/null | grep -o "CN = .*" | cut -d' ' -f3)
+        if [ "$CERT_CN" = "${DOMAIN}" ]; then
+            log_success "SSL certificate is correctly serving for ${DOMAIN}"
+        elif [ -n "$CERT_CN" ]; then
+            log_warning "SSL certificate CN is '${CERT_CN}' (expected '${DOMAIN}')"
+            log_warning "A conflicting web server may be intercepting port 443"
+            log_info "Check: ss -tlnp | grep -E ':80|:443'"
         fi
     fi
 }
@@ -651,6 +727,10 @@ main() {
     # Check root
     check_root
     
+    # ALWAYS stop conflicting web servers (LiteSpeed, Apache, etc.)
+    # This is critical on Hostinger VPS where LiteSpeed is pre-installed
+    stop_conflicting_servers
+    
     # Install dependencies
     if ! $SKIP_DEPS; then
         install_dependencies
@@ -675,6 +755,9 @@ main() {
     # Update configurations
     update_docker_compose
     update_nginx_config
+    
+    # Stop conflicting servers again (they may have restarted during SSL setup)
+    stop_conflicting_servers
     
     # Deploy
     deploy_docker

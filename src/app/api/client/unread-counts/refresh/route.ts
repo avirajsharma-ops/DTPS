@@ -13,15 +13,17 @@ import { broadcastUnreadCounts } from '../stream/route';
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Run auth + DB connection in PARALLEL
+    const [session] = await Promise.all([
+      getServerSession(authOptions),
+      connectDB()
+    ]);
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = session.user.id;
-
-    await connectDB();
 
     // Get fresh counts
     const [notificationCount, messageCount] = await Promise.all([

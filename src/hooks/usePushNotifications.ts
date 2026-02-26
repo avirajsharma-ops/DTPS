@@ -2,14 +2,17 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import {
-    registerFCMTokenWithBackend,
-    unregisterFCMToken,
-    onForegroundMessage,
-    isPushNotificationSupported,
-    getNotificationPermission,
-    requestNotificationPermission,
-} from '@/lib/firebase/fcmHelper';
+
+// Dynamic import types — Firebase SDK is lazy-loaded to avoid 50-80KB in initial bundle
+type FCMHelper = typeof import('@/lib/firebase/fcmHelper');
+let fcmHelperPromise: Promise<FCMHelper> | null = null;
+
+function loadFCMHelper(): Promise<FCMHelper> {
+    if (!fcmHelperPromise) {
+        fcmHelperPromise = import('@/lib/firebase/fcmHelper');
+    }
+    return fcmHelperPromise;
+}
 
 interface UsePushNotificationsOptions {
     autoRegister?: boolean;
@@ -42,16 +45,28 @@ export function usePushNotifications(
     const unsubscribeRef = useRef<(() => void) | null>(null);
     const hasRegisteredRef = useRef(false);
 
-    // Check support on mount
+    // Check support on mount — lazy-loads Firebase check
     useEffect(() => {
-        const supported = isPushNotificationSupported();
-        setIsSupported(supported);
-
-        if (supported) {
-            setPermission(getNotificationPermission());
-        } else {
+        // Quick check: skip entirely for native app WebViews
+        const ua = navigator?.userAgent || '';
+        if (ua.includes('NativeApp') || ua.includes('DTPSApp')) {
+            setIsSupported(false);
             setPermission('unsupported');
+            return;
         }
+
+        loadFCMHelper().then(({ isPushNotificationSupported, getNotificationPermission }) => {
+            const supported = isPushNotificationSupported();
+            setIsSupported(supported);
+            if (supported) {
+                setPermission(getNotificationPermission());
+            } else {
+                setPermission('unsupported');
+            }
+        }).catch(() => {
+            setIsSupported(false);
+            setPermission('unsupported');
+        });
     }, []);
 
     // Set up foreground message listener
@@ -62,16 +77,17 @@ export function usePushNotifications(
 
         console.log('[usePushNotifications] Setting up foreground message listener...');
 
-        unsubscribeRef.current = onForegroundMessage((payload) => {
-            console.log('[usePushNotifications] Foreground message received:', payload);
-
-            // Call custom handler (which will show toast in PushNotificationProvider)
-            // Do NOT show browser notification here to avoid duplicate notifications
-            if (onNotification) {
-                console.log('[usePushNotifications] Calling custom notification handler');
-                onNotification(payload);
-            }
-        });
+        let cleanup: (() => void) | null = null;
+        loadFCMHelper().then(({ onForegroundMessage }) => {
+            cleanup = onForegroundMessage((payload) => {
+                console.log('[usePushNotifications] Foreground message received:', payload);
+                if (onNotification) {
+                    console.log('[usePushNotifications] Calling custom notification handler');
+                    onNotification(payload);
+                }
+            });
+            unsubscribeRef.current = cleanup;
+        }).catch(() => {});
 
         return () => {
             if (unsubscribeRef.current) {
@@ -92,6 +108,7 @@ export function usePushNotifications(
         setError(null);
 
         try {
+            const { requestNotificationPermission } = await loadFCMHelper();
             const result = await requestNotificationPermission();
             setPermission(result);
             return result === 'granted';
@@ -121,6 +138,7 @@ export function usePushNotifications(
         setError(null);
 
         try {
+            const { registerFCMTokenWithBackend } = await loadFCMHelper();
             const success = await registerFCMTokenWithBackend();
             setIsRegistered(success);
             hasRegisteredRef.current = success;
@@ -139,6 +157,7 @@ export function usePushNotifications(
         setError(null);
 
         try {
+            const { unregisterFCMToken } = await loadFCMHelper();
             const success = await unregisterFCMToken();
             if (success) {
                 setIsRegistered(false);

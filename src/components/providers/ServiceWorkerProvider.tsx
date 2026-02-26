@@ -1,0 +1,170 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+
+/**
+ * ServiceWorkerProvider - Registers the app-shell service worker
+ * 
+ * This handles:
+ * - Purging stale caches from old SW versions immediately on load
+ * - Registering sw.js for caching static assets only
+ * - Auto-updating the service worker when a new version is available
+ * - Auto-recovering from ChunkLoadError (stale chunk references after deploy)
+ * 
+ * Works alongside firebase-messaging-sw.js (separate scope for /firebase-*)
+ */
+export default function ServiceWorkerProvider() {
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // --- 1. Purge ALL old page caches immediately (even before SW registers) ---
+    // This fixes white-screen caused by stale cached HTML pointing to old JS chunks
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          // Delete old v1 page/image caches and any non-v2 dtps caches
+          if (name.includes('pages') || name.includes('images') || 
+              (name.startsWith('dtps-') && !name.startsWith('dtps-v2'))) {
+            caches.delete(name);
+            console.log('[SW] Purged stale cache:', name);
+          }
+        });
+      }).catch(() => {});
+    }
+
+    // --- 2. ChunkLoadError recovery: reload page on stale chunk 404 ---
+    const handleChunkError = (event: ErrorEvent) => {
+      const msg = event.message || '';
+      const error = event.error;
+      if (
+        msg.includes('ChunkLoadError') ||
+        msg.includes('Loading chunk') ||
+        msg.includes('Failed to fetch dynamically imported module') ||
+        (error && error.name === 'ChunkLoadError')
+      ) {
+        // Avoid infinite reload loop: only reload once per session
+        const key = 'dtps-chunk-reload';
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          console.log('[SW] ChunkLoadError detected — reloading page');
+          // Clear all caches before reload to get completely fresh content
+          const doReload = () => location.reload();
+          if ('caches' in window) {
+            caches.keys().then((names) => {
+              Promise.all(names.filter(n => n.startsWith('dtps-')).map(n => caches.delete(n)))
+                .then(doReload);
+            }).catch(doReload);
+          } else {
+            doReload();
+          }
+          return;
+        }
+      }
+    };
+    window.addEventListener('error', handleChunkError);
+
+    // Also catch unhandled promise rejections (dynamic import failures)
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const msg = reason?.message || String(reason || '');
+      if (
+        msg.includes('ChunkLoadError') ||
+        msg.includes('Loading chunk') ||
+        msg.includes('Failed to fetch dynamically imported module')
+      ) {
+        const key = 'dtps-chunk-reload';
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          console.log('[SW] Dynamic import failure — reloading page');
+          const doReload = () => location.reload();
+          if ('caches' in window) {
+            caches.keys().then((names) => {
+              Promise.all(names.filter(n => n.startsWith('dtps-')).map(n => caches.delete(n)))
+                .then(doReload);
+            }).catch(doReload);
+          } else {
+            doReload();
+          }
+        }
+      }
+    };
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    // --- 3. Register/update service worker ---
+    if (!('serviceWorker' in navigator)) return;
+
+    const registerSW = async () => {
+      try {
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/',
+        });
+
+        registrationRef.current = registration;
+
+        // Force immediate update check on every page load
+        registration.update().catch(() => {});
+
+        // Check for updates periodically (every 15 minutes)
+        const updateInterval = setInterval(() => {
+          registration.update().catch(() => {});
+        }, 15 * 60 * 1000);
+
+        // When a new SW is waiting, activate it immediately
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (!newWorker) return;
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // New version available - activate immediately
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+
+        // When new SW takes control, clear the chunk-reload flag
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          sessionStorage.removeItem('dtps-chunk-reload');
+        });
+
+        return () => clearInterval(updateInterval);
+      } catch (error) {
+        console.warn('[SW] Registration failed:', error);
+      }
+    };
+
+    // Register immediately — don't wait for load event
+    registerSW();
+
+    return () => {
+      window.removeEventListener('error', handleChunkError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
+  return null;
+}
+
+// Utility functions to communicate with the service worker
+export function clearApiCache() {
+  if (navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_API_CACHE' });
+  }
+}
+
+export function clearAllCaches() {
+  if (navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_ALL_CACHES' });
+  }
+}
+
+export function preCacheUrls(urls: string[]) {
+  if (navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'CACHE_URLS',
+      payload: { urls },
+    });
+  }
+}

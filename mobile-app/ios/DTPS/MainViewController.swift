@@ -12,6 +12,8 @@ class MainViewController: UIViewController {
     private var progressView: UIProgressView!
     private var offlineView: UIView!
     private var retryButton: UIButton!
+    private var loadingView: UIView!
+    private var loadingSpinner: UIActivityIndicatorView!
 
     private let appURL = "https://dtps.tech/user"
     private let allowedHosts = [
@@ -26,6 +28,10 @@ class MainViewController: UIViewController {
     private var pendingDeepLink: URL?
     private var fileUploadCompletionHandler: (([URL]?) -> Void)?
     private var hasStartedLoading = false
+    private var hasFinishedFirstLoad = false
+    private var loadTimeoutTimer: Timer?
+    /// Maximum time (seconds) to wait for the initial page load before showing error UI
+    private let loadTimeoutSeconds: TimeInterval = 30
 
     // MARK: - Lifecycle
 
@@ -35,6 +41,7 @@ class MainViewController: UIViewController {
 
         setupWebView()
         setupProgressView()
+        setupLoadingView()
         setupOfflineView()
         setupNotificationObservers()
         loadAppURL()
@@ -49,6 +56,7 @@ class MainViewController: UIViewController {
 
     deinit {
         progressObservation?.invalidate()
+        loadTimeoutTimer?.invalidate()
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -127,7 +135,45 @@ class MainViewController: UIViewController {
         ])
     }
 
-    // MARK: - Offline View
+    // MARK: - Loading View (shown while WebView loads content)
+
+    private func setupLoadingView() {
+        loadingView = UIView()
+        loadingView.translatesAutoresizingMaskIntoConstraints = false
+        loadingView.backgroundColor = .white
+
+        loadingSpinner = UIActivityIndicatorView(style: .large)
+        loadingSpinner.translatesAutoresizingMaskIntoConstraints = false
+        loadingSpinner.color = UIColor(red: 59/255, green: 167/255, blue: 150/255, alpha: 1)
+        loadingSpinner.startAnimating()
+
+        let loadingLabel = UILabel()
+        loadingLabel.translatesAutoresizingMaskIntoConstraints = false
+        loadingLabel.text = "Loading DTPS..."
+        loadingLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        loadingLabel.textColor = .gray
+        loadingLabel.textAlignment = .center
+
+        let stack = UIStackView(arrangedSubviews: [loadingSpinner, loadingLabel])
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.spacing = 16
+        stack.alignment = .center
+
+        loadingView.addSubview(stack)
+        view.addSubview(loadingView)
+
+        NSLayoutConstraint.activate([
+            loadingView.topAnchor.constraint(equalTo: view.topAnchor),
+            loadingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            loadingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            loadingView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            stack.centerXAnchor.constraint(equalTo: loadingView.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: loadingView.centerYAnchor),
+        ])
+    }
+
+    // MARK: - Offline / Error View
 
     private func setupOfflineView() {
         offlineView = UIView()
@@ -149,9 +195,10 @@ class MainViewController: UIViewController {
         icon.heightAnchor.constraint(equalToConstant: 60).isActive = true
 
         let title = UILabel()
-        title.text = "No Internet Connection"
+        title.text = "Unable to Connect"
         title.font = .systemFont(ofSize: 18, weight: .semibold)
         title.textColor = .black
+        title.tag = 1001 // tag for updating text dynamically
 
         let subtitle = UILabel()
         subtitle.text = "Please check your connection and try again."
@@ -159,6 +206,7 @@ class MainViewController: UIViewController {
         subtitle.textColor = .gray
         subtitle.textAlignment = .center
         subtitle.numberOfLines = 0
+        subtitle.tag = 1002 // tag for updating text dynamically
 
         retryButton = UIButton(type: .system)
         retryButton.setTitle("Retry", for: .normal)
@@ -192,6 +240,23 @@ class MainViewController: UIViewController {
         ])
     }
 
+    /// Show the error view with a specific message
+    private func showErrorView(title: String = "Unable to Connect", subtitle: String = "Please check your connection and try again.", icon: String = "wifi.slash") {
+        if let titleLabel = offlineView.viewWithTag(1001) as? UILabel {
+            titleLabel.text = title
+        }
+        if let subtitleLabel = offlineView.viewWithTag(1002) as? UILabel {
+            subtitleLabel.text = subtitle
+        }
+        // Find the icon image view (first UIImageView in the stack)
+        if let stack = offlineView.subviews.first(where: { $0 is UIStackView }) as? UIStackView,
+           let iconView = stack.arrangedSubviews.first(where: { $0 is UIImageView }) as? UIImageView {
+            iconView.image = UIImage(systemName: icon)
+        }
+        loadingView.isHidden = true
+        offlineView.isHidden = false
+    }
+
     // MARK: - Notification Observers
 
     private func setupNotificationObservers() {
@@ -211,14 +276,37 @@ class MainViewController: UIViewController {
     }
 
     private func loadAppURL() {
-        guard !hasStartedLoading, let url = URL(string: appURL) else { return }
+        guard let url = URL(string: appURL) else { return }
+
+        // Cancel any existing timeout timer
+        loadTimeoutTimer?.invalidate()
+
+        // Reset state for fresh load attempt
         hasStartedLoading = true
+        hasFinishedFirstLoad = false
+
+        // Show the loading indicator (behind splash initially, visible after splash fades)
+        loadingView.isHidden = false
+        offlineView.isHidden = true
+
+        // Start loading
         webView.load(URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 30))
+
+        // Start a timeout timer — if page doesn't finish in time, show error UI
+        loadTimeoutTimer = Timer.scheduledTimer(withTimeInterval: loadTimeoutSeconds, repeats: false) { [weak self] _ in
+            guard let self = self, !self.hasFinishedFirstLoad else { return }
+            print("[DTPS] Load timeout after \(self.loadTimeoutSeconds)s — showing error")
+            self.webView.stopLoading()
+            self.showErrorView(
+                title: "Taking Too Long",
+                subtitle: "The page is taking too long to load. Please check your internet connection and try again.",
+                icon: "clock.arrow.circlepath"
+            )
+        }
     }
 
     @objc private func retryTapped() {
         offlineView.isHidden = true
-        hasStartedLoading = false
         loadAppURL()
     }
 
@@ -273,13 +361,31 @@ class MainViewController: UIViewController {
 extension MainViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        // Page started receiving data — hide the offline view but keep loading view
+        // until didFinish fires
         offlineView.isHidden = true
-        NotificationCenter.default.post(name: NSNotification.Name("DTPSWebPageLoaded"), object: nil)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        // Page fully loaded — cancel timeout, hide all overlays
+        loadTimeoutTimer?.invalidate()
+        hasFinishedFirstLoad = true
         offlineView.isHidden = true
+        loadingView.isHidden = true
+
         injectNativeCSS()
+
+        // If the user was redirected to the staff signin page (no session),
+        // redirect them to the client signin page instead.
+        if let currentURL = webView.url,
+           let host = currentURL.host?.lowercased(),
+           host.contains("dtps.tech"),
+           currentURL.path.hasPrefix("/auth/signin") {
+            if let clientSignIn = URL(string: "https://dtps.tech/client-auth/signin") {
+                webView.load(URLRequest(url: clientSignIn))
+                return
+            }
+        }
 
         // Signal splash overlay that the page is ready
         NotificationCenter.default.post(name: NSNotification.Name("DTPSWebPageLoaded"), object: nil)
@@ -405,13 +511,70 @@ extension MainViewController: WKNavigationDelegate {
     }
 
     private func handleLoadError(_ error: Error) {
-        let code = (error as NSError).code
-        if code == NSURLErrorNotConnectedToInternet ||
-           code == NSURLErrorNetworkConnectionLost ||
-           code == NSURLErrorTimedOut {
-            offlineView.isHidden = false
+        loadTimeoutTimer?.invalidate()
+        let nsError = error as NSError
+
+        // Ignore cancellations (e.g., user tapped a link before page finished, or frame cancelled)
+        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
+
+        print("[DTPS] Load error (\(nsError.code)): \(error.localizedDescription)")
+
+        switch nsError.code {
+        case NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost:
+            showErrorView(
+                title: "No Internet Connection",
+                subtitle: "Please check your Wi-Fi or cellular data and try again.",
+                icon: "wifi.slash"
+            )
+        case NSURLErrorTimedOut:
+            showErrorView(
+                title: "Connection Timed Out",
+                subtitle: "The server took too long to respond. Please try again.",
+                icon: "clock.arrow.circlepath"
+            )
+        case NSURLErrorCannotFindHost, NSURLErrorDNSLookupFailed:
+            showErrorView(
+                title: "Server Not Found",
+                subtitle: "Could not reach the server. Please check your connection and try again.",
+                icon: "exclamationmark.icloud"
+            )
+        case NSURLErrorSecureConnectionFailed, NSURLErrorServerCertificateUntrusted,
+             NSURLErrorServerCertificateHasBadDate, NSURLErrorServerCertificateNotYetValid,
+             NSURLErrorServerCertificateHasUnknownRoot:
+            showErrorView(
+                title: "Secure Connection Failed",
+                subtitle: "Could not establish a secure connection to the server.",
+                icon: "lock.slash"
+            )
+        default:
+            showErrorView(
+                title: "Something Went Wrong",
+                subtitle: "An unexpected error occurred. Please try again.",
+                icon: "exclamationmark.triangle"
+            )
         }
-        print("[DTPS] Load error: \(error.localizedDescription)")
+    }
+
+    /// Handle HTTP errors (e.g. 5xx server errors) via a navigation response policy check
+    func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationResponse: WKNavigationResponse,
+        decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
+    ) {
+        if let httpResponse = navigationResponse.response as? HTTPURLResponse {
+            // If the server returns a 5xx error on the initial load, show error UI
+            if httpResponse.statusCode >= 500 && !hasFinishedFirstLoad {
+                print("[DTPS] Server error \(httpResponse.statusCode) during initial load")
+                decisionHandler(.cancel)
+                showErrorView(
+                    title: "Server Error",
+                    subtitle: "The server is temporarily unavailable. Please try again in a moment.",
+                    icon: "exclamationmark.icloud"
+                )
+                return
+            }
+        }
+        decisionHandler(.allow)
     }
 
     func webView(

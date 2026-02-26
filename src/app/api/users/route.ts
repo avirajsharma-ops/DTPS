@@ -10,12 +10,14 @@ import { withCache, clearCacheByTag } from '@/lib/api/utils';
 // GET /api/users - Get users (for dietitians to see clients, admins to see all)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Run auth + DB connection in PARALLEL
+    const [session] = await Promise.all([
+      getServerSession(authOptions),
+      connectDB()
+    ]);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    await connectDB();
 
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');

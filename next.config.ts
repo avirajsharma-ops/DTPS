@@ -61,7 +61,19 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-label',
       '@radix-ui/react-progress',
       '@radix-ui/react-switch',
-    ]
+      'firebase',
+      'firebase/app',
+      'firebase/messaging',
+      'emoji-picker-react',
+      'html2canvas',
+      'jspdf',
+      'sonner',
+    ],
+    // Client-side router cache — keep prefetched pages alive longer
+    staleTimes: {
+      dynamic: 30,  // Cache dynamic pages for 30s on client router
+      static: 300,  // Cache static pages for 5min on client router
+    },
   } as any,
 
   // Webpack optimizations for better build performance
@@ -92,7 +104,8 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         headers: noCacheHeaders,
       },
-      // Disable caching for all authenticated app pages (staff + clients)
+      // Pages: no caching — prevents stale HTML from being served after deployments
+      // This is critical for WebViews (Android app) which can aggressively cache HTML
       {
         source: '/(admin|dashboard|dietician|health-counselor|messages|appointments|clients|recipes|meal-plans|meal-plan-templates|billing|subscriptions|analytics|profile|settings|revenue-report|user)/:path*',
         headers: noCacheHeaders,
@@ -110,10 +123,18 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=86400' },
         ],
       },
+      // Service worker must not be cached long to allow updates
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
+      },
       {
         source: '/:path*',
         headers: [
-          { key: 'Content-Security-Policy', value: 'frame-ancestors *' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors *; upgrade-insecure-requests" },
         ],
       },
     ];
