@@ -10,6 +10,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { UserRole, UserStatus } from "@/types";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { getClientId, getDietitianId, getHealthCounselorId } from "@/lib/utils";
+import { validateEmail } from "@/lib/validations/auth";
 
 interface Client {
   _id: string;
@@ -140,6 +141,13 @@ export default function AdminClientsPage() {
   }
 
   async function handleSave() {
+    // Validate email first
+    const emailValidation = validateEmail(form.email);
+    if (!emailValidation.isValid) {
+      setError(emailValidation.error || 'Invalid email');
+      return;
+    }
+    
     if (!form.email || !form.firstName || !form.lastName) {
       setError("Please fill required fields: email, first name, last name");
       return;
@@ -419,8 +427,17 @@ export default function AdminClientsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="text-sm text-gray-600">Email</label>
-              <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+              <label className="text-sm text-gray-600">Email <span className="text-red-500">*</span></label>
+              <Input 
+                type="email" 
+                value={form.email} 
+                onChange={e => {
+                  setForm(f => ({ ...f, email: e.target.value }));
+                  // Clear error when user starts typing
+                  if (error && error.includes('email')) setError(null);
+                }} 
+                placeholder="client@example.com"
+              />
             </div>
             {!editing && (
               <div className="col-span-2">

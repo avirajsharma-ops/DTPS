@@ -27,6 +27,7 @@ import { BasicInfoForm } from '@/components/clients/BasicInfoForm';
 import { LifestyleForm } from '@/components/clients/LifestyleForm';
 import { MedicalForm } from '@/components/clients/MedicalForm';
 import { RecallForm, RecallEntry } from '@/components/clients/RecallForm';
+import { validateEmail } from '@/lib/validations/auth';
 
 export default function NewClientPage() {
   const { data: session } = useSession();
@@ -221,6 +222,13 @@ export default function NewClientPage() {
     
     if (!firstName || !lastName || !email) {
       setError('Please fill in all required fields');
+      return;
+    }
+
+    // Validate email format
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      setError(emailValidation.error || 'Please enter a valid email address');
       return;
     }
 

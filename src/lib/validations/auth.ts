@@ -1,11 +1,50 @@
 import { z } from 'zod';
 import { UserRole } from '@/types';
 
+// Email validation regex that ensures:
+// 1. Local part contains at least one letter (not just numbers)
+// 2. Has proper format with @ symbol
+// 3. Domain has at least one dot
+const EMAIL_REGEX = /^(?=.*[a-zA-Z])[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+// Helper function to validate email - exported for use in other files
+export const validateEmail = (email: string): { isValid: boolean; error?: string } => {
+  if (!email || email.trim() === '') {
+    return { isValid: false, error: 'Email is required' };
+  }
+  
+  // Check for basic email format
+  if (!email.includes('@')) {
+    return { isValid: false, error: 'Please enter a valid email address' };
+  }
+  
+  // Check if local part is only numbers
+  const localPart = email.split('@')[0];
+  if (/^\d+$/.test(localPart)) {
+    return { isValid: false, error: 'Email cannot contain only numbers before @' };
+  }
+  
+  // Check full email format with regex
+  if (!EMAIL_REGEX.test(email)) {
+    return { isValid: false, error: 'Please enter a valid email address (e.g., name@example.com)' };
+  }
+  
+  return { isValid: true };
+};
+
 export const signInSchema = z.object({
   email: z
     .string()
     .min(1, 'Email is required')
-    .email('Invalid email address'),
+    .email('Invalid email address')
+    .refine((email) => {
+      // Check if local part has at least one letter
+      const localPart = email.split('@')[0];
+      return /[a-zA-Z]/.test(localPart);
+    }, { message: 'Email must contain letters, not just numbers' })
+    .refine((email) => EMAIL_REGEX.test(email), {
+      message: 'Please enter a valid email address (e.g., name@example.com)'
+    }),
   password: z
     .string()
     .min(1, 'Password is required')
@@ -16,7 +55,15 @@ export const signUpSchema = z.object({
   email: z
     .string()
     .min(1, 'Email is required')
-    .email('Invalid email address'),
+    .email('Invalid email address')
+    .refine((email) => {
+      // Check if local part has at least one letter
+      const localPart = email.split('@')[0];
+      return /[a-zA-Z]/.test(localPart);
+    }, { message: 'Email must contain letters, not just numbers' })
+    .refine((email) => EMAIL_REGEX.test(email), {
+      message: 'Please enter a valid email address (e.g., name@example.com)'
+    }),
   password: z
     .string()
     .min(6, 'Password must be at least 6 characters')

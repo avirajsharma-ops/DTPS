@@ -98,7 +98,7 @@ export const MEAL_TYPES: Record<MealTypeKey, MealTypeConfig> = {
   },
   PAST_DINNER: {
     key: 'PAST_DINNER',
-    label: 'Past Dinner',
+    label: 'Post Dinner',
     time24h: '21:00',
     time12h: '09:00 PM',
     sortOrder: 8,
@@ -281,8 +281,9 @@ export function normalizeMealType(input: string | undefined | null): MealTypeKey
     'SUPPER': 'DINNER',
     'NIGHT': 'DINNER',
     
-    // Past Dinner / Bedtime variations
+    // Post Dinner / Bedtime variations
     'PASTDINNER': 'PAST_DINNER',
+    'PAST_DINNER_LABEL': 'PAST_DINNER',
     'POST_DINNER': 'PAST_DINNER',
     'POSTDINNER': 'PAST_DINNER',
     'BEDTIME': 'PAST_DINNER',

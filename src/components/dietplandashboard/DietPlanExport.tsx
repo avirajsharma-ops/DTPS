@@ -59,17 +59,27 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     }
   };
 
-  // Helper function to get meal time — prefer canonical IST time from mealConfig
+  // Helper function to get meal time — prefer actual stored time from plan data
+  // This ensures custom meal times and bulk-edited times are reflected in exports
   const getMealTime = (mealType: string): string => {
-    const normalizedKey = normalizeMealType(mealType);
-    if (normalizedKey && MEAL_TYPES[normalizedKey]) {
-      return MEAL_TYPES[normalizedKey].time12h;
-    }
-    // Fallback: try stored time from plan data
+    // First try stored time from plan data (reflects bulk time edits and custom meals)
     for (const day of weekPlan) {
       if (day.meals[mealType]?.time) {
         return day.meals[mealType].time;
       }
+      // Also try normalized key form
+      const key = normalizeMealType(mealType);
+      if (key) {
+        const label = MEAL_TYPES[key]?.label;
+        if (label && label !== mealType && day.meals[label]?.time) {
+          return day.meals[label].time;
+        }
+      }
+    }
+    // Fallback to canonical IST time from mealConfig
+    const normalizedKey = normalizeMealType(mealType);
+    if (normalizedKey && MEAL_TYPES[normalizedKey]) {
+      return MEAL_TYPES[normalizedKey].time12h;
     }
     return '12:00 PM';
   };
@@ -135,13 +145,20 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     });
     
     return Array.from(allMealTypes).sort((a, b) => {
-      const orderA = getCanonicalSortOrder(a);
-      const orderB = getCanonicalSortOrder(b);
-      if (orderA !== orderB) return orderA - orderB;
-      // Same order (both custom) — sort by time
       const timeA = getMealTime(a);
       const timeB = getMealTime(b);
-      return getTimeNumericValue(timeA) - getTimeNumericValue(timeB);
+      const timeValueA = getTimeNumericValue(timeA);
+      const timeValueB = getTimeNumericValue(timeB);
+      
+      // Sort purely by time
+      if (timeValueA !== timeValueB) {
+        return timeValueA - timeValueB;
+      }
+      
+      // If same time, canonical types come before custom types
+      const orderA = getCanonicalSortOrder(a);
+      const orderB = getCanonicalSortOrder(b);
+      return orderA - orderB;
     });
   };
 

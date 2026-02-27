@@ -1,0 +1,31 @@
+'use client';
+
+import { ReactNode } from 'react';
+import SessionProvider from '@/components/providers/SessionProvider';
+import { ClientAppLayout } from '@/components/layout/ClientAppLayout';
+import { Toaster } from '@/components/ui/sonner';
+import PushNotificationProvider from '@/components/providers/PushNotificationProvider';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import ServiceWorkerProvider from '@/components/providers/ServiceWorkerProvider';
+import GlobalFetchInterceptor from '@/components/providers/GlobalFetchInterceptor';
+
+interface ProvidersProps {
+    children: ReactNode;
+}
+
+export function Providers({ children }: ProvidersProps) {
+    return (
+        <SessionProvider>
+            <ServiceWorkerProvider />
+            <GlobalFetchInterceptor />
+            <ThemeProvider>
+                <PushNotificationProvider autoRegister={true}>
+                    <ClientAppLayout>
+                        {children}
+                    </ClientAppLayout>
+                </PushNotificationProvider>
+                <Toaster />
+            </ThemeProvider>
+        </SessionProvider>
+    );
+}

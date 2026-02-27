@@ -31,6 +31,7 @@ interface MealItem {
   portion: string;
   calories: number;
   alternatives?: { name: string; portion: string; calories: number }[];
+  isAlternative?: boolean; // Flag for alternative food items
   recipe?: {
     ingredients: string[];
     instructions: string[];
@@ -69,7 +70,7 @@ interface MealItem {
 
 interface Meal {
   id: string;
-  type: 'breakfast' | 'morningSnack' | 'lunch' | 'afternoonSnack' | 'dinner' | 'eveningSnack';
+  type: string; // Can be default types or custom meal types
   time: string;
   totalCalories: number;
   items: MealItem[];
@@ -151,7 +152,7 @@ interface FoodItemSelectorModalData {
 }
 
 // Default meal slots with fixed times - 6 meal types
-const DEFAULT_MEAL_SLOTS: { type: Meal['type']; time: string; label: string }[] = [
+const DEFAULT_MEAL_SLOTS: { type: string; time: string; label: string }[] = [
   { type: 'breakfast', time: '7:00 AM', label: 'Breakfast' },
   { type: 'morningSnack', time: '10:00 AM', label: 'Mid Morning' },
   { type: 'lunch', time: '12:30 PM', label: 'Lunch' },
@@ -378,7 +379,18 @@ export default function UserPlanPage() {
     if (mealPlanCache.current.has(dateKey)) return;
 
     try {
-      const response = await fetch(`/api/client/meal-plan?date=${dateKey}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout for prefetch
+
+      const response = await fetch(`/api/client/meal-plan?date=${dateKey}`, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         const data = await response.json();
         const plan: DayPlan = data.success && data.hasPlan
@@ -398,7 +410,10 @@ export default function UserPlanPage() {
         mealPlanCache.current.set(dateKey, plan);
       }
     } catch (error) {
-      // Silently fail for pre-fetch
+      // Silently fail for pre-fetch - these are background requests
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.debug(`Prefetch failed for ${dateKey}:`, error.message);
+      }
     }
   };
 
@@ -420,7 +435,18 @@ export default function UserPlanPage() {
     }
 
     try {
-      const response = await fetch(`/api/client/meal-plan?date=${dateKey}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await fetch(`/api/client/meal-plan?date=${dateKey}`, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         const data = await response.json();
 
@@ -449,6 +475,9 @@ export default function UserPlanPage() {
         mealPlanCache.current.set(dateKey, plan);
         setDayPlan(plan);
       } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error(`API Error: ${response.status}`, errorData);
+        
         const noplan: DayPlan = {
           date: date,
           meals: [],
@@ -461,6 +490,18 @@ export default function UserPlanPage() {
       }
     } catch (error) {
       console.error('Error fetching meal plan:', error);
+      
+      // More detailed error logging
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          console.error('Request timeout while fetching meal plan');
+        } else if (error.message.includes('Failed to fetch')) {
+          console.error('Network error - failed to reach API server');
+        } else {
+          console.error('Fetch error:', error.message);
+        }
+      }
+
       setDayPlan({
         date: date,
         meals: [],
@@ -610,6 +651,7 @@ export default function UserPlanPage() {
   };
 
   const getMealLabel = (type: string) => {
+    // Check default meal types first
     switch (type) {
       case 'breakfast': return 'Breakfast';
       case 'morningSnack': return 'Mid Morning';
@@ -617,7 +659,15 @@ export default function UserPlanPage() {
       case 'afternoonSnack': return 'Evening Snack';
       case 'dinner': return 'Dinner';
       case 'eveningSnack': return 'Bedtime';
-      default: return type;
+      default: 
+        // For custom meal types, return the type as-is (it's already a display label)
+        // Or format camelCase to Title Case
+        if (type.includes(' ')) return type; // Already formatted
+        // Convert camelCase to Title Case
+        return type
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/^./, str => str.toUpperCase())
+          .trim();
     }
   };
 
@@ -626,31 +676,66 @@ export default function UserPlanPage() {
     return slot?.time || '';
   };
 
-  // Get all 6 meal slots - merge defaults with actual meals
+  // Get all meal slots - merge defaults with actual meals, including custom meals
   const getAllMealSlots = (): Meal[] => {
-    if (!dayPlan?.hasPlan) return [];
+    if (!dayPlan?.hasPlan) {
+      return [];
+    }
 
-    // Start with the 6 default meal slots
-    const slots: Meal[] = DEFAULT_MEAL_SLOTS.map(slot => {
-      const existingMeal = dayPlan.meals.find(m => m.type === slot.type);
-      if (existingMeal) {
-        return {
-          ...existingMeal,
-          time: existingMeal.time || slot.time
-        };
+    const slots: Meal[] = [];
+    const processedTypes = new Set<string>();
+
+    // First, add all actual meals from the day plan (including custom meals)
+    if (dayPlan.meals && dayPlan.meals.length > 0) {
+      dayPlan.meals.forEach(meal => {
+        // Include meal if it has items OR if it has a valid type (custom meal)
+        // This ensures custom meals appear even if they have food assigned
+        const hasItems = meal.items && meal.items.length > 0;
+        const isCustomMeal = meal.type && !DEFAULT_MEAL_SLOTS.some(s => s.type === meal.type);
+        
+        if (hasItems || isCustomMeal) {
+          // Find default slot time if this is a default meal type
+          const defaultSlot = DEFAULT_MEAL_SLOTS.find(s => s.type === meal.type);
+          slots.push({
+            ...meal,
+            time: meal.time || defaultSlot?.time || '12:00 PM'
+          });
+          processedTypes.add(meal.type);
+        }
+      });
+    }
+
+    // Add empty default slots for default types that don't have meals
+    DEFAULT_MEAL_SLOTS.forEach(slot => {
+      if (!processedTypes.has(slot.type)) {
+        slots.push({
+          id: `empty-${slot.type}`,
+          type: slot.type,
+          time: slot.time,
+          totalCalories: 0,
+          items: [],
+          isCompleted: false
+        });
+        processedTypes.add(slot.type);
       }
-      // Create empty meal slot for default types
-      return {
-        id: `empty-${slot.type}`,
-        type: slot.type,
-        time: slot.time,
-        totalCalories: 0,
-        items: [],
-        isCompleted: false
-      };
     });
 
-    return slots;
+    // Sort all slots by time (chronologically)
+    const parseTime = (timeStr: string): number => {
+      if (!timeStr) return 1200;
+      const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+      if (!match) return 1200;
+      let hours = parseInt(match[1], 10);
+      const minutes = parseInt(match[2], 10);
+      const period = match[3]?.toUpperCase();
+      
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+      
+      return hours * 100 + minutes;
+    };
+
+    return slots.sort((a, b) => parseTime(a.time) - parseTime(b.time));
   };
 
   const allMealSlots = getAllMealSlots();
@@ -771,6 +856,23 @@ export default function UserPlanPage() {
         </div>
       </div>
 
+      {/* Day Note from Dietitian - Below Calendar */}
+      {dayPlan?.dailyNote && !isChangingDate && (
+        <div className={`mx-4 mt-4 p-4 rounded-xl border ${isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'}`}>
+          <div className="flex items-start gap-2">
+            <span className="text-lg">📝</span>
+            <div>
+              <p className={`text-xs font-semibold mb-1 ${isDarkMode ? 'text-yellow-200' : 'text-yellow-700'}`}>Note from Dietitian</p>
+              <div className={`text-sm space-y-1 ${isDarkMode ? 'text-yellow-100' : 'text-yellow-800'}`}>
+                {formatNotesWithLineBreaks(dayPlan.dailyNote || '').map((line, idx) => (
+                  <p key={idx}>• {line}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-4 py-6 space-y-4">
         {/* Skeleton Loader when changing dates */}
         {isChangingDate ? (
@@ -882,7 +984,7 @@ export default function UserPlanPage() {
               {format(selectedDate, 'EEEE, MMMM d, yyyy')}
             </p>
             <p className={`mb-6 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-              You don't have a meal plan for this date. Get a personalized diet plan from our expert dietitians!
+              You don&apos;t have a meal plan for this date. Get a personalized diet plan from our expert dietitians!
             </p>
             <div className="flex flex-col gap-3">
               <Link
@@ -929,26 +1031,6 @@ export default function UserPlanPage() {
                   />
                 ))}
               </div>
-
-              {/* Daily Note from Dietitian */}
-              {dayPlan?.dailyNote && (
-                <div
-                  className={`mt-4 p-4 rounded-xl border ${isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'
-                    }`}
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">📝</span>
-                    <div>
-                      <p className={`text-xs font-semibold mb-1 ${isDarkMode ? 'text-yellow-200' : 'text-yellow-700'}`}>Note from Dietitian</p>
-                      <div className={`text-sm space-y-1 ${isDarkMode ? 'text-yellow-100' : 'text-yellow-800'}`}>
-                        {formatNotesWithLineBreaks(dayPlan.dailyNote || '').map((line, idx) => (
-                          <p key={idx}>• {line}</p>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Meals List - Show all 6 meal slots */}
@@ -1000,28 +1082,45 @@ export default function UserPlanPage() {
                   </div>
                 )}
 
-                {/* Meal Items - Show food if assigned, otherwise show empty message */}
+                {/* Meal Items - Stacked vertically, click to view recipe */}
                 {meal.items.length > 0 ? (
-                  <div className="mb-4 space-y-3">
-                    {meal.items.map((item) => (
-                      <div
+                  <div className="mb-4 space-y-2">
+                    {/* Main Food Items - Stacked vertically (excluding alternatives) */}
+                    {meal.items.filter(item => !item.isAlternative).map((item, itemIndex) => (
+                      <button
                         key={item.id}
-                        className={`p-3 rounded-xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}
+                        onClick={() => openRecipeModal(item)}
+                        className={`w-full p-4 rounded-xl text-left transition-all active:scale-[0.98] ${isDarkMode 
+                          ? 'bg-black/40 hover:bg-[#3AB1A0]/10 active:bg-[#3AB1A0]/20' 
+                          : 'bg-gray-50 hover:bg-[#3AB1A0]/10 active:bg-[#3AB1A0]/20'
+                        }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center flex-1 gap-3">
-                            <div className="w-2 h-2 rounded-full bg-[#3AB1A0]" />
-                            <div className="flex-1">
-                              <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{item.name}</span>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {/* Number indicator for multiple foods */}
+                            <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                              itemIndex === 0 
+                                ? 'bg-[#3AB1A0] text-white' 
+                                : 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
+                            }`}>
+                              {itemIndex + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`font-semibold truncate ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                                {item.name}
+                              </p>
+                              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {item.portion} • {item.calories} kcal
+                              </p>
                               {/* Tags */}
                               {item.tags && item.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-1">
-                                  {item.tags.map((tag, i) => (
+                                  {item.tags.slice(0, 2).map((tag, i) => (
                                     <span
                                       key={i}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#DB9C6E]/20 text-[#DB9C6E] rounded-full text-xs"
+                                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#DB9C6E]/20 text-[#DB9C6E] rounded text-[10px]"
                                     >
-                                      <Tag className="w-2.5 h-2.5" />
+                                      <Tag className="w-2 h-2" />
                                       {tag}
                                     </span>
                                   ))}
@@ -1029,30 +1128,72 @@ export default function UserPlanPage() {
                               )}
                             </div>
                           </div>
-                          <div className="text-right">
-                            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{item.portion}</span>
-                            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>({item.calories} kcal)</p>
+                          <div className="shrink-0 flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-[#3AB1A0]" />
+                            <ChevronRight className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                           </div>
                         </div>
-
-                        {/* Alternatives - Show inline */}
-                        {item.alternatives && item.alternatives.length > 0 && (
-                          <div className={`mt-2 pt-2 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                            <p className={`text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>🔄 Alternatives:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {item.alternatives.map((alt, altIndex) => (
-                                <span
-                                  key={altIndex}
-                                  className="inline-flex items-center gap-1 px-2 py-1 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-lg text-xs"
-                                >
-                                  {alt.name} ({alt.portion}) - {alt.calories} kcal
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      </button>
                     ))}
+
+                    {/* Alternatives Section - Show items marked as alternative AND nested alternatives */}
+                    {(meal.items.some(item => item.isAlternative) || meal.items.some(item => item.alternatives && item.alternatives.length > 0)) && (
+                      <div className={`mt-3 p-3 rounded-xl border-2 border-dashed ${isDarkMode ? 'border-orange-700/50 bg-orange-900/20' : 'border-orange-200 bg-orange-50/50'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-base">🔄</span>
+                          <p className={`text-xs font-semibold uppercase tracking-wide ${isDarkMode ? 'text-orange-300' : 'text-orange-600'}`}>
+                            Optional Alternatives
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          {/* Items marked as alternative food */}
+                          {meal.items.filter(item => item.isAlternative).map((item) => (
+                            <button
+                              key={item.id}
+                              onClick={() => openRecipeModal(item)}
+                              className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${isDarkMode ? 'bg-black/40 hover:bg-orange-900/30' : 'bg-white hover:bg-orange-50'}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 text-[10px] font-bold text-orange-700 bg-orange-200 rounded">ALT</span>
+                                <div className="text-left">
+                                  <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{item.name}</p>
+                                  <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    {item.portion}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold text-orange-600">{item.calories} kcal</p>
+                                <ChevronRight className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                              </div>
+                            </button>
+                          ))}
+                          {/* Nested alternatives from main items */}
+                          {meal.items.flatMap((item, itemIdx) => 
+                            (item.alternatives || []).map((alt, altIdx) => (
+                              <div
+                                key={`${itemIdx}-${altIdx}`}
+                                className={`flex items-center justify-between p-2 rounded-lg ${isDarkMode ? 'bg-black/40' : 'bg-white'}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-1.5 h-1.5 rounded-full bg-orange-400`} />
+                                  <div>
+                                    <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{alt.name}</p>
+                                    <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                      Instead of: {item.name}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm font-semibold text-orange-600">{alt.calories} kcal</p>
+                                  <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{alt.portion}</p>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className={`py-6 mb-4 text-center rounded-xl ${isDarkMode ? 'text-gray-400 bg-black/40' : 'text-gray-400 bg-gray-50'}`}>
@@ -1112,18 +1253,7 @@ export default function UserPlanPage() {
                       title="View recipe details"
                     >
                       <BookOpen className="w-4 h-4" />
-                      <span>View Recipe</span>
-                    </button>
-                  )}
-
-                  {/* View Alternatives */}
-                  {meal.items.some(item => item.alternatives && item.alternatives.length > 0) && (
-                    <button
-                      onClick={() => setAlternativesModal({ item: meal.items[0], isOpen: true })}
-                      className="py-2.5 px-4 border border-[#DB9C6E] rounded-xl text-sm font-medium text-[#DB9C6E] flex items-center gap-2 hover:bg-[#DB9C6E]/10 transition-colors"
-                    >
-                      <Tag className="w-4 h-4" />
-                      <span>Alt</span>
+                      <span>All Recipes</span>
                     </button>
                   )}
                 </div>

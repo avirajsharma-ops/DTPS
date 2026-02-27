@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExternalLink, RefreshCw, Search, Users, Plus } from 'lucide-react';
+import { validateEmail } from '@/lib/validations/auth';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -94,6 +95,7 @@ export default function HealthCounselorClientsPage() {
   // Create client dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [emailError, setEmailError] = useState('');
   const [createForm, setCreateForm] = useState({
     email: '',
     password: '',
@@ -187,6 +189,14 @@ export default function HealthCounselorClientsPage() {
   };
 
   const handleCreateClient = async () => {
+    // Validate email first
+    const emailValidation = validateEmail(createForm.email);
+    if (!emailValidation.isValid) {
+      setEmailError(emailValidation.error || 'Invalid email');
+      return;
+    }
+    setEmailError('');
+    
     if (!createForm.email || !createForm.firstName || !createForm.lastName || !createForm.password) {
       toast.error('Please fill required fields: email, first name, last name, and password');
       return;
@@ -566,7 +576,10 @@ export default function HealthCounselorClientsPage() {
       </div>
 
       {/* Create Client Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+      <Dialog open={createDialogOpen} onOpenChange={(open) => {
+        setCreateDialogOpen(open);
+        if (!open) setEmailError('');
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Create New Client</DialogTitle>
@@ -578,9 +591,17 @@ export default function HealthCounselorClientsPage() {
               <Input 
                 type="email" 
                 value={createForm.email} 
-                onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))} 
+                onChange={e => {
+                  setCreateForm(f => ({ ...f, email: e.target.value }));
+                  if (emailError) {
+                    const validation = validateEmail(e.target.value);
+                    setEmailError(validation.isValid ? '' : validation.error || '');
+                  }
+                }} 
                 placeholder="client@example.com"
+                className={emailError ? 'border-red-500' : ''}
               />
+              {emailError && <p className="text-sm text-red-500 mt-1">{emailError}</p>}
             </div>
             <div className="col-span-2">
               <label className="text-sm text-gray-600">Password <span className="text-red-500">*</span></label>

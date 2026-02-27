@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import SessionProvider from "@/components/providers/SessionProvider";
-import { ClientAppLayout } from "@/components/layout/ClientAppLayout";
-import { Toaster } from "@/components/ui/sonner";
-import PushNotificationProvider from "@/components/providers/PushNotificationProvider";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import GlobalFetchInterceptor from "@/components/providers/GlobalFetchInterceptor";
-import ServiceWorkerProvider from "@/components/providers/ServiceWorkerProvider";
+import { Providers } from "@/components/providers/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -80,18 +74,9 @@ export default function RootLayout({
         suppressHydrationWarning={true}
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider>
-          <ServiceWorkerProvider />
-          <GlobalFetchInterceptor />
-          <ThemeProvider>
-            <PushNotificationProvider autoRegister={true}>
-              <ClientAppLayout>
-                {children}
-              </ClientAppLayout>
-            </PushNotificationProvider>
-            <Toaster />
-          </ThemeProvider>
-        </SessionProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

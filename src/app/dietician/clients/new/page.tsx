@@ -23,6 +23,7 @@ import LifestyleForm from '@/components/clients/LifestyleForm';
 import MedicalForm from '@/components/clients/MedicalForm';
 import { RecallForm, type RecallEntry } from '@/components/clients/RecallForm';
 import { toast } from 'sonner';
+import { validateEmail } from '@/lib/validations/auth';
 
 export default function DietitianNewClientPage() {
   const { data: session } = useSession();
@@ -187,6 +188,13 @@ export default function DietitianNewClientPage() {
     
     if (!firstName || !lastName || !email) {
       toast.error('Please fill in all required fields (First Name, Last Name, Email)');
+      return;
+    }
+
+    // Validate email format
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      toast.error(emailValidation.error || 'Please enter a valid email address');
       return;
     }
 

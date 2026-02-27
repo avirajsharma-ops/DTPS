@@ -31,21 +31,21 @@ export function PushNotificationProvider({
     onNotification,
 }: PushNotificationProviderProps) {
     const { data: session, status } = useSession();
-    
+
     // Get user role
     const userRole = session?.user?.role?.toLowerCase() || '';
     const isClient = userRole === 'client';
     const isDietitianOrCounselor = userRole === 'dietitian' || userRole === 'health_counselor';
     const isAdmin = userRole.includes('admin');
-    
+
     // Track last notification to prevent duplicates
     const lastNotificationRef = useRef<{ id: string; timestamp: number } | null>(null);
-    
+
     // Helper to check if notification is duplicate
     const isDuplicateNotification = useCallback((title: string, body: string, data?: any): boolean => {
         const now = Date.now();
         const notificationId = `${title}-${body}-${JSON.stringify(data || {})}`;
-        
+
         // Check if same notification was received within last 2 seconds
         if (lastNotificationRef.current) {
             const timeDiff = now - lastNotificationRef.current.timestamp;
@@ -54,7 +54,7 @@ export function PushNotificationProvider({
                 return true;
             }
         }
-        
+
         // Update last notification
         lastNotificationRef.current = { id: notificationId, timestamp: now };
         return false;
@@ -63,7 +63,7 @@ export function PushNotificationProvider({
     // Handle foreground notification display with toast - ONLY for admin
     const handleForegroundNotification = useCallback((payload: any) => {
         console.log('[PushNotificationProvider] Foreground notification received:', payload);
-        
+
         // Skip toast for clients and dietitian/health counselor
         if (isClient || isDietitianOrCounselor) {
             console.log('[PushNotificationProvider] Skipping toast for non-admin user');
@@ -73,17 +73,17 @@ export function PushNotificationProvider({
             }
             return;
         }
-        
+
         // Extract notification data
         const title = payload.notification?.title || payload.data?.title || 'New Notification';
         const body = payload.notification?.body || payload.data?.body || payload.data?.message || '';
         const type = payload.data?.type || 'general';
-        
+
         // Check for duplicate notification
         if (isDuplicateNotification(title, body, payload.data)) {
             return;
         }
-        
+
         // Determine the icon/emoji based on notification type
         const getIcon = (notificationType: string) => {
             switch (notificationType) {
@@ -112,7 +112,7 @@ export function PushNotificationProvider({
 
         const icon = getIcon(type);
         console.log('[PushNotificationProvider] Showing notification banner:', { title, body, type, icon });
-        
+
         // Show toast notification with icon - ONLY for admin
         toast.success(`${icon} ${title}`, {
             description: body && body.length > 0 ? body : undefined,
@@ -129,13 +129,14 @@ export function PushNotificationProvider({
     const { isSupported, permission, registerToken } = usePushNotifications({
         autoRegister: false, // We'll handle it manually
         onNotification: handleForegroundNotification,
+        enabled: isAdmin,
     });
-    
+
     // Native app hook - handles FCM token registration for Android WebView
-    const { 
-        isNativeApp, 
-        fcmToken, 
-        tokenRegistered, 
+    const {
+        isNativeApp,
+        fcmToken,
+        tokenRegistered,
         requestNotificationPermission: requestNativePermission,
         isLoading: nativeLoading,
         onForegroundNotification: setNativeForegroundHandler
@@ -144,7 +145,7 @@ export function PushNotificationProvider({
     // Handle native app foreground notifications - NO toast for clients (user panel)
     const handleNativeForegroundNotification = useCallback((notification: ForegroundNotification) => {
         console.log('[PushNotificationProvider] Native foreground notification received:', JSON.stringify(notification));
-        
+
         // Skip toast for clients - they use native app notifications directly
         // Only log and call custom handler
         if (isClient) {
@@ -157,16 +158,16 @@ export function PushNotificationProvider({
             }
             return;
         }
-        
+
         const title = notification.title || 'New Notification';
         const body = notification.body || '';
         const type = notification.data?.type || 'general';
-        
+
         // Check for duplicate notification (uses the same deduplication logic)
         if (isDuplicateNotification(title, body, notification.data)) {
             return;
         }
-        
+
         // Determine the icon/emoji based on notification type
         const getNativeIcon = (notificationType: string) => {
             switch (notificationType) {
@@ -195,7 +196,7 @@ export function PushNotificationProvider({
 
         const icon = getNativeIcon(type);
         console.log('[PushNotificationProvider] Showing native notification banner:', { title, body, type, icon });
-        
+
         // Show toast notification with icon - only for non-clients
         toast.success(`${icon} ${title}`, {
             description: body && body.length > 0 ? body : undefined,
@@ -224,13 +225,13 @@ export function PushNotificationProvider({
         if (isNativeApp) {
             return;
         }
-        
+
         // Skip web push for dietitian and health counselor
         if (isDietitianOrCounselor) {
             console.log('[PushNotificationProvider] Skipping web push for dietitian/health counselor');
             return;
         }
-        
+
         // Only register if:
         // 1. Auto-register is enabled
         // 2. User is authenticated
@@ -247,7 +248,7 @@ export function PushNotificationProvider({
             registerToken();
         }
     }, [autoRegister, status, isSupported, permission, registerToken, isNativeApp, isDietitianOrCounselor, isAdmin]);
-    
+
     // Native app - log token registration status
     useEffect(() => {
         if (isNativeApp && !nativeLoading) {

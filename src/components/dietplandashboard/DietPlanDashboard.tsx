@@ -89,6 +89,7 @@ export type FoodOption = {
   fiber: string;
   recipeUuid?: string;  // UUID of the recipe if added from recipe database
   foods?: FoodItem[];   // Multiple foods array for stacking foods in same meal slot
+  isAlternative?: boolean; // Mark as alternative food
 };
 
 export type Meal = {
@@ -426,6 +427,27 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
           });
 
           const mealTimeMap = new Map(dedupedMealTypes.map((meal: MealTypeConfig) => [meal.name, meal.time]));
+          
+          // Collect all custom meal types from weekPlan that aren't in dedupedMealTypes
+          const customMealsFromWeekPlan: MealTypeConfig[] = [];
+          draft.weekPlan.forEach((day: DayPlan) => {
+            Object.entries(day.meals).forEach(([mealName, meal]) => {
+              if (!meal) return;
+              const mealKey = normalizeMealType(mealName);
+              const displayName = mealKey ? MEAL_TYPES[mealKey].label : mealName;
+              // If this meal type is not in dedupedMealTypes, it's a custom meal
+              if (!mealTimeMap.has(displayName) && !customMealsFromWeekPlan.some(m => m.name === displayName)) {
+                customMealsFromWeekPlan.push({
+                  name: displayName,
+                  time: normalizeTime(meal.time) || '12:00 PM'
+                });
+              }
+            });
+          });
+          
+          // Merge custom meals into dedupedMealTypes
+          const allMealTypes = [...dedupedMealTypes, ...customMealsFromWeekPlan];
+          
           const normalizedWeekPlan = draft.weekPlan.map((day: DayPlan) => {
             const meals: Record<string, Meal> = {};
             Object.keys(day.meals).forEach((mealName) => {
@@ -455,7 +477,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
           });
 
           setWeekPlan(normalizedWeekPlan);
-          setMealTypeConfigs(dedupedMealTypes);
+          setMealTypeConfigs(allMealTypes);
           setHasDraft(true);
           setLastSaved(draft.lastSaved ? new Date(draft.lastSaved) : null);
           
@@ -514,21 +536,46 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   }, []);
   // ============ END AUTO-SAVE FUNCTIONALITY ============
 
-  const handleAddMealType = (newMealType: string, position?: number) => {
-    if (newMealType && !mealTypes.includes(newMealType)) {
-      const newConfig: MealTypeConfig = { name: newMealType, time: '12:00 PM' };
-      if (position !== undefined) {
-        // Insert at specific position
-        setMealTypeConfigs(prev => {
-          const updated = [...prev];
-          updated.splice(position, 0, newConfig);
-          return updated;
-        });
-      } else {
-        // Add at the end
-        setMealTypeConfigs(prev => [...prev, newConfig]);
-      }
+  const handleAddMealType = (newMealType: string, position?: number, time?: string) => {
+    if (!newMealType) return;
+    
+    // Check if meal type already exists in config by checking the actual configs, not derived mealTypes
+    const alreadyExists = mealTypeConfigs.some(m => m.name === newMealType);
+    if (alreadyExists) return;
+    
+    const mealTime = time || '12:00 PM';
+    const newConfig: MealTypeConfig = { name: newMealType, time: mealTime };
+    
+    if (position !== undefined && position >= 0 && position <= mealTypeConfigs.length) {
+      // Insert at specific position
+      setMealTypeConfigs(prev => {
+        const updated = [...prev];
+        updated.splice(position, 0, newConfig);
+        return updated;
+      });
+    } else {
+      // Add at the end
+      setMealTypeConfigs(prev => [...prev, newConfig]);
     }
+  };
+
+  // Handle meal time updates from MealGridTable's bulk time editor
+  const handleUpdateMealTimes = (timesMap: { [mealType: string]: string }) => {
+    setMealTypeConfigs(prev => {
+      const updated = prev.map(config => {
+        if (timesMap[config.name]) {
+          return { ...config, time: timesMap[config.name] };
+        }
+        return config;
+      });
+      // Add any new custom meal types from the times map that aren't in configs yet
+      Object.entries(timesMap).forEach(([name, time]) => {
+        if (!updated.find(c => c.name === name)) {
+          updated.push({ name, time });
+        }
+      });
+      return updated;
+    });
   };
 
   const handleSavePlan = () => {
@@ -688,6 +735,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
           onAddMealType={readOnly ? undefined : handleAddMealType}
           onRemoveMealType={readOnly ? undefined : handleRemoveMealType}
           onRemoveDay={readOnly ? undefined : handleRemoveDay}
+          onUpdateMealTimes={readOnly ? undefined : handleUpdateMealTimes}
           onExport={canExport ? () => setExportDialogOpen(true) : undefined}
           readOnly={readOnly}
           clientName={clientName}

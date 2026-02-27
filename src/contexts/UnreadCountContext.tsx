@@ -100,18 +100,39 @@ export function UnreadCountProvider({ children }: UnreadCountProviderProps) {
   // Manual refresh function
   const refreshCounts = useCallback(async () => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
       const response = await fetch('/api/client/unread-counts/refresh', {
-        method: 'POST'
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         const data = await response.json();
         setCounts({
           notifications: data.notifications || 0,
           messages: data.messages || 0
         });
+      } else {
+        console.warn('[UnreadCountProvider] API returned non-ok status:', response.status);
       }
     } catch (error) {
-      console.error('[UnreadCountProvider] Error refreshing counts:', error);
+      // More specific error handling
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          console.warn('[UnreadCountProvider] Refresh request timeout');
+        } else if (error.message.includes('Failed to fetch')) {
+          console.warn('[UnreadCountProvider] Network error during refresh');
+        } else {
+          console.error('[UnreadCountProvider] Error refreshing counts:', error.message);
+        }
+      }
     }
   }, []);
 

@@ -76,10 +76,18 @@ export function GlobalFetchInterceptor() {
         
         return response;
       } catch (error) {
-        // Retry on network errors
-        if (retriesLeft > 0 && error instanceof Error && !error.name.includes('Abort')) {
-          await sleep(RETRY_DELAY);
-          return fetchWithRetry(input, init, retriesLeft - 1);
+        // Retry on network errors (including "Failed to fetch")
+        if (retriesLeft > 0 && error instanceof Error) {
+          const isNetworkError = 
+            error.message.includes('Failed to fetch') ||
+            error.message.includes('NetworkError') ||
+            error.name === 'TypeError' ||
+            !error.name.includes('Abort');
+          
+          if (isNetworkError) {
+            await sleep(RETRY_DELAY);
+            return fetchWithRetry(input, init, retriesLeft - 1);
+          }
         }
         throw error;
       }

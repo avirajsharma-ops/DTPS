@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import Message from '@/lib/db/models/Message';
 import { Notification } from '@/lib/db/models';

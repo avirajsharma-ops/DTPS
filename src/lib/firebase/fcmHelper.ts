@@ -1,7 +1,9 @@
 'use client';
 
-import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
+// Firebase SDK imports are lazy-loaded to prevent crashes when env vars are missing.
+// The SDK calls .split() on authDomain at import time, which throws if undefined.
+type FirebaseApp = import('firebase/app').FirebaseApp;
+type Messaging = import('firebase/messaging').Messaging;
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -14,6 +16,13 @@ const firebaseConfig = {
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+/**
+ * Returns true when the minimum required Firebase config values are present.
+ */
+function isFirebaseConfigValid(): boolean {
+    return !!(firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId);
+}
+
 // VAPID key for web push
 const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
 
@@ -24,7 +33,7 @@ let currentToken: string | null = null;
 /**
  * Initialize Firebase app (client-side only)
  */
-export function initializeFirebaseApp(): FirebaseApp | null {
+export async function initializeFirebaseApp(): Promise<FirebaseApp | null> {
     if (typeof window === 'undefined') {
         return null;
     }
@@ -33,25 +42,32 @@ export function initializeFirebaseApp(): FirebaseApp | null {
         return firebaseApp;
     }
 
-    // Check if all required config values exist
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+    // Check if all required config values exist BEFORE importing the SDK
+    if (!isFirebaseConfigValid()) {
         console.warn('Firebase config incomplete. Push notifications will not work.');
         return null;
     }
 
-    if (getApps().length === 0) {
-        firebaseApp = initializeApp(firebaseConfig);
-    } else {
-        firebaseApp = getApps()[0];
-    }
+    try {
+        const { initializeApp, getApps } = await import('firebase/app');
 
-    return firebaseApp;
+        if (getApps().length === 0) {
+            firebaseApp = initializeApp(firebaseConfig);
+        } else {
+            firebaseApp = getApps()[0];
+        }
+
+        return firebaseApp;
+    } catch (error) {
+        console.error('Error initializing Firebase app:', error);
+        return null;
+    }
 }
 
 /**
  * Get Firebase Messaging instance
  */
-export function getFirebaseMessaging(): Messaging | null {
+export async function getFirebaseMessaging(): Promise<Messaging | null> {
     if (typeof window === 'undefined') {
         return null;
     }
@@ -60,7 +76,11 @@ export function getFirebaseMessaging(): Messaging | null {
         return messaging;
     }
 
-    const app = initializeFirebaseApp();
+    if (!isFirebaseConfigValid()) {
+        return null;
+    }
+
+    const app = await initializeFirebaseApp();
     if (!app) {
         return null;
     }
@@ -78,6 +98,7 @@ export function getFirebaseMessaging(): Messaging | null {
     }
 
     try {
+        const { getMessaging } = await import('firebase/messaging');
         messaging = getMessaging(app);
         return messaging;
     } catch (error) {
@@ -111,7 +132,7 @@ export async function getFCMToken(): Promise<string | null> {
         return currentToken;
     }
 
-    const messagingInstance = getFirebaseMessaging();
+    const messagingInstance = await getFirebaseMessaging();
     if (!messagingInstance) {
         console.warn('Firebase Messaging not available');
         return null;
@@ -132,6 +153,8 @@ export async function getFCMToken(): Promise<string | null> {
 
         // Wait for service worker registration
         const registration = await navigator.serviceWorker.ready;
+
+        const { getToken } = await import('firebase/messaging');
 
         // Get FCM token
         const token = await getToken(messagingInstance, {
@@ -229,14 +252,16 @@ export async function unregisterFCMToken(): Promise<boolean> {
 /**
  * Set up foreground message listener
  */
-export function onForegroundMessage(callback: (payload: any) => void): (() => void) | null {
-    const messagingInstance = getFirebaseMessaging();
+export async function onForegroundMessage(callback: (payload: any) => void): Promise<(() => void) | null> {
+    const messagingInstance = await getFirebaseMessaging();
     if (!messagingInstance) {
         console.warn('Firebase Messaging not available for foreground listener');
         return null;
     }
 
     console.log('[fcmHelper] Setting up foreground message listener');
+
+    const { onMessage } = await import('firebase/messaging');
 
     const unsubscribe = onMessage(messagingInstance, (payload) => {
         console.log('[fcmHelper] Foreground message received:', {

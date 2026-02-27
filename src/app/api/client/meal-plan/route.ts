@@ -16,6 +16,27 @@ import {
   type MealTypeKey 
 } from '@/lib/mealConfig';
 
+// Convert MealTypeKey (uppercase) to camelCase for frontend compatibility
+// Map between backend MealTypeKey (8 types) and frontend meal types (6 types)
+const mealTypeKeyToCamelCase: Record<MealTypeKey, string> = {
+  'EARLY_MORNING': 'breakfast',       // Early morning mapped to breakfast slot
+  'BREAKFAST': 'breakfast',
+  'MID_MORNING': 'morningSnack',
+  'LUNCH': 'lunch',
+  'MID_EVENING': 'afternoonSnack',
+  'EVENING': 'eveningSnack',
+  'DINNER': 'dinner',
+  'PAST_DINNER': 'eveningSnack'       // Post dinner mapped to evening snack
+};
+
+function convertMealTypeToCamelCase(mealTypeKey: MealTypeKey | string): string {
+  if (mealTypeKey in mealTypeKeyToCamelCase) {
+    return mealTypeKeyToCamelCase[mealTypeKey as MealTypeKey];
+  }
+  // Fallback: try to convert manually
+  return mealTypeKey.toLowerCase().replace(/_([a-z])/g, (match, char) => char.toUpperCase());
+}
+
 // GET /api/client/meal-plan - Get client's meal plan for a specific date
 export async function GET(request: NextRequest) {
   try {
@@ -77,10 +98,14 @@ export async function GET(request: NextRequest) {
       
       if (dayData?.meals) {
         const mealsObj = dayData.meals;
-        // Use canonical meal type keys with normalization for DB compatibility
+        // Get ALL meal keys - both canonical and custom meal types
+        // Don't filter by MEAL_TYPE_KEYS to include custom meals
         const mealKeys = Object.keys(mealsObj).filter(k => {
-          const normalized = normalizeMealType(k);
-          return MEAL_TYPE_KEYS.includes(normalized as MealTypeKey);
+          // Skip non-meal properties
+          if (['note', 'date', 'id', '_id'].includes(k)) return false;
+          const meal = mealsObj[k];
+          // Include if it's an object (could be a meal)
+          return meal && typeof meal === 'object' && !Array.isArray(meal);
         });
         
         if (mealKeys.length > 0) {
@@ -193,10 +218,10 @@ function getDefaultMealTime(mealType: string): string {
 }
 
 function getDefaultMealSlots(planId: string, dayIndex: number): any[] {
-  // Use canonical meal types from config
+  // Use canonical meal types from config, convert to camelCase for frontend
   return MEAL_TYPE_KEYS.map((key, index) => ({
     id: `${planId}-${dayIndex}-${index}`,
-    type: key,
+    type: convertMealTypeToCamelCase(key), // Convert to camelCase
     time: MEAL_TYPES[key].time12h,
     label: MEAL_TYPES[key].label,
     totalCalories: 0,
@@ -260,12 +285,17 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
     mealsData.forEach((meal: any, index: number) => {
       const mealType = meal.mealType || meal.type || getMealTypeByIndex(index);
       const normalizedType = normalizeMealType(mealType);
+      const isKnownMealType = MEAL_TYPE_KEYS.includes(normalizedType as MealTypeKey);
+      // For known types, convert to camelCase; for custom types, use original name
+      const camelCaseType = isKnownMealType 
+        ? convertMealTypeToCamelCase(normalizedType as MealTypeKey) 
+        : mealType; // Preserve custom meal type name as-is
       const items = extractFoodItems(meal, planId, dayIndex, index);
       const macros = calculateMealMacros(meal);
       
       results.push({
         id: `${planId}-${dayIndex}-${index}`,
-        type: normalizedType,
+        type: camelCaseType, // Use camelCase for known types, original for custom types
         originalType: mealType, // Keep original for debugging
         time: meal.time || getDefaultMealTime(mealType),
         totalCalories: macros.calories || calculateMealCalories(meal),
@@ -275,7 +305,7 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
         notes: meal.notes || meal.note || '',
         items: items,
         itemCount: items.length, // Explicit count for debugging
-        isCompleted: checkMealCompletion(completions, date, normalizedType),
+        isCompleted: checkMealCompletion(completions, date, normalizedType || mealType),
         isEmpty: items.length === 0
       });
     });
@@ -297,6 +327,10 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
       const hasFoodData = meal.foods || meal.items || meal.foodOptions;
       const normalizedType = normalizeMealType(mealType);
       const isKnownMealType = MEAL_TYPE_KEYS.includes(normalizedType as MealTypeKey);
+      // For known types, convert to camelCase; for custom types, use original name
+      const camelCaseType = isKnownMealType 
+        ? convertMealTypeToCamelCase(normalizedType as MealTypeKey) 
+        : mealType; // Preserve custom meal type name as-is
       
       if (hasFoodData || isKnownMealType) {
         const items = extractFoodItems(meal, planId, dayIndex, mealIndex);
@@ -304,7 +338,7 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
         
         results.push({
           id: `${planId}-${dayIndex}-${mealIndex}`,
-          type: normalizedType,
+          type: camelCaseType, // Use camelCase for known types, original for custom types
           originalType: mealType,
           time: meal.time || getDefaultMealTime(mealType),
           totalCalories: macros.calories || calculateMealCalories(meal),
@@ -314,7 +348,7 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
           notes: meal.notes || meal.note || '',
           items: items,
           itemCount: items.length,
-          isCompleted: checkMealCompletion(completions, date, normalizedType),
+          isCompleted: checkMealCompletion(completions, date, normalizedType || mealType),
           isEmpty: items.length === 0
         });
         mealIndex++;
@@ -377,6 +411,8 @@ function extractFoodItems(meal: any, planId: string, dayIndex: number, mealIndex
         fats: Number(alt.fats) || Number(alt.fat) || 0,
         fiber: Number(alt.fiber) || 0
       })) : [],
+      // Flag for alternative food type
+      isAlternative: food.isAlternative || false,
       // Recipe data - include if present
       recipe: food.recipe || null,
       recipeId: food.recipeId || food.recipe?._id || null,

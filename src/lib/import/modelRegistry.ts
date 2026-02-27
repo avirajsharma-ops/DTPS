@@ -47,6 +47,14 @@ import SubscriptionPlan from '@/lib/db/models/SubscriptionPlan';
 import SystemAlert from '@/lib/db/models/SystemAlert';
 import WatiContact from '@/lib/db/models/WatiContact';
 import WooCommerceClient from '@/lib/db/models/WooCommerceClient';
+// Additional missing models
+import Payment from '@/lib/db/models/Payment';
+import AdminAuditLog from '@/lib/db/models/AdminAuditLog';
+import AppointmentConfig from '@/lib/db/models/AppointmentConfig';
+import Counter from '@/lib/db/models/Counter';
+import GroupMessage from '@/lib/db/models/GroupMessage';
+import MessageGroup from '@/lib/db/models/MessageGroup';
+import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -476,6 +484,70 @@ class ModelRegistry {
       displayName: 'Notifications',
       description: 'User notifications',
       uniqueIdentifiers: []
+    });
+
+    // Additional models
+    this.registerModel({
+      name: 'Payment',
+      model: Payment,
+      importable: true,
+      displayName: 'Payments',
+      description: 'Payment transactions',
+      uniqueIdentifiers: ['razorpayPaymentId', 'razorpayOrderId']
+    });
+
+    this.registerModel({
+      name: 'AdminAuditLog',
+      model: AdminAuditLog,
+      importable: false,
+      displayName: 'Admin Audit Logs',
+      description: 'Admin activity audit logs',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'AppointmentConfig',
+      model: AppointmentConfig,
+      importable: true,
+      displayName: 'Appointment Config',
+      description: 'Appointment configuration settings',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'Counter',
+      model: Counter,
+      importable: false,
+      displayName: 'Counters',
+      description: 'Auto-increment counters',
+      uniqueIdentifiers: ['name']
+    });
+
+    this.registerModel({
+      name: 'GroupMessage',
+      model: GroupMessage,
+      importable: true,
+      displayName: 'Group Messages',
+      description: 'Group chat messages',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'MessageGroup',
+      model: MessageGroup,
+      importable: true,
+      displayName: 'Message Groups',
+      description: 'Message group definitions',
+      uniqueIdentifiers: []
+    });
+
+    this.registerModel({
+      name: 'UnifiedPayment',
+      model: UnifiedPayment,
+      importable: true,
+      displayName: 'Unified Payments',
+      description: 'Unified payment records',
+      uniqueIdentifiers: ['paymentId', 'orderId']
     });
 
     this.initialized = true;

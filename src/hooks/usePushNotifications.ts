@@ -17,6 +17,7 @@ function loadFCMHelper(): Promise<FCMHelper> {
 interface UsePushNotificationsOptions {
     autoRegister?: boolean;
     onNotification?: (payload: any) => void;
+    enabled?: boolean;
 }
 
 interface UsePushNotificationsReturn {
@@ -33,7 +34,7 @@ interface UsePushNotificationsReturn {
 export function usePushNotifications(
     options: UsePushNotificationsOptions = {}
 ): UsePushNotificationsReturn {
-    const { autoRegister = true, onNotification } = options;
+    const { autoRegister = true, onNotification, enabled = true } = options;
     const { data: session, status } = useSession();
 
     const [isSupported, setIsSupported] = useState(false);
@@ -47,6 +48,11 @@ export function usePushNotifications(
 
     // Check support on mount — lazy-loads Firebase check
     useEffect(() => {
+        if (!enabled) {
+            setIsSupported(false);
+            setPermission('unsupported');
+            return;
+        }
         // Quick check: skip entirely for native app WebViews
         const ua = navigator?.userAgent || '';
         if (ua.includes('NativeApp') || ua.includes('DTPSApp')) {
@@ -67,38 +73,48 @@ export function usePushNotifications(
             setIsSupported(false);
             setPermission('unsupported');
         });
-    }, []);
+    }, [enabled]);
 
     // Set up foreground message listener
     useEffect(() => {
-        if (!isSupported || !isRegistered) {
+        if (!enabled || !isSupported || !isRegistered) {
             return;
         }
 
         console.log('[usePushNotifications] Setting up foreground message listener...');
 
-        let cleanup: (() => void) | null = null;
-        loadFCMHelper().then(({ onForegroundMessage }) => {
-            cleanup = onForegroundMessage((payload) => {
+        let cancelled = false;
+        loadFCMHelper().then(async ({ onForegroundMessage }) => {
+            if (cancelled) return;
+            const unsub = await onForegroundMessage((payload) => {
                 console.log('[usePushNotifications] Foreground message received:', payload);
                 if (onNotification) {
                     console.log('[usePushNotifications] Calling custom notification handler');
                     onNotification(payload);
                 }
             });
-            unsubscribeRef.current = cleanup;
-        }).catch(() => {});
+            if (cancelled && unsub) {
+                unsub();
+            } else {
+                unsubscribeRef.current = unsub;
+            }
+        }).catch(() => { });
 
         return () => {
+            cancelled = true;
             if (unsubscribeRef.current) {
                 unsubscribeRef.current();
                 unsubscribeRef.current = null;
             }
         };
-    }, [isSupported, isRegistered, onNotification]);
+    }, [enabled, isSupported, isRegistered, onNotification]);
 
     // Request permission
     const requestPermission = useCallback(async (): Promise<boolean> => {
+        if (!enabled) {
+            setError('Push notifications are disabled');
+            return false;
+        }
         if (!isSupported) {
             setError('Push notifications are not supported in this browser');
             return false;
@@ -118,10 +134,14 @@ export function usePushNotifications(
         } finally {
             setIsLoading(false);
         }
-    }, [isSupported]);
+    }, [enabled, isSupported]);
 
     // Register token with backend
     const registerToken = useCallback(async (): Promise<boolean> => {
+        if (!enabled) {
+            setError('Push notifications are disabled');
+            return false;
+        }
         if (!isSupported) {
             setError('Push notifications are not supported');
             return false;
@@ -149,10 +169,14 @@ export function usePushNotifications(
         } finally {
             setIsLoading(false);
         }
-    }, [isSupported, permission, requestPermission]);
+    }, [enabled, isSupported, permission, requestPermission]);
 
     // Unregister token
     const unregisterToken = useCallback(async (): Promise<boolean> => {
+        if (!enabled) {
+            setError('Push notifications are disabled');
+            return false;
+        }
         setIsLoading(true);
         setError(null);
 
@@ -170,11 +194,12 @@ export function usePushNotifications(
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [enabled]);
 
     // Auto-register when user is authenticated
     useEffect(() => {
         if (
+            enabled &&
             autoRegister &&
             status === 'authenticated' &&
             session?.user?.id &&
@@ -184,7 +209,7 @@ export function usePushNotifications(
         ) {
             registerToken();
         }
-    }, [autoRegister, status, session, isSupported, permission, registerToken]);
+    }, [enabled, autoRegister, status, session, isSupported, permission, registerToken]);
 
     return {
         isSupported,

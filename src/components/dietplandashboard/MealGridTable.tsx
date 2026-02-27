@@ -31,9 +31,10 @@ type MealGridTableProps = {
   weekPlan: DayPlan[];
   mealTypes: string[];
   onUpdate?: (weekPlan: DayPlan[]) => void;
-  onAddMealType?: (mealType: string, position?: number) => void;
+  onAddMealType?: (mealType: string, position?: number, time?: string) => void;
   onRemoveMealType?: (mealType: string) => void;
   onRemoveDay?: (dayIndex: number) => void;
+  onUpdateMealTimes?: (timesMap: { [mealType: string]: string }) => void; // Callback to sync meal times to parent
   onExport?: () => void; // Callback to trigger export dialog
   readOnly?: boolean;
   clientDietaryRestrictions?: string;
@@ -81,12 +82,20 @@ function formatNotesDisplay(note: string): string[] {
   return note.split('.').map(s => s.trim()).filter(s => s.length > 0);
 }
 
-export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, onExport, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', clientName = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
+export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, onUpdateMealTimes, onExport, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', clientName = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
   
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copySource, setCopySource] = useState<{ dayIndex: number; mealType: string } | null>(null);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
+  const [copyFoodDialogOpen, setCopyFoodDialogOpen] = useState(false);
+  const [copyFoodSource, setCopyFoodSource] = useState<{ dayIndex: number; mealType: string; optionIndex: number; foodIndex: number } | null>(null);
+  const [selectedDaysForFoodCopy, setSelectedDaysForFoodCopy] = useState<number[]>([]);
+  const [selectedMealsForFoodCopy, setSelectedMealsForFoodCopy] = useState<string[]>([]);
+  const [copyOptionDialogOpen, setCopyOptionDialogOpen] = useState(false);
+  const [copyOptionSource, setCopyOptionSource] = useState<{ dayIndex: number; mealType: string; optionIndex: number; option: FoodOption } | null>(null);
+  const [selectedDaysForOptionCopy, setSelectedDaysForOptionCopy] = useState<number[]>([]);
+  const [selectedMealsForOptionCopy, setSelectedMealsForOptionCopy] = useState<string[]>([]);
   const [customMealTimes, setCustomMealTimes] = useState<{ [key: string]: string }>({});
   const [currentPage, setCurrentPage] = useState(0);
   const [addMealTypeDialogOpen, setAddMealTypeDialogOpen] = useState(false);
@@ -221,22 +230,27 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     }
   };
 
-  const addFoodOption = (dayIndex: number, mealType: string) => {
+  const addFoodOption = (dayIndex: number, mealType: string, isAlternative: boolean = false) => {
     if (readOnly || !onUpdate) return;
     const newWeekPlan = [...weekPlan];
     const meal = newWeekPlan[dayIndex].meals[mealType];
     if (meal) {
       meal.foodOptions.push({
         id: Math.random().toString(36).substr(2, 9),
-        label: '',
+        label: isAlternative ? 'Alternative' : '',
         food: '',
         unit: '',
         cal: '',
         carbs: '',
         fats: '',
         protein: '',
-        fiber: ''
+        fiber: '',
+        isAlternative: isAlternative
       });
+      // Show alternatives if adding an alternative
+      if (isAlternative) {
+        meal.showAlternatives = true;
+      }
       onUpdate(newWeekPlan);
     }
   };
@@ -300,7 +314,8 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
           name: targetMealType,
           foodOptions: sourceMeal.foodOptions.map(option => ({
             ...option,
-            id: Math.random().toString(36).substr(2, 9)
+            id: Math.random().toString(36).substr(2, 9),
+            foods: option.foods ? option.foods.map(f => ({ ...f, id: Math.random().toString(36).substr(2, 9) })) : undefined,
           }))
         };
       });
@@ -308,6 +323,215 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
 
     onUpdate(newWeekPlan);
     setCopyDialogOpen(false);
+  };
+
+  const handleCopyFood = () => {
+    if (!copyFoodSource || selectedDaysForFoodCopy.length === 0 || selectedMealsForFoodCopy.length === 0) return;
+    if (readOnly || !onUpdate) return;
+
+    const sourceMeal = weekPlan[copyFoodSource.dayIndex].meals[copyFoodSource.mealType];
+    if (!sourceMeal || !sourceMeal.foodOptions[copyFoodSource.optionIndex]) return;
+
+    const sourceOption = sourceMeal.foodOptions[copyFoodSource.optionIndex];
+    const sourceFoodItem = sourceOption.foods?.[copyFoodSource.foodIndex];
+    if (!sourceFoodItem) return;
+
+    const newWeekPlan = [...weekPlan];
+    const isAlternative = sourceOption.isAlternative || false;
+    
+    // Copy to all selected day and meal combinations
+    selectedDaysForFoodCopy.forEach(targetDayIndex => {
+      selectedMealsForFoodCopy.forEach(targetMealType => {
+        let targetMeal = newWeekPlan[targetDayIndex].meals[targetMealType];
+        
+        // Create meal if it doesn't exist
+        if (!targetMeal) {
+          targetMeal = {
+            id: Math.random().toString(36).substr(2, 9),
+            time: '',
+            name: targetMealType,
+            showAlternatives: true,
+            foodOptions: []
+          };
+          newWeekPlan[targetDayIndex].meals[targetMealType] = targetMeal;
+        }
+
+        let targetOption;
+        
+        if (isAlternative) {
+          // For alternative food: Find existing alternative option or create new one
+          const existingAltIndex = targetMeal.foodOptions.findIndex(opt => opt.isAlternative === true);
+          
+          if (existingAltIndex >= 0) {
+            targetOption = targetMeal.foodOptions[existingAltIndex];
+          } else {
+            // Create new alternative option
+            targetOption = {
+              id: Math.random().toString(36).substr(2, 9),
+              label: 'Alternative',
+              food: '',
+              unit: '',
+              cal: '',
+              carbs: '',
+              fats: '',
+              protein: '',
+              fiber: '',
+              isAlternative: true,
+              foods: []
+            };
+            targetMeal.foodOptions.push(targetOption);
+          }
+          // Show alternatives when adding alternative food
+          targetMeal.showAlternatives = true;
+        } else {
+          // For normal food: Find existing normal option (first non-alternative) or create new one
+          const existingNormalIndex = targetMeal.foodOptions.findIndex(opt => !opt.isAlternative);
+          
+          if (existingNormalIndex >= 0) {
+            targetOption = targetMeal.foodOptions[existingNormalIndex];
+          } else {
+            // Create new normal option at the beginning
+            targetOption = {
+              id: Math.random().toString(36).substr(2, 9),
+              label: '',
+              food: '',
+              unit: '',
+              cal: '',
+              carbs: '',
+              fats: '',
+              protein: '',
+              fiber: '',
+              isAlternative: false,
+              foods: []
+            };
+            // Insert at beginning (before alternatives)
+            targetMeal.foodOptions.unshift(targetOption);
+          }
+        }
+
+        if (!targetOption.foods) {
+          targetOption.foods = [];
+        }
+
+        // Add the copied food with new ID
+        targetOption.foods.push({
+          ...sourceFoodItem,
+          id: Math.random().toString(36).substr(2, 9)
+        });
+
+        // Update the option's combined values
+        targetOption.food = targetOption.foods.map(f => f.food).join(' + ');
+        targetOption.unit = targetOption.foods.length > 1 ? 'Multiple' : targetOption.foods[0]?.unit || '';
+        targetOption.cal = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
+        targetOption.carbs = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
+        targetOption.fats = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
+        targetOption.protein = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
+        targetOption.fiber = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
+      });
+    });
+
+    onUpdate(newWeekPlan);
+    setCopyFoodDialogOpen(false);
+  };
+
+  // Copy entire food option (card) with all its foods
+  const handleCopyOption = () => {
+    if (!copyOptionSource || selectedDaysForOptionCopy.length === 0 || selectedMealsForOptionCopy.length === 0) return;
+    if (readOnly || !onUpdate) return;
+
+    const sourceMeal = weekPlan[copyOptionSource.dayIndex].meals[copyOptionSource.mealType];
+    if (!sourceMeal || !sourceMeal.foodOptions[copyOptionSource.optionIndex]) return;
+
+    const sourceOption = sourceMeal.foodOptions[copyOptionSource.optionIndex];
+    const isAlternative = sourceOption.isAlternative || false;
+
+    const newWeekPlan = [...weekPlan];
+    
+    // Copy to all selected day and meal combinations
+    selectedDaysForOptionCopy.forEach(targetDayIndex => {
+      selectedMealsForOptionCopy.forEach(targetMealType => {
+        let targetMeal = newWeekPlan[targetDayIndex].meals[targetMealType];
+        
+        // Create meal if it doesn't exist
+        if (!targetMeal) {
+          targetMeal = {
+            id: Math.random().toString(36).substr(2, 9),
+            time: '',
+            name: targetMealType,
+            showAlternatives: true,
+            foodOptions: []
+          };
+          newWeekPlan[targetDayIndex].meals[targetMealType] = targetMeal;
+        }
+
+        // Deep copy the entire option with new IDs
+        const copiedOption: FoodOption = {
+          ...sourceOption,
+          id: Math.random().toString(36).substr(2, 9),
+          isAlternative: isAlternative, // Preserve alternative status
+          foods: sourceOption.foods ? sourceOption.foods.map(f => ({
+            ...f,
+            id: Math.random().toString(36).substr(2, 9)
+          })) : undefined
+        };
+
+        // Add to appropriate position based on alternative status
+        if (isAlternative) {
+          // Find existing alternative options and add after them
+          const lastAltIndex = targetMeal.foodOptions.map((opt, idx) => opt.isAlternative ? idx : -1).filter(i => i >= 0).pop();
+          if (lastAltIndex !== undefined) {
+            targetMeal.foodOptions.splice(lastAltIndex + 1, 0, copiedOption);
+          } else {
+            // No existing alternatives, add at the end
+            targetMeal.foodOptions.push(copiedOption);
+          }
+          targetMeal.showAlternatives = true;
+        } else {
+          // For normal food options, add at the beginning (before alternatives)
+          const firstAltIndex = targetMeal.foodOptions.findIndex(opt => opt.isAlternative);
+          if (firstAltIndex >= 0) {
+            targetMeal.foodOptions.splice(firstAltIndex, 0, copiedOption);
+          } else {
+            targetMeal.foodOptions.push(copiedOption);
+          }
+        }
+      });
+    });
+
+    onUpdate(newWeekPlan);
+    setCopyOptionDialogOpen(false);
+  };
+
+  const toggleDaySelectionForOptionCopy = (dayIndex: number) => {
+    setSelectedDaysForOptionCopy(prev =>
+      prev.includes(dayIndex)
+        ? prev.filter(d => d !== dayIndex)
+        : [...prev, dayIndex]
+    );
+  };
+
+  const toggleMealSelectionForOptionCopy = (mealType: string) => {
+    setSelectedMealsForOptionCopy(prev =>
+      prev.includes(mealType)
+        ? prev.filter(m => m !== mealType)
+        : [...prev, mealType]
+    );
+  };
+
+  const toggleDaySelectionForFoodCopy = (dayIndex: number) => {
+    setSelectedDaysForFoodCopy(prev =>
+      prev.includes(dayIndex)
+        ? prev.filter(d => d !== dayIndex)
+        : [...prev, dayIndex]
+    );
+  };
+
+  const toggleMealSelectionForFoodCopy = (mealType: string) => {
+    setSelectedMealsForFoodCopy(prev =>
+      prev.includes(mealType)
+        ? prev.filter(m => m !== mealType)
+        : [...prev, mealType]
+    );
   };
 
   const toggleDaySelection = (dayIndex: number) => {
@@ -335,10 +559,10 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   };
 
   const selectAllMeals = () => {
-    if (selectedMeals.length === mealTypes.length) {
+    if (selectedMeals.length === displayMealTypes.length) {
       setSelectedMeals([]);
     } else {
-      setSelectedMeals([...mealTypes]);
+      setSelectedMeals([...displayMealTypes]);
     }
   };
 
@@ -431,14 +655,26 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       }
       return customMealTimes[mt] || mealTimeSuggestions[mt] || '12:00 PM';
     };
+    
+    // Sort ALL meals by time, not by canonical type (matching displayMealTypes sorting)
     const sorted = [...mealTypes, name].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=> {
+      const timeA = getMealTime(a);
+      const timeB = getMealTime(b);
+      const timeValueA = getTimeNumericValue(timeA);
+      const timeValueB = getTimeNumericValue(timeB);
+      
+      // Sort by time first
+      if (timeValueA !== timeValueB) {
+        return timeValueA - timeValueB;
+      }
+      
+      // If same time, canonical types come before custom
       const orderA = getCanonicalSortOrder(a);
       const orderB = getCanonicalSortOrder(b);
-      if (orderA !== orderB) return orderA - orderB;
-      return getTimeNumericValue(getMealTime(a)) - getTimeNumericValue(getMealTime(b));
+      return orderA - orderB;
     });
     const position = sorted.indexOf(name);
-    onAddMealType(name, position);
+    onAddMealType(name, position, time);
 
     setAddMealTypeDialogOpen(false);
     setNewMealTypeName('');
@@ -521,36 +757,47 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     return undefined;
   };
 
-  // Get all unique meal types (default + custom) that have food, sorted by canonical order then time
-  // Deduplicates by normalizing both mealTypes prop and weekPlan meal keys to display labels
+  // Get all unique meal types (default + custom) sorted by time
+  // Includes all mealTypes from parent (via mealTypeConfigs) AND any custom meals in weekPlan
   const displayMealTypes = (() => {
     const allMealTypes = new Set<string>();
     
-    // Add all default meal types (already labels)
+    // Add all meal types from parent's mealTypeConfigs (via mealTypes prop)
+    // These are the tracked meal types that should always display
     mealTypes.forEach(mt => allMealTypes.add(toDisplayLabel(mt)));
     
-    // Add meal types from weekPlan that aren't already present (after normalization)
+    // Add any additional meal types from weekPlan that aren't in parent's config
+    // (for safety - in case meals exist that weren't properly added to config)
     weekPlan.forEach(day => {
       Object.keys(day.meals).forEach(mt => {
         const label = toDisplayLabel(mt);
         if (!allMealTypes.has(label)) {
           const meal = day.meals[mt];
-          if (meal?.foodOptions?.some(opt => opt.food?.trim())) {
+          // Include if it has food OR if it was explicitly created as a meal
+          if (meal?.foodOptions?.some(opt => opt.food?.trim()) || meal?.id) {
             allMealTypes.add(label);
           }
         }
       });
     });
     
-    // Sort by canonical sortOrder first, then by time for custom types
+    // Sort ALL meal types by time (chronologically, 24-hour), regardless of canonical or custom
+    // This ensures custom meals appear in their proper chronological position
     return Array.from(allMealTypes).sort((a, b) => {
-      const orderA = getCanonicalSortOrder(a);
-      const orderB = getCanonicalSortOrder(b);
-      if (orderA !== orderB) return orderA - orderB;
-      // Same order (both custom) — sort by time
       const timeA = getMealTypeTime(a);
       const timeB = getMealTypeTime(b);
-      return getTimeNumericValue(timeA) - getTimeNumericValue(timeB);
+      const timeValueA = getTimeNumericValue(timeA);
+      const timeValueB = getTimeNumericValue(timeB);
+      
+      // Sort purely by time
+      if (timeValueA !== timeValueB) {
+        return timeValueA - timeValueB;
+      }
+      
+      // If same time, canonical types come before custom types
+      const orderA = getCanonicalSortOrder(a);
+      const orderB = getCanonicalSortOrder(b);
+      return orderA - orderB;
     });
   })();
 
@@ -652,8 +899,10 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   // Bulk time editor functions
   const openBulkTimeEditor = () => {
     const timesMap: { [key: string]: string } = {};
-    mealTypes.forEach(mealType => {
-      timesMap[mealType] = customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00 PM';
+    // Include all display meal types (default + custom from weekPlan)
+    const allTypes = new Set([...mealTypes, ...displayMealTypes]);
+    allTypes.forEach(mealType => {
+      timesMap[mealType] = customMealTimes[mealType] || getMealTypeTime(mealType) || mealTimeSuggestions[mealType] || '12:00 PM';
     });
     setMealTimesForBulkEdit(timesMap);
     setBulkTimeEditorOpen(true);
@@ -673,11 +922,25 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
           };
         }
       });
+      // Also update meal types that exist in the bulk editor but not yet in this day
+      Object.keys(mealTimesForBulkEdit).forEach(mealType => {
+        if (newMeals[mealType] && !newMeals[mealType].time) {
+          newMeals[mealType] = {
+            ...newMeals[mealType],
+            time: mealTimesForBulkEdit[mealType]
+          };
+        }
+      });
       return { ...day, meals: newMeals };
     });
     
-    // Update customMealTimes for display
+    // Update customMealTimes for local display
     setCustomMealTimes(mealTimesForBulkEdit);
+    
+    // Propagate times to parent (for mealTypeConfigs / localStorage / save)
+    if (onUpdateMealTimes) {
+      onUpdateMealTimes(mealTimesForBulkEdit);
+    }
     
     // Trigger update
     onUpdate(newWeekPlan);
@@ -772,7 +1035,11 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       // Copy (duplicate) to target meal without removing from source
       // Compute insertion index relative to target meal
       let insertionIndex = getInsertionIndex(e, targetMeal);
-      const duplicate = { ...movedOption, id: Math.random().toString(36).substr(2, 9) };
+      const duplicate = {
+        ...movedOption,
+        id: Math.random().toString(36).substr(2, 9),
+        foods: movedOption.foods ? movedOption.foods.map(f => ({ ...f, id: Math.random().toString(36).substr(2, 9) })) : undefined,
+      };
       // If target has a single blank option, replace
       if (
         targetMeal.foodOptions.length === 1 &&
@@ -921,7 +1188,10 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                 <React.Fragment key={mealType}>
                   <th className="border-r border-b-2 border-gray-300 p-5 bg-slate-50 min-w-70">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs">{mealType}</div>
+                      <div>
+                        <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs">{mealType}</div>
+                        <div className="text-slate-500 font-normal text-[10px] mt-0.5">{getMealTypeTime(mealType)}</div>
+                      </div>
                       {!readOnly && onRemoveMealType && (
                         <Button
                           variant="ghost"
@@ -1099,13 +1369,20 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => addFoodOption(actualDayIndex, mealType)}
-                                  style={{ backgroundColor: '#00A63E', color: 'white', borderColor: '#00A63E' }}
-                                  className="h-9 px-3 hover:opacity-90 font-medium"
+                                  onClick={() => addFoodOption(actualDayIndex, mealType, false)}
+                                  className="h-9 px-2.5 bg-green-600 text-white border-green-600 hover:bg-green-700"
+                                  title="Add normal food option"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => addFoodOption(actualDayIndex, mealType, true)}
+                                  className="h-9 px-3 bg-orange-500 text-white border-orange-500 hover:bg-orange-600 font-medium"
                                   title="Add alternative food option"
                                 >
-                                  <Copy className="w-3.5 h-3.5 mr-1.5" />
-                                  <span className="text-xs">Alt</span>
+                                  <span className="text-xs">🔄 Alt</span>
                                 </Button>
                                 <Button
                                   variant="outline"
@@ -1123,13 +1400,44 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                               {meal.foodOptions.map((option, optionIndex) => (
                                 <div 
                                   key={option.id} 
-                                  className={`food-box border border-gray-300 rounded-md p-3.5 bg-slate-50/50 space-y-2.5 ${option.food ? 'cursor-move' : ''}`}
+                                  className={`food-box border rounded-md p-3.5 space-y-2.5 ${option.food ? 'cursor-move' : ''} ${option.isAlternative ? 'border-orange-300 bg-orange-50/50' : 'border-gray-300 bg-slate-50/50'}`}
                                   draggable={!!option.food}
                                   onDragStart={(e) => handleDragStart(e, actualDayIndex, mealType, optionIndex, !!option.food)}
                                   style={{ display: !meal.showAlternatives && optionIndex > 0 ? 'none' : 'block' }}
                                 >
-                                  <div className="flex items-center justify-end mb-2">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      {option.isAlternative ? (
+                                        <span className="px-2 py-0.5 text-xs font-semibold text-orange-700 bg-orange-200 rounded">
+                                          🔄 Alternative
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-200 rounded">
+                                          Main Food
+                                        </span>
+                                      )}
+                                    </div>
                                     <div className="flex space-x-1">
+                                      {/* Copy entire option button */}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setCopyOptionSource({
+                                            dayIndex: actualDayIndex,
+                                            mealType,
+                                            optionIndex,
+                                            option
+                                          });
+                                          setSelectedDaysForOptionCopy([]);
+                                          setSelectedMealsForOptionCopy([]);
+                                          setCopyOptionDialogOpen(true);
+                                        }}
+                                        className={`h-7 w-7 p-0 ${option.isAlternative ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50' : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'}`}
+                                        title={`Copy this ${option.isAlternative ? 'alternative' : 'main'} food option to other days/meals`}
+                                      >
+                                        <Copy className="w-4 h-4" />
+                                      </Button>
                                       <Button
                                         variant="ghost"
                                         size="sm"
@@ -1138,7 +1446,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                           setFoodDatabaseOpen(true);
                                         }}
                                         className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                        title="Add more foods to this meal"
+                                        title="Add more foods to this option"
                                       >
                                         <Plus className="w-4 h-4" />
                                       </Button>
@@ -1158,63 +1466,88 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                   {option.foods && option.foods.length > 0 ? (
                                     <div className="space-y-3">
                                       {option.foods.map((foodItem, foodIndex) => (
-                                        <div key={foodItem.id} className="bg-white border border-gray-300 rounded-lg p-3 space-y-2 shadow-sm">
-                                          {/* Food Name Row */}
-                                          <div className="flex items-center justify-between gap-2">
-                                            <Input
-                                              value={foodItem.food}
-                                              onChange={(e) => {
-                                                if (readOnly || !onUpdate) return;
-                                                const newWeekPlan = [...weekPlan];
-                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
-                                                  meal.foodOptions[optionIndex].foods![foodIndex].food = e.target.value;
-                                                  // Update combined food name
-                                                  meal.foodOptions[optionIndex].food = meal.foodOptions[optionIndex].foods!.map(f => f.food).join(' + ');
-                                                  onUpdate(newWeekPlan);
-                                                }
-                                              }}
-                                              placeholder="Food item"
-                                              className="h-9 text-sm bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium flex-1"
-                                            />
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => {
-                                                if (readOnly || !onUpdate) return;
-                                                const newWeekPlan = [...weekPlan];
-                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                if (meal?.foodOptions[optionIndex]?.foods) {
-                                                  meal.foodOptions[optionIndex].foods!.splice(foodIndex, 1);
-                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                  if (allFoods.length === 0) {
-                                                    // Clear all fields if no foods left
-                                                    meal.foodOptions[optionIndex].food = '';
-                                                    meal.foodOptions[optionIndex].unit = '';
-                                                    meal.foodOptions[optionIndex].cal = '';
-                                                    meal.foodOptions[optionIndex].carbs = '';
-                                                    meal.foodOptions[optionIndex].fats = '';
-                                                    meal.foodOptions[optionIndex].protein = '';
-                                                    meal.foodOptions[optionIndex].fiber = '';
-                                                    meal.foodOptions[optionIndex].foods = undefined;
-                                                  } else {
-                                                    // Recalculate totals
-                                                    meal.foodOptions[optionIndex].food = allFoods.map(f => f.food).join(' + ');
-                                                    meal.foodOptions[optionIndex].unit = allFoods.length > 1 ? 'Multiple' : allFoods[0]?.unit || '';
-                                                    meal.foodOptions[optionIndex].cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
-                                                    meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
-                                                    meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
-                                                    meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
-                                                    meal.foodOptions[optionIndex].fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
+                                        <div key={foodItem.id} className={`bg-white border rounded-lg p-3 space-y-2 shadow-sm ${option.isAlternative ? 'border-orange-300 bg-orange-50' : 'border-gray-300'}`}>
+                                          {/* Food Name Row with Badge */}
+                                          <div className="flex items-start justify-between gap-2">
+                                            <div className="flex-1 space-y-1">
+                                              <div className="flex items-center gap-2">
+                                                <Input
+                                                  value={foodItem.food}
+                                                  onChange={(e) => {
+                                                    if (readOnly || !onUpdate) return;
+                                                    const newWeekPlan = [...weekPlan];
+                                                    const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                    if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                      meal.foodOptions[optionIndex].foods![foodIndex].food = e.target.value;
+                                                      // Update combined food name
+                                                      meal.foodOptions[optionIndex].food = meal.foodOptions[optionIndex].foods!.map(f => f.food).join(' + ');
+                                                      onUpdate(newWeekPlan);
+                                                    }
+                                                  }}
+                                                  placeholder="Food item"
+                                                  className="h-9 text-sm bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium flex-1"
+                                                />
+                                                {option.isAlternative && (
+                                                  <span className="px-2.5 py-1 text-xs font-semibold text-orange-700 bg-orange-100 rounded-full whitespace-nowrap">
+                                                    Alternative
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="flex gap-1">
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                  setSelectedDaysForFoodCopy([]);
+                                                  setSelectedMealsForFoodCopy([]);
+                                                  setCopyFoodSource({ dayIndex: actualDayIndex, mealType, optionIndex, foodIndex });
+                                                  setCopyFoodDialogOpen(true);
+                                                }}
+                                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                title="Copy this food to other meals"
+                                              >
+                                                <Copy className="w-4 h-4" />
+                                              </Button>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                  if (readOnly || !onUpdate) return;
+                                                  const newWeekPlan = [...weekPlan];
+                                                  const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                  if (meal?.foodOptions[optionIndex]?.foods) {
+                                                    meal.foodOptions[optionIndex].foods!.splice(foodIndex, 1);
+                                                    const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                    if (allFoods.length === 0) {
+                                                      // Clear all fields if no foods left
+                                                      meal.foodOptions[optionIndex].food = '';
+                                                      meal.foodOptions[optionIndex].unit = '';
+                                                      meal.foodOptions[optionIndex].cal = '';
+                                                      meal.foodOptions[optionIndex].carbs = '';
+                                                      meal.foodOptions[optionIndex].fats = '';
+                                                      meal.foodOptions[optionIndex].protein = '';
+                                                      meal.foodOptions[optionIndex].fiber = '';
+                                                      meal.foodOptions[optionIndex].foods = undefined;
+                                                    } else {
+                                                      // Recalculate totals
+                                                      meal.foodOptions[optionIndex].food = allFoods.map(f => f.food).join(' + ');
+                                                      meal.foodOptions[optionIndex].unit = allFoods.length > 1 ? 'Multiple' : allFoods[0]?.unit || '';
+                                                      meal.foodOptions[optionIndex].cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
+                                                      meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
+                                                      meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
+                                                      meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
+                                                      meal.foodOptions[optionIndex].fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
+                                                    }
+                                                    onUpdate(newWeekPlan);
                                                   }
-                                                  onUpdate(newWeekPlan);
-                                                }
-                                              }}
-                                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                              title="Remove this food"
-                                            >
-                                              <Minus className="w-4 h-4" />
-                                            </Button>
+                                                }}
+                                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                title="Remove this food"
+                                              >
+                                                <Minus className="w-4 h-4" />
+                                              </Button>
+                                            </div>
                                           </div>
                                           
                                           {/* Unit and Calories Row */}
@@ -1570,11 +1903,11 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                   onClick={selectAllMeals}
                   className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
                 >
-                  {selectedMeals.length === mealTypes.length ? 'Deselect All' : 'Select All'}
+                  {selectedMeals.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
                 </Button>
               </div>
               <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
-                {mealTypes.map((mealType) => (
+                {displayMealTypes.map((mealType) => (
                   <div key={mealType} className="flex items-center space-x-2.5">
                     <Checkbox
                       id={`meal-${mealType}`}
@@ -1612,6 +1945,254 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               className="hover:opacity-90 shadow font-medium"
             >
               Copy to {selectedDays.length * selectedMeals.length} Meal{selectedDays.length * selectedMeals.length !== 1 ? 's' : ''}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Copy Food Dialog */}
+      <Dialog open={copyFoodDialogOpen} onOpenChange={setCopyFoodDialogOpen}>
+        <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-slate-900 font-semibold flex items-center gap-2">
+              <Copy className="w-5 h-5" />
+              Copy Food Item
+              {copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative && (
+                <span className="px-2 py-0.5 text-xs font-semibold text-orange-700 bg-orange-200 rounded">Alternative</span>
+              )}
+            </DialogTitle>
+            <DialogDescription className="text-slate-600">
+              {copyFoodSource && (
+                <>
+                  Copying: <strong>{weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.foods?.[copyFoodSource.foodIndex]?.food || 'Food item'}</strong>
+                  {weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative && (
+                    <span className="ml-2 text-orange-600 text-xs">(Will be copied as alternative)</span>
+                  )}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 py-4 overflow-y-auto flex-1 min-h-0">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-slate-900 font-semibold text-sm">Target Days</Label>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setSelectedDaysForFoodCopy(selectedDaysForFoodCopy.length === weekPlan.length ? [] : weekPlan.map((_, i) => i))}
+                  className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
+                >
+                  {selectedDaysForFoodCopy.length === weekPlan.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
+                {weekPlan.map((day, index) => (
+                  <div key={day.id} className="flex items-center space-x-2.5">
+                    <Checkbox
+                      id={`food-copy-day-${index}`}
+                      checked={selectedDaysForFoodCopy.includes(index)}
+                      onCheckedChange={() => toggleDaySelectionForFoodCopy(index)}
+                      className="border-gray-400"
+                    />
+                    <label
+                      htmlFor={`food-copy-day-${index}`}
+                      className="text-sm cursor-pointer text-slate-700 font-medium"
+                    >
+                      {day.day}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-slate-900 font-semibold text-sm">Target Meal Types</Label>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setSelectedMealsForFoodCopy(selectedMealsForFoodCopy.length === displayMealTypes.length ? [] : [...displayMealTypes])}
+                  className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
+                >
+                  {selectedMealsForFoodCopy.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
+                {displayMealTypes.map((mealType) => (
+                  <div key={mealType} className="flex items-center space-x-2.5">
+                    <Checkbox
+                      id={`food-copy-meal-${mealType}`}
+                      checked={selectedMealsForFoodCopy.includes(mealType)}
+                      onCheckedChange={() => toggleMealSelectionForFoodCopy(mealType)}
+                      className="border-gray-400"
+                    />
+                    <label
+                      htmlFor={`food-copy-meal-${mealType}`}
+                      className="text-sm cursor-pointer text-slate-700 font-medium"
+                    >
+                      {mealType}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {selectedDaysForFoodCopy.length > 0 && selectedMealsForFoodCopy.length > 0 && (
+              <div className={`p-4 border-2 rounded-md ${copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative ? 'bg-orange-50 border-orange-300' : 'bg-slate-100 border-slate-300'}`}>
+                <p className="text-sm text-slate-900 font-medium">
+                  This food will be copied to <span className="font-bold">{selectedDaysForFoodCopy.length} day(s)</span> × <span className="font-bold">{selectedMealsForFoodCopy.length} meal type(s)</span> = <span className="font-bold">{selectedDaysForFoodCopy.length * selectedMealsForFoodCopy.length} total location(s)</span>
+                  {copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative && (
+                    <span className="block mt-1 text-orange-700 text-xs">🔄 Will be added as alternative food in each location</span>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="shrink-0">
+            <Button variant="outline" onClick={() => setCopyFoodDialogOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCopyFood}
+              disabled={selectedDaysForFoodCopy.length === 0 || selectedMealsForFoodCopy.length === 0}
+              className={`shadow font-medium ${copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'} text-white`}
+            >
+              Copy to {selectedDaysForFoodCopy.length * selectedMealsForFoodCopy.length} Location{selectedDaysForFoodCopy.length * selectedMealsForFoodCopy.length !== 1 ? 's' : ''}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Copy Food Option Dialog */}
+      <Dialog open={copyOptionDialogOpen} onOpenChange={setCopyOptionDialogOpen}>
+        <DialogContent className={`sm:max-w-2xl shadow-xl max-h-[85vh] flex flex-col ${copyOptionSource?.option?.isAlternative ? 'border-orange-300' : 'border-gray-300'}`}>
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-slate-900 font-semibold flex items-center gap-2">
+              <Copy className="w-5 h-5" />
+              Copy Food Option Card
+              {copyOptionSource?.option?.isAlternative ? (
+                <span className="px-2 py-0.5 text-xs font-semibold text-orange-700 bg-orange-200 rounded">🔄 Alternative</span>
+              ) : (
+                <span className="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-200 rounded">Main Food</span>
+              )}
+            </DialogTitle>
+            <DialogDescription className="text-slate-600">
+              {copyOptionSource && (
+                <>
+                  Copying entire food option card with <strong>{copyOptionSource.option?.foods?.length || 0} food item(s)</strong>
+                  {copyOptionSource.option?.isAlternative ? (
+                    <span className="ml-2 text-orange-600 text-xs">(Will be copied as alternative option)</span>
+                  ) : (
+                    <span className="ml-2 text-green-600 text-xs">(Will be copied as main food option)</span>
+                  )}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Show foods in this option */}
+          {copyOptionSource?.option?.foods && copyOptionSource.option.foods.length > 0 && (
+            <div className={`p-3 border-2 rounded-md ${copyOptionSource.option.isAlternative ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200'}`}>
+              <p className="text-xs font-semibold text-slate-700 mb-2">Foods in this option:</p>
+              <div className="flex flex-wrap gap-2">
+                {copyOptionSource.option.foods.map((food: { food?: string; quantity?: string }, idx: number) => (
+                  <span key={idx} className={`px-2 py-1 text-xs rounded ${copyOptionSource.option?.isAlternative ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'}`}>
+                    {food.food} {food.quantity && `(${food.quantity})`}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="space-y-5 py-4 overflow-y-auto flex-1 min-h-0">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-slate-900 font-semibold text-sm">Target Days</Label>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setSelectedDaysForOptionCopy(selectedDaysForOptionCopy.length === weekPlan.length ? [] : weekPlan.map((_, i) => i))}
+                  className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
+                >
+                  {selectedDaysForOptionCopy.length === weekPlan.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
+                {weekPlan.map((day, index) => (
+                  <div key={day.id} className="flex items-center space-x-2.5">
+                    <Checkbox
+                      id={`option-copy-day-${index}`}
+                      checked={selectedDaysForOptionCopy.includes(index)}
+                      onCheckedChange={() => toggleDaySelectionForOptionCopy(index)}
+                      className="border-gray-400"
+                    />
+                    <label
+                      htmlFor={`option-copy-day-${index}`}
+                      className="text-sm cursor-pointer text-slate-700 font-medium"
+                    >
+                      {day.day}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-slate-900 font-semibold text-sm">Target Meal Types</Label>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setSelectedMealsForOptionCopy(selectedMealsForOptionCopy.length === displayMealTypes.length ? [] : [...displayMealTypes])}
+                  className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
+                >
+                  {selectedMealsForOptionCopy.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
+                {displayMealTypes.map((mealType) => (
+                  <div key={mealType} className="flex items-center space-x-2.5">
+                    <Checkbox
+                      id={`option-copy-meal-${mealType}`}
+                      checked={selectedMealsForOptionCopy.includes(mealType)}
+                      onCheckedChange={() => toggleMealSelectionForOptionCopy(mealType)}
+                      className="border-gray-400"
+                    />
+                    <label
+                      htmlFor={`option-copy-meal-${mealType}`}
+                      className="text-sm cursor-pointer text-slate-700 font-medium"
+                    >
+                      {mealType}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {selectedDaysForOptionCopy.length > 0 && selectedMealsForOptionCopy.length > 0 && (
+              <div className={`p-4 border-2 rounded-md ${copyOptionSource?.option?.isAlternative ? 'bg-orange-50 border-orange-300' : 'bg-slate-100 border-slate-300'}`}>
+                <p className="text-sm text-slate-900 font-medium">
+                  This food option card will be copied to <span className="font-bold">{selectedDaysForOptionCopy.length} day(s)</span> × <span className="font-bold">{selectedMealsForOptionCopy.length} meal type(s)</span> = <span className="font-bold">{selectedDaysForOptionCopy.length * selectedMealsForOptionCopy.length} total location(s)</span>
+                </p>
+                <p className={`mt-1 text-xs ${copyOptionSource?.option?.isAlternative ? 'text-orange-700' : 'text-green-700'}`}>
+                  {copyOptionSource?.option?.isAlternative 
+                    ? '🔄 Will be added as alternative food option in each location' 
+                    : '✓ Will be added as main food option in each location'}
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="shrink-0">
+            <Button variant="outline" onClick={() => setCopyOptionDialogOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCopyOption}
+              disabled={selectedDaysForOptionCopy.length === 0 || selectedMealsForOptionCopy.length === 0}
+              className={`shadow font-medium ${copyOptionSource?.option?.isAlternative ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'} text-white`}
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy to {selectedDaysForOptionCopy.length * selectedMealsForOptionCopy.length} Location{selectedDaysForOptionCopy.length * selectedMealsForOptionCopy.length !== 1 ? 's' : ''}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1674,7 +2255,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-3">
-              {mealTypes.map(mealType => (
+              {Object.keys(mealTimesForBulkEdit).map(mealType => (
                 <div key={mealType} className="flex items-center justify-between gap-3">
                   <Label className="text-slate-700 font-medium text-sm w-32 shrink-0">
                     {mealType}
@@ -2093,52 +2674,40 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
             const newWeekPlan = [...weekPlan];
             const meal = newWeekPlan[dayIndex].meals[mealType];
             
-            if (meal && meal.foodOptions[optionIndex]) {
-              const option = meal.foodOptions[optionIndex];
+            if (meal) {
+              // Check if the current option at optionIndex is empty/blank
+              const currentOption = meal.foodOptions[optionIndex];
+              const isCurrentOptionEmpty = currentOption && 
+                !currentOption.food?.trim() && 
+                !currentOption.cal?.trim() && 
+                !currentOption.unit?.trim();
               
-              // Initialize foods array if not present
-              if (!option.foods) {
-                option.foods = [];
-                // If there's existing primary food, add it to the array first
-                if (option.food && option.food.trim()) {
-                  option.foods.push({
-                    id: Math.random().toString(36).substr(2, 9),
-                    food: option.food,
-                    unit: option.unit,
-                    cal: option.cal,
-                    carbs: option.carbs,
-                    fats: option.fats,
-                    protein: option.protein,
-                    fiber: option.fiber,
-                    recipeUuid: option.recipeUuid
-                  });
-                }
+              // Preserve the isAlternative flag from the current option
+              const preserveIsAlternative = currentOption?.isAlternative || false;
+              
+              // Build new FoodOption entries for each selected food
+              const newFoodOptions: FoodOption[] = foods.map((food) => ({
+                id: Math.random().toString(36).substr(2, 9),
+                label: '',
+                food: food.menu,
+                unit: food.amount,
+                cal: food.cals.toString(),
+                carbs: food.carbs.toString(),
+                fats: food.fats.toString(),
+                protein: food.protein.toString(),
+                fiber: '',
+                recipeUuid: food.recipeUuid,
+                isAlternative: preserveIsAlternative // Preserve alternative status
+              }));
+              
+              if (isCurrentOptionEmpty) {
+                // Replace the blank option with the first selected food,
+                // then insert the rest after it
+                meal.foodOptions.splice(optionIndex, 1, ...newFoodOptions);
+              } else {
+                // Insert all new foods after the current option
+                meal.foodOptions.splice(optionIndex + 1, 0, ...newFoodOptions);
               }
-              
-              // Add all selected foods to the foods array
-              foods.forEach((food) => {
-                option.foods!.push({
-                  id: Math.random().toString(36).substr(2, 9),
-                  food: food.menu,
-                  unit: food.amount,
-                  cal: food.cals.toString(),
-                  carbs: food.carbs.toString(),
-                  fats: food.fats.toString(),
-                  protein: food.protein.toString(),
-                  fiber: '',
-                  recipeUuid: food.recipeUuid
-                });
-              });
-              
-              // Update the primary fields to show combined info
-              const allFoods = option.foods!;
-              option.food = allFoods.map(f => f.food).join(' + ');
-              option.unit = allFoods.length > 1 ? 'Multiple' : allFoods[0]?.unit || '';
-              option.cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
-              option.carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
-              option.fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
-              option.protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
-              option.fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
               
               onUpdate(newWeekPlan);
             }
