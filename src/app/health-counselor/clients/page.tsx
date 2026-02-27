@@ -91,7 +91,7 @@ export default function HealthCounselorClientsPage() {
   const [filterFreeze, setFilterFreeze] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
-  
+
   // Create client dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -146,7 +146,7 @@ export default function HealthCounselorClientsPage() {
       if (response.ok) {
         const data = await response.json();
         // Filter tags to only show those created by health counselor
-        const hcTags = data.tags?.filter((tag: Tag) => 
+        const hcTags = data.tags?.filter((tag: Tag) =>
           tag._id && typeof tag.name === 'string'
         ) || [];
         setAvailableTags(hcTags);
@@ -196,7 +196,7 @@ export default function HealthCounselorClientsPage() {
       return;
     }
     setEmailError('');
-    
+
     if (!createForm.email || !createForm.firstName || !createForm.lastName || !createForm.password) {
       toast.error('Please fill required fields: email, first name, last name, and password');
       return;
@@ -261,8 +261,8 @@ export default function HealthCounselorClientsPage() {
       }
 
       // Update local state
-      setClients(prev => prev.map(client => 
-        client._id === clientId 
+      setClients(prev => prev.map(client =>
+        client._id === clientId
           ? { ...client, clientStatus: newStatus as Client['clientStatus'] }
           : client
       ));
@@ -278,11 +278,11 @@ export default function HealthCounselorClientsPage() {
       client.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.phone?.includes(searchTerm);
-    
+
     // Filter by client status
-    const matchesStatus = filterType === 'all' || 
+    const matchesStatus = filterType === 'all' ||
       (client.clientStatus || 'lead') === filterType;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -316,7 +316,7 @@ export default function HealthCounselorClientsPage() {
   return (
     <DashboardLayout>
       <div className="p-6 space-y-4">
-         {/* Header */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Clients</h1>
@@ -324,10 +324,10 @@ export default function HealthCounselorClientsPage() {
               Manage your assigned clients
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               className="bg-emerald-600 hover:bg-emerald-700"
               onClick={() => setCreateDialogOpen(true)}
             >
@@ -343,7 +343,7 @@ export default function HealthCounselorClientsPage() {
 
         {/* Search */}
         <Card>
-               <CardContent className="p-6">
+          <CardContent className="p-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -383,7 +383,7 @@ export default function HealthCounselorClientsPage() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <Button size="sm" variant="ghost" onClick={fetchMyClients}>
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -439,7 +439,7 @@ export default function HealthCounselorClientsPage() {
                               />
                             </TableCell>
                             <TableCell className="px-3">
-                              <Link 
+                              <Link
                                 href={`/health-counselor/clients/${client._id}`}
                                 className="text-blue-600 hover:underline font-medium text-sm"
                               >
@@ -522,9 +522,9 @@ export default function HealthCounselorClientsPage() {
                               {client.tags && client.tags.length > 0 ? (
                                 <div className="flex gap-1">
                                   {client.tags.slice(0, 2).map((tag) => (
-                                    <Badge 
-                                      key={tag._id} 
-                                      variant="outline" 
+                                    <Badge
+                                      key={tag._id}
+                                      variant="outline"
                                       className="text-xs px-1.5 py-0"
                                       style={tag.color ? { borderColor: tag.color, color: tag.color } : undefined}
                                     >
@@ -536,20 +536,18 @@ export default function HealthCounselorClientsPage() {
                             </TableCell>
                             <TableCell className="px-3">
                               {/* Status is automatically computed: LEAD / ACTIVE / INACTIVE */}
-                              <Badge 
+                              <Badge
                                 variant="outline"
-                                className={`text-xs px-2 py-0.5 ${
-                                  client.clientStatus === 'active' ? 'bg-green-100 text-green-700 border-green-300' :
-                                  client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
-                                  'bg-blue-100 text-blue-700 border-blue-300'
-                                }`}
+                                className={`text-xs px-2 py-0.5 ${client.clientStatus === 'active' ? 'bg-green-100 text-green-700 border-green-300' :
+                                    client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                                      'bg-blue-100 text-blue-700 border-blue-300'
+                                  }`}
                               >
                                 <span className="flex items-center gap-1.5">
-                                  <span className={`w-2 h-2 rounded-full ${
-                                    client.clientStatus === 'active' ? 'bg-green-500' :
-                                    client.clientStatus === 'inactive' ? 'bg-gray-500' :
-                                    'bg-blue-500'
-                                  }`}></span>
+                                  <span className={`w-2 h-2 rounded-full ${client.clientStatus === 'active' ? 'bg-green-500' :
+                                      client.clientStatus === 'inactive' ? 'bg-gray-500' :
+                                        'bg-blue-500'
+                                    }`}></span>
                                   {client.clientStatus === 'active' ? 'Active' : client.clientStatus === 'inactive' ? 'Inactive' : 'Lead'}
                                 </span>
                               </Badge>
@@ -564,7 +562,7 @@ export default function HealthCounselorClientsPage() {
                     </TableBody>
                   </Table>
                 </div>
-                
+
                 {/* Footer */}
                 <div className="px-4 py-3 border-t text-sm text-gray-600">
                   Showing {filteredClients.length} to 1 of {filteredClients.length} rows
@@ -588,16 +586,16 @@ export default function HealthCounselorClientsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className="text-sm text-gray-600">Email <span className="text-red-500">*</span></label>
-              <Input 
-                type="email" 
-                value={createForm.email} 
+              <Input
+                type="email"
+                value={createForm.email}
                 onChange={e => {
                   setCreateForm(f => ({ ...f, email: e.target.value }));
                   if (emailError) {
                     const validation = validateEmail(e.target.value);
                     setEmailError(validation.isValid ? '' : validation.error || '');
                   }
-                }} 
+                }}
                 placeholder="client@example.com"
                 className={emailError ? 'border-red-500' : ''}
               />
@@ -605,34 +603,34 @@ export default function HealthCounselorClientsPage() {
             </div>
             <div className="col-span-2">
               <label className="text-sm text-gray-600">Password <span className="text-red-500">*</span></label>
-              <Input 
-                type="password" 
-                value={createForm.password} 
-                onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} 
+              <Input
+                type="password"
+                value={createForm.password}
+                onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
                 placeholder="Enter password"
               />
             </div>
             <div>
               <label className="text-sm text-gray-600">First Name <span className="text-red-500">*</span></label>
-              <Input 
-                value={createForm.firstName} 
-                onChange={e => setCreateForm(f => ({ ...f, firstName: e.target.value }))} 
+              <Input
+                value={createForm.firstName}
+                onChange={e => setCreateForm(f => ({ ...f, firstName: e.target.value }))}
                 placeholder="First name"
               />
             </div>
             <div>
               <label className="text-sm text-gray-600">Last Name <span className="text-red-500">*</span></label>
-              <Input 
-                value={createForm.lastName} 
-                onChange={e => setCreateForm(f => ({ ...f, lastName: e.target.value }))} 
+              <Input
+                value={createForm.lastName}
+                onChange={e => setCreateForm(f => ({ ...f, lastName: e.target.value }))}
                 placeholder="Last name"
               />
             </div>
             <div>
               <label className="text-sm text-gray-600">Phone</label>
-              <Input 
-                value={createForm.phone} 
-                onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))} 
+              <Input
+                value={createForm.phone}
+                onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="Phone number"
               />
             </div>
@@ -649,10 +647,10 @@ export default function HealthCounselorClientsPage() {
             </div>
             <div className="col-span-2">
               <label className="text-sm text-gray-600">Date of Birth</label>
-              <Input 
-                type="date" 
-                value={createForm.dateOfBirth} 
-                onChange={e => setCreateForm(f => ({ ...f, dateOfBirth: e.target.value }))} 
+              <Input
+                type="date"
+                value={createForm.dateOfBirth}
+                onChange={e => setCreateForm(f => ({ ...f, dateOfBirth: e.target.value }))}
               />
             </div>
           </div>

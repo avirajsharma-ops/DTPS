@@ -7,13 +7,13 @@ import Recipe from '@/lib/db/models/Recipe';
 import { UserRole } from '@/types';
 import { startOfDay, endOfDay, parseISO, format } from 'date-fns';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
-import { 
-  MEAL_TYPES, 
-  MEAL_TYPE_KEYS, 
-  getMealLabel, 
+import {
+  MEAL_TYPES,
+  MEAL_TYPE_KEYS,
+  getMealLabel,
   getDefaultMealTime as getCanonicalMealTime,
   normalizeMealType as canonicalNormalizeMealType,
-  type MealTypeKey 
+  type MealTypeKey
 } from '@/lib/mealConfig';
 
 // Convert MealTypeKey (uppercase) to camelCase for frontend compatibility
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date');
     const requestedDate = dateParam ? parseISO(dateParam) : new Date();
-    
+
     // Normalize to start of day for accurate date comparison
     const normalizedDate = startOfDay(requestedDate);
 
@@ -83,19 +83,19 @@ export async function GET(request: NextRequest) {
     // Get meals for this day
     let dayMeals: any[] = [];
     let mealsSource = 'none';
-    
+
     // Store daily note
     let dailyNote = '';
 
     // 1. Try direct meals array on the plan
     if (mealPlan.meals?.length > 0) {
       const dayData = mealPlan.meals[dayIndex % mealPlan.meals.length];
-      
+
       // Capture daily note
       if (dayData?.note) {
         dailyNote = dayData.note;
       }
-      
+
       if (dayData?.meals) {
         const mealsObj = dayData.meals;
         // Get ALL meal keys - both canonical and custom meal types
@@ -107,14 +107,14 @@ export async function GET(request: NextRequest) {
           // Include if it's an object (could be a meal)
           return meal && typeof meal === 'object' && !Array.isArray(meal);
         });
-        
+
         if (mealKeys.length > 0) {
           mealsSource = 'plan-meals';
           dayMeals = extractMeals(mealsObj, mealPlan._id, dayIndex, normalizedDate, mealPlan.mealCompletions);
         }
       }
     }
-    
+
     // 2. Fallback to mealTypes if no meals found (show empty slots)
     if (dayMeals.length === 0 && mealPlan.mealTypes?.length > 0) {
       mealsSource = 'meal-types-empty';
@@ -128,11 +128,11 @@ export async function GET(request: NextRequest) {
         isEmpty: true
       }));
     }
-    
+
     // 3. Fallback to template if available
     if (dayMeals.length === 0 && mealPlan.templateId) {
       const template = mealPlan.templateId as any;
-      
+
       if (template?.meals?.length > 0) {
         const templateDay = template.meals[dayIndex % template.meals.length];
         if (templateDay) {
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
         }
       }
     }
-    
+
     // 4. Ultimate fallback - show default empty meal slots
     if (dayMeals.length === 0) {
       mealsSource = 'default-empty';
@@ -152,8 +152,8 @@ export async function GET(request: NextRequest) {
     dayMeals = await enrichMealsWithRecipeDetails(dayMeals);
 
     // Calculate total calories
-    const totalCalories = dayMeals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0) || 
-                         mealPlan.customizations?.targetCalories || 0;
+    const totalCalories = dayMeals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0) ||
+      mealPlan.customizations?.targetCalories || 0;
 
     // Check if this date is frozen
     const dateStr = format(normalizedDate, 'yyyy-MM-dd');
@@ -162,9 +162,9 @@ export async function GET(request: NextRequest) {
       const freezeDate = format(new Date(fd.date), 'yyyy-MM-dd');
       return freezeDate === dateStr;
     });
-    
+
     // Get freeze day details if frozen
-    const freezeInfo = isFrozen ? freezedDays.find((fd: any) => 
+    const freezeInfo = isFrozen ? freezedDays.find((fd: any) =>
       format(new Date(fd.date), 'yyyy-MM-dd') === dateStr
     ) : null;
 
@@ -234,10 +234,10 @@ function getDefaultMealSlots(planId: string, dayIndex: number): any[] {
 function calculateMealCalories(meal: any): number {
   if (!meal) return 0;
   if (meal.totalCalories) return Number(meal.totalCalories) || 0;
-  
+
   const foods = meal.foods || meal.items || meal.foodOptions || [];
   if (!Array.isArray(foods)) return 0;
-  
+
   return foods.reduce((sum: number, food: any) => {
     const cal = Number(food.calories) || Number(food.cal) || 0;
     return sum + cal;
@@ -248,26 +248,26 @@ function calculateMealCalories(meal: any): number {
 function calculateMealMacros(meal: any): { calories: number; protein: number; carbs: number; fat: number } {
   const result = { calories: 0, protein: 0, carbs: 0, fat: 0 };
   if (!meal) return result;
-  
+
   const foods = meal.foods || meal.items || meal.foodOptions || [];
   if (!Array.isArray(foods)) return result;
-  
+
   for (const food of foods) {
     result.calories += Number(food.calories) || Number(food.cal) || 0;
     result.protein += Number(food.protein) || 0;
     result.carbs += Number(food.carbs) || 0;
     result.fat += Number(food.fats) || Number(food.fat) || 0;
   }
-  
+
   return result;
 }
 
 function checkMealCompletion(completions: any[], date: Date, mealType: string): boolean {
   if (!completions?.length) return false;
-  
+
   const dateStart = startOfDay(date);
   const dateEnd = endOfDay(date);
-  
+
   return completions.some(c => {
     const cDate = new Date(c.date);
     return cDate >= dateStart && cDate <= dateEnd && c.mealType === mealType && c.completed;
@@ -277,9 +277,9 @@ function checkMealCompletion(completions: any[], date: Date, mealType: string): 
 // Main extraction function - handles all meal structures WITHOUT filtering
 function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Date, completions: any[]): any[] {
   if (!mealsData) return [];
-  
+
   const results: any[] = [];
-  
+
   // If it's an array of meals
   if (Array.isArray(mealsData)) {
     mealsData.forEach((meal: any, index: number) => {
@@ -287,12 +287,12 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
       const normalizedType = normalizeMealType(mealType);
       const isKnownMealType = MEAL_TYPE_KEYS.includes(normalizedType as MealTypeKey);
       // For known types, convert to camelCase; for custom types, use original name
-      const camelCaseType = isKnownMealType 
-        ? convertMealTypeToCamelCase(normalizedType as MealTypeKey) 
+      const camelCaseType = isKnownMealType
+        ? convertMealTypeToCamelCase(normalizedType as MealTypeKey)
         : mealType; // Preserve custom meal type name as-is
       const items = extractFoodItems(meal, planId, dayIndex, index);
       const macros = calculateMealMacros(meal);
-      
+
       results.push({
         id: `${planId}-${dayIndex}-${index}`,
         type: camelCaseType, // Use camelCase for known types, original for custom types
@@ -311,31 +311,31 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
     });
     return results;
   }
-  
+
   // If it's an object with meal types as keys (breakfast, lunch, etc.)
   if (typeof mealsData === 'object') {
     let mealIndex = 0;
-    
+
     // Process ALL keys - don't filter by canonical types only
     Object.entries(mealsData).forEach(([mealType, meal]: [string, any]) => {
       // Skip non-meal properties (like 'note', 'date', etc.)
       if (typeof meal !== 'object' || meal === null || Array.isArray(meal)) {
         return;
       }
-      
+
       // Check if it looks like a meal (has foods/items or is a recognized meal type)
       const hasFoodData = meal.foods || meal.items || meal.foodOptions;
       const normalizedType = normalizeMealType(mealType);
       const isKnownMealType = MEAL_TYPE_KEYS.includes(normalizedType as MealTypeKey);
       // For known types, convert to camelCase; for custom types, use original name
-      const camelCaseType = isKnownMealType 
-        ? convertMealTypeToCamelCase(normalizedType as MealTypeKey) 
+      const camelCaseType = isKnownMealType
+        ? convertMealTypeToCamelCase(normalizedType as MealTypeKey)
         : mealType; // Preserve custom meal type name as-is
-      
+
       if (hasFoodData || isKnownMealType) {
         const items = extractFoodItems(meal, planId, dayIndex, mealIndex);
         const macros = calculateMealMacros(meal);
-        
+
         results.push({
           id: `${planId}-${dayIndex}-${mealIndex}`,
           type: camelCaseType, // Use camelCase for known types, original for custom types
@@ -355,7 +355,7 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
       }
     });
   }
-  
+
   // Log for debugging
   if (process.env.NODE_ENV === 'development') {
     console.log('[extractMeals] Extracted meals:', results.map(m => ({
@@ -364,7 +364,7 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
       items: m.items?.map((i: any) => i.name)
     })));
   }
-  
+
   return results;
 }
 
@@ -382,20 +382,20 @@ function hasFood(meal: any): boolean {
 
 function extractFoodItems(meal: any, planId: string, dayIndex: number, mealIndex: number): any[] {
   if (!meal) return [];
-  
+
   const foods = meal.foods || meal.items || meal.foodOptions || [];
   if (!Array.isArray(foods)) return [];
-  
+
   // Extract ALL food items - no filtering, include everything
   return foods.map((food: any, foodIndex: number) => {
     // Get the food name from various possible fields
     const foodName = food.food || food.name || food.foodName || food.recipeName || '';
-    
+
     // Skip only if completely empty (no name at all)
     if (!foodName && !food.recipeId && !food.recipeUuid) {
       return null;
     }
-    
+
     return {
       id: `${planId}-${dayIndex}-${mealIndex}-${foodIndex}`,
       name: foodName || 'Food Item',
@@ -441,7 +441,7 @@ async function enrichMealsWithRecipeDetails(meals: any[]): Promise<any[]> {
   // Collect all recipe IDs and UUIDs that need to be fetched
   const recipeIds: string[] = [];
   const recipeUuids: string[] = [];
-  
+
   meals.forEach(meal => {
     if (meal.items) {
       meal.items.forEach((item: any) => {
@@ -455,9 +455,9 @@ async function enrichMealsWithRecipeDetails(meals: any[]): Promise<any[]> {
       });
     }
   });
-  
+
   if (recipeIds.length === 0 && recipeUuids.length === 0) return meals;
-  
+
   try {
     // Fetch all recipes in one query (by ID or UUID)
     const query: any = { $or: [] };
@@ -467,13 +467,13 @@ async function enrichMealsWithRecipeDetails(meals: any[]): Promise<any[]> {
     if (recipeUuids.length > 0) {
       query.$or.push({ uuid: { $in: recipeUuids } });
     }
-    
+
     const recipes = await Recipe.find(query).lean() as any[];
-    
+
     // Create maps for quick lookup by both ID and UUID
     const recipeMapById = new Map(recipes.map((r: any) => [r._id.toString(), r]));
     const recipeMapByUuid = new Map(recipes.filter((r: any) => r.uuid).map((r: any) => [r.uuid, r]));
-    
+
     // Enrich meal items with recipe details
     return meals.map(meal => ({
       ...meal,
@@ -486,31 +486,31 @@ async function enrichMealsWithRecipeDetails(meals: any[]): Promise<any[]> {
         if (!fullRecipe && item.recipeId) {
           fullRecipe = recipeMapById.get(item.recipeId.toString());
         }
-        
+
         if (fullRecipe) {
-            return {
-              ...item,
-              recipe: {
-                ingredients: fullRecipe.ingredients?.map((ing: any) => 
-                  `${ing.quantity} ${ing.unit} ${ing.name}${ing.remarks ? ` (${ing.remarks})` : ''}`
-                ) || [],
-                instructions: fullRecipe.instructions || [],
-                prepTime: fullRecipe.prepTime ? `${fullRecipe.prepTime} min` : null,
-                cookTime: fullRecipe.cookTime ? `${fullRecipe.cookTime} min` : null,
-                servings: fullRecipe.servings,
-                difficulty: fullRecipe.difficulty,
-                cuisine: fullRecipe.cuisine,
-                tips: fullRecipe.tips || [],
-                nutrition: fullRecipe.nutrition,
-                image: fullRecipe.image || fullRecipe.images?.[0]?.url,
-                video: fullRecipe.video,
-                equipment: fullRecipe.equipment || [],
-                storage: fullRecipe.storage,
-                tags: fullRecipe.tags || [],
-                dietaryRestrictions: fullRecipe.dietaryRestrictions || [],
-                allergens: fullRecipe.allergens || []
-              }
-            };
+          return {
+            ...item,
+            recipe: {
+              ingredients: fullRecipe.ingredients?.map((ing: any) =>
+                `${ing.quantity} ${ing.unit} ${ing.name}${ing.remarks ? ` (${ing.remarks})` : ''}`
+              ) || [],
+              instructions: fullRecipe.instructions || [],
+              prepTime: fullRecipe.prepTime ? `${fullRecipe.prepTime} min` : null,
+              cookTime: fullRecipe.cookTime ? `${fullRecipe.cookTime} min` : null,
+              servings: fullRecipe.servings,
+              difficulty: fullRecipe.difficulty,
+              cuisine: fullRecipe.cuisine,
+              tips: fullRecipe.tips || [],
+              nutrition: fullRecipe.nutrition,
+              image: fullRecipe.image || fullRecipe.images?.[0]?.url,
+              video: fullRecipe.video,
+              equipment: fullRecipe.equipment || [],
+              storage: fullRecipe.storage,
+              tags: fullRecipe.tags || [],
+              dietaryRestrictions: fullRecipe.dietaryRestrictions || [],
+              allergens: fullRecipe.allergens || []
+            }
+          };
         }
         return item;
       }) || []

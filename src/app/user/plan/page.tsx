@@ -477,7 +477,7 @@ export default function UserPlanPage() {
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error(`API Error: ${response.status}`, errorData);
-        
+
         const noplan: DayPlan = {
           date: date,
           meals: [],
@@ -490,7 +490,7 @@ export default function UserPlanPage() {
       }
     } catch (error) {
       console.error('Error fetching meal plan:', error);
-      
+
       // More detailed error logging
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
@@ -659,7 +659,7 @@ export default function UserPlanPage() {
       case 'afternoonSnack': return 'Evening Snack';
       case 'dinner': return 'Dinner';
       case 'eveningSnack': return 'Bedtime';
-      default: 
+      default:
         // For custom meal types, return the type as-is (it's already a display label)
         // Or format camelCase to Title Case
         if (type.includes(' ')) return type; // Already formatted
@@ -692,7 +692,7 @@ export default function UserPlanPage() {
         // This ensures custom meals appear even if they have food assigned
         const hasItems = meal.items && meal.items.length > 0;
         const isCustomMeal = meal.type && !DEFAULT_MEAL_SLOTS.some(s => s.type === meal.type);
-        
+
         if (hasItems || isCustomMeal) {
           // Find default slot time if this is a default meal type
           const defaultSlot = DEFAULT_MEAL_SLOTS.find(s => s.type === meal.type);
@@ -728,10 +728,10 @@ export default function UserPlanPage() {
       let hours = parseInt(match[1], 10);
       const minutes = parseInt(match[2], 10);
       const period = match[3]?.toUpperCase();
-      
+
       if (period === 'PM' && hours !== 12) hours += 12;
       if (period === 'AM' && hours === 12) hours = 0;
-      
+
       return hours * 100 + minutes;
     };
 
@@ -1090,19 +1090,18 @@ export default function UserPlanPage() {
                       <button
                         key={item.id}
                         onClick={() => openRecipeModal(item)}
-                        className={`w-full p-4 rounded-xl text-left transition-all active:scale-[0.98] ${isDarkMode 
-                          ? 'bg-black/40 hover:bg-[#3AB1A0]/10 active:bg-[#3AB1A0]/20' 
+                        className={`w-full p-4 rounded-xl text-left transition-all active:scale-[0.98] ${isDarkMode
+                          ? 'bg-black/40 hover:bg-[#3AB1A0]/10 active:bg-[#3AB1A0]/20'
                           : 'bg-gray-50 hover:bg-[#3AB1A0]/10 active:bg-[#3AB1A0]/20'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             {/* Number indicator for multiple foods */}
-                            <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                              itemIndex === 0 
-                                ? 'bg-[#3AB1A0] text-white' 
+                            <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${itemIndex === 0
+                                ? 'bg-[#3AB1A0] text-white'
                                 : 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
-                            }`}>
+                              }`}>
                               {itemIndex + 1}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -1169,7 +1168,7 @@ export default function UserPlanPage() {
                             </button>
                           ))}
                           {/* Nested alternatives from main items */}
-                          {meal.items.flatMap((item, itemIdx) => 
+                          {meal.items.flatMap((item, itemIdx) =>
                             (item.alternatives || []).map((alt, altIdx) => (
                               <div
                                 key={`${itemIdx}-${altIdx}`}

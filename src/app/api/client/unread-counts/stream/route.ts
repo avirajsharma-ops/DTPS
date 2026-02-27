@@ -45,17 +45,17 @@ export async function GET(request: NextRequest) {
       // Send initial counts
       try {
         await connectDB();
-        
+
         const [notificationCount, messageCount] = await Promise.all([
           Notification.countDocuments({ userId, read: false }),
           Message.countDocuments({ receiver: userId, isRead: false })
         ]);
 
-        const initialData = `data: ${JSON.stringify({ 
-          notifications: notificationCount, 
-          messages: messageCount 
+        const initialData = `data: ${JSON.stringify({
+          notifications: notificationCount,
+          messages: messageCount
         })}\n\n`;
-        
+
         controller.enqueue(new TextEncoder().encode(initialData));
       } catch (error) {
         // Silently handle initial count errors - client will use polling fallback

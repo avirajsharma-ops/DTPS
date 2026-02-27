@@ -30,7 +30,7 @@ interface DietPlanExportProps {
 export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, duration, startDate, externalOpen, onExternalOpenChange }: DietPlanExportProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [exportFor, setExportFor] = useState<'dietitian' | 'client'>('dietitian');
-  
+
   // Support both internal and external open state
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = (value: boolean) => {
@@ -40,7 +40,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
       setInternalOpen(value);
     }
   };
-  
+
   const [exportFormat, setExportFormat] = useState<'html' | 'csv' | 'pdf' | 'print'>('pdf');
 
   // Helper function to format date properly
@@ -48,9 +48,9 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     if (!dateStr) return '';
     try {
       const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', { 
+      return date.toLocaleDateString('en-US', {
         weekday: 'long',
-        month: 'long', 
+        month: 'long',
         day: 'numeric',
         year: 'numeric'
       });
@@ -143,18 +143,18 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
         }
       });
     });
-    
+
     return Array.from(allMealTypes).sort((a, b) => {
       const timeA = getMealTime(a);
       const timeB = getMealTime(b);
       const timeValueA = getTimeNumericValue(timeA);
       const timeValueB = getTimeNumericValue(timeB);
-      
+
       // Sort purely by time
       if (timeValueA !== timeValueB) {
         return timeValueA - timeValueB;
       }
-      
+
       // If same time, canonical types come before custom types
       const orderA = getCanonicalSortOrder(a);
       const orderB = getCanonicalSortOrder(b);
@@ -165,7 +165,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
   // Calculate daily totals
   const calculateDayTotals = (day: DayPlan) => {
     let cal = 0, carbs = 0, protein = 0, fats = 0, fiber = 0;
-    
+
     Object.values(day.meals).forEach(meal => {
       if (meal?.foodOptions?.[0]) {
         const opt = meal.foodOptions[0];
@@ -176,14 +176,14 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
         fiber += parseFloat(opt.fiber) || 0;
       }
     });
-    
+
     return { cal, carbs, protein, fats, fiber };
   };
 
   // Generate HTML table structure with date sorting
   const generateHTMLContent = useCallback((showMacros: boolean = true) => {
     const today = format(new Date(), 'dd MMM yyyy');
-    
+
     // Sort days by actual date if available
     const sortedDays = [...weekPlan].sort((a, b) => {
       if (a.date && b.date) {
@@ -191,7 +191,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
       }
       return weekPlan.indexOf(a) - weekPlan.indexOf(b);
     });
-    
+
     const includeMacrosStyle = showMacros ? '' : `
     .macro-cell { display: none !important; }
     thead tr th:nth-child(3),
@@ -205,7 +205,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     tbody tr td:nth-child(6),
     tbody tr td:nth-child(7) { display: none !important; }
     `;
-    
+
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -279,7 +279,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     ${sortedDays.map((day, dayIndex) => {
       const totals = calculateDayTotals(day);
       const hasData = Object.keys(day.meals).length > 0;
-      
+
       if (day.isHeld) {
         return `
         <div class="day-section">
@@ -291,7 +291,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
         </div>
         `;
       }
-      
+
       return `
       <div class="day-section">
         <div class="day-header">
@@ -313,17 +313,17 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
           </thead>
           <tbody>
             ${(() => {
-              const allMealTypes = getAllMealTypesSorted();
-              return allMealTypes.map(mealType => {
-                const meal = findMealInDay(day, mealType);
-                if (!meal) return '';
-                
-                const primaryFood = meal.foodOptions?.[0];
-                const alternatives = meal.foodOptions?.slice(1) || [];
-                
-                if (!primaryFood) return '';
-                
-                return `
+          const allMealTypes = getAllMealTypesSorted();
+          return allMealTypes.map(mealType => {
+            const meal = findMealInDay(day, mealType);
+            if (!meal) return '';
+
+            const primaryFood = meal.foodOptions?.[0];
+            const alternatives = meal.foodOptions?.slice(1) || [];
+
+            if (!primaryFood) return '';
+
+            return `
                 <tr>
                   <td>
                     <div class="meal-name">${mealType}</div>
@@ -350,8 +350,8 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
                   <td class="macro-cell"><div class="macro-value">${primaryFood.fiber || '0'}</div></td>
                 </tr>
                 `;
-              }).join('');
-            })()}
+          }).join('');
+        })()}
             ${hasData ? `
             <tr class="totals-row">
               <td colspan="2" style="text-align: right;"><strong>Daily Total</strong></td>
@@ -416,10 +416,10 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     csv += `"Duration","${duration} days"\n`;
     csv += `"Start Date","${startDate ? format(new Date(startDate), 'PPP') : 'N/A'}"\n`;
     csv += '\n';
-    
+
     // Column headers
     csv += '"Day","Date","Meal Type","Meal Time","Food Item","Quantity","Calories","Carbs(g)","Protein(g)","Fats(g)","Fiber(g)","Alternative Options","Notes"\n';
-    
+
     // Data rows
     sortedDays.forEach((day) => {
       // Skip held days or show them differently
@@ -429,7 +429,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
       }
 
       const allMealTypes = getAllMealTypesSorted();
-      
+
       allMealTypes.forEach(mealType => {
         const meal = findMealInDay(day, mealType);
         if (!meal?.foodOptions?.length) return;
@@ -437,26 +437,26 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
         // Get primary food and alternatives
         const primaryFood = meal.foodOptions[0];
         const alternatives = meal.foodOptions.slice(1);
-        
+
         const alternativesStr = alternatives
           .map(alt => `${alt.food}${alt.unit ? ` (${alt.unit})` : ''}`)
           .join(' | ');
 
         // Main food row
         csv += `"${day.day}","${day.date ? formatDateProper(day.date) : ''}","${mealType}","${getMealTime(mealType)}","${primaryFood.food || ''}","${primaryFood.unit || ''}","${primaryFood.cal || ''}","${primaryFood.carbs || ''}","${primaryFood.protein || ''}","${primaryFood.fats || ''}","${primaryFood.fiber || ''}","${alternativesStr}","${day.note || ''}"\n`;
-        
+
         // Alternative rows (if any)
         alternatives.forEach((alt, altIndex) => {
           csv += `"","","(Alternative ${altIndex + 1})","","${alt.food || ''}","${alt.unit || ''}","${alt.cal || ''}","${alt.carbs || ''}","${alt.protein || ''}","${alt.fats || ''}","${alt.fiber || ''}","",""\n`;
         });
       });
-      
+
       // Add day total row
       const dayTotals = calculateDayTotals(day);
       csv += `"${day.day} TOTAL","","","","","","${dayTotals.cal.toFixed(0)}","${dayTotals.carbs.toFixed(1)}","${dayTotals.protein.toFixed(1)}","${dayTotals.fats.toFixed(1)}","${dayTotals.fiber.toFixed(1)}","",""\n`;
       csv += '\n'; // Blank line between days for readability
     });
-    
+
     // Weekly summary
     csv += '\n"WEEKLY SUMMARY"\n';
     const weeklyTotals = sortedDays.reduce(
@@ -479,7 +479,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     csv += `"Total Protein","${weeklyTotals.protein.toFixed(1)} g"\n`;
     csv += `"Total Fats","${weeklyTotals.fats.toFixed(1)} g"\n`;
     csv += `"Total Fiber","${weeklyTotals.fiber.toFixed(1)} g"\n`;
-    
+
     return csv;
   }, [weekPlan, clientName, duration, startDate]);
 
@@ -589,7 +589,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
               Choose a format to download the diet plan for {clientName || 'this client'}.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Export For</label>
@@ -612,8 +612,8 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
                 </Button>
               </div>
               <p className="text-xs text-gray-600 mt-2">
-                {exportFor === 'dietitian' 
-                  ? '✓ Includes all nutritional data (calories, macros, fiber)' 
+                {exportFor === 'dietitian'
+                  ? '✓ Includes all nutritional data (calories, macros, fiber)'
                   : '✓ Meal plan only (no nutritional information)'}
               </p>
             </div>

@@ -7,8 +7,8 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { 
-  User, 
+import {
+  User,
   Save,
   ArrowLeft,
   Activity,
@@ -28,12 +28,12 @@ import { validateEmail } from '@/lib/validations/auth';
 export default function DietitianNewClientPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Active section state
-  const sections = ['basic','lifestyle','medical','recall'] as const;
+  const sections = ['basic', 'lifestyle', 'medical', 'recall'] as const;
   type SectionKey = typeof sections[number];
   const [activeSection, setActiveSection] = useState<SectionKey>('basic');
   const [savedSections, setSavedSections] = useState<SectionKey[]>([]);
@@ -110,7 +110,7 @@ export default function DietitianNewClientPage() {
   };
 
   const basicChange = (field: any, value: any) => {
-    switch(field){
+    switch (field) {
       case 'firstName': setFirstName(value); break;
       case 'lastName': setLastName(value); break;
       case 'email': setEmail(value); break;
@@ -141,7 +141,7 @@ export default function DietitianNewClientPage() {
   };
 
   const lifestyleChange = (field: any, value: any) => {
-    switch(field){
+    switch (field) {
       case 'foodPreference': setFoodPreference(value); break;
       case 'preferredCuisine': setPreferredCuisine(Array.isArray(value) ? value : []); break;
       case 'allergiesFood': setAllergiesFood(Array.isArray(value) ? value : []); break;
@@ -162,7 +162,7 @@ export default function DietitianNewClientPage() {
   };
 
   const medicalChange = (field: any, value: any) => {
-    switch(field){
+    switch (field) {
       case 'medicalConditions': setMedicalConditions(value); break;
       case 'allergies': setAllergies(value); break;
       case 'dietaryRestrictions': setDietaryRestrictions(value); break;
@@ -185,7 +185,7 @@ export default function DietitianNewClientPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!firstName || !lastName || !email) {
       toast.error('Please fill in all required fields (First Name, Last Name, Email)');
       return;
@@ -217,7 +217,7 @@ export default function DietitianNewClientPage() {
           gender: gender || undefined,
           parentAccount: parentAccount || undefined,
           altPhone: altPhone || undefined,
-          altEmails: altEmails ? altEmails.split(',').map(e=>e.trim()).filter(Boolean) : undefined,
+          altEmails: altEmails ? altEmails.split(',').map(e => e.trim()).filter(Boolean) : undefined,
           anniversary: anniversary || undefined,
           source: source || undefined,
           referralSource: referralSource || undefined,
@@ -299,7 +299,7 @@ export default function DietitianNewClientPage() {
               Back
             </Link>
           </Button>
-          
+
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
               <UserPlus className="h-7 w-7 text-green-600" />
@@ -313,43 +313,43 @@ export default function DietitianNewClientPage() {
         <Card className="border-2 border-green-500 shadow-lg rounded-xl overflow-hidden">
           <CardContent className="p-3 sm:p-4 bg-linear-to-r from-green-50 to-emerald-50">
             <div className="flex flex-wrap gap-2 sm:gap-3">
-              <Button 
-                variant={activeSection === 'basic' ? 'default':'outline'} 
-                onClick={() => setActiveSection('basic')} 
+              <Button
+                variant={activeSection === 'basic' ? 'default' : 'outline'}
+                onClick={() => setActiveSection('basic')}
                 className={`gap-2 text-xs sm:text-sm ${activeSection === 'basic' ? 'bg-green-600 hover:bg-green-700 border-green-600' : 'border-2 border-gray-800 hover:border-green-600 hover:bg-green-50'}`}
                 size="sm"
               >
-                <User className="h-4 w-4" /> 
+                <User className="h-4 w-4" />
                 <span className="hidden sm:inline">Basic</span>
                 {savedSections.includes('basic') && <CheckCircle className="h-4 w-4 text-green-400" />}
               </Button>
-              <Button 
-                variant={activeSection === 'lifestyle' ? 'default':'outline'} 
-                onClick={() => setActiveSection('lifestyle')} 
+              <Button
+                variant={activeSection === 'lifestyle' ? 'default' : 'outline'}
+                onClick={() => setActiveSection('lifestyle')}
                 className={`gap-2 text-xs sm:text-sm ${activeSection === 'lifestyle' ? 'bg-green-600 hover:bg-green-700 border-green-600' : 'border-2 border-gray-800 hover:border-green-600 hover:bg-green-50'}`}
                 size="sm"
               >
-                <Activity className="h-4 w-4" /> 
+                <Activity className="h-4 w-4" />
                 <span className="hidden sm:inline">Lifestyle</span>
                 {savedSections.includes('lifestyle') && <CheckCircle className="h-4 w-4 text-green-400" />}
               </Button>
-              <Button 
-                variant={activeSection === 'medical' ? 'default':'outline'} 
-                onClick={() => setActiveSection('medical')} 
+              <Button
+                variant={activeSection === 'medical' ? 'default' : 'outline'}
+                onClick={() => setActiveSection('medical')}
                 className={`gap-2 text-xs sm:text-sm ${activeSection === 'medical' ? 'bg-green-600 hover:bg-green-700 border-green-600' : 'border-2 border-gray-800 hover:border-green-600 hover:bg-green-50'}`}
                 size="sm"
               >
-                <HeartPulse className="h-4 w-4" /> 
+                <HeartPulse className="h-4 w-4" />
                 <span className="hidden sm:inline">Medical</span>
                 {savedSections.includes('medical') && <CheckCircle className="h-4 w-4 text-green-400" />}
               </Button>
-              <Button 
-                variant={activeSection === 'recall' ? 'default':'outline'} 
-                onClick={() => setActiveSection('recall')} 
+              <Button
+                variant={activeSection === 'recall' ? 'default' : 'outline'}
+                onClick={() => setActiveSection('recall')}
                 className={`gap-2 text-xs sm:text-sm ${activeSection === 'recall' ? 'bg-green-600 hover:bg-green-700 border-green-600' : 'border-2 border-gray-800 hover:border-green-600 hover:bg-green-50'}`}
                 size="sm"
               >
-                <ClipboardList className="h-4 w-4" /> 
+                <ClipboardList className="h-4 w-4" />
                 <span className="hidden sm:inline">Recall</span>
                 {savedSections.includes('recall') && <CheckCircle className="h-4 w-4 text-green-400" />}
               </Button>
@@ -469,9 +469,9 @@ export default function DietitianNewClientPage() {
                   <Button type="button" variant="outline" asChild className="flex-1 sm:flex-none">
                     <Link href="/dietician/clients">Cancel</Link>
                   </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={loading} 
+                  <Button
+                    type="submit"
+                    disabled={loading}
                     className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md hover:shadow-lg transition-all"
                   >
                     {loading ? (
@@ -502,7 +502,7 @@ export default function DietitianNewClientPage() {
               <div>
                 <h4 className="font-medium text-blue-900">Client Account Setup</h4>
                 <p className="text-sm text-blue-700 mt-1">
-                  A temporary password will be generated for the client. They will receive login instructions 
+                  A temporary password will be generated for the client. They will receive login instructions
                   via email and should change their password on first login. The client will be automatically assigned to you.
                 </p>
               </div>

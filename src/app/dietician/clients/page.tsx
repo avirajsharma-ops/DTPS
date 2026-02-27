@@ -95,7 +95,7 @@ export default function DieticianClientsPage() {
   const [filterFreeze, setFilterFreeze] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -164,7 +164,7 @@ export default function DieticianClientsPage() {
       return;
     }
     setEmailError('');
-    
+
     if (!createForm.email || !createForm.firstName || !createForm.lastName || !createForm.password) {
       toast.error('Please fill required fields: email, first name, last name, and password');
       return;
@@ -218,9 +218,9 @@ export default function DieticianClientsPage() {
 
   // Search is handled server-side; only apply local status filter
   const filteredClients = clients.filter(client => {
-    const matchesStatus = filterType === 'all' || 
+    const matchesStatus = filterType === 'all' ||
       (client.clientStatus || 'lead') === filterType;
-    
+
     return matchesStatus;
   });
 
@@ -254,7 +254,7 @@ export default function DieticianClientsPage() {
   return (
     <DashboardLayout>
       <div className="p-6 space-y-4">
-         {/* Header */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Clients</h1>
@@ -262,10 +262,10 @@ export default function DieticianClientsPage() {
               Manage your assigned clients
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               className="bg-emerald-600 hover:bg-emerald-700"
               onClick={() => setCreateDialogOpen(true)}
             >
@@ -281,7 +281,7 @@ export default function DieticianClientsPage() {
 
         {/* Search */}
         <Card>
-               <CardContent className="p-6">
+          <CardContent className="p-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -321,7 +321,7 @@ export default function DieticianClientsPage() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <Button size="sm" variant="ghost" onClick={() => fetchMyClients(currentPage, pageSize, debouncedSearch)}>
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -377,7 +377,7 @@ export default function DieticianClientsPage() {
                               />
                             </TableCell>
                             <TableCell className="px-3">
-                              <Link 
+                              <Link
                                 href={`/dietician/clients/${client._id}`}
                                 className="text-blue-600 hover:underline font-medium text-sm"
                               >
@@ -412,20 +412,18 @@ export default function DieticianClientsPage() {
                             </TableCell>
                             <TableCell className="px-3">
                               {/* Status is automatically computed: LEAD / ACTIVE / INACTIVE */}
-                              <Badge 
+                              <Badge
                                 variant="outline"
-                                className={`text-xs px-2 py-0.5 ${
-                                  client.clientStatus === 'active' ? 'bg-green-100 text-green-700 border-green-300' :
-                                  client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
-                                  'bg-blue-100 text-blue-700 border-blue-300'
-                                }`}
+                                className={`text-xs px-2 py-0.5 ${client.clientStatus === 'active' ? 'bg-green-100 text-green-700 border-green-300' :
+                                    client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                                      'bg-blue-100 text-blue-700 border-blue-300'
+                                  }`}
                               >
                                 <span className="flex items-center gap-1.5">
-                                  <span className={`w-2 h-2 rounded-full ${
-                                    client.clientStatus === 'active' ? 'bg-green-500' :
-                                    client.clientStatus === 'inactive' ? 'bg-gray-500' :
-                                    'bg-blue-500'
-                                  }`}></span>
+                                  <span className={`w-2 h-2 rounded-full ${client.clientStatus === 'active' ? 'bg-green-500' :
+                                      client.clientStatus === 'inactive' ? 'bg-gray-500' :
+                                        'bg-blue-500'
+                                    }`}></span>
                                   {client.clientStatus === 'active' ? 'Active' : client.clientStatus === 'inactive' ? 'Inactive' : 'Lead'}
                                 </span>
                               </Badge>
@@ -492,7 +490,7 @@ export default function DieticianClientsPage() {
                     </TableBody>
                   </Table>
                 </div>
-                
+
                 {/* Pagination Footer */}
                 <div className="px-4 py-3 border-t flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -589,16 +587,16 @@ export default function DieticianClientsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className="text-sm text-gray-600">Email <span className="text-red-500">*</span></label>
-              <Input 
-                type="email" 
-                value={createForm.email} 
+              <Input
+                type="email"
+                value={createForm.email}
                 onChange={e => {
                   setCreateForm(f => ({ ...f, email: e.target.value }));
                   if (emailError) {
                     const validation = validateEmail(e.target.value);
                     setEmailError(validation.isValid ? '' : validation.error || '');
                   }
-                }} 
+                }}
                 placeholder="client@example.com"
                 className={emailError ? 'border-red-500' : ''}
               />
@@ -606,34 +604,34 @@ export default function DieticianClientsPage() {
             </div>
             <div className="col-span-2">
               <label className="text-sm text-gray-600">Password <span className="text-red-500">*</span></label>
-              <Input 
-                type="password" 
-                value={createForm.password} 
-                onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} 
+              <Input
+                type="password"
+                value={createForm.password}
+                onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
                 placeholder="Enter password"
               />
             </div>
             <div>
               <label className="text-sm text-gray-600">First Name <span className="text-red-500">*</span></label>
-              <Input 
-                value={createForm.firstName} 
-                onChange={e => setCreateForm(f => ({ ...f, firstName: e.target.value }))} 
+              <Input
+                value={createForm.firstName}
+                onChange={e => setCreateForm(f => ({ ...f, firstName: e.target.value }))}
                 placeholder="First name"
               />
             </div>
             <div>
               <label className="text-sm text-gray-600">Last Name <span className="text-red-500">*</span></label>
-              <Input 
-                value={createForm.lastName} 
-                onChange={e => setCreateForm(f => ({ ...f, lastName: e.target.value }))} 
+              <Input
+                value={createForm.lastName}
+                onChange={e => setCreateForm(f => ({ ...f, lastName: e.target.value }))}
                 placeholder="Last name"
               />
             </div>
             <div>
               <label className="text-sm text-gray-600">Phone</label>
-              <Input 
-                value={createForm.phone} 
-                onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))} 
+              <Input
+                value={createForm.phone}
+                onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="Phone number"
               />
             </div>
@@ -650,10 +648,10 @@ export default function DieticianClientsPage() {
             </div>
             <div className="col-span-2">
               <label className="text-sm text-gray-600">Date of Birth</label>
-              <Input 
-                type="date" 
-                value={createForm.dateOfBirth} 
-                onChange={e => setCreateForm(f => ({ ...f, dateOfBirth: e.target.value }))} 
+              <Input
+                type="date"
+                value={createForm.dateOfBirth}
+                onChange={e => setCreateForm(f => ({ ...f, dateOfBirth: e.target.value }))}
               />
             </div>
           </div>

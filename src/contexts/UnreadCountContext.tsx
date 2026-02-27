@@ -162,9 +162,9 @@ export function useUnreadCounts() {
 // Export a hook that's safe to use outside provider (returns defaults)
 export function useUnreadCountsSafe() {
   const context = useContext(UnreadCountContext);
-  return context || { 
-    counts: { notifications: 0, messages: 0 }, 
-    refreshCounts: async () => {}, 
-    isConnected: false 
+  return context || {
+    counts: { notifications: 0, messages: 0 },
+    refreshCounts: async () => { },
+    isConnected: false
   };
 }

@@ -12,23 +12,23 @@ export const validateEmail = (email: string): { isValid: boolean; error?: string
   if (!email || email.trim() === '') {
     return { isValid: false, error: 'Email is required' };
   }
-  
+
   // Check for basic email format
   if (!email.includes('@')) {
     return { isValid: false, error: 'Please enter a valid email address' };
   }
-  
+
   // Check if local part is only numbers
   const localPart = email.split('@')[0];
   if (/^\d+$/.test(localPart)) {
     return { isValid: false, error: 'Email cannot contain only numbers before @' };
   }
-  
+
   // Check full email format with regex
   if (!EMAIL_REGEX.test(email)) {
     return { isValid: false, error: 'Please enter a valid email address (e.g., name@example.com)' };
   }
-  
+
   return { isValid: true };
 };
 

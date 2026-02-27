@@ -7,13 +7,13 @@ import { DietPlanExport } from './DietPlanExport';
 import { Save, User, Download, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
-import { 
-  MEAL_TYPES, 
-  MEAL_TYPE_KEYS, 
-  getMealLabel, 
+import {
+  MEAL_TYPES,
+  MEAL_TYPE_KEYS,
+  getMealLabel,
   sortMealsByType,
   normalizeMealType,
-  type MealTypeKey 
+  type MealTypeKey
 } from '@/lib/mealConfig';
 
 // ClientInfoPanel component (inline)
@@ -24,7 +24,7 @@ function InfoCard({ label, value, variant = 'default' }: { label: string; value:
     bordered: 'bg-white border-2 border-slate-300 hover:border-slate-400',
   };
   return (
-    <div className={`rounded-xl p-2.5 transition-colors ${styles[variant]}`}> 
+    <div className={`rounded-xl p-2.5 transition-colors ${styles[variant]}`}>
       <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">{label}</p>
       <p className={`font-semibold text-sm ${variant === 'dark' ? 'text-white' : 'text-slate-900'}`}>{value}</p>
     </div>
@@ -163,14 +163,14 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   const userRole = session?.user?.role as string | undefined;
   // Allow export for admin, health_counselor, and dietitian
   const canExport = userRole === 'admin' || userRole === 'health_counselor' || userRole === 'dietitian';
-  
+
   // Combine props with clientData for restrictions
   const dietaryRestrictions = clientDietaryRestrictions || clientData?.dietaryRestrictions || '';
   const medicalConditions = clientMedicalConditions || clientData?.medicalConditions || '';
   const allergies = clientAllergies || clientData?.allergies || '';
   const [mealTypeConfigs, setMealTypeConfigs] = useState<MealTypeConfig[]>(initialMealTypes || defaultMealTypes);
   const mealTypes = mealTypeConfigs.map(m => m.name);
-  
+
   // Helper to format date as YYYY-MM-DD
   const formatDateStr = (date: Date): string => {
     const year = date.getFullYear();
@@ -185,17 +185,17 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
     result.setDate(result.getDate() + days);
     return result;
   };
-  
+
   const buildDays = (count: number): DayPlan[] => {
     const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const baseDate = startDate ? new Date(startDate) : new Date();
-    
+
     return Array.from({ length: count }).map((_, index) => {
       const dayDate = addDaysToDate(baseDate, index);
       const dayOfMonth = dayDate.getDate();
       const dayName = fullDayNames[dayDate.getDay()];
       const dateStr = formatDateStr(dayDate);
-      
+
       return {
         id: `day-${index}`,
         day: `${dayOfMonth} - Day ${index + 1} - ${dayName}`,
@@ -205,19 +205,19 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       };
     });
   };
-  
+
   // Initialize weekPlan with the correct duration and initialMeals
   const [weekPlan, setWeekPlan] = useState<DayPlan[]>(() => {
-    
+
     // Always start with correct number of days based on duration
     const newDays = buildDays(duration);
-    
+
     // If we have initialMeals, merge it into the days
     if (initialMeals && Array.isArray(initialMeals) && initialMeals.length > 0) {
       // Log sample data
       if (initialMeals[0]) {
       }
-      
+
       return newDays.map((d, i) => ({
         ...d,
         ...(initialMeals[i] || {}), // Preserve all fields from initialMeals including isHeld, isCopiedFromHold
@@ -225,20 +225,20 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         note: initialMeals[i]?.note || ''
       }));
     }
-    
+
     return newDays;
   });
-  
+
   // Rebuild when duration changes
   useEffect(() => {
     if (weekPlan.length !== duration) {
       const newDays = buildDays(duration);
       setWeekPlan(prev => {
-        return newDays.map((d, i) => ({ 
+        return newDays.map((d, i) => ({
           ...d,
           ...(prev[i] || {}), // Preserve all fields including isHeld, isCopiedFromHold
-          meals: prev[i]?.meals || {}, 
-          note: prev[i]?.note || '' 
+          meals: prev[i]?.meals || {},
+          note: prev[i]?.note || ''
         }));
       });
     }
@@ -248,22 +248,22 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   // Using JSON stringify for deep comparison since object reference may not change
   const initialMealsKey = JSON.stringify(initialMeals);
   useEffect(() => {
-    
+
     const newDays = buildDays(duration);
-    
+
     if (initialMeals && Array.isArray(initialMeals) && initialMeals.length > 0) {
       // Log what we're loading
       initialMeals.forEach((day, i) => {
         const mealCount = day?.meals ? Object.keys(day.meals).length : 0;
         const isHeld = (day as any)?.isHeld || false;
       });
-      
+
       // Always set the weekPlan from initialMeals if provided
       // Use MAX of duration and initialMeals.length to ensure we show all days
       // (duration is what user wants, initialMeals.length may be less if old data, or more if hold days were added)
       const mealsLength = Math.max(duration, initialMeals.length);
       const adjustedDays = buildDays(mealsLength);
-      
+
       setWeekPlan(adjustedDays.map((d, i) => ({
         ...d,
         ...(initialMeals[i] || {}), // Preserve all fields including isHeld, isCopiedFromHold
@@ -300,7 +300,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
     const identifier = clientId || 'new';
     return `dietPlan_draft_${identifier}_${duration}`;
   }, [clientId, duration]);
-  
+
   // Auto-save state
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -310,10 +310,10 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousDataRef = useRef<string>('');
   const isInitializedRef = useRef(false);
-  
+
   const DRAFT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
   const DEBOUNCE_MS = 2000; // 2 seconds
-  
+
   // Memoized data for auto-save comparison
   const draftData = useMemo(() => ({
     weekPlan,
@@ -321,11 +321,11 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
     lastSaved: Date.now(),
     expiresAt: Date.now() + DRAFT_EXPIRY_MS,
   }), [weekPlan, mealTypeConfigs]);
-  
+
   // Save to localStorage (no server calls - zero DB load)
   const saveToStorage = useCallback(() => {
     if (typeof window === 'undefined' || readOnly) return;
-    
+
     try {
       localStorage.setItem(draftKey, JSON.stringify(draftData));
       setHasDraft(true);
@@ -336,80 +336,80 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       setIsSaving(false);
     }
   }, [draftKey, draftData, readOnly]);
-  
+
   // Debounced auto-save effect (2 second delay)
   useEffect(() => {
     if (readOnly || !session?.user?.id) return;
-    
+
     const currentDataStr = JSON.stringify({ weekPlan, mealTypeConfigs });
-    
+
     // Skip if no changes
     if (previousDataRef.current === currentDataStr) return;
-    
+
     // Skip initial state
     if (!isInitializedRef.current) {
       isInitializedRef.current = true;
       previousDataRef.current = currentDataStr;
       return;
     }
-    
+
     // Clear existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-    
+
     setIsSaving(true);
-    
+
     // Debounced save - only saves after 2 seconds of no changes
     saveTimeoutRef.current = setTimeout(() => {
       saveToStorage();
       previousDataRef.current = currentDataStr;
     }, DEBOUNCE_MS);
-    
+
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
   }, [weekPlan, mealTypeConfigs, readOnly, session?.user?.id, saveToStorage]);
-  
+
   // Restore draft on mount
   useEffect(() => {
     if (draftRestored || readOnly || !session?.user?.id) return;
     if (typeof window === 'undefined') return;
-    
+
     try {
       const stored = localStorage.getItem(draftKey);
       if (!stored) {
         setDraftRestored(true);
         return;
       }
-      
+
       const draft = JSON.parse(stored);
-      
+
       // Check if expired
       if (draft.expiresAt && Date.now() > draft.expiresAt) {
         localStorage.removeItem(draftKey);
         setDraftRestored(true);
         return;
       }
-      
+
       // Only restore draft if initialMeals is empty/absent (new plan or template create)
       // When initialMeals has data (editing existing plan/template), DB data takes priority
       const hasInitialMeals = initialMeals && Array.isArray(initialMeals) && initialMeals.length > 0 &&
         initialMeals.some((day: any) => day?.meals && Object.keys(day.meals).length > 0);
-      
+
       if (!hasInitialMeals && draft.weekPlan && draft.weekPlan.length > 0) {
-        const hasData = draft.weekPlan.some((day: DayPlan) => 
+        const hasData = draft.weekPlan.some((day: DayPlan) =>
           Object.keys(day.meals).length > 0 || day.note
         );
-        
+
         if (hasData) {
           // If initialMealTypes is provided, use that order; otherwise use draft's meal types
-          const baseMealTypes = initialMealTypes && initialMealTypes.length > 0 
-            ? initialMealTypes 
+          const baseMealTypes = initialMealTypes && initialMealTypes.length > 0
+            ? initialMealTypes
             : (draft.mealTypeConfigs || defaultMealTypes);
-            
+
           const normalizedMealTypes = baseMealTypes.map((meal: MealTypeConfig) => {
             const key = normalizeMealType(meal.name);
             return {
@@ -427,7 +427,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
           });
 
           const mealTimeMap = new Map(dedupedMealTypes.map((meal: MealTypeConfig) => [meal.name, meal.time]));
-          
+
           // Collect all custom meal types from weekPlan that aren't in dedupedMealTypes
           const customMealsFromWeekPlan: MealTypeConfig[] = [];
           draft.weekPlan.forEach((day: DayPlan) => {
@@ -444,10 +444,10 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
               }
             });
           });
-          
+
           // Merge custom meals into dedupedMealTypes
           const allMealTypes = [...dedupedMealTypes, ...customMealsFromWeekPlan];
-          
+
           const normalizedWeekPlan = draft.weekPlan.map((day: DayPlan) => {
             const meals: Record<string, Meal> = {};
             Object.keys(day.meals).forEach((mealName) => {
@@ -480,32 +480,32 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
           setMealTypeConfigs(allMealTypes);
           setHasDraft(true);
           setLastSaved(draft.lastSaved ? new Date(draft.lastSaved) : null);
-          
+
           toast.success('Draft restored', {
             description: 'Your previous diet plan work has been restored. Draft expires in 24 hours.',
             duration: 4000
           });
         }
       }
-      
+
       setDraftRestored(true);
     } catch (error) {
       console.error('Failed to restore diet plan draft:', error);
       setDraftRestored(true);
     }
   }, [draftKey, draftRestored, readOnly, session?.user?.id, initialMealTypes]);
-  
+
   // Clear draft function
   const handleClearDraft = useCallback(() => {
     if (typeof window === 'undefined') return;
-    
+
     try {
       localStorage.removeItem(draftKey);
       setHasDraft(false);
       setLastSaved(null);
       previousDataRef.current = '';
       isInitializedRef.current = false;
-      
+
       // Reset to initial state
       const newDays = buildDays(duration);
       if (initialMeals && initialMeals.length > 0) {
@@ -519,13 +519,13 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         setWeekPlan(newDays);
       }
       setMealTypeConfigs(initialMealTypes || defaultMealTypes);
-      
+
       toast.success('Draft cleared', { description: 'Starting fresh.' });
     } catch (error) {
       console.error('Failed to clear diet plan draft:', error);
     }
   }, [draftKey, duration, initialMeals, initialMealTypes]);
-  
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -538,14 +538,14 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
 
   const handleAddMealType = (newMealType: string, position?: number, time?: string) => {
     if (!newMealType) return;
-    
+
     // Check if meal type already exists in config by checking the actual configs, not derived mealTypes
     const alreadyExists = mealTypeConfigs.some(m => m.name === newMealType);
     if (alreadyExists) return;
-    
+
     const mealTime = time || '12:00 PM';
     const newConfig: MealTypeConfig = { name: newMealType, time: mealTime };
-    
+
     if (position !== undefined && position >= 0 && position <= mealTypeConfigs.length) {
       // Insert at specific position
       setMealTypeConfigs(prev => {
@@ -586,9 +586,9 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         setHasDraft(false);
         setLastSaved(null);
         previousDataRef.current = '';
-      } catch {/* ignore */}
+      } catch {/* ignore */ }
     }
-    
+
     if (onSave) {
       // New simple callback for PlanningSection
       onSave(weekPlan);
@@ -610,7 +610,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   const handleRemoveMealType = (mealTypeName: string) => {
     // Remove from mealTypeConfigs
     setMealTypeConfigs(prev => prev.filter(config => config.name !== mealTypeName));
-    
+
     // Also remove from weekPlan meals
     setWeekPlan(prev => prev.map(day => {
       const { [mealTypeName]: removed, ...remainingMeals } = day.meals;
@@ -653,7 +653,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
                 <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-1 rounded font-medium">View Only</span>
               )}
             </div>
-            
+
             {/* Right side - Auto-save indicator + Actions */}
             <div className="flex items-center space-x-3">
               {/* Auto-save indicator */}
@@ -683,7 +683,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
                   )}
                 </>
               )}
-              
+
               {/* Action buttons */}
               {!readOnly && (
                 <>
@@ -727,9 +727,9 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       </div>
 
 
-      <div className="max-w-600 z-mx-auto px-2 sm:px-4 lg:px-6 py-10"> 
-        <MealGridTable 
-          weekPlan={weekPlan} 
+      <div className="max-w-600 z-mx-auto px-2 sm:px-4 lg:px-6 py-10">
+        <MealGridTable
+          weekPlan={weekPlan}
           mealTypes={mealTypes}
           onUpdate={readOnly ? undefined : setWeekPlan}
           onAddMealType={readOnly ? undefined : handleAddMealType}

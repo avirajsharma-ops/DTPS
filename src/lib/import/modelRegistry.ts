@@ -630,8 +630,8 @@ class ModelRegistry {
       const fieldInfo: SchemaFieldInfo = {
         path: fullPath,
         type: this.getFieldType(schemaType),
-        required: options.required === true || 
-                  (Array.isArray(options.required) && options.required[0] === true),
+        required: options.required === true ||
+          (Array.isArray(options.required) && options.required[0] === true),
         enum: options.enum,
         default: options.default,
         ref: options.ref,
@@ -664,11 +664,11 @@ class ModelRegistry {
    */
   private flattenFieldNames(obj: Record<string, any>, prefix = ''): string[] {
     const fields: string[] = [];
-    
+
     for (const [key, value] of Object.entries(obj)) {
       const fullPath = prefix ? `${prefix}.${key}` : key;
       fields.push(fullPath);
-      
+
       // Only flatten one level for nested objects to avoid too many fields
       if (typeof value === 'object' && value !== null && !Array.isArray(value) && !prefix) {
         for (const nestedKey of Object.keys(value)) {
@@ -676,7 +676,7 @@ class ModelRegistry {
         }
       }
     }
-    
+
     return fields;
   }
 
@@ -685,7 +685,7 @@ class ModelRegistry {
    */
   private getFieldType(schemaType: any): string {
     const instance = schemaType.instance;
-    
+
     if (instance === 'Array') {
       const caster = schemaType.caster;
       if (caster) {
@@ -693,7 +693,7 @@ class ModelRegistry {
       }
       return 'Array';
     }
-    
+
     return instance || 'Mixed';
   }
 
@@ -738,10 +738,10 @@ class ModelRegistry {
     // Include ALL fields, even if empty - we need to check if required fields are PRESENT
     // Also flatten nested objects to get all field paths
     const rowFields = this.flattenFieldNames(row);
-    
+
     console.log(`\n[ModelDetection] ===== NEW ROW DETECTION =====`);
     console.log(`[ModelDetection] Row fields (${rowFields.length}): ${rowFields.slice(0, 20).join(', ')}${rowFields.length > 20 ? '...' : ''}`);
-    
+
     const results: ModelMatchResult[] = [];
 
     for (const [name, registeredModel] of this.models) {
@@ -759,50 +759,50 @@ class ModelRegistry {
       // Match fields with normalized comparison
       const matchedFields = rowFields.filter((f: string) => {
         const fNormalized = normalizeFieldName(f);
-        
+
         // Exact match
         if (modelFields.includes(f)) return true;
-        
+
         // Case-insensitive match
         if (modelFields.some(mf => mf.toLowerCase() === f.toLowerCase())) return true;
-        
+
         // Normalized match (ignore underscores)
         if (modelFields.some(mf => normalizeFieldName(mf) === fNormalized)) return true;
-        
+
         // Nested field match
         if (modelFields.some(mf => mf.startsWith(f + '.'))) return true;
-        
+
         return false;
       });
 
       const missingRequired = registeredModel.requiredFields.filter((rf: string) => {
         const rfNormalized = normalizeFieldName(rf);
-        
+
         // Check exact match
         if (rowFields.includes(rf)) return false;
-        
+
         // Check case-insensitive match
         if (rowFields.some(f => f.toLowerCase() === rf.toLowerCase())) return false;
-        
+
         // Check normalized match
         if (rowFields.some(f => normalizeFieldName(f) === rfNormalized)) return false;
-        
+
         // Check nested match
         if (rowFields.some(f => f.startsWith(rf + '.'))) return false;
-        
+
         return true;
       });
 
       const extraFields = rowFields.filter((f: string) => {
         const fNormalized = normalizeFieldName(f);
-        
+
         // Check if matches any model field
         if (modelFields.includes(f)) return false;
         if (modelFields.some(mf => mf.toLowerCase() === f.toLowerCase())) return false;
         if (modelFields.some(mf => normalizeFieldName(mf) === fNormalized)) return false;
         if (modelFields.some(mf => mf.startsWith(f + '.'))) return false;
         if (modelFields.some(mf => f.startsWith(mf + '.'))) return false;
-        
+
         return true;
       });
 
@@ -811,33 +811,33 @@ class ModelRegistry {
       // SECONDARY: How many total fields match (coverage)
       // TERTIARY: Model-specific keyword indicators (Recipe has "prepTime", "cookTime", "ingredients", etc.)
       // QUATERNARY: Penalize for extra fields
-      
+
       // All required fields matched = strong indicator this is the right model
       const hasAllRequired = missingRequired.length === 0 ? 1 : 0;
-      
+
       // Ratio of matched fields to model fields (how much of the model schema we cover)
       const matchRatio = matchedFields.length / Math.max(modelFields.length, 1);
-      
+
       // Model-specific keyword indicators for better partial-data detection
       let keywordBonus = 0;
       const rowFieldsLower = rowFields.map(f => f.toLowerCase().replace(/[_-]/g, ''));
-      
+
       if (name === 'Recipe') {
         // Strong indicators that this is recipe data
         const recipeKeywords = ['preptime', 'cooktime', 'ingredients', 'instructions', 'nutrition', 'servings'];
-        const matchedKeywords = recipeKeywords.filter(kw => 
+        const matchedKeywords = recipeKeywords.filter(kw =>
           rowFieldsLower.some(f => f.includes(kw))
         );
         keywordBonus = Math.min(25, matchedKeywords.length * 6); // Up to 25 points for strong indicators
       } else if (name === 'User') {
         // For User model
         const userKeywords = ['firstname', 'lastname', 'email', 'phone', 'dateofbirth', 'height', 'weight'];
-        const matchedKeywords = userKeywords.filter(kw => 
+        const matchedKeywords = userKeywords.filter(kw =>
           rowFieldsLower.some(f => f.includes(kw))
         );
         keywordBonus = Math.min(15, matchedKeywords.length * 3);
       }
-      
+
       // Penalty for missing required fields (each missing required field is a strike)
       // But for Recipe, reduce penalty since it might have many optional fields
       let missingRequiredPenalty = missingRequired.length * 10; // 10 points per missing required
@@ -849,7 +849,7 @@ class ModelRegistry {
           missingRequiredPenalty = missingRequired.length * 5; // Reduce to 5 per missing for recipe with keywords
         }
       }
-      
+
       // Smaller penalty for extra fields
       // If model has 50 fields and we have 60 extra, that's a ratio of 1.2, which is 36 penalty points
       // But we cap it at 20 to not over-penalize files with many unknown columns
@@ -861,7 +861,7 @@ class ModelRegistry {
       // + matchRatio * 20 points (coverage of model fields) 
       // + keywordBonus (model-specific indicators)
       // - penalties
-      const confidence = Math.max(0, Math.min(100, 
+      const confidence = Math.max(0, Math.min(100,
         80 * hasAllRequired +          // 80 points if all required found
         matchRatio * 20 +               // Up to 20 more points based on field coverage
         keywordBonus -                  // Bonus for model-specific keywords
@@ -869,10 +869,10 @@ class ModelRegistry {
         extraFieldPenalty               // Penalize for unknown extra fields
       ));
 
-      
+
       // Debug logging
-      console.log(`[ModelDetection-${name}] conf=${confidence.toFixed(1)} (allReq=${hasAllRequired*80}+match=${(matchRatio*20).toFixed(1)}+bonus=${keywordBonus}-missing=${missingRequiredPenalty}-extra=${extraFieldPenalty.toFixed(1)}), matched=${matchedFields.length}/${modelFields.length}, missing=${missingRequired.length}/${registeredModel.requiredFields.length}, extra=${extraFields.length}`);
-      
+      console.log(`[ModelDetection-${name}] conf=${confidence.toFixed(1)} (allReq=${hasAllRequired * 80}+match=${(matchRatio * 20).toFixed(1)}+bonus=${keywordBonus}-missing=${missingRequiredPenalty}-extra=${extraFieldPenalty.toFixed(1)}), matched=${matchedFields.length}/${modelFields.length}, missing=${missingRequired.length}/${registeredModel.requiredFields.length}, extra=${extraFields.length}`);
+
 
       if (name === 'User' || name === 'Recipe') {
         console.log(`  [${name}-Details] Required fields: ${registeredModel.requiredFields.join(', ')}`);
@@ -884,7 +884,7 @@ class ModelRegistry {
         if (name === 'Recipe') {
           const recipeKeywords = ['preptime', 'cooktime', 'ingredients', 'instructions', 'nutrition', 'servings'];
           const rowFieldsLower = rowFields.map(f => f.toLowerCase().replace(/[_-]/g, ''));
-          const matchedKeywords = recipeKeywords.filter(kw => 
+          const matchedKeywords = recipeKeywords.filter(kw =>
             rowFieldsLower.some(f => f.includes(kw))
           );
           console.log(`  [Recipe-Keywords] Matched strong indicators: ${matchedKeywords.join(', ')} (bonus: ${keywordBonus}pts)`);
@@ -948,7 +948,7 @@ class ModelRegistry {
    * Validate a single row against a model's schema
    */
   async validateRow(
-    modelName: string, 
+    modelName: string,
     row: Record<string, any>,
     rowIndex: number
   ): Promise<{
@@ -995,11 +995,11 @@ class ModelRegistry {
       // This removes extra columns from the import file
       const cleanedRow: Record<string, any> = {};
       for (const [key, value] of Object.entries(row)) {
-        const isAllowed = allowedFields.has(key) || 
-          Array.from(allowedFields).some(af => 
+        const isAllowed = allowedFields.has(key) ||
+          Array.from(allowedFields).some(af =>
             key.startsWith(af + '.') || af.startsWith(key + '.')
           );
-        
+
         if (isAllowed) {
           cleanedRow[key] = value;
         }
@@ -1007,10 +1007,10 @@ class ModelRegistry {
 
       // Create a document instance for validation
       const doc = new registeredModel.model(cleanedRow);
-      
+
       // Run Mongoose validation
       const validationError = doc.validateSync();
-      
+
       if (validationError) {
         for (const [field, error] of Object.entries(validationError.errors)) {
           errors.push({

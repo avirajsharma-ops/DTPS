@@ -55,7 +55,7 @@ const DAYS_PER_PAGE = 14;
 // Helper function to calculate daily macro totals
 function calculateDayMacros(day: DayPlan): { cal: number; carbs: number; fats: number; protein: number; fiber: number } {
   const totals = { cal: 0, carbs: 0, fats: 0, protein: 0, fiber: 0 };
-  
+
   Object.values(day.meals).forEach(meal => {
     if (meal && meal.foodOptions) {
       // Only count the first food option (A option) for totals
@@ -71,7 +71,7 @@ function calculateDayMacros(day: DayPlan): { cal: number; carbs: number; fats: n
       }
     }
   });
-  
+
   return totals;
 }
 
@@ -83,7 +83,7 @@ function formatNotesDisplay(note: string): string[] {
 }
 
 export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, onUpdateMealTimes, onExport, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', clientName = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
-  
+
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copySource, setCopySource] = useState<{ dayIndex: number; mealType: string } | null>(null);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
@@ -174,7 +174,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         cal: '',
         carbs: '',
         fats: '',
-  protein: '',
+        protein: '',
         fiber: ''
       }
     ]
@@ -224,7 +224,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     if (readOnly || !onUpdate) return;
     const newWeekPlan = [...weekPlan];
     if (newWeekPlan[dayIndex].meals[mealType]) {
-      newWeekPlan[dayIndex].meals[mealType].showAlternatives = 
+      newWeekPlan[dayIndex].meals[mealType].showAlternatives =
         !newWeekPlan[dayIndex].meals[mealType].showAlternatives;
       onUpdate(newWeekPlan);
     }
@@ -303,7 +303,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     if (!sourceMeal) return;
 
     const newWeekPlan = [...weekPlan];
-    
+
     // Copy to all selected day and meal combinations
     selectedDays.forEach(targetDayIndex => {
       selectedMeals.forEach(targetMealType => {
@@ -338,12 +338,12 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
 
     const newWeekPlan = [...weekPlan];
     const isAlternative = sourceOption.isAlternative || false;
-    
+
     // Copy to all selected day and meal combinations
     selectedDaysForFoodCopy.forEach(targetDayIndex => {
       selectedMealsForFoodCopy.forEach(targetMealType => {
         let targetMeal = newWeekPlan[targetDayIndex].meals[targetMealType];
-        
+
         // Create meal if it doesn't exist
         if (!targetMeal) {
           targetMeal = {
@@ -357,11 +357,11 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         }
 
         let targetOption;
-        
+
         if (isAlternative) {
           // For alternative food: Find existing alternative option or create new one
           const existingAltIndex = targetMeal.foodOptions.findIndex(opt => opt.isAlternative === true);
-          
+
           if (existingAltIndex >= 0) {
             targetOption = targetMeal.foodOptions[existingAltIndex];
           } else {
@@ -386,7 +386,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         } else {
           // For normal food: Find existing normal option (first non-alternative) or create new one
           const existingNormalIndex = targetMeal.foodOptions.findIndex(opt => !opt.isAlternative);
-          
+
           if (existingNormalIndex >= 0) {
             targetOption = targetMeal.foodOptions[existingNormalIndex];
           } else {
@@ -446,12 +446,12 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     const isAlternative = sourceOption.isAlternative || false;
 
     const newWeekPlan = [...weekPlan];
-    
+
     // Copy to all selected day and meal combinations
     selectedDaysForOptionCopy.forEach(targetDayIndex => {
       selectedMealsForOptionCopy.forEach(targetMealType => {
         let targetMeal = newWeekPlan[targetDayIndex].meals[targetMealType];
-        
+
         // Create meal if it doesn't exist
         if (!targetMeal) {
           targetMeal = {
@@ -535,16 +535,16 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   };
 
   const toggleDaySelection = (dayIndex: number) => {
-    setSelectedDays(prev => 
-      prev.includes(dayIndex) 
+    setSelectedDays(prev =>
+      prev.includes(dayIndex)
         ? prev.filter(d => d !== dayIndex)
         : [...prev, dayIndex]
     );
   };
 
   const toggleMealSelection = (mealType: string) => {
-    setSelectedMeals(prev => 
-      prev.includes(mealType) 
+    setSelectedMeals(prev =>
+      prev.includes(mealType)
         ? prev.filter(m => m !== mealType)
         : [...prev, mealType]
     );
@@ -646,7 +646,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
 
     // Store custom time and compute position based on time ordering
     setCustomMealTimes(prev => ({ ...prev, [name]: time }));
-    
+
     // Use getMealTypeTime for consistent sorting
     const getMealTime = (mt: string) => {
       if (mt === name) return time;
@@ -655,19 +655,19 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       }
       return customMealTimes[mt] || mealTimeSuggestions[mt] || '12:00 PM';
     };
-    
+
     // Sort ALL meals by time, not by canonical type (matching displayMealTypes sorting)
-    const sorted = [...mealTypes, name].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=> {
+    const sorted = [...mealTypes, name].filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => {
       const timeA = getMealTime(a);
       const timeB = getMealTime(b);
       const timeValueA = getTimeNumericValue(timeA);
       const timeValueB = getTimeNumericValue(timeB);
-      
+
       // Sort by time first
       if (timeValueA !== timeValueB) {
         return timeValueA - timeValueB;
       }
-      
+
       // If same time, canonical types come before custom
       const orderA = getCanonicalSortOrder(a);
       const orderB = getCanonicalSortOrder(b);
@@ -761,11 +761,11 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   // Includes all mealTypes from parent (via mealTypeConfigs) AND any custom meals in weekPlan
   const displayMealTypes = (() => {
     const allMealTypes = new Set<string>();
-    
+
     // Add all meal types from parent's mealTypeConfigs (via mealTypes prop)
     // These are the tracked meal types that should always display
     mealTypes.forEach(mt => allMealTypes.add(toDisplayLabel(mt)));
-    
+
     // Add any additional meal types from weekPlan that aren't in parent's config
     // (for safety - in case meals exist that weren't properly added to config)
     weekPlan.forEach(day => {
@@ -780,7 +780,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         }
       });
     });
-    
+
     // Sort ALL meal types by time (chronologically, 24-hour), regardless of canonical or custom
     // This ensures custom meals appear in their proper chronological position
     return Array.from(allMealTypes).sort((a, b) => {
@@ -788,12 +788,12 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       const timeB = getMealTypeTime(b);
       const timeValueA = getTimeNumericValue(timeA);
       const timeValueB = getTimeNumericValue(timeB);
-      
+
       // Sort purely by time
       if (timeValueA !== timeValueB) {
         return timeValueA - timeValueB;
       }
-      
+
       // If same time, canonical types come before custom types
       const orderA = getCanonicalSortOrder(a);
       const orderB = getCanonicalSortOrder(b);
@@ -820,12 +820,12 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     if (readOnly || !onUpdate) return;
     const findValue = (findFoodTarget || manualFindFoodName || findRecipeSearch).trim();
     const replaceValue = (replaceFoodValue || replaceRecipeSearch).trim();
-    
+
     if (!findValue || selectedDaysForReplace.length === 0 || selectedMealTypesForReplace.length === 0) return;
-    
+
     // For replace action, require a replace value
     if (replaceAction === 'replace' && !replaceValue) return;
-    
+
     // Matching helper: checks food name (case-insensitive) OR recipeUuid
     const isMatch = (opt: FoodOption): boolean => {
       const foodName = (opt.food || '').trim().toLowerCase();
@@ -847,14 +847,14 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       }
       return false;
     };
-    
+
     const newWeekPlan = weekPlan.map((d, idx) => {
       if (!selectedDaysForReplace.includes(idx)) return d;
       const day = { ...d, meals: { ...d.meals } };
       Object.keys(day.meals).forEach(mt => {
         if (!selectedMealTypesForReplace.includes(mt)) return;
         const meal = { ...day.meals[mt] };
-        
+
         if (replaceAction === 'delete') {
           // Delete matching food options
           meal.foodOptions = meal.foodOptions.filter(opt => !isMatch(opt));
@@ -910,7 +910,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
 
   const handleBulkTimeUpdate = () => {
     if (!onUpdate) return;
-    
+
     // Update all days with new meal times
     const newWeekPlan = weekPlan.map(day => {
       const newMeals = { ...day.meals };
@@ -933,15 +933,15 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       });
       return { ...day, meals: newMeals };
     });
-    
+
     // Update customMealTimes for local display
     setCustomMealTimes(mealTimesForBulkEdit);
-    
+
     // Propagate times to parent (for mealTypeConfigs / localStorage / save)
     if (onUpdateMealTimes) {
       onUpdateMealTimes(mealTimesForBulkEdit);
     }
-    
+
     // Trigger update
     onUpdate(newWeekPlan);
     setBulkTimeEditorOpen(false);
@@ -1097,1460 +1097,1337 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
             </span>
           )}
         </div>
-    <div className='flex items-center gap-4'  >
+        <div className='flex items-center gap-4'  >
           <div className="bg-white shadow-md rounded-full px-4 py-2 border border-gray-300">
-          <span className="text-xs font-semibold text-slate-700">
-            Page {currentPage + 1} of {totalPages} 
-            <span className="text-slate-500 ml-2">
-              (Days {startIndex + 1}-{endIndex})
+            <span className="text-xs font-semibold text-slate-700">
+              Page {currentPage + 1} of {totalPages}
+              <span className="text-slate-500 ml-2">
+                (Days {startIndex + 1}-{endIndex})
+              </span>
             </span>
-          </span>
+          </div>
+          <div className='flex gap-1'>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToPreviousPage}
+              disabled={currentPage === 0}
+              className="h-9 w-9 p-0 rounded-full bg-white shadow-md border-gray-300 hover:bg-slate-100 disabled:opacity-50"
+              title="Previous page"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextPage}
+              disabled={currentPage >= totalPages - 1}
+              className="h-9 w-9 p-0 rounded-full bg-white shadow-md border-gray-300 hover:bg-slate-100 disabled:opacity-50"
+              title="Next page"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={scrollLeft}
+              className="h-9 w-9 p-0 rounded-full bg-white shadow-md border-gray-300 hover:bg-slate-100"
+              title="Scroll left"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={scrollRight}
+              className="h-9 w-9 p-0 rounded-full bg-white shadow-md border-gray-300 hover:bg-slate-100"
+              title="Scroll right"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            {/* Full Screen Toggle Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              className={`h-9 w-9 p-0 rounded-full shadow-md border-gray-300 hover:bg-slate-100 ${isFullScreen ? 'bg-emerald-100 border-emerald-500 text-emerald-700' : 'bg-white'}`}
+              title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+            >
+              {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
+            {/* Download/Export Button */}
+            {onExport && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onExport}
+                className="h-9 w-9 p-0 rounded-full shadow-md border-gray-300 hover:bg-emerald-100 hover:border-emerald-500 hover:text-emerald-700 bg-white"
+                title="Download Diet Plan"
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
-   <div className='flex gap-1'>
-         <Button
-          variant="outline"
-          size="sm"
-          onClick={goToPreviousPage}
-          disabled={currentPage === 0}
-          className="h-9 w-9 p-0 rounded-full bg-white shadow-md border-gray-300 hover:bg-slate-100 disabled:opacity-50"
-          title="Previous page"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToNextPage}
-          disabled={currentPage >= totalPages - 1}
-          className="h-9 w-9 p-0 rounded-full bg-white shadow-md border-gray-300 hover:bg-slate-100 disabled:opacity-50"
-          title="Next page"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={scrollLeft}
-          className="h-9 w-9 p-0 rounded-full bg-white shadow-md border-gray-300 hover:bg-slate-100"
-          title="Scroll left"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={scrollRight}
-          className="h-9 w-9 p-0 rounded-full bg-white shadow-md border-gray-300 hover:bg-slate-100"
-          title="Scroll right"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-        {/* Full Screen Toggle Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsFullScreen(!isFullScreen)}
-          className={`h-9 w-9 p-0 rounded-full shadow-md border-gray-300 hover:bg-slate-100 ${isFullScreen ? 'bg-emerald-100 border-emerald-500 text-emerald-700' : 'bg-white'}`}
-          title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
-        >
-          {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-        </Button>
-        {/* Download/Export Button */}
-        {onExport && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onExport}
-            className="h-9 w-9 p-0 rounded-full shadow-md border-gray-300 hover:bg-emerald-100 hover:border-emerald-500 hover:text-emerald-700 bg-white"
-            title="Download Diet Plan"
-          >
-            <Download className="w-4 h-4" />
-          </Button>
-        )}
-   </div>
-    </div>
       </div>
 
       {/* Table Container */}
       <div className="relative border border-gray-300 rounded-lg bg-white overflow-hidden shadow">
-        <div 
-        ref={scrollContainerRef} 
-        className={`w-full overflow-auto ${isFullScreen ? 'h-[calc(100vh-120px)]' : 'h-[calc(100vh-250px)]'}`}
-        style={{ scrollbarWidth: 'thin' }}
-      >
-        <table className="w-full border-collapse relative">
-          <thead className="sticky top-0 bg-white shadow-sm" style={{ zIndex: 10 }}>
-            <tr>
-              <th className="border-r border-b-2 border-gray-300 p-6 bg-slate-100 w-48 min-w-48">
-                <div className="text-slate-800 font-semibold tracking-wide uppercase text-sm">Day</div>
-              </th>
-              {displayMealTypes.map((mealType, index) => (
-                <React.Fragment key={mealType}>
-                  <th className="border-r border-b-2 border-gray-300 p-5 bg-slate-50 min-w-70">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs">{mealType}</div>
-                        <div className="text-slate-500 font-normal text-[10px] mt-0.5">{getMealTypeTime(mealType)}</div>
-                      </div>
-                      {!readOnly && onRemoveMealType && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setMealTypeToRemove(mealType);
-                            setRemoveMealTypeDialogOpen(true);
-                          }}
-                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
-                          title={`Delete entire "${mealType}" row from all days`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </th>
-                </React.Fragment>
-              ))}
-              {/* Add Meal Type Column at the end */}
-              <th className="border-l border-b-2 border-gray-300 p-5 bg-slate-50 min-w-70">
-                <div className="space-y-2.5">
-                  <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs flex items-center justify-center gap-2">
-                    <Plus className="w-3.5 h-3.5" />
-                    Add Meal Type
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAddMealTypeDialogOpen(true)}
-                    className="w-full h-9 text-xs bg-white border-2 border-dashed border-slate-400 hover:border-slate-600 hover:bg-slate-50
-                     text-slate-700 hover:text-slate-900 font-medium"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New Meal Type
-                  </Button>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedDays.map((day, paginatedIndex) => {
-              const actualDayIndex = startIndex + paginatedIndex;
-              // Use same green color for all rows
-              const rowColor = '#BCEBCB';
-              // Get all meal types for this day (standard ones + any custom ones)
-              const dayMealTypes = [...displayMealTypes];
-              // Only include custom meals that have food in them
-              const customMeals = Object.keys(day.meals).filter(mt => {
-                const label = toDisplayLabel(mt);
-                if (!mealTypes.includes(label) && !displayMealTypes.includes(label)) {
-                  // Check if this custom meal has any food
-                  const meal = day.meals[mt];
-                  return meal?.foodOptions?.some(opt => opt.food?.trim());
-                }
-                return false;
-              }).map(mt => toDisplayLabel(mt));
-              const allMealTypesForDay = [...dayMealTypes, ...customMeals.filter(cm => !dayMealTypes.includes(cm))];
-              
-              // Format day label to show date + day number + day name
-              const formatDayLabel = () => {
-                if (day.date) {
-                  const dateObj = new Date(day.date);
-                  const dayOfMonth = dateObj.getDate();
-                  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                  const dayName = dayNames[dateObj.getDay()];
-                  const dayNum = actualDayIndex + 1;
-                  return `${dayOfMonth} - Day ${dayNum} - ${dayName}`;
-                }
-                return day.day;
-              };
-
-              // Check if this is a freeze recovery day (copied meal at the end)
-              const isFreezeRecovery = (day as any).isFreezeRecovery === true;
-              const originalFreezeDateLabel = (day as any).originalFreezeDateLabel;
-              
-              // Check if this day is a frozen day (original day that was frozen - should be blurred)
-              const isFrozenDay = (day as any).isFrozen === true;
-
-              return (
-                <tr key={day.id} className={`hover:opacity-90 transition-opacity ${isFrozenDay ? 'opacity-40 blur-[1px]' : ''}`}>
-                  <td className="border-r border-b border-gray-300 p-5 align-top" style={{ backgroundColor: rowColor }}>
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div className="text-slate-900 font-semibold text-base">{formatDayLabel()}</div>
-                        {!readOnly && onRemoveDay && weekPlan.length > 1 && (
+        <div
+          ref={scrollContainerRef}
+          className={`w-full overflow-auto ${isFullScreen ? 'h-[calc(100vh-120px)]' : 'h-[calc(100vh-250px)]'}`}
+          style={{ scrollbarWidth: 'thin' }}
+        >
+          <table className="w-full border-collapse relative">
+            <thead className="sticky top-0 bg-white shadow-sm" style={{ zIndex: 10 }}>
+              <tr>
+                <th className="border-r border-b-2 border-gray-300 p-6 bg-slate-100 w-48 min-w-48">
+                  <div className="text-slate-800 font-semibold tracking-wide uppercase text-sm">Day</div>
+                </th>
+                {displayMealTypes.map((mealType, index) => (
+                  <React.Fragment key={mealType}>
+                    <th className="border-r border-b-2 border-gray-300 p-5 bg-slate-50 min-w-70">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs">{mealType}</div>
+                          <div className="text-slate-500 font-normal text-[10px] mt-0.5">{getMealTypeTime(mealType)}</div>
+                        </div>
+                        {!readOnly && onRemoveMealType && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => onRemoveDay(actualDayIndex)}
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                            title={`Delete Day ${actualDayIndex + 1}`}
+                            onClick={() => {
+                              setMealTypeToRemove(mealType);
+                              setRemoveMealTypeDialogOpen(true);
+                            }}
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
+                            title={`Delete entire "${mealType}" row from all days`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         )}
                       </div>
-                      {isFreezeRecovery && originalFreezeDateLabel && (
-                        <div className="text-xs text-gray-500 italic">
-                          (Freeze Recovery from {originalFreezeDateLabel})
-                        </div>
-                      )}
-                      {isFrozenDay && (
-                        <div className="text-xs text-red-500 font-medium">
-                          ❄️ Frozen Day
-                        </div>
-                      )}
-                      <DatePicker
-                        value={day.date}
-                        onChange={(date) => updateDayInfo(actualDayIndex, 'date', date)}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 text-xs bg-white border-gray-300 hover:border-slate-500 justify-start font-normal text-left"
-                        onClick={() => {
-                          setNotesDialogDayIndex(actualDayIndex);
-                          setNotesDialogValue(day.note || '');
-                          setNotesDialogOpen(true);
-                        }}
-                      >
-                        {day.note ? (
-                          <span className="truncate">{day.note.substring(0, 20)}{day.note.length > 20 ? '...' : ''}</span>
-                        ) : (
-                          <span className="text-gray-400">Add notes...</span>
-                        )}
-                      </Button>
-                      {/* Daily Macro Totals */}
-                      {(() => {
-                        const macros = calculateDayMacros(day);
-                        const hasAnyMacros = macros.cal > 0 || macros.carbs > 0 || macros.protein > 0 || macros.fats > 0 || macros.fiber > 0;
-                        if (!hasAnyMacros) return null;
-                        return (
-                          <div className="mt-2 p-2 bg-emerald-50 rounded border border-emerald-200">
-                            <div className="text-[10px] font-semibold text-emerald-700 mb-1 uppercase tracking-wide">Daily Totals</div>
-                            <div className="grid grid-cols-2 gap-1 text-[10px]">
-                              <div className="text-emerald-900"><span className="font-medium">Cal:</span> {macros.cal.toFixed(0)}</div>
-                              <div className="text-emerald-900"><span className="font-medium">Carbs:</span> {macros.carbs.toFixed(1)}g</div>
-                              <div className="text-emerald-900"><span className="font-medium">Protein:</span> {macros.protein.toFixed(1)}g</div>
-                              <div className="text-emerald-900"><span className="font-medium">Fats:</span> {macros.fats.toFixed(1)}g</div>
-                              <div className="text-emerald-900 col-span-2"><span className="font-medium">Fiber:</span> {macros.fiber.toFixed(1)}g</div>
-                            </div>
-                          </div>
-                        );
-                      })()}
+                    </th>
+                  </React.Fragment>
+                ))}
+                {/* Add Meal Type Column at the end */}
+                <th className="border-l border-b-2 border-gray-300 p-5 bg-slate-50 min-w-70">
+                  <div className="space-y-2.5">
+                    <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs flex items-center justify-center gap-2">
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Meal Type
                     </div>
-                  </td>
-                  {allMealTypesForDay.map((mealType, index) => {
-                    const meal = getMealForDay(actualDayIndex, mealType);
-                    const isCustomMeal = !mealTypes.includes(mealType);
-                    return (
-                      <React.Fragment key={`${day.id}-${mealType}`}>
-                        <td
-                          className={`border-r border-b border-gray-300 p-4 align-top relative ${dragOverTarget && dragOverTarget.dayIndex === actualDayIndex && dragOverTarget.mealType === mealType ? 'ring-2 ring-green-500 ring-offset-1' : ''}`}
-                          style={{ backgroundColor: rowColor }}
-                          onDragOver={(e) => handleDragOver(e, actualDayIndex, mealType)}
-                          onDragLeave={(e) => handleDragLeave(e, actualDayIndex, mealType)}
-                          onDrop={(e) => handleDrop(e, actualDayIndex, mealType)}
+                    <Button
+                      variant="outline"
+                      onClick={() => setAddMealTypeDialogOpen(true)}
+                      className="w-full h-9 text-xs bg-white border-2 border-dashed border-slate-400 hover:border-slate-600 hover:bg-slate-50
+                     text-slate-700 hover:text-slate-900 font-medium"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Meal Type
+                    </Button>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedDays.map((day, paginatedIndex) => {
+                const actualDayIndex = startIndex + paginatedIndex;
+                // Use same green color for all rows
+                const rowColor = '#BCEBCB';
+                // Get all meal types for this day (standard ones + any custom ones)
+                const dayMealTypes = [...displayMealTypes];
+                // Only include custom meals that have food in them
+                const customMeals = Object.keys(day.meals).filter(mt => {
+                  const label = toDisplayLabel(mt);
+                  if (!mealTypes.includes(label) && !displayMealTypes.includes(label)) {
+                    // Check if this custom meal has any food
+                    const meal = day.meals[mt];
+                    return meal?.foodOptions?.some(opt => opt.food?.trim());
+                  }
+                  return false;
+                }).map(mt => toDisplayLabel(mt));
+                const allMealTypesForDay = [...dayMealTypes, ...customMeals.filter(cm => !dayMealTypes.includes(cm))];
+
+                // Format day label to show date + day number + day name
+                const formatDayLabel = () => {
+                  if (day.date) {
+                    const dateObj = new Date(day.date);
+                    const dayOfMonth = dateObj.getDate();
+                    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    const dayName = dayNames[dateObj.getDay()];
+                    const dayNum = actualDayIndex + 1;
+                    return `${dayOfMonth} - Day ${dayNum} - ${dayName}`;
+                  }
+                  return day.day;
+                };
+
+                // Check if this is a freeze recovery day (copied meal at the end)
+                const isFreezeRecovery = (day as any).isFreezeRecovery === true;
+                const originalFreezeDateLabel = (day as any).originalFreezeDateLabel;
+
+                // Check if this day is a frozen day (original day that was frozen - should be blurred)
+                const isFrozenDay = (day as any).isFrozen === true;
+
+                return (
+                  <tr key={day.id} className={`hover:opacity-90 transition-opacity ${isFrozenDay ? 'opacity-40 blur-[1px]' : ''}`}>
+                    <td className="border-r border-b border-gray-300 p-5 align-top" style={{ backgroundColor: rowColor }}>
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="text-slate-900 font-semibold text-base">{formatDayLabel()}</div>
+                          {!readOnly && onRemoveDay && weekPlan.length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onRemoveDay(actualDayIndex)}
+                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              title={`Delete Day ${actualDayIndex + 1}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {isFreezeRecovery && originalFreezeDateLabel && (
+                          <div className="text-xs text-gray-500 italic">
+                            (Freeze Recovery from {originalFreezeDateLabel})
+                          </div>
+                        )}
+                        {isFrozenDay && (
+                          <div className="text-xs text-red-500 font-medium">
+                            ❄️ Frozen Day
+                          </div>
+                        )}
+                        <DatePicker
+                          value={day.date}
+                          onChange={(date) => updateDayInfo(actualDayIndex, 'date', date)}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 text-xs bg-white border-gray-300 hover:border-slate-500 justify-start font-normal text-left"
+                          onClick={() => {
+                            setNotesDialogDayIndex(actualDayIndex);
+                            setNotesDialogValue(day.note || '');
+                            setNotesDialogOpen(true);
+                          }}
                         >
-                          {meal && meal.foodOptions.length > 0 ? (
-                            <div className="space-y-3">
-                              {/* Show meal name for custom meals */}
-                              {isCustomMeal && (
-                                <div className="text-xs font-semibold text-slate-800 bg-white px-2 py-1 rounded border border-slate-300 mb-1">
-                                  {mealType}
-                                </div>
-                              )}
-                              {/* Time Input and Action Buttons */}
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  type="text"
-                                  value={meal.time}
-                                  onChange={(e) => updateMealTime(actualDayIndex, mealType, e.target.value)}
-                                  placeholder="e.g., 8:00 AM"
-                                  className="h-9 text-xs flex-1 bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                />
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => addFoodOption(actualDayIndex, mealType, false)}
-                                  className="h-9 px-2.5 bg-green-600 text-white border-green-600 hover:bg-green-700"
-                                  title="Add normal food option"
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => addFoodOption(actualDayIndex, mealType, true)}
-                                  className="h-9 px-3 bg-orange-500 text-white border-orange-500 hover:bg-orange-600 font-medium"
-                                  title="Add alternative food option"
-                                >
-                                  <span className="text-xs">🔄 Alt</span>
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openCopyDialog(actualDayIndex, mealType)}
-                                  style={{ backgroundColor: '#00A63E', color: 'white', borderColor: '#00A63E' }}
-                                  className="h-9 px-2.5 hover:opacity-90"
-                                  title="Copy meal to another day"
-                                >
-                                  <Copy className="w-3.5 h-3.5" />
-                                </Button>
+                          {day.note ? (
+                            <span className="truncate">{day.note.substring(0, 20)}{day.note.length > 20 ? '...' : ''}</span>
+                          ) : (
+                            <span className="text-gray-400">Add notes...</span>
+                          )}
+                        </Button>
+                        {/* Daily Macro Totals */}
+                        {(() => {
+                          const macros = calculateDayMacros(day);
+                          const hasAnyMacros = macros.cal > 0 || macros.carbs > 0 || macros.protein > 0 || macros.fats > 0 || macros.fiber > 0;
+                          if (!hasAnyMacros) return null;
+                          return (
+                            <div className="mt-2 p-2 bg-emerald-50 rounded border border-emerald-200">
+                              <div className="text-[10px] font-semibold text-emerald-700 mb-1 uppercase tracking-wide">Daily Totals</div>
+                              <div className="grid grid-cols-2 gap-1 text-[10px]">
+                                <div className="text-emerald-900"><span className="font-medium">Cal:</span> {macros.cal.toFixed(0)}</div>
+                                <div className="text-emerald-900"><span className="font-medium">Carbs:</span> {macros.carbs.toFixed(1)}g</div>
+                                <div className="text-emerald-900"><span className="font-medium">Protein:</span> {macros.protein.toFixed(1)}g</div>
+                                <div className="text-emerald-900"><span className="font-medium">Fats:</span> {macros.fats.toFixed(1)}g</div>
+                                <div className="text-emerald-900 col-span-2"><span className="font-medium">Fiber:</span> {macros.fiber.toFixed(1)}g</div>
                               </div>
-
-                              {/* Food Options */}
-                              {meal.foodOptions.map((option, optionIndex) => (
-                                <div 
-                                  key={option.id} 
-                                  className={`food-box border rounded-md p-3.5 space-y-2.5 ${option.food ? 'cursor-move' : ''} ${option.isAlternative ? 'border-orange-300 bg-orange-50/50' : 'border-gray-300 bg-slate-50/50'}`}
-                                  draggable={!!option.food}
-                                  onDragStart={(e) => handleDragStart(e, actualDayIndex, mealType, optionIndex, !!option.food)}
-                                  style={{ display: !meal.showAlternatives && optionIndex > 0 ? 'none' : 'block' }}
-                                >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                      {option.isAlternative ? (
-                                        <span className="px-2 py-0.5 text-xs font-semibold text-orange-700 bg-orange-200 rounded">
-                                          🔄 Alternative
-                                        </span>
-                                      ) : (
-                                        <span className="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-200 rounded">
-                                          Main Food
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="flex space-x-1">
-                                      {/* Copy entire option button */}
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                          setCopyOptionSource({
-                                            dayIndex: actualDayIndex,
-                                            mealType,
-                                            optionIndex,
-                                            option
-                                          });
-                                          setSelectedDaysForOptionCopy([]);
-                                          setSelectedMealsForOptionCopy([]);
-                                          setCopyOptionDialogOpen(true);
-                                        }}
-                                        className={`h-7 w-7 p-0 ${option.isAlternative ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50' : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'}`}
-                                        title={`Copy this ${option.isAlternative ? 'alternative' : 'main'} food option to other days/meals`}
-                                      >
-                                        <Copy className="w-4 h-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                          setCurrentFoodContext({ dayIndex: actualDayIndex, mealType, optionIndex });
-                                          setFoodDatabaseOpen(true);
-                                        }}
-                                        className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                        title="Add more foods to this option"
-                                      >
-                                        <Plus className="w-4 h-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => removeFoodOption(actualDayIndex, mealType, optionIndex)}
-                                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                        title="Remove this food option"
-                                      >
-                                        <X className="w-4 h-4" />
-                                      </Button>
-                                    </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </td>
+                    {allMealTypesForDay.map((mealType, index) => {
+                      const meal = getMealForDay(actualDayIndex, mealType);
+                      const isCustomMeal = !mealTypes.includes(mealType);
+                      return (
+                        <React.Fragment key={`${day.id}-${mealType}`}>
+                          <td
+                            className={`border-r border-b border-gray-300 p-4 align-top relative ${dragOverTarget && dragOverTarget.dayIndex === actualDayIndex && dragOverTarget.mealType === mealType ? 'ring-2 ring-green-500 ring-offset-1' : ''}`}
+                            style={{ backgroundColor: rowColor }}
+                            onDragOver={(e) => handleDragOver(e, actualDayIndex, mealType)}
+                            onDragLeave={(e) => handleDragLeave(e, actualDayIndex, mealType)}
+                            onDrop={(e) => handleDrop(e, actualDayIndex, mealType)}
+                          >
+                            {meal && meal.foodOptions.length > 0 ? (
+                              <div className="space-y-3">
+                                {/* Show meal name for custom meals */}
+                                {isCustomMeal && (
+                                  <div className="text-xs font-semibold text-slate-800 bg-white px-2 py-1 rounded border border-slate-300 mb-1">
+                                    {mealType}
                                   </div>
+                                )}
+                                {/* Time Input and Action Buttons */}
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="text"
+                                    value={meal.time}
+                                    onChange={(e) => updateMealTime(actualDayIndex, mealType, e.target.value)}
+                                    placeholder="e.g., 8:00 AM"
+                                    className="h-9 text-xs flex-1 bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => addFoodOption(actualDayIndex, mealType, false)}
+                                    className="h-9 px-2.5 bg-green-600 text-white border-green-600 hover:bg-green-700"
+                                    title="Add normal food option"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => addFoodOption(actualDayIndex, mealType, true)}
+                                    className="h-9 px-3 bg-orange-500 text-white border-orange-500 hover:bg-orange-600 font-medium"
+                                    title="Add alternative food option"
+                                  >
+                                    <span className="text-xs">🔄 Alt</span>
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openCopyDialog(actualDayIndex, mealType)}
+                                    style={{ backgroundColor: '#00A63E', color: 'white', borderColor: '#00A63E' }}
+                                    className="h-9 px-2.5 hover:opacity-90"
+                                    title="Copy meal to another day"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
 
-                                  {/* Multiple Foods Display */}
-                                  {option.foods && option.foods.length > 0 ? (
-                                    <div className="space-y-3">
-                                      {option.foods.map((foodItem, foodIndex) => (
-                                        <div key={foodItem.id} className={`bg-white border rounded-lg p-3 space-y-2 shadow-sm ${option.isAlternative ? 'border-orange-300 bg-orange-50' : 'border-gray-300'}`}>
-                                          {/* Food Name Row with Badge */}
-                                          <div className="flex items-start justify-between gap-2">
-                                            <div className="flex-1 space-y-1">
-                                              <div className="flex items-center gap-2">
-                                                <Input
-                                                  value={foodItem.food}
-                                                  onChange={(e) => {
+                                {/* Food Options */}
+                                {meal.foodOptions.map((option, optionIndex) => (
+                                  <div
+                                    key={option.id}
+                                    className={`food-box border rounded-md p-3.5 space-y-2.5 ${option.food ? 'cursor-move' : ''} ${option.isAlternative ? 'border-orange-300 bg-orange-50/50' : 'border-gray-300 bg-slate-50/50'}`}
+                                    draggable={!!option.food}
+                                    onDragStart={(e) => handleDragStart(e, actualDayIndex, mealType, optionIndex, !!option.food)}
+                                    style={{ display: !meal.showAlternatives && optionIndex > 0 ? 'none' : 'block' }}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        {option.isAlternative ? (
+                                          <span className="px-2 py-0.5 text-xs font-semibold text-orange-700 bg-orange-200 rounded">
+                                            🔄 Alternative
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-200 rounded">
+                                            Main Food
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex space-x-1">
+                                        {/* Copy entire option button */}
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            setCopyOptionSource({
+                                              dayIndex: actualDayIndex,
+                                              mealType,
+                                              optionIndex,
+                                              option
+                                            });
+                                            setSelectedDaysForOptionCopy([]);
+                                            setSelectedMealsForOptionCopy([]);
+                                            setCopyOptionDialogOpen(true);
+                                          }}
+                                          className={`h-7 w-7 p-0 ${option.isAlternative ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50' : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'}`}
+                                          title={`Copy this ${option.isAlternative ? 'alternative' : 'main'} food option to other days/meals`}
+                                        >
+                                          <Copy className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            setCurrentFoodContext({ dayIndex: actualDayIndex, mealType, optionIndex });
+                                            setFoodDatabaseOpen(true);
+                                          }}
+                                          className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                          title="Add more foods to this option"
+                                        >
+                                          <Plus className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeFoodOption(actualDayIndex, mealType, optionIndex)}
+                                          className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                          title="Remove this food option"
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+
+                                    {/* Multiple Foods Display */}
+                                    {option.foods && option.foods.length > 0 ? (
+                                      <div className="space-y-3">
+                                        {option.foods.map((foodItem, foodIndex) => (
+                                          <div key={foodItem.id} className={`bg-white border rounded-lg p-3 space-y-2 shadow-sm ${option.isAlternative ? 'border-orange-300 bg-orange-50' : 'border-gray-300'}`}>
+                                            {/* Food Name Row with Badge */}
+                                            <div className="flex items-start justify-between gap-2">
+                                              <div className="flex-1 space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                  <Input
+                                                    value={foodItem.food}
+                                                    onChange={(e) => {
+                                                      if (readOnly || !onUpdate) return;
+                                                      const newWeekPlan = [...weekPlan];
+                                                      const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                      if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                        meal.foodOptions[optionIndex].foods![foodIndex].food = e.target.value;
+                                                        // Update combined food name
+                                                        meal.foodOptions[optionIndex].food = meal.foodOptions[optionIndex].foods!.map(f => f.food).join(' + ');
+                                                        onUpdate(newWeekPlan);
+                                                      }
+                                                    }}
+                                                    placeholder="Food item"
+                                                    className="h-9 text-sm bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium flex-1"
+                                                  />
+                                                  {option.isAlternative && (
+                                                    <span className="px-2.5 py-1 text-xs font-semibold text-orange-700 bg-orange-100 rounded-full whitespace-nowrap">
+                                                      Alternative
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                              <div className="flex gap-1">
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => {
+                                                    setSelectedDaysForFoodCopy([]);
+                                                    setSelectedMealsForFoodCopy([]);
+                                                    setCopyFoodSource({ dayIndex: actualDayIndex, mealType, optionIndex, foodIndex });
+                                                    setCopyFoodDialogOpen(true);
+                                                  }}
+                                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                  title="Copy this food to other meals"
+                                                >
+                                                  <Copy className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => {
                                                     if (readOnly || !onUpdate) return;
                                                     const newWeekPlan = [...weekPlan];
                                                     const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                    if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
-                                                      meal.foodOptions[optionIndex].foods![foodIndex].food = e.target.value;
-                                                      // Update combined food name
-                                                      meal.foodOptions[optionIndex].food = meal.foodOptions[optionIndex].foods!.map(f => f.food).join(' + ');
+                                                    if (meal?.foodOptions[optionIndex]?.foods) {
+                                                      meal.foodOptions[optionIndex].foods!.splice(foodIndex, 1);
+                                                      const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                      if (allFoods.length === 0) {
+                                                        // Clear all fields if no foods left
+                                                        meal.foodOptions[optionIndex].food = '';
+                                                        meal.foodOptions[optionIndex].unit = '';
+                                                        meal.foodOptions[optionIndex].cal = '';
+                                                        meal.foodOptions[optionIndex].carbs = '';
+                                                        meal.foodOptions[optionIndex].fats = '';
+                                                        meal.foodOptions[optionIndex].protein = '';
+                                                        meal.foodOptions[optionIndex].fiber = '';
+                                                        meal.foodOptions[optionIndex].foods = undefined;
+                                                      } else {
+                                                        // Recalculate totals
+                                                        meal.foodOptions[optionIndex].food = allFoods.map(f => f.food).join(' + ');
+                                                        meal.foodOptions[optionIndex].unit = allFoods.length > 1 ? 'Multiple' : allFoods[0]?.unit || '';
+                                                        meal.foodOptions[optionIndex].cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
+                                                        meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
+                                                        meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
+                                                        meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
+                                                        meal.foodOptions[optionIndex].fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
+                                                      }
                                                       onUpdate(newWeekPlan);
                                                     }
                                                   }}
-                                                  placeholder="Food item"
-                                                  className="h-9 text-sm bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium flex-1"
-                                                />
-                                                {option.isAlternative && (
-                                                  <span className="px-2.5 py-1 text-xs font-semibold text-orange-700 bg-orange-100 rounded-full whitespace-nowrap">
-                                                    Alternative
-                                                  </span>
-                                                )}
+                                                  className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                  title="Remove this food"
+                                                >
+                                                  <Minus className="w-4 h-4" />
+                                                </Button>
                                               </div>
                                             </div>
-                                            <div className="flex gap-1">
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => {
-                                                  setSelectedDaysForFoodCopy([]);
-                                                  setSelectedMealsForFoodCopy([]);
-                                                  setCopyFoodSource({ dayIndex: actualDayIndex, mealType, optionIndex, foodIndex });
-                                                  setCopyFoodDialogOpen(true);
-                                                }}
-                                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                title="Copy this food to other meals"
-                                              >
-                                                <Copy className="w-4 h-4" />
-                                              </Button>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => {
+
+                                            {/* Unit and Calories Row */}
+                                            <div className="grid grid-cols-2 gap-2">
+                                              <Input
+                                                value={foodItem.unit}
+                                                onChange={(e) => {
                                                   if (readOnly || !onUpdate) return;
                                                   const newWeekPlan = [...weekPlan];
                                                   const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                  if (meal?.foodOptions[optionIndex]?.foods) {
-                                                    meal.foodOptions[optionIndex].foods!.splice(foodIndex, 1);
-                                                    const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                    if (allFoods.length === 0) {
-                                                      // Clear all fields if no foods left
-                                                      meal.foodOptions[optionIndex].food = '';
-                                                      meal.foodOptions[optionIndex].unit = '';
-                                                      meal.foodOptions[optionIndex].cal = '';
-                                                      meal.foodOptions[optionIndex].carbs = '';
-                                                      meal.foodOptions[optionIndex].fats = '';
-                                                      meal.foodOptions[optionIndex].protein = '';
-                                                      meal.foodOptions[optionIndex].fiber = '';
-                                                      meal.foodOptions[optionIndex].foods = undefined;
-                                                    } else {
-                                                      // Recalculate totals
-                                                      meal.foodOptions[optionIndex].food = allFoods.map(f => f.food).join(' + ');
-                                                      meal.foodOptions[optionIndex].unit = allFoods.length > 1 ? 'Multiple' : allFoods[0]?.unit || '';
-                                                      meal.foodOptions[optionIndex].cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
-                                                      meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
-                                                      meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
-                                                      meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
-                                                      meal.foodOptions[optionIndex].fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
-                                                    }
+                                                  if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                    meal.foodOptions[optionIndex].foods![foodIndex].unit = e.target.value;
                                                     onUpdate(newWeekPlan);
                                                   }
                                                 }}
-                                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                title="Remove this food"
-                                              >
-                                                <Minus className="w-4 h-4" />
-                                              </Button>
+                                                placeholder="Unit (e.g., 100g)"
+                                                className="h-9 text-xs bg-gray-50 border-gray-300"
+                                              />
+                                              <Input
+                                                value={foodItem.cal}
+                                                onChange={(e) => {
+                                                  if (readOnly || !onUpdate) return;
+                                                  const newWeekPlan = [...weekPlan];
+                                                  const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                  if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                    meal.foodOptions[optionIndex].foods![foodIndex].cal = e.target.value;
+                                                    const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                    meal.foodOptions[optionIndex].cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
+                                                    onUpdate(newWeekPlan);
+                                                  }
+                                                }}
+                                                placeholder="Calories"
+                                                type="number"
+                                                className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
+                                              />
+                                            </div>
+
+                                            {/* Carbs and Fats Row */}
+                                            <div className="grid grid-cols-2 gap-2">
+                                              <Input
+                                                value={foodItem.carbs}
+                                                onChange={(e) => {
+                                                  if (readOnly || !onUpdate) return;
+                                                  const newWeekPlan = [...weekPlan];
+                                                  const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                  if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                    meal.foodOptions[optionIndex].foods![foodIndex].carbs = e.target.value;
+                                                    const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                    meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
+                                                    onUpdate(newWeekPlan);
+                                                  }
+                                                }}
+                                                placeholder="Carbs (g)"
+                                                type="number"
+                                                className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
+                                              />
+                                              <Input
+                                                value={foodItem.fats}
+                                                onChange={(e) => {
+                                                  if (readOnly || !onUpdate) return;
+                                                  const newWeekPlan = [...weekPlan];
+                                                  const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                  if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                    meal.foodOptions[optionIndex].foods![foodIndex].fats = e.target.value;
+                                                    const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                    meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
+                                                    onUpdate(newWeekPlan);
+                                                  }
+                                                }}
+                                                placeholder="Fats (g)"
+                                                type="number"
+                                                className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
+                                              />
+                                            </div>
+
+                                            {/* Protein and Fiber Row */}
+                                            <div className="grid grid-cols-2 gap-2">
+                                              <Input
+                                                value={foodItem.protein}
+                                                onChange={(e) => {
+                                                  if (readOnly || !onUpdate) return;
+                                                  const newWeekPlan = [...weekPlan];
+                                                  const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                  if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                    meal.foodOptions[optionIndex].foods![foodIndex].protein = e.target.value;
+                                                    const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                    meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
+                                                    onUpdate(newWeekPlan);
+                                                  }
+                                                }}
+                                                placeholder="Protein (g)"
+                                                type="number"
+                                                className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
+                                              />
+                                              <Input
+                                                value={foodItem.fiber}
+                                                onChange={(e) => {
+                                                  if (readOnly || !onUpdate) return;
+                                                  const newWeekPlan = [...weekPlan];
+                                                  const meal = newWeekPlan[actualDayIndex].meals[mealType];
+                                                  if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
+                                                    meal.foodOptions[optionIndex].foods![foodIndex].fiber = e.target.value;
+                                                    const allFoods = meal.foodOptions[optionIndex].foods!;
+                                                    meal.foodOptions[optionIndex].fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
+                                                    onUpdate(newWeekPlan);
+                                                  }
+                                                }}
+                                                placeholder="Fiber (g)"
+                                                type="number"
+                                                className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
+                                              />
                                             </div>
                                           </div>
-                                          
-                                          {/* Unit and Calories Row */}
-                                          <div className="grid grid-cols-2 gap-2">
-                                            <Input
-                                              value={foodItem.unit}
-                                              onChange={(e) => {
-                                                if (readOnly || !onUpdate) return;
-                                                const newWeekPlan = [...weekPlan];
-                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
-                                                  meal.foodOptions[optionIndex].foods![foodIndex].unit = e.target.value;
-                                                  onUpdate(newWeekPlan);
-                                                }
-                                              }}
-                                              placeholder="Unit (e.g., 100g)"
-                                              className="h-9 text-xs bg-gray-50 border-gray-300"
-                                            />
-                                            <Input
-                                              value={foodItem.cal}
-                                              onChange={(e) => {
-                                                if (readOnly || !onUpdate) return;
-                                                const newWeekPlan = [...weekPlan];
-                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
-                                                  meal.foodOptions[optionIndex].foods![foodIndex].cal = e.target.value;
-                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                  meal.foodOptions[optionIndex].cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
-                                                  onUpdate(newWeekPlan);
-                                                }
-                                              }}
-                                              placeholder="Calories"
-                                              type="number"
-                                              className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
-                                            />
-                                          </div>
-                                          
-                                          {/* Carbs and Fats Row */}
-                                          <div className="grid grid-cols-2 gap-2">
-                                            <Input
-                                              value={foodItem.carbs}
-                                              onChange={(e) => {
-                                                if (readOnly || !onUpdate) return;
-                                                const newWeekPlan = [...weekPlan];
-                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
-                                                  meal.foodOptions[optionIndex].foods![foodIndex].carbs = e.target.value;
-                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                  meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
-                                                  onUpdate(newWeekPlan);
-                                                }
-                                              }}
-                                              placeholder="Carbs (g)"
-                                              type="number"
-                                              className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
-                                            />
-                                            <Input
-                                              value={foodItem.fats}
-                                              onChange={(e) => {
-                                                if (readOnly || !onUpdate) return;
-                                                const newWeekPlan = [...weekPlan];
-                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
-                                                  meal.foodOptions[optionIndex].foods![foodIndex].fats = e.target.value;
-                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                  meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
-                                                  onUpdate(newWeekPlan);
-                                                }
-                                              }}
-                                              placeholder="Fats (g)"
-                                              type="number"
-                                              className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
-                                            />
-                                          </div>
-                                          
-                                          {/* Protein and Fiber Row */}
-                                          <div className="grid grid-cols-2 gap-2">
-                                            <Input
-                                              value={foodItem.protein}
-                                              onChange={(e) => {
-                                                if (readOnly || !onUpdate) return;
-                                                const newWeekPlan = [...weekPlan];
-                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
-                                                  meal.foodOptions[optionIndex].foods![foodIndex].protein = e.target.value;
-                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                  meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
-                                                  onUpdate(newWeekPlan);
-                                                }
-                                              }}
-                                              placeholder="Protein (g)"
-                                              type="number"
-                                              className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
-                                            />
-                                            <Input
-                                              value={foodItem.fiber}
-                                              onChange={(e) => {
-                                                if (readOnly || !onUpdate) return;
-                                                const newWeekPlan = [...weekPlan];
-                                                const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
-                                                  meal.foodOptions[optionIndex].foods![foodIndex].fiber = e.target.value;
-                                                  const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                  meal.foodOptions[optionIndex].fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
-                                                  onUpdate(newWeekPlan);
-                                                }
-                                              }}
-                                              placeholder="Fiber (g)"
-                                              type="number"
-                                              className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
-                                            />
-                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      /* Single Food Display (backward compatible) */
+                                      <>
+                                        <div className='flex gap-1 items-center justify-between'>
+                                          <Input
+                                            value={option.food}
+                                            onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'food', e.target.value)}
+                                            placeholder="Food item"
+                                            className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium"
+                                          />
                                         </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    /* Single Food Display (backward compatible) */
-                                    <>
-                                      <div className='flex gap-1 items-center justify-between'>
-                                        <Input
-                                        value={option.food}
-                                        onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'food', e.target.value)}
-                                        placeholder="Food item"
-                                        className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium"
-                                      />
-                                      </div>
 
-                                      
-                                      <div className="grid grid-cols-2 gap-2">
-                                        <Input
-                                          value={option.unit}
-                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'unit', e.target.value)}
-                                          placeholder="Unit (e.g., 100g)"
-                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500"
-                                        />
-                                        <Input
-                                          value={option.cal}
-                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'cal', e.target.value)}
-                                          placeholder="Calories"
-                                          type="number"
-                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                        />
-                                      </div>
 
-                                      <div className="grid grid-cols-2 gap-2">
-                                        <Input
-                                          value={option.carbs}
-                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'carbs', e.target.value)}
-                                          placeholder="Carbs (g)"
-                                          type="number"
-                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                        />
-                                        <Input
-                                          value={option.fats}
-                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'fats', e.target.value)}
-                                          placeholder="Fats (g)"
-                                          type="number"
-                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                        />
-                                      </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <Input
+                                            value={option.unit}
+                                            onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'unit', e.target.value)}
+                                            placeholder="Unit (e.g., 100g)"
+                                            className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500"
+                                          />
+                                          <Input
+                                            value={option.cal}
+                                            onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'cal', e.target.value)}
+                                            placeholder="Calories"
+                                            type="number"
+                                            className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                          />
+                                        </div>
 
-                                      <div className="grid grid-cols-2 gap-2">
-                                        <Input
-                                          value={option.protein}
-                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'protein', e.target.value)}
-                                          placeholder="Protein (g)"
-                                          type="number"
-                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                        />
-                                        <Input
-                                          value={option.fiber}
-                                          onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'fiber', e.target.value)}
-                                          placeholder="Fiber (g)"
-                                          type="number"
-                                          className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                        />
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="space-y-2.5">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => addMealToCell(actualDayIndex, mealType)}
-                                className="w-full h-20 border-2 border-dashed border-gray-400 hover:border-slate-600 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all font-medium"
-                              >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Add {mealType}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  // Ensure base option exists
-                                  addMealToCell(actualDayIndex, mealType);
-                                  // Add second alternative if only one currently
-                                  setTimeout(() => {
-                                    const mealObj = weekPlan[actualDayIndex].meals[mealType];
-                                    if (mealObj && mealObj.foodOptions.length === 1) {
-                                      addFoodOption(actualDayIndex, mealType);
-                                    } else if (mealObj && mealObj.foodOptions.length === 0) {
-                                      // Safety: if still zero, add two
-                                      addFoodOption(actualDayIndex, mealType);
-                                      addFoodOption(actualDayIndex, mealType);
-                                    }
-                                  }, 0);
-                                }}
-                                style={{ backgroundColor: '#C2E66E', borderColor: '#00A63E' }}
-                                className="w-full h-12 border-2 border-dashed hover:opacity-90 text-slate-900 font-medium"
-                              >
-                                <Copy className="w-4 h-4 mr-2" />
-                                Add with Alternatives
-                              </Button>
-                            </div>
-                          )}
-                        </td>
-                      </React.Fragment>
-                    );
-                  })}
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <Input
+                                            value={option.carbs}
+                                            onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'carbs', e.target.value)}
+                                            placeholder="Carbs (g)"
+                                            type="number"
+                                            className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                          />
+                                          <Input
+                                            value={option.fats}
+                                            onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'fats', e.target.value)}
+                                            placeholder="Fats (g)"
+                                            type="number"
+                                            className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                          />
+                                        </div>
 
-                </tr>
-              );
-            })}
-            {/* Add Day Row */}
-            <tr className="bg-slate-100/50">
-              <td className="border-r border-b border-gray-300 p-5 align-top">
-                <div className="space-y-2.5">
-                  <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs flex items-center gap-2">
-                    <Plus className="w-3.5 h-3.5" />
-                    Add Day
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <Input
+                                            value={option.protein}
+                                            onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'protein', e.target.value)}
+                                            placeholder="Protein (g)"
+                                            type="number"
+                                            className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                          />
+                                          <Input
+                                            value={option.fiber}
+                                            onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'fiber', e.target.value)}
+                                            placeholder="Fiber (g)"
+                                            type="number"
+                                            className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
+                                          />
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="space-y-2.5">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => addMealToCell(actualDayIndex, mealType)}
+                                  className="w-full h-20 border-2 border-dashed border-gray-400 hover:border-slate-600 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all font-medium"
+                                >
+                                  <Plus className="w-4 h-4 mr-2" />
+                                  Add {mealType}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Ensure base option exists
+                                    addMealToCell(actualDayIndex, mealType);
+                                    // Add second alternative if only one currently
+                                    setTimeout(() => {
+                                      const mealObj = weekPlan[actualDayIndex].meals[mealType];
+                                      if (mealObj && mealObj.foodOptions.length === 1) {
+                                        addFoodOption(actualDayIndex, mealType);
+                                      } else if (mealObj && mealObj.foodOptions.length === 0) {
+                                        // Safety: if still zero, add two
+                                        addFoodOption(actualDayIndex, mealType);
+                                        addFoodOption(actualDayIndex, mealType);
+                                      }
+                                    }, 0);
+                                  }}
+                                  style={{ backgroundColor: '#C2E66E', borderColor: '#00A63E' }}
+                                  className="w-full h-12 border-2 border-dashed hover:opacity-90 text-slate-900 font-medium"
+                                >
+                                  <Copy className="w-4 h-4 mr-2" />
+                                  Add with Alternatives
+                                </Button>
+                              </div>
+                            )}
+                          </td>
+                        </React.Fragment>
+                      );
+                    })}
+
+                  </tr>
+                );
+              })}
+              {/* Add Day Row */}
+              <tr className="bg-slate-100/50">
+                <td className="border-r border-b border-gray-300 p-5 align-top">
+                  <div className="space-y-2.5">
+                    <div className="text-slate-800 font-semibold tracking-wide uppercase text-xs flex items-center gap-2">
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Day
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={addNewDay}
+                      className="w-full h-10 text-xs bg-white border-2 border-dashed border-slate-400 hover:border-slate-600 hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-medium"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Day
+                    </Button>
                   </div>
+                </td>
+                {displayMealTypes.map((mealType, index) => (
+                  <React.Fragment key={`add-${mealType}`}>
+                    <td className="border-r border-b border-gray-300 bg-slate-100/30"></td>
+                  </React.Fragment>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Bottom Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 py-4 bg-white border-t border-gray-200">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToPreviousPage}
+              disabled={currentPage === 0}
+              className="h-9 px-4 border-gray-300 hover:bg-slate-100 disabled:opacity-50"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Previous
+            </Button>
+
+            <div className="flex items-center gap-2">
+              {Array.from({ length: totalPages }, (_, i) => (
+                <Button
+                  key={i}
+                  variant={currentPage === i ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(i)}
+                  className={`h-9 w-9 p-0 ${currentPage === i
+                      ? 'bg-slate-900 text-white hover:bg-slate-800'
+                      : 'border-gray-300 hover:bg-slate-100'
+                    }`}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextPage}
+              disabled={currentPage >= totalPages - 1}
+              className="h-9 px-4 border-gray-300 hover:bg-slate-100 disabled:opacity-50"
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+
+            <span className="text-sm text-slate-600 ml-4">
+              Days {startIndex + 1}-{endIndex} of {weekPlan.length}
+            </span>
+          </div>
+        )}
+
+        {/* Copy Meal Dialog */}
+        <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+          <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl max-h-[85vh] flex flex-col">
+            <DialogHeader className="shrink-0">
+              <DialogTitle className="text-slate-900 font-semibold">Copy Meal Plan</DialogTitle>
+              <DialogDescription className="text-slate-600">
+                Select the days and meal types where you want to copy this meal.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5 py-4 overflow-y-auto flex-1 min-h-0">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-slate-900 font-semibold text-sm">Target Days</Label>
                   <Button
                     variant="outline"
-                    onClick={addNewDay}
-                    className="w-full h-10 text-xs bg-white border-2 border-dashed border-slate-400 hover:border-slate-600 hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-medium"
+                    size="sm"
+                    onClick={selectAllDays}
+                    className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New Day
+                    {selectedDays.length === weekPlan.length ? 'Deselect All' : 'Select All'}
                   </Button>
                 </div>
-              </td>
-              {displayMealTypes.map((mealType, index) => (
-                <React.Fragment key={`add-${mealType}`}>
-                  <td className="border-r border-b border-gray-300 bg-slate-100/30"></td>
-                </React.Fragment>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      
-      {/* Bottom Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4 py-4 bg-white border-t border-gray-200">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToPreviousPage}
-            disabled={currentPage === 0}
-            className="h-9 px-4 border-gray-300 hover:bg-slate-100 disabled:opacity-50"
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Previous
-          </Button>
-          
-          <div className="flex items-center gap-2">
-            {Array.from({ length: totalPages }, (_, i) => (
-              <Button
-                key={i}
-                variant={currentPage === i ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentPage(i)}
-                className={`h-9 w-9 p-0 ${
-                  currentPage === i 
-                    ? 'bg-slate-900 text-white hover:bg-slate-800' 
-                    : 'border-gray-300 hover:bg-slate-100'
-                }`}
-              >
-                {i + 1}
-              </Button>
-            ))}
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToNextPage}
-            disabled={currentPage >= totalPages - 1}
-            className="h-9 px-4 border-gray-300 hover:bg-slate-100 disabled:opacity-50"
-          >
-            Next
-            <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-          
-          <span className="text-sm text-slate-600 ml-4">
-            Days {startIndex + 1}-{endIndex} of {weekPlan.length}
-          </span>
-        </div>
-      )}
-
-      {/* Copy Meal Dialog */}
-      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
-        <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl max-h-[85vh] flex flex-col">
-          <DialogHeader className="shrink-0">
-            <DialogTitle className="text-slate-900 font-semibold">Copy Meal Plan</DialogTitle>
-            <DialogDescription className="text-slate-600">
-              Select the days and meal types where you want to copy this meal.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-5 py-4 overflow-y-auto flex-1 min-h-0">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-slate-900 font-semibold text-sm">Target Days</Label>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={selectAllDays}
-                  className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
-                >
-                  {selectedDays.length === weekPlan.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
-                {weekPlan.map((day, index) => (
-                  <div key={day.id} className="flex items-center space-x-2.5">
-                    <Checkbox
-                      id={`day-${index}`}
-                      checked={selectedDays.includes(index)}
-                      onCheckedChange={() => toggleDaySelection(index)}
-                      className="border-gray-400"
-                    />
-                    <label
-                      htmlFor={`day-${index}`}
-                      className="text-sm cursor-pointer text-slate-700 font-medium"
-                    >
-                      {day.day}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-slate-900 font-semibold text-sm">Target Meal Types</Label>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={selectAllMeals}
-                  className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
-                >
-                  {selectedMeals.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
-                {displayMealTypes.map((mealType) => (
-                  <div key={mealType} className="flex items-center space-x-2.5">
-                    <Checkbox
-                      id={`meal-${mealType}`}
-                      checked={selectedMeals.includes(mealType)}
-                      onCheckedChange={() => toggleMealSelection(mealType)}
-                      className="border-gray-400"
-                    />
-                    <label
-                      htmlFor={`meal-${mealType}`}
-                      className="text-sm cursor-pointer text-slate-700 font-medium"
-                    >
-                      {mealType}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {selectedDays.length > 0 && selectedMeals.length > 0 && (
-              <div className="p-4 bg-slate-100 border-2 border-slate-300 rounded-md">
-                <p className="text-sm text-slate-900 font-medium">
-                  This meal will be copied to <span className="font-bold">{selectedDays.length} day(s)</span> × <span className="font-bold">{selectedMeals.length} meal type(s)</span> = <span className="font-bold">{selectedDays.length * selectedMeals.length} total meal(s)</span>
-                </p>
-              </div>
-            )}
-          </div>
-          <DialogFooter className="shrink-0">
-            <Button variant="outline" onClick={() => setCopyDialogOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCopyMeal}
-              disabled={selectedDays.length === 0 || selectedMeals.length === 0}
-              style={{ backgroundColor: '#00A63E', color: 'white' }}
-              className="hover:opacity-90 shadow font-medium"
-            >
-              Copy to {selectedDays.length * selectedMeals.length} Meal{selectedDays.length * selectedMeals.length !== 1 ? 's' : ''}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Copy Food Dialog */}
-      <Dialog open={copyFoodDialogOpen} onOpenChange={setCopyFoodDialogOpen}>
-        <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl max-h-[85vh] flex flex-col">
-          <DialogHeader className="shrink-0">
-            <DialogTitle className="text-slate-900 font-semibold flex items-center gap-2">
-              <Copy className="w-5 h-5" />
-              Copy Food Item
-              {copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative && (
-                <span className="px-2 py-0.5 text-xs font-semibold text-orange-700 bg-orange-200 rounded">Alternative</span>
-              )}
-            </DialogTitle>
-            <DialogDescription className="text-slate-600">
-              {copyFoodSource && (
-                <>
-                  Copying: <strong>{weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.foods?.[copyFoodSource.foodIndex]?.food || 'Food item'}</strong>
-                  {weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative && (
-                    <span className="ml-2 text-orange-600 text-xs">(Will be copied as alternative)</span>
-                  )}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-5 py-4 overflow-y-auto flex-1 min-h-0">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-slate-900 font-semibold text-sm">Target Days</Label>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setSelectedDaysForFoodCopy(selectedDaysForFoodCopy.length === weekPlan.length ? [] : weekPlan.map((_, i) => i))}
-                  className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
-                >
-                  {selectedDaysForFoodCopy.length === weekPlan.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
-                {weekPlan.map((day, index) => (
-                  <div key={day.id} className="flex items-center space-x-2.5">
-                    <Checkbox
-                      id={`food-copy-day-${index}`}
-                      checked={selectedDaysForFoodCopy.includes(index)}
-                      onCheckedChange={() => toggleDaySelectionForFoodCopy(index)}
-                      className="border-gray-400"
-                    />
-                    <label
-                      htmlFor={`food-copy-day-${index}`}
-                      className="text-sm cursor-pointer text-slate-700 font-medium"
-                    >
-                      {day.day}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-slate-900 font-semibold text-sm">Target Meal Types</Label>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setSelectedMealsForFoodCopy(selectedMealsForFoodCopy.length === displayMealTypes.length ? [] : [...displayMealTypes])}
-                  className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
-                >
-                  {selectedMealsForFoodCopy.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
-                {displayMealTypes.map((mealType) => (
-                  <div key={mealType} className="flex items-center space-x-2.5">
-                    <Checkbox
-                      id={`food-copy-meal-${mealType}`}
-                      checked={selectedMealsForFoodCopy.includes(mealType)}
-                      onCheckedChange={() => toggleMealSelectionForFoodCopy(mealType)}
-                      className="border-gray-400"
-                    />
-                    <label
-                      htmlFor={`food-copy-meal-${mealType}`}
-                      className="text-sm cursor-pointer text-slate-700 font-medium"
-                    >
-                      {mealType}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {selectedDaysForFoodCopy.length > 0 && selectedMealsForFoodCopy.length > 0 && (
-              <div className={`p-4 border-2 rounded-md ${copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative ? 'bg-orange-50 border-orange-300' : 'bg-slate-100 border-slate-300'}`}>
-                <p className="text-sm text-slate-900 font-medium">
-                  This food will be copied to <span className="font-bold">{selectedDaysForFoodCopy.length} day(s)</span> × <span className="font-bold">{selectedMealsForFoodCopy.length} meal type(s)</span> = <span className="font-bold">{selectedDaysForFoodCopy.length * selectedMealsForFoodCopy.length} total location(s)</span>
-                  {copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative && (
-                    <span className="block mt-1 text-orange-700 text-xs">🔄 Will be added as alternative food in each location</span>
-                  )}
-                </p>
-              </div>
-            )}
-          </div>
-          <DialogFooter className="shrink-0">
-            <Button variant="outline" onClick={() => setCopyFoodDialogOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCopyFood}
-              disabled={selectedDaysForFoodCopy.length === 0 || selectedMealsForFoodCopy.length === 0}
-              className={`shadow font-medium ${copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'} text-white`}
-            >
-              Copy to {selectedDaysForFoodCopy.length * selectedMealsForFoodCopy.length} Location{selectedDaysForFoodCopy.length * selectedMealsForFoodCopy.length !== 1 ? 's' : ''}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Copy Food Option Dialog */}
-      <Dialog open={copyOptionDialogOpen} onOpenChange={setCopyOptionDialogOpen}>
-        <DialogContent className={`sm:max-w-2xl shadow-xl max-h-[85vh] flex flex-col ${copyOptionSource?.option?.isAlternative ? 'border-orange-300' : 'border-gray-300'}`}>
-          <DialogHeader className="shrink-0">
-            <DialogTitle className="text-slate-900 font-semibold flex items-center gap-2">
-              <Copy className="w-5 h-5" />
-              Copy Food Option Card
-              {copyOptionSource?.option?.isAlternative ? (
-                <span className="px-2 py-0.5 text-xs font-semibold text-orange-700 bg-orange-200 rounded">🔄 Alternative</span>
-              ) : (
-                <span className="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-200 rounded">Main Food</span>
-              )}
-            </DialogTitle>
-            <DialogDescription className="text-slate-600">
-              {copyOptionSource && (
-                <>
-                  Copying entire food option card with <strong>{copyOptionSource.option?.foods?.length || 0} food item(s)</strong>
-                  {copyOptionSource.option?.isAlternative ? (
-                    <span className="ml-2 text-orange-600 text-xs">(Will be copied as alternative option)</span>
-                  ) : (
-                    <span className="ml-2 text-green-600 text-xs">(Will be copied as main food option)</span>
-                  )}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {/* Show foods in this option */}
-          {copyOptionSource?.option?.foods && copyOptionSource.option.foods.length > 0 && (
-            <div className={`p-3 border-2 rounded-md ${copyOptionSource.option.isAlternative ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200'}`}>
-              <p className="text-xs font-semibold text-slate-700 mb-2">Foods in this option:</p>
-              <div className="flex flex-wrap gap-2">
-                {copyOptionSource.option.foods.map((food: { food?: string; quantity?: string }, idx: number) => (
-                  <span key={idx} className={`px-2 py-1 text-xs rounded ${copyOptionSource.option?.isAlternative ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'}`}>
-                    {food.food} {food.quantity && `(${food.quantity})`}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          <div className="space-y-5 py-4 overflow-y-auto flex-1 min-h-0">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-slate-900 font-semibold text-sm">Target Days</Label>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setSelectedDaysForOptionCopy(selectedDaysForOptionCopy.length === weekPlan.length ? [] : weekPlan.map((_, i) => i))}
-                  className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
-                >
-                  {selectedDaysForOptionCopy.length === weekPlan.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
-                {weekPlan.map((day, index) => (
-                  <div key={day.id} className="flex items-center space-x-2.5">
-                    <Checkbox
-                      id={`option-copy-day-${index}`}
-                      checked={selectedDaysForOptionCopy.includes(index)}
-                      onCheckedChange={() => toggleDaySelectionForOptionCopy(index)}
-                      className="border-gray-400"
-                    />
-                    <label
-                      htmlFor={`option-copy-day-${index}`}
-                      className="text-sm cursor-pointer text-slate-700 font-medium"
-                    >
-                      {day.day}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-slate-900 font-semibold text-sm">Target Meal Types</Label>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setSelectedMealsForOptionCopy(selectedMealsForOptionCopy.length === displayMealTypes.length ? [] : [...displayMealTypes])}
-                  className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
-                >
-                  {selectedMealsForOptionCopy.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
-                {displayMealTypes.map((mealType) => (
-                  <div key={mealType} className="flex items-center space-x-2.5">
-                    <Checkbox
-                      id={`option-copy-meal-${mealType}`}
-                      checked={selectedMealsForOptionCopy.includes(mealType)}
-                      onCheckedChange={() => toggleMealSelectionForOptionCopy(mealType)}
-                      className="border-gray-400"
-                    />
-                    <label
-                      htmlFor={`option-copy-meal-${mealType}`}
-                      className="text-sm cursor-pointer text-slate-700 font-medium"
-                    >
-                      {mealType}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {selectedDaysForOptionCopy.length > 0 && selectedMealsForOptionCopy.length > 0 && (
-              <div className={`p-4 border-2 rounded-md ${copyOptionSource?.option?.isAlternative ? 'bg-orange-50 border-orange-300' : 'bg-slate-100 border-slate-300'}`}>
-                <p className="text-sm text-slate-900 font-medium">
-                  This food option card will be copied to <span className="font-bold">{selectedDaysForOptionCopy.length} day(s)</span> × <span className="font-bold">{selectedMealsForOptionCopy.length} meal type(s)</span> = <span className="font-bold">{selectedDaysForOptionCopy.length * selectedMealsForOptionCopy.length} total location(s)</span>
-                </p>
-                <p className={`mt-1 text-xs ${copyOptionSource?.option?.isAlternative ? 'text-orange-700' : 'text-green-700'}`}>
-                  {copyOptionSource?.option?.isAlternative 
-                    ? '🔄 Will be added as alternative food option in each location' 
-                    : '✓ Will be added as main food option in each location'}
-                </p>
-              </div>
-            )}
-          </div>
-          <DialogFooter className="shrink-0">
-            <Button variant="outline" onClick={() => setCopyOptionDialogOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCopyOption}
-              disabled={selectedDaysForOptionCopy.length === 0 || selectedMealsForOptionCopy.length === 0}
-              className={`shadow font-medium ${copyOptionSource?.option?.isAlternative ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'} text-white`}
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              Copy to {selectedDaysForOptionCopy.length * selectedMealsForOptionCopy.length} Location{selectedDaysForOptionCopy.length * selectedMealsForOptionCopy.length !== 1 ? 's' : ''}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Meal Type Dialog */}
-      <Dialog open={addMealTypeDialogOpen} onOpenChange={setAddMealTypeDialogOpen}>
-        <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl" style={{ zIndex: 200 }}>
-          <DialogHeader>
-            <DialogTitle className="text-slate-900 font-semibold">Add New Meal</DialogTitle>
-            <DialogDescription className="text-slate-600">
-              Enter the meal name and time. This meal will be added to all days and ordered by time in the header.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-5 py-4">
-            <div className="space-y-3">
-              <Label className="text-slate-900 font-semibold text-sm">Meal Name</Label>
-              <Input
-                value={newMealTypeName}
-                onChange={(e) => setNewMealTypeName(e.target.value)}
-                placeholder="e.g., Pre-Workout Snack"
-                className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium"
-              />
-            </div>
-            <div className="space-y-3">
-              <Label className="text-slate-900 font-semibold text-sm">Meal Time</Label>
-              <Input
-                type="text"
-                value={newMealTime}
-                onChange={(e) => setNewMealTime(e.target.value)}
-                placeholder="e.g., 8:00 AM"
-                className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setAddMealTypeDialogOpen(false); setNewMealTypeName(''); setNewMealTime(''); }} className="border-gray-300 hover:bg-slate-50 font-medium">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAddMealType}
-              disabled={!newMealTypeName.trim()}
-              style={{ backgroundColor: '#00A63E', color: 'white' }}
-              className="hover:opacity-90 shadow font-medium"
-            >
-              Add Meal
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Time Editor Dialog */}
-      <Dialog open={bulkTimeEditorOpen} onOpenChange={setBulkTimeEditorOpen}>
-        <DialogContent className="sm:max-w-md border-gray-300 shadow-xl" style={{ zIndex: 200 }}>
-          <DialogHeader>
-            <DialogTitle className="text-slate-900 font-semibold">Edit Meal Times</DialogTitle>
-            <DialogDescription className="text-slate-600">
-              Update times for all meal types across all days at once. Click "Apply Defaults" to use standard times.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-3">
-              {Object.keys(mealTimesForBulkEdit).map(mealType => (
-                <div key={mealType} className="flex items-center justify-between gap-3">
-                  <Label className="text-slate-700 font-medium text-sm w-32 shrink-0">
-                    {mealType}
-                  </Label>
-                  <Input
-                    type="text"
-                    value={mealTimesForBulkEdit[mealType] || '12:00 PM'}
-                    onChange={(e) => setMealTimesForBulkEdit(prev => ({
-                      ...prev,
-                      [mealType]: e.target.value
-                    }))}
-                    placeholder="e.g., 8:00 AM"
-                    className="h-8 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500"
-                  />
-                </div>
-              ))}
-            </div>
-            
-            {/* Apply Defaults Button */}
-            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
-              <Button
-                variant="outline"
-                onClick={applyDefaultMealTimes}
-                className="w-full h-9 text-xs border-blue-300 bg-white hover:bg-blue-50 text-blue-700 font-medium"
-              >
-                📋 Apply Default Times
-              </Button>
-              <p className="text-xs text-blue-600 mt-2 text-center">
-                {DEFAULT_MEAL_TYPES_LIST.map(m => `${m.name}: ${m.time}`).join(', ')}
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkTimeEditorOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleBulkTimeUpdate}
-              style={{ backgroundColor: '#00A63E', color: 'white' }}
-              className="hover:opacity-90 shadow font-medium"
-            >
-              Update All Times
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Find & Replace Dialog */}
-      <Dialog open={findReplaceDialogOpen} onOpenChange={(open) => { if (!open) resetFindReplaceDialog(); else setFindReplaceDialogOpen(true); }}>
-        <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl max-h-[90vh] overflow-y-auto" style={{ zIndex: 210 }}>
-          <DialogHeader>
-            <DialogTitle className="text-slate-900 font-semibold">Find & Replace/Delete Foods</DialogTitle>
-            <DialogDescription className="text-slate-600">
-              Find a food by name or recipe and replace or delete it across selected days and meal types.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* Find Section */}
-            <div className="space-y-3 p-3 border rounded-lg bg-slate-50">
-              <Label className="text-slate-900 font-semibold text-sm">🔍 Find Food / Recipe</Label>
-              
-              {/* Searchable input with dropdown */}
-              <div className="relative">
-                <Input
-                  value={findSearchFilter}
-                  onChange={e => {
-                    setFindSearchFilter(e.target.value);
-                    setShowFindDropdown(true);
-                    // Clear selected value when typing
-                    if (findFoodTarget || findRecipeSearch) {
-                      setFindFoodTarget('');
-                      setFindRecipeSearch('');
-                      setFindRecipeId('');
-                    }
-                  }}
-                  onFocus={() => setShowFindDropdown(true)}
-                  placeholder="Search recipe or food name..."
-                  className="h-10 text-sm bg-white border-gray-300"
-                />
-                
-                {/* Dropdown with filtered results */}
-                {showFindDropdown && findSearchFilter && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {/* Existing foods in plan */}
-                    {availableFoods.filter(f => f.toLowerCase().includes(findSearchFilter.toLowerCase())).length > 0 && (
-                      <div className="p-2 bg-gray-50 border-b">
-                        <span className="text-[10px] font-semibold text-gray-500 uppercase">Foods in Current Plan</span>
-                      </div>
-                    )}
-                    {availableFoods
-                      .filter(f => f.toLowerCase().includes(findSearchFilter.toLowerCase()))
-                      .slice(0, 5)
-                      .map(f => (
-                        <div
-                          key={`find-food-${f}`}
-                          className="px-3 py-2 hover:bg-emerald-50 cursor-pointer text-sm border-b border-gray-100"
-                          onClick={() => {
-                            setFindFoodTarget(f);
-                            setFindSearchFilter(f);
-                            setFindRecipeSearch('');
-                            setFindRecipeId('');
-                            setManualFindFoodName('');
-                            setShowFindDropdown(false);
-                          }}
-                        >
-                          <span className="text-emerald-700">📋</span> {f}
-                        </div>
-                      ))
-                    }
-                    
-                    {/* Recipes from database */}
-                    {recipes.filter(r => r.name.toLowerCase().includes(findSearchFilter.toLowerCase())).length > 0 && (
-                      <div className="p-2 bg-gray-50 border-b">
-                        <span className="text-[10px] font-semibold text-gray-500 uppercase">Recipes Database</span>
-                      </div>
-                    )}
-                    {recipes
-                      .filter(r => r.name.toLowerCase().includes(findSearchFilter.toLowerCase()))
-                      .slice(0, 10)
-                      .map(r => (
-                        <div
-                          key={`find-recipe-${r._id}`}
-                          className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100"
-                          onClick={() => {
-                            setFindRecipeSearch(r.name);
-                            setFindRecipeId(r._id);
-                            setFindSearchFilter(r.name);
-                            setFindFoodTarget('');
-                            setManualFindFoodName('');
-                            setShowFindDropdown(false);
-                          }}
-                        >
-                          <span className="text-blue-600">🍽️</span> {r.name}
-                        </div>
-                      ))
-                    }
-                    
-                    {/* No results */}
-                    {availableFoods.filter(f => f.toLowerCase().includes(findSearchFilter.toLowerCase())).length === 0 &&
-                     recipes.filter(r => r.name.toLowerCase().includes(findSearchFilter.toLowerCase())).length === 0 && (
-                      <div className="px-3 py-3 text-sm text-gray-500 text-center">
-                        No matching foods or recipes found
-                      </div>
-                    )}
-                    
-                    {/* Use as manual entry option */}
-                    <div
-                      className="px-3 py-2 hover:bg-yellow-50 cursor-pointer text-sm bg-yellow-25 border-t"
-                      onClick={() => {
-                        setManualFindFoodName(findSearchFilter);
-                        setFindFoodTarget('');
-                        setFindRecipeSearch('');
-                        setFindRecipeId('');
-                        setShowFindDropdown(false);
-                      }}
-                    >
-                      <span className="text-yellow-600">✏️</span> Use "{findSearchFilter}" as search term
+                <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
+                  {weekPlan.map((day, index) => (
+                    <div key={day.id} className="flex items-center space-x-2.5">
+                      <Checkbox
+                        id={`day-${index}`}
+                        checked={selectedDays.includes(index)}
+                        onCheckedChange={() => toggleDaySelection(index)}
+                        className="border-gray-400"
+                      />
+                      <label
+                        htmlFor={`day-${index}`}
+                        className="text-sm cursor-pointer text-slate-700 font-medium"
+                      >
+                        {day.day}
+                      </label>
                     </div>
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
 
-              {/* Show selected find value */}
-              {(findFoodTarget || findRecipeSearch || manualFindFoodName) && (
-                <div className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-200 flex items-center justify-between">
-                  <span><strong>Finding:</strong> {findFoodTarget || findRecipeSearch || manualFindFoodName}</span>
-                  <button
-                    onClick={() => {
-                      setFindFoodTarget('');
-                      setFindRecipeSearch('');
-                      setFindRecipeId('');
-                      setManualFindFoodName('');
-                      setFindSearchFilter('');
-                    }}
-                    className="text-red-500 hover:text-red-700 ml-2"
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-slate-900 font-semibold text-sm">Target Meal Types</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={selectAllMeals}
+                    className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
                   >
-                    ✕
-                  </button>
+                    {selectedMeals.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
+                  {displayMealTypes.map((mealType) => (
+                    <div key={mealType} className="flex items-center space-x-2.5">
+                      <Checkbox
+                        id={`meal-${mealType}`}
+                        checked={selectedMeals.includes(mealType)}
+                        onCheckedChange={() => toggleMealSelection(mealType)}
+                        className="border-gray-400"
+                      />
+                      <label
+                        htmlFor={`meal-${mealType}`}
+                        className="text-sm cursor-pointer text-slate-700 font-medium"
+                      >
+                        {mealType}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedDays.length > 0 && selectedMeals.length > 0 && (
+                <div className="p-4 bg-slate-100 border-2 border-slate-300 rounded-md">
+                  <p className="text-sm text-slate-900 font-medium">
+                    This meal will be copied to <span className="font-bold">{selectedDays.length} day(s)</span> × <span className="font-bold">{selectedMeals.length} meal type(s)</span> = <span className="font-bold">{selectedDays.length * selectedMeals.length} total meal(s)</span>
+                  </p>
                 </div>
               )}
             </div>
+            <DialogFooter className="shrink-0">
+              <Button variant="outline" onClick={() => setCopyDialogOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCopyMeal}
+                disabled={selectedDays.length === 0 || selectedMeals.length === 0}
+                style={{ backgroundColor: '#00A63E', color: 'white' }}
+                className="hover:opacity-90 shadow font-medium"
+              >
+                Copy to {selectedDays.length * selectedMeals.length} Meal{selectedDays.length * selectedMeals.length !== 1 ? 's' : ''}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-            {/* Action Selection */}
-            <div className="space-y-2">
-              <Label className="text-slate-900 font-semibold text-sm">Action</Label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="replaceAction"
-                    checked={replaceAction === 'replace'}
-                    onChange={() => setReplaceAction('replace')}
-                    className="w-4 h-4 text-emerald-600"
-                  />
-                  <span className="text-sm font-medium">Replace with another food</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="replaceAction"
-                    checked={replaceAction === 'delete'}
-                    onChange={() => setReplaceAction('delete')}
-                    className="w-4 h-4 text-red-600"
-                  />
-                  <span className="text-sm font-medium text-red-600">Delete found items</span>
-                </label>
+        {/* Copy Food Dialog */}
+        <Dialog open={copyFoodDialogOpen} onOpenChange={setCopyFoodDialogOpen}>
+          <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl max-h-[85vh] flex flex-col">
+            <DialogHeader className="shrink-0">
+              <DialogTitle className="text-slate-900 font-semibold flex items-center gap-2">
+                <Copy className="w-5 h-5" />
+                Copy Food Item
+                {copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative && (
+                  <span className="px-2 py-0.5 text-xs font-semibold text-orange-700 bg-orange-200 rounded">Alternative</span>
+                )}
+              </DialogTitle>
+              <DialogDescription className="text-slate-600">
+                {copyFoodSource && (
+                  <>
+                    Copying: <strong>{weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.foods?.[copyFoodSource.foodIndex]?.food || 'Food item'}</strong>
+                    {weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative && (
+                      <span className="ml-2 text-orange-600 text-xs">(Will be copied as alternative)</span>
+                    )}
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5 py-4 overflow-y-auto flex-1 min-h-0">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-slate-900 font-semibold text-sm">Target Days</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedDaysForFoodCopy(selectedDaysForFoodCopy.length === weekPlan.length ? [] : weekPlan.map((_, i) => i))}
+                    className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
+                  >
+                    {selectedDaysForFoodCopy.length === weekPlan.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
+                  {weekPlan.map((day, index) => (
+                    <div key={day.id} className="flex items-center space-x-2.5">
+                      <Checkbox
+                        id={`food-copy-day-${index}`}
+                        checked={selectedDaysForFoodCopy.includes(index)}
+                        onCheckedChange={() => toggleDaySelectionForFoodCopy(index)}
+                        className="border-gray-400"
+                      />
+                      <label
+                        htmlFor={`food-copy-day-${index}`}
+                        className="text-sm cursor-pointer text-slate-700 font-medium"
+                      >
+                        {day.day}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-slate-900 font-semibold text-sm">Target Meal Types</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedMealsForFoodCopy(selectedMealsForFoodCopy.length === displayMealTypes.length ? [] : [...displayMealTypes])}
+                    className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
+                  >
+                    {selectedMealsForFoodCopy.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
+                  {displayMealTypes.map((mealType) => (
+                    <div key={mealType} className="flex items-center space-x-2.5">
+                      <Checkbox
+                        id={`food-copy-meal-${mealType}`}
+                        checked={selectedMealsForFoodCopy.includes(mealType)}
+                        onCheckedChange={() => toggleMealSelectionForFoodCopy(mealType)}
+                        className="border-gray-400"
+                      />
+                      <label
+                        htmlFor={`food-copy-meal-${mealType}`}
+                        className="text-sm cursor-pointer text-slate-700 font-medium"
+                      >
+                        {mealType}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedDaysForFoodCopy.length > 0 && selectedMealsForFoodCopy.length > 0 && (
+                <div className={`p-4 border-2 rounded-md ${copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative ? 'bg-orange-50 border-orange-300' : 'bg-slate-100 border-slate-300'}`}>
+                  <p className="text-sm text-slate-900 font-medium">
+                    This food will be copied to <span className="font-bold">{selectedDaysForFoodCopy.length} day(s)</span> × <span className="font-bold">{selectedMealsForFoodCopy.length} meal type(s)</span> = <span className="font-bold">{selectedDaysForFoodCopy.length * selectedMealsForFoodCopy.length} total location(s)</span>
+                    {copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative && (
+                      <span className="block mt-1 text-orange-700 text-xs">🔄 Will be added as alternative food in each location</span>
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter className="shrink-0">
+              <Button variant="outline" onClick={() => setCopyFoodDialogOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCopyFood}
+                disabled={selectedDaysForFoodCopy.length === 0 || selectedMealsForFoodCopy.length === 0}
+                className={`shadow font-medium ${copyFoodSource && weekPlan[copyFoodSource.dayIndex]?.meals[copyFoodSource.mealType]?.foodOptions[copyFoodSource.optionIndex]?.isAlternative ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'} text-white`}
+              >
+                Copy to {selectedDaysForFoodCopy.length * selectedMealsForFoodCopy.length} Location{selectedDaysForFoodCopy.length * selectedMealsForFoodCopy.length !== 1 ? 's' : ''}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Copy Food Option Dialog */}
+        <Dialog open={copyOptionDialogOpen} onOpenChange={setCopyOptionDialogOpen}>
+          <DialogContent className={`sm:max-w-2xl shadow-xl max-h-[85vh] flex flex-col ${copyOptionSource?.option?.isAlternative ? 'border-orange-300' : 'border-gray-300'}`}>
+            <DialogHeader className="shrink-0">
+              <DialogTitle className="text-slate-900 font-semibold flex items-center gap-2">
+                <Copy className="w-5 h-5" />
+                Copy Food Option Card
+                {copyOptionSource?.option?.isAlternative ? (
+                  <span className="px-2 py-0.5 text-xs font-semibold text-orange-700 bg-orange-200 rounded">🔄 Alternative</span>
+                ) : (
+                  <span className="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-200 rounded">Main Food</span>
+                )}
+              </DialogTitle>
+              <DialogDescription className="text-slate-600">
+                {copyOptionSource && (
+                  <>
+                    Copying entire food option card with <strong>{copyOptionSource.option?.foods?.length || 0} food item(s)</strong>
+                    {copyOptionSource.option?.isAlternative ? (
+                      <span className="ml-2 text-orange-600 text-xs">(Will be copied as alternative option)</span>
+                    ) : (
+                      <span className="ml-2 text-green-600 text-xs">(Will be copied as main food option)</span>
+                    )}
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Show foods in this option */}
+            {copyOptionSource?.option?.foods && copyOptionSource.option.foods.length > 0 && (
+              <div className={`p-3 border-2 rounded-md ${copyOptionSource.option.isAlternative ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200'}`}>
+                <p className="text-xs font-semibold text-slate-700 mb-2">Foods in this option:</p>
+                <div className="flex flex-wrap gap-2">
+                  {copyOptionSource.option.foods.map((food: { food?: string; quantity?: string }, idx: number) => (
+                    <span key={idx} className={`px-2 py-1 text-xs rounded ${copyOptionSource.option?.isAlternative ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'}`}>
+                      {food.food} {food.quantity && `(${food.quantity})`}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-5 py-4 overflow-y-auto flex-1 min-h-0">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-slate-900 font-semibold text-sm">Target Days</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedDaysForOptionCopy(selectedDaysForOptionCopy.length === weekPlan.length ? [] : weekPlan.map((_, i) => i))}
+                    className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
+                  >
+                    {selectedDaysForOptionCopy.length === weekPlan.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
+                  {weekPlan.map((day, index) => (
+                    <div key={day.id} className="flex items-center space-x-2.5">
+                      <Checkbox
+                        id={`option-copy-day-${index}`}
+                        checked={selectedDaysForOptionCopy.includes(index)}
+                        onCheckedChange={() => toggleDaySelectionForOptionCopy(index)}
+                        className="border-gray-400"
+                      />
+                      <label
+                        htmlFor={`option-copy-day-${index}`}
+                        className="text-sm cursor-pointer text-slate-700 font-medium"
+                      >
+                        {day.day}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-slate-900 font-semibold text-sm">Target Meal Types</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedMealsForOptionCopy(selectedMealsForOptionCopy.length === displayMealTypes.length ? [] : [...displayMealTypes])}
+                    className="h-8 text-xs border-gray-300 hover:bg-slate-50 font-medium"
+                  >
+                    {selectedMealsForOptionCopy.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 p-4 border-2 border-gray-300 rounded-md bg-slate-50">
+                  {displayMealTypes.map((mealType) => (
+                    <div key={mealType} className="flex items-center space-x-2.5">
+                      <Checkbox
+                        id={`option-copy-meal-${mealType}`}
+                        checked={selectedMealsForOptionCopy.includes(mealType)}
+                        onCheckedChange={() => toggleMealSelectionForOptionCopy(mealType)}
+                        className="border-gray-400"
+                      />
+                      <label
+                        htmlFor={`option-copy-meal-${mealType}`}
+                        className="text-sm cursor-pointer text-slate-700 font-medium"
+                      >
+                        {mealType}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedDaysForOptionCopy.length > 0 && selectedMealsForOptionCopy.length > 0 && (
+                <div className={`p-4 border-2 rounded-md ${copyOptionSource?.option?.isAlternative ? 'bg-orange-50 border-orange-300' : 'bg-slate-100 border-slate-300'}`}>
+                  <p className="text-sm text-slate-900 font-medium">
+                    This food option card will be copied to <span className="font-bold">{selectedDaysForOptionCopy.length} day(s)</span> × <span className="font-bold">{selectedMealsForOptionCopy.length} meal type(s)</span> = <span className="font-bold">{selectedDaysForOptionCopy.length * selectedMealsForOptionCopy.length} total location(s)</span>
+                  </p>
+                  <p className={`mt-1 text-xs ${copyOptionSource?.option?.isAlternative ? 'text-orange-700' : 'text-green-700'}`}>
+                    {copyOptionSource?.option?.isAlternative
+                      ? '🔄 Will be added as alternative food option in each location'
+                      : '✓ Will be added as main food option in each location'}
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter className="shrink-0">
+              <Button variant="outline" onClick={() => setCopyOptionDialogOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCopyOption}
+                disabled={selectedDaysForOptionCopy.length === 0 || selectedMealsForOptionCopy.length === 0}
+                className={`shadow font-medium ${copyOptionSource?.option?.isAlternative ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'} text-white`}
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copy to {selectedDaysForOptionCopy.length * selectedMealsForOptionCopy.length} Location{selectedDaysForOptionCopy.length * selectedMealsForOptionCopy.length !== 1 ? 's' : ''}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Meal Type Dialog */}
+        <Dialog open={addMealTypeDialogOpen} onOpenChange={setAddMealTypeDialogOpen}>
+          <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl" style={{ zIndex: 200 }}>
+            <DialogHeader>
+              <DialogTitle className="text-slate-900 font-semibold">Add New Meal</DialogTitle>
+              <DialogDescription className="text-slate-600">
+                Enter the meal name and time. This meal will be added to all days and ordered by time in the header.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5 py-4">
+              <div className="space-y-3">
+                <Label className="text-slate-900 font-semibold text-sm">Meal Name</Label>
+                <Input
+                  value={newMealTypeName}
+                  onChange={(e) => setNewMealTypeName(e.target.value)}
+                  placeholder="e.g., Pre-Workout Snack"
+                  className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium"
+                />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-slate-900 font-semibold text-sm">Meal Time</Label>
+                <Input
+                  type="text"
+                  value={newMealTime}
+                  onChange={(e) => setNewMealTime(e.target.value)}
+                  placeholder="e.g., 8:00 AM"
+                  className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-medium"
+                />
               </div>
             </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setAddMealTypeDialogOpen(false); setNewMealTypeName(''); setNewMealTime(''); }} className="border-gray-300 hover:bg-slate-50 font-medium">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddMealType}
+                disabled={!newMealTypeName.trim()}
+                style={{ backgroundColor: '#00A63E', color: 'white' }}
+                className="hover:opacity-90 shadow font-medium"
+              >
+                Add Meal
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-            {/* Replace Section - Only show if action is replace */}
-            {replaceAction === 'replace' && (
-              <div className="space-y-3 p-3 border rounded-lg bg-blue-50">
-                <Label className="text-slate-900 font-semibold text-sm">🔄 Replace With</Label>
-                
+        {/* Bulk Time Editor Dialog */}
+        <Dialog open={bulkTimeEditorOpen} onOpenChange={setBulkTimeEditorOpen}>
+          <DialogContent className="sm:max-w-md border-gray-300 shadow-xl" style={{ zIndex: 200 }}>
+            <DialogHeader>
+              <DialogTitle className="text-slate-900 font-semibold">Edit Meal Times</DialogTitle>
+              <DialogDescription className="text-slate-600">
+                Update times for all meal types across all days at once. Click "Apply Defaults" to use standard times.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-3">
+                {Object.keys(mealTimesForBulkEdit).map(mealType => (
+                  <div key={mealType} className="flex items-center justify-between gap-3">
+                    <Label className="text-slate-700 font-medium text-sm w-32 shrink-0">
+                      {mealType}
+                    </Label>
+                    <Input
+                      type="text"
+                      value={mealTimesForBulkEdit[mealType] || '12:00 PM'}
+                      onChange={(e) => setMealTimesForBulkEdit(prev => ({
+                        ...prev,
+                        [mealType]: e.target.value
+                      }))}
+                      placeholder="e.g., 8:00 AM"
+                      className="h-8 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Apply Defaults Button */}
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                <Button
+                  variant="outline"
+                  onClick={applyDefaultMealTimes}
+                  className="w-full h-9 text-xs border-blue-300 bg-white hover:bg-blue-50 text-blue-700 font-medium"
+                >
+                  📋 Apply Default Times
+                </Button>
+                <p className="text-xs text-blue-600 mt-2 text-center">
+                  {DEFAULT_MEAL_TYPES_LIST.map(m => `${m.name}: ${m.time}`).join(', ')}
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setBulkTimeEditorOpen(false)} className="border-gray-300 hover:bg-slate-50 font-medium">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleBulkTimeUpdate}
+                style={{ backgroundColor: '#00A63E', color: 'white' }}
+                className="hover:opacity-90 shadow font-medium"
+              >
+                Update All Times
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Find & Replace Dialog */}
+        <Dialog open={findReplaceDialogOpen} onOpenChange={(open) => { if (!open) resetFindReplaceDialog(); else setFindReplaceDialogOpen(true); }}>
+          <DialogContent className="sm:max-w-2xl border-gray-300 shadow-xl max-h-[90vh] overflow-y-auto" style={{ zIndex: 210 }}>
+            <DialogHeader>
+              <DialogTitle className="text-slate-900 font-semibold">Find & Replace/Delete Foods</DialogTitle>
+              <DialogDescription className="text-slate-600">
+                Find a food by name or recipe and replace or delete it across selected days and meal types.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Find Section */}
+              <div className="space-y-3 p-3 border rounded-lg bg-slate-50">
+                <Label className="text-slate-900 font-semibold text-sm">🔍 Find Food / Recipe</Label>
+
                 {/* Searchable input with dropdown */}
                 <div className="relative">
                   <Input
-                    value={replaceSearchFilter}
+                    value={findSearchFilter}
                     onChange={e => {
-                      setReplaceSearchFilter(e.target.value);
-                      setShowReplaceDropdown(true);
+                      setFindSearchFilter(e.target.value);
+                      setShowFindDropdown(true);
                       // Clear selected value when typing
-                      if (replaceRecipeSearch || replaceFoodValue) {
-                        setReplaceRecipeSearch('');
-                        setReplaceRecipeId('');
-                        setReplaceFoodValue('');
+                      if (findFoodTarget || findRecipeSearch) {
+                        setFindFoodTarget('');
+                        setFindRecipeSearch('');
+                        setFindRecipeId('');
                       }
                     }}
-                    onFocus={() => setShowReplaceDropdown(true)}
-                    placeholder="Search recipe to replace with..."
+                    onFocus={() => setShowFindDropdown(true)}
+                    placeholder="Search recipe or food name..."
                     className="h-10 text-sm bg-white border-gray-300"
                   />
-                  
+
                   {/* Dropdown with filtered results */}
-                  {showReplaceDropdown && replaceSearchFilter && (
+                  {showFindDropdown && findSearchFilter && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {/* Existing foods in plan */}
+                      {availableFoods.filter(f => f.toLowerCase().includes(findSearchFilter.toLowerCase())).length > 0 && (
+                        <div className="p-2 bg-gray-50 border-b">
+                          <span className="text-[10px] font-semibold text-gray-500 uppercase">Foods in Current Plan</span>
+                        </div>
+                      )}
+                      {availableFoods
+                        .filter(f => f.toLowerCase().includes(findSearchFilter.toLowerCase()))
+                        .slice(0, 5)
+                        .map(f => (
+                          <div
+                            key={`find-food-${f}`}
+                            className="px-3 py-2 hover:bg-emerald-50 cursor-pointer text-sm border-b border-gray-100"
+                            onClick={() => {
+                              setFindFoodTarget(f);
+                              setFindSearchFilter(f);
+                              setFindRecipeSearch('');
+                              setFindRecipeId('');
+                              setManualFindFoodName('');
+                              setShowFindDropdown(false);
+                            }}
+                          >
+                            <span className="text-emerald-700">📋</span> {f}
+                          </div>
+                        ))
+                      }
+
                       {/* Recipes from database */}
-                      {recipes.filter(r => r.name.toLowerCase().includes(replaceSearchFilter.toLowerCase())).length > 0 && (
+                      {recipes.filter(r => r.name.toLowerCase().includes(findSearchFilter.toLowerCase())).length > 0 && (
                         <div className="p-2 bg-gray-50 border-b">
                           <span className="text-[10px] font-semibold text-gray-500 uppercase">Recipes Database</span>
                         </div>
                       )}
                       {recipes
-                        .filter(r => r.name.toLowerCase().includes(replaceSearchFilter.toLowerCase()))
-                        .slice(0, 15)
+                        .filter(r => r.name.toLowerCase().includes(findSearchFilter.toLowerCase()))
+                        .slice(0, 10)
                         .map(r => (
                           <div
-                            key={`replace-recipe-${r._id}`}
+                            key={`find-recipe-${r._id}`}
                             className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100"
                             onClick={() => {
-                              setReplaceRecipeSearch(r.name);
-                              setReplaceRecipeId(r._id);
-                              setReplaceSearchFilter(r.name);
-                              setReplaceFoodValue('');
-                              setShowReplaceDropdown(false);
+                              setFindRecipeSearch(r.name);
+                              setFindRecipeId(r._id);
+                              setFindSearchFilter(r.name);
+                              setFindFoodTarget('');
+                              setManualFindFoodName('');
+                              setShowFindDropdown(false);
                             }}
                           >
                             <span className="text-blue-600">🍽️</span> {r.name}
                           </div>
                         ))
                       }
-                      
+
                       {/* No results */}
-                      {recipes.filter(r => r.name.toLowerCase().includes(replaceSearchFilter.toLowerCase())).length === 0 && (
-                        <div className="px-3 py-3 text-sm text-gray-500 text-center">
-                          No matching recipes found
-                        </div>
-                      )}
-                      
+                      {availableFoods.filter(f => f.toLowerCase().includes(findSearchFilter.toLowerCase())).length === 0 &&
+                        recipes.filter(r => r.name.toLowerCase().includes(findSearchFilter.toLowerCase())).length === 0 && (
+                          <div className="px-3 py-3 text-sm text-gray-500 text-center">
+                            No matching foods or recipes found
+                          </div>
+                        )}
+
                       {/* Use as manual entry option */}
                       <div
                         className="px-3 py-2 hover:bg-yellow-50 cursor-pointer text-sm bg-yellow-25 border-t"
                         onClick={() => {
-                          setReplaceFoodValue(replaceSearchFilter);
-                          setReplaceRecipeSearch('');
-                          setReplaceRecipeId('');
-                          setShowReplaceDropdown(false);
+                          setManualFindFoodName(findSearchFilter);
+                          setFindFoodTarget('');
+                          setFindRecipeSearch('');
+                          setFindRecipeId('');
+                          setShowFindDropdown(false);
                         }}
                       >
-                        <span className="text-yellow-600">✏️</span> Use "{replaceSearchFilter}" as replacement
+                        <span className="text-yellow-600">✏️</span> Use "{findSearchFilter}" as search term
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Show selected replace value */}
-                {(replaceRecipeSearch || replaceFoodValue) && (
-                  <div className="text-xs text-blue-700 bg-blue-100 p-2 rounded border border-blue-200 flex items-center justify-between">
-                    <span><strong>Replacing with:</strong> {replaceRecipeSearch || replaceFoodValue}</span>
+                {/* Show selected find value */}
+                {(findFoodTarget || findRecipeSearch || manualFindFoodName) && (
+                  <div className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-200 flex items-center justify-between">
+                    <span><strong>Finding:</strong> {findFoodTarget || findRecipeSearch || manualFindFoodName}</span>
                     <button
                       onClick={() => {
-                        setReplaceRecipeSearch('');
-                        setReplaceRecipeId('');
-                        setReplaceFoodValue('');
-                        setReplaceSearchFilter('');
+                        setFindFoodTarget('');
+                        setFindRecipeSearch('');
+                        setFindRecipeId('');
+                        setManualFindFoodName('');
+                        setFindSearchFilter('');
                       }}
                       className="text-red-500 hover:text-red-700 ml-2"
                     >
@@ -2559,243 +2436,365 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                   </div>
                 )}
               </div>
-            )}
 
-            {/* Delete Warning */}
-            {replaceAction === 'delete' && (
-              <div className="p-3 border border-red-300 rounded-lg bg-red-50">
-                <p className="text-sm text-red-700 font-medium">⚠️ Delete Mode</p>
-                <p className="text-xs text-red-600">Found items will be permanently removed from the selected days and meal types.</p>
-              </div>
-            )}
-
-            {/* Meal Types Selection */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-slate-900 font-semibold text-sm">Meal Types</Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedMealTypesForReplace(selectedMealTypesForReplace.length === displayMealTypes.length ? [] : [...displayMealTypes])}
-                  className="h-6 text-xs"
-                >
-                  {selectedMealTypesForReplace.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-3 gap-2 p-3 border rounded-md bg-slate-50">
-                {displayMealTypes.map(mt => (
-                  <div key={`fr-mt-${mt}`} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`fr-mt-${mt}`}
-                      checked={selectedMealTypesForReplace.includes(mt)}
-                      onCheckedChange={() => toggleReplaceMealType(mt)}
+              {/* Action Selection */}
+              <div className="space-y-2">
+                <Label className="text-slate-900 font-semibold text-sm">Action</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="replaceAction"
+                      checked={replaceAction === 'replace'}
+                      onChange={() => setReplaceAction('replace')}
+                      className="w-4 h-4 text-emerald-600"
                     />
-                    <Label htmlFor={`fr-mt-${mt}`} className="text-xs font-medium cursor-pointer">{mt}</Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Days Selection */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-slate-900 font-semibold text-sm">Select Days</Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedDaysForReplace(selectedDaysForReplace.length === weekPlan.length ? [] : weekPlan.map((_, i) => i))}
-                  className="h-6 text-xs"
-                >
-                  {selectedDaysForReplace.length === weekPlan.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-3 gap-2 p-3 border rounded-md bg-slate-50 max-h-40 overflow-y-auto">
-                {weekPlan.map((day, idx) => (
-                  <div key={day.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`fr-day-${idx}`}
-                      checked={selectedDaysForReplace.includes(idx)}
-                      onCheckedChange={() => toggleReplaceDay(idx)}
+                    <span className="text-sm font-medium">Replace with another food</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="replaceAction"
+                      checked={replaceAction === 'delete'}
+                      onChange={() => setReplaceAction('delete')}
+                      className="w-4 h-4 text-red-600"
                     />
-                    <Label htmlFor={`fr-day-${idx}`} className="text-xs font-medium cursor-pointer">{day.day}</Label>
-                  </div>
-                ))}
+                    <span className="text-sm font-medium text-red-600">Delete found items</span>
+                  </label>
+                </div>
               </div>
-            </div>
 
-            {/* Summary */}
-            {selectedDaysForReplace.length > 0 && selectedMealTypesForReplace.length > 0 && (findFoodTarget || findRecipeSearch || manualFindFoodName) && (
-              <div className="p-3 bg-slate-100 border rounded-md">
-                <p className="text-sm text-slate-800">
-                  Will {replaceAction === 'delete' ? <span className="text-red-600 font-semibold">DELETE</span> : <span className="text-emerald-600 font-semibold">REPLACE</span>}{' '}
-                  "<strong>{findFoodTarget || findRecipeSearch || manualFindFoodName}</strong>" 
-                  {replaceAction === 'replace' && (replaceRecipeSearch || replaceFoodValue) && (
-                    <> with "<strong>{replaceRecipeSearch || replaceFoodValue}</strong>"</>
+              {/* Replace Section - Only show if action is replace */}
+              {replaceAction === 'replace' && (
+                <div className="space-y-3 p-3 border rounded-lg bg-blue-50">
+                  <Label className="text-slate-900 font-semibold text-sm">🔄 Replace With</Label>
+
+                  {/* Searchable input with dropdown */}
+                  <div className="relative">
+                    <Input
+                      value={replaceSearchFilter}
+                      onChange={e => {
+                        setReplaceSearchFilter(e.target.value);
+                        setShowReplaceDropdown(true);
+                        // Clear selected value when typing
+                        if (replaceRecipeSearch || replaceFoodValue) {
+                          setReplaceRecipeSearch('');
+                          setReplaceRecipeId('');
+                          setReplaceFoodValue('');
+                        }
+                      }}
+                      onFocus={() => setShowReplaceDropdown(true)}
+                      placeholder="Search recipe to replace with..."
+                      className="h-10 text-sm bg-white border-gray-300"
+                    />
+
+                    {/* Dropdown with filtered results */}
+                    {showReplaceDropdown && replaceSearchFilter && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {/* Recipes from database */}
+                        {recipes.filter(r => r.name.toLowerCase().includes(replaceSearchFilter.toLowerCase())).length > 0 && (
+                          <div className="p-2 bg-gray-50 border-b">
+                            <span className="text-[10px] font-semibold text-gray-500 uppercase">Recipes Database</span>
+                          </div>
+                        )}
+                        {recipes
+                          .filter(r => r.name.toLowerCase().includes(replaceSearchFilter.toLowerCase()))
+                          .slice(0, 15)
+                          .map(r => (
+                            <div
+                              key={`replace-recipe-${r._id}`}
+                              className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100"
+                              onClick={() => {
+                                setReplaceRecipeSearch(r.name);
+                                setReplaceRecipeId(r._id);
+                                setReplaceSearchFilter(r.name);
+                                setReplaceFoodValue('');
+                                setShowReplaceDropdown(false);
+                              }}
+                            >
+                              <span className="text-blue-600">🍽️</span> {r.name}
+                            </div>
+                          ))
+                        }
+
+                        {/* No results */}
+                        {recipes.filter(r => r.name.toLowerCase().includes(replaceSearchFilter.toLowerCase())).length === 0 && (
+                          <div className="px-3 py-3 text-sm text-gray-500 text-center">
+                            No matching recipes found
+                          </div>
+                        )}
+
+                        {/* Use as manual entry option */}
+                        <div
+                          className="px-3 py-2 hover:bg-yellow-50 cursor-pointer text-sm bg-yellow-25 border-t"
+                          onClick={() => {
+                            setReplaceFoodValue(replaceSearchFilter);
+                            setReplaceRecipeSearch('');
+                            setReplaceRecipeId('');
+                            setShowReplaceDropdown(false);
+                          }}
+                        >
+                          <span className="text-yellow-600">✏️</span> Use "{replaceSearchFilter}" as replacement
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Show selected replace value */}
+                  {(replaceRecipeSearch || replaceFoodValue) && (
+                    <div className="text-xs text-blue-700 bg-blue-100 p-2 rounded border border-blue-200 flex items-center justify-between">
+                      <span><strong>Replacing with:</strong> {replaceRecipeSearch || replaceFoodValue}</span>
+                      <button
+                        onClick={() => {
+                          setReplaceRecipeSearch('');
+                          setReplaceRecipeId('');
+                          setReplaceFoodValue('');
+                          setReplaceSearchFilter('');
+                        }}
+                        className="text-red-500 hover:text-red-700 ml-2"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   )}
-                  {' '}in <strong>{selectedDaysForReplace.length}</strong> day(s) × <strong>{selectedMealTypesForReplace.length}</strong> meal type(s)
+                </div>
+              )}
+
+              {/* Delete Warning */}
+              {replaceAction === 'delete' && (
+                <div className="p-3 border border-red-300 rounded-lg bg-red-50">
+                  <p className="text-sm text-red-700 font-medium">⚠️ Delete Mode</p>
+                  <p className="text-xs text-red-600">Found items will be permanently removed from the selected days and meal types.</p>
+                </div>
+              )}
+
+              {/* Meal Types Selection */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-slate-900 font-semibold text-sm">Meal Types</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedMealTypesForReplace(selectedMealTypesForReplace.length === displayMealTypes.length ? [] : [...displayMealTypes])}
+                    className="h-6 text-xs"
+                  >
+                    {selectedMealTypesForReplace.length === displayMealTypes.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 p-3 border rounded-md bg-slate-50">
+                  {displayMealTypes.map(mt => (
+                    <div key={`fr-mt-${mt}`} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`fr-mt-${mt}`}
+                        checked={selectedMealTypesForReplace.includes(mt)}
+                        onCheckedChange={() => toggleReplaceMealType(mt)}
+                      />
+                      <Label htmlFor={`fr-mt-${mt}`} className="text-xs font-medium cursor-pointer">{mt}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Days Selection */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-slate-900 font-semibold text-sm">Select Days</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedDaysForReplace(selectedDaysForReplace.length === weekPlan.length ? [] : weekPlan.map((_, i) => i))}
+                    className="h-6 text-xs"
+                  >
+                    {selectedDaysForReplace.length === weekPlan.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 p-3 border rounded-md bg-slate-50 max-h-40 overflow-y-auto">
+                  {weekPlan.map((day, idx) => (
+                    <div key={day.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`fr-day-${idx}`}
+                        checked={selectedDaysForReplace.includes(idx)}
+                        onCheckedChange={() => toggleReplaceDay(idx)}
+                      />
+                      <Label htmlFor={`fr-day-${idx}`} className="text-xs font-medium cursor-pointer">{day.day}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary */}
+              {selectedDaysForReplace.length > 0 && selectedMealTypesForReplace.length > 0 && (findFoodTarget || findRecipeSearch || manualFindFoodName) && (
+                <div className="p-3 bg-slate-100 border rounded-md">
+                  <p className="text-sm text-slate-800">
+                    Will {replaceAction === 'delete' ? <span className="text-red-600 font-semibold">DELETE</span> : <span className="text-emerald-600 font-semibold">REPLACE</span>}{' '}
+                    "<strong>{findFoodTarget || findRecipeSearch || manualFindFoodName}</strong>"
+                    {replaceAction === 'replace' && (replaceRecipeSearch || replaceFoodValue) && (
+                      <> with "<strong>{replaceRecipeSearch || replaceFoodValue}</strong>"</>
+                    )}
+                    {' '}in <strong>{selectedDaysForReplace.length}</strong> day(s) × <strong>{selectedMealTypesForReplace.length}</strong> meal type(s)
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={resetFindReplaceDialog} className="border-gray-300 hover:bg-slate-50 font-medium">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleFindReplace}
+                disabled={
+                  !(findFoodTarget || manualFindFoodName.trim() || findRecipeSearch) ||
+                  (replaceAction === 'replace' && !(replaceFoodValue.trim() || replaceRecipeSearch)) ||
+                  selectedDaysForReplace.length === 0 ||
+                  selectedMealTypesForReplace.length === 0
+                }
+                style={{ backgroundColor: replaceAction === 'delete' ? '#dc2626' : '#00A63E', color: 'white' }}
+                className="hover:opacity-90 shadow font-medium"
+              >
+                {replaceAction === 'delete' ? '🗑️ Delete' : '🔄 Replace'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Food Database Panel */}
+        <FoodDatabasePanel
+          isOpen={foodDatabaseOpen}
+          onClose={() => setFoodDatabaseOpen(false)}
+          clientDietaryRestrictions={clientDietaryRestrictions}
+          clientMedicalConditions={clientMedicalConditions}
+          clientAllergies={clientAllergies}
+          onSelectFood={(foods: FoodDatabaseItem[]) => {
+            if (currentFoodContext && foods.length > 0) {
+              const { dayIndex, mealType, optionIndex } = currentFoodContext;
+
+              if (readOnly || !onUpdate) return;
+
+              const newWeekPlan = [...weekPlan];
+              const meal = newWeekPlan[dayIndex].meals[mealType];
+
+              if (meal) {
+                // Check if the current option at optionIndex is empty/blank
+                const currentOption = meal.foodOptions[optionIndex];
+                const isCurrentOptionEmpty = currentOption &&
+                  !currentOption.food?.trim() &&
+                  !currentOption.cal?.trim() &&
+                  !currentOption.unit?.trim();
+
+                // Preserve the isAlternative flag from the current option
+                const preserveIsAlternative = currentOption?.isAlternative || false;
+
+                // Build new FoodOption entries for each selected food
+                const newFoodOptions: FoodOption[] = foods.map((food) => ({
+                  id: Math.random().toString(36).substr(2, 9),
+                  label: '',
+                  food: food.menu,
+                  unit: food.amount,
+                  cal: food.cals.toString(),
+                  carbs: food.carbs.toString(),
+                  fats: food.fats.toString(),
+                  protein: food.protein.toString(),
+                  fiber: '',
+                  recipeUuid: food.recipeUuid,
+                  isAlternative: preserveIsAlternative // Preserve alternative status
+                }));
+
+                if (isCurrentOptionEmpty) {
+                  // Replace the blank option with the first selected food,
+                  // then insert the rest after it
+                  meal.foodOptions.splice(optionIndex, 1, ...newFoodOptions);
+                } else {
+                  // Insert all new foods after the current option
+                  meal.foodOptions.splice(optionIndex + 1, 0, ...newFoodOptions);
+                }
+
+                onUpdate(newWeekPlan);
+              }
+            }
+          }}
+        />
+
+        {/* Notes Dialog */}
+        <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Day Notes</DialogTitle>
+              <DialogDescription>
+                Add notes for this day. Press Enter to go to the next line.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Textarea
+                value={notesDialogValue}
+                onChange={(e) => setNotesDialogValue(e.target.value)}
+                placeholder="Enter notes here..."
+                className="min-h-37.5 resize-y"
+                autoFocus
+              />
+            </div>
+            <DialogFooter className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setNotesDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (notesDialogDayIndex !== null) {
+                    updateDayInfo(notesDialogDayIndex, 'note', notesDialogValue);
+                  }
+                  setNotesDialogOpen(false);
+                }}
+              >
+                Save Notes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Remove Meal Type Confirmation Dialog */}
+        <Dialog open={removeMealTypeDialogOpen} onOpenChange={setRemoveMealTypeDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <Trash2 className="w-5 h-5" />
+                Delete Meal Type
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete the entire <strong>{mealTypeToRemove}</strong> row?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-3">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800">
+                  <strong>⚠️ Warning:</strong> This will remove <strong>{mealTypeToRemove}</strong> from <strong>ALL days</strong> in this diet plan. This action cannot be undone.
                 </p>
               </div>
-            )}
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={resetFindReplaceDialog} className="border-gray-300 hover:bg-slate-50 font-medium">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleFindReplace}
-              disabled={
-                !(findFoodTarget || manualFindFoodName.trim() || findRecipeSearch) || 
-                (replaceAction === 'replace' && !(replaceFoodValue.trim() || replaceRecipeSearch)) || 
-                selectedDaysForReplace.length === 0 || 
-                selectedMealTypesForReplace.length === 0
-              }
-              style={{ backgroundColor: replaceAction === 'delete' ? '#dc2626' : '#00A63E', color: 'white' }}
-              className="hover:opacity-90 shadow font-medium"
-            >
-              {replaceAction === 'delete' ? '🗑️ Delete' : '🔄 Replace'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Food Database Panel */}
-      <FoodDatabasePanel
-        isOpen={foodDatabaseOpen}
-        onClose={() => setFoodDatabaseOpen(false)}
-        clientDietaryRestrictions={clientDietaryRestrictions}
-        clientMedicalConditions={clientMedicalConditions}
-        clientAllergies={clientAllergies}
-  onSelectFood={(foods: FoodDatabaseItem[]) => {
-          if (currentFoodContext && foods.length > 0) {
-            const { dayIndex, mealType, optionIndex } = currentFoodContext;
-            
-            if (readOnly || !onUpdate) return;
-            
-            const newWeekPlan = [...weekPlan];
-            const meal = newWeekPlan[dayIndex].meals[mealType];
-            
-            if (meal) {
-              // Check if the current option at optionIndex is empty/blank
-              const currentOption = meal.foodOptions[optionIndex];
-              const isCurrentOptionEmpty = currentOption && 
-                !currentOption.food?.trim() && 
-                !currentOption.cal?.trim() && 
-                !currentOption.unit?.trim();
-              
-              // Preserve the isAlternative flag from the current option
-              const preserveIsAlternative = currentOption?.isAlternative || false;
-              
-              // Build new FoodOption entries for each selected food
-              const newFoodOptions: FoodOption[] = foods.map((food) => ({
-                id: Math.random().toString(36).substr(2, 9),
-                label: '',
-                food: food.menu,
-                unit: food.amount,
-                cal: food.cals.toString(),
-                carbs: food.carbs.toString(),
-                fats: food.fats.toString(),
-                protein: food.protein.toString(),
-                fiber: '',
-                recipeUuid: food.recipeUuid,
-                isAlternative: preserveIsAlternative // Preserve alternative status
-              }));
-              
-              if (isCurrentOptionEmpty) {
-                // Replace the blank option with the first selected food,
-                // then insert the rest after it
-                meal.foodOptions.splice(optionIndex, 1, ...newFoodOptions);
-              } else {
-                // Insert all new foods after the current option
-                meal.foodOptions.splice(optionIndex + 1, 0, ...newFoodOptions);
-              }
-              
-              onUpdate(newWeekPlan);
-            }
-          }
-        }}
-      />
-
-      {/* Notes Dialog */}
-      <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Day Notes</DialogTitle>
-            <DialogDescription>
-              Add notes for this day. Press Enter to go to the next line.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              value={notesDialogValue}
-              onChange={(e) => setNotesDialogValue(e.target.value)}
-              placeholder="Enter notes here..."
-              className="min-h-37.5 resize-y"
-              autoFocus
-            />
-          </div>
-          <DialogFooter className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setNotesDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (notesDialogDayIndex !== null) {
-                  updateDayInfo(notesDialogDayIndex, 'note', notesDialogValue);
-                }
-                setNotesDialogOpen(false);
-              }}
-            >
-              Save Notes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Remove Meal Type Confirmation Dialog */}
-      <Dialog open={removeMealTypeDialogOpen} onOpenChange={setRemoveMealTypeDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <Trash2 className="w-5 h-5" />
-              Delete Meal Type
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete the entire <strong>{mealTypeToRemove}</strong> row?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-3">
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">
-                <strong>⚠️ Warning:</strong> This will remove <strong>{mealTypeToRemove}</strong> from <strong>ALL days</strong> in this diet plan. This action cannot be undone.
-              </p>
             </div>
-          </div>
-          <DialogFooter className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setRemoveMealTypeDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (mealTypeToRemove && onRemoveMealType) {
-                  onRemoveMealType(mealTypeToRemove);
-                  setRemoveMealTypeDialogOpen(false);
-                  setMealTypeToRemove(null);
-                }
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Row
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setRemoveMealTypeDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (mealTypeToRemove && onRemoveMealType) {
+                    onRemoveMealType(mealTypeToRemove);
+                    setRemoveMealTypeDialogOpen(false);
+                    setMealTypeToRemove(null);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Row
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

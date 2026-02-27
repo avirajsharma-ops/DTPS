@@ -12,7 +12,7 @@
 // TYPES
 // ============================================================================
 
-export type MealTypeKey = 
+export type MealTypeKey =
   | 'EARLY_MORNING'
   | 'BREAKFAST'
   | 'MID_MORNING'
@@ -141,7 +141,7 @@ export const MEAL_TYPE_ENUM_VALUES: string[] = MEAL_TYPE_KEYS as string[];
 /**
  * Options for select/dropdown components
  */
-export const MEAL_TYPE_OPTIONS: { value: MealTypeKey; label: string; time: string }[] = 
+export const MEAL_TYPE_OPTIONS: { value: MealTypeKey; label: string; time: string }[] =
   MEAL_TYPES_SORTED.map(meal => ({
     value: meal.key,
     label: meal.label,
@@ -151,7 +151,7 @@ export const MEAL_TYPE_OPTIONS: { value: MealTypeKey; label: string; time: strin
 /**
  * Options with time in label (e.g., "Breakfast (09:00 AM)")
  */
-export const MEAL_TYPE_OPTIONS_WITH_TIME: { value: MealTypeKey; label: string }[] = 
+export const MEAL_TYPE_OPTIONS_WITH_TIME: { value: MealTypeKey; label: string }[] =
   MEAL_TYPES_SORTED.map(meal => ({
     value: meal.key,
     label: `${meal.label} (${meal.time12h})`,
@@ -227,14 +227,14 @@ export function sortMealsByType<T extends { mealType: string }>(meals: T[]): T[]
  */
 export function normalizeMealType(input: string | undefined | null): MealTypeKey | null {
   if (!input) return null;
-  
+
   const normalized = input.toUpperCase().trim().replace(/[\s_-]+/g, '_');
-  
+
   // Direct match
   if (MEAL_TYPE_KEYS.includes(normalized as MealTypeKey)) {
     return normalized as MealTypeKey;
   }
-  
+
   // Map common variations
   const mappings: Record<string, MealTypeKey> = {
     // Early Morning variations
@@ -244,12 +244,12 @@ export function normalizeMealType(input: string | undefined | null): MealTypeKey
     'WAKEUP': 'EARLY_MORNING',
     'PRE_BREAKFAST': 'EARLY_MORNING',
     'PREBREAKFAST': 'EARLY_MORNING',
-    
+
     // Breakfast variations
     'BF': 'BREAKFAST',
     'BFAST': 'BREAKFAST',
     'MORNING': 'BREAKFAST',
-    
+
     // Mid Morning variations
     'MIDMORNING': 'MID_MORNING',
     'MID_DAY': 'MID_MORNING',
@@ -258,11 +258,11 @@ export function normalizeMealType(input: string | undefined | null): MealTypeKey
     'SNACK_1': 'MID_MORNING',
     'SNACK1': 'MID_MORNING',
     'MORNING_SNACK': 'MID_MORNING',
-    
+
     // Lunch variations
     'NOON': 'LUNCH',
     'AFTERNOON': 'LUNCH',
-    
+
     // Mid Evening variations (Snack)
     'MIDEVENING': 'MID_EVENING',
     'SNACK': 'MID_EVENING',
@@ -272,15 +272,15 @@ export function normalizeMealType(input: string | undefined | null): MealTypeKey
     'TEA_TIME': 'MID_EVENING',
     'TEATIME': 'MID_EVENING',
     'TEA': 'MID_EVENING',
-    
+
     // Evening variations
     'EVE': 'EVENING',
     'EVENING_SNACK': 'EVENING',
-    
+
     // Dinner variations
     'SUPPER': 'DINNER',
     'NIGHT': 'DINNER',
-    
+
     // Post Dinner / Bedtime variations
     'PASTDINNER': 'PAST_DINNER',
     'PAST_DINNER_LABEL': 'PAST_DINNER',
@@ -293,7 +293,7 @@ export function normalizeMealType(input: string | undefined | null): MealTypeKey
     'BEFORE_BED': 'PAST_DINNER',
     'BEFOREBED': 'PAST_DINNER',
   };
-  
+
   return mappings[normalized] || null;
 }
 
@@ -356,16 +356,16 @@ export function time24hTo12h(time24h: string): string {
 export function time12hTo24h(time12h: string): string {
   const match = time12h.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
   if (!match) return time12h;
-  
+
   let [, hours, minutes, period] = match;
   let hour = parseInt(hours);
-  
+
   if (period.toUpperCase() === 'PM' && hour !== 12) {
     hour += 12;
   } else if (period.toUpperCase() === 'AM' && hour === 12) {
     hour = 0;
   }
-  
+
   return `${hour.toString().padStart(2, '0')}:${minutes}`;
 }
 
@@ -374,10 +374,10 @@ export function time12hTo24h(time12h: string): string {
  */
 export function findClosestMealType(time24h: string): MealTypeKey {
   const inputMinutes = timeToMinutes(time24h);
-  
+
   let closest: MealTypeKey = 'BREAKFAST';
   let minDiff = Infinity;
-  
+
   for (const meal of MEAL_TYPES_SORTED) {
     const diff = Math.abs(meal.timeMinutes - inputMinutes);
     if (diff < minDiff) {
@@ -385,7 +385,7 @@ export function findClosestMealType(time24h: string): MealTypeKey {
       closest = meal.key;
     }
   }
-  
+
   return closest;
 }
 
@@ -430,11 +430,11 @@ export const mealTypeSchemaDefinition = {
  */
 export const mealTimeSchemaDefinition = {
   type: String,
-  default: function(this: { mealType?: string }) {
+  default: function (this: { mealType?: string }) {
     return getDefaultMealTime(this.mealType || 'BREAKFAST');
   },
   validate: {
-    validator: function(v: string) {
+    validator: function (v: string) {
       return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v);
     },
     message: 'Time must be in HH:MM format (24-hour)',

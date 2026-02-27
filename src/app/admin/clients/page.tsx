@@ -43,8 +43,8 @@ export default function AdminClientsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [saving, setSaving] = useState(false);
-  const [dietitians, setDietitians] = useState<{_id: string; firstName: string; lastName: string;}[]>([]);
-  const [healthCounselors, setHealthCounselors] = useState<{_id: string; firstName: string; lastName: string;}[]>([]);
+  const [dietitians, setDietitians] = useState<{ _id: string; firstName: string; lastName: string; }[]>([]);
+  const [healthCounselors, setHealthCounselors] = useState<{ _id: string; firstName: string; lastName: string; }[]>([]);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assigningClient, setAssigningClient] = useState<Client | null>(null);
   const [selectedDietitianId, setSelectedDietitianId] = useState("");
@@ -93,7 +93,7 @@ export default function AdminClientsPage() {
       if (!res.ok) return;
       const body = await res.json();
       setDietitians((body.dietitians || []).map((d: any) => ({ _id: d._id, firstName: d.firstName, lastName: d.lastName })));
-    } catch {}
+    } catch { }
   }
 
   async function fetchHealthCounselors() {
@@ -102,7 +102,7 @@ export default function AdminClientsPage() {
       if (!res.ok) return;
       const body = await res.json();
       setHealthCounselors((body.users || []).map((u: any) => ({ _id: u._id, firstName: u.firstName, lastName: u.lastName })));
-    } catch {}
+    } catch { }
   }
 
   useEffect(() => { fetchClients(); fetchDietitians(); fetchHealthCounselors(); }, []);
@@ -147,7 +147,7 @@ export default function AdminClientsPage() {
       setError(emailValidation.error || 'Invalid email');
       return;
     }
-    
+
     if (!form.email || !form.firstName || !form.lastName) {
       setError("Please fill required fields: email, first name, last name");
       return;
@@ -212,7 +212,7 @@ export default function AdminClientsPage() {
   function openAssignDialog(client: Client, type: 'dietitian' | 'healthCounselor' = 'dietitian') {
     setAssigningClient(client);
     setAssignType(type);
-    
+
     if (type === 'dietitian') {
       const dietitianId = typeof client.assignedDietitian === 'string'
         ? client.assignedDietitian
@@ -264,320 +264,320 @@ export default function AdminClientsPage() {
           </div>
         </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Clients</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="py-12 flex items-center justify-center"><LoadingSpinner /></div>
-          ) : error ? (
-            <div className="text-red-600 text-sm">{error}</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left p-3">Name</th>
-                    <th className="text-left p-3">Email</th>
-                    <th className="text-left p-3">Phone</th>
-                    <th className="text-left p-3">Gender</th>
-                    <th className="text-left p-3">Assigned Dietitian</th>
-                    <th className="text-left p-3">Assigned Health Counselor</th>
-                    <th className="text-left p-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(u => (
-                    <tr key={u._id} className="border-b hover:bg-gray-50">
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <span>{u.firstName} {u.lastName}</span>
-                          <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
-                            {getClientId(u._id)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="p-3">{u.email}</td>
-                      <td className="p-3">{u.phone || '-'}</td>
-                      <td className="p-3 capitalize">{u.gender || '-'}</td>
-                      <td className="p-3">
-                        {u.assignedDietitian ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900">
-                              {typeof u.assignedDietitian === 'string'
-                                ? (dietitians.find(d => d._id === u.assignedDietitian)?.firstName + ' ' + (dietitians.find(d => d._id === u.assignedDietitian)?.lastName || ''))
-                                : `${u.assignedDietitian.firstName} ${u.assignedDietitian.lastName}`
-                              }
-                            </span>
-                            <span className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-medium">
-                              {getDietitianId(typeof u.assignedDietitian === 'string' ? u.assignedDietitian : u.assignedDietitian._id)}
-                            </span>
-                            <Button variant="ghost" size="sm" onClick={() => openAssignDialog(u, 'dietitian')} className="h-6 px-2 text-xs">
-                              Change
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button variant="outline" size="sm" onClick={() => openAssignDialog(u, 'dietitian')} className="h-7 px-3 text-xs">
-                            Assign Dietitian
-                          </Button>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        {u.assignedHealthCounselor ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900">
-                              {typeof u.assignedHealthCounselor === 'string'
-                                ? (healthCounselors.find(hc => hc._id === u.assignedHealthCounselor)?.firstName + ' ' + (healthCounselors.find(hc => hc._id === u.assignedHealthCounselor)?.lastName || ''))
-                                : `${u.assignedHealthCounselor.firstName} ${u.assignedHealthCounselor.lastName}`
-                              }
-                            </span>
-                            <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-medium">
-                              {getHealthCounselorId(typeof u.assignedHealthCounselor === 'string' ? u.assignedHealthCounselor : u.assignedHealthCounselor._id)}
-                            </span>
-                            <Button variant="ghost" size="sm" onClick={() => openAssignDialog(u, 'healthCounselor')} className="h-6 px-2 text-xs">
-                              Change
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button variant="outline" size="sm" onClick={() => openAssignDialog(u, 'healthCounselor')} className="h-7 px-3 text-xs">
-                            Assign HC
-                          </Button>
-                        )}
-                      </td>
-                      <td className="p-3 flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => openEdit(u)}>Edit</Button>
-                        <Button
-                          variant={u.status === 'active' ? 'outline' : 'outline'}
-                          size="sm"
-                          onClick={() => handleStatusToggle(u._id, u.status)}
-                          className={u.status === 'inactive'
-                            ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'}
-                        >
-                          {u.status === 'active' ? 'Deactivate' : 'Activate'}
-                        </Button>
-                      </td>
+        <Card>
+          <CardHeader>
+            <CardTitle>All Clients</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="py-12 flex items-center justify-center"><LoadingSpinner /></div>
+            ) : error ? (
+              <div className="text-red-600 text-sm">{error}</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left p-3">Name</th>
+                      <th className="text-left p-3">Email</th>
+                      <th className="text-left p-3">Phone</th>
+                      <th className="text-left p-3">Gender</th>
+                      <th className="text-left p-3">Assigned Dietitian</th>
+                      <th className="text-left p-3">Assigned Health Counselor</th>
+                      <th className="text-left p-3">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Pagination */}
-          {!loading && totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="text-sm text-gray-600">
-                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalClients)} of {totalClients} clients
+                  </thead>
+                  <tbody>
+                    {filtered.map(u => (
+                      <tr key={u._id} className="border-b hover:bg-gray-50">
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <span>{u.firstName} {u.lastName}</span>
+                            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
+                              {getClientId(u._id)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3">{u.email}</td>
+                        <td className="p-3">{u.phone || '-'}</td>
+                        <td className="p-3 capitalize">{u.gender || '-'}</td>
+                        <td className="p-3">
+                          {u.assignedDietitian ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                {typeof u.assignedDietitian === 'string'
+                                  ? (dietitians.find(d => d._id === u.assignedDietitian)?.firstName + ' ' + (dietitians.find(d => d._id === u.assignedDietitian)?.lastName || ''))
+                                  : `${u.assignedDietitian.firstName} ${u.assignedDietitian.lastName}`
+                                }
+                              </span>
+                              <span className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-medium">
+                                {getDietitianId(typeof u.assignedDietitian === 'string' ? u.assignedDietitian : u.assignedDietitian._id)}
+                              </span>
+                              <Button variant="ghost" size="sm" onClick={() => openAssignDialog(u, 'dietitian')} className="h-6 px-2 text-xs">
+                                Change
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button variant="outline" size="sm" onClick={() => openAssignDialog(u, 'dietitian')} className="h-7 px-3 text-xs">
+                              Assign Dietitian
+                            </Button>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {u.assignedHealthCounselor ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                {typeof u.assignedHealthCounselor === 'string'
+                                  ? (healthCounselors.find(hc => hc._id === u.assignedHealthCounselor)?.firstName + ' ' + (healthCounselors.find(hc => hc._id === u.assignedHealthCounselor)?.lastName || ''))
+                                  : `${u.assignedHealthCounselor.firstName} ${u.assignedHealthCounselor.lastName}`
+                                }
+                              </span>
+                              <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-medium">
+                                {getHealthCounselorId(typeof u.assignedHealthCounselor === 'string' ? u.assignedHealthCounselor : u.assignedHealthCounselor._id)}
+                              </span>
+                              <Button variant="ghost" size="sm" onClick={() => openAssignDialog(u, 'healthCounselor')} className="h-6 px-2 text-xs">
+                                Change
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button variant="outline" size="sm" onClick={() => openAssignDialog(u, 'healthCounselor')} className="h-7 px-3 text-xs">
+                              Assign HC
+                            </Button>
+                          )}
+                        </td>
+                        <td className="p-3 flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => openEdit(u)}>Edit</Button>
+                          <Button
+                            variant={u.status === 'active' ? 'outline' : 'outline'}
+                            size="sm"
+                            onClick={() => handleStatusToggle(u._id, u.status)}
+                            className={u.status === 'inactive'
+                              ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                              : 'border-gray-300 text-gray-700 hover:bg-gray-50'}
+                          >
+                            {u.status === 'active' ? 'Deactivate' : 'Activate'}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fetchClients(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => fetchClients(pageNum)}
-                        className="w-10"
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
+            )}
+
+            {/* Pagination */}
+            {!loading && totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t">
+                <div className="text-sm text-gray-600">
+                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalClients)} of {totalClients} clients
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fetchClients(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchClients(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => fetchClients(pageNum)}
+                          className="w-10"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchClients(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? "Edit Client" : "Create Client"}</DialogTitle>
-          </DialogHeader>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editing ? "Edit Client" : "Create Client"}</DialogTitle>
+            </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="text-sm text-gray-600">Email <span className="text-red-500">*</span></label>
-              <Input 
-                type="email" 
-                value={form.email} 
-                onChange={e => {
-                  setForm(f => ({ ...f, email: e.target.value }));
-                  // Clear error when user starts typing
-                  if (error && error.includes('email')) setError(null);
-                }} 
-                placeholder="client@example.com"
-              />
-            </div>
-            {!editing && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className="text-sm text-gray-600">Password</label>
-                <Input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+                <label className="text-sm text-gray-600">Email <span className="text-red-500">*</span></label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={e => {
+                    setForm(f => ({ ...f, email: e.target.value }));
+                    // Clear error when user starts typing
+                    if (error && error.includes('email')) setError(null);
+                  }}
+                  placeholder="client@example.com"
+                />
               </div>
-            )}
-            <div>
-              <label className="text-sm text-gray-600">First Name</label>
-              <Input value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Last Name</label>
-              <Input value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Phone</label>
-              <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Gender</label>
-              <Select value={form.gender} onValueChange={(v) => setForm(f => ({ ...f, gender: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Date of Birth</label>
-              <Input type="date" value={form.dateOfBirth} onChange={e => setForm(f => ({ ...f, dateOfBirth: e.target.value }))} />
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-sm text-gray-600">Assigned Dietitian</label>
-              <Select value={form.assignedDietitian} onValueChange={(v) => setForm(f => ({ ...f, assignedDietitian: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select dietitian (optional)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">None</SelectItem>
-                  {dietitians.map(d => (
-                    <SelectItem key={d._id} value={d._id}>{d.firstName} {d.lastName}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {error && <div className="text-sm text-red-600 mt-2">{error}</div>}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Quick Assign Dietitian/Health Counselor Dialog */}
-      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Assign {assignType === 'dietitian' ? 'Dietitian' : 'Health Counselor'} to {assigningClient?.firstName} {assigningClient?.lastName}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Select {assignType === 'dietitian' ? 'Dietitian' : 'Health Counselor'}
-              </label>
-              {assignType === 'dietitian' ? (
-                <Select value={selectedDietitianId} onValueChange={setSelectedDietitianId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a dietitian" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None (Unassign)</SelectItem>
-                    {dietitians.map(d => (
-                      <SelectItem key={d._id} value={d._id}>
-                        {d.firstName} {d.lastName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Select value={selectedHealthCounselorId} onValueChange={setSelectedHealthCounselorId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a health counselor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None (Unassign)</SelectItem>
-                    {healthCounselors.map(hc => (
-                      <SelectItem key={hc._id} value={hc._id}>
-                        {hc.firstName} {hc.lastName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {!editing && (
+                <div className="col-span-2">
+                  <label className="text-sm text-gray-600">Password</label>
+                  <Input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+                </div>
               )}
+              <div>
+                <label className="text-sm text-gray-600">First Name</label>
+                <Input value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">Last Name</label>
+                <Input value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">Phone</label>
+                <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">Gender</label>
+                <Select value={form.gender} onValueChange={(v) => setForm(f => ({ ...f, gender: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">Date of Birth</label>
+                <Input type="date" value={form.dateOfBirth} onChange={e => setForm(f => ({ ...f, dateOfBirth: e.target.value }))} />
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-sm text-gray-600">Assigned Dietitian</label>
+                <Select value={form.assignedDietitian} onValueChange={(v) => setForm(f => ({ ...f, assignedDietitian: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select dietitian (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {dietitians.map(d => (
+                      <SelectItem key={d._id} value={d._id}>{d.firstName} {d.lastName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            {assignType === 'dietitian' && selectedDietitianId && selectedDietitianId !== "none" && (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <p className="text-sm text-slate-700">
-                  <strong>{assigningClient?.firstName}</strong> will be assigned to{' '}
-                  <strong>{dietitians.find(d => d._id === selectedDietitianId)?.firstName} {dietitians.find(d => d._id === selectedDietitianId)?.lastName}</strong>
-                </p>
+            {error && <div className="text-sm text-red-600 mt-2">{error}</div>}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Quick Assign Dietitian/Health Counselor Dialog */}
+        <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Assign {assignType === 'dietitian' ? 'Dietitian' : 'Health Counselor'} to {assigningClient?.firstName} {assigningClient?.lastName}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Select {assignType === 'dietitian' ? 'Dietitian' : 'Health Counselor'}
+                </label>
+                {assignType === 'dietitian' ? (
+                  <Select value={selectedDietitianId} onValueChange={setSelectedDietitianId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a dietitian" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None (Unassign)</SelectItem>
+                      {dietitians.map(d => (
+                        <SelectItem key={d._id} value={d._id}>
+                          {d.firstName} {d.lastName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select value={selectedHealthCounselorId} onValueChange={setSelectedHealthCounselorId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a health counselor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None (Unassign)</SelectItem>
+                      {healthCounselors.map(hc => (
+                        <SelectItem key={hc._id} value={hc._id}>
+                          {hc.firstName} {hc.lastName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
-            )}
 
-            {assignType === 'healthCounselor' && selectedHealthCounselorId && selectedHealthCounselorId !== "none" && (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <p className="text-sm text-slate-700">
-                  <strong>{assigningClient?.firstName}</strong> will be assigned to{' '}
-                  <strong>{healthCounselors.find(hc => hc._id === selectedHealthCounselorId)?.firstName} {healthCounselors.find(hc => hc._id === selectedHealthCounselorId)?.lastName}</strong>
-                </p>
-              </div>
-            )}
+              {assignType === 'dietitian' && selectedDietitianId && selectedDietitianId !== "none" && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                  <p className="text-sm text-slate-700">
+                    <strong>{assigningClient?.firstName}</strong> will be assigned to{' '}
+                    <strong>{dietitians.find(d => d._id === selectedDietitianId)?.firstName} {dietitians.find(d => d._id === selectedDietitianId)?.lastName}</strong>
+                  </p>
+                </div>
+              )}
 
-            {((assignType === 'dietitian' && selectedDietitianId === "none" && assigningClient?.assignedDietitian) ||
-              (assignType === 'healthCounselor' && selectedHealthCounselorId === "none" && assigningClient?.assignedHealthCounselor)) && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                <p className="text-sm text-orange-700">
-                  This will unassign the current {assignType === 'dietitian' ? 'dietitian' : 'health counselor'} from <strong>{assigningClient?.firstName}</strong>
-                </p>
-              </div>
-            )}
-          </div>
+              {assignType === 'healthCounselor' && selectedHealthCounselorId && selectedHealthCounselorId !== "none" && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                  <p className="text-sm text-slate-700">
+                    <strong>{assigningClient?.firstName}</strong> will be assigned to{' '}
+                    <strong>{healthCounselors.find(hc => hc._id === selectedHealthCounselorId)?.firstName} {healthCounselors.find(hc => hc._id === selectedHealthCounselorId)?.lastName}</strong>
+                  </p>
+                </div>
+              )}
 
-          {error && <div className="text-sm text-red-600 mt-2">{error}</div>}
+              {((assignType === 'dietitian' && selectedDietitianId === "none" && assigningClient?.assignedDietitian) ||
+                (assignType === 'healthCounselor' && selectedHealthCounselorId === "none" && assigningClient?.assignedHealthCounselor)) && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <p className="text-sm text-orange-700">
+                      This will unassign the current {assignType === 'dietitian' ? 'dietitian' : 'health counselor'} from <strong>{assigningClient?.firstName}</strong>
+                    </p>
+                  </div>
+                )}
+            </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleQuickAssign} disabled={saving}>
-              {saving ? 'Assigning...' : 'Assign'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            {error && <div className="text-sm text-red-600 mt-2">{error}</div>}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleQuickAssign} disabled={saving}>
+                {saving ? 'Assigning...' : 'Assign'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
