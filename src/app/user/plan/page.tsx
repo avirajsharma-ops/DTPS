@@ -24,6 +24,7 @@ import { format, addDays, startOfWeek, isToday, isSameDay } from 'date-fns';
 
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { toast } from 'sonner';
+import { MEAL_TYPES, type MealTypeKey } from '@/lib/mealConfig';
 
 interface MealItem {
   id: string;
@@ -151,17 +152,44 @@ interface FoodItemSelectorModalData {
   isOpen: boolean;
 }
 
-// Default meal slots with fixed times - 8 meal types to match backend
-const DEFAULT_MEAL_SLOTS: { type: string; time: string; label: string }[] = [
-  { type: 'earlyMorning', time: '6:00 AM', label: 'Early Morning' },
-  { type: 'breakfast', time: '8:00 AM', label: 'Breakfast' },
-  { type: 'midMorning', time: '11:00 AM', label: 'Mid Morning' },
-  { type: 'lunch', time: '1:00 PM', label: 'Lunch' },
-  { type: 'midEvening', time: '4:00 PM', label: 'Mid Evening' },
-  { type: 'evening', time: '6:00 PM', label: 'Evening' },
-  { type: 'dinner', time: '8:00 PM', label: 'Dinner' },
-  { type: 'pastDinner', time: '10:00 PM', label: 'Post Dinner' },
-];
+// Default meal slots using canonical mealConfig - single source of truth for times
+const MEAL_TYPE_TO_CAMELCASE: Record<MealTypeKey, string> = {
+  'EARLY_MORNING': 'earlyMorning',
+  'BREAKFAST': 'breakfast',
+  'MID_MORNING': 'midMorning',
+  'LUNCH': 'lunch',
+  'MID_EVENING': 'midEvening',
+  'EVENING': 'evening',
+  'DINNER': 'dinner',
+  'PAST_DINNER': 'pastDinner',
+};
+
+const DEFAULT_MEAL_SLOTS: { type: string; time: string; label: string }[] = (
+  Object.keys(MEAL_TYPES) as MealTypeKey[]
+).map((key) => ({
+  type: MEAL_TYPE_TO_CAMELCASE[key],
+  time: MEAL_TYPES[key].time12h,
+  label: MEAL_TYPES[key].label,
+}));
+
+// Map for normalizing legacy/variant meal type names to canonical camelCase keys
+const LEGACY_TYPE_MAP: Record<string, string> = {
+  'morningsnack': 'midMorning',
+  'morningSnack': 'midMorning',
+  'morning_snack': 'midMorning',
+  'afternoonsnack': 'midEvening',
+  'afternoonSnack': 'midEvening',
+  'afternoon_snack': 'midEvening',
+  'eveningsnack': 'evening',
+  'eveningSnack': 'evening',
+  'evening_snack': 'evening',
+  'postdinner': 'pastDinner',
+  'postDinner': 'pastDinner',
+  'post_dinner': 'pastDinner',
+  'pastdinner': 'pastDinner',
+  'bedtime': 'pastDinner',
+  'snack': 'midEvening',
+};
 
 // Helper function to format notes with period as line break
 function formatNotesWithLineBreaks(note: string): string[] {
@@ -693,6 +721,8 @@ export default function UserPlanPage() {
   };
 
   // Get all meal slots - merge defaults with actual meals, including custom meals
+  // Key fix: include ALL API meals (even empty ones) to preserve their times,
+  // and normalize legacy types to prevent duplicates.
   const getAllMealSlots = (): Meal[] => {
     if (!dayPlan?.hasPlan) {
       return [];
@@ -701,27 +731,39 @@ export default function UserPlanPage() {
     const slots: Meal[] = [];
     const processedTypes = new Set<string>();
 
-    // First, add all actual meals from the day plan (including custom meals)
+    // Helper to normalize a meal type to canonical camelCase
+    const normalizeMealTypeKey = (type: string): string => {
+      // Check legacy map first
+      if (LEGACY_TYPE_MAP[type]) return LEGACY_TYPE_MAP[type];
+      // Check if it's already a known default type
+      if (DEFAULT_MEAL_SLOTS.some(s => s.type === type)) return type;
+      // Return as-is for custom types
+      return type;
+    };
+
+    // First, add ALL meals from the API (including those with 0 items).
+    // The API returns meals that the dietitian configured, so they should
+    // all be shown — even empty ones get "No food allotted" display.
     if (dayPlan.meals && dayPlan.meals.length > 0) {
       dayPlan.meals.forEach(meal => {
-        // Include meal if it has items OR if it has a valid type (custom meal)
-        // This ensures custom meals appear even if they have food assigned
-        const hasItems = meal.items && meal.items.length > 0;
-        const isCustomMeal = meal.type && !DEFAULT_MEAL_SLOTS.some(s => s.type === meal.type);
+        if (!meal.type) return;
 
-        if (hasItems || isCustomMeal) {
-          // Find default slot time if this is a default meal type
-          const defaultSlot = DEFAULT_MEAL_SLOTS.find(s => s.type === meal.type);
-          slots.push({
-            ...meal,
-            time: meal.time || defaultSlot?.time || '12:00 PM'
-          });
-          processedTypes.add(meal.type);
-        }
+        const normalizedType = normalizeMealTypeKey(meal.type);
+
+        // Skip if we already have this type (prevents duplicates from legacy names)
+        if (processedTypes.has(normalizedType)) return;
+
+        const defaultSlot = DEFAULT_MEAL_SLOTS.find(s => s.type === normalizedType);
+        slots.push({
+          ...meal,
+          type: normalizedType,
+          time: meal.time || defaultSlot?.time || '12:00 PM'
+        });
+        processedTypes.add(normalizedType);
       });
     }
 
-    // Add empty default slots for default types that don't have meals
+    // Add empty default slots only for types not returned by the API
     DEFAULT_MEAL_SLOTS.forEach(slot => {
       if (!processedTypes.has(slot.type)) {
         slots.push({
