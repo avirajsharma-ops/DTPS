@@ -17,16 +17,16 @@ import {
 } from '@/lib/mealConfig';
 
 // Convert MealTypeKey (uppercase) to camelCase for frontend compatibility
-// Map between backend MealTypeKey (8 types) and frontend meal types (6 types)
+// Each meal type maps to a UNIQUE camelCase key to avoid duplicates
 const mealTypeKeyToCamelCase: Record<MealTypeKey, string> = {
-  'EARLY_MORNING': 'breakfast',       // Early morning mapped to breakfast slot
+  'EARLY_MORNING': 'earlyMorning',
   'BREAKFAST': 'breakfast',
-  'MID_MORNING': 'morningSnack',
+  'MID_MORNING': 'midMorning',
   'LUNCH': 'lunch',
-  'MID_EVENING': 'afternoonSnack',
-  'EVENING': 'eveningSnack',
+  'MID_EVENING': 'midEvening',
+  'EVENING': 'evening',
   'DINNER': 'dinner',
-  'PAST_DINNER': 'eveningSnack'       // Post dinner mapped to evening snack
+  'PAST_DINNER': 'pastDinner'
 };
 
 function convertMealTypeToCamelCase(mealTypeKey: MealTypeKey | string): string {

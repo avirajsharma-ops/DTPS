@@ -8,7 +8,7 @@ import { withConditionalCache, errorResponse } from '@/lib/api/utils';
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session || !session.user?.role?.toLowerCase().includes('admin')) {
       return errorResponse('Unauthorized', 401, 'AUTH_REQUIRED');
     }

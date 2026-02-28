@@ -87,28 +87,28 @@ if (!cached) {
 const connectionOptions: mongoose.ConnectOptions = {
   // Buffer commands when disconnected - mongoose will auto-reconnect
   bufferCommands: true,
-  
+
   // Timeouts — aggressive for fast failure detection
   serverSelectionTimeoutMS: 5000,   // 5s to find a server (was 15s)
   socketTimeoutMS: 20000,           // 20s socket timeout (was 30s)
   connectTimeoutMS: 5000,           // 5s to establish connection (was 15s)
-  
+
   // Force IPv4 - helps with some DNS issues
   family: 4,
-  
+
   // Connection pool — optimized for throughput
   maxPoolSize: 20,                  // Handle concurrent requests (was 10)
   minPoolSize: 5,                   // Keep 5 connections warm (was 2)
   maxIdleTimeMS: 60000,             // Close idle connections after 60s (was 30s)
   waitQueueTimeoutMS: 5000,         // Max wait for pool connection
-  
+
   // Retry settings (MongoDB driver handles these)
   retryWrites: true,
   retryReads: true,
-  
+
   // Heartbeat to detect dead connections
   heartbeatFrequencyMS: 10000,      // Check every 10s
-  
+
   // Auto-index in development only
   autoIndex: process.env.NODE_ENV !== 'production',
 };
@@ -207,22 +207,22 @@ async function connectDB(): Promise<typeof mongoose> {
         }
 
         console.log(`[MongoDB] Connecting to database${attempt > 0 ? ` (attempt ${attempt + 1})` : ''}...`);
-        
+
         const conn = await mongoose.connect(MONGODB_URI, connectionOptions);
-        
+
         console.log('[MongoDB] Connected successfully!');
         cached.conn = conn;
         cached.lastError = null;
         cached.retryCount = 0;
-        
+
         return conn;
       } catch (error: any) {
         lastError = error;
         cached.lastError = error;
         cached.retryCount = attempt + 1;
-        
+
         console.error(`[MongoDB] Connection attempt ${attempt + 1} failed:`, error.message);
-        
+
         // Don't retry on authentication errors
         if (error.message?.includes('authentication') || error.message?.includes('auth')) {
           console.error('[MongoDB] Authentication error - not retrying');
@@ -294,22 +294,22 @@ function setupEventHandlers(): void {
 /**
  * Check database health
  */
-export async function checkDBHealth(): Promise<{ 
-  healthy: boolean; 
+export async function checkDBHealth(): Promise<{
+  healthy: boolean;
   error?: string;
   readyState: number;
   readyStateLabel: string;
 }> {
   const readyStateLabels = ['disconnected', 'connected', 'connecting', 'disconnecting'];
-  
+
   try {
     if (!isConnected()) {
       await connectDB();
     }
-    
+
     // Ping to verify connection works
     await mongoose.connection.db?.admin().ping();
-    
+
     return {
       healthy: true,
       readyState: mongoose.connection.readyState,
@@ -337,7 +337,7 @@ export function getConnectionStats(): {
   isConnecting: boolean;
 } {
   const readyStateLabels = ['disconnected', 'connected', 'connecting', 'disconnecting'];
-  
+
   return {
     readyState: mongoose.connection.readyState,
     readyStateLabel: readyStateLabels[mongoose.connection.readyState] || 'unknown',

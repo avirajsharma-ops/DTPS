@@ -13,7 +13,16 @@ import { VoiceRecorder } from './VoiceRecorder';
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 interface ChatInputProps {
-  onSendMessage: (content: string, type?: 'text' | 'image' | 'file' | 'video' | 'audio') => void;
+  onSendMessage: (content: string, type?: 'text' | 'image' | 'file' | 'video' | 'audio' | 'voice', attachments?: {
+    url: string;
+    filename: string;
+    size: number;
+    mimeType: string;
+    thumbnail?: string;
+    duration?: number;
+    width?: number;
+    height?: number;
+  }[]) => void;
   onTyping?: (isTyping: boolean) => void;
   disabled?: boolean;
   placeholder?: string;
@@ -78,8 +87,16 @@ export function ChatInput({
       else if (file.type.startsWith('video/')) messageType = 'video';
       else if (file.type.startsWith('audio/')) messageType = 'audio';
 
-      // Send message with attachment
-      await onSendMessage(caption || file.name, messageType);
+      // Create attachment data
+      const attachment = {
+        url: uploadData.url,
+        filename: uploadData.filename || file.name,
+        size: uploadData.size || file.size,
+        mimeType: uploadData.type || file.type,
+      };
+
+      // Send message with attachment data
+      await onSendMessage(caption || file.name, messageType, [attachment]);
 
       setShowMediaUpload(false);
     } catch (error) {
@@ -121,21 +138,8 @@ export function ChatInput({
         duration: Math.floor(audioBlob.size / 16000) // Rough estimate
       };
 
-      // Send voice message with attachment data
-      const response = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipientId: recipientId,
-          content: 'Voice message',
-          type: 'voice',
-          attachments: [attachment]
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to send voice message');
-      }
+      // Send voice message using the onSendMessage callback
+      await onSendMessage('Voice message', 'voice', [attachment]);
 
       setShowVoiceRecorder(false);
     } catch (error) {
@@ -174,11 +178,11 @@ export function ChatInput({
   const handleTyping = useCallback(() => {
     if (onTyping) {
       onTyping(true);
-      
+
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      
+
       typingTimeoutRef.current = setTimeout(() => {
         onTyping(false);
       }, 1000);
@@ -209,7 +213,7 @@ export function ChatInput({
 
     setMessage('');
     if (onTyping) onTyping(false);
-    
+
     // Reset textarea height
     setTimeout(() => {
       if (textareaRef.current) {
@@ -318,7 +322,7 @@ export function ChatInput({
             className="min-h-[40px] max-h-[120px] resize-none pr-12 py-2"
             rows={1}
           />
-          
+
           {/* Emoji button */}
           <Button
             variant="ghost"

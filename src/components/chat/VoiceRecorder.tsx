@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { Mic, MicOff, Play, Pause, Send, Trash2, Square, AlertCircle } from 'lucide-react';
+import { Mic, MicOff, Play, Pause, Send, Trash2, Square, AlertCircle, Loader2 } from 'lucide-react';
 
 interface VoiceRecorderProps {
-  onSend: (audioBlob: Blob) => void;
+  onSend: (audioBlob: Blob) => Promise<void> | void;
   onCancel: () => void;
   className?: string;
 }
@@ -15,6 +15,7 @@ interface VoiceRecorderProps {
 export function VoiceRecorder({ onSend, onCancel, className }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string>('');
@@ -107,15 +108,28 @@ export function VoiceRecorder({ onSend, onCancel, className }: VoiceRecorderProp
 
       // Determine the best audio format supported by the browser
       let mimeType = 'audio/webm';
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-        mimeType = 'audio/webm;codecs=opus';
-      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-        mimeType = 'audio/mp4';
-      } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
-        mimeType = 'audio/ogg;codecs=opus';
+      const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus',
+        'audio/ogg',
+        'audio/wav'
+      ];
+
+      for (const type of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          break;
+        }
       }
 
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      console.log('Using audio mimeType:', mimeType);
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType,
+        audioBitsPerSecond: 128000 // 128kbps for good quality
+      });
       mediaRecorderRef.current = mediaRecorder;
 
       // Reset chunks
@@ -233,9 +247,17 @@ export function VoiceRecorder({ onSend, onCancel, className }: VoiceRecorderProp
     }
   };
 
-  const handleSend = () => {
-    if (audioBlob) {
-      onSend(audioBlob);
+  const handleSend = async () => {
+    if (audioBlob && !isSending) {
+      setIsSending(true);
+      setError('');
+      try {
+        await onSend(audioBlob);
+      } catch (err) {
+        console.error('Failed to send voice message:', err);
+        setError('Failed to send voice message. Please try again.');
+        setIsSending(false);
+      }
     }
   };
 
@@ -350,7 +372,7 @@ export function VoiceRecorder({ onSend, onCancel, className }: VoiceRecorderProp
         </div>
 
         {/* Timer */}
-        <div className="text-sm font-mono text-gray-600 min-w-[40px]">
+        <div className="text-sm font-mono text-gray-600 min-w-10">
           {formatTime(recordingTime)}
         </div>
 
@@ -361,17 +383,28 @@ export function VoiceRecorder({ onSend, onCancel, className }: VoiceRecorderProp
               variant="default"
               size="sm"
               onClick={handleSend}
+              disabled={isSending}
               className="h-8 px-3"
             >
-              <Send className="w-3 h-3 mr-1" />
-              Send
+              {isSending ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-3 h-3 mr-1" />
+                  Send
+                </>
+              )}
             </Button>
           )}
-          
+
           <Button
             variant="outline"
             size="sm"
             onClick={handleCancel}
+            disabled={isSending}
             className="h-8 px-3"
           >
             <Trash2 className="w-3 h-3 mr-1" />

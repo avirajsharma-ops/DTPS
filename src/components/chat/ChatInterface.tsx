@@ -54,7 +54,7 @@ export function ChatInterface({ recipient, onBack, className, onUserStatusChange
     showCallNotification,
     clearNotification
   } = useNotifications();
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -173,17 +173,35 @@ export function ChatInterface({ recipient, onBack, className, onUserStatusChange
   }, []);
 
   // Send message
-  const handleSendMessage = async (content: string, type: 'text' | 'image' | 'file' | 'video' | 'audio' = 'text') => {
-    if (!content.trim() || sending) return;
+  const handleSendMessage = async (
+    content: string,
+    type: 'text' | 'image' | 'file' | 'video' | 'audio' | 'voice' = 'text',
+    attachments?: {
+      url: string;
+      filename: string;
+      size: number;
+      mimeType: string;
+      thumbnail?: string;
+      duration?: number;
+      width?: number;
+      height?: number;
+    }[]
+  ) => {
+    // For text messages, require content. For media messages, allow sending with attachments
+    const hasContent = content.trim().length > 0;
+    const hasAttachments = attachments && attachments.length > 0;
+
+    if ((!hasContent && !hasAttachments) || sending) return;
 
     try {
       setSending(true);
-      
+
       // Optimistically add message
       const tempMessage: ChatMessage = {
         _id: `temp-${Date.now()}`,
         content,
         type,
+        attachments,
         sender: {
           _id: session!.user.id,
           firstName: session!.user.firstName,
@@ -195,7 +213,7 @@ export function ChatInterface({ recipient, onBack, className, onUserStatusChange
         createdAt: new Date().toISOString(),
         status: 'sending'
       };
-      
+
       setMessages(prev => [...prev, tempMessage]);
       scrollToBottom();
 
@@ -205,24 +223,25 @@ export function ChatInterface({ recipient, onBack, className, onUserStatusChange
         body: JSON.stringify({
           recipientId: recipient._id,
           content,
-          type
+          type,
+          attachments
         })
       });
 
       if (response.ok) {
         const sentMessage = await response.json();
-        setMessages(prev => 
-          prev.map(msg => 
-            msg._id === tempMessage._id 
+        setMessages(prev =>
+          prev.map(msg =>
+            msg._id === tempMessage._id
               ? { ...sentMessage, status: 'sent' }
               : msg
           )
         );
       } else {
         // Mark message as failed
-        setMessages(prev => 
-          prev.map(msg => 
-            msg._id === tempMessage._id 
+        setMessages(prev =>
+          prev.map(msg =>
+            msg._id === tempMessage._id
               ? { ...msg, status: 'failed' }
               : msg
           )
@@ -231,9 +250,9 @@ export function ChatInterface({ recipient, onBack, className, onUserStatusChange
     } catch (error) {
       console.error('Failed to send message:', error);
       // Mark message as failed
-      setMessages(prev => 
-        prev.map(msg => 
-          msg._id.startsWith('temp-') 
+      setMessages(prev =>
+        prev.map(msg =>
+          msg._id.startsWith('temp-')
             ? { ...msg, status: 'failed' }
             : msg
         )
@@ -257,7 +276,7 @@ export function ChatInterface({ recipient, onBack, className, onUserStatusChange
   const groupedMessages = messages.reduce((groups: ChatMessage[][], message, index) => {
     const prevMessage = messages[index - 1];
     const isSameSender = prevMessage?.sender._id === message.sender._id;
-    const timeDiff = prevMessage 
+    const timeDiff = prevMessage
       ? new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime()
       : Infinity;
     const isWithinTimeWindow = timeDiff < 5 * 60 * 1000; // 5 minutes
@@ -405,10 +424,10 @@ export function ChatInterface({ recipient, onBack, className, onUserStatusChange
             callState.isIncoming
               ? callState.caller!
               : callState.receiver || {
-                  id: recipient._id,
-                  name: `${recipient.firstName} ${recipient.lastName}`,
-                  avatar: recipient.avatar
-                }
+                id: recipient._id,
+                name: `${recipient.firstName} ${recipient.lastName}`,
+                avatar: recipient.avatar
+              }
           }
           callType={callState.callType!}
           isIncoming={callState.isIncoming}

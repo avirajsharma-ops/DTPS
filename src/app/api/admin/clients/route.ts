@@ -16,11 +16,11 @@ export async function GET(request: NextRequest) {
 
     // Check if user has admin role (case-insensitive and flexible)
     const userRole = session.user.role?.toLowerCase();
-    
+
     if (!userRole || (!userRole.includes('admin') && userRole !== 'admin')) {
-      return NextResponse.json({ 
-        error: 'Forbidden - Admin access required', 
-        userRole: session.user.role 
+      return NextResponse.json({
+        error: 'Forbidden - Admin access required',
+        userRole: session.user.role
       }, { status: 403 });
     }
 
@@ -106,15 +106,15 @@ export async function GET(request: NextRequest) {
       async () => {
         const [totalCount, assignedCount, unassignedCount] = await Promise.all([
           User.countDocuments({ role: UserRole.CLIENT }),
-          User.countDocuments({ 
-            role: UserRole.CLIENT, 
+          User.countDocuments({
+            role: UserRole.CLIENT,
             $or: [
               { assignedDietitian: { $ne: null } },
               { assignedDietitians: { $exists: true, $not: { $size: 0 } } }
             ]
           }),
-          User.countDocuments({ 
-            role: UserRole.CLIENT, 
+          User.countDocuments({
+            role: UserRole.CLIENT,
             assignedDietitian: null,
             $or: [
               { assignedDietitians: { $exists: false } },

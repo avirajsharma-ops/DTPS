@@ -87,7 +87,7 @@ export const authOptions: NextAuthOptions = {
             if (user.status === 'inactive') {
               throw new Error('Your account has been deactivated. Please contact admin.');
             }
-            
+
             if (user.status === 'suspended') {
               throw new Error('Your account has been suspended. Please contact admin for assistance.');
             }
@@ -172,8 +172,8 @@ export const authOptions: NextAuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: process.env.NODE_ENV === 'production' 
-        ? '__Secure-next-auth.session-token' 
+      name: process.env.NODE_ENV === 'production'
+        ? '__Secure-next-auth.session-token'
         : 'next-auth.session-token',
       options: {
         httpOnly: true,
@@ -215,7 +215,7 @@ export const authOptions: NextAuthOptions = {
         token.lastName = user.lastName;
         token.avatar = user.avatar;
         token.emailVerified = !!user.emailVerified;
-        
+
         // For client users, fetch onboardingCompleted from database on initial sign in
         if (user.role === UserRole.CLIENT && !user.isWooCommerceClient) {
           try {
@@ -284,7 +284,7 @@ export const authOptions: NextAuthOptions = {
         session.user.lastName = token.lastName as string;
         session.user.avatar = token.avatar as string;
         session.user.emailVerified = token.emailVerified as boolean;
-        
+
         // Include onboardingCompleted for client users
         session.user.onboardingCompleted = token.onboardingCompleted as boolean ?? true;
 
@@ -311,7 +311,8 @@ export const authOptions: NextAuthOptions = {
             // Cache miss — check DB and cache result
             try {
               await connectDB();
-              const user = await User.findById(userId).select('status').lean();
+              const userDoc = await User.findById(userId).select('status').lean();
+              const user = userDoc as { status?: string } | null;
               if (user) {
                 setCachedUserStatus(userId, user.status || 'active');
                 if (user.status !== 'active') {
@@ -330,7 +331,7 @@ export const authOptions: NextAuthOptions = {
     async redirect({ url, baseUrl }) {
       // Use getBaseUrl() instead of baseUrl from environment
       const safeBaseUrl = getBaseUrl();
-      
+
       // Allows relative callback URLs
       if (url.startsWith('/')) return `${safeBaseUrl}${url}`;
       // Allows callback URLs on the same origin

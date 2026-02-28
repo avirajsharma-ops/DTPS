@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     // Check if user has admin role (case-insensitive and flexible)
     const userRole = session.user.role?.toLowerCase();
-    
+
     if (!userRole || (!userRole.includes('admin') && userRole !== 'admin')) {
       return errorResponse('Forbidden - Admin access required', 403, 'ADMIN_REQUIRED');
     }
@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
     const dietitians = await withCache(
       `admin:dietitians:${JSON.stringify(query)}`,
       async () => await User.find(query)
-      .select('firstName lastName email avatar phone specialization status updatedAt')
-      .sort({ firstName: 1, lastName: 1 }),
+        .select('firstName lastName email avatar phone specialization status updatedAt')
+        .sort({ firstName: 1, lastName: 1 }),
       { ttl: 120000, tags: ['admin'] }
     );
 

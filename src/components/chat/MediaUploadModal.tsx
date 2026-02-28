@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { X, Send, Image, Video, FileText, Music, Camera, Upload } from 'lucide-react';
+import { Send, Image, Video, FileText, Music, Camera, Upload, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MediaUploadModalProps {
@@ -21,15 +21,111 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string>('');
-  
+  const [isCompressing, setIsCompressing] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
 
+  // Compress video using canvas/mediarecorder (client-side)
+  const compressVideo = async (file: File): Promise<File> => {
+    // For small videos (< 5MB), don't compress
+    if (file.size < 5 * 1024 * 1024) return file;
+
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.muted = true;
+      video.playsInline = true;
+
+      video.onloadedmetadata = async () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(file); // Fallback to original
+            return;
+          }
+
+          // Scale down if video is too large (max 720p)
+          const maxHeight = 720;
+          let width = video.videoWidth;
+          let height = video.videoHeight;
+
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          // Use MediaRecorder to re-encode
+          const stream = canvas.captureStream(24); // 24 fps
+          const mediaRecorder = new MediaRecorder(stream, {
+            mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+              ? 'video/webm;codecs=vp9'
+              : 'video/webm',
+            videoBitsPerSecond: 1500000 // 1.5 Mbps for decent quality
+          });
+
+          const chunks: Blob[] = [];
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) chunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.webm'), {
+              type: 'video/webm',
+              lastModified: Date.now()
+            });
+            // Only use compressed if it's smaller
+            resolve(compressedFile.size < file.size ? compressedFile : file);
+          };
+
+          mediaRecorder.onerror = () => resolve(file);
+          mediaRecorder.start();
+
+          // Draw frames
+          video.currentTime = 0;
+          video.play();
+
+          const drawFrame = () => {
+            if (video.paused || video.ended) {
+              mediaRecorder.stop();
+              return;
+            }
+            ctx.drawImage(video, 0, 0, width, height);
+            requestAnimationFrame(drawFrame);
+          };
+
+          video.onplay = drawFrame;
+          video.onended = () => mediaRecorder.stop();
+
+          // Timeout for long videos (max 60 seconds of processing)
+          setTimeout(() => {
+            if (mediaRecorder.state === 'recording') {
+              video.pause();
+              mediaRecorder.stop();
+            }
+          }, 60000);
+
+        } catch (err) {
+          console.error('Video compression error:', err);
+          resolve(file); // Fallback to original
+        }
+      };
+
+      video.onerror = () => resolve(file);
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
     setCaption('');
-    
+
     // Create preview URL for images and videos
     if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
       const url = URL.createObjectURL(file);
@@ -48,11 +144,25 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
 
   const handleSend = async () => {
     if (!selectedFile) return;
-    
+
     setUploading(true);
     setUploadProgress(0);
-    
+
     try {
+      let fileToUpload = selectedFile;
+
+      // Compress video if it's a video file
+      if (selectedFile.type.startsWith('video/')) {
+        setIsCompressing(true);
+        setUploadProgress(10);
+        try {
+          fileToUpload = await compressVideo(selectedFile);
+        } catch (err) {
+          console.warn('Video compression failed, using original:', err);
+        }
+        setIsCompressing(false);
+      }
+
       // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -62,21 +172,22 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
           }
           return prev + 10;
         });
-      }, 100);
-      
-      await onSend(selectedFile, caption);
-      
+      }, 150);
+
+      await onSend(fileToUpload, caption);
+
       clearInterval(progressInterval);
       setUploadProgress(100);
-      
+
       // Close modal after successful upload
       setTimeout(() => {
         handleClose();
-      }, 500);
+      }, 300);
     } catch (error) {
       console.error('Upload failed:', error);
     } finally {
       setUploading(false);
+      setIsCompressing(false);
     }
   };
 
@@ -108,12 +219,7 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            Send Media
-            <Button variant="ghost" size="sm" onClick={handleClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </DialogTitle>
+          <DialogTitle>Send Media</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -134,7 +240,7 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
                   <Image className="w-6 h-6" />
                   <span className="text-sm">Photos</span>
                 </Button>
-                
+
                 <Button
                   variant="outline"
                   className="h-20 flex-col space-y-2"
@@ -147,7 +253,7 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
                   <Video className="w-6 h-6" />
                   <span className="text-sm">Videos</span>
                 </Button>
-                
+
                 <Button
                   variant="outline"
                   className="h-20 flex-col space-y-2"
@@ -160,7 +266,7 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
                   <FileText className="w-6 h-6" />
                   <span className="text-sm">Documents</span>
                 </Button>
-                
+
                 <Button
                   variant="outline"
                   className="h-20 flex-col space-y-2"
@@ -176,7 +282,7 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
                   <span className="text-sm">Camera</span>
                 </Button>
               </div>
-              
+
               <div className="text-center">
                 <Button
                   variant="outline"
@@ -200,7 +306,7 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
                     className="w-full h-48 object-cover rounded"
                   />
                 )}
-                
+
                 {selectedFile.type.startsWith('video/') && previewUrl && (
                   <video
                     src={previewUrl}
@@ -208,7 +314,7 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
                     className="w-full h-48 object-cover rounded"
                   />
                 )}
-                
+
                 {!selectedFile.type.startsWith('image/') && !selectedFile.type.startsWith('video/') && (
                   <div className="flex items-center space-x-3 p-4">
                     <div className="text-blue-600">
@@ -225,28 +331,29 @@ export function MediaUploadModal({ isOpen, onClose, onSend }: MediaUploadModalPr
                   </div>
                 )}
               </div>
-              
+
               {/* Caption input */}
               <div>
                 <Textarea
                   placeholder="Add a caption..."
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
-                  className="min-h-[80px]"
+                  className="min-h-20"
                   disabled={uploading}
                 />
               </div>
-              
+
               {/* Upload progress */}
               {uploading && (
                 <div className="space-y-2">
                   <Progress value={uploadProgress} className="w-full" />
-                  <p className="text-sm text-gray-500 text-center">
-                    Uploading... {uploadProgress}%
+                  <p className="text-sm text-gray-500 text-center flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {isCompressing ? 'Compressing video...' : `Uploading... ${uploadProgress}%`}
                   </p>
                 </div>
               )}
-              
+
               {/* Actions */}
               <div className="flex space-x-2">
                 <Button

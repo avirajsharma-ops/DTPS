@@ -20,11 +20,11 @@ async function uploadToImageKit(
   try {
     const ik = getImageKit();
     const isImage = mimeType.startsWith('image/') && !mimeType.includes('gif');
-    
+
     let uploadData: string;
     let finalMimeType: string;
     let finalFileName: string;
-    
+
     if (isImage && compress) {
       // Compress image before upload
       const settings = compressionSettings || { maxWidth: 1600, maxHeight: 1600, quality: 85 };
@@ -38,13 +38,13 @@ async function uploadToImageKit(
       finalMimeType = mimeType;
       finalFileName = fileName;
     }
-    
+
     const uploadResponse = await ik.upload({
       file: uploadData,
       fileName: finalFileName,
       folder: folder,
     });
-    
+
     return {
       url: uploadResponse.url,
       fileId: uploadResponse.fileId,
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       avatar: ['image/jpeg', 'image/png', 'image/webp'],
       document: ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
       'recipe-image': ['image/jpeg', 'image/png', 'image/webp'],
-      'message': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'audio/mpeg', 'audio/wav', 'audio/webm', 'video/mp4', 'video/webm'],
+      'message': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'audio/mpeg', 'audio/wav', 'audio/webm', 'audio/ogg', 'audio/mp4', 'audio/aac', 'audio/x-m4a', 'audio/flac', 'audio/opus', 'audio/webm;codecs=opus', 'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'],
       'note-attachment': ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/aac'],
       'progress': ['image/jpeg', 'image/png', 'image/webp'],
       'progress-photo': ['image/jpeg', 'image/png', 'image/webp'],
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     };
 
     const fileType = type as keyof typeof allowedTypes;
-    
+
     if (!allowedTypes[fileType]?.includes(file.type)) {
       return NextResponse.json(
         { error: 'Invalid file type' },
@@ -143,14 +143,14 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
 
     // Get compression settings based on type
-    const compressionSettings = fileType === 'avatar' 
-      ? serverCompressionPresets.avatar 
+    const compressionSettings = fileType === 'avatar'
+      ? serverCompressionPresets.avatar
       : { maxWidth: 1600, maxHeight: 1600, quality: 85 };
 
     // Try to upload to ImageKit first (preferred for all file types)
     const folder = imagekitFolders[fileType] || '/uploads';
     const shouldCompress = file.type.startsWith('image/') && !file.type.includes('gif');
-    
+
     const imageKitResult = await uploadToImageKit(
       buffer,
       fileName,
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
 
     // Fallback: Save file locally if ImageKit fails (but still don't store in MongoDB)
     console.warn(`[Upload] ImageKit failed for ${fileType}, falling back to local storage`);
-    
+
     let localUrl = '';
     try {
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', fileType);

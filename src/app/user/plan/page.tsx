@@ -151,14 +151,16 @@ interface FoodItemSelectorModalData {
   isOpen: boolean;
 }
 
-// Default meal slots with fixed times - 6 meal types
+// Default meal slots with fixed times - 8 meal types to match backend
 const DEFAULT_MEAL_SLOTS: { type: string; time: string; label: string }[] = [
-  { type: 'breakfast', time: '7:00 AM', label: 'Breakfast' },
-  { type: 'morningSnack', time: '10:00 AM', label: 'Mid Morning' },
-  { type: 'lunch', time: '12:30 PM', label: 'Lunch' },
-  { type: 'afternoonSnack', time: '4:00 PM', label: 'Evening Snack' },
-  { type: 'dinner', time: '7:30 PM', label: 'Dinner' },
-  { type: 'eveningSnack', time: '9:00 PM', label: 'Bedtime' },
+  { type: 'earlyMorning', time: '6:00 AM', label: 'Early Morning' },
+  { type: 'breakfast', time: '8:00 AM', label: 'Breakfast' },
+  { type: 'midMorning', time: '11:00 AM', label: 'Mid Morning' },
+  { type: 'lunch', time: '1:00 PM', label: 'Lunch' },
+  { type: 'midEvening', time: '4:00 PM', label: 'Mid Evening' },
+  { type: 'evening', time: '6:00 PM', label: 'Evening' },
+  { type: 'dinner', time: '8:00 PM', label: 'Dinner' },
+  { type: 'pastDinner', time: '10:00 PM', label: 'Post Dinner' },
 ];
 
 // Helper function to format notes with period as line break
@@ -489,13 +491,15 @@ export default function UserPlanPage() {
         setDayPlan(noplan);
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+
       console.error('Error fetching meal plan:', error);
 
       // More detailed error logging
       if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          console.error('Request timeout while fetching meal plan');
-        } else if (error.message.includes('Failed to fetch')) {
+        if (error.message.includes('Failed to fetch')) {
           console.error('Network error - failed to reach API server');
         } else {
           console.error('Fetch error:', error.message);
@@ -640,11 +644,17 @@ export default function UserPlanPage() {
 
   const getMealIcon = (type: string) => {
     switch (type) {
-      case 'breakfast': return '🌅';
-      case 'morningSnack': return '🍎';
+      case 'earlyMorning': return '🌅';
+      case 'breakfast': return '🍳';
+      case 'midMorning': return '🍎';
       case 'lunch': return '☀️';
-      case 'afternoonSnack': return '🥜';
+      case 'midEvening': return '🥜';
+      case 'evening': return '🍵';
       case 'dinner': return '🌙';
+      case 'pastDinner': return '🌛';
+      // Legacy types for backward compatibility
+      case 'morningSnack': return '🍎';
+      case 'afternoonSnack': return '🥜';
       case 'eveningSnack': return '🍵';
       default: return '🍽️';
     }
@@ -653,12 +663,18 @@ export default function UserPlanPage() {
   const getMealLabel = (type: string) => {
     // Check default meal types first
     switch (type) {
+      case 'earlyMorning': return 'Early Morning';
       case 'breakfast': return 'Breakfast';
-      case 'morningSnack': return 'Mid Morning';
+      case 'midMorning': return 'Mid Morning';
       case 'lunch': return 'Lunch';
-      case 'afternoonSnack': return 'Evening Snack';
+      case 'midEvening': return 'Mid Evening';
+      case 'evening': return 'Evening';
       case 'dinner': return 'Dinner';
-      case 'eveningSnack': return 'Bedtime';
+      case 'pastDinner': return 'Post Dinner';
+      // Legacy types for backward compatibility
+      case 'morningSnack': return 'Mid Morning';
+      case 'afternoonSnack': return 'Mid Evening';
+      case 'eveningSnack': return 'Evening';
       default:
         // For custom meal types, return the type as-is (it's already a display label)
         // Or format camelCase to Title Case
@@ -1099,8 +1115,8 @@ export default function UserPlanPage() {
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             {/* Number indicator for multiple foods */}
                             <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${itemIndex === 0
-                                ? 'bg-[#3AB1A0] text-white'
-                                : 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
+                              ? 'bg-[#3AB1A0] text-white'
+                              : 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
                               }`}>
                               {itemIndex + 1}
                             </div>
@@ -1353,25 +1369,7 @@ export default function UserPlanPage() {
                     </div>
                   </div>
 
-                  {/* Prep & Cook Time */}
-                  {(fullRecipeData?.prepTime || fullRecipeData?.cookTime || recipeModal.item.recipe?.prepTime || recipeModal.item.recipe?.cookTime) && (
-                    <div className={`flex gap-6 p-4 rounded-xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}>
-                      {(fullRecipeData?.prepTime || recipeModal.item.recipe?.prepTime) && (
-                        <div className="text-center flex-1">
-                          <Clock className="w-5 h-5 text-[#3AB1A0] mx-auto mb-1" />
-                          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Prep Time</p>
-                          <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{fullRecipeData?.prepTime || recipeModal.item.recipe?.prepTime} min</p>
-                        </div>
-                      )}
-                      {(fullRecipeData?.cookTime || recipeModal.item.recipe?.cookTime) && (
-                        <div className="text-center flex-1">
-                          <Clock className="w-5 h-5 text-[#E06A26] mx-auto mb-1" />
-                          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cook Time</p>
-                          <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{fullRecipeData?.cookTime || recipeModal.item.recipe?.cookTime} min</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Prep & Cook Time removed */}
 
                   {/* Nutrition Info */}
                   {(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition) && (
