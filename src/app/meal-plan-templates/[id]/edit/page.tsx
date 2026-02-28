@@ -59,7 +59,7 @@ export default function EditTemplatePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [isOwner, setIsOwner] = useState(false);
-  
+
   // Form state
   const [template, setTemplate] = useState<MealPlanTemplate | null>(null);
   const [name, setName] = useState('');
@@ -215,10 +215,10 @@ export default function EditTemplatePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>Template Name *</Label>
-                <Input 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  placeholder="e.g., 7-Day Weight Loss Plan" 
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., 7-Day Weight Loss Plan"
                 />
               </div>
               <div className="space-y-2">
@@ -228,17 +228,6 @@ export default function EditTemplatePage() {
                   <SelectContent>
                     {categories.map(c => (
                       <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Duration (days)</Label>
-                <Select value={duration.toString()} onValueChange={(v) => setDuration(parseInt(v))}>
-                  <SelectTrigger><SelectValue placeholder="Select duration" /></SelectTrigger>
-                  <SelectContent>
-                    {['7', '14', '21', '30'].map(d => (
-                      <SelectItem key={d} value={d}>{d} Days</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -258,11 +247,11 @@ export default function EditTemplatePage() {
 
             <div className="space-y-2">
               <Label>Description</Label>
-              <Textarea 
-                value={description} 
-                onChange={(e) => setDescription(e.target.value)} 
-                rows={3} 
-                placeholder="Short summary of the template..." 
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                placeholder="Short summary of the template..."
               />
             </div>
 

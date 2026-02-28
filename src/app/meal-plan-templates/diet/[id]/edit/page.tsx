@@ -34,7 +34,7 @@ const categories = [
 ];
 
 const dietaryRestrictionsList = [
-  'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 'egg-free', 
+  'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 'egg-free',
   'soy-free', 'keto', 'paleo', 'low-carb', 'low-fat', 'diabetic-friendly'
 ];
 
@@ -71,10 +71,10 @@ export default function EditDietTemplatePage() {
   const [fatMax, setFatMax] = useState('100');
   const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(false);
-  
+
   // Meals and meal types state
   const [meals, setMeals] = useState<any[]>([]);
-  const [mealTypes, setMealTypes] = useState<{name: string; time: string}[]>(DEFAULT_MEAL_TYPES_LIST);
+  const [mealTypes, setMealTypes] = useState<{ name: string; time: string }[]>(DEFAULT_MEAL_TYPES_LIST);
   const [activeTab, setActiveTab] = useState('details');
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export default function EditDietTemplatePage() {
     if (id) fetchTemplate();
   }, [id]);
 
-  const handleSave = async (mealsOverride?: any[], mealTypesOverride?: {name: string; time: string}[]) => {
+  const handleSave = async (mealsOverride?: any[], mealTypesOverride?: { name: string; time: string }[]) => {
     if (!name.trim()) {
       setError('Name is required');
       return;
@@ -187,8 +187,8 @@ export default function EditDietTemplatePage() {
   };
 
   const toggleRestriction = (restriction: string) => {
-    setSelectedRestrictions(prev => 
-      prev.includes(restriction) 
+    setSelectedRestrictions(prev =>
+      prev.includes(restriction)
         ? prev.filter(r => r !== restriction)
         : [...prev, restriction]
     );
@@ -252,150 +252,139 @@ export default function EditDietTemplatePage() {
 
           <TabsContent value="details" className="space-y-6 mt-6">
 
-        {/* Basic Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ChefHat className="h-5 w-5 text-emerald-600" />
-              Edit Diet Template
-            </CardTitle>
-            <CardDescription>Update your diet template details</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Template Name *</Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., 7-Day Keto Plan" />
-              </div>
-              <div className="space-y-2">
-                <Label>Category *</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map(c => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Duration (days)</Label>
-                <Select value={duration} onValueChange={setDuration}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {['7', '14', '21', '30'].map(d => (
-                      <SelectItem key={d} value={d}>{d} Days</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Difficulty</Label>
-                <Select value={difficulty} onValueChange={setDifficulty}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {difficultyLevels.map(dl => (
-                      <SelectItem key={dl.value} value={dl.value}>{dl.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe your diet template..." />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch id="isPublic" checked={isPublic} onCheckedChange={setIsPublic} />
-              <Label htmlFor="isPublic">Make this template public</Label>
-            </div>
-          </CardContent>
-        </Card>
+            {/* Basic Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ChefHat className="h-5 w-5 text-emerald-600" />
+                  Edit Diet Template
+                </CardTitle>
+                <CardDescription>Update your diet template details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Template Name *</Label>
+                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., 7-Day Keto Plan" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Category *</Label>
+                    <Select value={category} onValueChange={setCategory}>
+                      <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                      <SelectContent>
+                        {categories.map(c => (
+                          <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Difficulty</Label>
+                    <Select value={difficulty} onValueChange={setDifficulty}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {difficultyLevels.map(dl => (
+                          <SelectItem key={dl.value} value={dl.value}>{dl.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe your diet template..." />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch id="isPublic" checked={isPublic} onCheckedChange={setIsPublic} />
+                  <Label htmlFor="isPublic">Make this template public</Label>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Dietary Restrictions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Leaf className="h-5 w-5 text-emerald-600" />
-              Dietary Restrictions
-            </CardTitle>
-            <CardDescription>Select applicable dietary restrictions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {dietaryRestrictionsList.map(r => {
-                const selected = selectedRestrictions.includes(r);
-                return (
-                  <Button 
-                    key={r} 
-                    type="button" 
-                    variant={selected ? 'default' : 'outline'} 
-                    size="sm" 
-                    className="text-xs capitalize"
-                    onClick={() => toggleRestriction(r)}
-                  >
-                    {r.replace('-', ' ')}
-                  </Button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+            {/* Dietary Restrictions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Leaf className="h-5 w-5 text-emerald-600" />
+                  Dietary Restrictions
+                </CardTitle>
+                <CardDescription>Select applicable dietary restrictions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {dietaryRestrictionsList.map(r => {
+                    const selected = selectedRestrictions.includes(r);
+                    return (
+                      <Button
+                        key={r}
+                        type="button"
+                        variant={selected ? 'default' : 'outline'}
+                        size="sm"
+                        className="text-xs capitalize"
+                        onClick={() => toggleRestriction(r)}
+                      >
+                        {r.replace('-', ' ')}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Nutrition Targets */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-blue-600" />
-              Nutrition Targets
-            </CardTitle>
-            <CardDescription>Set daily nutrition goals</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Calories Min</Label>
-                <Input type="number" value={calMin} onChange={e => setCalMin(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Calories Max</Label>
-                <Input type="number" value={calMax} onChange={e => setCalMax(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Protein Min (g)</Label>
-                <Input type="number" value={proteinMin} onChange={e => setProteinMin(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Protein Max (g)</Label>
-                <Input type="number" value={proteinMax} onChange={e => setProteinMax(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Carbs Min (g)</Label>
-                <Input type="number" value={carbMin} onChange={e => setCarbMin(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Carbs Max (g)</Label>
-                <Input type="number" value={carbMax} onChange={e => setCarbMax(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Fat Min (g)</Label>
-                <Input type="number" value={fatMin} onChange={e => setFatMin(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Fat Max (g)</Label>
-                <Input type="number" value={fatMax} onChange={e => setFatMax(e.target.value)} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            {/* Nutrition Targets */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-blue-600" />
+                  Nutrition Targets
+                </CardTitle>
+                <CardDescription>Set daily nutrition goals</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>Calories Min</Label>
+                    <Input type="number" value={calMin} onChange={e => setCalMin(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Calories Max</Label>
+                    <Input type="number" value={calMax} onChange={e => setCalMax(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Protein Min (g)</Label>
+                    <Input type="number" value={proteinMin} onChange={e => setProteinMin(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Protein Max (g)</Label>
+                    <Input type="number" value={proteinMax} onChange={e => setProteinMax(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Carbs Min (g)</Label>
+                    <Input type="number" value={carbMin} onChange={e => setCarbMin(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Carbs Max (g)</Label>
+                    <Input type="number" value={carbMax} onChange={e => setCarbMax(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Fat Min (g)</Label>
+                    <Input type="number" value={fatMin} onChange={e => setFatMin(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Fat Max (g)</Label>
+                    <Input type="number" value={fatMax} onChange={e => setFatMax(e.target.value)} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button size="lg" onClick={() => handleSave()} disabled={saving}>
-            {saving ? <LoadingSpinner className="h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            Save Diet Template
-          </Button>
-        </div>
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <Button size="lg" onClick={() => handleSave()} disabled={saving}>
+                {saving ? <LoadingSpinner className="h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Diet Template
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="meals" className="mt-6">

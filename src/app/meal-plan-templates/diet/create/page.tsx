@@ -140,7 +140,7 @@ const categories = [
 ];
 
 const dietaryRestrictions = [
-  'vegetarian','vegan','gluten-free','dairy-free','nut-free','egg-free','soy-free','keto','paleo','low-carb','low-fat','diabetic-friendly'
+  'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 'egg-free', 'soy-free', 'keto', 'paleo', 'low-carb', 'low-fat', 'diabetic-friendly'
 ];
 
 const difficultyLevels = [
@@ -184,17 +184,17 @@ export default function CreateDietTemplatePage() {
   const [template, setTemplate] = useState<MealPlanTemplate>(defaultTemplate);
 
   // Auto-save hook for diet templates
-  const { 
-    isSaving, 
-    lastSaved, 
-    hasDraft, 
-    clearDraft, 
+  const {
+    isSaving,
+    lastSaved,
+    hasDraft,
+    clearDraft,
     saveDraft,
-    restoreDraft 
+    restoreDraft
   } = useDietTemplateAutoSave('new-diet-template', template, {
     debounceMs: 2000,
     enabled: !!session?.user?.id,
-    onSaveSuccess: () => {},
+    onSaveSuccess: () => { },
     onSaveError: (error) => {
       console.error('Auto-save error:', error);
     }
@@ -210,9 +210,9 @@ export default function CreateDietTemplatePage() {
             ...prev,
             ...restored,
           }));
-          toast.success('Draft restored', { 
+          toast.success('Draft restored', {
             description: 'Your previous work has been restored.',
-            duration: 3000 
+            duration: 3000
           });
         }
       }
@@ -239,7 +239,7 @@ export default function CreateDietTemplatePage() {
     }
   }, [session, router]);
 
-  
+
 
   // ----------- AUTO-REFRESH RECIPES ----------
   useEffect(() => { fetchRecipes(); }, [searchQuery, selectedFilters]);
@@ -260,12 +260,12 @@ export default function CreateDietTemplatePage() {
     }
   };
 
-  
+
 
   // ----------- LOAD TEMPLATE DATA ----------
   const loadTemplateData = (tmpl: any) => {
     if (!tmpl) return;
-    
+
     // Load basic info
     setTemplate(prev => ({
       ...prev,
@@ -279,17 +279,17 @@ export default function CreateDietTemplatePage() {
       difficulty: tmpl.difficulty || 'intermediate',
       targetAudience: tmpl.targetAudience || prev.targetAudience,
     }));
-    
+
     // Load meal types if available
     if (tmpl.mealTypes && tmpl.mealTypes.length > 0) {
       setMealTypesData(tmpl.mealTypes);
     }
-    
+
     // Load meals if available
     if (tmpl.meals && tmpl.meals.length > 0) {
       setWeekPlanData(tmpl.meals);
     }
-    
+
     setSelectedTemplateId(tmpl._id);
     setShowTemplateDialog(false);
     setSuccess(`Template "${tmpl.name}" loaded successfully!`);
@@ -331,8 +331,8 @@ export default function CreateDietTemplatePage() {
       const days = prev.duration;
       if (prev.meals.length === days) return prev;
       const meals: DailyMeal[] = Array.from({ length: days }).map((_, i) => ({
-        day: i+1, breakfast: [], lunch: [], dinner: [], morningSnack: [], afternoonSnack: [], eveningSnack: [],
-        totalNutrition: { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 }, notes: ''
+        day: i + 1, breakfast: [], lunch: [], dinner: [], morningSnack: [], afternoonSnack: [], eveningSnack: [],
+        totalNutrition: { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 }, notes: ''
       }));
       return { ...prev, meals };
     });
@@ -342,8 +342,8 @@ export default function CreateDietTemplatePage() {
   const recalcDayTotals = (dayIdx: number) => {
     setTemplate(prev => {
       const day = prev.meals[dayIdx];
-      const sum = (items?: MealItem[]) => (items||[]).reduce((acc, item) => {
-        if (item.type==='recipe' && item.recipe) {
+      const sum = (items?: MealItem[]) => (items || []).reduce((acc, item) => {
+        if (item.type === 'recipe' && item.recipe) {
           const s = item.servings || 1;
           acc.calories += item.recipe.nutrition.calories * s;
           acc.protein += item.recipe.nutrition.protein * s;
@@ -354,10 +354,10 @@ export default function CreateDietTemplatePage() {
           acc.sodium += item.recipe.nutrition.sodium * s;
         }
         return acc;
-      }, { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 });
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 });
       const total = MEAL_TYPE_KEYS
-        .map(k=>sum((day as any)[k]))
-        .reduce((a,b)=>({ calories:a.calories+b.calories, protein:a.protein+b.protein, carbs:a.carbs+b.carbs, fat:a.fat+b.fat, fiber:a.fiber+b.fiber, sugar:a.sugar+b.sugar, sodium:a.sodium+b.sodium }), { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 });
+        .map(k => sum((day as any)[k]))
+        .reduce((a, b) => ({ calories: a.calories + b.calories, protein: a.protein + b.protein, carbs: a.carbs + b.carbs, fat: a.fat + b.fat, fiber: a.fiber + b.fiber, sugar: a.sugar + b.sugar, sodium: a.sodium + b.sodium }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 });
       const meals = [...prev.meals];
       meals[dayIdx] = { ...day, totalNutrition: total };
       return { ...prev, meals };
@@ -365,38 +365,38 @@ export default function CreateDietTemplatePage() {
   };
 
   // ----------------- ADD/REMOVE MEALS ------------
-  const addRecipeTo = (dayIdx:number, slot:keyof DailyMeal, recipe:Recipe) => {
+  const addRecipeTo = (dayIdx: number, slot: keyof DailyMeal, recipe: Recipe) => {
     setTemplate(prev => {
       const meals = [...prev.meals];
       const arr = ([...(meals[dayIdx] as any)[slot]] as MealItem[]);
-      arr.push({ type:'recipe', recipeId: recipe._id, recipe, servings:1 });
+      arr.push({ type: 'recipe', recipeId: recipe._id, recipe, servings: 1 });
       (meals[dayIdx] as any)[slot] = arr;
       return { ...prev, meals };
     });
-    setTimeout(()=>recalcDayTotals(dayIdx),0);
+    setTimeout(() => recalcDayTotals(dayIdx), 0);
   };
 
-  const removeMealItem = (dayIdx:number, slot:keyof DailyMeal, index:number) => {
+  const removeMealItem = (dayIdx: number, slot: keyof DailyMeal, index: number) => {
     setTemplate(prev => {
       const meals = [...prev.meals];
-      const arr = ([...(meals[dayIdx] as any)[slot]] as MealItem[]).filter((_,i)=>i!==index);
+      const arr = ([...(meals[dayIdx] as any)[slot]] as MealItem[]).filter((_, i) => i !== index);
       (meals[dayIdx] as any)[slot] = arr;
       return { ...prev, meals };
     });
-    setTimeout(()=>recalcDayTotals(dayIdx),0);
+    setTimeout(() => recalcDayTotals(dayIdx), 0);
   };
 
-  const dayMeals = useMemo(()=>template.meals[selectedDay-1], [template.meals, selectedDay]);
+  const dayMeals = useMemo(() => template.meals[selectedDay - 1], [template.meals, selectedDay]);
 
   // Store weekPlan and mealTypes data from DietPlanDashboard
   const [weekPlanData, setWeekPlanData] = useState<any[]>([]);
-  const [mealTypesData, setMealTypesData] = useState<{name: string; time: string}[]>(DEFAULT_MEAL_TYPES_LIST);
+  const [mealTypesData, setMealTypesData] = useState<{ name: string; time: string }[]>(DEFAULT_MEAL_TYPES_LIST);
 
   // -------------- SAVE/PUBLISH TEMPLATE -------------
-  const saveTemplate = async (weekPlan?: any[], mealTypes?: {name: string; time: string}[]) => {
+  const saveTemplate = async (weekPlan?: any[], mealTypes?: { name: string; time: string }[]) => {
     try {
       setLoading(true); setError('');
-      
+
       // Validate required fields
       if (!template.name?.trim()) {
         setError('Template name is required');
@@ -408,32 +408,32 @@ export default function CreateDietTemplatePage() {
         setLoading(false);
         return;
       }
-      
+
       const mealsToSave = weekPlan || weekPlanData;
       const mealTypesToSave = mealTypes || mealTypesData;
-      const submitPayload = { 
-        ...template, 
-        meals: mealsToSave, 
+      const submitPayload = {
+        ...template,
+        meals: mealsToSave,
         mealTypes: mealTypesToSave,
         // Ensure defaults
         targetCalories: template.targetCalories || { min: 1200, max: 2500 },
-        targetMacros: template.targetMacros || { 
-          protein: { min: 50, max: 150 }, 
-          carbs: { min: 100, max: 300 }, 
-          fat: { min: 30, max: 100 } 
+        targetMacros: template.targetMacros || {
+          protein: { min: 50, max: 150 },
+          carbs: { min: 100, max: 300 },
+          fat: { min: 30, max: 100 }
         }
       };
       // Remove templateType as it's not needed for diet templates (separate collection)
       delete (submitPayload as any).templateType;
-      
-      
-      const res = await fetch('/api/diet-templates', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(submitPayload) });
+
+
+      const res = await fetch('/api/diet-templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(submitPayload) });
       if (res.ok) {
         // Clear draft and localStorage after successful save
         clearDraft();
         try {
           localStorage.removeItem(`dietPlan_week_${template.duration}`);
-        } catch {}
+        } catch { }
         toast.success('Diet template saved successfully!');
         router.push('/meal-plan-templates?success=created&tab=diet');
       } else {
@@ -449,7 +449,7 @@ export default function CreateDietTemplatePage() {
         setError(errMsg);
         toast.error('Failed to save template', { description: errMsg });
       }
-    } catch (err) { 
+    } catch (err) {
       console.error('Save error:', err);
       setError('Failed to save template');
       toast.error('Failed to save template', { description: 'Please try again.' });
@@ -503,13 +503,13 @@ export default function CreateDietTemplatePage() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              {[1,2,3].map(step => (
+              {[1, 2, 3].map(step => (
                 <div key={step} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep>=step?'bg-blue-600 text-white':'bg-gray-200 text-gray-600'}`}>{step}</div>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= step ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>{step}</div>
                   <div className="ml-2 text-xs font-medium {currentStep>=step?'text-blue-600':'text-gray-500'}">
-                    {step===1 && 'Basic'}{step===2 && 'Targets'}{step===3 && 'Diet planner'}
+                    {step === 1 && 'Basic'}{step === 2 && 'Targets'}{step === 3 && 'Diet planner'}
                   </div>
-                  {step<3 && <div className={`w-12 h-0.5 ml-2 ${currentStep>step?'bg-blue-600':'bg-gray-200'}`}></div>}
+                  {step < 3 && <div className={`w-12 h-0.5 ml-2 ${currentStep > step ? 'bg-blue-600' : 'bg-gray-200'}`}></div>}
                 </div>
               ))}
             </div>
@@ -517,7 +517,7 @@ export default function CreateDietTemplatePage() {
         </Card>
 
         {/* Step 1: Basic Info */}
-        {currentStep===1 && (
+        {currentStep === 1 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><ChefHat className="h-5 w-5" />Basic Info</CardTitle>
@@ -525,35 +525,34 @@ export default function CreateDietTemplatePage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2"><Label>Name *</Label><Input value={template.name} onChange={e=>setTemplate({...template, name: e.target.value})} /></div>
-                <div className="space-y-2"><Label>Category *</Label><Select value={template.category} onValueChange={v=>setTemplate({...template, category: v})}>
+                <div className="space-y-2"><Label>Name *</Label><Input value={template.name} onChange={e => setTemplate({ ...template, name: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Category *</Label><Select value={template.category} onValueChange={v => setTemplate({ ...template, category: v })}>
                   <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
                   <SelectContent>{categories.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                 </Select></div>
-                <div className="space-y-2"><Label>Duration * (max 15 days)</Label>
-                  <Input 
-                    type="number" 
-                    min={1} 
-                    max={15} 
-                    value={template.duration} 
+                <div className="space-y-2"><Label>Duration *</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={template.duration}
                     onChange={e => {
                       const val = parseInt(e.target.value) || 1;
-                      setTemplate({...template, duration: Math.min(15, Math.max(1, val))});
+                      setTemplate({ ...template, duration: Math.max(1, val) });
                     }}
-                    placeholder="Enter days (1-15)"
+                    placeholder="Enter days"
                   /></div>
-                <div className="space-y-2"><Label>Difficulty</Label><Select value={template.difficulty} onValueChange={v=>setTemplate({...template, difficulty: v})}>
+                <div className="space-y-2"><Label>Difficulty</Label><Select value={template.difficulty} onValueChange={v => setTemplate({ ...template, difficulty: v })}>
                   <SelectTrigger><SelectValue placeholder="Difficulty" /></SelectTrigger>
-                  <SelectContent>{difficultyLevels.map(dl=> <SelectItem key={dl.value} value={dl.value}>{dl.label}</SelectItem>)}</SelectContent>
+                  <SelectContent>{difficultyLevels.map(dl => <SelectItem key={dl.value} value={dl.value}>{dl.label}</SelectItem>)}</SelectContent>
                 </Select></div>
               </div>
               <div className="space-y-2"><Label>Description</Label>
-                <Textarea rows={3} value={template.description} onChange={e=>setTemplate({...template, description: e.target.value})} />
+                <Textarea rows={3} value={template.description} onChange={e => setTemplate({ ...template, description: e.target.value })} />
               </div>
               <div className="space-y-2"><Label>Dietary Restrictions</Label>
-                <div className="flex flex-wrap gap-2">{dietaryRestrictions.map(r=>{
+                <div className="flex flex-wrap gap-2">{dietaryRestrictions.map(r => {
                   const sel = template.dietaryRestrictions.includes(r);
-                  return <Button key={r} type="button" variant={sel?'default':'outline'} size="sm" className="text-xs capitalize" onClick={()=>setTemplate({...template, dietaryRestrictions: sel? template.dietaryRestrictions.filter(x=>x!==r): [...template.dietaryRestrictions,r]})}>{r.replace('-', ' ')}</Button>;
+                  return <Button key={r} type="button" variant={sel ? 'default' : 'outline'} size="sm" className="text-xs capitalize" onClick={() => setTemplate({ ...template, dietaryRestrictions: sel ? template.dietaryRestrictions.filter(x => x !== r) : [...template.dietaryRestrictions, r] })}>{r.replace('-', ' ')}</Button>;
                 })}</div>
               </div>
               <div className="flex justify-end">
@@ -575,7 +574,7 @@ export default function CreateDietTemplatePage() {
         )}
 
         {/* Step 2: Nutrition Targets */}
-        {currentStep===2 && (
+        {currentStep === 2 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5" />Nutrition Targets</CardTitle>
@@ -583,25 +582,25 @@ export default function CreateDietTemplatePage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex justify-start mb-2">
-                <Button variant="outline" onClick={()=>setCurrentStep(1)}>
+                <Button variant="outline" onClick={() => setCurrentStep(1)}>
                   <ArrowLeft className="h-4 w-4 mr-2" />Back
                 </Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2"><Label>Calories Min</Label><Input type="number" value={template.targetCalories.min} onChange={e=>setTemplate({...template, targetCalories: {...template.targetCalories, min: parseInt(e.target.value)}})} /></div>
-                <div className="space-y-2"><Label>Calories Max</Label><Input type="number" value={template.targetCalories.max} onChange={e=>setTemplate({...template, targetCalories: {...template.targetCalories, max: parseInt(e.target.value)}})} /></div>
+                <div className="space-y-2"><Label>Calories Min</Label><Input type="number" value={template.targetCalories.min} onChange={e => setTemplate({ ...template, targetCalories: { ...template.targetCalories, min: parseInt(e.target.value) } })} /></div>
+                <div className="space-y-2"><Label>Calories Max</Label><Input type="number" value={template.targetCalories.max} onChange={e => setTemplate({ ...template, targetCalories: { ...template.targetCalories, max: parseInt(e.target.value) } })} /></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2"><Label>Protein Min</Label><Input type="number" value={template.targetMacros.protein.min} onChange={e=>setTemplate({...template, targetMacros:{...template.targetMacros, protein:{...template.targetMacros.protein, min:parseInt(e.target.value)}}})} /></div>
-                <div className="space-y-2"><Label>Carbs Min</Label><Input type="number" value={template.targetMacros.carbs.min} onChange={e=>setTemplate({...template, targetMacros:{...template.targetMacros, carbs:{...template.targetMacros.carbs, min:parseInt(e.target.value)}}})} /></div>
-                <div className="space-y-2"><Label>Fat Min</Label><Input type="number" value={template.targetMacros.fat.min} onChange={e=>setTemplate({...template, targetMacros:{...template.targetMacros, fat:{...template.targetMacros.fat, min:parseInt(e.target.value)}}})} /></div>
-                <div className="space-y-2"><Label>Protein Max</Label><Input type="number" value={template.targetMacros.protein.max} onChange={e=>setTemplate({...template, targetMacros:{...template.targetMacros, protein:{...template.targetMacros.protein, max:parseInt(e.target.value)}}})} /></div>
-                <div className="space-y-2"><Label>Carbs Max</Label><Input type="number" value={template.targetMacros.carbs.max} onChange={e=>setTemplate({...template, targetMacros:{...template.targetMacros, carbs:{...template.targetMacros.carbs, max:parseInt(e.target.value)}}})} /></div>
-                <div className="space-y-2"><Label>Fat Max</Label><Input type="number" value={template.targetMacros.fat.max} onChange={e=>setTemplate({...template, targetMacros:{...template.targetMacros, fat:{...template.targetMacros.fat, max:parseInt(e.target.value)}}})} /></div>
+                <div className="space-y-2"><Label>Protein Min</Label><Input type="number" value={template.targetMacros.protein.min} onChange={e => setTemplate({ ...template, targetMacros: { ...template.targetMacros, protein: { ...template.targetMacros.protein, min: parseInt(e.target.value) } } })} /></div>
+                <div className="space-y-2"><Label>Carbs Min</Label><Input type="number" value={template.targetMacros.carbs.min} onChange={e => setTemplate({ ...template, targetMacros: { ...template.targetMacros, carbs: { ...template.targetMacros.carbs, min: parseInt(e.target.value) } } })} /></div>
+                <div className="space-y-2"><Label>Fat Min</Label><Input type="number" value={template.targetMacros.fat.min} onChange={e => setTemplate({ ...template, targetMacros: { ...template.targetMacros, fat: { ...template.targetMacros.fat, min: parseInt(e.target.value) } } })} /></div>
+                <div className="space-y-2"><Label>Protein Max</Label><Input type="number" value={template.targetMacros.protein.max} onChange={e => setTemplate({ ...template, targetMacros: { ...template.targetMacros, protein: { ...template.targetMacros.protein, max: parseInt(e.target.value) } } })} /></div>
+                <div className="space-y-2"><Label>Carbs Max</Label><Input type="number" value={template.targetMacros.carbs.max} onChange={e => setTemplate({ ...template, targetMacros: { ...template.targetMacros, carbs: { ...template.targetMacros.carbs, max: parseInt(e.target.value) } } })} /></div>
+                <div className="space-y-2"><Label>Fat Max</Label><Input type="number" value={template.targetMacros.fat.max} onChange={e => setTemplate({ ...template, targetMacros: { ...template.targetMacros, fat: { ...template.targetMacros.fat, max: parseInt(e.target.value) } } })} /></div>
               </div>
-              
+
               <div className="flex justify-end">
-                <Button onClick={()=>setCurrentStep(3)}>
+                <Button onClick={() => setCurrentStep(3)}>
                   Next <Calendar className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -610,20 +609,20 @@ export default function CreateDietTemplatePage() {
         )}
 
         {/* Step 3: Plan Dashboard */}
-        {currentStep===3 && (
+        {currentStep === 3 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Calendar className="h-5 w-5" />Templates</CardTitle>
               <CardDescription>Use dashboard tools to finalize and publish ({template.duration} days)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <DietPlanDashboard 
+              <DietPlanDashboard
                 key={`diet-dashboard-${template.duration}`}
                 clientId="template-create-new"
                 clientData={{
                   name: template.name || 'Untitled Template',
                   age: 0,
-                  goal: template.description ? template.description.slice(0,30) : 'Goal not set',
+                  goal: template.description ? template.description.slice(0, 30) : 'Goal not set',
                   planType: template.category || 'Uncategorized'
                 }}
                 duration={template.duration}
@@ -636,10 +635,10 @@ export default function CreateDietTemplatePage() {
                 }}
               />
               <div className="flex justify-end">
-                <Button variant="outline" onClick={()=>setCurrentStep(2)} className="mr-2">
+                <Button variant="outline" onClick={() => setCurrentStep(2)} className="mr-2">
                   <ArrowLeft className="h-4 w-4 mr-1" />Back
                 </Button>
-                <Button disabled={loading || !template.name || !template.category} onClick={() => saveTemplate()}>{loading? 'Saving...' : 'Publish Template'}</Button>
+                <Button disabled={loading || !template.name || !template.category} onClick={() => saveTemplate()}>{loading ? 'Saving...' : 'Publish Template'}</Button>
               </div>
             </CardContent>
           </Card>
