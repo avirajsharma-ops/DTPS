@@ -502,7 +502,7 @@ export default function DataImportPage() {
                 </div>
                 <button
                   onClick={() => handleDownloadTemplate(m.name)}
-                  className="ml-2 text-primary hover:text-primary/80 flex-shrink-0"
+                  className="ml-2 text-primary hover:text-primary/80 shrink-0"
                   title="Download template"
                 >
                   <Download className="w-4 h-4" />
@@ -583,7 +583,7 @@ export default function DataImportPage() {
         {totalUnmappedFields > 0 && (
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-medium text-yellow-800 dark:text-yellow-300">
                   Field Mapping Warning
@@ -734,7 +734,7 @@ export default function DataImportPage() {
                         <div className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wide">
                           {field.originalField}
                         </div>
-                        <p className="text-sm text-gray-900 dark:text-white mt-1 break-words">
+                        <p className="text-sm text-gray-900 dark:text-white mt-1">
                           {typeof field.value === 'object' ? JSON.stringify(field.value) : String(field.value)}
                         </p>
                       </div>
@@ -780,10 +780,10 @@ export default function DataImportPage() {
                             )}
                           </div>
                           {fieldErrors && (
-                            <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                            <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
                           )}
                         </div>
-                        <p className="text-sm text-gray-900 dark:text-white break-words">
+                        <p className="text-sm text-gray-900 dark:text-white">
                           {typeof field.value === 'object' ? JSON.stringify(field.value) : String(field.value)}
                         </p>
                         {fieldErrors && (
@@ -920,7 +920,7 @@ export default function DataImportPage() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+        <div className="overflow-x-auto max-h-150 overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
               <tr>
@@ -968,7 +968,7 @@ export default function DataImportPage() {
                       </div>
                     </td>
                     {headers.slice(0, 8).map(h => (
-                      <td key={h} className="px-4 py-3 max-w-[200px] truncate">
+                      <td key={h} className="px-4 py-3 max-w-50 truncate">
                         {formatCellValue(row.data[h])}
                       </td>
                     ))}
@@ -1053,7 +1053,7 @@ export default function DataImportPage() {
             </p>
           </div>
 
-          <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+          <div className="overflow-x-auto max-h-100 overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
                 <tr>
@@ -1071,7 +1071,7 @@ export default function DataImportPage() {
                   <tr key={row.rowIndex} className="bg-yellow-50/50 dark:bg-yellow-900/5">
                     <td className="px-4 py-3 font-mono text-gray-500">{row.rowIndex}</td>
                     {headers.slice(0, 6).map(h => (
-                      <td key={h} className="px-4 py-3 max-w-[150px] truncate">
+                      <td key={h} className="px-4 py-3 max-w-37.5 truncate">
                         {formatCellValue(row.data[h])}
                       </td>
                     ))}
@@ -1130,7 +1130,7 @@ export default function DataImportPage() {
               </button>
             </div>
             
-            <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto">
+            <div className="p-4 space-y-2 max-h-75 overflow-y-auto">
               {state.unmatchedData
                 .find(r => r.rowIndex === showMatchDetails)
                 ?.matchAttempts?.sort((a, b) => b.confidence - a.confidence)
@@ -1260,10 +1260,10 @@ export default function DataImportPage() {
 
   // Render sidebar
   const renderSidebar = () => (
-    <div className="w-64 bg-gradient-to-b from-teal-50 to-white dark:from-gray-800 dark:to-gray-900 border-r-2 border-teal-200 dark:border-teal-900 h-screen shadow-lg">
+    <div className="w-64 bg-linear-to-b from-teal-50 to-white dark:from-gray-800 dark:to-gray-900 border-r-2 border-teal-200 dark:border-teal-900 h-screen shadow-lg">
       <div className="p-5 border-b-2 border-teal-200 dark:border-teal-900 bg-white dark:bg-gray-800">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2.5 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
+          <div className="p-2.5 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
             <Database className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -1281,16 +1281,16 @@ export default function DataImportPage() {
         {/* Import Section */}
         <button
           onClick={() => router.push('/admin/import')}
-          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 font-medium bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] text-white shadow-lg shadow-teal-500/30`}
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 font-medium bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B] text-white shadow-lg shadow-teal-500/30`}
         >
-          <Upload className="w-5 h-5 flex-shrink-0" />
+          <Upload className="w-5 h-5 shrink-0" />
           <div className="text-left flex-1">
             <p className="font-semibold">Import Data</p>
             <p className={`text-xs opacity-70 text-teal-100`}>
               Upload files
             </p>
           </div>
-          <ChevronRight className="w-4 h-4 flex-shrink-0" />
+          <ChevronRight className="w-4 h-4 shrink-0" />
         </button>
 
         {/* Export Section */}
@@ -1298,7 +1298,7 @@ export default function DataImportPage() {
           onClick={() => router.push('/admin/data')}
           className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 font-medium text-gray-700 dark:text-gray-300 hover:bg-teal-100 dark:hover:bg-teal-900/20`}
         >
-          <Download className="w-5 h-5 flex-shrink-0" />
+          <Download className="w-5 h-5 shrink-0" />
           <div className="text-left flex-1">
             <p className="font-semibold">Export Data</p>
             <p className="text-xs opacity-70">Download files</p>
@@ -1310,7 +1310,7 @@ export default function DataImportPage() {
           onClick={() => router.push('/admin/data')}
           className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 font-medium text-gray-700 dark:text-gray-300 hover:bg-teal-100 dark:hover:bg-teal-900/20`}
         >
-          <Edit3 className="w-5 h-5 flex-shrink-0" />
+          <Edit3 className="w-5 h-5 shrink-0" />
           <div className="text-left flex-1">
             <p className="font-semibold">Update Data</p>
             <p className="text-xs opacity-70">Search & edit</p>
@@ -1340,7 +1340,7 @@ export default function DataImportPage() {
       </div>
 
       {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white dark:from-gray-800 to-transparent border-t border-teal-200 dark:border-teal-900">
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-linear-to-t from-white dark:from-gray-800 to-transparent border-t border-teal-200 dark:border-teal-900">
         <p className="text-xs text-center text-gray-500 dark:text-gray-400">
           DTPS Admin
         </p>
@@ -1363,7 +1363,7 @@ export default function DataImportPage() {
             <div className="flex items-start justify-between mb-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-3 bg-gradient-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
+                  <div className="p-3 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B] rounded-lg">
                     <Upload className="w-6 h-6 text-white" />
                   </div>
                   <div>

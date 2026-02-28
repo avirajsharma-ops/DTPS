@@ -319,7 +319,7 @@ export function ChatInput({
             onKeyDown={handleKeyPress}
             placeholder={placeholder}
             disabled={disabled}
-            className="min-h-[40px] max-h-[120px] resize-none pr-12 py-2"
+            className="min-h-10 max-h-30 resize-none pr-12 py-2"
             rows={1}
           />
 
