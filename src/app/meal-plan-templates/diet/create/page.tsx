@@ -660,6 +660,7 @@ export default function CreateDietTemplatePage() {
                 }}
                 duration={template.duration}
                 initialMealTypes={mealTypesData}
+                clientDietaryRestrictions={template.dietaryRestrictions?.join(', ') || ''}
                 onBack={() => setCurrentStep(2)}
                 onSavePlan={(weekPlan, mealTypes) => {
                   setWeekPlanData(weekPlan);

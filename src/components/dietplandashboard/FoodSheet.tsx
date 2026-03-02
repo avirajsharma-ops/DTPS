@@ -186,36 +186,116 @@ export function FoodDatabasePanel({
             }
 
             // ===== DIETARY RESTRICTIONS FILTER =====
-            // Only exclude recipes that explicitly match the selected restriction.
-            // Vegetarian recipes are ALWAYS allowed for everyone.
+            // Filter recipes based on selected dietary restrictions
+            // Recipes should be COMPATIBLE with the selected restrictions
             if (clientDietaryArr.length > 0) {
-              // NON-VEGETARIAN restriction: hide recipes tagged as non-vegetarian
-              if (clientDietaryArr.includes('non-vegetarian')) {
-                if (recipeDietary.includes('non-vegetarian')) {
-                  console.log(`[Filter] Hiding non-vegetarian recipe: ${recipe.name}`, recipeDietary);
+              // VEGETARIAN restriction: hide recipes tagged as non-vegetarian
+              if (clientDietaryArr.includes('vegetarian')) {
+                if (recipeDietary.includes('non-vegetarian') || recipeDietary.includes('nonvegetarian')) {
                   return false;
                 }
               }
-              // Vegetarian recipes remain visible for all restriction types (no filtering).
+
+              // NON-VEGETARIAN restriction: hide recipes tagged as non-vegetarian
+              if (clientDietaryArr.includes('non-vegetarian')) {
+                if (recipeDietary.includes('non-vegetarian')) {
+                  return false;
+                }
+              }
+
+              // VEGAN restriction: exclude non-vegan recipes (those with dairy, eggs, meat, fish, honey)
+              if (clientDietaryArr.includes('vegan')) {
+                const nonVeganAllergens = ['dairy', 'egg', 'eggs', 'milk', 'cheese', 'meat', 'fish', 'seafood', 'honey'];
+                const hasNonVegan = nonVeganAllergens.some(allergen =>
+                  recipeAllergens.some((ra: string) => ra.includes(allergen)) ||
+                  recipeIngredients.some((ing: string) => ing.includes(allergen))
+                );
+                if (hasNonVegan || recipeDietary.includes('non-vegetarian')) {
+                  return false;
+                }
+              }
             }
 
             // ===== EXCLUSION-BASED DIETARY RESTRICTIONS =====
 
             // If client is Gluten-Free, exclude recipes with gluten
-            if (clientDietaryArr.includes('gluten-free') &&
-              (recipeAllergens.includes('gluten') || recipeDietary.some((d: string) => d.includes('gluten') && !d.includes('gluten-free')))) {
-              return false;
+            if (clientDietaryArr.includes('gluten-free') || clientDietaryArr.includes('gluten free')) {
+              const hasGluten = recipeAllergens.includes('gluten') ||
+                recipeAllergens.includes('wheat') ||
+                recipeDietary.some((d: string) => d.includes('gluten') && !d.includes('gluten-free') && !d.includes('gluten free'));
+              if (hasGluten) {
+                return false;
+              }
             }
 
             // If client is Dairy-Free, exclude recipes with dairy
-            if (clientDietaryArr.includes('dairy-free') && recipeAllergens.includes('dairy')) {
-              return false;
+            if (clientDietaryArr.includes('dairy-free') || clientDietaryArr.includes('dairy free')) {
+              const hasDairy = recipeAllergens.includes('dairy') ||
+                recipeAllergens.includes('milk') ||
+                recipeAllergens.includes('lactose');
+              if (hasDairy) {
+                return false;
+              }
             }
 
-            // If client has Keto restriction, only show Keto-friendly recipes
-            if (clientDietaryArr.includes('keto') && !recipeDietary.includes('keto')) {
-              // For Keto, we should ideally check if recipe is low-carb, but for now just check tag
-              // Don't exclude if no keto tag - let user decide
+            // If client is Egg-Free, exclude recipes with eggs
+            if (clientDietaryArr.includes('egg-free') || clientDietaryArr.includes('egg free')) {
+              const hasEgg = recipeAllergens.includes('egg') || recipeAllergens.includes('eggs');
+              if (hasEgg) {
+                return false;
+              }
+            }
+
+            // If client is Nut-Free, exclude recipes with nuts
+            if (clientDietaryArr.includes('nut-free') || clientDietaryArr.includes('nut free')) {
+              const nutAllergens = ['nut', 'nuts', 'peanut', 'peanuts', 'almond', 'almonds', 'cashew', 'cashews', 'walnut', 'walnuts', 'pistachio', 'hazelnut'];
+              const hasNuts = nutAllergens.some(nut =>
+                recipeAllergens.some((ra: string) => ra.includes(nut)) ||
+                recipeIngredients.some((ing: string) => ing.includes(nut))
+              );
+              if (hasNuts) {
+                return false;
+              }
+            }
+
+            // If client is Soy-Free, exclude recipes with soy
+            if (clientDietaryArr.includes('soy-free') || clientDietaryArr.includes('soy free')) {
+              const hasSoy = recipeAllergens.includes('soy') || recipeAllergens.includes('soya');
+              if (hasSoy) {
+                return false;
+              }
+            }
+
+            // If client has Diabetic Friendly restriction, exclude high-sugar recipes
+            if (clientDietaryArr.includes('diabetic friendly') || clientDietaryArr.includes('diabetic-friendly')) {
+              // Check if recipe has medical contraindication for diabetes
+              const contraindicatedForDiabetes = recipeMedical.some((m: string) =>
+                m.includes('diabetes') || m.includes('diabetic') || m.includes('high sugar')
+              );
+              if (contraindicatedForDiabetes) {
+                return false;
+              }
+            }
+
+            // If client has Low-Carb restriction
+            if (clientDietaryArr.includes('low-carb') || clientDietaryArr.includes('low carb')) {
+              // Could check carbs value if available, for now rely on tags
+            }
+
+            // If client has Paleo restriction, exclude non-paleo foods
+            if (clientDietaryArr.includes('paleo')) {
+              const nonPaleoAllergens = ['dairy', 'grain', 'grains', 'legume', 'legumes', 'refined sugar'];
+              const hasNonPaleo = nonPaleoAllergens.some(item =>
+                recipeAllergens.some((ra: string) => ra.includes(item))
+              );
+              if (hasNonPaleo) {
+                return false;
+              }
+            }
+
+            // If client has Keto restriction
+            if (clientDietaryArr.includes('keto')) {
+              // For Keto, we could check carb content but for now rely on tags
             }
 
             // If client has Lactose Intolerance (from medical), exclude dairy recipes
@@ -510,8 +590,8 @@ export function FoodDatabasePanel({
                       onClick={() => toggleSelection(item.id)}
                       style={item.selected ? { backgroundColor: '#BCEBCB' } : {}}
                       className={`border-b border-gray-100 cursor-pointer transition-colors ${item.selected
-                          ? "hover:brightness-95"
-                          : "hover:bg-slate-50"
+                        ? "hover:brightness-95"
+                        : "hover:bg-slate-50"
                         }`}
                       onMouseEnter={(e) => {
                         if (item.selected) {
@@ -584,8 +664,8 @@ export function FoodDatabasePanel({
                 disabled={page === "..."}
                 style={currentPage === page ? { backgroundColor: '#00A63E', color: 'white', borderColor: '#00A63E' } : {}}
                 className={`w-9 h-9 p-0 ${currentPage === page
-                    ? "hover:opacity-90"
-                    : "border-gray-300"
+                  ? "hover:opacity-90"
+                  : "border-gray-300"
                   }`}
               >
                 {page}

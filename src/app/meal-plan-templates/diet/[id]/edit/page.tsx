@@ -430,6 +430,7 @@ export default function EditDietTemplatePage() {
                   duration={Number(duration)}
                   initialMeals={meals}
                   initialMealTypes={mealTypes}
+                  clientDietaryRestrictions={selectedRestrictions?.join(', ') || ''}
                   onBack={() => setActiveTab('details')}
                   onSavePlan={(weekPlan, newMealTypes) => {
                     setMeals(weekPlan);
