@@ -148,6 +148,33 @@ export const MEAL_TYPE_OPTIONS: { value: MealTypeKey; label: string; time: strin
     time: meal.time12h,
   }));
 
+// ============================================================================
+// DIETARY RESTRICTIONS
+// ============================================================================
+
+/**
+ * Canonical list of dietary restrictions
+ * This is the SINGLE SOURCE OF TRUTH for dietary restrictions across the application
+ */
+export const DIETARY_RESTRICTIONS = [
+  'None',
+  'Vegetarian',
+  'Vegan',
+  'Eggitarian',
+  'Gluten-Free',
+  'Non-Vegetarian',
+  'Dairy-Free',
+  'Keto',
+  'Low-Carb',
+  'Low-Fat',
+  'High-Protein',
+  'Paleo',
+  'Mediterranean',
+  'Jain',
+  'Halal',
+  'Kosher'
+] as const;
+
 /**
  * Options with time in label (e.g., "Breakfast (09:00 AM)")
  */

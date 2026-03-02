@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { LoadingPage, LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { DEFAULT_MEAL_TYPES_LIST } from '@/lib/mealConfig';
+import { DEFAULT_MEAL_TYPES_LIST, DIETARY_RESTRICTIONS } from '@/lib/mealConfig';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChefHat, Target, Calendar, AlertCircle, ArrowLeft, RefreshCw, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -139,15 +139,32 @@ const categories = [
   { value: 'custom', label: 'Custom', icon: '⚙️' }
 ];
 
-const dietaryRestrictions = [
-  'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 'egg-free', 'soy-free', 'keto', 'paleo', 'low-carb', 'low-fat', 'diabetic-friendly'
-];
-
 const difficultyLevels = [
   { value: 'beginner', label: 'Beginner', description: 'Simple recipes, minimal prep' },
   { value: 'intermediate', label: 'Intermediate', description: 'Moderate complexity' },
   { value: 'advanced', label: 'Advanced', description: 'Complex recipes, extensive prep' }
 ];
+
+// Normalize dietary restrictions for consistent matching
+const normalizeRestriction = (restriction: string): string => {
+  return restriction.trim().toLowerCase();
+};
+
+// Normalize array of restrictions and match against canonical list
+const normalizeRestrictionsArray = (restrictions: string[] | undefined): string[] => {
+  if (!Array.isArray(restrictions)) return [];
+
+  return restrictions
+    .map(r => {
+      const normalized = normalizeRestriction(r);
+      // Find matching restriction from canonical list (case-insensitive)
+      const match = DIETARY_RESTRICTIONS.find(
+        canonical => normalizeRestriction(canonical) === normalized
+      );
+      return match || r; // Return canonical form or original if no match
+    })
+    .filter(Boolean);
+};
 
 // ------------------- MAIN COMPONENT ------------------
 
@@ -170,12 +187,12 @@ export default function CreateDietTemplatePage() {
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
-  // Default template state
+  // Default template state - ensure dietaryRestrictions is always an array
   const defaultTemplate: MealPlanTemplate = {
     name: '', description: '', category: '', duration: 7,
     targetCalories: { min: 1200, max: 2500 },
     targetMacros: { protein: { min: 50, max: 150 }, carbs: { min: 100, max: 300 }, fat: { min: 30, max: 100 } },
-    dietaryRestrictions: [], tags: [], meals: [], isPublic: false, isPremium: false,
+    dietaryRestrictions: [] as string[], tags: [], meals: [], isPublic: false, isPremium: false,
     difficulty: 'intermediate', prepTime: { daily: 30, weekly: 210 },
     targetAudience: { ageGroup: [], activityLevel: [], healthConditions: [], goals: [] }
   };
@@ -209,6 +226,8 @@ export default function CreateDietTemplatePage() {
           setTemplate(prev => ({
             ...prev,
             ...restored,
+            // Normalize dietary restrictions from restored draft
+            dietaryRestrictions: normalizeRestrictionsArray(restored.dietaryRestrictions)
           }));
           toast.success('Draft restored', {
             description: 'Your previous work has been restored.',
@@ -550,9 +569,23 @@ export default function CreateDietTemplatePage() {
                 <Textarea rows={3} value={template.description} onChange={e => setTemplate({ ...template, description: e.target.value })} />
               </div>
               <div className="space-y-2"><Label>Dietary Restrictions</Label>
-                <div className="flex flex-wrap gap-2">{dietaryRestrictions.map(r => {
-                  const sel = template.dietaryRestrictions.includes(r);
-                  return <Button key={r} type="button" variant={sel ? 'default' : 'outline'} size="sm" className="text-xs capitalize" onClick={() => setTemplate({ ...template, dietaryRestrictions: sel ? template.dietaryRestrictions.filter(x => x !== r) : [...template.dietaryRestrictions, r] })}>{r.replace('-', ' ')}</Button>;
+                <div className="flex flex-wrap gap-2">{DIETARY_RESTRICTIONS.map(r => {
+                  const sel = Array.isArray(template.dietaryRestrictions) && template.dietaryRestrictions.includes(r);
+                  return (
+                    <Button
+                      key={r}
+                      type="button"
+                      variant={sel ? 'default' : 'outline'}
+                      size="sm"
+                      className={`text-xs capitalize ${sel
+                        ? 'bg-yellow-400 text-black hover:bg-yellow-500 border-yellow-500'
+                        : 'hover:bg-gray-100'
+                        }`}
+                      onClick={() => setTemplate({ ...template, dietaryRestrictions: sel ? (template.dietaryRestrictions || []).filter(x => x !== r) : [...(template.dietaryRestrictions || []), r] })}
+                    >
+                      {r.replace('-', ' ')}
+                    </Button>
+                  );
                 })}</div>
               </div>
               <div className="flex justify-end">

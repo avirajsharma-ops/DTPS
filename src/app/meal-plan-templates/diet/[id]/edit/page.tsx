@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
-import { DEFAULT_MEAL_TYPES_LIST } from '@/lib/mealConfig';
+import { DEFAULT_MEAL_TYPES_LIST, DIETARY_RESTRICTIONS } from '@/lib/mealConfig';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, ChefHat, Target, AlertCircle, Save, Leaf, UtensilsCrossed } from 'lucide-react';
 import Link from 'next/link';
@@ -33,16 +33,32 @@ const categories = [
   { value: 'custom', label: 'Custom' }
 ];
 
-const dietaryRestrictionsList = [
-  'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 'egg-free',
-  'soy-free', 'keto', 'paleo', 'low-carb', 'low-fat', 'diabetic-friendly'
-];
-
 const difficultyLevels = [
   { value: 'beginner', label: 'Beginner' },
   { value: 'intermediate', label: 'Intermediate' },
   { value: 'advanced', label: 'Advanced' }
 ];
+
+// Normalize dietary restrictions for consistent matching
+const normalizeRestriction = (restriction: string): string => {
+  return restriction.trim().toLowerCase();
+};
+
+// Normalize array of restrictions and match against canonical list
+const normalizeRestrictionsArray = (restrictions: string[] | undefined): string[] => {
+  if (!Array.isArray(restrictions)) return [];
+
+  return restrictions
+    .map(r => {
+      const normalized = normalizeRestriction(r);
+      // Find matching restriction from canonical list (case-insensitive)
+      const match = DIETARY_RESTRICTIONS.find(
+        canonical => normalizeRestriction(canonical) === normalized
+      );
+      return match || r; // Return canonical form or original if no match
+    })
+    .filter(Boolean);
+};
 
 export default function EditDietTemplatePage() {
   const params = useParams();
@@ -109,7 +125,9 @@ export default function EditDietTemplatePage() {
           setFatMin(t.targetMacros?.fat?.min?.toString() || '30');
           setFatMax(t.targetMacros?.fat?.max?.toString() || '100');
           setDifficulty(t.difficulty || 'intermediate');
-          setSelectedRestrictions(t.dietaryRestrictions || []);
+          // Normalize and load dietary restrictions
+          const restrictions = normalizeRestrictionsArray(t.dietaryRestrictions);
+          setSelectedRestrictions(restrictions);
           setIsPublic(t.isPublic || false);
           // Load meals and mealTypes
           if (t.meals && Array.isArray(t.meals)) {
@@ -157,7 +175,7 @@ export default function EditDietTemplatePage() {
           carbs: { min: Number(carbMin), max: Number(carbMax) },
           fat: { min: Number(fatMin), max: Number(fatMax) }
         },
-        dietaryRestrictions: selectedRestrictions,
+        dietaryRestrictions: Array.isArray(selectedRestrictions) ? selectedRestrictions : [],
         isPublic,
         meals: mealsOverride || meals,
         mealTypes: mealTypesOverride || mealTypes
@@ -312,7 +330,7 @@ export default function EditDietTemplatePage() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {dietaryRestrictionsList.map(r => {
+                  {DIETARY_RESTRICTIONS.map(r => {
                     const selected = selectedRestrictions.includes(r);
                     return (
                       <Button
@@ -320,7 +338,10 @@ export default function EditDietTemplatePage() {
                         type="button"
                         variant={selected ? 'default' : 'outline'}
                         size="sm"
-                        className="text-xs capitalize"
+                        className={`text-xs capitalize ${selected
+                          ? 'bg-yellow-400 text-black hover:bg-yellow-500 border-yellow-500'
+                          : 'hover:bg-gray-100'
+                          }`}
                         onClick={() => toggleRestriction(r)}
                       >
                         {r.replace('-', ' ')}

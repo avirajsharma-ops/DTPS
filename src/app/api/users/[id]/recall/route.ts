@@ -6,6 +6,24 @@ import DietaryRecall from '@/lib/db/models/DietaryRecall';
 import User from '@/lib/db/models/User';
 import { logHistoryServer } from '@/lib/server/history';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { MEAL_TYPES, MEAL_TYPE_KEYS } from '@/lib/mealConfig';
+
+// Build valid mealType labels from canonical config
+const VALID_MEAL_TYPES = MEAL_TYPE_KEYS.map(k => MEAL_TYPES[k].label);
+
+// Normalize mealType to match canonical labels (case-insensitive)
+const normalizeMealType = (mealType: string): string | null => {
+  if (!mealType) return null;
+
+  const normalized = mealType.trim();
+
+  // Find matching meal type (case-insensitive)
+  const match = VALID_MEAL_TYPES.find(
+    validType => validType.toLowerCase() === normalized.toLowerCase()
+  );
+
+  return match || null; // Return canonical form or null if no match
+};
 
 // GET /api/users/[id]/recall - Fetch dietary recall for a user
 export async function GET(
@@ -37,11 +55,11 @@ export async function GET(
 
     // If no recall exists, return empty meals array
     if (!recall) {
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         meals: [],
         entries: [],
-        recallId: null 
+        recallId: null
       }, { status: 200 });
     }
 
@@ -56,8 +74,8 @@ export async function GET(
       food: meal.food || ''
     }));
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       meals: recall.meals || [],
       entries: entriesWithId,
       recallId: recall._id,
@@ -87,7 +105,7 @@ export async function POST(
 
     const { id: userId } = await params;
     const body = await request.json();
-  
+
     // console.log('Saving dietary recall for user:', userId);
     // console.log('Request body:', body);
 
@@ -118,11 +136,15 @@ export async function POST(
 
     // Ensure all meals have valid times
     const mealsWithDefaults = mealsData
-      .filter((meal: any) => meal.mealType) // Only include meals with mealType
+      .filter((meal: any) => {
+        const normalized = normalizeMealType(meal.mealType);
+        return normalized; // Only include meals with valid mealType
+      })
       .map((meal: any) => {
-        const defaultTime = defaultTimes[meal.mealType] || { hour: '12', minute: '00', meridian: 'PM' };
+        const normalizedMealType = normalizeMealType(meal.mealType);
+        const defaultTime = defaultTimes[normalizedMealType!] || { hour: '12', minute: '00', meridian: 'PM' };
         return {
-          mealType: meal.mealType,
+          mealType: normalizedMealType, // Use normalized canonical form
           hour: meal.hour || defaultTime.hour,
           minute: meal.minute || defaultTime.minute,
           meridian: meal.meridian || defaultTime.meridian,
@@ -134,7 +156,7 @@ export async function POST(
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let recall = await DietaryRecall.findOne({ 
+    let recall = await DietaryRecall.findOne({
       userId,
       date: { $gte: today }
     });

@@ -37,7 +37,7 @@ export async function GET(
     const isDietitianAssigned =
       session.user.role === UserRole.DIETITIAN &&
       (targetUser.assignedDietitian?.toString() === session.user.id ||
-       targetUser.assignedDietitians?.some((d: any) => d.toString() === session.user.id));
+        targetUser.assignedDietitians?.some((d: any) => d.toString() === session.user.id));
 
     if (!isAdmin && !isSelf && !isDietitianAssigned) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -60,11 +60,11 @@ export async function GET(
     const history = await withCache(
       `users:id:history:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await History.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean()
-      .exec(),
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
       { ttl: 120000, tags: ['users'] }
     );
 
@@ -124,7 +124,16 @@ export async function POST(
 
     await connectDB();
 
-    const body = await request.json();
+    let body = {};
+    try {
+      const text = await request.text();
+      if (text) {
+        body = JSON.parse(text);
+      }
+    } catch (error) {
+      // If body is empty or invalid JSON, use empty object
+      body = {};
+    }
 
     const {
       action = 'update',

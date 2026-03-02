@@ -151,7 +151,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(addDays(new Date(), 6), 'yyyy-MM-dd'));
   const [primaryGoal, setPrimaryGoal] = useState<string>('weight-loss');
-  
+
   // Template states
   const [templates, setTemplates] = useState<DietTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
@@ -162,16 +162,16 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   const [templatePage, setTemplatePage] = useState(1);
   const [totalTemplates, setTotalTemplates] = useState(0);
   const TEMPLATES_PER_PAGE = 20;
-  
+
   // Meal plan states
   const [initialMeals, setInitialMeals] = useState<any[]>([]);
   const [initialMealTypes, setInitialMealTypes] = useState<{ name: string; time: string }[]>(DEFAULT_MEAL_TYPES_LIST);
-  
+
   // Loading and saving states
   const [saving, setSaving] = useState(false);
   const [clientPlans, setClientPlans] = useState<any[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
-  
+
   // Edit mode states
   const [editingPlan, setEditingPlan] = useState<any | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -257,7 +257,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         }
       }
     }, 2000);
-    
+
     return () => clearTimeout(timer);
   }, [planTitle, description, duration, startDate, endDate, primaryGoal, initialMeals, initialMealTypes, selectedTemplate, step, planFormDraftKey]);
 
@@ -308,16 +308,16 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   // Helper function to check if a plan is currently running (today is within date range)
   const isPlanRunning = (plan: any): boolean => {
     if (!plan || plan.status !== 'active') return false;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const startDate = new Date(plan.startDate);
     startDate.setHours(0, 0, 0, 0);
-    
+
     const endDate = new Date(plan.endDate);
     endDate.setHours(0, 0, 0, 0);
-    
+
     return today >= startDate && today <= endDate;
   };
 
@@ -380,8 +380,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         ...(primaryGoal && { primaryGoal }),
         ...(duration && { duration: duration.toString() })
       });
-      
-      const url = type === 'plan' 
+
+      const url = type === 'plan'
         ? `/api/meal-plan-templates?templateType=plan&${params.toString()}`
         : `/api/diet-templates?${params.toString()}`;
       const res = await fetch(url);
@@ -391,8 +391,31 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       }
       const data = await res.json();
       if (data.success) {
-        setTemplates(data.templates || []);
-        setTotalTemplates(data.total || data.templates?.length || 0);
+        let fetchedTemplates = data.templates || [];
+
+        // Filter out templates that have dietary restrictions matching the client's restrictions
+        // If client has "Non-Vegetarian" restriction, hide templates tagged with "Non-Vegetarian"
+        const clientRestrictions = toCommaString(client.dietaryRestrictions)
+          .split(',')
+          .map(s => s.trim().toLowerCase())
+          .filter(Boolean);
+
+        if (clientRestrictions.length > 0) {
+          fetchedTemplates = fetchedTemplates.filter((template: DietTemplate) => {
+            const templateRestrictions = (template.dietaryRestrictions || [])
+              .map(r => r.toLowerCase().trim());
+
+            // Exclude template if ANY of its dietary restrictions match client's restrictions
+            const hasMatchingRestriction = clientRestrictions.some(clientRestr =>
+              templateRestrictions.includes(clientRestr)
+            );
+
+            return !hasMatchingRestriction;
+          });
+        }
+
+        setTemplates(fetchedTemplates);
+        setTotalTemplates(data.total || fetchedTemplates.length || 0);
       }
     } catch (error) {
       console.error('Error fetching templates:', error);
@@ -419,15 +442,15 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
     setDescription(template.description || '');
     setDuration(template.duration);
     setSelectedTemplate(template);
-    
+
     if (template.mealTypes && template.mealTypes.length > 0) {
       setInitialMealTypes(template.mealTypes);
     }
-    
+
     if (template.meals && template.meals.length > 0) {
       setInitialMeals(template.meals);
     }
-    
+
     setShowTemplateDialog(false);
     toast.success(`Template "${template.name}" loaded successfully`);
   };
@@ -435,7 +458,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   // Fetch the latest meal plan's end date from already fetched clientPlans
   const getLatestMealPlanEndDate = (): string | null => {
     if (clientPlans && clientPlans.length > 0) {
-      const sortedPlans = [...clientPlans].sort((a: any, b: any) => 
+      const sortedPlans = [...clientPlans].sort((a: any, b: any) =>
         new Date(b.endDate).getTime() - new Date(a.endDate).getTime()
       );
       return sortedPlans[0].endDate;
@@ -446,18 +469,18 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   // Initialize start date based on latest plan's end date + 1, respecting expected dates
   const initializeStartDate = async () => {
     const today = format(new Date(), 'yyyy-MM-dd');
-    const expectedStartDate = paymentCheck?.purchase?.expectedStartDate 
-      ? format(new Date(paymentCheck.purchase.expectedStartDate), 'yyyy-MM-dd') 
+    const expectedStartDate = paymentCheck?.purchase?.expectedStartDate
+      ? format(new Date(paymentCheck.purchase.expectedStartDate), 'yyyy-MM-dd')
       : null;
-    const expectedEndDate = paymentCheck?.purchase?.expectedEndDate 
-      ? format(new Date(paymentCheck.purchase.expectedEndDate), 'yyyy-MM-dd') 
+    const expectedEndDate = paymentCheck?.purchase?.expectedEndDate
+      ? format(new Date(paymentCheck.purchase.expectedEndDate), 'yyyy-MM-dd')
       : null;
-    
+
     // Get latest meal plan's end date
     const latestEndDate = getLatestMealPlanEndDate();
-    
+
     let newStartDate = today;
-    
+
     if (latestEndDate) {
       // Start from day after last plan ends
       newStartDate = format(addDays(new Date(latestEndDate), 1), 'yyyy-MM-dd');
@@ -465,7 +488,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       // No existing plans - use expected start date if available
       newStartDate = expectedStartDate;
     }
-    
+
     // Validate against expected dates if set
     if (expectedStartDate && expectedEndDate) {
       // If calculated start date is before expected start, use expected start
@@ -476,7 +499,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       if (newStartDate > expectedEndDate) {
       }
     }
-    
+
     setStartDate(newStartDate);
   };
 
@@ -484,14 +507,14 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   const checkDateOverlap = (newStart: string, newEnd: string, excludePlanId?: string) => {
     const newStartDate = new Date(newStart);
     const newEndDate = new Date(newEnd);
-    
+
     for (const plan of clientPlans) {
       // Skip the plan being edited
       if (excludePlanId && plan._id === excludePlanId) continue;
-      
+
       const planStart = new Date(plan.startDate);
       const planEnd = new Date(plan.endDate);
-      
+
       // Check if date ranges overlap
       // Overlap occurs when: newStart <= planEnd AND newEnd >= planStart
       if (newStartDate <= planEnd && newEndDate >= planStart) {
@@ -505,7 +528,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         };
       }
     }
-    
+
     return { hasOverlap: false };
   };
 
@@ -529,13 +552,13 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       toast.error('Client needs to purchase a plan first');
       return;
     }
-    
+
     // Validate start date is within expected range if set (end date can be outside)
     if (paymentCheck?.purchase?.expectedStartDate && paymentCheck?.purchase?.expectedEndDate) {
       const expectedStart = new Date(paymentCheck.purchase.expectedStartDate);
       const expectedEnd = new Date(paymentCheck.purchase.expectedEndDate);
       const planStartDate = new Date(startDate);
-      
+
       if (planStartDate < expectedStart) {
         toast.error(`Start date must be on or after expected start date (${format(expectedStart, 'dd MMM yyyy')})`);
         return;
@@ -546,7 +569,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       }
       // Note: End date CAN be outside expected dates - no restriction
     }
-    
+
     // Check for overlapping meal plans (exclude current plan if editing)
     const overlapResult = checkDateOverlap(startDate, endDate, isEditMode ? editingPlan?._id : undefined);
     if (overlapResult.hasOverlap) {
@@ -556,7 +579,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       );
       return;
     }
-    
+
     setStep('meals');
   };
 
@@ -564,24 +587,24 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   const handleSavePlan = async (mealsData: any[]) => {
     try {
       setSaving(true);
-      
+
       // Calculate proper dates for each day based on startDate
       const startDateObj = new Date(startDate);
       const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      
+
       const mealsWithDates = mealsData.map((day, index) => {
         const dayDate = addDays(startDateObj, index);
         const dateOfMonth = dayDate.getDate();
         const dayName = fullDayNames[dayDate.getDay()];
         const dateStr = format(dayDate, 'yyyy-MM-dd');
-        
+
         return {
           ...day,
           date: dateStr,
           day: `${dateOfMonth} - Day ${index + 1} - ${dayName}`
         };
       });
-      
+
       const payload: any = {
         clientId: client._id,
         name: planTitle,
@@ -628,7 +651,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         return;
       }
       const data = await res.json();
-      
+
       if (data.success) {
         // Update client purchase - ADD days used (do not change expected dates)
         if (paymentCheck?.purchase?._id) {
@@ -647,7 +670,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
             console.error('Error updating purchase record:', updateError);
           }
         }
-        
+
         // Update Payment record - mark mealPlanCreated as true
         if (paymentCheck?.payment?._id) {
           try {
@@ -664,20 +687,20 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
             console.error('Error updating payment record:', updateError);
           }
         }
-        
+
         // Calculate remaining days after this plan
         const remainingAfterPlan = Math.max(0, (paymentCheck?.remainingDays || 0) - duration);
-        
+
         // Show success dialog
         setCreatedPlanInfo({
           days: duration,
           remainingDays: remainingAfterPlan
         });
         setShowSuccessDialog(true);
-        
+
         // Emit event to trigger automatic refresh across all components
         emitDataChange(DataEventTypes.MEAL_PLAN_CREATED, { planId: data.mealPlan?._id });
-        
+
         resetForm();
         fetchClientPlans();
         checkPaymentStatus(); // Refresh payment status
@@ -710,17 +733,17 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
 
   // View plan details
   const handleViewPlan = (plan: any) => {
-    
+
     // Log first day's meals for debugging
     if (plan.meals && plan.meals.length > 0) {
     }
-    
+
     // Use stored duration if available, otherwise calculate from dates
     const planDuration = plan.duration || Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const planMeals = plan.meals || [];
     const planMealTypes = plan.mealTypes || DEFAULT_MEAL_TYPES_LIST;
-    
-    
+
+
     setViewingPlan(plan);
     setPlanTitle(plan.name);
     setDescription(plan.description || '');
@@ -736,17 +759,17 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
 
   // Edit plan
   const handleEditPlan = (plan: any) => {
-    
+
     // Log first day's meals for debugging
     if (plan.meals && plan.meals.length > 0) {
     }
-    
+
     // Use stored duration if available, otherwise calculate from dates
     const planDuration = plan.duration || Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const planMeals = plan.meals || [];
     const planMealTypes = plan.mealTypes || DEFAULT_MEAL_TYPES_LIST;
-    
-    
+
+
     setEditingPlan(plan);
     setIsEditMode(true);
     setPlanTitle(plan.name);
@@ -764,27 +787,27 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   // Update existing plan
   const handleUpdatePlan = async (mealsData: any[]) => {
     if (!editingPlan?._id) return;
-    
+
     try {
       setSaving(true);
-      
+
       // Calculate proper dates for each day based on startDate
       const startDateObj = new Date(startDate);
       const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      
+
       const mealsWithDates = mealsData.map((day, index) => {
         const dayDate = addDays(startDateObj, index);
         const dateOfMonth = dayDate.getDate();
         const dayName = fullDayNames[dayDate.getDay()];
         const dateStr = format(dayDate, 'yyyy-MM-dd');
-        
+
         return {
           ...day,
           date: dateStr,
           day: `${dateOfMonth} - Day ${index + 1} - ${dayName}`
         };
       });
-      
+
       const payload: any = {
         name: planTitle,
         description,
@@ -818,7 +841,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         return;
       }
       const data = await res.json();
-      
+
       if (data.success) {
         toast.success('Diet plan updated successfully!');
         // Emit event to trigger automatic refresh across all components
@@ -843,7 +866,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       toast.error('Client needs to purchase a plan first before duplicating meal plans');
       return;
     }
-    
+
     // Check if client has remaining days
     if (paymentCheck.remainingDays <= 0) {
       toast.error('All plan days have been used. Client needs to purchase a new plan.');
@@ -933,7 +956,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
 
       if (data.success) {
         toast.success('Plan dates extended successfully!');
-        
+
         // AUTO-ADJUST ALL MEAL PLANS IN THE CHAIN (BOTH BEFORE AND AFTER)
         try {
           const allPlansRes = await fetch(`/api/client-meal-plans?clientId=${client._id}`);
@@ -942,32 +965,32 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
             return;
           }
           const allPlansDataResponse = await allPlansRes.json();
-          
+
           if (allPlansDataResponse.success && allPlansDataResponse.mealPlans) {
             // Sort all plans by start date
-            const sortedPlans = allPlansDataResponse.mealPlans.sort((a: any, b: any) => 
+            const sortedPlans = allPlansDataResponse.mealPlans.sort((a: any, b: any) =>
               new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
             );
-            
+
             const currentPlanIndex = sortedPlans.findIndex((p: any) => p._id === plan._id);
-            
+
             if (currentPlanIndex !== -1) {
               // ADJUST ALL PLANS BEFORE THE CURRENT PLAN (BACKWARD CASCADE)
               for (let i = currentPlanIndex - 1; i >= 0; i--) {
                 const planToAdjust = sortedPlans[i];
                 const nextPlan = sortedPlans[i + 1];
-                
+
                 // Calculate this plan's original duration
                 const planOriginalDuration = Math.ceil(
                   (new Date(planToAdjust.endDate).getTime() - new Date(planToAdjust.startDate).getTime()) / (1000 * 60 * 60 * 24)
                 ) + 1;
-                
+
                 // This plan ends one day before the next plan starts
                 const newEndDate_adjusted = format(addDays(new Date(nextPlan.startDate), -1), 'yyyy-MM-dd');
-                
+
                 // This plan's start = end - duration + 1
                 const newStartDate_adjusted = format(addDays(new Date(newEndDate_adjusted), -(planOriginalDuration - 1)), 'yyyy-MM-dd');
-                
+
                 // Update this plan in the chain
                 await fetch(`/api/client-meal-plans/${planToAdjust._id}`, {
                   method: 'PUT',
@@ -977,28 +1000,28 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                     endDate: newEndDate_adjusted
                   })
                 });
-                
+
                 // Update the reference for next iteration
                 sortedPlans[i].startDate = newStartDate_adjusted;
                 sortedPlans[i].endDate = newEndDate_adjusted;
               }
-              
+
               // ADJUST ALL PLANS AFTER THE CURRENT PLAN (FORWARD CASCADE)
               for (let i = currentPlanIndex + 1; i < sortedPlans.length; i++) {
                 const planToAdjust = sortedPlans[i];
                 const prevPlan = sortedPlans[i - 1];
-                
+
                 // Calculate plan's original duration
                 const planOriginalDuration = Math.ceil(
                   (new Date(planToAdjust.endDate).getTime() - new Date(planToAdjust.startDate).getTime()) / (1000 * 60 * 60 * 24)
                 ) + 1;
-                
+
                 // New plan starts the day after previous plan ends
                 const newStartDate_adjusted = format(addDays(new Date(prevPlan.endDate), 1), 'yyyy-MM-dd');
-                
+
                 // New end date = start + original duration
                 const newEndDate_adjusted = format(addDays(new Date(newStartDate_adjusted), Math.max(0, planOriginalDuration - 1)), 'yyyy-MM-dd');
-                
+
                 // Update this plan in the chain
                 await fetch(`/api/client-meal-plans/${planToAdjust._id}`, {
                   method: 'PUT',
@@ -1008,7 +1031,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                     endDate: newEndDate_adjusted
                   })
                 });
-                
+
                 // Update the reference for next iteration
                 sortedPlans[i].startDate = newStartDate_adjusted;
                 sortedPlans[i].endDate = newEndDate_adjusted;
@@ -1018,7 +1041,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         } catch (adjustError) {
           console.error('Error auto-adjusting meal plans:', adjustError);
         }
-        
+
         // Emit event to trigger automatic refresh
         emitDataChange(DataEventTypes.MEAL_PLAN_EXTENDED, { planId: plan._id });
         fetchClientPlans();
@@ -1071,7 +1094,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       const data = await res.json();
 
       if (data.success) {
-        const message = hasStarted 
+        const message = hasStarted
           ? `Plan paused for ${pauseDays} days. End date extended to ${endDateToUse}`
           : `Plan paused. (Plan hasn't started yet, so end date not extended)`;
         toast.success(message);
@@ -1154,8 +1177,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
           {showAsText ? (
             <span className="text-sm cursor-pointer">Hold</span>
           ) : showAsButton ? (
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="outline"
               title={isPaused ? 'Resume plan' : 'Hold plan'}
               className="flex items-center gap-1.5"
@@ -1164,8 +1187,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
               <span className="text-xs">Hold</span>
             </Button>
           ) : (
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="outline"
               title={isPaused ? 'Resume plan' : 'Pause plan'}
               className={isPaused ? 'text-orange-600 hover:text-orange-700' : 'text-amber-600 hover:text-amber-700'}
@@ -1178,7 +1201,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
           <DialogHeader>
             <DialogTitle>{isPaused ? 'Resume Plan' : 'Pause Plan'}</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {!isPaused ? (
               <>
@@ -1220,7 +1243,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                       1 Week
                     </Button>
                   </div>
-                  
+
                   <div className="mt-3">
                     <Label className="text-xs">Or enter custom days:</Label>
                     <Input
@@ -1244,13 +1267,13 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1"
                   >
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     className="flex-1 bg-amber-600 hover:bg-amber-700"
                     onClick={handlePause}
                     disabled={isLoading}
@@ -1284,13 +1307,13 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1"
                   >
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     className="flex-1 bg-green-600 hover:bg-green-700"
                     onClick={handleResume}
                     disabled={isLoading}
@@ -1387,23 +1410,23 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       const date = new Date(dateStr);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       // Can't select past dates
       if (date < today) return false;
-      
+
       // Can't select dates outside plan range
       if (date < startDate || date > endDate) return false;
-      
+
       // Can't select already frozen dates
       if (isDateFrozen(dateStr)) return false;
-      
+
       return true;
     };
 
     // Toggle date selection
     const toggleDateSelection = (dateStr: string) => {
       if (!isDateSelectable(dateStr)) return;
-      
+
       // Check if we've reached the limit
       if (!selectedDates.includes(dateStr)) {
         if (freezeInfo && selectedDates.length >= freezeInfo.remainingFreezeDays) {
@@ -1412,8 +1435,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         }
       }
 
-      setSelectedDates(prev => 
-        prev.includes(dateStr) 
+      setSelectedDates(prev =>
+        prev.includes(dateStr)
           ? prev.filter(d => d !== dateStr)
           : [...prev, dateStr]
       );
@@ -1503,8 +1526,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
 
     // Toggle unfreeze date selection
     const toggleUnfreezeSelection = (dateStr: string) => {
-      setSelectedUnfreezeDates(prev => 
-        prev.includes(dateStr) 
+      setSelectedUnfreezeDates(prev =>
+        prev.includes(dateStr)
           ? prev.filter(d => d !== dateStr)
           : [...prev, dateStr]
       );
@@ -1513,11 +1536,11 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
     // Generate calendar days for current month range (startDate to endDate)
     const generateCalendarDays = () => {
       const days: { date: Date; dateStr: string; isCurrentMonth: boolean }[] = [];
-      
+
       // Start from plan start date
       const current = new Date(startDate);
       current.setHours(0, 0, 0, 0);
-      
+
       while (current <= endDate) {
         days.push({
           date: new Date(current),
@@ -1526,7 +1549,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         });
         current.setDate(current.getDate() + 1);
       }
-      
+
       return days;
     };
 
@@ -1538,8 +1561,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
           {showAsText ? (
             <span className="text-sm cursor-pointer">Freeze</span>
           ) : showAsButton ? (
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="outline"
               title="Freeze specific dates"
               className="flex items-center gap-1.5"
@@ -1548,8 +1571,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
               <span className="text-xs">Freeze</span>
             </Button>
           ) : (
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="outline"
               title="Freeze dates"
               className="text-blue-600 hover:text-blue-700"
@@ -1568,7 +1591,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
               Freeze dates to pause meals or unfreeze to restore them.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {isFetching ? (
               <div className="flex items-center justify-center py-8">
@@ -1580,21 +1603,19 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                 {/* Tabs for Freeze / Unfreeze */}
                 <div className="flex border-b">
                   <button
-                    className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
-                      activeTab === 'freeze' 
-                        ? 'border-blue-500 text-blue-600' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
+                    className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'freeze'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
                     onClick={() => setActiveTab('freeze')}
                   >
                     ❄️ Freeze Dates
                   </button>
                   <button
-                    className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
-                      activeTab === 'unfreeze' 
-                        ? 'border-green-500 text-green-600' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
+                    className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'unfreeze'
+                      ? 'border-green-500 text-green-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
                     onClick={() => setActiveTab('unfreeze')}
                     disabled={!freezeInfo || freezeInfo.totalFreezeCount === 0}
                   >
@@ -1606,7 +1627,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                 <div className="bg-gray-50 p-3 rounded border">
                   <Label className="text-sm font-medium">Plan Duration</Label>
                   <div className="mt-1 flex items-center gap-2">
-                    <Input 
+                    <Input
                       value={`${durationDays} days (${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd, yyyy')})`}
                       disabled
                       className="bg-white"
@@ -1640,38 +1661,38 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                 {/* FREEZE TAB CONTENT */}
                 {activeTab === 'freeze' && (
                   <>
-                <div className="border rounded-lg p-3">
-                  <Label className="text-sm font-medium mb-2 block">Select Dates to Freeze</Label>
-                  
-                  {/* Day headers */}
-                  <div className="grid grid-cols-7 gap-1 mb-2">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                      <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
-                        {day}
+                    <div className="border rounded-lg p-3">
+                      <Label className="text-sm font-medium mb-2 block">Select Dates to Freeze</Label>
+
+                      {/* Day headers */}
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                          <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
+                            {day}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Calendar grid */}
-                  <div className="grid grid-cols-7 gap-1">
-                    {/* Add empty cells for alignment to start day of week */}
-                    {Array.from({ length: calendarDays[0]?.date.getDay() || 0 }).map((_, i) => (
-                      <div key={`empty-${i}`} className="aspect-square" />
-                    ))}
-                    
-                    {calendarDays.map(({ date, dateStr }) => {
-                      const isFrozen = isDateFrozen(dateStr);
-                      const isSelectable = isDateSelectable(dateStr);
-                      const isSelected = selectedDates.includes(dateStr);
-                      const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+                      {/* Calendar grid */}
+                      <div className="grid grid-cols-7 gap-1">
+                        {/* Add empty cells for alignment to start day of week */}
+                        {Array.from({ length: calendarDays[0]?.date.getDay() || 0 }).map((_, i) => (
+                          <div key={`empty-${i}`} className="aspect-square" />
+                        ))}
 
-                      return (
-                        <button
-                          key={dateStr}
-                          type="button"
-                          onClick={() => toggleDateSelection(dateStr)}
-                          disabled={!isSelectable}
-                          className={`
+                        {calendarDays.map(({ date, dateStr }) => {
+                          const isFrozen = isDateFrozen(dateStr);
+                          const isSelectable = isDateSelectable(dateStr);
+                          const isSelected = selectedDates.includes(dateStr);
+                          const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+
+                          return (
+                            <button
+                              key={dateStr}
+                              type="button"
+                              onClick={() => toggleDateSelection(dateStr)}
+                              disabled={!isSelectable}
+                              className={`
                             aspect-square flex flex-col items-center justify-center text-sm rounded-lg relative transition-all
                             ${isSelected ? 'bg-blue-500 text-white font-bold ring-2 ring-blue-300' : ''}
                             ${isFrozen ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : ''}
@@ -1679,108 +1700,108 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                             ${isSelectable && !isSelected ? 'hover:bg-blue-100 cursor-pointer border border-gray-200' : ''}
                             ${!isSelectable && !isFrozen && !isPast ? 'opacity-50 cursor-not-allowed' : ''}
                           `}
-                        >
-                          <span>{date.getDate()}</span>
-                          {isFrozen && (
-                            <X className="h-3 w-3 text-red-500 absolute top-0.5 right-0.5" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Legend */}
-                  <div className="flex gap-4 mt-3 text-xs text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 bg-blue-500 rounded" />
-                      <span>Selected</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 bg-gray-200 rounded relative">
-                        <X className="h-2 w-2 text-red-500 absolute -top-0.5 -right-0.5" />
-                      </div>
-                      <span>Already Frozen</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 bg-gray-100 rounded" />
-                      <span>Past</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Selected Dates Summary */}
-                {selectedDates.length > 0 && (
-                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                    <p className="text-sm font-medium text-blue-900 mb-2">
-                      Selected {selectedDates.length} date(s) to freeze:
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {selectedDates.sort().map(dateStr => (
-                        <Badge 
-                          key={dateStr} 
-                          variant="secondary"
-                          className="cursor-pointer hover:bg-red-100"
-                          onClick={() => toggleDateSelection(dateStr)}
-                        >
-                          {format(new Date(dateStr), 'MMM dd')}
-                          <X className="h-3 w-3 ml-1" />
-                        </Badge>
-                      ))}
-                    </div>
-                    
-                    {/* Show the dates that will be added at the end */}
-                    <div className="mt-3 pt-3 border-t border-blue-200">
-                      <p className="text-sm font-medium text-green-800 mb-2">
-                        Meals will be copied to these new dates (after plan end):
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {selectedDates.sort().map((_, index) => {
-                          const newDate = addDays(endDate, index + 1);
-                          return (
-                            <Badge 
-                              key={index} 
-                              variant="outline"
-                              className="bg-green-50 text-green-800 border-green-300"
                             >
-                              {format(newDate, 'MMM dd, yyyy')}
-                            </Badge>
+                              <span>{date.getDate()}</span>
+                              {isFrozen && (
+                                <X className="h-3 w-3 text-red-500 absolute top-0.5 right-0.5" />
+                              )}
+                            </button>
                           );
                         })}
                       </div>
-                      <p className="text-xs text-gray-600 mt-2">
-                        <strong>Note:</strong> Original plan duration will NOT change. Meals from frozen dates will be copied to the dates shown above.
-                      </p>
-                    </div>
-                  </div>
-                )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-2">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    onClick={handleFreeze}
-                    disabled={isLoading || selectedDates.length === 0 || (freezeInfo !== null && !freezeInfo.canFreeze)}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Freezing...
-                      </>
-                    ) : (
-                      <>
-                        <Snowflake className="h-4 w-4 mr-2" />
-                        Freeze {selectedDates.length > 0 ? `${selectedDates.length} Days` : 'Selected'}
-                      </>
+                      {/* Legend */}
+                      <div className="flex gap-4 mt-3 text-xs text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-blue-500 rounded" />
+                          <span>Selected</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-gray-200 rounded relative">
+                            <X className="h-2 w-2 text-red-500 absolute -top-0.5 -right-0.5" />
+                          </div>
+                          <span>Already Frozen</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-gray-100 rounded" />
+                          <span>Past</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Selected Dates Summary */}
+                    {selectedDates.length > 0 && (
+                      <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                        <p className="text-sm font-medium text-blue-900 mb-2">
+                          Selected {selectedDates.length} date(s) to freeze:
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedDates.sort().map(dateStr => (
+                            <Badge
+                              key={dateStr}
+                              variant="secondary"
+                              className="cursor-pointer hover:bg-red-100"
+                              onClick={() => toggleDateSelection(dateStr)}
+                            >
+                              {format(new Date(dateStr), 'MMM dd')}
+                              <X className="h-3 w-3 ml-1" />
+                            </Badge>
+                          ))}
+                        </div>
+
+                        {/* Show the dates that will be added at the end */}
+                        <div className="mt-3 pt-3 border-t border-blue-200">
+                          <p className="text-sm font-medium text-green-800 mb-2">
+                            Meals will be copied to these new dates (after plan end):
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {selectedDates.sort().map((_, index) => {
+                              const newDate = addDays(endDate, index + 1);
+                              return (
+                                <Badge
+                                  key={index}
+                                  variant="outline"
+                                  className="bg-green-50 text-green-800 border-green-300"
+                                >
+                                  {format(newDate, 'MMM dd, yyyy')}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                          <p className="text-xs text-gray-600 mt-2">
+                            <strong>Note:</strong> Original plan duration will NOT change. Meals from frozen dates will be copied to the dates shown above.
+                          </p>
+                        </div>
+                      </div>
                     )}
-                  </Button>
-                </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                        onClick={handleFreeze}
+                        disabled={isLoading || selectedDates.length === 0 || (freezeInfo !== null && !freezeInfo.canFreeze)}
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Freezing...
+                          </>
+                        ) : (
+                          <>
+                            <Snowflake className="h-4 w-4 mr-2" />
+                            Freeze {selectedDates.length > 0 ? `${selectedDates.length} Days` : 'Selected'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </>
                 )}
 
@@ -1793,112 +1814,111 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                         fd => !fd.planId || fd.planId === plan._id
                       ) || [];
                       const hasCurrentPlanFrozenDates = currentPlanFrozenDates.length > 0;
-                      
+
                       return hasCurrentPlanFrozenDates ? (
-                      <>
-                        {/* List of Frozen Dates for this plan only */}
-                        <div className="border rounded-lg p-3">
-                          <Label className="text-sm font-medium mb-2 block">Select Frozen Dates to Unfreeze</Label>
-                          <p className="text-xs text-gray-500 mb-3">
-                            Select dates to unfreeze. The meals added at the end will be removed and original dates will be restored.
-                            {freezeInfo?.isSharedFreeze && (
-                              <span className="block mt-1 text-blue-600">
-                                Note: Only showing frozen dates from this phase. Other phases have their own frozen dates.
-                              </span>
-                            )}
-                          </p>
-                          
-                          <div className="space-y-2 max-h-60 overflow-y-auto">
-                            {currentPlanFrozenDates.map((fd) => {
-                              const dateStr = format(new Date(fd.date), 'yyyy-MM-dd');
-                              const isSelected = selectedUnfreezeDates.includes(dateStr);
-                              return (
-                                <div 
-                                  key={dateStr}
-                                  onClick={() => toggleUnfreezeSelection(dateStr)}
-                                  className={`
-                                    flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all
-                                    ${isSelected 
-                                      ? 'bg-green-50 border-green-500 ring-2 ring-green-200' 
-                                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                                    }
-                                  `}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                      isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
-                                    }`}>
-                                      {isSelected && <Check className="h-3 w-3 text-white" />}
-                                    </div>
-                                    <div>
-                                      <p className="font-medium text-sm">
-                                        {format(new Date(fd.date), 'EEEE, MMM dd, yyyy')}
-                                      </p>
-                                      <p className="text-xs text-gray-500">
-                                        Frozen on: {format(new Date(fd.createdAt), 'MMM dd, yyyy HH:mm')}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Snowflake className="h-4 w-4 text-blue-400" />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Unfreeze Warning */}
-                        {selectedUnfreezeDates.length > 0 && (
-                          <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
-                            <p className="text-sm font-medium text-yellow-800 mb-2">
-                              ⚠️ Unfreezing {selectedUnfreezeDates.length} date(s) will:
+                        <>
+                          {/* List of Frozen Dates for this plan only */}
+                          <div className="border rounded-lg p-3">
+                            <Label className="text-sm font-medium mb-2 block">Select Frozen Dates to Unfreeze</Label>
+                            <p className="text-xs text-gray-500 mb-3">
+                              Select dates to unfreeze. The meals added at the end will be removed and original dates will be restored.
+                              {freezeInfo?.isSharedFreeze && (
+                                <span className="block mt-1 text-blue-600">
+                                  Note: Only showing frozen dates from this phase. Other phases have their own frozen dates.
+                                </span>
+                              )}
                             </p>
-                            <ul className="text-xs text-yellow-700 list-disc list-inside space-y-1">
-                              <li>Remove the frozen flag from selected dates</li>
-                              <li>Remove the recovery meals added at the end of plan</li>
-                              <li>Reduce end date by {selectedUnfreezeDates.length} day(s)</li>
-                            </ul>
-                          </div>
-                        )}
 
-                        {/* Unfreeze Action Buttons */}
-                        <div className="flex gap-2 pt-2">
-                          <Button 
-                            variant="outline" 
-                            className="flex-1"
-                            onClick={() => setIsOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button 
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                            onClick={handleUnfreeze}
-                            disabled={isLoading || selectedUnfreezeDates.length === 0}
-                          >
-                            {isLoading ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Unfreezing...
-                              </>
-                            ) : (
-                              <>
-                                🔓 Unfreeze {selectedUnfreezeDates.length > 0 ? `${selectedUnfreezeDates.length} Days` : 'Selected'}
-                              </>
-                            )}
-                          </Button>
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                              {currentPlanFrozenDates.map((fd) => {
+                                const dateStr = format(new Date(fd.date), 'yyyy-MM-dd');
+                                const isSelected = selectedUnfreezeDates.includes(dateStr);
+                                return (
+                                  <div
+                                    key={dateStr}
+                                    onClick={() => toggleUnfreezeSelection(dateStr)}
+                                    className={`
+                                    flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all
+                                    ${isSelected
+                                        ? 'bg-green-50 border-green-500 ring-2 ring-green-200'
+                                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                      }
+                                  `}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                                        }`}>
+                                        {isSelected && <Check className="h-3 w-3 text-white" />}
+                                      </div>
+                                      <div>
+                                        <p className="font-medium text-sm">
+                                          {format(new Date(fd.date), 'EEEE, MMM dd, yyyy')}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          Frozen on: {format(new Date(fd.createdAt), 'MMM dd, yyyy HH:mm')}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <Snowflake className="h-4 w-4 text-blue-400" />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Unfreeze Warning */}
+                          {selectedUnfreezeDates.length > 0 && (
+                            <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                              <p className="text-sm font-medium text-yellow-800 mb-2">
+                                ⚠️ Unfreezing {selectedUnfreezeDates.length} date(s) will:
+                              </p>
+                              <ul className="text-xs text-yellow-700 list-disc list-inside space-y-1">
+                                <li>Remove the frozen flag from selected dates</li>
+                                <li>Remove the recovery meals added at the end of plan</li>
+                                <li>Reduce end date by {selectedUnfreezeDates.length} day(s)</li>
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Unfreeze Action Buttons */}
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => setIsOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                              onClick={handleUnfreeze}
+                              disabled={isLoading || selectedUnfreezeDates.length === 0}
+                            >
+                              {isLoading ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Unfreezing...
+                                </>
+                              ) : (
+                                <>
+                                  🔓 Unfreeze {selectedUnfreezeDates.length > 0 ? `${selectedUnfreezeDates.length} Days` : 'Selected'}
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Snowflake className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm">No frozen dates to unfreeze in this phase</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {freezeInfo?.isSharedFreeze && freezeInfo?.totalFreezeCount > 0
+                              ? 'Frozen dates from other phases can only be unfrozen from their respective phase'
+                              : 'Freeze some dates first to use this feature'
+                            }
+                          </p>
                         </div>
-                      </>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <Snowflake className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                        <p className="text-sm">No frozen dates to unfreeze in this phase</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {freezeInfo?.isSharedFreeze && freezeInfo?.totalFreezeCount > 0 
-                            ? 'Frozen dates from other phases can only be unfrozen from their respective phase'
-                            : 'Freeze some dates first to use this feature'
-                          }
-                        </p>
-                      </div>
-                    )
+                      )
                     })()}
                   </>
                 )}
@@ -1923,8 +1943,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         {showAsText ? (
           <span className="text-sm cursor-pointer" onClick={handleComingSoon}>Extend</span>
         ) : showAsButton ? (
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             variant="outline"
             title="Extend plan dates"
             className="flex items-center gap-1.5"
@@ -1934,8 +1954,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
             <span className="text-xs">Extend</span>
           </Button>
         ) : (
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             variant="outline"
             title="Extend plan dates"
             className="text-blue-600 hover:text-blue-700"
@@ -1953,7 +1973,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   // Step 3: View Plan (Read-only)
   if (step === 'view' && viewingPlan) {
     // Debug logging
-    
+
     return (
       <div className="mt-6">
         <Card>
@@ -1972,11 +1992,11 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-semibold">{planTitle}</h2>
                     <Badge className={
-                      viewingPlan.status === 'active' 
+                      viewingPlan.status === 'active'
                         ? 'bg-green-100 text-green-800'
                         : viewingPlan.status === 'completed'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
                     }>
                       {viewingPlan.status || 'draft'}
                     </Badge>
@@ -1987,14 +2007,14 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => handleEditPlan(viewingPlan)}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Plan
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => handleDuplicatePlan(viewingPlan)}
                   disabled={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0}
@@ -2189,8 +2209,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                       ) : (
                         <div className="space-y-2">
                           {templates.map((template) => (
-                            <div 
-                              key={template._id} 
+                            <div
+                              key={template._id}
                               className="border rounded-lg p-3 cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition-colors"
                               onClick={() => loadTemplate(template)}
                             >
@@ -2198,6 +2218,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-medium text-gray-900 truncate">{template.name}</h4>
                                   <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    {template.category && (
+                                      <Badge className="text-xs capitalize bg-blue-100 text-blue-800">{template.category.replace(/-/g, ' ')}</Badge>
+                                    )}
                                     <span className="text-xs text-gray-600">{template.duration} days</span>
                                     {template.goals?.primaryGoal && (
                                       <Badge variant="secondary" className="text-xs capitalize">
@@ -2256,7 +2279,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                 <Button variant="outline" onClick={() => setStep('form')}>
                   Edit Details
                 </Button>
-                <Button 
+                <Button
                   className="bg-green-600 hover:bg-green-700"
                   onClick={() => {
                     // Get meals from DietPlanDashboard and save
@@ -2404,6 +2427,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-medium text-gray-900 truncate">{template.name}</h4>
                                   <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    {template.category && (
+                                      <Badge className="text-xs capitalize bg-blue-100 text-blue-800">{template.category.replace(/-/g, ' ')}</Badge>
+                                    )}
                                     <span className="text-xs text-gray-600">{template.duration} days</span>
                                     {template.goals?.primaryGoal && (
                                       <Badge variant="secondary" className="text-xs capitalize">
@@ -2531,7 +2557,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                         const expectedStart = new Date(paymentCheck.purchase.expectedStartDate);
                         const expectedEnd = new Date(paymentCheck.purchase.expectedEndDate);
                         const selectedDate = new Date(newStartDate);
-                        
+
                         if (selectedDate < expectedStart) {
                           toast.error(`Start date cannot be before expected start date (${format(expectedStart, 'dd MMM yyyy')})`);
                           return;
@@ -2661,9 +2687,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                   This client hasn't purchased a service plan yet. Please create a payment link and complete the payment before creating a meal plan.
                 </p>
                 <div className="flex gap-2 mt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="border-amber-600 text-amber-700 hover:bg-amber-100"
                     onClick={() => {
                       // Navigate to payments section (scroll to it or switch tab)
@@ -2677,9 +2703,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                     <CreditCard className="h-4 w-4 mr-2" />
                     Go to Payments
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="border-amber-600 text-amber-700 hover:bg-amber-100"
                     onClick={() => checkPaymentStatus(true)}
                     disabled={checkingPayment}
@@ -2690,7 +2716,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                 </div>
               </div>
             </div>
-                   </CardContent>
+          </CardContent>
         </Card>
       ) : paymentCheck && paymentCheck.hasPaidPlan ? (
         paymentCheck.remainingDays > 0 ? (
@@ -2734,12 +2760,12 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                     )}
                   </div>
                   <div className="mt-3 bg-green-100 rounded-full h-2 overflow-hidden">
-                    <div 
+                    <div
                       className="bg-green-500 h-full transition-all"
                       style={{ width: `${((paymentCheck.totalDaysUsed || 0) / (paymentCheck.totalPurchasedDays || 1)) * 100}%` }}
                     />
                   </div>
-                  
+
                   {/* Set Expected Dates Prompt - Show when mealPlanCreated is false and no expected dates */}
                   {!paymentCheck.purchase?.mealPlanCreated && !paymentCheck.purchase?.expectedStartDate && (
                     <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
@@ -2752,9 +2778,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                       <p className="text-xs text-orange-600 mt-1">
                         Client has paid. Please set the expected start date in the Payments section to schedule the meal plan.
                       </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="mt-2 text-orange-700 border-orange-300 hover:bg-orange-100"
                         onClick={() => {
                           const paymentsSection = document.querySelector('[data-section="payments"]');
@@ -2768,7 +2794,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                       </Button>
                     </div>
                   )}
-                  
+
                   {/* Show all pending purchases needing meal plans */}
                   {paymentCheck.allPurchasesNeedingMealPlan && paymentCheck.allPurchasesNeedingMealPlan.length > 0 && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -2782,15 +2808,14 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                         {paymentCheck.allPurchasesNeedingMealPlan.map((purchase, idx) => {
                           const isPartiallyUsed = (purchase.daysUsed || 0) > 0;
                           const isCurrentPurchase = purchase._id === paymentCheck.purchase?._id;
-                          
+
                           return (
-                            <div 
-                              key={purchase._id} 
-                              className={`flex items-center justify-between text-xs p-2 rounded border ${
-                                isCurrentPurchase 
-                                  ? 'bg-green-50 border-green-300' 
-                                  : 'bg-white border-blue-100'
-                              }`}
+                            <div
+                              key={purchase._id}
+                              className={`flex items-center justify-between text-xs p-2 rounded border ${isCurrentPurchase
+                                ? 'bg-green-50 border-green-300'
+                                : 'bg-white border-blue-100'
+                                }`}
                             >
                               <div className="flex items-center gap-2">
                                 {isCurrentPurchase && (
@@ -2835,16 +2860,16 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                       </p>
                     </div>
                   )}
-                  
+
                   <p className="text-xs text-green-600 mt-2">
-                    {paymentCheck.purchase?.mealPlanCreated 
+                    {paymentCheck.purchase?.mealPlanCreated
                       ? '✓ Meal plan has been created. You can create additional plans with remaining days.'
                       : '✓ Ready to create meal plan. Click "Create New Plan" button below.'}
                   </p>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="text-green-700 hover:bg-green-100"
                   onClick={() => checkPaymentStatus(true)}
                   disabled={checkingPayment}
@@ -2864,10 +2889,10 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                   <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm text-amber-700 font-medium">
-                      All {paymentCheck.totalPurchasedDays || paymentCheck.purchase?.durationDays} days used • 
-                      <Button 
-                        variant="link" 
-                        size="sm" 
+                      All {paymentCheck.totalPurchasedDays || paymentCheck.purchase?.durationDays} days used •
+                      <Button
+                        variant="link"
+                        size="sm"
                         className="text-amber-700 underline p-0 h-auto"
                         onClick={() => {
                           const paymentsSection = document.querySelector('[data-section="payments"]');
@@ -2882,9 +2907,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                     </p>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="text-amber-700 hover:bg-amber-100"
                   onClick={() => checkPaymentStatus(true)}
                   disabled={checkingPayment}
@@ -2922,34 +2947,33 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
               </Button>
               {/* Create New Plan Button - Hidden in viewOnly mode (health counselor) */}
               {!viewOnly && (
-              <Button 
-                className={`${
-                  paymentCheck?.hasPaidPlan && paymentCheck.remainingDays > 0
-                    ? 'bg-blue-600 hover:bg-blue-700' 
+                <Button
+                  className={`${paymentCheck?.hasPaidPlan && paymentCheck.remainingDays > 0
+                    ? 'bg-blue-600 hover:bg-blue-700'
                     : 'bg-gray-400 cursor-not-allowed'
-                }`}
-                onClick={async () => {
-                  if (!paymentCheck?.hasPaidPlan) {
-                    toast.error('Client needs to purchase a plan first before creating a meal plan');
-                    return;
-                  }
-                  if (paymentCheck.remainingDays <= 0) {
-                    toast.error('All plan days have been used. Client needs to purchase a new plan.');
-                    return;
-                  }
-                  // Set duration based on remaining days
-                  if (paymentCheck.remainingDays > 0) {
-                    setDuration(Math.min(paymentCheck.remainingDays, 30)); // Max 30 days at a time
-                  }
-                  // Initialize start date based on latest plan
-                  await initializeStartDate();
-                  setStep('form');
-                }}
-                disabled={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Plan
-              </Button>
+                    }`}
+                  onClick={async () => {
+                    if (!paymentCheck?.hasPaidPlan) {
+                      toast.error('Client needs to purchase a plan first before creating a meal plan');
+                      return;
+                    }
+                    if (paymentCheck.remainingDays <= 0) {
+                      toast.error('All plan days have been used. Client needs to purchase a new plan.');
+                      return;
+                    }
+                    // Set duration based on remaining days
+                    if (paymentCheck.remainingDays > 0) {
+                      setDuration(Math.min(paymentCheck.remainingDays, 30)); // Max 30 days at a time
+                    }
+                    // Initialize start date based on latest plan
+                    await initializeStartDate();
+                    setStep('form');
+                  }}
+                  disabled={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Plan
+                </Button>
               )}
             </div>
           </div>
@@ -2975,11 +2999,10 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
               {clientPlans.map((plan: any) => (
                 <div
                   key={plan._id}
-                  className={`border rounded-lg p-4 transition-colors ${
-                    plan.status === 'active' 
-                      ? 'border-green-300 bg-green-50/50' 
-                      : 'border-gray-200 hover:border-blue-300'
-                  }`}
+                  className={`border rounded-lg p-4 transition-colors ${plan.status === 'active'
+                    ? 'border-green-300 bg-green-50/50'
+                    : 'border-gray-200 hover:border-blue-300'
+                    }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -2992,10 +3015,10 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                             plan.status === 'active'
                               ? 'bg-green-100 text-green-800'
                               : plan.status === 'completed'
-                              ? 'bg-blue-100 text-blue-800'
-                              : plan.status === 'paused'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
+                                ? 'bg-blue-100 text-blue-800'
+                                : plan.status === 'paused'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-gray-100 text-gray-800'
                           }
                         >
                           {plan.status}
@@ -3024,7 +3047,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                         <div>
                           <span className="text-gray-500">Duration:</span>
                           <p className="font-medium">
-                            {plan.duration} Days  
+                            {plan.duration} Days
                             {/* {Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} Days */}
                           </p>
                         </div>
@@ -3035,7 +3058,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                           </p>
                         </div>
                       </div>
-                      
+
                       {/* Show freeze days info if any */}
                       {plan.totalFreezeCount > 0 && (
                         <div className="mt-2 flex items-center gap-2">
@@ -3055,24 +3078,24 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                         const planEndDate = new Date(plan.endDate);
                         planEndDate.setHours(23, 59, 59, 999);
                         const isPlanEnded = plan.status === 'completed' || plan.status === 'cancelled' || planEndDate < today;
-                        
+
                         return (
                           <>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                            <Button
+                              size="sm"
+                              variant="outline"
                               title="View"
                               onClick={() => handleViewPlan(plan)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            
+
                             {/* Only show Edit and More options if plan has NOT ended */}
                             {!isPlanEnded && (
                               <>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
+                                <Button
+                                  size="sm"
+                                  variant="outline"
                                   title="Edit"
                                   onClick={() => handleEditPlan(plan)}
                                 >
@@ -3093,54 +3116,54 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                         const isPlanEnded = plan.status === 'completed' || plan.status === 'cancelled' || planEndDate < today;
                         if (isPlanEnded) return null;
                         return (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            title="More options"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="p-3 w-48">
-                          <div className="flex flex-col gap-2">
-                            <ExtendPlanDialog 
-                              plan={plan}
-                              onExtend={handleExtendPlan}
-                              showAsText={false}
-                              showAsButton={true}
-                            />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                title="More options"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="p-3 w-48">
+                              <div className="flex flex-col gap-2">
+                                <ExtendPlanDialog
+                                  plan={plan}
+                                  onExtend={handleExtendPlan}
+                                  showAsText={false}
+                                  showAsButton={true}
+                                />
 
-                            <PausePlanDialog 
-                              plan={plan}
-                              onPause={handlePausePlan}
-                              onResume={handleResumePlan}
-                              showAsText={false}
-                              showAsButton={true}
-                            />
+                                <PausePlanDialog
+                                  plan={plan}
+                                  onPause={handlePausePlan}
+                                  onResume={handleResumePlan}
+                                  showAsText={false}
+                                  showAsButton={true}
+                                />
 
-                            <FreezePlanDialog 
-                              plan={plan}
-                              onFreeze={fetchClientPlans}
-                              showAsText={false}
-                              showAsButton={true}
-                            />
+                                <FreezePlanDialog
+                                  plan={plan}
+                                  onFreeze={fetchClientPlans}
+                                  showAsText={false}
+                                  showAsButton={true}
+                                />
 
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              title={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0 ? 'Client needs active payment to duplicate plans' : 'Duplicate'}
-                              onClick={() => handleDuplicatePlan(plan)}
-                              disabled={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0}
-                              className="flex items-center gap-1.5"
-                            >
-                              <Copy className="h-4 w-4" />
-                              <span className="text-xs">Duplicate</span>
-                            </Button>
-                          </div>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  title={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0 ? 'Client needs active payment to duplicate plans' : 'Duplicate'}
+                                  onClick={() => handleDuplicatePlan(plan)}
+                                  disabled={!paymentCheck?.hasPaidPlan || paymentCheck.remainingDays <= 0}
+                                  className="flex items-center gap-1.5"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                  <span className="text-xs">Duplicate</span>
+                                </Button>
+                              </div>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         );
                       })()}
                     </div>
@@ -3204,17 +3227,17 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                     </div>
 
                     {!viewOnly && (
-                    <div className="flex gap-2 ml-4">
-                      <Button size="sm" variant="outline">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                      <div className="flex gap-2 ml-4">
+                        <Button size="sm" variant="outline">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -3226,19 +3249,19 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
               <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p className="text-lg font-medium text-gray-900 mb-2">No diet plans created yet</p>
               <p className="text-sm text-gray-600 mb-6">
-                {viewOnly 
+                {viewOnly
                   ? `No diet plans available for ${client.firstName} ${client.lastName}`
                   : `Create a personalized diet plan for ${client.firstName} ${client.lastName}`
                 }
               </p>
               {!viewOnly && (
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => setStep('form')}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create First Diet Plan
-              </Button>
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setStep('form')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create First Diet Plan
+                </Button>
               )}
             </div>
           )}
@@ -3260,7 +3283,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                 <Check className="h-10 w-10 text-green-600" />
               </div>
             </div>
-            
+
             <div className="text-center">
               <p className="text-lg font-medium text-gray-900">
                 {createdPlanInfo?.days} Day Meal Plan Created
@@ -3292,15 +3315,15 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
             ) : null}
 
             <div className="flex gap-2 pt-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex-1"
                 onClick={() => setShowSuccessDialog(false)}
               >
                 Close
               </Button>
               {createdPlanInfo && createdPlanInfo.remainingDays <= 0 && (
-                <Button 
+                <Button
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                   onClick={() => {
                     setShowSuccessDialog(false);
