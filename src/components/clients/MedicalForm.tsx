@@ -446,7 +446,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Input placeholder="File Name (Optional)" value={pendingReportName} onChange={e => setPendingReportName(e.target.value)} className="flex-1" disabled={uploadingFile} />
               <Select value={reportCategory} onValueChange={(v: 'medical-report' | 'other') => setReportCategory(v)}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-45">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -464,7 +464,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">Filter:</span>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[180px] h-8">
+              <SelectTrigger className="w-45 h-8">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
