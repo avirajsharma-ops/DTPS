@@ -38,14 +38,35 @@ export function StaffUnreadCountProvider({ children }: StaffUnreadCountProviderP
   const reconnectAttemptsRef = useRef(0);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isConnectingRef = useRef(false);
+
+  const role = session?.user?.role;
+  const isStaffRole = role === 'admin' || role === 'dietitian' || role === 'health_counselor';
 
   // Connect to SSE stream for unread counts with resilient reconnection
   useEffect(() => {
-    if (status !== 'authenticated' || !session?.user) {
+    if (status !== 'authenticated' || !session?.user || !isStaffRole) {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      setIsConnected(false);
       return;
     }
 
     const connect = () => {
+      if (isConnectingRef.current) return;
+      isConnectingRef.current = true;
+
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+
       // Clean up existing connection
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
@@ -58,6 +79,7 @@ export function StaffUnreadCountProvider({ children }: StaffUnreadCountProviderP
         console.log('[StaffUnreadCountProvider] SSE connected');
         setIsConnected(true);
         reconnectAttemptsRef.current = 0; // Reset on successful connection
+        isConnectingRef.current = false;
       };
 
       es.onmessage = (event) => {
@@ -72,15 +94,21 @@ export function StaffUnreadCountProvider({ children }: StaffUnreadCountProviderP
       };
 
       es.onerror = () => {
+        isConnectingRef.current = false;
         setIsConnected(false);
         es.close();
         eventSourceRef.current = null;
+
+        // Do not reconnect if browser is offline; wait for online event
+        if (!navigator.onLine) {
+          return;
+        }
 
         // Implement exponential backoff for reconnection
         if (reconnectAttemptsRef.current < MAX_RETRIES) {
           const delay = calculateBackoff(reconnectAttemptsRef.current);
           console.log(`[StaffUnreadCountProvider] Reconnecting in ${Math.round(delay)}ms (attempt ${reconnectAttemptsRef.current + 1}/${MAX_RETRIES})`);
-          
+
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
             connect();
@@ -115,15 +143,18 @@ export function StaffUnreadCountProvider({ children }: StaffUnreadCountProviderP
     return () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('online', handleOnline);
+      isConnectingRef.current = false;
       setIsConnected(false);
     };
-  }, [status, session?.user]);
+  }, [status, session?.user?.id, isStaffRole]);
 
   // Manual refresh function
   const refreshCounts = useCallback(async () => {
@@ -160,9 +191,9 @@ export function useStaffUnreadCounts() {
 // Export a hook that's safe to use outside provider (returns defaults)
 export function useStaffUnreadCountsSafe() {
   const context = useContext(StaffUnreadCountContext);
-  return context || { 
+  return context || {
     counts: { messages: 0 },
-    refreshCounts: async () => {},
-    isConnected: false 
+    refreshCounts: async () => { },
+    isConnected: false
   };
 }

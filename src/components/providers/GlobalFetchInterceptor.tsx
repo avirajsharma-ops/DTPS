@@ -26,6 +26,26 @@ export function GlobalFetchInterceptor() {
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+    const getAuthFallbackResponse = (url: string): Response | null => {
+      // NextAuth session poll expects JSON payload; return null session on transient network failures
+      if (url.includes('/api/auth/session')) {
+        return new Response('null', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Logout-notification check can safely degrade to empty payload
+      if (url.includes('/api/auth/logout-notification')) {
+        return new Response('{}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      return null;
+    };
+
     const fetchWithRetry = async (
       input: RequestInfo | URL,
       init?: RequestInit,
@@ -89,6 +109,13 @@ export function GlobalFetchInterceptor() {
             return fetchWithRetry(input, init, retriesLeft - 1);
           }
         }
+
+        // Graceful fallback for auth polling endpoints on final network failure
+        const fallback = getAuthFallbackResponse(url);
+        if (fallback) {
+          return fallback;
+        }
+
         throw error;
       }
     };

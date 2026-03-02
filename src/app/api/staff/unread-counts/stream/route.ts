@@ -4,8 +4,21 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import Message from '@/lib/db/models/Message';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Store active SSE connections by user ID
 const connections = new Map<string, Set<ReadableStreamDefaultController>>();
+
+function removeConnection(userId: string, controller: ReadableStreamDefaultController) {
+  const userConnections = connections.get(userId);
+  if (!userConnections) return;
+
+  userConnections.delete(controller);
+  if (userConnections.size === 0) {
+    connections.delete(userId);
+  }
+}
 
 // Function to broadcast updates to all connections for a user
 export function broadcastStaffUnreadCounts(userId: string, counts: { messages: number }) {
@@ -15,8 +28,9 @@ export function broadcastStaffUnreadCounts(userId: string, counts: { messages: n
     userConnections.forEach((controller) => {
       try {
         controller.enqueue(new TextEncoder().encode(data));
-      } catch (error) {
-        // Connection might be closed - silently ignore
+      } catch {
+        // Connection is stale/closed; remove it
+        removeConnection(userId, controller);
       }
     });
   }
@@ -35,6 +49,15 @@ export async function GET(request: NextRequest) {
   // Create readable stream for SSE
   const stream = new ReadableStream({
     async start(controller) {
+      let heartbeatInterval: NodeJS.Timeout | null = null;
+      const cleanup = () => {
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+          heartbeatInterval = null;
+        }
+        removeConnection(userId, controller);
+      };
+
       // Add this connection to the map
       if (!connections.has(userId)) {
         connections.set(userId, new Set());
@@ -44,49 +67,48 @@ export async function GET(request: NextRequest) {
       // Send initial counts
       try {
         await connectDB();
-        
+
         // For staff, only count unread messages (no notifications for now)
-        const messageCount = await Message.countDocuments({ 
-          receiver: userId, 
-          isRead: false 
+        const messageCount = await Message.countDocuments({
+          receiver: userId,
+          isRead: false
         });
 
-        const initialData = `data: ${JSON.stringify({ 
-          messages: messageCount 
+        const initialData = `data: ${JSON.stringify({
+          messages: messageCount
         })}\n\n`;
-        
+
         controller.enqueue(new TextEncoder().encode(initialData));
-      } catch (error) {
-        // Silently handle initial count errors
+      } catch {
+        // If initial fetch fails, still keep stream alive and let heartbeat continue
       }
 
       // Keep connection alive with heartbeat every 30 seconds
-      const heartbeatInterval = setInterval(() => {
+      heartbeatInterval = setInterval(() => {
         try {
           controller.enqueue(new TextEncoder().encode(': heartbeat\n\n'));
-        } catch (error) {
-          clearInterval(heartbeatInterval);
+        } catch {
+          cleanup();
         }
       }, 30000);
 
       // Cleanup on close
       request.signal.addEventListener('abort', () => {
-        clearInterval(heartbeatInterval);
-        const userConnections = connections.get(userId);
-        if (userConnections) {
-          userConnections.delete(controller);
-          if (userConnections.size === 0) {
-            connections.delete(userId);
-          }
-        }
+        cleanup();
       });
     },
+    cancel() {
+      // Additional safeguard: cleanup when client cancels stream
+      const userConnections = connections.get(userId);
+      if (!userConnections) return;
+      userConnections.forEach((controller) => removeConnection(userId, controller));
+    }
   });
 
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
+      'Cache-Control': 'no-cache, no-store, no-transform',
       'Connection': 'keep-alive',
       'X-Accel-Buffering': 'no', // Disable nginx buffering
     },
