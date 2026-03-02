@@ -65,26 +65,42 @@ interface BasicInfoFormProps extends BasicInfoData {
 
 export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, gender, parentAccount, altPhone, altEmails, anniversary, source, referralSource, generalGoal, maritalStatus, occupation, goalsList, targetWeightBucket, sharePhotoConsent, heightFeet, heightInch, heightCm, weightKg, targetWeightKg, idealWeightKg, bmi, activityLevel, onChange, onSave, loading, disableEmail = false, disablePhone = false }: BasicInfoFormProps) {
   const [goalCategories, setGoalCategories] = useState<GoalCategory[]>(defaultGoals);
-  
-  // Fetch dynamic goal categories
+
+  // Fetch dynamic goal categories with better error handling
   useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
     const fetchGoalCategories = async () => {
       try {
-        const response = await fetch('/api/admin/goal-categories?active=true');
-        if (response.ok) {
+        const response = await fetch('/api/admin/goal-categories?active=true', {
+          signal: controller.signal,
+          credentials: 'same-origin',
+        });
+        if (response.ok && isMounted) {
           const data = await response.json();
           if (data && data.length > 0) {
             setGoalCategories(data);
           }
         }
-      } catch (error) {
-        console.error('Error fetching goal categories:', error);
-        // Keep using default goals on error
+      } catch (error: any) {
+        // Ignore abort errors and network errors silently - we have default fallback
+        if (error?.name !== 'AbortError') {
+          console.warn('Using default goal categories');
+        }
       }
     };
-    fetchGoalCategories();
+
+    // Small delay to ensure session is ready
+    const timeoutId = setTimeout(fetchGoalCategories, 100);
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
   }, []);
-  
+
   const formattedDOB = dateOfBirth ? new Date(dateOfBirth).toISOString().split("T")[0] : "";
 
   const formattedAN = anniversary ? new Date(anniversary).toISOString().split("T")[0] : "";
@@ -100,7 +116,7 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
 
   return (
     <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
-            <CardHeader className="bg-linear-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
+      <CardHeader className="bg-linear-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
         <CardTitle className="text-lg sm:text-xl font-bold text-white">Basic Information</CardTitle>
         <CardDescription className="text-blue-100 text-sm">Client's personal details</CardDescription>
       </CardHeader>
@@ -124,7 +140,7 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
         <div className="space-y-1.5">
           <Label htmlFor="phone">Phone *</Label>
           <div className="flex gap-2">
-            <Select 
+            <Select
               value={phone?.startsWith('+91') ? '+91' : phone?.startsWith('+1') ? '+1' : phone?.startsWith('+44') ? '+44' : phone?.startsWith('+971') ? '+971' : '+91'}
               onValueChange={(code) => {
                 if (disablePhone) return;
@@ -147,15 +163,15 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
                 <SelectItem value="+33">🇫🇷 +33</SelectItem>
               </SelectContent>
             </Select>
-            <Input 
-              id="phone" 
+            <Input
+              id="phone"
               className="flex-1"
-              value={phone?.replace(/^\+\d+\s*/, '') || ''} 
+              value={phone?.replace(/^\+\d+\s*/, '') || ''}
               onChange={e => {
                 if (disablePhone) return;
                 const code = phone?.match(/^\+\d+/)?.[0] || '+91';
                 onChange('phone', `${code} ${e.target.value}`);
-              }} 
+              }}
               placeholder="90000 00000"
               required
               disabled={disablePhone}
@@ -175,13 +191,13 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
               <SelectTrigger>
                 <SelectValue placeholder="Select gender" />
               </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                  <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                </SelectContent>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="male">Male</SelectItem>
+                <SelectItem value="female">Female</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+              </SelectContent>
             </Select>
           </div>
         </div>
@@ -195,7 +211,7 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
           <div className="space-y-1.5">
             <Label htmlFor="altPhone">Alternative Phone Number</Label>
             <div className="flex gap-2">
-              <Select 
+              <Select
                 value={altPhone?.startsWith('+91') ? '+91' : altPhone?.startsWith('+1') ? '+1' : altPhone?.startsWith('+44') ? '+44' : altPhone?.startsWith('+971') ? '+971' : '+91'}
                 onValueChange={(code) => {
                   const currentNumber = altPhone?.replace(/^\+\d+\s*/, '') || '';
@@ -216,15 +232,15 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
                   <SelectItem value="+33">🇫🇷 +33</SelectItem>
                 </SelectContent>
               </Select>
-              <Input 
-                id="altPhone" 
+              <Input
+                id="altPhone"
                 className="flex-1"
-                value={altPhone?.replace(/^\+\d+\s*/, '') || ''} 
+                value={altPhone?.replace(/^\+\d+\s*/, '') || ''}
                 onChange={e => {
                   const code = altPhone?.match(/^\+\d+/)?.[0] || '+91';
                   onChange('altPhone', `${code} ${e.target.value}`);
-                }} 
-                placeholder="90000 00000" 
+                }}
+                placeholder="90000 00000"
               />
             </div>
           </div>
@@ -244,8 +260,8 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="source">Source</Label>
-            <Select 
-              value={['google-ads', 'facebook-ads', 'instagram', 'referral', 'other'].includes(source) ? source : 'other'} 
+            <Select
+              value={['google-ads', 'facebook-ads', 'instagram', 'referral', 'other'].includes(source) ? source : 'other'}
               onValueChange={val => {
                 if (val === 'other') {
                   onChange('source', '');
@@ -267,8 +283,8 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
             </Select>
             {/* Show text input when "Other" is selected or when source has a custom value */}
             {(!['google-ads', 'facebook-ads', 'instagram', 'referral'].includes(source) && source !== undefined) && (
-              <Input 
-                id="otherSource" 
+              <Input
+                id="otherSource"
                 value={source === 'other' ? '' : source}
                 onChange={e => onChange('source', e.target.value)}
                 placeholder="Please specify the source..."
@@ -286,7 +302,7 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
         {/* GENERAL GOAL — NOT SAVED + NEVER SHOW SELECTED VALUE */}
         <div className="space-y-6 border-t border-gray-200 pt-6">
           <h4 className="font-semibold text-gray-900 text-base">Goals & Personal Info</h4>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="space-y-2.5">
               <Label htmlFor="generalGoal" className="text-sm font-medium">Goal</Label>
@@ -353,7 +369,7 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
         {/* Physical Measurements Section */}
         <div className="space-y-6 border-t border-gray-200 pt-6">
           <h4 className="font-semibold text-gray-900 text-base">Physical Measurements</h4>
-          
+
           {/* Height */}
           <div>
             <Label className="text-sm font-medium mb-3 block">Height Measurements</Label>
@@ -451,15 +467,15 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
             <span className="text-xs text-gray-500">Select multiple</span>
           </div>
           <div className="flex flex-wrap gap-2.5 mt-2">
-            {['Weight Loss','Weight Gain','Weight Loss + Disease Management','Only Disease Management','Other'].map(item => {
-              const value = item.toLowerCase().replace(/\s+/g,'-');
+            {['Weight Loss', 'Weight Gain', 'Weight Loss + Disease Management', 'Only Disease Management', 'Other'].map(item => {
+              const value = item.toLowerCase().replace(/\s+/g, '-');
               const selected = goalsList?.includes(value);
               return (
-                <Button 
-                  key={value} 
-                  type="button" 
+                <Button
+                  key={value}
+                  type="button"
                   variant="outline"
-                  size="sm" 
+                  size="sm"
                   onClick={() => {
                     const next = selected ? goalsList?.filter((g: string) => g !== value) : [...(goalsList || []), value];
                     onChange('goalsList', next);
@@ -479,9 +495,9 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
         </div>
 
         <div className="flex justify-end pt-6 border-t border-gray-200 mt-6">
-          <Button type="button" onClick={onSave} disabled={loading} 
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md hover:shadow-lg transition-all">
-               <Save className="mr-2 h-4 w-4" />
+          <Button type="button" onClick={onSave} disabled={loading}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md hover:shadow-lg transition-all">
+            <Save className="mr-2 h-4 w-4" />
             Save Basic Info
           </Button>
         </div>

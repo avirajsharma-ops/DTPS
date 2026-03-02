@@ -168,6 +168,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
   const dietaryRestrictions = clientDietaryRestrictions || clientData?.dietaryRestrictions || '';
   const medicalConditions = clientMedicalConditions || clientData?.medicalConditions || '';
   const allergies = clientAllergies || clientData?.allergies || '';
+
   const [mealTypeConfigs, setMealTypeConfigs] = useState<MealTypeConfig[]>(initialMealTypes || defaultMealTypes);
   const mealTypes = mealTypeConfigs.map(m => m.name);
 

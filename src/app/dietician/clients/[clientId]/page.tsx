@@ -173,7 +173,7 @@ const NOTE_TOPIC_TYPES = [
   'Medical',
   'Progress',
   'Consultation',
-   'Renewal',
+  'Renewal',
   'Follow-up',
   'Feedback',
   'Other'
@@ -243,7 +243,7 @@ export default function ClientDetailPage() {
   const [activeTab, setActiveTab] = useState('basic-details');
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<ClientData>>({});
-  
+
 
   // Notes panel state
   const [isNotesOpen, setIsNotesOpen] = useState(false);
@@ -301,12 +301,12 @@ export default function ClientDetailPage() {
   const [clientTagIds, setClientTagIds] = useState<string[]>([]);
   const [loadingTags, setLoadingTags] = useState(false);
 
-  
+
   const [renewalStartDate, setRenewalStartDate] = useState('');
   const [renewalEndDate, setRenewalEndDate] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
-  
+
   // Audio recording state
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -325,7 +325,7 @@ export default function ClientDetailPage() {
     }
     return 'Not Assigned';
   };
-  
+
   // Note detail/edit state
   const [selectedNote, setSelectedNote] = useState<ClientNote | null>(null);
   const [isEditingNote, setIsEditingNote] = useState(false);
@@ -336,7 +336,7 @@ export default function ClientDetailPage() {
     showToClient: false,
     attachments: []
   });
-  
+
   // Form component states
   const [basicInfo, setBasicInfo] = useState<BasicInfoData>({
     firstName: '',
@@ -510,16 +510,16 @@ export default function ClientDetailPage() {
         const data = await mealPlanRes.json();
         // API returns { success: true, mealPlans: [...] }
         const mealPlans = data.mealPlans || [];
-        
+
         // Get ALL active plans
         const activePlans = mealPlans
           .filter((p: any) => p.status === 'active')
           .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-        
+
         if (activePlans.length > 0) {
           const today = new Date();
           today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
-          
+
           // Find the CURRENTLY RUNNING plan (today is between startDate and endDate)
           const currentlyRunningPlan = activePlans.find((plan: any) => {
             const planStart = new Date(plan.startDate);
@@ -528,32 +528,32 @@ export default function ClientDetailPage() {
             planEnd.setHours(23, 59, 59, 999);
             return today >= planStart && today <= planEnd;
           });
-          
+
           // If a plan is currently running, show that specific plan
           if (currentlyRunningPlan) {
             const planOriginalDuration = currentlyRunningPlan.duration || 0;
             const planCurrentDuration = Math.ceil(
               (new Date(currentlyRunningPlan.endDate).getTime() - new Date(currentlyRunningPlan.startDate).getTime()) / (1000 * 60 * 60 * 24)
             ) + 1;
-            
+
             // Get frozen days count from totalFreezeCount (more accurate) or count from meals
-            const frozenDays = currentlyRunningPlan.totalFreezeCount || 
+            const frozenDays = currentlyRunningPlan.totalFreezeCount ||
               currentlyRunningPlan.meals?.filter((m: any) => m.isFrozen)?.length || 0;
-            
+
             // Calculate extended days (total extension = current duration - original duration)
             // This includes both manual extensions and freeze-related extensions
-            const totalExtension = (planOriginalDuration > 0 && planCurrentDuration > planOriginalDuration) 
-              ? planCurrentDuration - planOriginalDuration 
+            const totalExtension = (planOriginalDuration > 0 && planCurrentDuration > planOriginalDuration)
+              ? planCurrentDuration - planOriginalDuration
               : 0;
-            
+
             // Extended days = total extension - frozen days (since frozen days are part of extension)
             const extendedDays = Math.max(0, totalExtension - frozenDays);
-            
+
             // Calculate original end date (before any extensions or freezes)
             const originalEndDate = planOriginalDuration > 0 && totalExtension > 0
               ? new Date(new Date(currentlyRunningPlan.startDate).getTime() + (planOriginalDuration - 1) * 24 * 60 * 60 * 1000).toISOString()
               : undefined;
-            
+
             setActivePlan({
               name: currentlyRunningPlan.name || 'Wellness Plan',
               startDate: currentlyRunningPlan.startDate,
@@ -572,7 +572,7 @@ export default function ClientDetailPage() {
             });
             return;
           }
-          
+
           // If no plan is running today, find upcoming or most recent plan
           // First check for upcoming plans
           const upcomingPlan = activePlans.find((plan: any) => {
@@ -580,13 +580,13 @@ export default function ClientDetailPage() {
             planStart.setHours(0, 0, 0, 0);
             return planStart > today;
           });
-          
+
           if (upcomingPlan) {
             const planOriginalDuration = upcomingPlan.duration || 0;
             const planCurrentDuration = Math.ceil(
               (new Date(upcomingPlan.endDate).getTime() - new Date(upcomingPlan.startDate).getTime()) / (1000 * 60 * 60 * 24)
             ) + 1;
-            
+
             setActivePlan({
               name: upcomingPlan.name || 'Wellness Plan',
               startDate: upcomingPlan.startDate,
@@ -600,14 +600,14 @@ export default function ClientDetailPage() {
             });
             return;
           }
-          
+
           // Otherwise show the most recent expired plan
           const mostRecentPlan = activePlans[activePlans.length - 1];
           const planOriginalDuration = mostRecentPlan.duration || 0;
           const planCurrentDuration = Math.ceil(
             (new Date(mostRecentPlan.endDate).getTime() - new Date(mostRecentPlan.startDate).getTime()) / (1000 * 60 * 60 * 24)
           ) + 1;
-          
+
           setActivePlan({
             name: mostRecentPlan.name || 'Wellness Plan',
             startDate: mostRecentPlan.startDate,
@@ -622,7 +622,7 @@ export default function ClientDetailPage() {
           return;
         }
       }
-      
+
       // If no meal plan, check for purchases to determine if inactive
       if (purchaseData && purchaseData.hasPaidPlan) {
         setActivePlan({
@@ -674,13 +674,13 @@ export default function ClientDetailPage() {
 
     try {
       setSavingNote(true);
-      
+
       // Prepare note data - include renewal dates in content if Renewal type
       const noteToSave = {
         ...newNote,
         date: newNote.topicType === 'Renewal' ? renewalStartDate : newNote.date,
         // Store renewal end date in a metadata field if needed, or append to content
-        content: newNote.topicType === 'Renewal' 
+        content: newNote.topicType === 'Renewal'
           ? `${newNote.content}\n\n[Renewal Period: ${format(new Date(renewalStartDate), 'MMM d, yyyy')} - ${format(new Date(renewalEndDate), 'MMM d, yyyy')}]`
           : newNote.content
       };
@@ -814,7 +814,7 @@ export default function ClientDetailPage() {
       });
 
       if (response.ok) {
-        setClientNotes(prev => prev.map(n => 
+        setClientNotes(prev => prev.map(n =>
           n._id === noteId ? { ...n, showToClient } : n
         ));
         // Also update selectedNote if it's the same note
@@ -868,7 +868,7 @@ export default function ClientDetailPage() {
 
       if (response.ok) {
         toast.success('Note updated successfully');
-        setClientNotes(prev => prev.map(n => 
+        setClientNotes(prev => prev.map(n =>
           n._id === selectedNote._id ? { ...n, ...editNote } : n
         ));
         setSelectedNote({ ...selectedNote, ...editNote });
@@ -895,7 +895,7 @@ export default function ClientDetailPage() {
 
         // Load client tags
         if (data?.user?.tags && Array.isArray(data.user.tags)) {
-          const tagIds = data.user.tags.map((tag: any) => 
+          const tagIds = data.user.tags.map((tag: any) =>
             typeof tag === 'string' ? tag : tag._id
           );
           setClientTagIds(tagIds);
@@ -1138,6 +1138,14 @@ export default function ClientDetailPage() {
 
       if (!medicalResponse.ok) {
         console.error('Failed to save medical data');
+      } else {
+        // Immediately update client state with new medical data so PlanningSection has latest data
+        setClient(prev => ({
+          ...prev,
+          medicalConditions: medicalPayload.medicalConditions,
+          allergies: medicalPayload.allergies,
+          dietaryRestrictions: medicalPayload.dietaryRestrictions
+        }));
       }
 
       // 4. Save dietary recall entries separately
@@ -1149,7 +1157,7 @@ export default function ClientDetailPage() {
           minute: entry.minute,
           meridian: entry.meridian,
           food: entry.food,
-        
+
         }));
 
         const recallResponse = await fetch(`/api/users/${params.clientId}/recall`, {
@@ -1170,7 +1178,7 @@ export default function ClientDetailPage() {
         category: 'profile',
         description: 'Client profile, medical, and lifestyle information updated',
         changeDetails: generateChangeDetails(
-          { 
+          {
             firstName: client?.firstName,
             lastName: client?.lastName,
             email: client?.email,
@@ -1203,10 +1211,10 @@ export default function ClientDetailPage() {
     try {
       // Always save all entries to maintain consistency
       // Update the entry in the local state first
-      const updatedEntries = recallEntries.map(e => 
+      const updatedEntries = recallEntries.map(e =>
         e.id === entry.id ? entry : e
       );
-      
+
       // Map entries to meals format for API
       const mealsToSave = updatedEntries.map(e => ({
         mealType: e.mealType,
@@ -1214,7 +1222,7 @@ export default function ClientDetailPage() {
         minute: e.minute,
         meridian: e.meridian,
         food: e.food,
-       
+
       }));
 
       const response = await fetch(`/api/users/${params.clientId}/recall`, {
@@ -1233,7 +1241,7 @@ export default function ClientDetailPage() {
           metadata: {
             mealType: entry.mealType,
             food: entry.food,
-            
+
           },
         });
 
@@ -1257,7 +1265,7 @@ export default function ClientDetailPage() {
 
       if (response.ok) {
         const deletedEntry = recallEntries.find(e => e._id === entryId);
-        
+
         // Log history for deletion
         await logHistory({
           userId: params.clientId as string,
@@ -1315,18 +1323,18 @@ export default function ClientDetailPage() {
     try {
       const date = new Date(dateString);
       if (isNaN(date?.getTime())) return 'Never';
-      
+
       const now = new Date();
       const diffInMs = now.getTime() - date.getTime();
       const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
       const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
       const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-      
+
       if (diffInMinutes < 1) return 'Just now';
       if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
       if (diffInHours < 24) return `${diffInHours}h ago`;
       if (diffInDays < 7) return `${diffInDays}d ago`;
-      
+
       return format(date, 'MMM d, yyyy');
     } catch (error) {
       return 'Never';
@@ -1434,7 +1442,7 @@ export default function ClientDetailPage() {
       });
 
       if (response.ok) {
-        setClientTasks(prev => prev.map(t => 
+        setClientTasks(prev => prev.map(t =>
           t._id === taskId ? { ...t, status: status as any } : t
         ));
         if (selectedTask && selectedTask._id === taskId) {
@@ -1480,10 +1488,10 @@ export default function ClientDetailPage() {
     try {
       const isSelected = clientTagIds.includes(tagId);
       // Single tag mode: If clicking the same tag, remove it. If clicking a different tag, replace it.
-      const newTagIds = isSelected 
+      const newTagIds = isSelected
         ? [] // Remove if already selected
         : [tagId]; // Replace with new tag (single tag only)
-      
+
       setClientTagIds(newTagIds);
 
       // Update client with new tags
@@ -1556,113 +1564,105 @@ export default function ClientDetailPage() {
   return (
     <DashboardLayout>
       <div className="flex h-[calc(100vh-64px)] bg-gray-50">
-     
+
 
         {/* Main Content - Scrollable */}
         <div className="flex-1 overflow-y-auto bg-white">
-           {/* Full-width client navigation */}
-<div className="w-full bg-gray-50 border-b border-gray-200 sticky top-0 z-20">
-  <div className="max-w-full px-8 py-2 flex items-center  justify-around gap-2 overflow-x-auto">
- 
-    <button
-      onClick={() => setActiveSection('forms')}
-      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-        activeSection === 'forms'
-          ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-      }`}
-    >
-      <FileText className="h-4 w-4" />
-      Forms
-    </button>
+          {/* Full-width client navigation */}
+          <div className="w-full bg-gray-50 border-b border-gray-200 sticky top-0 z-20">
+            <div className="max-w-full px-8 py-2 flex items-center  justify-around gap-2 overflow-x-auto">
 
-    <button
-      onClick={() => setActiveSection('journal')}
-      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-        activeSection === 'journal'
-          ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-      }`}
-    >
-      <BookOpen className="h-4 w-4" />
-      Journal
-    </button>
+              <button
+                onClick={() => setActiveSection('forms')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'forms'
+                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+              >
+                <FileText className="h-4 w-4" />
+                Forms
+              </button>
 
-    
-    <button
-      onClick={() => setActiveSection('planning')}
-      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-        activeSection === 'planning'
-          ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-      }`}
-    >
-      <Calendar className="h-4 w-4" />
-      Planning
-    </button>
+              <button
+                onClick={() => setActiveSection('journal')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'journal'
+                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+              >
+                <BookOpen className="h-4 w-4" />
+                Journal
+              </button>
 
-    <button
-      onClick={() => setActiveSection('payments')}
-      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-        activeSection === 'payments'
-          ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-      }`}
-    >
-      <CreditCard className="h-4 w-4" />
-      Payments
-    </button>
 
-    <button
-      onClick={() => setActiveSection('bookings')}
-      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-        activeSection === 'bookings'
-          ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-      }`}
-    >
-      <Calendar className="h-4 w-4" />
-      Bookings
-    </button>
+              <button
+                onClick={() => setActiveSection('planning')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'planning'
+                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+              >
+                <Calendar className="h-4 w-4" />
+                Planning
+              </button>
 
-    <button
-      onClick={() => setActiveSection('documents')}
-      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-        activeSection === 'documents'
-          ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-      }`}
-    >
-      <FileText className="h-4 w-4" />
-      Documents
-    </button>
+              <button
+                onClick={() => setActiveSection('payments')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'payments'
+                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+              >
+                <CreditCard className="h-4 w-4" />
+                Payments
+              </button>
 
-    <button
-      onClick={() => setActiveSection('tasks')}
-      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-        activeSection === 'tasks'
-          ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-      }`}
-    >
-      <Calendar className="h-4 w-4" />
-      Tasks
-    </button>
+              <button
+                onClick={() => setActiveSection('bookings')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'bookings'
+                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+              >
+                <Calendar className="h-4 w-4" />
+                Bookings
+              </button>
 
-    <button
-      onClick={() => setActiveSection('history')}
-      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-        activeSection === 'history'
-          ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-      }`}
-    >
-      <Calendar className="h-4 w-4" />
-      History
-    </button>
+              <button
+                onClick={() => setActiveSection('documents')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'documents'
+                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+              >
+                <FileText className="h-4 w-4" />
+                Documents
+              </button>
 
-  </div>
-</div>
+              <button
+                onClick={() => setActiveSection('tasks')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'tasks'
+                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+              >
+                <Calendar className="h-4 w-4" />
+                Tasks
+              </button>
+
+              <button
+                onClick={() => setActiveSection('history')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'history'
+                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+              >
+                <Calendar className="h-4 w-4" />
+                History
+              </button>
+
+            </div>
+          </div>
 
 
 
@@ -1689,15 +1689,14 @@ export default function ClientDetailPage() {
                       </div>
                       <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
                         <div className="flex items-center gap-1.5">
-                          <span className={`inline-block h-2 w-2 rounded-full ${
-                            clientComputedStatus === 'active' ? 'bg-green-500' :
-                            clientComputedStatus === 'inactive' ? 'bg-gray-400' :
-                            'bg-blue-500'
-                          }`} />
+                          <span className={`inline-block h-2 w-2 rounded-full ${clientComputedStatus === 'active' ? 'bg-green-500' :
+                              clientComputedStatus === 'inactive' ? 'bg-gray-400' :
+                                'bg-blue-500'
+                            }`} />
                           <span className="capitalize">
                             {clientComputedStatus === 'active' ? 'Active' :
-                             clientComputedStatus === 'inactive' ? 'Inactive' :
-                             'Lead'}
+                              clientComputedStatus === 'inactive' ? 'Inactive' :
+                                'Lead'}
                           </span>
                         </div>
                         <span className="text-gray-300">•</span>
@@ -1713,9 +1712,9 @@ export default function ClientDetailPage() {
 
                 {/* Right: Action buttons */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="text-xs h-8 flex items-center gap-1.5"
                     onClick={() => setIsTagsOpen(true)}
                   >
@@ -1757,9 +1756,9 @@ export default function ClientDetailPage() {
                   >
                     History
                   </Button> */}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="text-xs h-8 flex items-center gap-1.5"
                     onClick={() => setIsNotesOpen(true)}
                   >
@@ -1795,14 +1794,13 @@ export default function ClientDetailPage() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <div className={`h-2 w-2 rounded-full ${
-                          activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'bg-emerald-400 animate-pulse' : 
-                          'bg-gray-400'
-                        }`}></div>
+                        <div className={`h-2 w-2 rounded-full ${activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'bg-emerald-400 animate-pulse' :
+                            'bg-gray-400'
+                          }`}></div>
                         <p className="text-sm font-medium text-slate-300 uppercase tracking-wide">
-                          {activePlan.status === 'active' ? 'Currently Running' : 
-                           activePlan.status === 'upcoming' ? 'Upcoming Program' :
-                           activePlan.status === 'completed' ? 'Completed Program' : 'No active program'}
+                          {activePlan.status === 'active' ? 'Currently Running' :
+                            activePlan.status === 'upcoming' ? 'Upcoming Program' :
+                              activePlan.status === 'completed' ? 'Completed Program' : 'No active program'}
                         </p>
                         {activePlan.totalActivePlans && activePlan.totalActivePlans > 1 && (
                           <span className="ml-2 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
@@ -1813,7 +1811,7 @@ export default function ClientDetailPage() {
                       <h2 className="mt-2 text-xl text-white font-bold">{activePlan.name}</h2>
                       <p className="mt-1 text-sm text-slate-400">
                         {activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'Ongoing wellness journey' :
-                         'Plan completed'}
+                          'Plan completed'}
                       </p>
                     </div>
                     <div className={`grid ${activePlan.expectedStartDate && activePlan.expectedEndDate && activePlan.hasMealPlan ? 'grid-cols-4' : 'grid-cols-3'} gap-3 text-xs`}>
@@ -1836,7 +1834,7 @@ export default function ClientDetailPage() {
                       )}
                       {/* Meal Plan Dates - shown only when meal plan exists */}
                       {activePlan.hasMealPlan && (
-                        <div 
+                        <div
                           className={`rounded-xl bg-linear-to-br from-violet-500 to-purple-600 px-4 py-3 shadow-md ${(activePlan.isExtended || activePlan.isFrozen) ? 'cursor-pointer hover:from-violet-600 hover:to-purple-700 transition-colors' : ''}`}
                           onClick={(e) => {
                             if (activePlan.isExtended || activePlan.isFrozen) {
@@ -1864,24 +1862,21 @@ export default function ClientDetailPage() {
                           </p>
                         </div>
                       )}
-                      <div className={`rounded-xl bg-linear-to-br ${
-                        activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'from-emerald-500 to-green-600' :
-                        'from-gray-500 to-gray-600'
-                      } px-4 py-3 shadow-md`}>
-                        <p className={`text-xs font-medium uppercase tracking-wide ${
-                          activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'text-emerald-100' :
-                          'text-gray-100'
-                        }`}>Status</p>
-                        <Badge className={`mt-1.5 ${
-                          activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'bg-white/20' : 
-                          'bg-gray-500/20'
-                        } backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold`}>
+                      <div className={`rounded-xl bg-linear-to-br ${activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'from-emerald-500 to-green-600' :
+                          'from-gray-500 to-gray-600'
+                        } px-4 py-3 shadow-md`}>
+                        <p className={`text-xs font-medium uppercase tracking-wide ${activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'text-emerald-100' :
+                            'text-gray-100'
+                          }`}>Status</p>
+                        <Badge className={`mt-1.5 ${activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'bg-white/20' :
+                            'bg-gray-500/20'
+                          } backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold`}>
                           {activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'Active' : 'Completed'}
                         </Badge>
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Extended/Frozen Details - shown on click of Program dates */}
                   {showPlanDetails && (activePlan.isExtended || activePlan.isFrozen) && (
                     <div className="mt-4 pt-4 border-t border-white/20">
@@ -1939,21 +1934,18 @@ export default function ClientDetailPage() {
                         <p className="text-xs font-medium text-gray-300 uppercase tracking-wide">Program dates</p>
                         <p className="mt-1.5 text-sm font-semibold text-white">No dates</p>
                       </div>
-                      <div className={`rounded-xl bg-linear-to-br ${
-                        clientComputedStatus === 'lead' ? 'from-blue-600 to-blue-700' :
-                        clientComputedStatus === 'inactive' ? 'from-red-600 to-red-700' :
-                        'from-green-600 to-green-700'
-                      } px-4 py-3 shadow-md`}>
-                        <p className={`text-xs font-medium uppercase tracking-wide ${
-                          clientComputedStatus === 'lead' ? 'text-blue-200' :
-                          clientComputedStatus === 'inactive' ? 'text-red-200' :
-                          'text-green-200'
-                        }`}>Status</p>
-                        <Badge className={`mt-1.5 ${
-                          clientComputedStatus === 'lead' ? 'bg-blue-500/30' :
-                          clientComputedStatus === 'inactive' ? 'bg-red-500/30' :
-                          'bg-green-500/30'
-                        } backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold`}>
+                      <div className={`rounded-xl bg-linear-to-br ${clientComputedStatus === 'lead' ? 'from-blue-600 to-blue-700' :
+                          clientComputedStatus === 'inactive' ? 'from-red-600 to-red-700' :
+                            'from-green-600 to-green-700'
+                        } px-4 py-3 shadow-md`}>
+                        <p className={`text-xs font-medium uppercase tracking-wide ${clientComputedStatus === 'lead' ? 'text-blue-200' :
+                            clientComputedStatus === 'inactive' ? 'text-red-200' :
+                              'text-green-200'
+                          }`}>Status</p>
+                        <Badge className={`mt-1.5 ${clientComputedStatus === 'lead' ? 'bg-blue-500/30' :
+                            clientComputedStatus === 'inactive' ? 'bg-red-500/30' :
+                              'bg-green-500/30'
+                          } backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold`}>
                           {clientComputedStatus === 'active' ? 'Active' : clientComputedStatus === 'inactive' ? 'Inactive' : 'Lead'}
                         </Badge>
                       </div>
@@ -2003,9 +1995,9 @@ export default function ClientDetailPage() {
             )}
 
             {activeSection === 'bookings' && (
-              <BookingsSection 
-                clientId={client._id} 
-                clientName={`${client.firstName} ${client.lastName}`} 
+              <BookingsSection
+                clientId={client._id}
+                clientName={`${client.firstName} ${client.lastName}`}
               />
             )}
 
@@ -2029,22 +2021,20 @@ export default function ClientDetailPage() {
       </div>
 
       {/* Notes Slide-out Panel */}
-      <div 
-        className={`fixed inset-0 z-40 transition-opacity duration-300 ${
-          isNotesOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+      <div
+        className={`fixed inset-0 z-40 transition-opacity duration-300 ${isNotesOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
       >
         {/* Backdrop */}
-        <div 
+        <div
           className="absolute inset-0 bg-black/30"
           onClick={() => setIsNotesOpen(false)}
         />
-        
+
         {/* Panel */}
-        <div 
-          className={`fixed top-1/2 right-0 -translate-y-1/2 h-[85vh] w-full max-w-sm bg-white shadow-2xl z-50 rounded-l-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${
-            isNotesOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
+        <div
+          className={`fixed top-1/2 right-0 -translate-y-1/2 h-[85vh] w-full max-w-sm bg-white shadow-2xl z-50 rounded-l-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${isNotesOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b bg-linear-to-r from-blue-50 to-white">
@@ -2057,9 +2047,9 @@ export default function ClientDetailPage() {
                 <p className="text-xs text-gray-500">{clientNotes.length} notes</p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
               onClick={() => setIsNotesOpen(false)}
             >
@@ -2086,115 +2076,115 @@ export default function ClientDetailPage() {
                 {/* Note Detail Card */}
                 <Card className="border-gray-200">
                   <CardContent className="p-4">
-                      <div className="space-y-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <Badge variant="secondary" className="text-[10px] px-2 py-0.5 mb-1">
-                              {selectedNote.topicType || 'General'}
-                            </Badge>
-                            <h3 className="text-lg font-semibold text-gray-900">{selectedNote.topicType || 'General'}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <p className="text-xs text-gray-500">
-                                {selectedNote.date ? format(new Date(selectedNote.date), 'MMMM d, yyyy') : 'No date'}
-                              </p>
-                              {selectedNote.showToClient ? (
-                                <Badge className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 border-green-200">
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  Visible to client
-                                </Badge>
-                              ) : (
-                                <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
-                                  <EyeOff className="h-3 w-3 mr-1" />
-                                  Hidden from client
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-gray-50 rounded-lg p-4 mt-4">
-                          <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Note Content</Label>
-                          <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap leading-relaxed">
-                            {selectedNote.content}
-                          </p>
-                        </div>
-
-                        {/* Attachments Display */}
-                        {selectedNote.attachments && selectedNote.attachments.length > 0 && (
-                          <div className="mt-4">
-                            <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Attachments</Label>
-                            <div className="flex flex-wrap gap-3 mt-2">
-                              {selectedNote.attachments.map((att, idx) => (
-                                <div key={idx} className="relative">
-                                  {att.type === 'image' && (
-                                    <a href={att.url} target="_blank" rel="noopener noreferrer">
-                                      <img src={att.url} alt={att.filename || 'Image'} className="h-24 w-24 object-cover rounded-lg border shadow-sm hover:shadow-md transition-shadow" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                                    </a>
-                                  )}
-                                  {att.type === 'video' && (
-                                    <video controls className="h-24 w-40 rounded-lg border shadow-sm">
-                                      <source src={att.url} type={att.mimeType || 'video/mp4'} />
-                                    </video>
-                                  )}
-                                  {att.type === 'audio' && (
-                                    <audio controls className="h-10 w-48">
-                                      <source src={att.url} type={att.mimeType || 'audio/mpeg'} />
-                                    </audio>
-                                  )}
-                                  <p className="text-[9px] text-gray-400 mt-0.5 truncate max-w-25">{att.filename}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {selectedNote.createdAt && (
-                          <p className="text-[10px] text-gray-400 pt-2">
-                            Created: {format(new Date(selectedNote.createdAt), 'MMM d, yyyy h:mm a')}
-                            {selectedNote.createdBy && (
-                              <span className="ml-1">
-                                by {selectedNote.createdBy.firstName} {selectedNote.createdBy.lastName}
-                              </span>
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <Badge variant="secondary" className="text-[10px] px-2 py-0.5 mb-1">
+                            {selectedNote.topicType || 'General'}
+                          </Badge>
+                          <h3 className="text-lg font-semibold text-gray-900">{selectedNote.topicType || 'General'}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-xs text-gray-500">
+                              {selectedNote.date ? format(new Date(selectedNote.date), 'MMMM d, yyyy') : 'No date'}
+                            </p>
+                            {selectedNote.showToClient ? (
+                              <Badge className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 border-green-200">
+                                <Eye className="h-3 w-3 mr-1" />
+                                Visible to client
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                                <EyeOff className="h-3 w-3 mr-1" />
+                                Hidden from client
+                              </Badge>
                             )}
-                          </p>
-                        )}
+                          </div>
+                        </div>
+                      </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 pt-3 border-t">
+                      <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                        <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Note Content</Label>
+                        <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap leading-relaxed">
+                          {selectedNote.content}
+                        </p>
+                      </div>
+
+                      {/* Attachments Display */}
+                      {selectedNote.attachments && selectedNote.attachments.length > 0 && (
+                        <div className="mt-4">
+                          <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Attachments</Label>
+                          <div className="flex flex-wrap gap-3 mt-2">
+                            {selectedNote.attachments.map((att, idx) => (
+                              <div key={idx} className="relative">
+                                {att.type === 'image' && (
+                                  <a href={att.url} target="_blank" rel="noopener noreferrer">
+                                    <img src={att.url} alt={att.filename || 'Image'} className="h-24 w-24 object-cover rounded-lg border shadow-sm hover:shadow-md transition-shadow" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                  </a>
+                                )}
+                                {att.type === 'video' && (
+                                  <video controls className="h-24 w-40 rounded-lg border shadow-sm">
+                                    <source src={att.url} type={att.mimeType || 'video/mp4'} />
+                                  </video>
+                                )}
+                                {att.type === 'audio' && (
+                                  <audio controls className="h-10 w-48">
+                                    <source src={att.url} type={att.mimeType || 'audio/mpeg'} />
+                                  </audio>
+                                )}
+                                <p className="text-[9px] text-gray-400 mt-0.5 truncate max-w-25">{att.filename}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedNote.createdAt && (
+                        <p className="text-[10px] text-gray-400 pt-2">
+                          Created: {format(new Date(selectedNote.createdAt), 'MMM d, yyyy h:mm a')}
+                          {selectedNote.createdBy && (
+                            <span className="ml-1">
+                              by {selectedNote.createdBy.firstName} {selectedNote.createdBy.lastName}
+                            </span>
+                          )}
+                        </p>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 pt-3 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleToggleNoteVisibility(selectedNote._id!, !selectedNote.showToClient)}
+                        >
+                          {selectedNote.showToClient ? (
+                            <>
+                              <EyeOff className="h-3.5 w-3.5 mr-1.5" />
+                              Hide from Client
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="h-3.5 w-3.5 mr-1.5" />
+                              Show to Client
+                            </>
+                          )}
+                        </Button>
+                        {/* Only show delete button if current user created the note */}
+                        {selectedNote.createdBy?._id === session?.user?.id && (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1"
-                            onClick={() => handleToggleNoteVisibility(selectedNote._id!, !selectedNote.showToClient)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                            onClick={() => {
+                              handleDeleteNote(selectedNote._id!);
+                              handleCloseNoteDetail();
+                            }}
                           >
-                            {selectedNote.showToClient ? (
-                              <>
-                                <EyeOff className="h-3.5 w-3.5 mr-1.5" />
-                                Hide from Client
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-3.5 w-3.5 mr-1.5" />
-                                Show to Client
-                              </>
-                            )}
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
-                          {/* Only show delete button if current user created the note */}
-                          {selectedNote.createdBy?._id === session?.user?.id && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                              onClick={() => {
-                                handleDeleteNote(selectedNote._id!);
-                                handleCloseNoteDetail();
-                              }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </div>
+                        )}
                       </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -2203,7 +2193,7 @@ export default function ClientDetailPage() {
               <>
                 {/* Add Note Button */}
                 {!isAddingNote && (
-                  <Button 
+                  <Button
                     className="w-full mb-3 bg-blue-600 hover:bg-blue-700 h-9 text-sm"
                     onClick={() => setIsAddingNote(true)}
                   >
@@ -2239,7 +2229,7 @@ export default function ClientDetailPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       {/* Show date range for Renewal, single date for others */}
                       {newNote.topicType === 'Renewal' ? (
                         <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -2281,302 +2271,302 @@ export default function ClientDetailPage() {
                           />
                         </div>
                       )}
-                  
-                  <div>
-                    <Label className="text-xs font-medium">Notes *</Label>
-                    <Textarea
-                      placeholder="Enter your notes here..."
-                      value={newNote.content}
-                      onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
-                      className="mt-1 min-h-20 text-sm resize-none"
-                    />
-                  </div>
 
-                  {/* Audio Recording Section */}
-                  <div>
-                    <Label className="text-xs font-medium">Voice Recording</Label>
-                    <div className="mt-1 flex items-center gap-2">
-                      {!isRecording ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-10 px-4 flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
-                          onClick={async () => {
-                            try {
-                              const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                              const recorder = new MediaRecorder(stream);
-                              const chunks: Blob[] = [];
-                              
-                              recorder.ondataavailable = (e) => {
-                                if (e.data.size > 0) chunks.push(e.data);
-                              };
-                              
-                              recorder.onstop = async () => {
-                                try {
-                                  
-                                  if (chunks.length === 0) {
-                                    console.error('No audio chunks recorded');
-                                    toast.error('No audio recorded. Please try again.');
-                                    stream.getTracks().forEach(track => track.stop());
-                                    setRecordingTime(0);
-                                    setIsRecording(false);
-                                    return;
-                                  }
-                                  
-                                  const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-                                  
-                                  if (audioBlob.size === 0) {
-                                    console.error('Audio blob is empty');
-                                    toast.error('Audio file is empty. Please try again.');
-                                    stream.getTracks().forEach(track => track.stop());
-                                    setRecordingTime(0);
-                                    setIsRecording(false);
-                                    return;
-                                  }
-                                  
-                                  const file = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
-                                  
-                                  stream.getTracks().forEach(track => track.stop());
-                                  
-                                  const result = await handleMediaUpload(file);
-                                  
-                                  setRecordingTime(0);
-                                  setIsRecording(false);
-                                } catch (error) {
-                                  console.error('Error in recorder.onstop:', error);
-                                  toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                                  stream.getTracks().forEach(track => track.stop());
-                                  setRecordingTime(0);
-                                  setIsRecording(false);
-                                }
-                              };
-                              
-                              setMediaRecorder(recorder);
-                              setAudioChunks([]);
-                              recorder.start();
-                              setIsRecording(true);
-                              
-                              // Start timer
-                              const timer = setInterval(() => {
-                                setRecordingTime(prev => prev + 1);
-                              }, 1000);
-                              recordingTimerRef.current = timer;
-                            } catch (err) {
-                              toast.error('Microphone access denied');
-                            }
-                          }}
-                        >
-                          <Mic className="h-4 w-4" />
-                          Record Audio
-                        </Button>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-lg border border-red-200">
-                            <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse" />
-                            <span className="text-sm font-mono text-red-600">
-                              {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
-                            </span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-10 px-4 flex items-center gap-2 text-gray-600"
-                            onClick={() => {
-                              if (mediaRecorder) {
-                                mediaRecorder.stop();
-                                setIsRecording(false);
-                                if (recordingTimerRef.current) {
-                                  clearInterval(recordingTimerRef.current);
-                                  recordingTimerRef.current = null;
-                                }
-                              }
-                            }}
-                          >
-                            <Square className="h-4 w-4" />
-                            Stop
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Media Upload Section */}
-                  <div>
-                    <Label className="text-xs font-medium">Attachments (Image/Video/Audio)</Label>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {(newNote.attachments || []).map((att, idx) => (
-                        <div key={idx} className="relative group">
-                          {att.type === 'image' && (
-                            <img src={att.url} alt={att.filename} className="h-16 w-16 object-cover rounded border" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                          )}
-                          {att.type === 'video' && (
-                            <div className="h-16 w-16 bg-gray-100 rounded border flex items-center justify-center">
-                              <span className="text-[10px] text-gray-500">Video</span>
-                            </div>
-                          )}
-                          {att.type === 'audio' && (
-                            <div className="h-16 w-16 bg-gray-100 rounded border flex items-center justify-center">
-                              <span className="text-[10px] text-gray-500">Audio</span>
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveAttachment(idx)}
-                            className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                      <label className="h-16 w-16 border-2 border-dashed border-gray-300 rounded flex items-center justify-center cursor-pointer hover:border-blue-400 transition-colors">
-                        <input
-                          type="file"
-                          accept="image/*,video/*,audio/*"
-                          capture="environment"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleMediaUpload(file);
-                            e.target.value = '';
-                          }}
-                          disabled={uploadingMedia}
+                      <div>
+                        <Label className="text-xs font-medium">Notes *</Label>
+                        <Textarea
+                          placeholder="Enter your notes here..."
+                          value={newNote.content}
+                          onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
+                          className="mt-1 min-h-20 text-sm resize-none"
                         />
-                        {uploadingMedia ? (
-                          <LoadingSpinner className="h-4 w-4" />
-                        ) : (
-                          <Plus className="h-5 w-5 text-gray-400" />
-                        )}
-                      </label>
-                    </div>
-                    <p className="text-[10px] text-gray-400 mt-1">Max 50MB per file</p>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="showToClient"
-                      checked={newNote.showToClient}
-                      onChange={(e) => setNewNote(prev => ({ ...prev, showToClient: e.target.checked }))}
-                      className="h-3.5 w-3.5 text-blue-600 rounded border-gray-300"
-                    />
-                    <Label htmlFor="showToClient" className="text-xs cursor-pointer">
-                      Show to client
-                    </Label>
-                  </div>
-                  
-                  <div className="flex gap-2 pt-1">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 h-8 text-xs"
-                      onClick={() => {
-                        setIsAddingNote(false);
-                        setNewNote({
-                          topicType: 'General',
-                          date: format(new Date(), 'yyyy-MM-dd'),
-                          content: '',
-                          showToClient: false,
-                          attachments: []
-                        });
-                        setRenewalStartDate('');
-                        setRenewalEndDate('');
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      className="flex-1 h-8 text-xs bg-blue-600 hover:bg-blue-700"
-                      onClick={handleSaveNote}
-                      disabled={savingNote || uploadingMedia}
-                    >
-                      {savingNote ? 'Saving...' : 'Save Note'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                      </div>
 
-            {/* Notes List */}
-            <div className="space-y-2">
-              {clientNotes.length === 0 && !isAddingNote ? (
-                <div className="text-center py-8">
-                  <StickyNote className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">No notes yet</p>
-                  <p className="text-gray-400 text-xs mt-1">Add your first note</p>
-                </div>
-              ) : (
-                clientNotes.map((note, index) => (
-                  <Card 
-                    key={note._id} 
-                    className="border-gray-200 hover:border-blue-300 transition-all duration-200 hover:shadow-md cursor-pointer animate-in fade-in slide-in-from-right-2 group"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    onClick={() => handleOpenNoteDetail(note)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                            <Badge variant="outline" className="text-[8px] px-1 py-0 text-gray-500">
-                              {note.topicType || 'General'}
-                            </Badge>
-                            {note.showToClient ? (
-                              <Badge className="text-[9px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200">
-                                <Eye className="h-2.5 w-2.5 mr-0.5" />
-                                Visible
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
-                                <EyeOff className="h-2.5 w-2.5 mr-0.5" />
-                                Hidden
-                              </Badge>
-                            )}
-                            {note.createdBy && (
-                              <span className="text-[9px] text-gray-400">
-                                by {note.createdBy.firstName} {note.createdBy.lastName}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-gray-500 mb-1">
-                            {note.date ? format(new Date(note.date), 'MMM d, yyyy') : 'No date'}
-                          </p>
-                          <p className="text-xs text-gray-600 line-clamp-2">{note.content}</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            onClick={() => handleToggleNoteVisibility(note._id!, !note.showToClient)}
-                            title={note.showToClient ? 'Hide from client' : 'Show to client'}
-                          >
-                            {note.showToClient ? (
-                              <EyeOff className="h-3.5 w-3.5 text-gray-500" />
-                            ) : (
-                              <Eye className="h-3.5 w-3.5 text-gray-500" />
-                            )}
-                          </Button>
-                          {/* Only show delete button if current user created the note */}
-                          {note.createdBy?._id === session?.user?.id && (
+                      {/* Audio Recording Section */}
+                      <div>
+                        <Label className="text-xs font-medium">Voice Recording</Label>
+                        <div className="mt-1 flex items-center gap-2">
+                          {!isRecording ? (
                             <Button
-                              variant="ghost"
+                              type="button"
+                              variant="outline"
                               size="sm"
-                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleDeleteNote(note._id!)}
+                              className="h-10 px-4 flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={async () => {
+                                try {
+                                  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                                  const recorder = new MediaRecorder(stream);
+                                  const chunks: Blob[] = [];
+
+                                  recorder.ondataavailable = (e) => {
+                                    if (e.data.size > 0) chunks.push(e.data);
+                                  };
+
+                                  recorder.onstop = async () => {
+                                    try {
+
+                                      if (chunks.length === 0) {
+                                        console.error('No audio chunks recorded');
+                                        toast.error('No audio recorded. Please try again.');
+                                        stream.getTracks().forEach(track => track.stop());
+                                        setRecordingTime(0);
+                                        setIsRecording(false);
+                                        return;
+                                      }
+
+                                      const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+
+                                      if (audioBlob.size === 0) {
+                                        console.error('Audio blob is empty');
+                                        toast.error('Audio file is empty. Please try again.');
+                                        stream.getTracks().forEach(track => track.stop());
+                                        setRecordingTime(0);
+                                        setIsRecording(false);
+                                        return;
+                                      }
+
+                                      const file = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
+
+                                      stream.getTracks().forEach(track => track.stop());
+
+                                      const result = await handleMediaUpload(file);
+
+                                      setRecordingTime(0);
+                                      setIsRecording(false);
+                                    } catch (error) {
+                                      console.error('Error in recorder.onstop:', error);
+                                      toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                                      stream.getTracks().forEach(track => track.stop());
+                                      setRecordingTime(0);
+                                      setIsRecording(false);
+                                    }
+                                  };
+
+                                  setMediaRecorder(recorder);
+                                  setAudioChunks([]);
+                                  recorder.start();
+                                  setIsRecording(true);
+
+                                  // Start timer
+                                  const timer = setInterval(() => {
+                                    setRecordingTime(prev => prev + 1);
+                                  }, 1000);
+                                  recordingTimerRef.current = timer;
+                                } catch (err) {
+                                  toast.error('Microphone access denied');
+                                }
+                              }}
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Mic className="h-4 w-4" />
+                              Record Audio
                             </Button>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-lg border border-red-200">
+                                <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+                                <span className="text-sm font-mono text-red-600">
+                                  {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
+                                </span>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-10 px-4 flex items-center gap-2 text-gray-600"
+                                onClick={() => {
+                                  if (mediaRecorder) {
+                                    mediaRecorder.stop();
+                                    setIsRecording(false);
+                                    if (recordingTimerRef.current) {
+                                      clearInterval(recordingTimerRef.current);
+                                      recordingTimerRef.current = null;
+                                    }
+                                  }
+                                }}
+                              >
+                                <Square className="h-4 w-4" />
+                                Stop
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
+
+                      {/* Media Upload Section */}
+                      <div>
+                        <Label className="text-xs font-medium">Attachments (Image/Video/Audio)</Label>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {(newNote.attachments || []).map((att, idx) => (
+                            <div key={idx} className="relative group">
+                              {att.type === 'image' && (
+                                <img src={att.url} alt={att.filename} className="h-16 w-16 object-cover rounded border" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              )}
+                              {att.type === 'video' && (
+                                <div className="h-16 w-16 bg-gray-100 rounded border flex items-center justify-center">
+                                  <span className="text-[10px] text-gray-500">Video</span>
+                                </div>
+                              )}
+                              {att.type === 'audio' && (
+                                <div className="h-16 w-16 bg-gray-100 rounded border flex items-center justify-center">
+                                  <span className="text-[10px] text-gray-500">Audio</span>
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveAttachment(idx)}
+                                className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                          <label className="h-16 w-16 border-2 border-dashed border-gray-300 rounded flex items-center justify-center cursor-pointer hover:border-blue-400 transition-colors">
+                            <input
+                              type="file"
+                              accept="image/*,video/*,audio/*"
+                              capture="environment"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleMediaUpload(file);
+                                e.target.value = '';
+                              }}
+                              disabled={uploadingMedia}
+                            />
+                            {uploadingMedia ? (
+                              <LoadingSpinner className="h-4 w-4" />
+                            ) : (
+                              <Plus className="h-5 w-5 text-gray-400" />
+                            )}
+                          </label>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-1">Max 50MB per file</p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="showToClient"
+                          checked={newNote.showToClient}
+                          onChange={(e) => setNewNote(prev => ({ ...prev, showToClient: e.target.checked }))}
+                          className="h-3.5 w-3.5 text-blue-600 rounded border-gray-300"
+                        />
+                        <Label htmlFor="showToClient" className="text-xs cursor-pointer">
+                          Show to client
+                        </Label>
+                      </div>
+
+                      <div className="flex gap-2 pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 h-8 text-xs"
+                          onClick={() => {
+                            setIsAddingNote(false);
+                            setNewNote({
+                              topicType: 'General',
+                              date: format(new Date(), 'yyyy-MM-dd'),
+                              content: '',
+                              showToClient: false,
+                              attachments: []
+                            });
+                            setRenewalStartDate('');
+                            setRenewalEndDate('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1 h-8 text-xs bg-blue-600 hover:bg-blue-700"
+                          onClick={handleSaveNote}
+                          disabled={savingNote || uploadingMedia}
+                        >
+                          {savingNote ? 'Saving...' : 'Save Note'}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
-                ))
-              )}
-            </div>
+                )}
+
+                {/* Notes List */}
+                <div className="space-y-2">
+                  {clientNotes.length === 0 && !isAddingNote ? (
+                    <div className="text-center py-8">
+                      <StickyNote className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500 text-sm">No notes yet</p>
+                      <p className="text-gray-400 text-xs mt-1">Add your first note</p>
+                    </div>
+                  ) : (
+                    clientNotes.map((note, index) => (
+                      <Card
+                        key={note._id}
+                        className="border-gray-200 hover:border-blue-300 transition-all duration-200 hover:shadow-md cursor-pointer animate-in fade-in slide-in-from-right-2 group"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                        onClick={() => handleOpenNoteDetail(note)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                <Badge variant="outline" className="text-[8px] px-1 py-0 text-gray-500">
+                                  {note.topicType || 'General'}
+                                </Badge>
+                                {note.showToClient ? (
+                                  <Badge className="text-[9px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200">
+                                    <Eye className="h-2.5 w-2.5 mr-0.5" />
+                                    Visible
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                    <EyeOff className="h-2.5 w-2.5 mr-0.5" />
+                                    Hidden
+                                  </Badge>
+                                )}
+                                {note.createdBy && (
+                                  <span className="text-[9px] text-gray-400">
+                                    by {note.createdBy.firstName} {note.createdBy.lastName}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-500 mb-1">
+                                {note.date ? format(new Date(note.date), 'MMM d, yyyy') : 'No date'}
+                              </p>
+                              <p className="text-xs text-gray-600 line-clamp-2">{note.content}</p>
+                            </div>
+
+                            <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => handleToggleNoteVisibility(note._id!, !note.showToClient)}
+                                title={note.showToClient ? 'Hide from client' : 'Show to client'}
+                              >
+                                {note.showToClient ? (
+                                  <EyeOff className="h-3.5 w-3.5 text-gray-500" />
+                                ) : (
+                                  <Eye className="h-3.5 w-3.5 text-gray-500" />
+                                )}
+                              </Button>
+                              {/* Only show delete button if current user created the note */}
+                              {note.createdBy?._id === session?.user?.id && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleDeleteNote(note._id!)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
               </>
             )}
           </div>
@@ -2584,22 +2574,20 @@ export default function ClientDetailPage() {
       </div>
 
       {/* Tasks Slide-out Panel */}
-      <div 
-        className={`fixed inset-0 z-40 transition-opacity duration-300 ${
-          isTasksOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+      <div
+        className={`fixed inset-0 z-40 transition-opacity duration-300 ${isTasksOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
       >
         {/* Backdrop */}
-        <div 
+        <div
           className="absolute inset-0 bg-black/30"
           onClick={() => setIsTasksOpen(false)}
         />
-        
+
         {/* Panel */}
-        <div 
-          className={`fixed top-1/2 right-0 -translate-y-1/2 h-[85vh] w-full max-w-md bg-white shadow-2xl z-50 rounded-l-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${
-            isTasksOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
+        <div
+          className={`fixed top-1/2 right-0 -translate-y-1/2 h-[85vh] w-full max-w-md bg-white shadow-2xl z-50 rounded-l-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${isTasksOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b bg-linear-to-r from-green-50 to-white">
@@ -2612,9 +2600,9 @@ export default function ClientDetailPage() {
                 <p className="text-xs text-gray-500">{clientTasks.length} tasks</p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
               onClick={() => setIsTasksOpen(false)}
             >
@@ -2644,14 +2632,13 @@ export default function ClientDetailPage() {
                     <div className="space-y-4">
                       <div className="flex items-start justify-between">
                         <div>
-                          <Badge 
-                            variant="secondary" 
-                            className={`text-[10px] px-2 py-0.5 mb-1 ${
-                              selectedTask.status === 'completed' ? 'bg-green-100 text-green-700' :
-                              selectedTask.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
-                              selectedTask.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}
+                          <Badge
+                            variant="secondary"
+                            className={`text-[10px] px-2 py-0.5 mb-1 ${selectedTask.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                selectedTask.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                                  selectedTask.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                    'bg-yellow-100 text-yellow-700'
+                              }`}
                           >
                             {selectedTask.status}
                           </Badge>
@@ -2661,7 +2648,7 @@ export default function ClientDetailPage() {
                           </Badge>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-gray-50 rounded-lg p-3">
                           <Label className="text-xs font-medium text-gray-500">Start Date</Label>
@@ -2750,7 +2737,7 @@ export default function ClientDetailPage() {
               <>
                 {/* Add Task Button */}
                 {!isAddingTask && (
-                  <Button 
+                  <Button
                     className="w-full mb-3 bg-green-600 hover:bg-green-700 h-9 text-sm"
                     onClick={() => setIsAddingTask(true)}
                   >
@@ -2878,11 +2865,11 @@ export default function ClientDetailPage() {
                           Note: Type #name to use as a placeholder for contact&apos;s name
                         </p>
                       </div>
-                      
+
                       <div className="flex gap-2 pt-1">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className="flex-1 h-8 text-xs"
                           onClick={() => {
                             setIsAddingTask(false);
@@ -2902,8 +2889,8 @@ export default function ClientDetailPage() {
                         >
                           Cancel
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700"
                           onClick={handleSaveTask}
                           disabled={savingTask}
@@ -2925,8 +2912,8 @@ export default function ClientDetailPage() {
                     </div>
                   ) : (
                     clientTasks.map((task, index) => (
-                      <Card 
-                        key={task._id} 
+                      <Card
+                        key={task._id}
                         className="border-gray-200 hover:border-green-300 transition-all duration-200 hover:shadow-md cursor-pointer animate-in fade-in slide-in-from-right-2 group"
                         style={{ animationDelay: `${index * 50}ms` }}
                         onClick={() => handleOpenTaskDetail(task)}
@@ -2938,13 +2925,12 @@ export default function ClientDetailPage() {
                                 <Badge variant="outline" className="text-[8px] px-1 py-0 text-gray-500">
                                   {task.taskType}
                                 </Badge>
-                                <Badge 
-                                  className={`text-[9px] px-1.5 py-0 ${
-                                    task.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                    task.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
-                                    task.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                    'bg-yellow-100 text-yellow-700'
-                                  }`}
+                                <Badge
+                                  className={`text-[9px] px-1.5 py-0 ${task.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                      task.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                                        task.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                          'bg-yellow-100 text-yellow-700'
+                                    }`}
                                 >
                                   {task.status}
                                 </Badge>
@@ -2956,7 +2942,7 @@ export default function ClientDetailPage() {
                                 {task.startDate ? format(new Date(task.startDate), 'MMM d') : ''} - {task.endDate ? format(new Date(task.endDate), 'MMM d, yyyy') : ''}
                               </p>
                             </div>
-                            
+
                             <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                               <Button
                                 variant="ghost"
@@ -2980,22 +2966,20 @@ export default function ClientDetailPage() {
       </div>
 
       {/* Tags Slide-out Panel */}
-      <div 
-        className={`fixed inset-0 z-40 transition-opacity duration-300 ${
-          isTagsOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+      <div
+        className={`fixed inset-0 z-40 transition-opacity duration-300 ${isTagsOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
       >
         {/* Backdrop */}
-        <div 
+        <div
           className="absolute inset-0 bg-black/30"
           onClick={() => setIsTagsOpen(false)}
         />
-        
+
         {/* Panel */}
-        <div 
-          className={`fixed top-1/2 right-0 -translate-y-1/2 h-[85vh] w-full max-w-md bg-white shadow-2xl z-50 rounded-l-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${
-            isTagsOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
+        <div
+          className={`fixed top-1/2 right-0 -translate-y-1/2 h-[85vh] w-full max-w-md bg-white shadow-2xl z-50 rounded-l-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${isTagsOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b bg-linear-to-r from-purple-50 to-white">
@@ -3008,9 +2992,9 @@ export default function ClientDetailPage() {
                 <p className="text-xs text-gray-500">{clientTagIds.length > 0 ? '1 tag assigned' : 'No tag assigned'}</p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
               onClick={() => setIsTagsOpen(false)}
             >
@@ -3049,14 +3033,14 @@ export default function ClientDetailPage() {
                         {allTags
                           .filter(tag => clientTagIds.includes(tag._id))
                           .map((tag) => (
-                            <Card 
-                              key={tag._id} 
+                            <Card
+                              key={tag._id}
                               className="border-2 border-purple-200 bg-purple-50 hover:shadow-md transition-all"
                             >
                               <CardContent className="p-3">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2 flex-1">
-                                    <div 
+                                    <div
                                       className="h-3 w-3 rounded-full"
                                       style={{ backgroundColor: tag.color || '#3B82F6' }}
                                     />
@@ -3097,14 +3081,14 @@ export default function ClientDetailPage() {
                       {allTags
                         .filter(tag => !clientTagIds.includes(tag._id))
                         .map((tag) => (
-                          <Card 
-                            key={tag._id} 
+                          <Card
+                            key={tag._id}
                             className="border-gray-200 hover:border-purple-300 transition-all duration-200 hover:shadow-md cursor-pointer group"
                             onClick={() => handleToggleClientTag(tag._id)}
                           >
                             <CardContent className="p-3">
                               <div className="flex items-center gap-2">
-                                <div 
+                                <div
                                   className="h-3 w-3 rounded-full shrink-0"
                                   style={{ backgroundColor: tag.color || '#3B82F6' }}
                                 />

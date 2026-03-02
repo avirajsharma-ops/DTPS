@@ -21,17 +21,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // Debounce hook for search optimization
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
-    
+
     return () => {
       clearTimeout(handler);
     };
   }, [value, delay]);
-  
+
   return debouncedValue;
 }
 
@@ -71,6 +71,14 @@ export function FoodDatabasePanel({
   const clientDietaryArr = clientDietaryRestrictions.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
   const clientMedicalArr = clientMedicalConditions.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
   const clientAllergyArr = clientAllergies.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+
+  // Debug: Log dietary restrictions when component opens
+  console.log('[FoodDatabasePanel] Filtering with:', {
+    dietaryRestrictions: clientDietaryArr,
+    medicalConditions: clientMedicalArr,
+    allergies: clientAllergyArr
+  });
+
   const [allRecipes, setAllRecipes] = useState<FoodItem[]>([]); // Store all recipes
   const [foodData, setFoodData] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,22 +86,22 @@ export function FoodDatabasePanel({
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [refreshKey, setRefreshKey] = useState(0);
-  
+
   // Debounce search query for optimization
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Optimized search function that ranks results by relevance
   const searchAndRankRecipes = useCallback((recipes: FoodItem[], query: string): FoodItem[] => {
     if (!query.trim()) return recipes;
-    
+
     const searchLower = query.toLowerCase().trim();
     const searchWords = searchLower.split(/\s+/).filter(Boolean);
-    
+
     // Score each recipe based on match quality
     const scoredRecipes = recipes.map(recipe => {
       const nameLower = recipe.menu.toLowerCase();
       let score = 0;
-      
+
       // Exact match - highest priority
       if (nameLower === searchLower) {
         score = 1000;
@@ -119,10 +127,10 @@ export function FoodDatabasePanel({
           score = matchCount * 30;
         }
       }
-      
+
       return { recipe, score };
     });
-    
+
     // Filter out non-matches and sort by score (highest first)
     return scoredRecipes
       .filter(item => item.score > 0)
@@ -139,7 +147,7 @@ export function FoodDatabasePanel({
   useEffect(() => {
     const fetchRecipes = async () => {
       if (!isOpen) return;
-      
+
       try {
         setLoading(true);
         const params = new URLSearchParams();
@@ -147,13 +155,12 @@ export function FoodDatabasePanel({
         if (categoryFilter && categoryFilter !== 'all') {
           params.append('category', categoryFilter);
         }
-        
+
         const response = await fetch(`/api/recipes?${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
           const recipes = data.recipes || [];
-          
-          // Debug: Log client restrictions
+
           // Helper to ensure value is an array
           const toArray = (val: any): any[] => {
             if (Array.isArray(val)) return val;
@@ -166,81 +173,88 @@ export function FoodDatabasePanel({
             const recipeDietary: string[] = toArray(recipe.dietaryRestrictions).map((d: string) => String(d).toLowerCase().trim());
             const recipeMedical: string[] = toArray(recipe.medicalContraindications).map((m: string) => String(m).toLowerCase().trim());
             const recipeIngredients: string[] = toArray(recipe.ingredients).map((ing: any) => (ing?.name || String(ing) || '').toLowerCase().trim());
-            
+
             // ===== ALLERGEN CHECKS =====
             // Exclude if recipe contains any allergen the client is allergic to
-            const hasClientAllergen = clientAllergyArr.some(allergy => 
-              recipeAllergens.some((ra: string) => ra.includes(allergy) || allergy.includes(ra)) || 
+            const hasClientAllergen = clientAllergyArr.some(allergy =>
+              recipeAllergens.some((ra: string) => ra.includes(allergy) || allergy.includes(ra)) ||
               recipe.name?.toLowerCase().includes(allergy) ||
               recipeIngredients.some((ing: string) => ing.includes(allergy))
             );
             if (hasClientAllergen) {
               return false;
             }
-            
-            // ===== DIETARY RESTRICTION CHECKS =====
-            // Check if client's dietary restriction matches recipe's dietary restriction
-            // If client has a restriction (e.g., "Non-Vegetarian") and recipe also has it, EXCLUDE the recipe
-            const hasDietaryConflict = clientDietaryArr.some((clientRestriction: string) => 
-              recipeDietary.some((recipeRestriction: string) => 
-                clientRestriction === recipeRestriction || 
-                recipeRestriction.includes(clientRestriction) || 
-                clientRestriction.includes(recipeRestriction)
-              )
-            );
-            
-            if (hasDietaryConflict) {
-              return false;
+
+            // ===== DIETARY RESTRICTIONS FILTER =====
+            // Only exclude recipes that explicitly match the selected restriction.
+            // Vegetarian recipes are ALWAYS allowed for everyone.
+            if (clientDietaryArr.length > 0) {
+              // NON-VEGETARIAN restriction: hide recipes tagged as non-vegetarian
+              if (clientDietaryArr.includes('non-vegetarian')) {
+                if (recipeDietary.includes('non-vegetarian')) {
+                  console.log(`[Filter] Hiding non-vegetarian recipe: ${recipe.name}`, recipeDietary);
+                  return false;
+                }
+              }
+              // Vegetarian recipes remain visible for all restriction types (no filtering).
             }
-            
+
+            // ===== EXCLUSION-BASED DIETARY RESTRICTIONS =====
+
             // If client is Gluten-Free, exclude recipes with gluten
-            if (clientDietaryArr.includes('gluten-free') && 
-                (recipeAllergens.includes('gluten') || recipeDietary.some((d: string) => d.includes('gluten') && !d.includes('gluten-free')))) {
+            if (clientDietaryArr.includes('gluten-free') &&
+              (recipeAllergens.includes('gluten') || recipeDietary.some((d: string) => d.includes('gluten') && !d.includes('gluten-free')))) {
               return false;
             }
-            
+
             // If client is Dairy-Free, exclude recipes with dairy
             if (clientDietaryArr.includes('dairy-free') && recipeAllergens.includes('dairy')) {
               return false;
             }
-            
+
+            // If client has Keto restriction, only show Keto-friendly recipes
+            if (clientDietaryArr.includes('keto') && !recipeDietary.includes('keto')) {
+              // For Keto, we should ideally check if recipe is low-carb, but for now just check tag
+              // Don't exclude if no keto tag - let user decide
+            }
+
             // If client has Lactose Intolerance (from medical), exclude dairy recipes
             if (clientMedicalArr.includes('lactose intolerance') && recipeAllergens.includes('dairy')) {
               return false;
             }
-            
+
             // If client has Celiac Disease (from medical), exclude gluten recipes
             if (clientMedicalArr.includes('celiac disease') && recipeAllergens.includes('gluten')) {
               return false;
             }
-            
+
             // ===== MEDICAL CONTRAINDICATIONS CHECK =====
             // Exclude recipes that have medical contraindications matching client's conditions
-            const hasMedicalConflict = clientMedicalArr.some(clientCondition => 
+            const hasMedicalConflict = clientMedicalArr.some(clientCondition =>
               recipeMedical.some((recipeContra: string) => {
                 // Case-insensitive partial matching
                 const match = recipeContra.includes(clientCondition) || clientCondition.includes(recipeContra);
                 return match;
               })
             );
-            
+
             if (hasMedicalConflict) {
               return false;
             }
-            
+
             // All checks passed - recipe is suitable for client
             return true;
           });
-          
+
           // Transform filtered recipes to FoodItem format
           const transformedData: FoodItem[] = filteredRecipes.map((recipe: any) => {
             // Format serving size - use servingSize if available, otherwise show servings count
             const servingSizeDisplay = recipe.servingSize || recipe.portionSize;
             const servingsCount = recipe.servings || 1;
-            const amount = servingSizeDisplay 
-              ? servingSizeDisplay 
+            const amount = servingSizeDisplay
+              ? servingSizeDisplay
               : `${servingsCount} serving${servingsCount > 1 ? 's' : ''}`;
-            
+
             // Get nutrition values - API returns flat values at recipe level
             // Also check nutrition object for backwards compatibility
             const cals = recipe.calories || recipe.nutrition?.calories || recipe.flatNutrition?.calories || 0;
@@ -248,7 +262,7 @@ export function FoodDatabasePanel({
             const proteinVal = recipe.protein || recipe.nutrition?.protein || recipe.flatNutrition?.protein || 0;
             const fatsVal = recipe.fat || recipe.nutrition?.fat || recipe.flatNutrition?.fat || 0;
             const fiberVal = recipe.fiber || recipe.nutrition?.fiber || recipe.flatNutrition?.fiber || 0;
-            
+
             return {
               id: recipe._id,
               date: new Date().toISOString().split('T')[0],
@@ -264,7 +278,10 @@ export function FoodDatabasePanel({
               recipeUuid: recipe.uuid || undefined,
             };
           });
-          
+
+          // Debug: Log filtering results
+          console.log(`[FoodDatabasePanel] Fetched ${recipes.length} recipes, after filtering: ${transformedData.length}`);
+
           // Store all recipes for local filtering
           setAllRecipes(transformedData);
           setFoodData(transformedData);
@@ -282,7 +299,7 @@ export function FoodDatabasePanel({
   // Apply local search filtering with ranking when search query changes
   useEffect(() => {
     if (!allRecipes.length) return;
-    
+
     if (debouncedSearchQuery.trim()) {
       const rankedResults = searchAndRankRecipes(allRecipes, debouncedSearchQuery);
       setFoodData(rankedResults);
@@ -297,7 +314,7 @@ export function FoodDatabasePanel({
     setSearchQuery("");
     setRefreshKey(prev => prev + 1);
   };
-  
+
   const itemsPerPage = 12;
 
   const totalPages = Math.ceil(foodData.length / itemsPerPage);
@@ -348,14 +365,14 @@ export function FoodDatabasePanel({
         className="fixed inset-0 bg-black/20 backdrop-blur-lg z-70 transition-all duration-300"
         onClick={onClose}
       />
-      
+
 
       {/* Slide-in Panel - LEFT SIDE */}
-<div className="fixed left-0 top-0 h-full w-1/2 bg-white shadow-2xl z-120 flex flex-col animate-slide-in">
+      <div className="fixed left-0 top-0 h-full w-1/2 bg-white shadow-2xl z-120 flex flex-col animate-slide-in">
 
         {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shrink-0">
-      <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shrink-0">
+          <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="sm"
@@ -454,90 +471,89 @@ export function FoodDatabasePanel({
             <div className="flex flex-col items-center justify-center h-64 gap-4">
               <p className="text-gray-500">No recipes found</p>
               <Button variant="outline" asChild>
-             <Link href="/recipes/create" target="_blank" rel="noopener noreferrer">
+                <Link href="/recipes/create" target="_blank" rel="noopener noreferrer">
                   <Plus className="w-4 h-4 mr-2" />
                   Create New Recipe
                 </Link>
               </Button>
             </div>
           ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-8"></th>
-                  <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Menu
-                  </th>
-                  <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Cals
-                  </th>
-                  <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Carbs
-                  </th>
-                  <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Protein
-                  </th>
-                  <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Fats
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedData.map((item) => (
-                  <tr
-                    key={item.id}
-                    onClick={() => toggleSelection(item.id)}
-                    style={item.selected ? { backgroundColor: '#BCEBCB' } : {}}
-                    className={`border-b border-gray-100 cursor-pointer transition-colors ${
-                      item.selected 
-                        ? "hover:brightness-95" 
-                        : "hover:bg-slate-50"
-                    }`}
-                    onMouseEnter={(e) => {
-                      if (item.selected) {
-                        e.currentTarget.style.backgroundColor = '#C2E66E';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (item.selected) {
-                        e.currentTarget.style.backgroundColor = '#BCEBCB';
-                      }
-                    }}
-                  >
-                    <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={item.selected}
-                        onCheckedChange={() => toggleSelection(item.id)}
-                        className="border-gray-300"
-                      />
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm font-medium text-slate-900">{item.menu}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-slate-700">{item.amount}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm font-medium text-slate-900">{item.cals} <span className="text-xs text-slate-500">kcal</span></div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-slate-700">{item.carbs} <span className="text-xs text-slate-500">gr</span></div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-slate-700">{item.protein} <span className="text-xs text-slate-500">gr</span></div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-slate-700">{item.fats} <span className="text-xs text-slate-500">gr</span></div>
-                    </td>
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-8"></th>
+                    <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Menu
+                    </th>
+                    <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Cals
+                    </th>
+                    <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Carbs
+                    </th>
+                    <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Protein
+                    </th>
+                    <th className="text-left p-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Fats
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {paginatedData.map((item) => (
+                    <tr
+                      key={item.id}
+                      onClick={() => toggleSelection(item.id)}
+                      style={item.selected ? { backgroundColor: '#BCEBCB' } : {}}
+                      className={`border-b border-gray-100 cursor-pointer transition-colors ${item.selected
+                          ? "hover:brightness-95"
+                          : "hover:bg-slate-50"
+                        }`}
+                      onMouseEnter={(e) => {
+                        if (item.selected) {
+                          e.currentTarget.style.backgroundColor = '#C2E66E';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (item.selected) {
+                          e.currentTarget.style.backgroundColor = '#BCEBCB';
+                        }
+                      }}
+                    >
+                      <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={item.selected}
+                          onCheckedChange={() => toggleSelection(item.id)}
+                          className="border-gray-300"
+                        />
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm font-medium text-slate-900">{item.menu}</div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm text-slate-700">{item.amount}</div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm font-medium text-slate-900">{item.cals} <span className="text-xs text-slate-500">kcal</span></div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm text-slate-700">{item.carbs} <span className="text-xs text-slate-500">gr</span></div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm text-slate-700">{item.protein} <span className="text-xs text-slate-500">gr</span></div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm text-slate-700">{item.fats} <span className="text-xs text-slate-500">gr</span></div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
@@ -567,11 +583,10 @@ export function FoodDatabasePanel({
                 }
                 disabled={page === "..."}
                 style={currentPage === page ? { backgroundColor: '#00A63E', color: 'white', borderColor: '#00A63E' } : {}}
-                className={`w-9 h-9 p-0 ${
-                  currentPage === page
+                className={`w-9 h-9 p-0 ${currentPage === page
                     ? "hover:opacity-90"
                     : "border-gray-300"
-                }`}
+                  }`}
               >
                 {page}
               </Button>

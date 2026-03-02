@@ -23,7 +23,7 @@ export async function GET(
     const medicalInfo = await withCache(
       `users:id:medical:${JSON.stringify({ userId: id })}`,
       async () => await MedicalInfo.findOne({ userId: id }),
-      { ttl: 120000, tags: ['users'] }
+      { ttl: 120000, tags: ['users', `users:id:${id}`, `users:id:medical:${id}`] }
     );
 
     if (!medicalInfo) {
@@ -55,20 +55,27 @@ export async function POST(
     const { id } = await params;
     const body = await request.json();
 
-    // Find existing or create new
-    let medicalInfo = await MedicalInfo.findOne({ userId: id });
+    // Use findOneAndUpdate to avoid version conflicts from concurrent updates
+    const medicalInfo = await MedicalInfo.findOneAndUpdate(
+      { userId: id },
+      {
+        $set: {
+          ...body,
+          updatedAt: new Date()
+        }
+      },
+      {
+        new: true,              // Return updated document
+        upsert: true,           // Create if doesn't exist
+        setDefaultsOnInsert: true,
+        overwrite: false        // Don't overwrite, merge updates
+      }
+    );
 
-    if (medicalInfo) {
-      // Update existing
-      Object.assign(medicalInfo, body);
-      await medicalInfo.save();
-    } else {
-      // Create new
-      medicalInfo = await MedicalInfo.create({
-        userId: id,
-        ...body
-      });
-    }
+    // Clear all related cache tags
+    await clearCacheByTag('users');
+    await clearCacheByTag(`users:id:${id}`);
+    await clearCacheByTag(`users:id:medical:${id}`);
 
     return NextResponse.json({ medicalInfo });
   } catch (error) {
