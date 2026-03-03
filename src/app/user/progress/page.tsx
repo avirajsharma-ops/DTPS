@@ -5,12 +5,12 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
-import { 
+import {
   ArrowLeft,
-  TrendingUp, 
-  TrendingDown, 
-  Scale, 
-  Activity, 
+  TrendingUp,
+  TrendingDown,
+  Scale,
+  Activity,
   Ruler,
   Camera,
   Plus,
@@ -99,26 +99,25 @@ interface ProgressData {
 }
 
 // Time Range Filter Component
-function TimeRangeFilter({ 
-  value, 
-  onChange 
-}: { 
-  value: TimeRange; 
-  onChange: (v: TimeRange) => void 
+function TimeRangeFilter({
+  value,
+  onChange
+}: {
+  value: TimeRange;
+  onChange: (v: TimeRange) => void
 }) {
   const options: TimeRange[] = ['1W', '1M', '3M', '6M', '1Y'];
-  
+
   return (
     <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
       {options.map((option) => (
         <button
           key={option}
           onClick={() => onChange(option)}
-          className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
-            value === option
+          className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${value === option
               ? 'bg-[#E06A26] text-white shadow-sm'
               : 'text-gray-600 hover:bg-gray-200'
-          }`}
+            }`}
         >
           {option}
         </button>
@@ -128,14 +127,14 @@ function TimeRangeFilter({
 }
 
 // Simple Line Chart Component
-function LineChart({ 
-  data, 
-  height = 120, 
+function LineChart({
+  data,
+  height = 120,
   color = '#3AB1A0',
   labels = []
-}: { 
-  data: number[], 
-  height?: number, 
+}: {
+  data: number[],
+  height?: number,
   color?: string,
   labels?: string[]
 }) {
@@ -173,9 +172,9 @@ function LineChart({
             <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
-        
+
         <polygon points={areaPoints} fill={`url(#areaGradient-${color})`} />
-        
+
         <polyline
           points={points}
           fill="none"
@@ -184,7 +183,7 @@ function LineChart({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        
+
         {data.map((value, index) => {
           const x = paddingX + (index / (data.length - 1)) * chartWidth;
           const y = chartHeight - ((value - min) / range) * chartHeight + paddingY;
@@ -213,19 +212,19 @@ function LineChart({
 }
 
 // Circular Progress Component
-function CircularProgress({ 
-  value, 
-  max, 
-  size = 80, 
-  strokeWidth = 8, 
+function CircularProgress({
+  value,
+  max,
+  size = 80,
+  strokeWidth = 8,
   color = '#3AB1A0',
   label,
   unit
-}: { 
-  value: number; 
-  max: number; 
-  size?: number; 
-  strokeWidth?: number; 
+}: {
+  value: number;
+  max: number;
+  size?: number;
+  strokeWidth?: number;
   color?: string;
   label: string;
   unit: string;
@@ -271,21 +270,21 @@ function CircularProgress({
 }
 
 // Macro Bar Component
-function MacroBar({ 
-  label, 
-  value, 
-  max, 
-  color, 
-  icon: Icon 
-}: { 
-  label: string; 
-  value: number; 
-  max: number; 
-  color: string; 
+function MacroBar({
+  label,
+  value,
+  max,
+  color,
+  icon: Icon
+}: {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
   icon: React.ElementType;
 }) {
   const progress = Math.min((value / max) * 100, 100);
-  
+
   return (
     <div className="flex items-center gap-3">
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color.replace('bg-', 'bg-').replace('-500', '-100')}`}>
@@ -297,7 +296,7 @@ function MacroBar({
           <span className="text-sm text-gray-500">{value}g / {max}g</span>
         </div>
         <div className="h-2 overflow-hidden bg-gray-100 rounded-full">
-          <div 
+          <div
             className={`h-full rounded-full ${color}`}
             style={{ width: `${progress}%`, transition: 'width 0.5s ease' }}
           />
@@ -321,7 +320,7 @@ function getDateRange(range: TimeRange): Date {
 }
 
 export default function UserProgressPage() {
-    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { data: session, status } = useSession();
   const router = useRouter();
   const { isDarkMode } = useTheme();
@@ -367,10 +366,10 @@ export default function UserProgressPage() {
       const response = await fetch(`/api/client/progress?range=${timeRange}`);
       if (response.ok) {
         const data = await response.json();
-        
+
         // Set the progress data to state
         setProgressData(data);
-        
+
         if (data.measurements) {
           setMeasurements({
             waist: data.measurements.waist?.toString() || '',
@@ -394,7 +393,7 @@ export default function UserProgressPage() {
           }
         }
       }
-      
+
       // Fetch user profile data (BMI, weight, height, etc.)
       try {
         const profileRes = await fetch('/api/client/profile');
@@ -454,7 +453,7 @@ export default function UserProgressPage() {
               weightKg: parseFloat(newWeight)
             })
           });
-          
+
           if (bmiResponse.ok) {
             const bmiData = await bmiResponse.json();
             // Update local profile state with new BMI
@@ -473,7 +472,7 @@ export default function UserProgressPage() {
         } catch (bmiError) {
           console.error('Error updating BMI:', bmiError);
         }
-        
+
         toast.success('Weight logged successfully!');
         setShowWeightModal(false);
         setNewWeight('');
@@ -486,7 +485,7 @@ export default function UserProgressPage() {
     } finally {
       setSaving(false);
     }
-       
+
   };
 
   const handleSaveMeasurements = async () => {
@@ -547,10 +546,8 @@ export default function UserProgressPage() {
         format: 'image/webp'
       });
 
-      // Convert base64 to blob for upload
-      const base64Response = await fetch(compressed.base64);
-      const blob = await base64Response.blob();
-      const compressedFile = new File([blob], `transformation-${Date.now()}.webp`, { type: 'image/webp' });
+      // Use the compressed blob directly (compressImage returns { blob, dataUrl, ... })
+      const compressedFile = new File([compressed.blob], `transformation-${Date.now()}.webp`, { type: 'image/webp' });
 
       // Upload the compressed file
       const formData = new FormData();
@@ -640,13 +637,13 @@ export default function UserProgressPage() {
   };
 
   // Use today's measurements if available, otherwise use latest measurements
-  const displayMeasurements = data.todayMeasurements && 
+  const displayMeasurements = data.todayMeasurements &&
     (data.todayMeasurements.waist || data.todayMeasurements.hips || data.todayMeasurements.chest || data.todayMeasurements.arms || data.todayMeasurements.thighs)
-    ? data.todayMeasurements 
+    ? data.todayMeasurements
     : data.measurements;
 
   const weightToGo = Math.max(0, data.currentWeight - data.targetWeight);
-  
+
   // Filter data based on time range
   const filteredWeightHistory = useMemo(() => {
     const startDate = getDateRange(timeRange);
@@ -670,7 +667,7 @@ export default function UserProgressPage() {
   }, [data.nutritionHistory, timeRange]);
 
   // Chart data
-  const weightChartData = filteredWeightHistory.length > 1 
+  const weightChartData = filteredWeightHistory.length > 1
     ? filteredWeightHistory.map(e => e.weight)
     : data.currentWeight > 0 ? [data.currentWeight] : [];
 
@@ -690,11 +687,11 @@ export default function UserProgressPage() {
   const proteinChartData = filteredNutritionHistory.length > 1
     ? filteredNutritionHistory.map(e => e.protein)
     : [];
-  
+
   const carbsChartData = filteredNutritionHistory.length > 1
     ? filteredNutritionHistory.map(e => e.carbs)
     : [];
-  
+
   const fatChartData = filteredNutritionHistory.length > 1
     ? filteredNutritionHistory.map(e => e.fat)
     : [];
@@ -721,13 +718,13 @@ export default function UserProgressPage() {
   };
 
   // Use API BMI or calculate from height/weight
-  const calculatedBmi = data.bmi && data.bmi > 0 
-    ? data.bmi 
+  const calculatedBmi = data.bmi && data.bmi > 0
+    ? data.bmi
     : calculateBMI(data.currentWeight, data.heightCm || 0);
 
   // BMI display value - ensure it's properly formatted and reasonable
-  const bmiValue = calculatedBmi && !isNaN(calculatedBmi) && calculatedBmi > 10 && calculatedBmi < 60 
-    ? calculatedBmi.toFixed(1) 
+  const bmiValue = calculatedBmi && !isNaN(calculatedBmi) && calculatedBmi > 10 && calculatedBmi < 60
+    ? calculatedBmi.toFixed(1)
     : '--';
 
   if (status === 'loading' || loading) {
@@ -752,7 +749,7 @@ export default function UserProgressPage() {
             <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>My Progress</h1>
           </div>
         </div>
-        
+
         {/* Tabs */}
         <div className="flex gap-1 px-4 pb-3">
           {[
@@ -763,13 +760,12 @@ export default function UserProgressPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                activeTab === tab.id
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id
                   ? 'bg-[#E06A26] text-white shadow-lg shadow-[#E06A26]/25'
                   : isDarkMode
                     ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
@@ -811,7 +807,7 @@ export default function UserProgressPage() {
                     </div>
                   )}
                 </div>
-                <button 
+                <button
                   onClick={() => setShowWeightModal(true)}
                   className="p-3 transition-colors bg-white/20 hover:bg-white/30 rounded-xl"
                 >
@@ -821,7 +817,7 @@ export default function UserProgressPage() {
 
               {/* Progress Bar */}
               <div className="h-3 mb-2 rounded-full bg-white/20">
-                <div 
+                <div
                   className="h-3 transition-all duration-500 bg-white rounded-full"
                   style={{ width: `${Math.min(data.progressPercent, 100)}%` }}
                 />
@@ -838,10 +834,10 @@ export default function UserProgressPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Weight Trend</h3>
                 <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                  {timeRange === '1W' ? 'Last 7 days' : 
-                   timeRange === '1M' ? 'Last month' :
-                   timeRange === '3M' ? 'Last 3 months' :
-                   timeRange === '6M' ? 'Last 6 months' : 'Last year'}
+                  {timeRange === '1W' ? 'Last 7 days' :
+                    timeRange === '1M' ? 'Last month' :
+                      timeRange === '3M' ? 'Last 3 months' :
+                        timeRange === '6M' ? 'Last 6 months' : 'Last year'}
                 </span>
               </div>
               <div className="h-38">
@@ -874,109 +870,108 @@ export default function UserProgressPage() {
               </div>
             </div>
 
-              {/* BMI Card - Show if BMI is available */}
-    {/* BMI Card */}
-{userProfile?.bmi && (
-  <div className={`rounded-3xl p-6 shadow-sm border border-[#E06A26]/15 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-    
-    {/* Header */}
-    <div className="flex items-center justify-between mb-5">
-      <div>
-        <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-          Body Mass Index
-        </p>
-        <div className="flex items-end gap-2 mt-1">
-          <span className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {userProfile.bmi}
-          </span>
-          <span className={`mb-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>kg/m²</span>
-        </div>
-      </div>
+            {/* BMI Card - Show if BMI is available */}
+            {/* BMI Card */}
+            {userProfile?.bmi && (
+              <div className={`rounded-3xl p-6 shadow-sm border border-[#E06A26]/15 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
 
-      {/* Category Badge */}
-      <span
-        className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-          userProfile.bmiCategory === 'Normal'
-            ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
-            : userProfile.bmiCategory === 'Underweight'
-            ? 'bg-blue-100 text-blue-700'
-            : userProfile.bmiCategory === 'Overweight'
-            ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
-            : 'bg-[#E06A26]/15 text-[#E06A26]'
-        }`}
-      >
-        {userProfile.bmiCategory}
-      </span>
-    </div>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                      Body Mass Index
+                    </p>
+                    <div className="flex items-end gap-2 mt-1">
+                      <span className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {userProfile.bmi}
+                      </span>
+                      <span className={`mb-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>kg/m²</span>
+                    </div>
+                  </div>
 
-    {/* Progress Bar */}
-    <div className="relative mt-6">
-      {/* Track */}
-      <div className="flex h-3 overflow-hidden rounded-full">
-        <div className="w-[20%] bg-blue-400/70" />
-        <div className="w-[30%] bg-[#3AB1A0]" />
-        <div className="w-[20%] bg-[#DB9C6E]" />
-        <div className="w-[30%] bg-[#E06A26]" />
-      </div>
+                  {/* Category Badge */}
+                  <span
+                    className={`px-4 py-1.5 rounded-full text-sm font-semibold ${userProfile.bmiCategory === 'Normal'
+                        ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
+                        : userProfile.bmiCategory === 'Underweight'
+                          ? 'bg-blue-100 text-blue-700'
+                          : userProfile.bmiCategory === 'Overweight'
+                            ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
+                            : 'bg-[#E06A26]/15 text-[#E06A26]'
+                      }`}
+                  >
+                    {userProfile.bmiCategory}
+                  </span>
+                </div>
 
-      {/* Indicator - contained within bounds */}
-      <div
-        className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2"
-        style={{
-          left: `clamp(2.5%, ${Math.min(
-            Math.max(((parseFloat(userProfile.bmi) - 15) / 25) * 100, 2.5),
-            97.5
-          )}%, 97.5%)`,
-        }}
-      >
-        <div className={`w-5 h-5 border-2 rounded-full shadow-md ${isDarkMode ? 'bg-gray-950 border-gray-200' : 'bg-white border-gray-900'}`} />
-      </div>
-    </div>
+                {/* Progress Bar */}
+                <div className="relative mt-6">
+                  {/* Track */}
+                  <div className="flex h-3 overflow-hidden rounded-full">
+                    <div className="w-[20%] bg-blue-400/70" />
+                    <div className="w-[30%] bg-[#3AB1A0]" />
+                    <div className="w-[20%] bg-[#DB9C6E]" />
+                    <div className="w-[30%] bg-[#E06A26]" />
+                  </div>
 
-    {/* Scale */}
-    <div className="flex justify-between mt-2 text-xs text-gray-400">
-      <span>15</span>
-      <span>18.5</span>
-      <span>25</span>
-      <span>30</span>
-      <span>40</span>
-    </div>
+                  {/* Indicator - contained within bounds */}
+                  <div
+                    className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2"
+                    style={{
+                      left: `clamp(2.5%, ${Math.min(
+                        Math.max(((parseFloat(userProfile.bmi) - 15) / 25) * 100, 2.5),
+                        97.5
+                      )}%, 97.5%)`,
+                    }}
+                  >
+                    <div className={`w-5 h-5 border-2 rounded-full shadow-md ${isDarkMode ? 'bg-gray-950 border-gray-200' : 'bg-white border-gray-900'}`} />
+                  </div>
+                </div>
 
-    <div className="flex justify-between mt-1 text-xs font-medium">
-      <span className="text-blue-500">Under</span>
-      <span className="text-[#3AB1A0]">Normal</span>
-      <span className="text-[#DB9C6E]">Over</span>
-      <span className="text-[#E06A26]">Obese</span>
-    </div>
+                {/* Scale */}
+                <div className="flex justify-between mt-2 text-xs text-gray-400">
+                  <span>15</span>
+                  <span>18.5</span>
+                  <span>25</span>
+                  <span>30</span>
+                  <span>40</span>
+                </div>
 
-    {/* Weight & Height */}
-    <div className={`grid grid-cols-2 gap-4 pt-4 mt-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/15 flex items-center justify-center">
-          <Activity className="h-5 w-5 text-[#3AB1A0]" />
-        </div>
-        <div>
-          <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Weight</p>
-          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {userProfile.weightKg} kg
-          </p>
-        </div>
-      </div>
+                <div className="flex justify-between mt-1 text-xs font-medium">
+                  <span className="text-blue-500">Under</span>
+                  <span className="text-[#3AB1A0]">Normal</span>
+                  <span className="text-[#DB9C6E]">Over</span>
+                  <span className="text-[#E06A26]">Obese</span>
+                </div>
 
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-[#E06A26]/15 flex items-center justify-center">
-          <User className="h-5 w-5 text-[#E06A26]" />
-        </div>
-        <div>
-          <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Height</p>
-          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {userProfile.heightCm} cm
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+                {/* Weight & Height */}
+                <div className={`grid grid-cols-2 gap-4 pt-4 mt-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/15 flex items-center justify-center">
+                      <Activity className="h-5 w-5 text-[#3AB1A0]" />
+                    </div>
+                    <div>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Weight</p>
+                      <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {userProfile.weightKg} kg
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-[#E06A26]/15 flex items-center justify-center">
+                      <User className="h-5 w-5 text-[#E06A26]" />
+                    </div>
+                    <div>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Height</p>
+                      <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {userProfile.heightCm} cm
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
 
             {/* Recent Entries */}
@@ -985,7 +980,7 @@ export default function UserProgressPage() {
               {filteredWeightHistory.length > 0 ? (
                 <div className="space-y-2">
                   {filteredWeightHistory.slice(0, 5).map((entry, index) => (
-                    <div 
+                    <div
                       key={index}
                       className={`flex items-center justify-between py-2 border-b last:border-0 ${isDarkMode ? 'border-gray-700' : 'border-gray-50'}`}
                     >
@@ -1000,7 +995,7 @@ export default function UserProgressPage() {
                 <div className="py-6 text-center">
                   <Scale className={`w-10 h-10 mx-auto mb-2 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                   <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>No weight entries yet</p>
-                  <button 
+                  <button
                     onClick={() => setShowWeightModal(true)}
                     className="mt-2 text-[#E06A26] font-medium text-sm"
                   >
@@ -1020,10 +1015,10 @@ export default function UserProgressPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Calorie Trend</h3>
                 <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                  {timeRange === '1W' ? 'Last 7 days' : 
-                   timeRange === '1M' ? 'Last month' :
-                   timeRange === '3M' ? 'Last 3 months' :
-                   timeRange === '6M' ? 'Last 6 months' : 'Last year'}
+                  {timeRange === '1W' ? 'Last 7 days' :
+                    timeRange === '1M' ? 'Last month' :
+                      timeRange === '3M' ? 'Last 3 months' :
+                        timeRange === '6M' ? 'Last 6 months' : 'Last year'}
                 </span>
               </div>
               <div className="h-38">
@@ -1045,7 +1040,7 @@ export default function UserProgressPage() {
                   {data.todayIntake?.calories || 0} / {data.goals?.calories || 2000}
                 </span>
               </div>
-              
+
               {/* Calorie Progress Ring */}
               <div className="flex justify-center mb-6">
                 <CircularProgress
@@ -1072,7 +1067,7 @@ export default function UserProgressPage() {
             {/* Macros */}
             <div className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <h3 className={`mb-4 font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Macronutrients</h3>
-              
+
               <div className="flex justify-around mb-6">
                 <CircularProgress
                   value={data.todayIntake?.protein || 0}
@@ -1105,25 +1100,25 @@ export default function UserProgressPage() {
 
               {/* Macro Bars */}
               <div className="space-y-4">
-                <MacroBar 
-                  label="Protein" 
-                  value={data.todayIntake?.protein || 0} 
-                  max={data.goals?.protein || 120} 
-                  color="bg-[#3AB1A0]" 
+                <MacroBar
+                  label="Protein"
+                  value={data.todayIntake?.protein || 0}
+                  max={data.goals?.protein || 120}
+                  color="bg-[#3AB1A0]"
                   icon={Activity}
                 />
-                <MacroBar 
-                  label="Carbohydrates" 
-                  value={data.todayIntake?.carbs || 0} 
-                  max={data.goals?.carbs || 250} 
-                  color="bg-[#E06A26]" 
+                <MacroBar
+                  label="Carbohydrates"
+                  value={data.todayIntake?.carbs || 0}
+                  max={data.goals?.carbs || 250}
+                  color="bg-[#E06A26]"
                   icon={Flame}
                 />
-                <MacroBar 
-                  label="Fat" 
-                  value={data.todayIntake?.fat || 0} 
-                  max={data.goals?.fat || 65} 
-                  color="bg-[#DB9C6E]" 
+                <MacroBar
+                  label="Fat"
+                  value={data.todayIntake?.fat || 0}
+                  max={data.goals?.fat || 65}
+                  color="bg-[#DB9C6E]"
                   icon={Droplets}
                 />
               </div>
@@ -1142,7 +1137,7 @@ export default function UserProgressPage() {
                     </span>
                   </div>
 
-                  
+
                   <div className="h-38">
                     {proteinChartData.length > 1 ? (
                       <LineChart data={proteinChartData} color="#3AB1A0" labels={macroChartLabels} height={96} />
@@ -1230,18 +1225,18 @@ export default function UserProgressPage() {
             <div className={`p-4 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <div className="flex items-center justify-between mb-2">
                 <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Body Measurements</h3>
-                <button 
+                <button
                   onClick={handleAddMeasurementClick}
                   className="text-[#E06A26] text-sm font-medium flex items-center gap-1 bg-[#E06A26]/10 px-3 py-1.5 rounded-lg hover:bg-[#E06A26]/20 transition-colors"
                 >
                   <Plus className="w-4 h-4" /> Add
                 </button>
               </div>
-              
+
               {/* Show date indicator */}
               <p className={`mb-3 text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                {data.todayMeasurements && (data.todayMeasurements.waist || data.todayMeasurements.hips) 
-                  ? `Today's measurements (${format(new Date(), 'MMM d, yyyy')})` 
+                {data.todayMeasurements && (data.todayMeasurements.waist || data.todayMeasurements.hips)
+                  ? `Today's measurements (${format(new Date(), 'MMM d, yyyy')})`
                   : 'Latest measurements'}
               </p>
 
@@ -1301,7 +1296,7 @@ export default function UserProgressPage() {
                 <div className="py-6 text-center">
                   <Ruler className={`w-10 h-10 mx-auto mb-2 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                   <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>No measurement history yet</p>
-                  <button 
+                  <button
                     onClick={handleAddMeasurementClick}
                     className="mt-2 text-[#E06A26] font-medium text-sm"
                   >
@@ -1310,136 +1305,135 @@ export default function UserProgressPage() {
                 </div>
               )}
             </div>
-    {/* BMI Card - Show if BMI is available */}
-    {/* BMI Card */}
-{userProfile?.bmi && (
-  <div className={`rounded-3xl p-6 shadow-sm border border-[#E06A26]/15 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-    
-    {/* Header */}
-    <div className="flex items-center justify-between mb-5">
-      <div>
-        <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-          Body Mass Index
-        </p>
-        <div className="flex items-end gap-2 mt-1">
-          <span className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {userProfile.bmi}
-          </span>
-          <span className={`mb-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>kg/m²</span>
-        </div>
-      </div>
+            {/* BMI Card - Show if BMI is available */}
+            {/* BMI Card */}
+            {userProfile?.bmi && (
+              <div className={`rounded-3xl p-6 shadow-sm border border-[#E06A26]/15 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
 
-      {/* Category Badge */}
-      <span
-        className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-          userProfile.bmiCategory === 'Normal'
-            ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
-            : userProfile.bmiCategory === 'Underweight'
-            ? 'bg-blue-100 text-blue-700'
-            : userProfile.bmiCategory === 'Overweight'
-            ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
-            : 'bg-[#E06A26]/15 text-[#E06A26]'
-        }`}
-      >
-        {userProfile.bmiCategory}
-      </span>
-    </div>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                      Body Mass Index
+                    </p>
+                    <div className="flex items-end gap-2 mt-1">
+                      <span className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {userProfile.bmi}
+                      </span>
+                      <span className={`mb-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>kg/m²</span>
+                    </div>
+                  </div>
 
-    {/* Progress Bar */}
-    <div className="relative mt-6">
-      {/* Track */}
-      <div className="flex h-3 overflow-hidden rounded-full">
-        <div className="w-[20%] bg-blue-400/70" />
-        <div className="w-[30%] bg-[#3AB1A0]" />
-        <div className="w-[20%] bg-[#DB9C6E]" />
-        <div className="w-[30%] bg-[#E06A26]" />
-      </div>
+                  {/* Category Badge */}
+                  <span
+                    className={`px-4 py-1.5 rounded-full text-sm font-semibold ${userProfile.bmiCategory === 'Normal'
+                        ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
+                        : userProfile.bmiCategory === 'Underweight'
+                          ? 'bg-blue-100 text-blue-700'
+                          : userProfile.bmiCategory === 'Overweight'
+                            ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
+                            : 'bg-[#E06A26]/15 text-[#E06A26]'
+                      }`}
+                  >
+                    {userProfile.bmiCategory}
+                  </span>
+                </div>
 
-      {/* Indicator - contained within bounds */}
-      <div
-        className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2"
-        style={{
-          left: `clamp(2.5%, ${Math.min(
-            Math.max(((parseFloat(userProfile.bmi) - 15) / 25) * 100, 2.5),
-            97.5
-          )}%, 97.5%)`,
-        }}
-      >
-        <div className={`w-5 h-5 border-2 rounded-full shadow-md ${isDarkMode ? 'bg-gray-950 border-gray-200' : 'bg-white border-gray-900'}`} />
-      </div>
-    </div>
+                {/* Progress Bar */}
+                <div className="relative mt-6">
+                  {/* Track */}
+                  <div className="flex h-3 overflow-hidden rounded-full">
+                    <div className="w-[20%] bg-blue-400/70" />
+                    <div className="w-[30%] bg-[#3AB1A0]" />
+                    <div className="w-[20%] bg-[#DB9C6E]" />
+                    <div className="w-[30%] bg-[#E06A26]" />
+                  </div>
 
-    {/* Scale */}
-    <div className="flex justify-between mt-2 text-xs text-gray-400">
-      <span>15</span>
-      <span>18.5</span>
-      <span>25</span>
-      <span>30</span>
-      <span>40</span>
-    </div>
+                  {/* Indicator - contained within bounds */}
+                  <div
+                    className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2"
+                    style={{
+                      left: `clamp(2.5%, ${Math.min(
+                        Math.max(((parseFloat(userProfile.bmi) - 15) / 25) * 100, 2.5),
+                        97.5
+                      )}%, 97.5%)`,
+                    }}
+                  >
+                    <div className={`w-5 h-5 border-2 rounded-full shadow-md ${isDarkMode ? 'bg-gray-950 border-gray-200' : 'bg-white border-gray-900'}`} />
+                  </div>
+                </div>
 
-    <div className="flex justify-between mt-1 text-xs font-medium">
-      <span className="text-blue-500">Under</span>
-      <span className="text-[#3AB1A0]">Normal</span>
-      <span className="text-[#DB9C6E]">Over</span>
-      <span className="text-[#E06A26]">Obese</span>
-    </div>
+                {/* Scale */}
+                <div className="flex justify-between mt-2 text-xs text-gray-400">
+                  <span>15</span>
+                  <span>18.5</span>
+                  <span>25</span>
+                  <span>30</span>
+                  <span>40</span>
+                </div>
 
-    {/* Weight & Height */}
-    <div className={`grid grid-cols-2 gap-4 pt-4 mt-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/15 flex items-center justify-center">
-          <Activity className="h-5 w-5 text-[#3AB1A0]" />
-        </div>
-        <div>
-          <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Weight</p>
-          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {userProfile.weightKg} kg
-          </p>
-        </div>
-      </div>
+                <div className="flex justify-between mt-1 text-xs font-medium">
+                  <span className="text-blue-500">Under</span>
+                  <span className="text-[#3AB1A0]">Normal</span>
+                  <span className="text-[#DB9C6E]">Over</span>
+                  <span className="text-[#E06A26]">Obese</span>
+                </div>
 
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-[#E06A26]/15 flex items-center justify-center">
-          <User className="h-5 w-5 text-[#E06A26]" />
-        </div>
-        <div>
-          <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Height</p>
-          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {userProfile.heightCm} cm
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+                {/* Weight & Height */}
+                <div className={`grid grid-cols-2 gap-4 pt-4 mt-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/15 flex items-center justify-center">
+                      <Activity className="h-5 w-5 text-[#3AB1A0]" />
+                    </div>
+                    <div>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Weight</p>
+                      <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {userProfile.weightKg} kg
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-[#E06A26]/15 flex items-center justify-center">
+                      <User className="h-5 w-5 text-[#E06A26]" />
+                    </div>
+                    <div>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Height</p>
+                      <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {userProfile.heightCm} cm
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Progress Photos */}
             <div className={`p-4 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Transformation Photos</h3>
-                <button 
+                <button
                   onClick={() => setShowPhotoModal(true)}
                   className="text-[#E06A26] text-sm font-medium flex items-center gap-1 bg-[#E06A26]/10 px-3 py-1.5 rounded-lg hover:bg-[#E06A26]/20 transition-colors"
                 >
                   <Camera className="w-4 h-4" /> Add
                 </button>
               </div>
-              
+
               {data.transformationPhotos && data.transformationPhotos.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2">
                   {data.transformationPhotos.map((photo) => (
-                    <div 
-                      key={photo._id} 
+                    <div
+                      key={photo._id}
                       className="relative overflow-hidden cursor-pointer aspect-square rounded-xl group"
                       onClick={() => {
                         setSelectedPhoto(photo);
                         setShowPhotoViewer(true);
                       }}
                     >
-                      <img 
-                        src={photo.url} 
-                        alt="Progress photo" 
+                      <img
+                        src={photo.url}
+                        alt="Progress photo"
                         loading="lazy"
                         className="object-cover w-full h-full"
                       />
@@ -1456,7 +1450,7 @@ export default function UserProgressPage() {
                   <Camera className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                   <p className="text-gray-500">No transformation photos yet</p>
                   <p className="mt-1 text-xs text-gray-400">Track your journey with photos</p>
-                  <button 
+                  <button
                     onClick={() => setShowPhotoModal(true)}
                     className="mt-3 text-[#3AB1A0] font-medium text-sm"
                   >
@@ -1474,7 +1468,7 @@ export default function UserProgressPage() {
         <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/50 sm:items-center">
           <div className="w-full max-w-md p-6 bg-white rounded-t-3xl sm:rounded-3xl">
             <h3 className="mb-4 text-xl font-bold text-gray-900">Log Today's Weight</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">Weight (kg)</label>
@@ -1517,7 +1511,7 @@ export default function UserProgressPage() {
             <p className="mb-4 text-sm text-gray-500">
               Recording for: {format(new Date(), 'MMMM d, yyyy')}
             </p>
-            
+
             <div className="space-y-4">
               {[
                 { key: 'waist', label: 'Waist' },
@@ -1567,7 +1561,7 @@ export default function UserProgressPage() {
             <p className="mb-4 text-sm text-gray-500">
               Date: {format(new Date(), 'MMMM d, yyyy')}
             </p>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">Side *</label>
@@ -1671,9 +1665,9 @@ export default function UserProgressPage() {
             </div>
           </div>
           <div className="flex items-center justify-center flex-1 p-4">
-            <img 
-              src={selectedPhoto.url} 
-              alt="Progress photo" 
+            <img
+              src={selectedPhoto.url}
+              alt="Progress photo"
               loading="lazy"
               className="object-contain max-w-full max-h-full rounded-lg"
             />
@@ -1725,8 +1719,8 @@ export default function UserProgressPage() {
               Body measurements can only be recorded once every 7 days for accurate tracking.
             </p>
             <p className="text-lg font-semibold text-[#3AB1A0] mb-6">
-              {data.daysUntilNextMeasurement === 1 
-                ? '1 day remaining' 
+              {data.daysUntilNextMeasurement === 1
+                ? '1 day remaining'
                 : `${data.daysUntilNextMeasurement || 0} days remaining`}
             </p>
             {data.lastMeasurementDate && (

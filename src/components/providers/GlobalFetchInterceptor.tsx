@@ -51,7 +51,17 @@ export function GlobalFetchInterceptor() {
       init?: RequestInit,
       retriesLeft: number = MAX_RETRIES
     ): Promise<Response> => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      // Guard: if input is undefined/null or not a valid fetch argument, pass through to original fetch
+      // This prevents crashes when code accidentally calls fetch(undefined)
+      if (!input) {
+        return originalFetch(input, init);
+      }
+
+      const url = typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.href
+          : (input as Request)?.url || '';
 
       const isApiCall = url.startsWith('/api') || url.startsWith(window.location.origin + '/api');
       const isAuthCall = url.includes('/api/auth');
