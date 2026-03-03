@@ -7,7 +7,19 @@ import { UserRole } from '@/types';
 import { parseISO, startOfDay, isToday } from 'date-fns';
 import { getImageKit } from '@/lib/imagekit';
 import { compressImageServer } from '@/lib/imageCompressionServer';
-import { MEAL_TYPE_KEYS } from '@/lib/mealConfig';
+import { MEAL_TYPE_KEYS, normalizeMealType, type MealTypeKey } from '@/lib/mealConfig';
+
+// Map camelCase meal types to canonical UPPERCASE keys
+const CAMELCASE_TO_CANONICAL: Record<string, MealTypeKey> = {
+  'earlyMorning': 'EARLY_MORNING',
+  'breakfast': 'BREAKFAST',
+  'midMorning': 'MID_MORNING',
+  'lunch': 'LUNCH',
+  'midEvening': 'MID_EVENING',
+  'evening': 'EVENING',
+  'dinner': 'DINNER',
+  'pastDinner': 'PAST_DINNER',
+};
 
 // POST /api/client/meal-plan/complete - Mark a meal as completed with image
 export async function POST(request: NextRequest) {
@@ -55,8 +67,8 @@ export async function POST(request: NextRequest) {
 
     // *** IMPORTANT: Only allow completion for today's date ***
     if (!isToday(requestedDate)) {
-      return NextResponse.json({ 
-        error: 'You can only mark meals as complete for today\'s plan. Past and future meals cannot be modified.' 
+      return NextResponse.json({
+        error: 'You can only mark meals as complete for today\'s plan. Past and future meals cannot be modified.'
       }, { status: 400 });
     }
 
@@ -68,16 +80,30 @@ export async function POST(request: NextRequest) {
     });
 
     if (!mealPlan) {
-      return NextResponse.json({ 
-        error: 'Meal plan not found or not active' 
+      return NextResponse.json({
+        error: 'Meal plan not found or not active'
       }, { status: 404 });
     }
 
     // Determine meal type from mealId if not provided
     const mealIdParts = mealId.split('-');
     const mealIndex = parseInt(mealIdParts[2] || '0');
-    // Use canonical meal types from config
-    const determinedMealType = mealType || MEAL_TYPE_KEYS[mealIndex % MEAL_TYPE_KEYS.length];
+
+    // Normalize meal type: handle camelCase from frontend, use canonical UPPERCASE keys for DB
+    let determinedMealType: MealTypeKey;
+    if (mealType) {
+      // Check if it's a camelCase type from frontend
+      if (CAMELCASE_TO_CANONICAL[mealType]) {
+        determinedMealType = CAMELCASE_TO_CANONICAL[mealType];
+      } else {
+        // Try to normalize using the mealConfig function
+        const normalized = normalizeMealType(mealType);
+        determinedMealType = normalized || MEAL_TYPE_KEYS[mealIndex % MEAL_TYPE_KEYS.length];
+      }
+    } else {
+      // Fallback to index-based meal type
+      determinedMealType = MEAL_TYPE_KEYS[mealIndex % MEAL_TYPE_KEYS.length];
+    }
 
     // Handle image upload - save to ImageKit
     let imagePath: string | undefined;
@@ -92,7 +118,7 @@ export async function POST(request: NextRequest) {
         // Convert File to buffer and compress
         const bytes = await imageFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        
+
         // Compress the image before upload
         const compressedBase64 = await compressImageServer(buffer, {
           quality: 85,
@@ -113,8 +139,8 @@ export async function POST(request: NextRequest) {
         imagePath = uploadResponse.url;
       } catch (uploadError) {
         console.error('Error uploading meal image to ImageKit:', uploadError);
-        return NextResponse.json({ 
-          error: 'Failed to upload meal image' 
+        return NextResponse.json({
+          error: 'Failed to upload meal image'
         }, { status: 500 });
       }
     }
@@ -123,8 +149,8 @@ export async function POST(request: NextRequest) {
     const existingCompletionIndex = mealPlan.mealCompletions?.findIndex((c: any) => {
       const completionDate = new Date(c.date);
       const targetDate = startOfDay(requestedDate);
-      return startOfDay(completionDate).getTime() === targetDate.getTime() && 
-             c.mealType === determinedMealType;
+      return startOfDay(completionDate).getTime() === targetDate.getTime() &&
+        c.mealType === determinedMealType;
     }) ?? -1;
 
     if (existingCompletionIndex >= 0) {
@@ -139,7 +165,7 @@ export async function POST(request: NextRequest) {
       if (!mealPlan.mealCompletions) {
         mealPlan.mealCompletions = [];
       }
-      
+
       mealPlan.mealCompletions.push({
         date: startOfDay(requestedDate),
         mealType: determinedMealType,
@@ -153,7 +179,7 @@ export async function POST(request: NextRequest) {
     if (!mealPlan.analytics) {
       mealPlan.analytics = {};
     }
-    
+
     // Calculate total days completed
     const uniqueDates = new Set(
       mealPlan.mealCompletions
