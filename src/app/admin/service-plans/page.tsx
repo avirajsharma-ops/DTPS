@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { useDurationPresets } from '@/hooks/useDurationPresets';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -60,16 +61,7 @@ const CATEGORIES = [
   { value: 'custom', label: 'Custom' }
 ];
 
-// Duration presets for quick selection
-const DURATION_PRESETS = [
-  { days: 7, label: '1 Week' },
-  { days: 14, label: '2 Weeks' },
-  { days: 30, label: '1 Month' },
-  { days: 60, label: '2 Months' },
-  { days: 90, label: '3 Months' },
-  { days: 180, label: '6 Months' },
-  { days: 365, label: '1 Year' },
-];
+// Duration presets are now fetched dynamically from the database
 
 export default function AdminServicePlansPage() {
   const [plans, setPlans] = useState<ServicePlan[]>([]);
@@ -78,6 +70,9 @@ export default function AdminServicePlansPage() {
   const [editingPlan, setEditingPlan] = useState<ServicePlan | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Fetch dynamic duration presets
+  const { presets: DURATION_PRESETS, getDurationLabel, loading: presetsLoading } = useDurationPresets();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -131,15 +126,7 @@ export default function AdminServicePlansPage() {
     setNewTier({ durationDays: 30, amount: 0, maxDiscount: 0, extendDays: 0, freezeDays: 0 });
   };
 
-  // Auto-generate label from days
-  const getDurationLabel = (days: number): string => {
-    const preset = DURATION_PRESETS.find(p => p.days === days);
-    if (preset) return preset.label;
-    if (days % 365 === 0) return `${days / 365} Year${days / 365 > 1 ? 's' : ''}`;
-    if (days % 30 === 0) return `${days / 30} Month${days / 30 > 1 ? 's' : ''}`;
-    if (days % 7 === 0) return `${days / 7} Week${days / 7 > 1 ? 's' : ''}`;
-    return `${days} Days`;
-  };
+  // getDurationLabel is now provided by useDurationPresets hook
 
   const handleSubmit = async () => {
     if (!formData.name) {
@@ -540,9 +527,9 @@ export default function AdminServicePlansPage() {
                           />
                         </div>
                         <div>
-                          <Button 
-                            type="button" 
-                            onClick={addPricingTier} 
+                          <Button
+                            type="button"
+                            onClick={addPricingTier}
                             className="bg-green-600 hover:bg-green-700 text-white font-medium w-full h-10 flex items-center justify-center gap-2"
                           >
                             <Plus className="h-4 w-4" /> Add
@@ -561,7 +548,7 @@ export default function AdminServicePlansPage() {
                       <Label className="text-lg font-bold text-gray-900">Settings</Label>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 rounded-lg bg-white border border-purple-100 hover:border-purple-300 hover:shadow-sm transition">
                       <div>
@@ -596,16 +583,16 @@ export default function AdminServicePlansPage() {
 
                 {/* Actions */}
                 <div className="flex justify-end gap-4 pt-8 border-t-2 border-gray-200">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => { setDialogOpen(false); resetForm(); }}
                     className="px-8 h-11 font-semibold text-base"
                   >
                     Cancel
                   </Button>
-                  <Button 
-                    onClick={handleSubmit} 
-                    disabled={saving} 
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={saving}
                     className="bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold px-8 h-11 text-base"
                   >
                     {saving ? (

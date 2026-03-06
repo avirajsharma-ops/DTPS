@@ -39,6 +39,7 @@ import {
 import Link from 'next/link';
 import { UserRole } from '@/types';
 import { useMealPlanAutoSave } from '@/hooks/useAutoSave';
+import { useDurationPresets } from '@/hooks/useDurationPresets';
 import { toast } from 'sonner';
 
 interface Recipe {
@@ -183,6 +184,9 @@ export default function CreateMealPlanTemplatePage() {
   const [selectedFilters, setSelectedFilters] = useState<any>({});
   const [selectedDay, setSelectedDay] = useState(1);
   const [draftRestored, setDraftRestored] = useState(false);
+
+  // Fetch dynamic duration presets
+  const { presets: durationPresets } = useDurationPresets();
 
   // Default template state
   const defaultTemplate: MealPlanTemplate = {
@@ -552,10 +556,11 @@ export default function CreateMealPlanTemplatePage() {
                       <SelectValue placeholder="Select duration" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="7">7 Days (1 Week)</SelectItem>
-                      <SelectItem value="14">14 Days (2 Weeks)</SelectItem>
-                      <SelectItem value="21">21 Days (3 Weeks)</SelectItem>
-                      <SelectItem value="30">30 Days (1 Month)</SelectItem>
+                      {durationPresets.map(preset => (
+                        <SelectItem key={preset.days} value={preset.days.toString()}>
+                          {preset.days} Days ({preset.label})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

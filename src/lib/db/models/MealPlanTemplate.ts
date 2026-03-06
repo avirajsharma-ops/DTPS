@@ -47,7 +47,7 @@ export interface IMealPlanTemplate extends Document {
   name: string;
   description?: string;
   category: 'weight-loss' | 'weight-gain' | 'maintenance' | 'muscle-gain' | 'diabetes' | 'heart-healthy' | 'keto' | 'vegan' | 'custom';
-  duration: number; // Number of days (7, 14, 21, 30, etc.)
+  duration: number; // Number of days (7, 10, 14, 21, 30, etc.)
   targetCalories: {
     min: number;
     max: number;

@@ -261,6 +261,12 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
             description: 'Manage service plans with pricing'
           },
           {
+            href: '/admin/duration-presets',
+            label: 'Duration Presets',
+            icon: Clock,
+            description: 'Manage plan duration options'
+          },
+          {
             href: '/admin/appointments',
             label: 'All Appointments',
             icon: Calendar,
