@@ -185,21 +185,21 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
             icon: BarChart3,
             description: 'Your health overview'
           },
-          { 
-            href: '/my-plan', 
-            label: 'My Plan', 
+          {
+            href: '/my-plan',
+            label: 'My Plan',
             icon: Heart,
             description: 'Current meal plan'
           },
-          { 
-            href: '/progress', 
-            label: 'Progress', 
+          {
+            href: '/progress',
+            label: 'Progress',
             icon: TrendingUp,
             description: 'Track your progress'
           },
-          { 
-            href: '/appointments', 
-            label: 'Appointments', 
+          {
+            href: '/appointments',
+            label: 'Appointments',
             icon: Calendar,
             description: 'Upcoming consultations'
           },
@@ -438,14 +438,14 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
   }
 
   const navigationItems = getNavigationItems(session.user.role);
-  
+
   // Filter out Dashboard from sidebar nav items (it's shown in header)
   const filteredNavItems = navigationItems.filter(item => item.label !== 'Dashboard');
 
-  const dashboardHref = session?.user?.role === UserRole.ADMIN 
-    ? '/dashboard/admin' 
-    : session?.user?.role === UserRole.CLIENT 
-      ? '/client-dashboard' 
+  const dashboardHref = session?.user?.role === UserRole.ADMIN
+    ? '/dashboard/admin'
+    : session?.user?.role === UserRole.CLIENT
+      ? '/client-dashboard'
       : '/dashboard/dietitian';
 
   return (
@@ -465,8 +465,8 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
             href={dashboardHref}
             className={cn(
               "flex items-center space-x-2 px-3 py-1 rounded-lg border",
-              isDarkMode 
-                ? "bg-green-900/50 text-green-400 border-green-800" 
+              isDarkMode
+                ? "bg-green-900/50 text-green-400 border-green-800"
                 : "bg-green-100 text-green-700 border-green-200"
             )}
           >
@@ -507,8 +507,8 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
                   onClick={() => toggleFolder(item.label)}
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isExpanded 
-                      ? isDarkMode 
+                    isExpanded
+                      ? isDarkMode
                         ? "bg-gray-800 text-white"
                         : "bg-gray-100 text-gray-900"
                       : isDarkMode
@@ -541,7 +541,7 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
                           className={cn(
                             "flex items-center space-x-2 px-2 py-1.5 rounded-md text-sm transition-colors",
                             isChildActive
-                              ? isDarkMode 
+                              ? isDarkMode
                                 ? "bg-green-900/50 text-green-400"
                                 : "bg-green-100 text-green-700"
                               : isDarkMode
@@ -568,7 +568,7 @@ export default function Sidebar({ className, isDarkMode = false }: SidebarProps)
               className={cn(
                 "flex items-center justify-between space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative",
                 isActive
-                  ? isDarkMode 
+                  ? isDarkMode
                     ? "bg-green-900/50 text-green-400 border border-green-800"
                     : "bg-green-100 text-green-700 border border-green-200"
                   : isDarkMode
