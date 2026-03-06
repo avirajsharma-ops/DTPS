@@ -132,7 +132,6 @@ export default function ClientSignUpPage() {
         password: data.password,
         loginContext: 'client',
         redirect: false,
-        callbackUrl: '/user/onboarding',
       });
 
       if (signInResult?.error) {
@@ -144,8 +143,9 @@ export default function ClientSignUpPage() {
         return;
       }
 
-      // Redirect to onboarding after successful auto-login
-      router.replace('/user/onboarding');
+      // Directly redirect to onboarding without going through /user
+      // Use window.location for a hard redirect to ensure session is refreshed
+      window.location.href = '/user/onboarding';
 
     } catch (err) {
       console.error('Registration error:', err);

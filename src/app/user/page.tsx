@@ -479,7 +479,8 @@ export default function UserHomePage() {
 
     // FAST PATH: Check session first for onboarding status (from JWT)
     // This avoids an API call in most cases and prevents redirect loops
-    if (session?.user?.onboardingCompleted === false) {
+    // Also check if user is a new user (just registered)
+    if (session?.user?.onboardingCompleted === false || session?.user?.isNewUser === true) {
       setCheckingOnboarding(false);
       router.replace('/user/onboarding');
       return;
@@ -496,16 +497,22 @@ export default function UserHomePage() {
     // Fallback: If session doesn't have onboardingCompleted (legacy users), check API
     const checkOnboarding = async () => {
       // Hard stop: never block the UI forever on slow networks/proxy issues
+      // Reduced to 2 seconds for faster UX
       const hardStop = setTimeout(() => {
-        if (!unmountedRef.current) setCheckingOnboarding(false);
-      }, 3000);
+        if (!unmountedRef.current) {
+          setCheckingOnboarding(false);
+          // If still no answer, check API response or allow page to load
+        }
+      }, 2000);
 
       try {
         // Check onboarding and active plan in parallel
         const [onboardingRes, planRes] = await Promise.all([
-          fetchWithTimeout('/api/client/onboarding', undefined, 3000),
-          fetchWithTimeout('/api/client/service-plans', undefined, 3000)
+          fetchWithTimeout('/api/client/onboarding', undefined, 2000),
+          fetchWithTimeout('/api/client/service-plans', undefined, 2000)
         ]);
+
+        clearTimeout(hardStop);
 
         if (onboardingRes.ok) {
           const data = await onboardingRes.json();
@@ -687,8 +694,8 @@ export default function UserHomePage() {
         {/* Calories Card */}
         <div
           className={`rounded-3xl p-5 shadow-sm border ${isDarkMode
-              ? 'bg-gray-900/60 border-gray-800'
-              : 'bg-linear-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/20 border-[#3AB1A0]/10'
+            ? 'bg-gray-900/60 border-gray-800'
+            : 'bg-linear-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/20 border-[#3AB1A0]/10'
             }`}
         >
           <div className="flex items-start justify-between">
@@ -1121,12 +1128,12 @@ export default function UserHomePage() {
               {/* Category Badge */}
               <span
                 className={`px-4 py-1.5 rounded-full text-sm font-semibold ${userProfile.bmiCategory === 'Normal'
-                    ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
-                    : userProfile.bmiCategory === 'Underweight'
-                      ? 'bg-blue-100 text-blue-700'
-                      : userProfile.bmiCategory === 'Overweight'
-                        ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
-                        : 'bg-[#E06A26]/15 text-[#E06A26]'
+                  ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
+                  : userProfile.bmiCategory === 'Underweight'
+                    ? 'bg-blue-100 text-blue-700'
+                    : userProfile.bmiCategory === 'Overweight'
+                      ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
+                      : 'bg-[#E06A26]/15 text-[#E06A26]'
                   }`}
               >
                 {userProfile.bmiCategory}
@@ -1455,8 +1462,8 @@ export default function UserHomePage() {
             <Link
               href="/user/hydration"
               className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${isDarkMode
-                  ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
-                  : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+                ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+                : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
                 }`}
             >
               <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
@@ -1470,8 +1477,8 @@ export default function UserHomePage() {
             <Link
               href="/user/activity"
               className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${isDarkMode
-                  ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
-                  : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+                ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+                : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
                 }`}
             >
               <div className="h-16 w-16 rounded-full bg-[#E06A26]/10 flex items-center justify-center">
@@ -1485,8 +1492,8 @@ export default function UserHomePage() {
             <Link
               href="/user/sleep"
               className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${isDarkMode
-                  ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
-                  : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+                ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+                : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
                 }`}
             >
               <div className="h-16 w-16 rounded-full bg-[#DB9C6E]/20 flex items-center justify-center">
@@ -1500,8 +1507,8 @@ export default function UserHomePage() {
             <Link
               href="/user/steps"
               className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${isDarkMode
-                  ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
-                  : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+                ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+                : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
                 }`}
             >
               <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">

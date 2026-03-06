@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
-import { 
-  ChevronLeft, 
+import {
+  ChevronLeft,
   ChevronRight,
   Armchair,
   PersonStanding,
@@ -92,27 +92,27 @@ const feetInchesToCm = (feet: string, inches: string) => {
 // Step 1: Basic Info
 function Step1BasicInfo({ onNext, data, updateData, isDarkMode }: StepProps) {
   const activityLevels = [
-    { 
-      value: 'sedentary', 
-      label: 'Sedentary', 
+    {
+      value: 'sedentary',
+      label: 'Sedentary',
       description: 'Little or no exercise, desk job',
       icon: Armchair
     },
-    { 
-      value: 'lightly_active', 
-      label: 'Lightly Active', 
+    {
+      value: 'lightly_active',
+      label: 'Lightly Active',
       description: 'Exercise 1-3 times/week',
       icon: PersonStanding
     },
-    { 
-      value: 'moderately_active', 
-      label: 'Active', 
+    {
+      value: 'moderately_active',
+      label: 'Active',
       description: 'Daily exercise or intense job',
       icon: Dumbbell
     },
-    { 
-      value: 'very_active', 
-      label: 'Very Active', 
+    {
+      value: 'very_active',
+      label: 'Very Active',
       description: 'Heavy exercise 6-7 days/week',
       icon: Flame
     },
@@ -157,11 +157,10 @@ function Step1BasicInfo({ onNext, data, updateData, isDarkMode }: StepProps) {
             <button
               key={gender}
               onClick={() => updateData({ gender })}
-              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all ${
-                data.gender === gender
+              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all ${data.gender === gender
                   ? 'bg-[#3AB1A0] text-white'
                   : isDarkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}
+                }`}
             >
               {gender.charAt(0).toUpperCase() + gender.slice(1)}
             </button>
@@ -181,11 +180,10 @@ function Step1BasicInfo({ onNext, data, updateData, isDarkMode }: StepProps) {
           onChange={(e) => updateData({ dateOfBirth: e.target.value })}
           max={maxDateStr}
           min={minDateStr}
-          className={`w-full px-4 py-3 border rounded-2xl text-lg focus:ring-2 focus:ring-[#3AB1A0] focus:border-[#3AB1A0] ${
-            isDarkMode 
-              ? 'bg-gray-800 border-gray-700 text-white' 
+          className={`w-full px-4 py-3 border rounded-2xl text-lg focus:ring-2 focus:ring-[#3AB1A0] focus:border-[#3AB1A0] ${isDarkMode
+              ? 'bg-gray-800 border-gray-700 text-white'
               : 'bg-white border-gray-200 text-gray-900'
-          }`}
+            }`}
         />
         {data.dateOfBirth && (
           <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -205,11 +203,10 @@ function Step1BasicInfo({ onNext, data, updateData, isDarkMode }: StepProps) {
               value={data.heightCm}
               onChange={(e) => handleHeightCmChange(e.target.value)}
               placeholder="Height in CM"
-              className={`w-full px-4 py-3 border rounded-2xl text-lg focus:ring-2 focus:ring-[#3AB1A0] focus:border-[#3AB1A0] pr-14 ${
-                isDarkMode 
-                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' 
+              className={`w-full px-4 py-3 border rounded-2xl text-lg focus:ring-2 focus:ring-[#3AB1A0] focus:border-[#3AB1A0] pr-14 ${isDarkMode
+                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
                   : 'bg-white border-gray-200 text-gray-900'
-              }`}
+                }`}
             />
             <span className={`absolute right-4 top-1/2 -translate-y-1/2 font-medium ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>cm</span>
           </div>
@@ -238,11 +235,10 @@ function Step1BasicInfo({ onNext, data, updateData, isDarkMode }: StepProps) {
             value={data.weightKg}
             onChange={(e) => updateData({ weightKg: e.target.value })}
             placeholder="Weight in KG"
-            className={`w-full px-4 py-3 border rounded-2xl text-lg focus:ring-2 focus:ring-[#3AB1A0] focus:border-[#3AB1A0] pr-14 ${
-              isDarkMode 
-                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' 
+            className={`w-full px-4 py-3 border rounded-2xl text-lg focus:ring-2 focus:ring-[#3AB1A0] focus:border-[#3AB1A0] pr-14 ${isDarkMode
+                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
                 : 'bg-white border-gray-200 text-gray-900'
-            }`}
+              }`}
           />
           <span className={`absolute right-4 top-1/2 -translate-y-1/2 font-medium ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>kg</span>
         </div>
@@ -265,15 +261,13 @@ function Step1BasicInfo({ onNext, data, updateData, isDarkMode }: StepProps) {
               <button
                 key={level.value}
                 onClick={() => updateData({ activityLevel: level.value as OnboardingData['activityLevel'] })}
-                className={`w-full p-4 rounded-2xl border-2 flex items-center gap-4 transition-all ${
-                  data.activityLevel === level.value
+                className={`w-full p-4 rounded-2xl border-2 flex items-center gap-4 transition-all ${data.activityLevel === level.value
                     ? 'border-[#3AB1A0] bg-[#3AB1A0]/10'
                     : isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'
-                }`}
+                  }`}
               >
-                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
-                  data.activityLevel === level.value ? 'bg-[#3AB1A0]/20' : isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
-                }`}>
+                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${data.activityLevel === level.value ? 'bg-[#3AB1A0]/20' : isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+                  }`}>
                   <Icon className={`h-6 w-6 ${data.activityLevel === level.value ? 'text-[#3AB1A0]' : isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                 </div>
                 <div className="text-left flex-1">
@@ -298,11 +292,10 @@ function Step1BasicInfo({ onNext, data, updateData, isDarkMode }: StepProps) {
         <button
           onClick={onNext}
           disabled={!isValid}
-          className={`w-full py-4 rounded-full font-semibold text-lg flex items-center justify-center gap-2 transition-all ${
-            isValid
+          className={`w-full py-4 rounded-full font-semibold text-lg flex items-center justify-center gap-2 transition-all ${isValid
               ? 'bg-[#E06A26] text-white hover:bg-[#c55a1f]'
               : isDarkMode ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
+            }`}
         >
           Continue
           <ChevronRight className="h-5 w-5" />
@@ -315,27 +308,27 @@ function Step1BasicInfo({ onNext, data, updateData, isDarkMode }: StepProps) {
 // Step 2: Goal Selection
 function Step2Goals({ onNext, onBack, data, updateData, isDarkMode }: StepProps) {
   const goals = [
-    { 
-      value: 'weight-loss', 
-      label: 'Weight Loss', 
+    {
+      value: 'weight-loss',
+      label: 'Weight Loss',
       description: 'Burn fat and get lean',
       icon: TrendingDown,
     },
-    { 
-      value: 'weight-gain', 
-      label: 'Weight Gain', 
+    {
+      value: 'weight-gain',
+      label: 'Weight Gain',
       description: 'Build muscle and mass',
       icon: TrendingUp,
     },
-    { 
-      value: 'disease-management', 
-      label: 'Disease Management', 
+    {
+      value: 'disease-management',
+      label: 'Disease Management',
       description: 'Manage health conditions through diet',
       icon: Stethoscope,
     },
-    { 
-      value: 'weight-loss-disease-management', 
-      label: 'Weight Loss + Disease Management', 
+    {
+      value: 'weight-loss-disease-management',
+      label: 'Weight Loss + Disease Management',
       description: 'Combined approach for weight and health',
       icon: Heart,
     },
@@ -369,15 +362,13 @@ function Step2Goals({ onNext, onBack, data, updateData, isDarkMode }: StepProps)
             <button
               key={goal.value}
               onClick={() => updateData({ primaryGoal: goal.value as OnboardingData['primaryGoal'] })}
-              className={`w-full p-5 rounded-2xl border-2 flex items-center gap-4 transition-all ${
-                data.primaryGoal === goal.value
+              className={`w-full p-5 rounded-2xl border-2 flex items-center gap-4 transition-all ${data.primaryGoal === goal.value
                   ? 'border-[#3AB1A0] bg-[#3AB1A0]/10'
                   : isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'
-              }`}
+                }`}
             >
-              <div className={`h-14 w-14 rounded-2xl flex items-center justify-center ${
-                data.primaryGoal === goal.value ? 'bg-[#3AB1A0]/20' : isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
-              }`}>
+              <div className={`h-14 w-14 rounded-2xl flex items-center justify-center ${data.primaryGoal === goal.value ? 'bg-[#3AB1A0]/20' : isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+                }`}>
                 <Icon className={`h-7 w-7 ${data.primaryGoal === goal.value ? 'text-[#3AB1A0]' : isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
               </div>
               <div className="text-left flex-1">
@@ -386,11 +377,10 @@ function Step2Goals({ onNext, onBack, data, updateData, isDarkMode }: StepProps)
                 </p>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{goal.description}</p>
               </div>
-              <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center ${
-                data.primaryGoal === goal.value
+              <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center ${data.primaryGoal === goal.value
                   ? 'border-[#3AB1A0] bg-white'
                   : isDarkMode ? 'border-gray-600' : 'border-gray-300'
-              }`}>
+                }`}>
                 {data.primaryGoal === goal.value && (
                   <div className="h-2.5 w-2.5 rounded-full bg-[#3AB1A0]" />
                 )}
@@ -579,15 +569,13 @@ function Step4DietaryPreferences({ onNext, onBack, data, updateData, isDarkMode 
           <button
             key={diet.value}
             onClick={() => updateData({ dietType: diet.value })}
-            className={`p-4 rounded-2xl border-2 flex flex-col items-center text-center transition-all ${
-              data.dietType === diet.value
+            className={`p-4 rounded-2xl border-2 flex flex-col items-center text-center transition-all ${data.dietType === diet.value
                 ? 'border-[#3AB1A0] bg-[#3AB1A0]/10'
                 : isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'
-            }`}
+              }`}
           >
-            <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-2xl mb-2 ${
-              data.dietType === diet.value ? 'bg-[#3AB1A0]/20' : isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
-            }`}>
+            <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-2xl mb-2 ${data.dietType === diet.value ? 'bg-[#3AB1A0]/20' : isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
               {diet.icon}
             </div>
             <p className={`font-semibold text-sm ${data.dietType === diet.value ? (isDarkMode ? 'text-white' : 'text-gray-900') : isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -608,11 +596,10 @@ function Step4DietaryPreferences({ onNext, onBack, data, updateData, isDarkMode 
         <button
           onClick={onNext}
           disabled={!data.dietType}
-          className={`w-full py-4 rounded-full font-semibold text-lg transition-all flex items-center justify-center gap-2 ${
-            data.dietType
+          className={`w-full py-4 rounded-full font-semibold text-lg transition-all flex items-center justify-center gap-2 ${data.dietType
               ? 'bg-[#E06A26] text-white hover:bg-[#c55a1f]'
               : isDarkMode ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
+            }`}
         >
           Continue
           <ChevronRight className="h-5 w-5" />
@@ -630,7 +617,7 @@ function Step5Summary({ onNext, onBack, data, isDarkMode }: StepProps) {
   const fats = Math.round((data.dailyGoals.calories * 0.3) / 9); // 30% fats
 
   // Calculate age from DOB
-  const age = data.dateOfBirth 
+  const age = data.dateOfBirth
     ? Math.floor((new Date().getTime() - new Date(data.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
     : 0;
 
@@ -776,39 +763,23 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<OnboardingData>(defaultData);
   const [saving, setSaving] = useState(false);
-  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [checkingStatus, setCheckingStatus] = useState(false); // Start as false - show onboarding immediately
 
   useEffect(() => {
     if (status === 'authenticated') {
       // First check session for onboardingCompleted (fast path)
+      // If onboardingCompleted is explicitly true, redirect to user dashboard
       if (session?.user?.onboardingCompleted === true) {
         router.replace('/user');
         return;
       }
-      // If not in session, check API as fallback
-      checkOnboardingStatus();
+      // If onboardingCompleted is false or undefined, show onboarding immediately
+      // No need to check API - just show the onboarding form
+      setCheckingStatus(false);
     } else if (status === 'unauthenticated') {
       router.replace('/client-auth/signin');
     }
   }, [status, session, router]);
-
-  const checkOnboardingStatus = async () => {
-    try {
-      const response = await fetch('/api/client/onboarding');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.onboardingCompleted) {
-          // Already completed onboarding, redirect to user dashboard
-          router.replace('/user');
-          return;
-        }
-      }
-    } catch (error) {
-      console.error('Error checking onboarding status:', error);
-    } finally {
-      setCheckingStatus(false);
-    }
-  };
 
   const updateData = (newData: Partial<OnboardingData>) => {
     setData(prev => ({ ...prev, ...newData }));
@@ -831,7 +802,7 @@ export default function OnboardingPage() {
   const completeOnboarding = async () => {
     // Prevent duplicate submissions
     if (saving) return;
-    
+
     try {
       setSaving(true);
 
@@ -860,12 +831,12 @@ export default function OnboardingPage() {
         // CRITICAL: Update the session to include onboardingCompleted = true
         // This refreshes the JWT token so middleware won't redirect back to onboarding
         await updateSession({ onboardingCompleted: true });
-        
+
         toast.success('Welcome! Your profile has been set up.');
-        
+
         // Small delay to ensure session is updated before navigation
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         router.replace('/user');
       } else {
         toast.error(result.error || result.message || 'Failed to save profile');
