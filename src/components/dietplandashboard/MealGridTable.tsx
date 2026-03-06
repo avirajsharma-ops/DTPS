@@ -53,8 +53,8 @@ const mealTimeSuggestions: { [key: string]: string } = Object.fromEntries(
 const DAYS_PER_PAGE = 14;
 
 // Helper function to calculate daily macro totals
-function calculateDayMacros(day: DayPlan): { cal: number; carbs: number; fats: number; protein: number; fiber: number } {
-  const totals = { cal: 0, carbs: 0, fats: 0, protein: 0, fiber: 0 };
+function calculateDayMacros(day: DayPlan): { cal: number; carbs: number; fats: number; protein: number } {
+  const totals = { cal: 0, carbs: 0, fats: 0, protein: 0 };
 
   Object.values(day.meals).forEach(meal => {
     if (meal && meal.foodOptions) {
@@ -67,7 +67,6 @@ function calculateDayMacros(day: DayPlan): { cal: number; carbs: number; fats: n
         totals.carbs += parseFloat(primaryOption.carbs) || 0;
         totals.fats += parseFloat(primaryOption.fats) || 0;
         totals.protein += parseFloat(primaryOption.protein) || 0;
-        totals.fiber += parseFloat(primaryOption.fiber) || 0;
       }
     }
   });
@@ -174,8 +173,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         cal: '',
         carbs: '',
         fats: '',
-        protein: '',
-        fiber: ''
+        protein: ''
       }
     ]
   });
@@ -204,8 +202,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         cal: '',
         carbs: '',
         fats: '',
-        protein: '',
-        fiber: ''
+        protein: ''
       });
       onUpdate(newWeekPlan);
     }
@@ -244,7 +241,6 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         carbs: '',
         fats: '',
         protein: '',
-        fiber: '',
         isAlternative: isAlternative
       });
       // Show alternatives if adding an alternative
@@ -375,7 +371,6 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               carbs: '',
               fats: '',
               protein: '',
-              fiber: '',
               isAlternative: true,
               foods: []
             };
@@ -400,7 +395,6 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               carbs: '',
               fats: '',
               protein: '',
-              fiber: '',
               isAlternative: false,
               foods: []
             };
@@ -426,7 +420,6 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
         targetOption.carbs = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
         targetOption.fats = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
         targetOption.protein = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
-        targetOption.fiber = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
       });
     });
 
@@ -634,8 +627,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
               cal: '',
               carbs: '',
               fats: '',
-              protein: '',
-              fiber: ''
+              protein: ''
             }
           ]
         };
@@ -1320,7 +1312,7 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                         {/* Daily Macro Totals */}
                         {(() => {
                           const macros = calculateDayMacros(day);
-                          const hasAnyMacros = macros.cal > 0 || macros.carbs > 0 || macros.protein > 0 || macros.fats > 0 || macros.fiber > 0;
+                          const hasAnyMacros = macros.cal > 0 || macros.carbs > 0 || macros.protein > 0 || macros.fats > 0;
                           if (!hasAnyMacros) return null;
                           return (
                             <div className="mt-2 p-2 bg-emerald-50 rounded border border-emerald-200">
@@ -1330,7 +1322,6 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                 <div className="text-emerald-900"><span className="font-medium">Carbs:</span> {macros.carbs.toFixed(1)}g</div>
                                 <div className="text-emerald-900"><span className="font-medium">Protein:</span> {macros.protein.toFixed(1)}g</div>
                                 <div className="text-emerald-900"><span className="font-medium">Fats:</span> {macros.fats.toFixed(1)}g</div>
-                                <div className="text-emerald-900 col-span-2"><span className="font-medium">Fiber:</span> {macros.fiber.toFixed(1)}g</div>
                               </div>
                             </div>
                           );
@@ -1527,7 +1518,6 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                                         meal.foodOptions[optionIndex].carbs = '';
                                                         meal.foodOptions[optionIndex].fats = '';
                                                         meal.foodOptions[optionIndex].protein = '';
-                                                        meal.foodOptions[optionIndex].fiber = '';
                                                         meal.foodOptions[optionIndex].foods = undefined;
                                                       } else {
                                                         // Recalculate totals
@@ -1537,7 +1527,6 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                                         meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
                                                         meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
                                                         meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
-                                                        meal.foodOptions[optionIndex].fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
                                                       }
                                                       onUpdate(newWeekPlan);
                                                     }
@@ -1623,8 +1612,8 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                               />
                                             </div>
 
-                                            {/* Protein and Fiber Row */}
-                                            <div className="grid grid-cols-2 gap-2">
+                                            {/* Protein Row */}
+                                            <div className="grid grid-cols-1 gap-2">
                                               <Input
                                                 value={foodItem.protein}
                                                 onChange={(e) => {
@@ -1639,23 +1628,6 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                                   }
                                                 }}
                                                 placeholder="Protein (g)"
-                                                type="number"
-                                                className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
-                                              />
-                                              <Input
-                                                value={foodItem.fiber}
-                                                onChange={(e) => {
-                                                  if (readOnly || !onUpdate) return;
-                                                  const newWeekPlan = [...weekPlan];
-                                                  const meal = newWeekPlan[actualDayIndex].meals[mealType];
-                                                  if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
-                                                    meal.foodOptions[optionIndex].foods![foodIndex].fiber = e.target.value;
-                                                    const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                    meal.foodOptions[optionIndex].fiber = allFoods.reduce((sum, f) => sum + (parseFloat(f.fiber) || 0), 0).toString();
-                                                    onUpdate(newWeekPlan);
-                                                  }
-                                                }}
-                                                placeholder="Fiber (g)"
                                                 type="number"
                                                 className="h-9 text-xs bg-gray-50 border-gray-300 font-mono"
                                               />
@@ -1709,18 +1681,11 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                                           />
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-1 gap-2">
                                           <Input
                                             value={option.protein}
                                             onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'protein', e.target.value)}
                                             placeholder="Protein (g)"
-                                            type="number"
-                                            className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
-                                          />
-                                          <Input
-                                            value={option.fiber}
-                                            onChange={(e) => updateFoodOption(actualDayIndex, mealType, optionIndex, 'fiber', e.target.value)}
-                                            placeholder="Fiber (g)"
                                             type="number"
                                             className="h-9 text-xs bg-white border-gray-300 focus:border-slate-500 focus:ring-slate-500 font-mono"
                                           />
@@ -1825,8 +1790,8 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                   size="sm"
                   onClick={() => setCurrentPage(i)}
                   className={`h-9 w-9 p-0 ${currentPage === i
-                      ? 'bg-slate-900 text-white hover:bg-slate-800'
-                      : 'border-gray-300 hover:bg-slate-100'
+                    ? 'bg-slate-900 text-white hover:bg-slate-800'
+                    : 'border-gray-300 hover:bg-slate-100'
                     }`}
                 >
                   {i + 1}
@@ -2694,7 +2659,6 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
                   carbs: food.carbs.toString(),
                   fats: food.fats.toString(),
                   protein: food.protein.toString(),
-                  fiber: '',
                   recipeUuid: food.recipeUuid,
                   isAlternative: preserveIsAlternative // Preserve alternative status
                 }));

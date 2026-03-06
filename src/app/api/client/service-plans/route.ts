@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import dbConnect from '@/lib/db/connect';
 import { ServicePlan } from '@/lib/db/models/ServicePlan';
 import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
+import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
 // GET - Fetch service plans visible to clients (for user dashboard)
@@ -19,25 +20,44 @@ export async function GET(request: NextRequest) {
 
         // Check if client has any purchases in UnifiedPayment collection (paid status)
         const allPurchases = await withCache(
-      `client:service-plans:${JSON.stringify({
-            client: session.user.id,
-            status: { $in: ['paid', 'completed'] },
-            paymentStatus: 'paid'
-        })}`,
-      async () => await UnifiedPayment.find({
-            client: session.user.id,
-            status: { $in: ['paid', 'completed'] },
-            paymentStatus: 'paid'
-        }).populate('dietitian', 'firstName lastName email phone avatar').sort({ createdAt: -1 }),
-      { ttl: 120000, tags: ['client'] }
-    );
+            `client:service-plans:${JSON.stringify({
+                client: session.user.id,
+                status: { $in: ['paid', 'completed'] },
+                paymentStatus: 'paid'
+            })}`,
+            async () => await UnifiedPayment.find({
+                client: session.user.id,
+                status: { $in: ['paid', 'completed'] },
+                paymentStatus: 'paid'
+            }).populate('dietitian', 'firstName lastName email phone avatar').sort({ createdAt: -1 }),
+            { ttl: 120000, tags: ['client'] }
+        );
+
+        // Check if client has an active meal plan running (current date within plan dates)
+        const activeClientMealPlan = await ClientMealPlan.findOne({
+            clientId: session.user.id,
+            status: 'active',
+            startDate: { $lte: new Date() },
+            endDate: { $gte: new Date() }
+        }).lean() as any;
+
+        const hasActiveMealPlan = !!activeClientMealPlan;
+
+        // Get the current active meal plan details (for showing correct dates)
+        const currentMealPlanDetails = activeClientMealPlan ? {
+            name: activeClientMealPlan.name || activeClientMealPlan.planName,
+            startDate: activeClientMealPlan.startDate,
+            endDate: activeClientMealPlan.endDate,
+            duration: activeClientMealPlan.duration || Math.ceil((new Date(activeClientMealPlan.endDate).getTime() - new Date(activeClientMealPlan.startDate).getTime()) / (1000 * 60 * 60 * 24)),
+            goal: activeClientMealPlan.goal
+        } : null;
 
         // With UnifiedPayment, we already have all payment data in allPurchases
         const completedPayments = allPurchases;
 
         // Check for active purchases specifically (paid and not expired)
-        const activePurchases = allPurchases.filter(p => 
-          p.paymentStatus === 'paid' && (!p.endDate || new Date(p.endDate) >= new Date())
+        const activePurchases = allPurchases.filter(p =>
+            p.paymentStatus === 'paid' && (!p.endDate || new Date(p.endDate) >= new Date())
         );
         const hasActivePlan = activePurchases.length > 0;
 
@@ -49,16 +69,16 @@ export async function GET(request: NextRequest) {
 
         // Fetch service plans that are active and visible to clients
         const plans = await withCache(
-      `client:service-plans:${JSON.stringify({
-            isActive: true,
-            showToClients: true
-        })}`,
-      async () => await ServicePlan.find({
-            isActive: true,
-            showToClients: true
-        }).sort({ createdAt: -1 }),
-      { ttl: 120000, tags: ['client'] }
-    );
+            `client:service-plans:${JSON.stringify({
+                isActive: true,
+                showToClients: true
+            })}`,
+            async () => await ServicePlan.find({
+                isActive: true,
+                showToClients: true
+            }).sort({ createdAt: -1 }),
+            { ttl: 120000, tags: ['client'] }
+        );
 
         return NextResponse.json({
             success: true,
@@ -66,20 +86,33 @@ export async function GET(request: NextRequest) {
             hasActivePlan,
             hasAnyPurchase,
             hasPendingDietitianAssignment,
+            hasActiveMealPlan,
+            currentMealPlan: currentMealPlanDetails,
             activePurchases: allPurchases.map(p => {
                 const dietitian = p.dietitian as any;
-                // Debug log to check mealPlanCreated value
+                // Check if this purchase has an active meal plan running
+                // Either mealPlanCreated flag is true OR there's an active ClientMealPlan
+                const isMealPlanActive = Boolean(p.mealPlanCreated) || hasActiveMealPlan;
+
+                // Use meal plan dates if available, otherwise use payment dates
+                const mealPlanStartDate = hasActiveMealPlan && currentMealPlanDetails ? currentMealPlanDetails.startDate : p.startDate;
+                const mealPlanEndDate = hasActiveMealPlan && currentMealPlanDetails ? currentMealPlanDetails.endDate : p.endDate;
+                const mealPlanDuration = hasActiveMealPlan && currentMealPlanDetails ? currentMealPlanDetails.duration : p.durationDays;
+
                 return {
                     _id: p._id,
                     planName: p.planName,
                     planCategory: p.planCategory,
-                    durationDays: p.durationDays,
+                    durationDays: mealPlanDuration,
                     durationLabel: p.durationLabel,
-                    startDate: p.startDate,
-                    endDate: p.endDate,
+                    startDate: mealPlanStartDate,
+                    endDate: mealPlanEndDate,
                     status: p.status,
                     hasDietitian: !!dietitian,
-                    mealPlanCreated: Boolean(p.mealPlanCreated),
+                    mealPlanCreated: isMealPlanActive,
+                    // Also include meal plan specific info
+                    mealPlanName: currentMealPlanDetails?.name || null,
+                    mealPlanGoal: currentMealPlanDetails?.goal || null,
                     dietitian: dietitian ? {
                         id: dietitian._id,
                         name: `${dietitian.firstName || ''} ${dietitian.lastName || ''}`.trim(),

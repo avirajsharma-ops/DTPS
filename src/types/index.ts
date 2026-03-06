@@ -35,7 +35,7 @@ export interface IUser extends Document {
   emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Dietitian specific fields
   credentials?: string[];
   specializations?: string[];
@@ -47,7 +47,7 @@ export interface IUser extends Document {
     startTime: string;
     endTime: string;
   }[];
-  
+
   // Client specific fields
   dateOfBirth?: Date;
   gender?: 'male' | 'female' | 'other';
@@ -170,7 +170,6 @@ export interface INutrition {
   protein: number; // in grams
   carbs: number; // in grams
   fat: number; // in grams
-  fiber?: number; // in grams
   sugar?: number; // in grams
   sodium?: number; // in mg
 }
@@ -306,27 +305,27 @@ export interface IPayment extends Document {
   paymentMethod: string;
   transactionId?: string;
   description?: string;
-  
+
   // Plan details (for service_plan type)
   planName?: string;
   planCategory?: string;
   durationDays?: number;
   durationLabel?: string;
-  
+
   // Payment link reference
   paymentLink?: string;
   clientPurchase?: string;
   otherPlatformPayment?: string;
-  
+
   // Meal plan tracking
   mealPlanCreated: boolean;
   mealPlanId?: string;
-  
+
   // Payment method details
   payerEmail?: string;
   payerPhone?: string;
   payerName?: string;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }

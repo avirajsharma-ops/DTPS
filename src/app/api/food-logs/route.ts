@@ -34,14 +34,14 @@ export async function GET(request: NextRequest) {
       if (clientId) {
         // Verify the dietitian is assigned to this client
         const client = await withCache(
-      `food-logs:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
-      { ttl: 120000, tags: ['food_logs'] }
-    );
-        const isAssigned = 
+          `food-logs:${JSON.stringify(clientId)}`,
+          async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
+          { ttl: 120000, tags: ['food_logs'] }
+        );
+        const isAssigned =
           client?.assignedDietitian?.toString() === session.user.id ||
           client?.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
-        
+
         if (!isAssigned) {
           return NextResponse.json(
             { error: 'You are not assigned to this client' },
@@ -79,10 +79,10 @@ export async function GET(request: NextRequest) {
     const foodLogs = await withCache(
       `food-logs:${JSON.stringify(query)}:page=${page}:limit=${limit}`,
       async () => await FoodLog.find(query)
-      .populate('client', 'firstName lastName')
-      .sort({ date: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit),
+        .populate('client', 'firstName lastName')
+        .sort({ date: -1 })
+        .limit(limit)
+        .skip((page - 1) * limit),
       { ttl: 120000, tags: ['food_logs'] }
     );
 
@@ -186,7 +186,6 @@ export async function POST(request: NextRequest) {
         protein: parseFloat(macros?.protein?.toString() || '0'),
         carbs: parseFloat(macros?.carbs?.toString() || '0'),
         fat: parseFloat(macros?.fat?.toString() || '0'),
-        fiber: parseFloat(macros?.fiber?.toString() || '0'),
         sugar: parseFloat(macros?.sugar?.toString() || '0'),
         sodium: parseFloat(macros?.sodium?.toString() || '0'),
       }
@@ -215,7 +214,6 @@ export async function POST(request: NextRequest) {
           protein: 0,
           carbs: 0,
           fat: 0,
-          fiber: 0,
           sugar: 0,
           sodium: 0
         }

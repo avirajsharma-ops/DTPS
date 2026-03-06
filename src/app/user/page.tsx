@@ -1,4 +1,4 @@
-  'use client';
+'use client';
 
 import { useEffect, useState, useRef, useCallback, Suspense, lazy } from 'react';
 import { useSession } from 'next-auth/react';
@@ -92,6 +92,8 @@ interface PurchaseInfo {
   status: string;
   hasDietitian: boolean;
   mealPlanCreated: boolean;
+  mealPlanName?: string | null;
+  mealPlanGoal?: string | null;
   dietitian: {
     id: string;
     name: string;
@@ -213,7 +215,7 @@ export default function UserHomePage() {
       // Process aggregated health summary (hydration, sleep, activity, steps, profile)
       if (summaryRes.ok) {
         const summary = await summaryRes.json();
-        
+
         // Hydration
         newData.water = {
           current: (summary.hydration?.totalToday / 1000) || 0,
@@ -267,7 +269,7 @@ export default function UserHomePage() {
         const mealPlanData = await mealPlanRes.json();
         if (mealPlanData.hasPlan) {
           totalMeals = mealPlanData.meals?.length || 4;
-          
+
           // Calculate total goals from all meals in the plan (sum of all food items)
           let totalProteinFromMeals = 0;
           let totalCarbsFromMeals = 0;
@@ -300,10 +302,10 @@ export default function UserHomePage() {
           proteinGoal = totalProteinFromMeals || mealPlanData.planDetails?.customizations?.proteinGoal || 120;
           carbsGoal = totalCarbsFromMeals || mealPlanData.planDetails?.customizations?.carbsGoal || 250;
           fatGoal = totalFatFromMeals || mealPlanData.planDetails?.customizations?.fatGoal || 65;
-          
+
           // Count completed meals
           mealsEaten = (mealPlanData.meals || []).filter((meal: any) => meal.isCompleted).length;
-          
+
           // Calculate calories and macros from completed meals
           const completedMeals = (mealPlanData.meals || []).filter((meal: any) => meal.isCompleted);
           completedMeals.forEach((meal: any) => {
@@ -359,7 +361,7 @@ export default function UserHomePage() {
     try {
       // Fetch service plans + health data (which includes profile)
       const planRes = await fetch('/api/client/service-plans');
-      
+
       // Also fetch health data (includes profile via dashboard-summary)
       fetchHealthData();
 
@@ -389,7 +391,7 @@ export default function UserHomePage() {
         setHasPendingDietitianAssignment(planData.hasPendingDietitianAssignment || false);
         setActivePurchases(planData.activePurchases || []);
       }
-      
+
       // Fetch health data (which includes profile from dashboard-summary)
       fetchHealthData();
     } catch (error) {
@@ -482,7 +484,7 @@ export default function UserHomePage() {
       router.replace('/user/onboarding');
       return;
     }
-    
+
     // If session says onboarding is complete, trust it and continue
     if (session?.user?.onboardingCompleted === true) {
       setCheckingOnboarding(false);
@@ -568,7 +570,7 @@ export default function UserHomePage() {
   // Blogs don't depend on onboarding status
   useEffect(() => {
     if (status !== 'authenticated') return;
-    
+
     const fetchBlogs = async () => {
       try {
         if (!unmountedRef.current) {
@@ -587,10 +589,10 @@ export default function UserHomePage() {
 
         const blogsData = await blogsRes.json();
         console.log('Blogs API response:', blogsData); // Debug log
-        
+
         // Handle both response formats: { blogs: [...] } and direct array
         const blogsList = Array.isArray(blogsData) ? blogsData : (blogsData.blogs || []);
-        
+
         if (!unmountedRef.current) {
           setBlogs(blogsList);
           console.log('Blogs set:', blogsList); // Debug log
@@ -635,10 +637,10 @@ export default function UserHomePage() {
   // Show loading while mounting, session is loading, checking onboarding, or verifying payment
   if (!mounted || status === 'loading' || checkingOnboarding || paymentVerifying) {
     return (
-      <FullPageLoader 
-        size="lg" 
-        isDarkMode={isDarkMode} 
-        text={paymentVerifying ? 'Verifying your payment...' : undefined} 
+      <FullPageLoader
+        size="lg"
+        isDarkMode={isDarkMode}
+        text={paymentVerifying ? 'Verifying your payment...' : undefined}
       />
     );
   }
@@ -649,46 +651,45 @@ export default function UserHomePage() {
   }
 
   return (
-      <div className={isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'}>
-        {/* Header */}
-        <SmoothComponent animation="fade-in">
-          <div className={`px-4 pt-6 pb-4 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-xs font-medium tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {dayName}, {dateStr}
-                </p>
-                <h1 className={`mt-1 text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                  Hi, {userName}
-                </h1>
-              </div>
-              <Link href="/user/profile">
-                <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center overflow-hidden border-2 border-[#E06A26]/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                  {session?.user?.avatar ? (
-                    <img
-                      src={session.user.avatar}
-                      alt="Profile"
-                      loading="lazy"
-                      className="w-full h-full rounded-full "
-                    />
-                  ) : (
-                    <User className="h-6 w-6 text-[#E06A26]" />
-                  )}
-                </div>
-              </Link>
+    <div className={isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'}>
+      {/* Header */}
+      <SmoothComponent animation="fade-in">
+        <div className={`px-4 pt-6 pb-4 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-xs font-medium tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                {dayName}, {dateStr}
+              </p>
+              <h1 className={`mt-1 text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                Hi, {userName}
+              </h1>
             </div>
+            <Link href="/user/profile">
+              <div className="h-12 w-12 rounded-full bg-[#E06A26]/10 flex items-center justify-center overflow-hidden border-2 border-[#E06A26]/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                {session?.user?.avatar ? (
+                  <img
+                    src={session.user.avatar}
+                    alt="Profile"
+                    loading="lazy"
+                    className="w-full h-full rounded-full "
+                  />
+                ) : (
+                  <User className="h-6 w-6 text-[#E06A26]" />
+                )}
+              </div>
+            </Link>
           </div>
-        </SmoothComponent>
+        </div>
+      </SmoothComponent>
 
-        {/* Main Content */}
+      {/* Main Content */}
       <div className="px-4 py-4 space-y-4">
         {/* Calories Card */}
         <div
-          className={`rounded-3xl p-5 shadow-sm border ${
-            isDarkMode
+          className={`rounded-3xl p-5 shadow-sm border ${isDarkMode
               ? 'bg-gray-900/60 border-gray-800'
               : 'bg-linear-to-br from-[#3AB1A0]/10 to-[#3AB1A0]/20 border-[#3AB1A0]/10'
-          }`}
+            }`}
         >
           <div className="flex items-start justify-between">
             <div>
@@ -702,9 +703,8 @@ export default function UserHomePage() {
                 <span className={`ml-1 text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>kcal</span>
               </div>
               <div
-                className={`flex items-center px-3 py-1 mt-2 rounded-full w-fit ${
-                  isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'
-                }`}
+                className={`flex items-center px-3 py-1 mt-2 rounded-full w-fit ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'
+                  }`}
               >
                 <span className="text-[#3AB1A0] text-sm">🏁 Goal: {data.caloriesGoal.toLocaleString()}</span>
               </div>
@@ -757,9 +757,9 @@ export default function UserHomePage() {
               </div>
               <p className={`mt-1 text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{data.protein}g</p>
               <div className={`h-1.5 rounded-full mt-2 overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                <div 
-                  className="h-full bg-[#3AB1A0] rounded-full transition-all duration-300" 
-                  style={{ width: `${Math.min((data.protein / data.proteinGoal) * 100, 100)}%` }} 
+                <div
+                  className="h-full bg-[#3AB1A0] rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((data.protein / data.proteinGoal) * 100, 100)}%` }}
                 />
               </div>
             </div>
@@ -772,9 +772,9 @@ export default function UserHomePage() {
               </div>
               <p className={`mt-1 text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{data.carbs}g</p>
               <div className={`h-1.5 rounded-full mt-2 overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                <div 
-                  className="h-full bg-[#E06A26] rounded-full transition-all duration-300" 
-                  style={{ width: `${Math.min((data.carbs / data.carbsGoal) * 100, 100)}%` }} 
+                <div
+                  className="h-full bg-[#E06A26] rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((data.carbs / data.carbsGoal) * 100, 100)}%` }}
                 />
               </div>
             </div>
@@ -787,68 +787,68 @@ export default function UserHomePage() {
               </div>
               <p className={`mt-1 text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{data.fat}g</p>
               <div className={`h-1.5 rounded-full mt-2 overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                <div 
-                  className="h-full bg-[#DB9C6E] rounded-full transition-all duration-300" 
-                  style={{ width: `${Math.min((data.fat / data.fatGoal) * 100, 100)}%` }} 
+                <div
+                  className="h-full bg-[#DB9C6E] rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((data.fat / data.fatGoal) * 100, 100)}%` }}
                 />
               </div>
             </div>
           </div>
         </div>
 
-    
-    {/* Service Plans Swiper - Only shown when user has no purchases at all */}
-{!hasAnyPurchase && (
-  <div className="pt-6 pb-4">
-    <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><SpoonGifLoader size="md" /></div>}>
-      <ServicePlansSwiper />
-    </Suspense>
-  </div>
-)}
+
+        {/* Service Plans Swiper - Only shown when user has no purchases at all */}
+        {!hasAnyPurchase && (
+          <div className="pt-6 pb-4">
+            <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><SpoonGifLoader size="md" /></div>}>
+              <ServicePlansSwiper />
+            </Suspense>
+          </div>
+        )}
 
         {/* Purchase Status Cards - Show only the first/current active purchase */}
         {activePurchases.length > 0 && (() => {
           // Get the current active purchase (first one or most recent)
           const currentPurchase = activePurchases[0];
           return (
-          <div key={currentPurchase._id}>
-            {currentPurchase.mealPlanCreated ? (
-              /* STATE 3: Meal Plan Created - Full Details with actions */
-              <div
-                className={
-                  isDarkMode
-                    ? 'rounded-3xl bg-gray-900/60 p-6 shadow-sm border border-gray-800'
-                    : 'rounded-3xl bg-linear-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20'
-                }
-              >
-                <div className="flex items-start gap-4">
-                  <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
-                    {currentPurchase.dietitian?.avatar ? (
-                      <img 
-                        src={currentPurchase.dietitian.avatar} 
-                        alt={currentPurchase.dietitian.name}
-                        loading="lazy"
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <UserCheck className="h-8 w-8 text-[#3AB1A0]" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                        {currentPurchase.hasDietitian ? 'Your Dietitian' : 'Your Plan'}
-                      </h3>
-                      <span className="px-2 py-0.5 bg-[#3AB1A0] text-white text-xs font-semibold rounded-full">
-                        Active ✓
-                      </span>
+            <div key={currentPurchase._id}>
+              {currentPurchase.mealPlanCreated ? (
+                /* STATE 3: Meal Plan Created - Full Details with actions */
+                <div
+                  className={
+                    isDarkMode
+                      ? 'rounded-3xl bg-gray-900/60 p-6 shadow-sm border border-gray-800'
+                      : 'rounded-3xl bg-linear-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20'
+                  }
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
+                      {currentPurchase.dietitian?.avatar ? (
+                        <img
+                          src={currentPurchase.dietitian.avatar}
+                          alt={currentPurchase.dietitian.name}
+                          loading="lazy"
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <UserCheck className="h-8 w-8 text-[#3AB1A0]" />
+                      )}
                     </div>
-                    {currentPurchase.hasDietitian && (
-                      <>
-                        <p className="text-base font-semibold text-[#3AB1A0] mt-1">
-                          {currentPurchase.dietitian?.name || 'Dietitian'}
-                        </p>
-                        {/* {currentPurchase.dietitian?.email && (
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                          {currentPurchase.hasDietitian ? 'Your Dietitian' : 'Your Plan'}
+                        </h3>
+                        <span className="px-2 py-0.5 bg-[#3AB1A0] text-white text-xs font-semibold rounded-full">
+                          Active ✓
+                        </span>
+                      </div>
+                      {currentPurchase.hasDietitian && (
+                        <>
+                          <p className="text-base font-semibold text-[#3AB1A0] mt-1">
+                            {currentPurchase.dietitian?.name || 'Dietitian'}
+                          </p>
+                          {/* {currentPurchase.dietitian?.email && (
                           <div className={`flex items-center gap-1 mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             <Mail className="w-3 h-3" />
                             <span>{currentPurchase.dietitian.email}</span>
@@ -860,118 +860,119 @@ export default function UserHomePage() {
                             <span>{currentPurchase.dietitian.phone}</span>
                           </div>
                         )} */}
-                      </>
-                    )}
-                    {!currentPurchase.hasDietitian && (
-                      <p className="text-base font-semibold text-[#3AB1A0] mt-1">
-                        {currentPurchase.planName}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Plan Info - Full Details */}
-                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Active Plan</span>
-                    <span className="px-3 py-1 bg-[#61a035]/15 text-[#61a035] text-xs font-semibold rounded-full">
-                      🟢 Active
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
-                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</p>
-                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.planName}</p>
-                    </div>
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
-                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Duration</p>
-                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.durationDays} Days</p>
-                    </div>
-                    {/* Show dates when meal plan is created */}
-                    {currentPurchase.startDate && (
-                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
-                        <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Start Date</p>
-                        <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                          {format(new Date(currentPurchase.startDate), 'dd MMM yyyy')}
+                        </>
+                      )}
+                      {!currentPurchase.hasDietitian && (
+                        <p className="text-base font-semibold text-[#3AB1A0] mt-1">
+                          {currentPurchase.planName}
                         </p>
-                      </div>
-                    )}
-                    {currentPurchase.endDate && (
-                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
-                        <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>End Date</p>
-                        <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                          {format(new Date(currentPurchase.endDate), 'dd MMM yyyy')}
-                        </p>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Quick Actions - View Meal Plan, Message & Book Appointment */}
-                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <Link 
-                      href="/user/plan"
-                      className="flex items-center justify-center gap-2 px-4 py-3 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2A9A8B] transition-colors"
-                    >
-                      <Utensils className="w-4 h-4" />
-                      <span>View Meal Plan</span>
-                    </Link>
-                    <Link 
-                      href="/user/messages"
-                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors border border-[#3AB1A0] text-[#3AB1A0] ${
-                        isDarkMode ? 'bg-gray-950/40 hover:bg-gray-900/60' : 'bg-white hover:bg-[#3AB1A0]/10'
-                      }`}
-                    >
-                      <Mail className="w-4 h-4" />
-                      <span>Message</span>
-                    </Link>
-                  </div>
-                  {currentPurchase.hasDietitian && (
-                    <Link 
-                      href="/user/appointments/book"
-                      className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#E06A26] text-white rounded-xl text-sm font-semibold hover:bg-[#d55f1f] transition-colors"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <span>Book Appointment</span>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            ) : currentPurchase.hasDietitian ? (
-              /* STATE 2: Dietitian Assigned but Meal Plan NOT Created Yet */
-              <div
-                className={
-                  isDarkMode
-                    ? 'rounded-3xl bg-gray-900/60 p-6 shadow-sm border border-gray-800'
-                    : 'rounded-3xl bg-linear-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20'
-                }
-              >
-                <div className="flex items-start gap-4">
-                  <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
-                    {currentPurchase.dietitian?.avatar ? (
-                      <img 
-                        src={currentPurchase.dietitian.avatar} 
-                        alt={currentPurchase.dietitian.name}
-                        loading="lazy"
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <UserCheck className="h-8 w-8 text-[#3AB1A0]" />
-                    )}
-                    
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Your Dietitian</h3>
-                      <span className="px-2 py-0.5 bg-[#3AB1A0] text-white text-xs font-semibold rounded-full">
-                        Assigned ✓
+                  {/* Plan Info - Full Details */}
+                  <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Active Plan</span>
+                      <span className="px-3 py-1 bg-[#61a035]/15 text-[#61a035] text-xs font-semibold rounded-full">
+                        🟢 Active
                       </span>
                     </div>
-                    <p className="text-base font-semibold text-[#3AB1A0] mt-1">
-                      {currentPurchase.dietitian?.name || 'Dietitian'}
-                    </p>
-                    {/* {currentPurchase.dietitian?.email && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                        <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</p>
+                        <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                          {currentPurchase.mealPlanName || currentPurchase.planName}
+                        </p>
+                      </div>
+                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                        <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Duration</p>
+                        <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.durationDays} Days</p>
+                      </div>
+                      {/* Show meal plan dates (from actual meal plan, not payment) */}
+                      {currentPurchase.startDate && (
+                        <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                          <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Start Date</p>
+                          <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                            {format(new Date(currentPurchase.startDate), 'dd MMM yyyy')}
+                          </p>
+                        </div>
+                      )}
+                      {currentPurchase.endDate && (
+                        <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                          <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>End Date</p>
+                          <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                            {format(new Date(currentPurchase.endDate), 'dd MMM yyyy')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quick Actions - View Meal Plan, Message & Book Appointment */}
+                  <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Link
+                        href="/user/plan"
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2A9A8B] transition-colors"
+                      >
+                        <Utensils className="w-4 h-4" />
+                        <span>View Meal Plan</span>
+                      </Link>
+                      <Link
+                        href="/user/messages"
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors border border-[#3AB1A0] text-[#3AB1A0] ${isDarkMode ? 'bg-gray-950/40 hover:bg-gray-900/60' : 'bg-white hover:bg-[#3AB1A0]/10'
+                          }`}
+                      >
+                        <Mail className="w-4 h-4" />
+                        <span>Message</span>
+                      </Link>
+                    </div>
+                    {currentPurchase.hasDietitian && (
+                      <Link
+                        href="/user/appointments/book"
+                        className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#E06A26] text-white rounded-xl text-sm font-semibold hover:bg-[#d55f1f] transition-colors"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        <span>Book Appointment</span>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ) : currentPurchase.hasDietitian ? (
+                /* STATE 2: Dietitian Assigned but Meal Plan NOT Created Yet */
+                <div
+                  className={
+                    isDarkMode
+                      ? 'rounded-3xl bg-gray-900/60 p-6 shadow-sm border border-gray-800'
+                      : 'rounded-3xl bg-linear-to-br from-[#3AB1A0]/10 to-[#61a035]/10 p-6 shadow-sm border border-[#3AB1A0]/20'
+                  }
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/20 flex items-center justify-center overflow-hidden border-2 border-[#3AB1A0]/30">
+                      {currentPurchase.dietitian?.avatar ? (
+                        <img
+                          src={currentPurchase.dietitian.avatar}
+                          alt={currentPurchase.dietitian.name}
+                          loading="lazy"
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <UserCheck className="h-8 w-8 text-[#3AB1A0]" />
+                      )}
+
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Your Dietitian</h3>
+                        <span className="px-2 py-0.5 bg-[#3AB1A0] text-white text-xs font-semibold rounded-full">
+                          Assigned ✓
+                        </span>
+                      </div>
+                      <p className="text-base font-semibold text-[#3AB1A0] mt-1">
+                        {currentPurchase.dietitian?.name || 'Dietitian'}
+                      </p>
+                      {/* {currentPurchase.dietitian?.email && (
                       <div className={`flex items-center gap-1 mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         <Mail className="w-3 h-3" />
                         <span>{currentPurchase.dietitian.email}</span>
@@ -983,230 +984,227 @@ export default function UserHomePage() {
                         <span>{currentPurchase.dietitian.phone}</span>
                       </div>
                     )} */}
+                    </div>
                   </div>
-                </div>
 
-                {/* Plan Info - No meal plan yet */}
-                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Your Plan</span>
-                    <span
-                      className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 ${
-                        isDarkMode ? 'bg-amber-900/30 text-amber-200' : 'bg-amber-100 text-amber-700'
-                      }`}
+                  {/* Plan Info - No meal plan yet */}
+                  <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Your Plan</span>
+                      <span
+                        className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 ${isDarkMode ? 'bg-amber-900/30 text-amber-200' : 'bg-amber-100 text-amber-700'
+                          }`}
+                      >
+                        <Clock className="w-3 h-3" />
+                        Plan Soon
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                        <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</p>
+                        <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.planName}</p>
+                      </div>
+                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                        <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Duration</p>
+                        <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.durationDays} Days</p>
+                      </div>
+                    </div>
+                    {/* Notice - Meal plan being prepared */}
+                    <div
+                      className={`p-4 mt-3 border rounded-xl ${isDarkMode ? 'bg-blue-950/30 border-blue-900' : 'bg-blue-50 border-blue-200'
+                        }`}
                     >
-                      <Clock className="w-3 h-3" />
-                      Plan Soon
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
-                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</p>
-                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.planName}</p>
-                    </div>
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
-                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Duration</p>
-                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.durationDays} Days</p>
-                    </div>
-                  </div>
-                  {/* Notice - Meal plan being prepared */}
-                  <div
-                    className={`p-4 mt-3 border rounded-xl ${
-                      isDarkMode ? 'bg-blue-950/30 border-blue-900' : 'bg-blue-50 border-blue-200'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${isDarkMode ? 'bg-blue-900/40' : 'bg-blue-100'}`}>
-                        <Utensils className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className={`text-sm font-semibold ${isDarkMode ? 'text-blue-200' : 'text-blue-800'}`}>Meal Plan Coming Soon!</p>
-                        <p className={`text-xs mt-1 ${isDarkMode ? 'text-blue-200/80' : 'text-blue-600'}`}
-                        >
-                          Your dietitian is preparing a personalized meal plan for you. You'll be notified once it's ready.
-                        </p>
+                      <div className="flex items-start gap-3">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${isDarkMode ? 'bg-blue-900/40' : 'bg-blue-100'}`}>
+                          <Utensils className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className={`text-sm font-semibold ${isDarkMode ? 'text-blue-200' : 'text-blue-800'}`}>Meal Plan Coming Soon!</p>
+                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-blue-200/80' : 'text-blue-600'}`}
+                          >
+                            Your dietitian is preparing a personalized meal plan for you. You'll be notified once it's ready.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Message & Book Appointment Actions */}
-                <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10 space-y-3">
-                  <Link 
-                    href="/user/messages"
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2A9A8B] transition-colors"
-                  >
-                    <Mail className="w-4 h-4" />
-                    <span>Message Your Dietitian</span>
-                  </Link>
-                  <Link 
-                    href="/user/appointments/book"
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#E06A26] text-white rounded-xl text-sm font-semibold hover:bg-[#d55f1f] transition-colors"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    <span>Book Appointment</span>
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              /* STATE 1: Plan Purchased, Waiting for Dietitian Assignment */
-              <div
-                className={
-                  isDarkMode
-                    ? 'rounded-3xl bg-gray-900/60 p-6 shadow-sm border border-gray-800'
-                    : 'rounded-3xl bg-linear-to-br from-[#E06A26]/10 to-[#DB9C6E]/10 p-6 shadow-sm border border-[#E06A26]/20'
-                }
-              >
-                <div className="flex items-start gap-4">
-                  <div className="h-14 w-14 rounded-2xl flex items-center justify-center">
-                     <img
-                       src="/images/dtps-logo.png"
-                       alt="DTPS"
-                       loading="lazy"
-                       className="object-cover w-full h-full"
-                     />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Plan Purchased! 🎉</h3>
-                    <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      You've successfully purchased <span className="font-semibold text-[#E06A26]">{currentPurchase.planName}</span>
-                    </p>
-                    <div className="mt-3 flex items-center gap-2 text-sm text-[#DB9C6E]">
-                      <Clock className="w-4 h-4" />
-                      <span>Dietitian will be assigned shortly...</span>
-                    </div>
-                    <p className={`mt-2 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Our team is reviewing your profile and will assign the best dietitian for your goals.
-                    </p>
+                  {/* Message & Book Appointment Actions */}
+                  <div className="mt-4 pt-4 border-t border-[#3AB1A0]/10 space-y-3">
+                    <Link
+                      href="/user/messages"
+                      className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold hover:bg-[#2A9A8B] transition-colors"
+                    >
+                      <Mail className="w-4 h-4" />
+                      <span>Message Your Dietitian</span>
+                    </Link>
+                    <Link
+                      href="/user/appointments/book"
+                      className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#E06A26] text-white rounded-xl text-sm font-semibold hover:bg-[#d55f1f] transition-colors"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      <span>Book Appointment</span>
+                    </Link>
                   </div>
                 </div>
-                
-                {/* Plan Details - Only show duration, no dates until dietitian assigned */}
-                <div className="mt-4 pt-4 border-t border-[#E06A26]/10">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
-                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</p>
-                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.planName}</p>
+              ) : (
+                /* STATE 1: Plan Purchased, Waiting for Dietitian Assignment */
+                <div
+                  className={
+                    isDarkMode
+                      ? 'rounded-3xl bg-gray-900/60 p-6 shadow-sm border border-gray-800'
+                      : 'rounded-3xl bg-linear-to-br from-[#E06A26]/10 to-[#DB9C6E]/10 p-6 shadow-sm border border-[#E06A26]/20'
+                  }
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="h-14 w-14 rounded-2xl flex items-center justify-center">
+                      <img
+                        src="/images/dtps-logo.png"
+                        alt="DTPS"
+                        loading="lazy"
+                        className="object-cover w-full h-full"
+                      />
                     </div>
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
-                      <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Duration</p>
-                      <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.durationDays} Days</p>
+                    <div className="flex-1">
+                      <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Plan Purchased! 🎉</h3>
+                      <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        You've successfully purchased <span className="font-semibold text-[#E06A26]">{currentPurchase.planName}</span>
+                      </p>
+                      <div className="mt-3 flex items-center gap-2 text-sm text-[#DB9C6E]">
+                        <Clock className="w-4 h-4" />
+                        <span>Dietitian will be assigned shortly...</span>
+                      </div>
+                      <p className={`mt-2 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Our team is reviewing your profile and will assign the best dietitian for your goals.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Plan Details - Only show duration, no dates until dietitian assigned */}
+                  <div className="mt-4 pt-4 border-t border-[#E06A26]/10">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                        <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</p>
+                        <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.planName}</p>
+                      </div>
+                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-950/40' : 'bg-white/60'}`}>
+                        <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Duration</p>
+                        <p className={`mt-1 text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{currentPurchase.durationDays} Days</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        );
+              )}
+            </div>
+          );
         })()}
-       
-    {/* BMI Card - Show if BMI is available */}
-    {/* BMI Card */}
-{userProfile?.bmi && (
-  <div className={`rounded-3xl p-6 shadow-sm border ${isDarkMode ? 'bg-gray-900/60 border-gray-800' : 'bg-white border-[#E06A26]/15'}`}>
-    
-    {/* Header */}
-    <div className="flex items-center justify-between mb-5">
-      <div>
-        <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          Body Mass Index
-        </p>
-        <div className="flex items-end gap-2 mt-1">
-          <span className={`text-4xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-            {userProfile.bmi}
-          </span>
-          <span className={`mb-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>kg/m²</span>
-        </div>
-      </div>
 
-      {/* Category Badge */}
-      <span
-        className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-          userProfile.bmiCategory === 'Normal'
-            ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
-            : userProfile.bmiCategory === 'Underweight'
-            ? 'bg-blue-100 text-blue-700'
-            : userProfile.bmiCategory === 'Overweight'
-            ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
-            : 'bg-[#E06A26]/15 text-[#E06A26]'
-        }`}
-      >
-        {userProfile.bmiCategory}
-      </span>
-    </div>
+        {/* BMI Card - Show if BMI is available */}
+        {/* BMI Card */}
+        {userProfile?.bmi && (
+          <div className={`rounded-3xl p-6 shadow-sm border ${isDarkMode ? 'bg-gray-900/60 border-gray-800' : 'bg-white border-[#E06A26]/15'}`}>
 
-    {/* Progress Bar */}
-    <div className="relative mt-6">
-      {/* Track - proportional to BMI ranges (15-40 scale) */}
-      <div className="flex h-3 overflow-hidden rounded-full">
-        {/* Underweight (15-18.5 = 3.5/25 = 14%) */}
-        <div className="w-[14%] bg-blue-400/70" />
-        {/* Normal (18.5-25 = 6.5/25 = 26%) */}
-        <div className="w-[26%] bg-[#3AB1A0]" />
-        {/* Overweight (25-29.9 = 4.9/25 = 19.6%) */}
-        <div className="w-[20%] bg-[#DB9C6E]" />
-        {/* Obese (30-40 = 10/25 = 40%) */}
-        <div className="w-[40%] bg-[#E06A26]" />
-      </div>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Body Mass Index
+                </p>
+                <div className="flex items-end gap-2 mt-1">
+                  <span className={`text-4xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    {userProfile.bmi}
+                  </span>
+                  <span className={`mb-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>kg/m²</span>
+                </div>
+              </div>
 
-      {/* Indicator - contained within bounds */}
-      <div
-        className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2"
-        style={{
-          left: `clamp(2.5%, ${Math.min(
-            Math.max(((parseFloat(userProfile.bmi) - 15) / (40 - 15)) * 100, 2.5),
-            97.5
-          )}%, 97.5%)`,
-        }}
-      >
-        <div className={`w-5 h-5 rounded-full shadow-md border-2 ${isDarkMode ? 'bg-gray-950 border-gray-200' : 'bg-white border-gray-900'}`} />
-      </div>
-    </div>
+              {/* Category Badge */}
+              <span
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold ${userProfile.bmiCategory === 'Normal'
+                    ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
+                    : userProfile.bmiCategory === 'Underweight'
+                      ? 'bg-blue-100 text-blue-700'
+                      : userProfile.bmiCategory === 'Overweight'
+                        ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
+                        : 'bg-[#E06A26]/15 text-[#E06A26]'
+                  }`}
+              >
+                {userProfile.bmiCategory}
+              </span>
+            </div>
 
-    {/* Scale */}
-    <div className={`flex justify-between mt-2 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-      <span>15</span>
-      <span>18.5</span>
-      <span>25</span>
-      <span>30</span>
-      <span>40</span>
-    </div>
+            {/* Progress Bar */}
+            <div className="relative mt-6">
+              {/* Track - proportional to BMI ranges (15-40 scale) */}
+              <div className="flex h-3 overflow-hidden rounded-full">
+                {/* Underweight (15-18.5 = 3.5/25 = 14%) */}
+                <div className="w-[14%] bg-blue-400/70" />
+                {/* Normal (18.5-25 = 6.5/25 = 26%) */}
+                <div className="w-[26%] bg-[#3AB1A0]" />
+                {/* Overweight (25-29.9 = 4.9/25 = 19.6%) */}
+                <div className="w-[20%] bg-[#DB9C6E]" />
+                {/* Obese (30-40 = 10/25 = 40%) */}
+                <div className="w-[40%] bg-[#E06A26]" />
+              </div>
 
-    <div className="flex justify-between mt-1 text-xs font-medium">
-      <span className="text-blue-500">Under</span>
-      <span className="text-[#3AB1A0]">Normal</span>
-      <span className="text-[#DB9C6E]">Over</span>
-      <span className="text-[#E06A26]">Obese</span>
-    </div>
+              {/* Indicator - contained within bounds */}
+              <div
+                className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2"
+                style={{
+                  left: `clamp(2.5%, ${Math.min(
+                    Math.max(((parseFloat(userProfile.bmi) - 15) / (40 - 15)) * 100, 2.5),
+                    97.5
+                  )}%, 97.5%)`,
+                }}
+              >
+                <div className={`w-5 h-5 rounded-full shadow-md border-2 ${isDarkMode ? 'bg-gray-950 border-gray-200' : 'bg-white border-gray-900'}`} />
+              </div>
+            </div>
 
-    {/* Weight & Height */}
-    <div className={`grid grid-cols-2 gap-4 pt-4 mt-6 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/15 flex items-center justify-center">
-          <Activity className="h-5 w-5 text-[#3AB1A0]" />
-        </div>
-        <div>
-          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Weight</p>
-          <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-            {userProfile.weightKg} kg
-          </p>
-        </div>
-      </div>
+            {/* Scale */}
+            <div className={`flex justify-between mt-2 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              <span>15</span>
+              <span>18.5</span>
+              <span>25</span>
+              <span>30</span>
+              <span>40</span>
+            </div>
 
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-[#E06A26]/15 flex items-center justify-center">
-          <User className="h-5 w-5 text-[#E06A26]" />
-        </div>
-        <div>
-          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Height</p>
-          <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-            {userProfile.heightCm} cm
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+            <div className="flex justify-between mt-1 text-xs font-medium">
+              <span className="text-blue-500">Under</span>
+              <span className="text-[#3AB1A0]">Normal</span>
+              <span className="text-[#DB9C6E]">Over</span>
+              <span className="text-[#E06A26]">Obese</span>
+            </div>
+
+            {/* Weight & Height */}
+            <div className={`grid grid-cols-2 gap-4 pt-4 mt-6 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-[#3AB1A0]/15 flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-[#3AB1A0]" />
+                </div>
+                <div>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Weight</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    {userProfile.weightKg} kg
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-[#E06A26]/15 flex items-center justify-center">
+                  <User className="h-5 w-5 text-[#E06A26]" />
+                </div>
+                <div>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Height</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    {userProfile.heightCm} cm
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
 
         {/* Swipeable Image Cards - Only shown when user has no purchases at all */}
@@ -1285,9 +1283,8 @@ export default function UserHomePage() {
               {[0, 1, 2].map((index) => (
                 <span
                   key={index}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    activeCard === index ? 'bg-[#E06A26]' : isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
-                  }`}
+                  className={`w-2 h-2 rounded-full transition-colors ${activeCard === index ? 'bg-[#E06A26]' : isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
+                    }`}
                 />
               ))}
             </div>
@@ -1315,9 +1312,8 @@ export default function UserHomePage() {
           {/* Water Card */}
           <Link
             href="/user/hydration"
-            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#3AB1A0]/10 ${
-              isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
-            }`}
+            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#3AB1A0]/10 ${isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
+              }`}
           >
             <div className="flex items-center justify-between mb-3">
               <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Water</p>
@@ -1353,9 +1349,8 @@ export default function UserHomePage() {
           {/* Sleep Card */}
           <Link
             href="/user/sleep"
-            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#DB9C6E]/10 ${
-              isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
-            }`}
+            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#DB9C6E]/10 ${isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
+              }`}
           >
             <div className="flex items-center justify-between mb-3">
               <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sleep</p>
@@ -1378,9 +1373,8 @@ export default function UserHomePage() {
           {/* Activity Card */}
           <Link
             href="/user/activity"
-            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#E06A26]/10 ${
-              isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
-            }`}
+            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#E06A26]/10 ${isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
+              }`}
           >
             <div className="flex items-center justify-between mb-3">
               <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Activity</p>
@@ -1415,9 +1409,8 @@ export default function UserHomePage() {
           {/* Steps Card */}
           <Link
             href="/user/steps"
-            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#3AB1A0]/10 ${
-              isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
-            }`}
+            className={`rounded-2xl p-4 transition-all cursor-pointer border border-[#3AB1A0]/10 ${isDarkMode ? 'bg-gray-900/60 hover:bg-gray-900 border-gray-800' : 'bg-white shadow-sm hover:shadow-md'
+              }`}
           >
             <div className="flex items-center justify-between mb-3">
               <p className={`text-xs font-medium tracking-wider uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Steps</p>
@@ -1451,81 +1444,77 @@ export default function UserHomePage() {
         {/* Quick Log Section */}
 
         <div>
-  <h2 className="text-lg font-bold text-[#E06A26] mb-4">
-    Quick Log
-  </h2>
+          <h2 className="text-lg font-bold text-[#E06A26] mb-4">
+            Quick Log
+          </h2>
 
-  {/* Grid Container */}
-  <div className="grid grid-cols-2 gap-4">
-    
-    {/* Water */}
-    <Link
-      href="/user/hydration"
-      className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${
-        isDarkMode
-          ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
-          : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
-      }`}
-    >
-      <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
-        <Droplet className="h-8 w-8 text-[#3AB1A0]" fill="#3AB1A0" fillOpacity="0.3" />
-      </div>
-      <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Water</span>
-      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>+250 ml</span>
-    </Link>
+          {/* Grid Container */}
+          <div className="grid grid-cols-2 gap-4">
 
-    {/* Exercise */}
-    <Link
-      href="/user/activity"
-      className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${
-        isDarkMode
-          ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
-          : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
-      }`}
-    >
-      <div className="h-16 w-16 rounded-full bg-[#E06A26]/10 flex items-center justify-center">
-        <Activity className="h-8 w-8 text-[#E06A26]" />
-      </div>
-      <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Exercise</span>
-      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Log Activity</span>
-    </Link>
+            {/* Water */}
+            <Link
+              href="/user/hydration"
+              className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${isDarkMode
+                  ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+                  : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+                }`}
+            >
+              <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
+                <Droplet className="h-8 w-8 text-[#3AB1A0]" fill="#3AB1A0" fillOpacity="0.3" />
+              </div>
+              <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Water</span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>+250 ml</span>
+            </Link>
 
-    {/* Sleep */}
-    <Link
-      href="/user/sleep"
-      className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${
-        isDarkMode
-          ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
-          : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
-      }`}
-    >
-      <div className="h-16 w-16 rounded-full bg-[#DB9C6E]/20 flex items-center justify-center">
-        <Moon className="h-8 w-8 text-[#DB9C6E]" />
-      </div>
-      <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Sleep</span>
-      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Duration</span>
-    </Link>
+            {/* Exercise */}
+            <Link
+              href="/user/activity"
+              className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${isDarkMode
+                  ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+                  : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+                }`}
+            >
+              <div className="h-16 w-16 rounded-full bg-[#E06A26]/10 flex items-center justify-center">
+                <Activity className="h-8 w-8 text-[#E06A26]" />
+              </div>
+              <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Exercise</span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Log Activity</span>
+            </Link>
 
-    {/* Steps */}
-    <Link
-      href="/user/steps"
-      className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${
-        isDarkMode
-          ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
-          : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
-      }`}
-    >
-      <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
-        <Footprints className="h-8 w-8 text-[#3AB1A0]" />
-      </div>
-      <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Steps</span>
-      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>
-        {data.steps.current.toLocaleString()}
-      </span>
-    </Link>
+            {/* Sleep */}
+            <Link
+              href="/user/sleep"
+              className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${isDarkMode
+                  ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+                  : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+                }`}
+            >
+              <div className="h-16 w-16 rounded-full bg-[#DB9C6E]/20 flex items-center justify-center">
+                <Moon className="h-8 w-8 text-[#DB9C6E]" />
+              </div>
+              <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Sleep</span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Duration</span>
+            </Link>
 
-  </div>
-</div>
+            {/* Steps */}
+            <Link
+              href="/user/steps"
+              className={`flex flex-col items-center gap-4 p-6 transition-all rounded-3xl ${isDarkMode
+                  ? 'bg-gray-900/60 border border-gray-800 hover:bg-gray-900'
+                  : 'bg-white shadow-md hover:shadow-lg hover:bg-gray-50'
+                }`}
+            >
+              <div className="h-16 w-16 rounded-full bg-[#3AB1A0]/10 flex items-center justify-center">
+                <Footprints className="h-8 w-8 text-[#3AB1A0]" />
+              </div>
+              <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Steps</span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>
+                {data.steps.current.toLocaleString()}
+              </span>
+            </Link>
+
+          </div>
+        </div>
 
         {/* Transformation Success Stories */}
         <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><SpoonGifLoader size="md" /></div>}>
@@ -1608,15 +1597,15 @@ export default function UserHomePage() {
                     }
                   };
                   return (
-                    <Link 
-                      key={blog._id} 
+                    <Link
+                      key={blog._id}
                       href={`/user/blogs/${blog.slug || blog._id}`}
                       className={`min-w-65 snap-start rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md hover:-translate-y-1 ${isDarkMode ? 'bg-gray-900/60 border border-gray-800' : 'bg-white'}`}
                     >
                       <div className={`relative h-32 bg-linear-to-br ${blog.thumbnailImage || blog.featuredImage ? '' : getCategoryBg(blog.category)}`}>
                         {(blog.thumbnailImage || blog.featuredImage) ? (
-                          <img 
-                            src={blog.thumbnailImage || blog.featuredImage} 
+                          <img
+                            src={blog.thumbnailImage || blog.featuredImage}
                             alt={blog.title}
                             className="w-full h-full object-cover"
                           />
@@ -1646,6 +1635,6 @@ export default function UserHomePage() {
           )}
         </>
       </div>
-      </div>
+    </div>
   );
 }

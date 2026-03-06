@@ -22,10 +22,6 @@ const nutritionSchema = new Schema<INutrition>({
     required: true,
     min: 0
   },
-  fiber: {
-    type: Number,
-    min: 0
-  },
   sugar: {
     type: Number,
     min: 0
@@ -102,40 +98,38 @@ foodLogSchema.index({ date: -1 });
 foodLogSchema.index({ client: 1, date: 1 }, { unique: true });
 
 // Pre-save middleware to calculate total nutrition
-foodLogSchema.pre('save', function(next) {
+foodLogSchema.pre('save', function (next) {
   const totalNutrition: INutrition = {
     calories: 0,
     protein: 0,
     carbs: 0,
     fat: 0,
-    fiber: 0,
     sugar: 0,
     sodium: 0
   };
-  
+
   this.meals.forEach((meal: any) => {
     meal.foods.forEach((food: any) => {
       totalNutrition.calories += food.calories || 0;
       totalNutrition.protein += food.nutrition?.protein || 0;
       totalNutrition.carbs += food.nutrition?.carbs || 0;
       totalNutrition.fat += food.nutrition?.fat || 0;
-      totalNutrition.fiber = (totalNutrition.fiber || 0) + (food.nutrition?.fiber || 0);
       totalNutrition.sugar = (totalNutrition.sugar || 0) + (food.nutrition?.sugar || 0);
       totalNutrition.sodium = (totalNutrition.sodium || 0) + (food.nutrition?.sodium || 0);
     });
   });
-  
+
   // Round to 1 decimal place
   Object.keys(totalNutrition).forEach(key => {
     totalNutrition[key as keyof INutrition] = Math.round((totalNutrition[key as keyof INutrition] || 0) * 10) / 10;
   });
-  
+
   this.totalNutrition = totalNutrition;
   next();
 });
 
 // Static method to get food logs for a date range
-foodLogSchema.statics.getLogsInRange = function(clientId: string, startDate: Date, endDate: Date) {
+foodLogSchema.statics.getLogsInRange = function (clientId: string, startDate: Date, endDate: Date) {
   return this.find({
     client: clientId,
     date: {
@@ -146,23 +140,23 @@ foodLogSchema.statics.getLogsInRange = function(clientId: string, startDate: Dat
 };
 
 // Static method to get nutrition trends
-foodLogSchema.statics.getNutritionTrends = function(clientId: string, days = 30) {
+foodLogSchema.statics.getNutritionTrends = function (clientId: string, days = 30) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
+
   return this.find({
     client: clientId,
     date: { $gte: startDate }
   })
-  .select('date totalNutrition')
-  .sort({ date: 1 });
+    .select('date totalNutrition')
+    .sort({ date: 1 });
 };
 
 // Static method to get average daily nutrition
-foodLogSchema.statics.getAverageDailyNutrition = function(clientId: string, days = 7) {
+foodLogSchema.statics.getAverageDailyNutrition = function (clientId: string, days = 7) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
+
   return this.aggregate([
     {
       $match: {
@@ -177,7 +171,6 @@ foodLogSchema.statics.getAverageDailyNutrition = function(clientId: string, days
         avgProtein: { $avg: '$totalNutrition.protein' },
         avgCarbs: { $avg: '$totalNutrition.carbs' },
         avgFat: { $avg: '$totalNutrition.fat' },
-        avgFiber: { $avg: '$totalNutrition.fiber' },
         avgSugar: { $avg: '$totalNutrition.sugar' },
         avgSodium: { $avg: '$totalNutrition.sodium' },
         totalDays: { $sum: 1 }
@@ -187,10 +180,10 @@ foodLogSchema.statics.getAverageDailyNutrition = function(clientId: string, days
 };
 
 // Static method to get meal type breakdown
-foodLogSchema.statics.getMealTypeBreakdown = function(clientId: string, days = 7) {
+foodLogSchema.statics.getMealTypeBreakdown = function (clientId: string, days = 7) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
+
   return this.aggregate([
     {
       $match: {
@@ -216,9 +209,9 @@ foodLogSchema.statics.getMealTypeBreakdown = function(clientId: string, days = 7
 };
 
 // Method to add meal to existing log
-foodLogSchema.methods.addMeal = function(mealType: string, foods: any[]) {
+foodLogSchema.methods.addMeal = function (mealType: string, foods: any[]) {
   const existingMealIndex = this.meals.findIndex((meal: any) => meal.type === mealType);
-  
+
   if (existingMealIndex >= 0) {
     this.meals[existingMealIndex].foods.push(...foods);
   } else {
@@ -227,12 +220,12 @@ foodLogSchema.methods.addMeal = function(mealType: string, foods: any[]) {
       foods: foods
     });
   }
-  
+
   return this.save();
 };
 
 // Method to get nutrition summary
-foodLogSchema.methods.getNutritionSummary = function() {
+foodLogSchema.methods.getNutritionSummary = function () {
   return {
     totalCalories: this.totalNutrition.calories,
     macros: {
@@ -253,7 +246,6 @@ foodLogSchema.methods.getNutritionSummary = function() {
       }
     },
     micronutrients: {
-      fiber: this.totalNutrition.fiber,
       sugar: this.totalNutrition.sugar,
       sodium: this.totalNutrition.sodium
     }

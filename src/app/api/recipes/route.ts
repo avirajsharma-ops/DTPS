@@ -11,9 +11,9 @@ import { compressImageServer } from '@/lib/imageCompressionServer';
 import mongoose from 'mongoose';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 import { findSimilarRecipes, compareIngredients } from '@/lib/recipe-dedup';
-import { 
-  normalizeToArray, 
-  normalizeServings, 
+import {
+  normalizeToArray,
+  normalizeServings,
   normalizeNutritionValue,
   cleanDoubleEncodedString,
   VALID_DIETARY_RESTRICTIONS,
@@ -44,7 +44,6 @@ const recipeSchema = z.object({
     protein: z.number().min(0, 'Protein must be positive'),
     carbs: z.number().min(0, 'Carbs must be positive'),
     fat: z.number().min(0, 'Fat must be positive'),
-    fiber: z.number().min(0).optional(),
     sugar: z.number().min(0).optional(),
     sodium: z.number().min(0).optional()
   }).optional(),
@@ -54,8 +53,7 @@ const recipeSchema = z.object({
   macros: z.object({
     protein: z.number().min(0).optional(),
     carbs: z.number().min(0).optional(),
-    fat: z.number().min(0).optional(),
-    fiber: z.number().min(0).optional()
+    fat: z.number().min(0).optional()
   }).optional(),
 
   // Support both tags and dietaryRestrictions
@@ -109,12 +107,12 @@ export async function GET(request: NextRequest) {
         { description: { $regex: search, $options: 'i' } },
         { 'ingredients.name': { $regex: search, $options: 'i' } }
       ];
-      
+
       // Only add uuid search if it looks like it could be a uuid (numeric or alphanumeric)
       if (/^[a-zA-Z0-9]+$/.test(search.trim())) {
         searchConditions.push({ uuid: search.trim() });
       }
-      
+
       // Check if search term looks like a MongoDB ObjectId (hex characters)
       const cleanSearch = search.trim().toLowerCase();
       if (/^[a-f0-9]+$/.test(cleanSearch)) {
@@ -128,7 +126,7 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-      
+
       query.$or = searchConditions;
     }
 
@@ -172,7 +170,7 @@ export async function GET(request: NextRequest) {
     let sortOptions: any = {};
     let isNumericUuidSort = false;
     let isRelevanceSort = false;
-    
+
     switch (sortBy) {
       case 'rating':
         sortOptions = { 'rating.average': -1, _id: -1 };
@@ -216,12 +214,12 @@ export async function GET(request: NextRequest) {
 
     // Generate cache key based on query params
     const cacheKey = `recipes:${search || ''}:${category || ''}:${cuisine || ''}:${difficulty || ''}:${sortBy}:${page}:${limit}`;
-    
+
     let recipes: any[] = [];
     let total = 0;
     let cuisines: string[] = [];
     let tags: string[] = [];
-    
+
     try {
       const cachedResult = await withCache(
         cacheKey,
@@ -281,7 +279,7 @@ export async function GET(request: NextRequest) {
                 return bUuid - aUuid;
               }
             });
-            
+
             // Apply pagination after sorting
             if (limit > 0) {
               const startIdx = (page - 1) * limit;
@@ -295,7 +293,7 @@ export async function GET(request: NextRequest) {
           if (isRelevanceSort && search) {
             const searchLower = search.toLowerCase().trim();
             const searchTerms = searchLower.split(/\s+/).filter(t => t.length > 0);
-            
+
             recipesData = recipesData.map((recipe: any) => {
               const nameLower = (recipe.name || '').toLowerCase();
               const descLower = (recipe.description || '').toLowerCase();
@@ -303,9 +301,9 @@ export async function GET(request: NextRequest) {
                 .map((ing: any) => (ing.name || '').toLowerCase())
                 .join(' ');
               const tagsText = (recipe.tags || []).join(' ').toLowerCase();
-              
+
               let score = 0;
-              
+
               // Exact name match (highest priority)
               if (nameLower === searchLower) {
                 score += 1000;
@@ -318,7 +316,7 @@ export async function GET(request: NextRequest) {
               else if (nameLower.includes(searchLower)) {
                 score += 300;
               }
-              
+
               // Check individual search terms for partial matches
               for (const term of searchTerms) {
                 // Term in name
@@ -342,26 +340,26 @@ export async function GET(request: NextRequest) {
                   score += 20;
                 }
               }
-              
+
               // Boost shorter names (more likely to be exact matches)
               if (nameLower.includes(searchLower)) {
                 const lengthRatio = searchLower.length / nameLower.length;
                 score += Math.floor(lengthRatio * 50);
               }
-              
+
               return { ...recipe, _relevanceScore: score };
             });
-            
+
             // Sort by relevance score (highest first), then by name for ties
             recipesData.sort((a: any, b: any) => {
               const scoreDiff = (b._relevanceScore || 0) - (a._relevanceScore || 0);
               if (scoreDiff !== 0) return scoreDiff;
               return (a.name || '').localeCompare(b.name || '');
             });
-            
+
             // Remove the score from results and apply pagination
             recipesData = recipesData.map(({ _relevanceScore, ...rest }: any) => rest);
-            
+
             if (limit > 0) {
               const startIdx = (page - 1) * limit;
               const endIdx = startIdx + limit;
@@ -379,14 +377,14 @@ export async function GET(request: NextRequest) {
         },
         { ttl: 300000, tags: ['recipes'] } // 5 minutes TTL
       );
-      
+
       recipes = cachedResult.recipes || [];
       total = cachedResult.total || 0;
       cuisines = cachedResult.cuisines || [];
       tags = cachedResult.tags || [];
     } catch (cacheError: any) {
       console.error('Cache/Query error, fetching directly:', cacheError?.message);
-      
+
       // Fallback: fetch directly without cache
       let recipesQuery = Recipe.find(query)
         .populate({
@@ -401,7 +399,7 @@ export async function GET(request: NextRequest) {
       }
 
       const recipesRaw = await recipesQuery.lean();
-      
+
       recipes = recipesRaw.map((recipe: any) => ({
         ...recipe,
         flatNutrition: {
@@ -524,7 +522,7 @@ export async function POST(request: NextRequest) {
       }));
 
     // IMPORTANT: Recipe schema expects ingredients as objects, not strings!
-    
+
     // Handle nutrition and extract flat values
     let caloriesValue = 0;
     let proteinValue = 0;
@@ -553,14 +551,14 @@ export async function POST(request: NextRequest) {
     // Parse servings: extract number for calculations, keep full string for display
     let servingsValue: number = 1;
     let servingSizeValue: string = '1 serving';
-    
+
     if (typeof validatedData.servings === 'number') {
       servingsValue = validatedData.servings;
       servingSizeValue = `${servingsValue} serving${servingsValue !== 1 ? 's' : ''}`;
     } else if (typeof validatedData.servings === 'string') {
       const str = validatedData.servings.trim();
       servingSizeValue = str;
-      
+
       // Extract numeric value (supports decimals and fractions)
       const match = str.match(/^[\s]*([0-9]+(?:\/[0-9]+)?(?:\.[0-9]+)?)/);
       if (match && match[1]) {
@@ -615,7 +613,7 @@ export async function POST(request: NextRequest) {
       const imageValue = cleanDoubleEncodedString(validatedData.image);
       try {
         let compressedBase64: string;
-        
+
         if (imageValue.startsWith('data:image/')) {
           // Base64 image - extract and compress
           const base64Data = imageValue.split(',')[1];
@@ -640,7 +638,7 @@ export async function POST(request: NextRequest) {
           });
           compressedBase64 = `data:image/jpeg;base64,${compressed}`;
         }
-        
+
         const imageKit = getImageKit();
         const uploadResponse = await imageKit.upload({
           file: compressedBase64,
@@ -694,7 +692,7 @@ export async function POST(request: NextRequest) {
           message: 'A recipe with this name already exists'
         }, { status: 409 });
       }
-      
+
       // Return error details for debugging
       return NextResponse.json({
         error: 'Internal server error',

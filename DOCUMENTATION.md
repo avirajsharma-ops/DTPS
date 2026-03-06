@@ -12020,12 +12020,12 @@ FoodLog {
           quantity: number,
           unit: string,
           calories: number,
-          nutrition: { protein, carbs, fat, fiber, sugar, sodium }
+          nutrition: { protein, carbs, fat, sugar, sodium }
         }
       ]
     }
   ],
-  totalNutrition: { calories, protein, carbs, fat, fiber, sugar, sodium }
+  totalNutrition: { calories, protein, carbs, fat, sugar, sodium }
 }
 ```
 
@@ -37196,7 +37196,6 @@ Primary entities involved in meal plan templates and diet UI:
 | totalNutrition.protein | Number | Yes | 0 | Calculated daily protein |
 | totalNutrition.carbs | Number | Yes | 0 | Calculated daily carbs |
 | totalNutrition.fat | Number | Yes | 0 | Calculated daily fat |
-| totalNutrition.fiber | Number | Yes | 0 | Calculated daily fiber |
 | totalNutrition.sugar | Number | Yes | 0 | Calculated daily sugar |
 | totalNutrition.sodium | Number | Yes | 0 | Calculated daily sodium |
 | notes | String | No | - | Day notes |
@@ -37215,7 +37214,6 @@ Primary entities involved in meal plan templates and diet UI:
 | customMeal.protein | Number | No | 0 | Flat protein |
 | customMeal.carbs | Number | No | 0 | Flat carbs |
 | customMeal.fat | Number | No | 0 | Flat fat |
-| customMeal.fiber | Number | No | 0 | Flat fiber |
 | customMeal.sugar | Number | No | 0 | Flat sugar |
 | customMeal.sodium | Number | No | 0 | Flat sodium |
 | customMeal.servings | Number | No | - | Serving count |
@@ -37326,7 +37324,6 @@ Primary entities involved in meal plan templates and diet UI:
 | nutrition.protein | Number | Yes | 0 | Total protein |
 | nutrition.carbs | Number | Yes | 0 | Total carbs |
 | nutrition.fat | Number | Yes | 0 | Total fat |
-| nutrition.fiber | Number | No | 0 | Total fiber |
 | nutrition.sugar | Number | No | 0 | Total sugar |
 | nutrition.sodium | Number | No | 0 | Total sodium |
 | tags | [String] | No | [] | Search tags |

@@ -408,8 +408,7 @@ function extractFoodItems(meal: any, planId: string, dayIndex: number, mealIndex
         calories: Number(alt.calories) || 0,
         protein: Number(alt.protein) || 0,
         carbs: Number(alt.carbs) || 0,
-        fats: Number(alt.fats) || Number(alt.fat) || 0,
-        fiber: Number(alt.fiber) || 0
+        fats: Number(alt.fats) || Number(alt.fat) || 0
       })) : [],
       // Flag for alternative food type
       isAlternative: food.isAlternative || false,
@@ -423,7 +422,6 @@ function extractFoodItems(meal: any, planId: string, dayIndex: number, mealIndex
       protein: Number(food.protein) || 0,
       carbs: Number(food.carbs) || 0,
       fats: Number(food.fats) || Number(food.fat) || 0,
-      fiber: Number(food.fiber) || 0,
       // Additional details for full view
       notes: food.notes || food.dietitianNotes || food.remarks || '',
       timing: food.timing || food.whenToEat || food.timeToEat || '',

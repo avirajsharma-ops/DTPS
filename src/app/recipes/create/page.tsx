@@ -14,9 +14,9 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useRecipeAutoSave, type RecipeFormData } from '@/hooks';
-import { 
-  Plus, 
-  Trash2, 
+import {
+  Plus,
+  Trash2,
   ChefHat,
   Clock,
   Users,
@@ -70,7 +70,7 @@ const defaultFormData: RecipeFormData = {
 export default function CreateRecipePage() {
   const { data: session } = useSession();
   const router = useRouter();
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -120,12 +120,12 @@ export default function CreateRecipePage() {
   }), [name, description, prepTime, cookTime, servings, calories, protein, carbs, fat, image, imagePreview, isActive, ingredients, instructions, dietaryRestrictions, medicalContraindications]);
 
   // Auto-save hook (saves draft every 2 seconds, expires after 24 hours)
-  const { 
-    isSaving, 
-    lastSaved, 
-    hasDraft, 
-    clearDraft, 
-    restoreDraft 
+  const {
+    isSaving,
+    lastSaved,
+    hasDraft,
+    clearDraft,
+    restoreDraft
   } = useRecipeAutoSave('new-recipe', formData, {
     debounceMs: 2000,
     enabled: !!session?.user?.id,
@@ -153,10 +153,10 @@ export default function CreateRecipePage() {
         setInstructions(restored.instructions?.length ? restored.instructions : ['']);
         setDietaryRestrictions(restored.dietaryRestrictions || []);
         setMedicalContraindications(restored.medicalContraindications || []);
-        
-        toast.success('Draft restored', { 
+
+        toast.success('Draft restored', {
           description: 'Your previous work has been restored. Draft expires in 24 hours.',
-          duration: 4000 
+          duration: 4000
         });
       }
       setDraftRestored(true);
@@ -190,7 +190,7 @@ export default function CreateRecipePage() {
   }, [clearDraft]);
 
   const availableDietaryRestrictions = [
-     'Vegetarian','Vegan','Gluten-Free','Non-Vegetarian','Dairy-Free','Keto','Low-Carb','Low-Fat','High-Protein','Paleo','Mediterranean'
+    'Vegetarian', 'Vegan', 'Gluten-Free', 'Non-Vegetarian', 'Dairy-Free', 'Keto', 'Low-Carb', 'Low-Fat', 'High-Protein', 'Paleo', 'Mediterranean'
   ];
 
   const availableMedicalContraindications = [
@@ -399,7 +399,7 @@ export default function CreateRecipePage() {
 
       // Upload to ImageKit
       const uploadedUrl = await uploadCompressedImage(blob, file.name, 'recipes');
-      
+
       setImage(uploadedUrl);
       toast.success('Image uploaded successfully', {
         description: `Original: ${(file.size / 1024 / 1024).toFixed(2)}MB → Compressed: ${(blob.size / 1024 / 1024).toFixed(2)}MB`,
@@ -415,7 +415,7 @@ export default function CreateRecipePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name || !servings || ingredients.some(ing => !ing.name || !ing.unit)) {
       setError('Please fill in all required fields (name, serving size, and complete ingredient details)');
       return;
@@ -469,7 +469,7 @@ export default function CreateRecipePage() {
           cookTime: cookTime ? parseInt(cookTime) : 0,
           servings: servings ? parseInt(servings) : 1,
           nutrition: {
-            calories: calories ? parseInt(calories) : 0,
+            calories: calories ? parseFloat(calories) : 0,
             protein: protein ? parseFloat(protein) : 0,
             carbs: carbs ? parseFloat(carbs) : 0,
             fat: fat ? parseFloat(fat) : 0
@@ -631,11 +631,10 @@ export default function CreateRecipePage() {
                   <button
                     type="button"
                     onClick={() => setIsActive(!isActive)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      isActive 
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${isActive
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
                         : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {isActive ? (
                       <>
@@ -879,107 +878,106 @@ export default function CreateRecipePage() {
                   </>
                 ) : (
                   <>
-                <div>
-                  <Label htmlFor="calories">Calories *</Label>
-                  <Input
-                    id="calories"
-                    type="number"
-                    value={calories}
-                    onChange={(e) => setCalories(e.target.value)}
-                    placeholder="350"
-                    required
-                  />
-                </div>
+                    <div>
+                      <Label htmlFor="calories">Calories *</Label>
+                      <Input
+                        id="calories"
+                        type="number"
+                        step="any"
+                        value={calories}
+                        onChange={(e) => setCalories(e.target.value)}
+                        placeholder="350.5"
+                        required
+                      />
+                    </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="protein">Protein (g) *</Label>
-                    <Input
-                      id="protein"
-                      type="number"
-                      step="0.1"
-                      value={protein}
-                      onChange={(e) => setProtein(e.target.value)}
-                      placeholder="25"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="carbs">Carbs (g) *</Label>
-                    <Input
-                      id="carbs"
-                      type="number"
-                      step="0.1"
-                      value={carbs}
-                      onChange={(e) => setCarbs(e.target.value)}
-                      placeholder="30"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="fat">Fat (g) *</Label>
-                    <Input
-                      id="fat"
-                      type="number"
-                      step="0.1"
-                      value={fat}
-                      onChange={(e) => setFat(e.target.value)}
-                      placeholder="15"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Dietary Restrictions</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {availableDietaryRestrictions.map((restriction) => (
-                      <Badge
-                        key={restriction}
-                        variant={dietaryRestrictions.includes(restriction) ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => toggleDietaryRestriction(restriction)}
-                      >
-                        {restriction}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Medical Contraindications</Label>
-                  <p className="text-sm text-gray-600 mb-2">
-                    Select medical conditions for which this recipe should NOT be recommended
-                  </p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {availableMedicalContraindications.map((condition) => (
-                      <div
-                        key={condition}
-                        className={`p-2 rounded-lg border cursor-pointer transition-colors ${
-                          medicalContraindications.includes(condition)
-                            ? 'bg-red-50 border-red-200 text-red-800'
-                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                        }`}
-                        onClick={() => toggleMedicalContraindication(condition)}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                            medicalContraindications.includes(condition)
-                              ? 'bg-red-500 border-red-500'
-                              : 'border-gray-300'
-                          }`}>
-                            {medicalContraindications.includes(condition) && (
-                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-                          <span className="text-sm font-medium">{condition}</span>
-                        </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="protein">Protein (g) *</Label>
+                        <Input
+                          id="protein"
+                          type="number"
+                          step="any"
+                          value={protein}
+                          onChange={(e) => setProtein(e.target.value)}
+                          placeholder="25"
+                          required
+                        />
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <div>
+                        <Label htmlFor="carbs">Carbs (g) *</Label>
+                        <Input
+                          id="carbs"
+                          type="number"
+                          step="any"
+                          value={carbs}
+                          onChange={(e) => setCarbs(e.target.value)}
+                          placeholder="30"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="fat">Fat (g) *</Label>
+                        <Input
+                          id="fat"
+                          type="number"
+                          step="any"
+                          value={fat}
+                          onChange={(e) => setFat(e.target.value)}
+                          placeholder="15"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Dietary Restrictions</Label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {availableDietaryRestrictions.map((restriction) => (
+                          <Badge
+                            key={restriction}
+                            variant={dietaryRestrictions.includes(restriction) ? "default" : "outline"}
+                            className="cursor-pointer"
+                            onClick={() => toggleDietaryRestriction(restriction)}
+                          >
+                            {restriction}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Medical Contraindications</Label>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Select medical conditions for which this recipe should NOT be recommended
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {availableMedicalContraindications.map((condition) => (
+                          <div
+                            key={condition}
+                            className={`p-2 rounded-lg border cursor-pointer transition-colors ${medicalContraindications.includes(condition)
+                                ? 'bg-red-50 border-red-200 text-red-800'
+                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                              }`}
+                            onClick={() => toggleMedicalContraindication(condition)}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${medicalContraindications.includes(condition)
+                                  ? 'bg-red-500 border-red-500'
+                                  : 'border-gray-300'
+                                }`}>
+                                {medicalContraindications.includes(condition) && (
+                                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </div>
+                              <span className="text-sm font-medium">{condition}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </>
                 )}
               </CardContent>
@@ -1000,68 +998,68 @@ export default function CreateRecipePage() {
                 </>
               ) : (
                 <>
-              {ingredients.map((ingredient, index) => (
-                <div key={index} className="space-y-3">
-                  <div className="grid grid-cols-12 gap-4 items-end">
-                    <div className="col-span-4">
-                      <Input
-                        placeholder="Ingredient name"
-                        value={ingredient.name}
-                        onChange={(e) => updateIngredient(index, 'name', e.target.value)}
-                      />
+                  {ingredients.map((ingredient, index) => (
+                    <div key={index} className="space-y-3">
+                      <div className="grid grid-cols-12 gap-4 items-end">
+                        <div className="col-span-4">
+                          <Input
+                            placeholder="Ingredient name"
+                            value={ingredient.name}
+                            onChange={(e) => updateIngredient(index, 'name', e.target.value)}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="Quantity"
+                            value={ingredient.quantity || ''}
+                            onChange={(e) => updateIngredient(index, 'quantity', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <Select
+                            value={ingredient.unit}
+                            onValueChange={(value) => updateIngredient(index, 'unit', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Unit" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {units.map((unit) => (
+                                <SelectItem key={unit} value={unit}>
+                                  {unit}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            placeholder="Remarks"
+                            value={ingredient.remarks || ''}
+                            onChange={(e) => updateIngredient(index, 'remarks', e.target.value)}
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeIngredient(index)}
+                            disabled={ingredients.length === 1}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="Quantity"
-                        value={ingredient.quantity || ''}
-                        onChange={(e) => updateIngredient(index, 'quantity', parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div className="col-span-3">
-                      <Select
-                        value={ingredient.unit}
-                        onValueChange={(value) => updateIngredient(index, 'unit', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Unit" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {units.map((unit) => (
-                            <SelectItem key={unit} value={unit}>
-                              {unit}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        placeholder="Remarks"
-                        value={ingredient.remarks || ''}
-                        onChange={(e) => updateIngredient(index, 'remarks', e.target.value)}
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeIngredient(index)}
-                        disabled={ingredients.length === 1}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              <Button type="button" variant="outline" onClick={addIngredient}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Ingredient
-              </Button>
+                  ))}
+
+                  <Button type="button" variant="outline" onClick={addIngredient}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Ingredient
+                  </Button>
                 </>
               )}
             </CardContent>
@@ -1081,35 +1079,35 @@ export default function CreateRecipePage() {
                 </>
               ) : (
                 <>
-              {instructions.map((instruction, index) => (
-                <div key={index} className="flex items-start space-x-4">
-                  <div className="shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <Textarea
-                      placeholder={`Step ${index + 1} instructions...`}
-                      value={instruction}
-                      onChange={(e) => updateInstruction(index, e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeInstruction(index)}
-                    disabled={instructions.length === 1}
-                  >
-                    <Trash2 className="h-3 w-3" />
+                  {instructions.map((instruction, index) => (
+                    <div key={index} className="flex items-start space-x-4">
+                      <div className="shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <Textarea
+                          placeholder={`Step ${index + 1} instructions...`}
+                          value={instruction}
+                          onChange={(e) => updateInstruction(index, e.target.value)}
+                          rows={2}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeInstruction(index)}
+                        disabled={instructions.length === 1}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+
+                  <Button type="button" variant="outline" onClick={addInstruction}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Step
                   </Button>
-                </div>
-              ))}
-              
-              <Button type="button" variant="outline" onClick={addInstruction}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Step
-              </Button>
                 </>
               )}
             </CardContent>

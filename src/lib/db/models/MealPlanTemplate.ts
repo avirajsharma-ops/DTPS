@@ -13,7 +13,6 @@ interface IMealItem {
       protein: number;
       carbs: number;
       fat: number;
-      fiber?: number;
       sugar?: number;
       sodium?: number;
     };
@@ -36,7 +35,6 @@ interface IDailyMeal {
     protein: number;
     carbs: number;
     fat: number;
-    fiber: number;
     sugar: number;
     sodium: number;
   };
@@ -94,17 +92,16 @@ const MealItemSchema = new Schema({
   recipeId: {
     type: Schema.Types.ObjectId,
     ref: 'Recipe',
-    required: function(this: any) { return !this.customMeal; }
+    required: function (this: any) { return !this.customMeal; }
   },
   customMeal: {
-    name: { type: String, required: function(this: any) { return !this.recipeId; } },
+    name: { type: String, required: function (this: any) { return !this.recipeId; } },
     description: String,
     nutrition: {
       calories: { type: Number, required: true, min: 0 },
       protein: { type: Number, required: true, min: 0 },
       carbs: { type: Number, required: true, min: 0 },
       fat: { type: Number, required: true, min: 0 },
-      fiber: { type: Number, min: 0, default: 0 },
       sugar: { type: Number, min: 0, default: 0 },
       sodium: { type: Number, min: 0, default: 0 }
     }
@@ -127,7 +124,6 @@ const DailyMealSchema = new Schema({
     protein: { type: Number, required: true, min: 0 },
     carbs: { type: Number, required: true, min: 0 },
     fat: { type: Number, required: true, min: 0 },
-    fiber: { type: Number, min: 0, default: 0 },
     sugar: { type: Number, min: 0, default: 0 },
     sodium: { type: Number, min: 0, default: 0 }
   },
@@ -146,12 +142,12 @@ const MealPlanTemplateSchema = new Schema({
     enum: ['plan', 'diet'],
     default: 'plan'
   },
-  name: { 
-    type: String, 
-    required: true, 
+  name: {
+    type: String,
+    required: true,
     trim: true
   },
-  description: { 
+  description: {
     type: String
   },
   category: {
@@ -159,10 +155,10 @@ const MealPlanTemplateSchema = new Schema({
     required: true,
     enum: ['weight-loss', 'weight-gain', 'maintenance', 'muscle-gain', 'diabetes', 'heart-healthy', 'keto', 'vegan', 'custom']
   },
-  duration: { 
-    type: Number, 
-    required: true, 
-    min: 1, 
+  duration: {
+    type: Number,
+    required: true,
+    min: 1,
     max: 365
   },
   targetCalories: {
@@ -183,12 +179,12 @@ const MealPlanTemplateSchema = new Schema({
       max: { type: Number, required: true, min: 0 }
     }
   },
-  dietaryRestrictions: [{ 
-    type: String, 
+  dietaryRestrictions: [{
+    type: String,
     trim: true
   }],
-  tags: [{ 
-    type: String, 
+  tags: [{
+    type: String,
     trim: true
   }],
   meals: [DailyMealSchema],
@@ -210,9 +206,9 @@ const MealPlanTemplateSchema = new Schema({
     healthConditions: [{ type: String }],
     goals: [{ type: String }]
   },
-  createdBy: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'User', 
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   },
   usageCount: { type: Number, default: 0, min: 0 },
@@ -238,14 +234,14 @@ MealPlanTemplateSchema.index({ createdBy: 1, isActive: 1 });
 MealPlanTemplateSchema.index({ 'targetCalories.min': 1, 'targetCalories.max': 1 });
 
 // Virtual for average daily calories
-MealPlanTemplateSchema.virtual('averageDailyCalories').get(function() {
+MealPlanTemplateSchema.virtual('averageDailyCalories').get(function () {
   if (!this.meals || this.meals.length === 0) return 0;
   const totalCalories = this.meals.reduce((sum, day) => sum + (day.totalNutrition?.calories || 0), 0);
   return Math.round(totalCalories / this.meals.length);
 });
 
 // Virtual for total recipes used
-MealPlanTemplateSchema.virtual('totalRecipes').get(function() {
+MealPlanTemplateSchema.virtual('totalRecipes').get(function () {
   if (!this.meals) return 0;
   let count = 0;
   this.meals.forEach((day: any) => {
@@ -259,7 +255,7 @@ MealPlanTemplateSchema.virtual('totalRecipes').get(function() {
 });
 
 // Pre-save middleware to generate auto-incrementing uuid and calculate total nutrition
-MealPlanTemplateSchema.pre('save', async function(next) {
+MealPlanTemplateSchema.pre('save', async function (next) {
   try {
     // Generate auto-incrementing uuid for new documents only if uuid is not already set
     if (this.isNew && !this.uuid) {
@@ -274,45 +270,42 @@ MealPlanTemplateSchema.pre('save', async function(next) {
     }
 
     if (this.isModified('meals')) {
-    this.meals.forEach(day => {
-      const nutrition = {
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fat: 0,
-        fiber: 0,
-        sugar: 0,
-        sodium: 0
-      };
+      this.meals.forEach(day => {
+        const nutrition = {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+          sugar: 0,
+          sodium: 0
+        };
 
-      MEAL_TYPE_KEYS.forEach(mealType => {
-        if ((day as any)[mealType]) {
-          (day as any)[mealType].forEach((item: any) => {
-            const itemNutrition = item.customMeal?.nutrition || item.recipeId?.nutrition || {};
-            const servings = item.servings || 1;
-            
-            nutrition.calories += (itemNutrition.calories || 0) * servings;
-            nutrition.protein += (itemNutrition.protein || 0) * servings;
-            nutrition.carbs += (itemNutrition.carbs || 0) * servings;
-            nutrition.fat += (itemNutrition.fat || 0) * servings;
-            nutrition.fiber += (itemNutrition.fiber || 0) * servings;
-            nutrition.sugar += (itemNutrition.sugar || 0) * servings;
-            nutrition.sodium += (itemNutrition.sodium || 0) * servings;
-          });
-        }
+        MEAL_TYPE_KEYS.forEach(mealType => {
+          if ((day as any)[mealType]) {
+            (day as any)[mealType].forEach((item: any) => {
+              const itemNutrition = item.customMeal?.nutrition || item.recipeId?.nutrition || {};
+              const servings = item.servings || 1;
+
+              nutrition.calories += (itemNutrition.calories || 0) * servings;
+              nutrition.protein += (itemNutrition.protein || 0) * servings;
+              nutrition.carbs += (itemNutrition.carbs || 0) * servings;
+              nutrition.fat += (itemNutrition.fat || 0) * servings;
+              nutrition.sugar += (itemNutrition.sugar || 0) * servings;
+              nutrition.sodium += (itemNutrition.sodium || 0) * servings;
+            });
+          }
+        });
+
+        day.totalNutrition = {
+          calories: nutrition.calories,
+          protein: nutrition.protein,
+          carbs: nutrition.carbs,
+          fat: nutrition.fat,
+          sugar: nutrition.sugar,
+          sodium: nutrition.sodium
+        };
       });
-
-      day.totalNutrition = {
-        calories: Math.round(nutrition.calories),
-        protein: Math.round(nutrition.protein * 10) / 10,
-        carbs: Math.round(nutrition.carbs * 10) / 10,
-        fat: Math.round(nutrition.fat * 10) / 10,
-        fiber: Math.round(nutrition.fiber * 10) / 10,
-        sugar: Math.round(nutrition.sugar * 10) / 10,
-        sodium: Math.round(nutrition.sodium * 10) / 10
-      };
-    });
-  }
+    }
   } catch (error) {
     console.error('Error in MealPlanTemplate pre-save hook:', error);
     next(error as any);

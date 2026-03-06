@@ -78,7 +78,7 @@ Applied to:
 ┌──────────────────────────────────┐
 │ Food Name                 100 cal │  (Green border)
 │ Qty: 1 SMALL BOWL serving       │
-│ P: 25g  C: 30g  F: 5g  Fiber: 2g │
+│ P: 25g  C: 30g  F: 5g            │
 └──────────────────────────────────┘
 ```
 
@@ -90,13 +90,13 @@ Applied to:
    ┌──────────────────────────────┐
    │ Alternative Food      80 cal  │  (Blue border, dashed)
    │ Qty: 1 CUP                   │
-   │ P: 20g  C: 25g  F: 4g Fiber:1g│
+   │ P: 20g  C: 25g  F: 4g         │
    └──────────────────────────────┘
    
    ┌──────────────────────────────┐
    │ Another Alternative   85 cal  │  (Blue border, dashed)
    │ Qty: 150g                    │
-   │ P: 22g  C: 28g  F: 4g Fiber:2g│
+   │ P: 22g  C: 28g  F: 4g         │
    └──────────────────────────────┘
 ```
 

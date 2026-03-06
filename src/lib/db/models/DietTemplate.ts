@@ -1,10 +1,10 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import Counter from './Counter';
-import { 
-  MEAL_TYPE_KEYS, 
-  MEAL_TYPES, 
+import {
+  MEAL_TYPE_KEYS,
+  MEAL_TYPES,
   normalizeMealType,
-  type MealTypeKey 
+  type MealTypeKey
 } from '@/lib/mealConfig';
 
 // Get default meal types from canonical config
@@ -23,10 +23,8 @@ interface IFoodOption {
   carbs: string;
   fats: string;
   protein: string;
-  fiber: string;
   recipeUuid?: string; // UUID of the recipe if added from recipe database
 }
-
 // Meal interface (from DietPlanDashboard)
 interface IMeal {
   id: string;
@@ -107,10 +105,8 @@ const FoodOptionSchema = new Schema({
   carbs: String,
   fats: String,
   protein: String,
-  fiber: String,
   recipeUuid: String // UUID of the recipe if added from recipe database
 }, { _id: false, strict: false });
-
 // Meal schema (from DietPlanDashboard)
 const MealSchema = new Schema({
   id: String,
@@ -131,8 +127,8 @@ const DayPlanSchema = new Schema({
 
 // Meal type config schema
 const MealTypeConfigSchema = new Schema({
-  name: { 
-    type: String, 
+  name: {
+    type: String,
     required: true,
     set: (val: string) => {
       // Normalize to canonical display label (e.g. "EARLY_MORNING" → "Early Morning")
@@ -153,12 +149,12 @@ const DietTemplateSchema = new Schema({
     unique: true,
     index: true
   },
-  name: { 
-    type: String, 
-    required: true, 
+  name: {
+    type: String,
+    required: true,
     trim: true
   },
-  description: { 
+  description: {
     type: String
   },
   category: {
@@ -166,10 +162,10 @@ const DietTemplateSchema = new Schema({
     required: true,
     enum: ['weight-loss', 'weight-gain', 'maintenance', 'muscle-gain', 'diabetes', 'heart-healthy', 'keto', 'vegan', 'custom']
   },
-  duration: { 
-    type: Number, 
-    required: true, 
-    min: 1, 
+  duration: {
+    type: Number,
+    required: true,
+    min: 1,
     max: 365
   },
   targetCalories: {
@@ -190,12 +186,12 @@ const DietTemplateSchema = new Schema({
       max: { type: Number, default: 100, min: 0 }
     }
   },
-  dietaryRestrictions: [{ 
-    type: String, 
+  dietaryRestrictions: [{
+    type: String,
     trim: true
   }],
-  tags: [{ 
-    type: String, 
+  tags: [{
+    type: String,
     trim: true
   }],
   // Use Mixed type for meals to accept any structure from DietPlanDashboard
@@ -222,9 +218,9 @@ const DietTemplateSchema = new Schema({
     healthConditions: [{ type: String }],
     goals: [{ type: String }]
   },
-  createdBy: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'User', 
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   },
   usageCount: { type: Number, default: 0, min: 0 },
@@ -251,7 +247,7 @@ DietTemplateSchema.index({ 'targetCalories.min': 1, 'targetCalories.max': 1 });
 DietTemplateSchema.index({ duration: 1, isActive: 1 });
 
 // Virtual for average daily calories (calculated from food options)
-DietTemplateSchema.virtual('averageDailyCalories').get(function() {
+DietTemplateSchema.virtual('averageDailyCalories').get(function () {
   if (!this.meals || this.meals.length === 0) return 0;
   let totalCalories = 0;
   let daysWithMeals = 0;
@@ -275,7 +271,7 @@ DietTemplateSchema.virtual('averageDailyCalories').get(function() {
 });
 
 // Virtual for total recipes used
-DietTemplateSchema.virtual('totalRecipes').get(function() {
+DietTemplateSchema.virtual('totalRecipes').get(function () {
   if (!this.meals) return 0;
   let count = 0;
   this.meals.forEach((day: any) => {
@@ -291,7 +287,7 @@ DietTemplateSchema.virtual('totalRecipes').get(function() {
 });
 
 // Pre-save middleware to generate auto-incrementing uuid
-DietTemplateSchema.pre('save', async function(next) {
+DietTemplateSchema.pre('save', async function (next) {
   try {
     // Generate auto-incrementing uuid for new documents only if uuid is not already set
     if (this.isNew && !this.uuid) {

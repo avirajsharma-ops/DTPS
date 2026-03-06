@@ -114,7 +114,7 @@ export default function ContactDietitian({ className }: ContactDietitianProps) {
           
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900">
-              Dr. {dietitian.firstName} {dietitian.lastName}
+              Dt. {dietitian.firstName} {dietitian.lastName}
             </h3>
             
             <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">

@@ -57,7 +57,6 @@ interface Recipe {
     protein: number;
     carbs: number;
     fat: number;
-    fiber?: number;
     sugar?: number;
     sodium?: number;
   };
@@ -182,7 +181,7 @@ export default function RecipeViewPage() {
     try {
       setLoading(true);
       const response = await fetch(`/api/recipes/${recipeId}`);
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           setError('Recipe not found');
@@ -379,7 +378,7 @@ export default function RecipeViewPage() {
               <div className="flex-1">
                 <CardTitle className="text-3xl font-bold mb-2">{recipe.name}</CardTitle>
                 <p className="text-gray-600 text-lg mb-4">{recipe.description}</p>
-                
+
                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                   <div className="flex items-center space-x-1">
                     <Users className="h-4 w-4" />
@@ -399,14 +398,14 @@ export default function RecipeViewPage() {
                   </div> */}
                 </div>
               </div>
-              
+
               {recipe.image && (
-                <div 
+                <div
                   className="lg:w-80 lg:h-60 w-full h-48 rounded-lg overflow-hidden cursor-pointer relative group"
                   onClick={() => setShowImageModal(true)}
                 >
-                  <img 
-                    src={recipe.image} 
+                  <img
+                    src={recipe.image}
                     alt={recipe.name}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   />
@@ -551,43 +550,37 @@ export default function RecipeViewPage() {
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-600">{Math.round((recipe.calories || recipe.nutrition?.calories || 0) * servingMultiplier)}</p>
+                  <p className="text-2xl font-bold text-blue-600">{(recipe.calories || recipe.nutrition?.calories || 0) * servingMultiplier}</p>
                   <p className="text-sm text-gray-600">Calories</p>
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <p className="text-2xl font-bold text-green-600">{Math.round((recipe.protein || recipe.nutrition?.protein || 0) * servingMultiplier)}g</p>
+                  <p className="text-2xl font-bold text-green-600">{(recipe.protein || recipe.nutrition?.protein || 0) * servingMultiplier}g</p>
                   <p className="text-sm text-gray-600">Protein</p>
                 </div>
                 <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                  <p className="text-2xl font-bold text-yellow-600">{Math.round((recipe.carbs || recipe.nutrition?.carbs || 0) * servingMultiplier)}g</p>
+                  <p className="text-2xl font-bold text-yellow-600">{(recipe.carbs || recipe.nutrition?.carbs || 0) * servingMultiplier}g</p>
                   <p className="text-sm text-gray-600">Carbs</p>
                 </div>
                 <div className="text-center p-3 bg-red-50 rounded-lg">
-                  <p className="text-2xl font-bold text-red-600">{Math.round((recipe.fat || recipe.nutrition?.fat || 0) * servingMultiplier)}g</p>
+                  <p className="text-2xl font-bold text-red-600">{(recipe.fat || recipe.nutrition?.fat || 0) * servingMultiplier}g</p>
                   <p className="text-sm text-gray-600">Fat</p>
                 </div>
               </div>
 
-              {(recipe.nutrition?.fiber || recipe.nutrition?.sugar || recipe.nutrition?.sodium) && (
+              {(recipe.nutrition?.sugar || recipe.nutrition?.sodium) && (
                 <>
                   <Separator className="my-4" />
                   <div className="space-y-2 text-sm">
-                    {recipe.nutrition?.fiber && (
-                      <div className="flex justify-between">
-                        <span>Fiber:</span>
-                        <span className="font-medium">{Math.round(recipe.nutrition.fiber * servingMultiplier)}g</span>
-                      </div>
-                    )}
                     {recipe.nutrition?.sugar && (
                       <div className="flex justify-between">
                         <span>Sugar:</span>
-                        <span className="font-medium">{Math.round(recipe.nutrition.sugar * servingMultiplier)}g</span>
+                        <span className="font-medium">{recipe.nutrition.sugar * servingMultiplier}g</span>
                       </div>
                     )}
                     {recipe.nutrition?.sodium && (
                       <div className="flex justify-between">
                         <span>Sodium:</span>
-                        <span className="font-medium">{Math.round(recipe.nutrition.sodium * servingMultiplier)}mg</span>
+                        <span className="font-medium">{recipe.nutrition.sodium * servingMultiplier}mg</span>
                       </div>
                     )}
                   </div>
@@ -843,7 +836,7 @@ export default function RecipeViewPage() {
 
       {/* Image Modal/Lightbox */}
       {showImageModal && recipe?.image && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
           onClick={() => setShowImageModal(false)}
         >
@@ -853,7 +846,7 @@ export default function RecipeViewPage() {
           >
             <X className="h-8 w-8" />
           </button>
-          <div 
+          <div
             className="relative max-w-4xl max-h-[90vh] w-full"
             onClick={(e) => e.stopPropagation()}
           >

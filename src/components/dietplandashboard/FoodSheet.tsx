@@ -45,7 +45,6 @@ type FoodItem = {
   carbs: number;
   protein: number;
   fats: number;
-  fiber?: number;
   selected: boolean;
   recipeUuid?: string; // UUID of the recipe
 };
@@ -341,7 +340,6 @@ export function FoodDatabasePanel({
             const carbsVal = recipe.carbs || recipe.nutrition?.carbs || recipe.flatNutrition?.carbs || 0;
             const proteinVal = recipe.protein || recipe.nutrition?.protein || recipe.flatNutrition?.protein || 0;
             const fatsVal = recipe.fat || recipe.nutrition?.fat || recipe.flatNutrition?.fat || 0;
-            const fiberVal = recipe.fiber || recipe.nutrition?.fiber || recipe.flatNutrition?.fiber || 0;
 
             return {
               id: recipe._id,
@@ -353,7 +351,6 @@ export function FoodDatabasePanel({
               carbs: carbsVal,
               protein: proteinVal,
               fats: fatsVal,
-              fiber: fiberVal,
               selected: false,
               recipeUuid: recipe.uuid || undefined,
             };

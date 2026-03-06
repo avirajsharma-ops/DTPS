@@ -41,7 +41,6 @@ interface Recipe {
     protein: number;
     carbs: number;
     fat: number;
-    fiber: number;
     sugar: number;
     sodium: number;
   };
@@ -67,7 +66,6 @@ interface MealItem {
     protein: number;
     carbs: number;
     fat: number;
-    fiber: number;
     sugar: number;
     sodium: number;
     servings: number;
@@ -92,7 +90,6 @@ interface DailyMeal {
     protein: number;
     carbs: number;
     fat: number;
-    fiber: number;
     sugar: number;
     sodium: number;
   };
@@ -330,7 +327,7 @@ export default function CreateDietTemplatePage() {
           afternoonSnack: [],
           dinner: [],
           eveningSnack: [],
-          totalNutrition: { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 },
+          totalNutrition: { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, sodium: 0 },
           notes: ''
         }));
       }
@@ -351,7 +348,7 @@ export default function CreateDietTemplatePage() {
       if (prev.meals.length === days) return prev;
       const meals: DailyMeal[] = Array.from({ length: days }).map((_, i) => ({
         day: i + 1, breakfast: [], lunch: [], dinner: [], morningSnack: [], afternoonSnack: [], eveningSnack: [],
-        totalNutrition: { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 }, notes: ''
+        totalNutrition: { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, sodium: 0 }, notes: ''
       }));
       return { ...prev, meals };
     });
@@ -368,15 +365,14 @@ export default function CreateDietTemplatePage() {
           acc.protein += item.recipe.nutrition.protein * s;
           acc.carbs += item.recipe.nutrition.carbs * s;
           acc.fat += item.recipe.nutrition.fat * s;
-          acc.fiber += item.recipe.nutrition.fiber * s;
           acc.sugar += item.recipe.nutrition.sugar * s;
           acc.sodium += item.recipe.nutrition.sodium * s;
         }
         return acc;
-      }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 });
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, sodium: 0 });
       const total = MEAL_TYPE_KEYS
         .map(k => sum((day as any)[k]))
-        .reduce((a, b) => ({ calories: a.calories + b.calories, protein: a.protein + b.protein, carbs: a.carbs + b.carbs, fat: a.fat + b.fat, fiber: a.fiber + b.fiber, sugar: a.sugar + b.sugar, sodium: a.sodium + b.sodium }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 });
+        .reduce((a, b) => ({ calories: a.calories + b.calories, protein: a.protein + b.protein, carbs: a.carbs + b.carbs, fat: a.fat + b.fat, sugar: a.sugar + b.sugar, sodium: a.sodium + b.sodium }), { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, sodium: 0 });
       const meals = [...prev.meals];
       meals[dayIdx] = { ...day, totalNutrition: total };
       return { ...prev, meals };

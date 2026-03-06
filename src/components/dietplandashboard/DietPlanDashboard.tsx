@@ -73,7 +73,6 @@ export type FoodItem = {
   carbs: string;
   fats: string;
   protein: string;
-  fiber: string;
   recipeUuid?: string;
 };
 
@@ -86,7 +85,6 @@ export type FoodOption = {
   carbs: string;
   fats: string;
   protein: string;
-  fiber: string;
   recipeUuid?: string;  // UUID of the recipe if added from recipe database
   foods?: FoodItem[];   // Multiple foods array for stacking foods in same meal slot
   isAlternative?: boolean; // Mark as alternative food

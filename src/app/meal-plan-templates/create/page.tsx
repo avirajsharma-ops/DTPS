@@ -16,9 +16,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MEAL_TYPE_KEYS } from '@/lib/mealConfig';
-import { 
-  Plus, 
-  Trash2, 
+import {
+  Plus,
+  Trash2,
   ChefHat,
   Target,
   Calendar,
@@ -56,7 +56,6 @@ interface Recipe {
     protein: number;
     carbs: number;
     fat: number;
-    fiber: number;
     sugar: number;
     sodium: number;
   };
@@ -85,7 +84,6 @@ interface MealItem {
     protein: number;
     carbs: number;
     fat: number;
-    fiber: number;
     sugar: number;
     sodium: number;
     servings: number;
@@ -110,7 +108,6 @@ interface DailyMeal {
     protein: number;
     carbs: number;
     fat: number;
-    fiber: number;
     sugar: number;
     sodium: number;
   };
@@ -159,7 +156,7 @@ const categories = [
 ];
 
 const dietaryRestrictions = [
-  'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 
+  'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free',
   'egg-free', 'soy-free', 'keto', 'paleo', 'low-carb', 'low-fat', 'diabetic-friendly'
 ];
 
@@ -221,13 +218,13 @@ export default function CreateMealPlanTemplatePage() {
   const [template, setTemplate] = useState<MealPlanTemplate>(defaultTemplate);
 
   // Auto-save hook for meal plan templates
-  const { 
-    isSaving, 
-    lastSaved, 
-    hasDraft, 
-    clearDraft, 
+  const {
+    isSaving,
+    lastSaved,
+    hasDraft,
+    clearDraft,
     saveDraft,
-    restoreDraft 
+    restoreDraft
   } = useMealPlanAutoSave('new-template', template, {
     debounceMs: 2000,
     enabled: !!session?.user?.id,
@@ -250,9 +247,9 @@ export default function CreateMealPlanTemplatePage() {
             ...prev,
             ...restored,
           }));
-          toast.success('Draft restored', { 
+          toast.success('Draft restored', {
             description: 'Your previous work has been restored.',
-            duration: 3000 
+            duration: 3000
           });
         }
       }
@@ -293,7 +290,7 @@ export default function CreateMealPlanTemplatePage() {
       if (searchQuery) params.append('search', searchQuery);
       if (selectedFilters.category) params.append('category', selectedFilters.category);
       if (selectedFilters.difficulty) params.append('difficulty', selectedFilters.difficulty);
-      
+
       const response = await fetch(`/api/recipes?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
@@ -318,7 +315,7 @@ export default function CreateMealPlanTemplatePage() {
         afternoonSnack: [],
         eveningSnack: [],
         totalNutrition: {
-          calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0
+          calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, sodium: 0
         },
         notes: ''
       }));
@@ -336,23 +333,21 @@ export default function CreateMealPlanTemplatePage() {
           acc.protein += (item.recipe.nutrition.protein || 0) * s;
           acc.carbs += (item.recipe.nutrition.carbs || 0) * s;
           acc.fat += (item.recipe.nutrition.fat || 0) * s;
-          acc.fiber += (item.recipe.nutrition.fiber || 0) * s;
           acc.sugar += (item.recipe.nutrition.sugar || 0) * s;
           acc.sodium += (item.recipe.nutrition.sodium || 0) * s;
         }
         return acc;
-      }, { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 });
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, sodium: 0 });
       const totals = MEAL_TYPE_KEYS
         .map((k) => sumFromItems((day as any)[k]))
-        .reduce((a,b)=>({
-          calories:a.calories+b.calories,
-          protein:a.protein+b.protein,
-          carbs:a.carbs+b.carbs,
-          fat:a.fat+b.fat,
-          fiber:a.fiber+b.fiber,
-          sugar:a.sugar+b.sugar,
-          sodium:a.sodium+b.sodium
-        }), { calories:0, protein:0, carbs:0, fat:0, fiber:0, sugar:0, sodium:0 });
+        .reduce((a, b) => ({
+          calories: a.calories + b.calories,
+          protein: a.protein + b.protein,
+          carbs: a.carbs + b.carbs,
+          fat: a.fat + b.fat,
+          sugar: a.sugar + b.sugar,
+          sodium: a.sodium + b.sodium
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, sodium: 0 });
       const newMeals = [...prev.meals];
       newMeals[dayIdx] = { ...day, totalNutrition: totals };
       return { ...prev, meals: newMeals };
@@ -406,7 +401,7 @@ export default function CreateMealPlanTemplatePage() {
         setError(errorMsg);
         toast.error('Failed to save template', { description: errorMsg });
       }
-    } catch (e:any) {
+    } catch (e: any) {
       console.error(e);
       setError('Failed to save template');
       toast.error('Failed to save template', { description: 'Please try again.' });
@@ -468,15 +463,13 @@ export default function CreateMealPlanTemplatePage() {
             <div className="flex items-center justify-between mb-6">
               {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    currentStep >= step ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-                  }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= step ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
                     {step}
                   </div>
                   <div className="ml-3">
-                    <p className={`text-sm font-medium ${
-                      currentStep >= step ? 'text-blue-600' : 'text-gray-500'
-                    }`}>
+                    <p className={`text-sm font-medium ${currentStep >= step ? 'text-blue-600' : 'text-gray-500'
+                      }`}>
                       {step === 1 && 'Basic Info'}
                       {step === 2 && 'Nutrition Targets'}
                       {step === 3 && 'Meal Planning'}
@@ -484,9 +477,8 @@ export default function CreateMealPlanTemplatePage() {
                     </p>
                   </div>
                   {step < 4 && (
-                    <div className={`w-16 h-0.5 ml-4 ${
-                      currentStep > step ? 'bg-blue-600' : 'bg-gray-200'
-                    }`} />
+                    <div className={`w-16 h-0.5 ml-4 ${currentStep > step ? 'bg-blue-600' : 'bg-gray-200'
+                      }`} />
                   )}
                 </div>
               ))}
@@ -813,31 +805,31 @@ export default function CreateMealPlanTemplatePage() {
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
                   <Label>Day</Label>
-                  <Select value={selectedDay.toString()} onValueChange={(v)=>setSelectedDay(parseInt(v))}>
+                  <Select value={selectedDay.toString()} onValueChange={(v) => setSelectedDay(parseInt(v))}>
                     <SelectTrigger className="w-32"><SelectValue placeholder="Day" /></SelectTrigger>
                     <SelectContent>
-                      {Array.from({ length: template.duration }).map((_,i)=>(
-                        <SelectItem key={i} value={(i+1).toString()}>Day {i+1}</SelectItem>
+                      {Array.from({ length: template.duration }).map((_, i) => (
+                        <SelectItem key={i} value={(i + 1).toString()}>Day {i + 1}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="relative flex-1 min-w-55">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input value={searchQuery} onChange={(e)=>setSearchQuery(e.target.value)} placeholder="Search recipes to add..." className="pl-10" />
+                  <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search recipes to add..." className="pl-10" />
                 </div>
               </div>
 
               {/* Meal slots */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {([
-                  { key:'breakfast', label:'Breakfast', icon: '🍳' },
-                  { key:'morningSnack', label:'Mid Morning', icon: '🥜' },
-                  { key:'lunch', label:'Lunch', icon: '🍛' },
-                  { key:'afternoonSnack', label:'Mid Evening', icon: '🍎' },
-                  { key:'dinner', label:'Dinner', icon: '🍽️' },
-                  { key:'eveningSnack', label:'Past Dinner', icon: '🍪' }
-                ] as {key: keyof DailyMeal; label: string; icon: string;}[]).map(slot => (
+                  { key: 'breakfast', label: 'Breakfast', icon: '🍳' },
+                  { key: 'morningSnack', label: 'Mid Morning', icon: '🥜' },
+                  { key: 'lunch', label: 'Lunch', icon: '🍛' },
+                  { key: 'afternoonSnack', label: 'Mid Evening', icon: '🍎' },
+                  { key: 'dinner', label: 'Dinner', icon: '🍽️' },
+                  { key: 'eveningSnack', label: 'Past Dinner', icon: '🍪' }
+                ] as { key: keyof DailyMeal; label: string; icon: string; }[]).map(slot => (
                   <div key={slot.key} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="font-medium">{slot.icon} {slot.label}</div>
@@ -854,7 +846,7 @@ export default function CreateMealPlanTemplatePage() {
                               <div className="font-medium">Custom item</div>
                             )}
                           </div>
-                          <Button size="sm" variant="ghost" onClick={()=>removeMealItem(selectedDay-1, slot.key, index)}>
+                          <Button size="sm" variant="ghost" onClick={() => removeMealItem(selectedDay - 1, slot.key, index)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -870,7 +862,7 @@ export default function CreateMealPlanTemplatePage() {
                               <div className="text-sm font-medium line-clamp-1">{r.name}</div>
                               <div className="text-xs text-gray-500">{r.nutrition.calories} kcal</div>
                             </div>
-                            <Button size="sm" variant="outline" onClick={()=>addRecipeTo(selectedDay-1, slot.key, r)}>Add</Button>
+                            <Button size="sm" variant="outline" onClick={() => addRecipeTo(selectedDay - 1, slot.key, r)}>Add</Button>
                           </div>
                         ))}
                         {recipes.length === 0 && (
@@ -889,7 +881,6 @@ export default function CreateMealPlanTemplatePage() {
                   <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.protein}g</div><div className="text-gray-600">Protein</div></div>
                   <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.carbs}g</div><div className="text-gray-600">Carbs</div></div>
                   <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.fat}g</div><div className="text-gray-600">Fat</div></div>
-                  <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.fiber}g</div><div className="text-gray-600">Fiber</div></div>
                   <div className="bg-gray-50 rounded p-2 text-center"><div className="font-semibold">{dayMeals.totalNutrition.sugar}g</div><div className="text-gray-600">Sugar</div></div>
                 </div>
               )}
@@ -934,7 +925,7 @@ export default function CreateMealPlanTemplatePage() {
               <div className="text-sm">
                 <div className="text-gray-600 mb-1">Dietary Restrictions</div>
                 <div className="flex flex-wrap gap-1">
-                  {template.dietaryRestrictions.length ? template.dietaryRestrictions.map((r, i)=>(
+                  {template.dietaryRestrictions.length ? template.dietaryRestrictions.map((r, i) => (
                     <Badge key={i} variant="outline" className="text-xs capitalize">{r.replace('-', ' ')}</Badge>
                   )) : <span className="text-gray-500">None</span>}
                 </div>
@@ -942,11 +933,11 @@ export default function CreateMealPlanTemplatePage() {
 
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <Checkbox id="isPublic" checked={template.isPublic} onCheckedChange={(c)=>setTemplate({...template, isPublic: !!c})} />
+                  <Checkbox id="isPublic" checked={template.isPublic} onCheckedChange={(c) => setTemplate({ ...template, isPublic: !!c })} />
                   <Label htmlFor="isPublic">Make Public</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Checkbox id="isPremium" checked={template.isPremium} onCheckedChange={(c)=>setTemplate({...template, isPremium: !!c})} />
+                  <Checkbox id="isPremium" checked={template.isPremium} onCheckedChange={(c) => setTemplate({ ...template, isPremium: !!c })} />
                   <Label htmlFor="isPremium">Premium</Label>
                 </div>
               </div>

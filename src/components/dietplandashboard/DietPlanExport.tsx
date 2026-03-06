@@ -164,7 +164,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
 
   // Calculate daily totals
   const calculateDayTotals = (day: DayPlan) => {
-    let cal = 0, carbs = 0, protein = 0, fats = 0, fiber = 0;
+    let cal = 0, carbs = 0, protein = 0, fats = 0;
 
     Object.values(day.meals).forEach(meal => {
       if (meal?.foodOptions?.[0]) {
@@ -173,11 +173,10 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
         carbs += parseFloat(opt.carbs) || 0;
         protein += parseFloat(opt.protein) || 0;
         fats += parseFloat(opt.fats) || 0;
-        fiber += parseFloat(opt.fiber) || 0;
       }
     });
 
-    return { cal, carbs, protein, fats, fiber };
+    return { cal, carbs, protein, fats };
   };
 
   // Generate HTML table structure with date sorting
@@ -308,7 +307,6 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
               <th style="width: 70px;" class="macro-cell">Carbs(g)</th>
               <th style="width: 70px;" class="macro-cell">Protein(g)</th>
               <th style="width: 70px;" class="macro-cell">Fats(g)</th>
-              <th style="width: 70px;" class="macro-cell">Fiber(g)</th>
             </tr>
           </thead>
           <tbody>
@@ -347,7 +345,6 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
                   <td class="macro-cell"><div class="macro-value">${primaryFood.carbs || '0'}</div></td>
                   <td class="macro-cell"><div class="macro-value">${primaryFood.protein || '0'}</div></td>
                   <td class="macro-cell"><div class="macro-value">${primaryFood.fats || '0'}</div></td>
-                  <td class="macro-cell"><div class="macro-value">${primaryFood.fiber || '0'}</div></td>
                 </tr>
                 `;
           }).join('');
@@ -359,9 +356,8 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
               <td class="macro-cell"><strong>${totals.carbs.toFixed(1)}</strong></td>
               <td class="macro-cell"><strong>${totals.protein.toFixed(1)}</strong></td>
               <td class="macro-cell"><strong>${totals.fats.toFixed(1)}</strong></td>
-              <td class="macro-cell"><strong>${totals.fiber.toFixed(1)}</strong></td>
             </tr>
-            ` : ''}
+            ` : ''}}
           </tbody>
         </table>
       </div>
@@ -418,7 +414,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     csv += '\n';
 
     // Column headers
-    csv += '"Day","Date","Meal Type","Meal Time","Food Item","Quantity","Calories","Carbs(g)","Protein(g)","Fats(g)","Fiber(g)","Alternative Options","Notes"\n';
+    csv += '"Day","Date","Meal Type","Meal Time","Food Item","Quantity","Calories","Carbs(g)","Protein(g)","Fats(g)","Alternative Options","Notes"\n';
 
     // Data rows
     sortedDays.forEach((day) => {
@@ -443,17 +439,17 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
           .join(' | ');
 
         // Main food row
-        csv += `"${day.day}","${day.date ? formatDateProper(day.date) : ''}","${mealType}","${getMealTime(mealType)}","${primaryFood.food || ''}","${primaryFood.unit || ''}","${primaryFood.cal || ''}","${primaryFood.carbs || ''}","${primaryFood.protein || ''}","${primaryFood.fats || ''}","${primaryFood.fiber || ''}","${alternativesStr}","${day.note || ''}"\n`;
+        csv += `"${day.day}","${day.date ? formatDateProper(day.date) : ''}","${mealType}","${getMealTime(mealType)}","${primaryFood.food || ''}","${primaryFood.unit || ''}","${primaryFood.cal || ''}","${primaryFood.carbs || ''}","${primaryFood.protein || ''}","${primaryFood.fats || ''}","${alternativesStr}","${day.note || ''}"\n`;
 
         // Alternative rows (if any)
         alternatives.forEach((alt, altIndex) => {
-          csv += `"","","(Alternative ${altIndex + 1})","","${alt.food || ''}","${alt.unit || ''}","${alt.cal || ''}","${alt.carbs || ''}","${alt.protein || ''}","${alt.fats || ''}","${alt.fiber || ''}","",""\n`;
+          csv += `"","","(Alternative ${altIndex + 1})","","${alt.food || ''}","${alt.unit || ''}","${alt.cal || ''}","${alt.carbs || ''}","${alt.protein || ''}","${alt.fats || ''}","",""\n`;
         });
       });
 
       // Add day total row
       const dayTotals = calculateDayTotals(day);
-      csv += `"${day.day} TOTAL","","","","","","${dayTotals.cal.toFixed(0)}","${dayTotals.carbs.toFixed(1)}","${dayTotals.protein.toFixed(1)}","${dayTotals.fats.toFixed(1)}","${dayTotals.fiber.toFixed(1)}","",""\n`;
+      csv += `"${day.day} TOTAL","","","","","","${dayTotals.cal.toFixed(0)}","${dayTotals.carbs.toFixed(1)}","${dayTotals.protein.toFixed(1)}","${dayTotals.fats.toFixed(1)}","",""\n`;
       csv += '\n'; // Blank line between days for readability
     });
 
@@ -466,11 +462,10 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
           cal: acc.cal + totals.cal,
           carbs: acc.carbs + totals.carbs,
           protein: acc.protein + totals.protein,
-          fats: acc.fats + totals.fats,
-          fiber: acc.fiber + totals.fiber
+          fats: acc.fats + totals.fats
         };
       },
-      { cal: 0, carbs: 0, protein: 0, fats: 0, fiber: 0 }
+      { cal: 0, carbs: 0, protein: 0, fats: 0 }
     );
 
     csv += `"Total Calories","${weeklyTotals.cal.toFixed(0)}"\n`;
@@ -478,7 +473,6 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     csv += `"Total Carbs","${weeklyTotals.carbs.toFixed(1)} g"\n`;
     csv += `"Total Protein","${weeklyTotals.protein.toFixed(1)} g"\n`;
     csv += `"Total Fats","${weeklyTotals.fats.toFixed(1)} g"\n`;
-    csv += `"Total Fiber","${weeklyTotals.fiber.toFixed(1)} g"\n`;
 
     return csv;
   }, [weekPlan, clientName, duration, startDate]);
@@ -613,7 +607,7 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
               </div>
               <p className="text-xs text-gray-600 mt-2">
                 {exportFor === 'dietitian'
-                  ? '✓ Includes all nutritional data (calories, macros, fiber)'
+                  ? '✓ Includes all nutritional data (calories, macros)'
                   : '✓ Meal plan only (no nutritional information)'}
               </p>
             </div>

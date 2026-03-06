@@ -1,5 +1,5 @@
 'use client';
-  import { UserRole } from '@/types';
+import { UserRole } from '@/types';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -23,9 +23,9 @@ import {
   AISkeletonIngredientRow,
   AISkeletonInstructionRow,
 } from '@/components/ui/ai-skeleton';
-import { 
-  Plus, 
-  Trash2, 
+import {
+  Plus,
+  Trash2,
   ChefHat,
   Clock,
   Users,
@@ -81,13 +81,13 @@ export default function EditRecipePage() {
   const router = useRouter();
   const params = useParams();
   const recipeId = params?.id as string;
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [aiFetching, setAiFetching] = useState(false);
-  
+
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -159,7 +159,7 @@ export default function EditRecipePage() {
   // ];
 
   const availableDietaryRestrictions = [
-     'Vegetarian','Vegan','Gluten-Free','Non-Vegetarian','Dairy-Free','Keto','Low-Carb','Low-Fat','High-Protein','Paleo','Mediterranean'
+    'Vegetarian', 'Vegan', 'Gluten-Free', 'Non-Vegetarian', 'Dairy-Free', 'Keto', 'Low-Carb', 'Low-Fat', 'High-Protein', 'Paleo', 'Mediterranean'
   ];
 
   const availableMedicalContraindications = [
@@ -199,12 +199,12 @@ export default function EditRecipePage() {
       setLoading(true);
       setError('');
       const response = await fetch(`/api/recipes/${recipeId}`);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMsg = errorData.error || errorData.message || 'Failed to load recipe';
         console.error('Recipe fetch error:', { status: response.status, error: errorMsg });
-        
+
         if (response.status === 404) {
           setError('Recipe not found. It may have been deleted.');
         } else if (response.status === 401) {
@@ -221,13 +221,13 @@ export default function EditRecipePage() {
       if (data.success && data.recipe) {
         const recipeData = data.recipe;
         setRecipe(recipeData);
-        
+
         // Populate form fields with proper type handling
         setName(recipeData.name || '');
         setDescription(recipeData.description || '');
         setPrepTime(String(recipeData.prepTime || '').trim() || '');
         setCookTime(String(recipeData.cookTime || '').trim() || '');
-        
+
         // Handle servings - use servingSize if available, otherwise format servings number
         if (recipeData.servingSize) {
           setServings(recipeData.servingSize);
@@ -236,26 +236,26 @@ export default function EditRecipePage() {
         } else {
           setServings('');
         }
-        
+
         // Handle nutrition from nested object or flat fields
         const calories = recipeData.nutrition?.calories || recipeData.calories || '';
         const protein = recipeData.nutrition?.protein || recipeData.protein || '';
         const carbs = recipeData.nutrition?.carbs || recipeData.carbs || '';
         const fat = recipeData.nutrition?.fat || recipeData.fat || '';
-        
+
         setCalories(String(calories).trim() || '');
         setProtein(String(protein).trim() || '');
         setCarbs(String(carbs).trim() || '');
         setFat(String(fat).trim() || '');
-        
+
         setImage(recipeData.image || '');
         setImagePreview(recipeData.image || '');
         setIsActive(recipeData.isActive !== false);
-        
+
         // Set ingredients - ensure proper array structure
         try {
           let ingredientsArray: Ingredient[] = [];
-          
+
           if (Array.isArray(recipeData.ingredients)) {
             ingredientsArray = recipeData.ingredients
               .filter((ing: any) => ing && typeof ing === 'object')
@@ -266,24 +266,24 @@ export default function EditRecipePage() {
                 remarks: String(ing.remarks || '').trim()
               }));
           }
-          
+
           if (ingredientsArray.length === 0) {
             ingredientsArray = [{ name: '', quantity: 0, unit: '', remarks: '' }];
           }
-          
+
           setIngredients(ingredientsArray);
         } catch (err) {
           console.error('Error processing ingredients:', err);
           setIngredients([{ name: '', quantity: 0, unit: '', remarks: '' }]);
         }
-        
+
         // Set instructions - ensure proper array structure
         if (Array.isArray(recipeData.instructions) && recipeData.instructions.length > 0) {
           setInstructions(recipeData.instructions.filter((i: any) => typeof i === 'string'));
         } else {
           setInstructions(['']);
         }
-        
+
         // Set dietary restrictions - handle both arrays and strings
         const restrictions = recipeData.dietaryRestrictions;
         if (Array.isArray(restrictions)) {
@@ -293,7 +293,7 @@ export default function EditRecipePage() {
         } else {
           setDietaryRestrictions([]);
         }
-        
+
         // Set medical contraindications - handle both arrays and strings
         const contraindications = recipeData.medicalContraindications;
         if (Array.isArray(contraindications)) {
@@ -316,7 +316,7 @@ export default function EditRecipePage() {
     }
   };
 
-  
+
 
   const canEditRecipe = () => {
     if (!session?.user || !recipe) {
@@ -328,11 +328,11 @@ export default function EditRecipePage() {
     const userRole = session.user.role;
     const allowedRoles = [UserRole.DIETITIAN, UserRole.HEALTH_COUNSELOR, UserRole.ADMIN];
     const canEdit = allowedRoles.includes(userRole);
-    
+
     if (!canEdit) {
       console.log('canEditRecipe: user role not allowed', { userRole, allowedRoles });
     }
-    
+
     return canEdit;
   };
 
@@ -458,7 +458,7 @@ export default function EditRecipePage() {
 
       // Upload to ImageKit
       const uploadedUrl = await uploadCompressedImage(blob, file.name, 'recipes');
-      
+
       setImage(uploadedUrl);
       toast.success('Image uploaded successfully', {
         description: `Original: ${(file.size / 1024 / 1024).toFixed(2)}MB → Compressed: ${(blob.size / 1024 / 1024).toFixed(2)}MB`,
@@ -475,14 +475,14 @@ export default function EditRecipePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!canEditRecipe()) {
       const msg = 'You do not have permission to edit this recipe';
       setError(msg);
       toast.error(msg);
       return;
     }
-    
+
     // Validate required fields
     if (!name || !name.trim()) {
       toast.error('Recipe name is required');
@@ -512,7 +512,7 @@ export default function EditRecipePage() {
     }
 
     // Validate nutrition fields
-    const caloriesNum = parseInt(calories || '0');
+    const caloriesNum = parseFloat(calories || '0');
     const proteinNum = parseFloat(protein || '0');
     const carbsNum = parseFloat(carbs || '0');
     const fatNum = parseFloat(fat || '0');
@@ -534,7 +534,7 @@ export default function EditRecipePage() {
 
     try {
       toast.loading('Updating recipe...', { id: 'update-recipe' });
-      
+
       const updatePayload = {
         name: name.trim(),
         description: description.trim(),
@@ -560,7 +560,7 @@ export default function EditRecipePage() {
       };
 
       console.log('Submitting recipe update:', updatePayload);
-      
+
       const response = await fetch(`/api/recipes/${recipeId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -720,8 +720,8 @@ export default function EditRecipePage() {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error || 'Recipe not found'}</AlertDescription>
           </Alert>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="mt-4"
             onClick={() => router.push('/recipes')}
           >
@@ -741,8 +741,8 @@ export default function EditRecipePage() {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>You do not have permission to edit this recipe.</AlertDescription>
           </Alert>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="mt-4"
             onClick={() => router.push(`/recipes/${recipeId}`)}
           >
@@ -767,8 +767,8 @@ export default function EditRecipePage() {
               </p>
             )}
           </div>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => router.push(`/recipes/${recipeId}`)}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -786,11 +786,10 @@ export default function EditRecipePage() {
                   <button
                     type="button"
                     onClick={() => setIsActive(!isActive)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      isActive 
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${isActive
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
                         : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {isActive ? (
                       <>
@@ -846,7 +845,7 @@ export default function EditRecipePage() {
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Brief description of the recipe..."
                       rows={3}
-                      
+
                     />
                   )}
                 </div>
@@ -893,7 +892,7 @@ export default function EditRecipePage() {
                     </div>
                   </div>
                 </div>
-{/* 
+                {/* 
                 <div>
                   <Label htmlFor="category">Category *</Label>
                   <Select value={category} onValueChange={setCategory}>
@@ -929,51 +928,51 @@ export default function EditRecipePage() {
                   </>
                 ) : (
                   <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="prepTime">Prep Time (min) *</Label>
-                    <Input
-                      id="prepTime"
-                      type="number"
-                      value={prepTime}
-                      onChange={(e) => setPrepTime(e.target.value)}
-                      placeholder="30"
-                      min="0"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cookTime">Cook Time (min) *</Label>
-                    <Input
-                      id="cookTime"
-                      type="number"
-                      value={cookTime}
-                      onChange={(e) => setCookTime(e.target.value)}
-                      placeholder="45"
-                      min="0"
-                      required
-                    />
-                  </div>
-                </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="prepTime">Prep Time (min) *</Label>
+                        <Input
+                          id="prepTime"
+                          type="number"
+                          value={prepTime}
+                          onChange={(e) => setPrepTime(e.target.value)}
+                          placeholder="30"
+                          min="0"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="cookTime">Cook Time (min) *</Label>
+                        <Input
+                          id="cookTime"
+                          type="number"
+                          value={cookTime}
+                          onChange={(e) => setCookTime(e.target.value)}
+                          placeholder="45"
+                          min="0"
+                          required
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <Label htmlFor="servings">Serving Size *</Label>
-                  <Select
-                    value={servings}
-                    onValueChange={(value) => setServings(value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select serving size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {portionSizes.map((size) => (
-                        <SelectItem key={size} value={size}>
-                          {size}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <div>
+                      <Label htmlFor="servings">Serving Size *</Label>
+                      <Select
+                        value={servings}
+                        onValueChange={(value) => setServings(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select serving size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {portionSizes.map((size) => (
+                            <SelectItem key={size} value={size}>
+                              {size}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </>
                 )}
               </CardContent>
@@ -995,59 +994,56 @@ export default function EditRecipePage() {
                   <div><Label>Fat (g) *</Label><AISkeletonInput /></div>
                 </div>
               ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="calories">Calories *</Label>
-                  <Input
-                    id="calories"
-                    type="number"
-                    value={calories}
-                    onChange={(e) => setCalories(e.target.value)}
-                    placeholder="350"
-                    min="0"
-                    required
-                  />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label htmlFor="calories">Calories *</Label>
+                    <Input
+                      id="calories"
+                      type="number"
+                      step="any"
+                      value={calories}
+                      onChange={(e) => setCalories(e.target.value)}
+                      placeholder="350.5"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="protein">Protein (g) *</Label>
+                    <Input
+                      id="protein"
+                      type="number"
+                      step="any"
+                      value={protein}
+                      onChange={(e) => setProtein(e.target.value)}
+                      placeholder="25.5"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="carbs">Carbs (g) *</Label>
+                    <Input
+                      id="carbs"
+                      type="number"
+                      step="any"
+                      value={carbs}
+                      onChange={(e) => setCarbs(e.target.value)}
+                      placeholder="30.2"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="fat">Fat (g) *</Label>
+                    <Input
+                      id="fat"
+                      type="number"
+                      step="any"
+                      value={fat}
+                      onChange={(e) => setFat(e.target.value)}
+                      placeholder="12.8"
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="protein">Protein (g) *</Label>
-                  <Input
-                    id="protein"
-                    type="number"
-                    step="0.1"
-                    value={protein}
-                    onChange={(e) => setProtein(e.target.value)}
-                    placeholder="25.5"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="carbs">Carbs (g) *</Label>
-                  <Input
-                    id="carbs"
-                    type="number"
-                    step="0.1"
-                    value={carbs}
-                    onChange={(e) => setCarbs(e.target.value)}
-                    placeholder="30.2"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="fat">Fat (g) *</Label>
-                  <Input
-                    id="fat"
-                    type="number"
-                    step="0.1"
-                    value={fat}
-                    onChange={(e) => setFat(e.target.value)}
-                    placeholder="12.8"
-                    min="0"
-                    required
-                  />
-                </div>
-              </div>
               )}
             </CardContent>
           </Card>
@@ -1159,19 +1155,17 @@ export default function EditRecipePage() {
                       {availableMedicalContraindications.map((condition) => (
                         <div
                           key={condition}
-                          className={`p-2 rounded-lg border cursor-pointer transition-colors ${
-                            medicalContraindications.includes(condition)
+                          className={`p-2 rounded-lg border cursor-pointer transition-colors ${medicalContraindications.includes(condition)
                               ? 'bg-red-50 border-red-200 text-red-800'
                               : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                          }`}
+                            }`}
                           onClick={() => toggleMedicalContraindication(condition)}
                         >
                           <div className="flex items-center space-x-2">
-                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                              medicalContraindications.includes(condition)
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${medicalContraindications.includes(condition)
                                 ? 'bg-red-500 border-red-500'
                                 : 'border-gray-300'
-                            }`}>
+                              }`}>
                               {medicalContraindications.includes(condition) && (
                                 <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

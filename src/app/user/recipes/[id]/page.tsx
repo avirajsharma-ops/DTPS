@@ -25,7 +25,6 @@ interface Recipe {
     protein?: number;
     carbs?: number;
     fat?: number;
-    fiber?: number;
   };
   dietaryRestrictions?: string[];
 }
@@ -96,9 +95,8 @@ export default function RecipeDetailPage() {
           <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recipe Details</h1>
           <button
             onClick={() => setIsSaved(!isSaved)}
-            className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
-              isSaved ? 'bg-[#E06A26]/10' : isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'
-            }`}
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${isSaved ? 'bg-[#E06A26]/10' : isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'
+              }`}
           >
             <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-[#E06A26] text-[#E06A26]' : isDarkMode ? 'text-gray-300' : 'text-gray-400'}`} />
           </button>
@@ -269,12 +267,6 @@ export default function RecipeDetailPage() {
                 <div className="p-4 bg-[#3AB1A0]/10 rounded-xl border border-[#3AB1A0]">
                   <p className={`text-xs font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>FAT</p>
                   <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{recipe.nutrition.fat}g</p>
-                </div>
-              )}
-              {recipe.nutrition.fiber && (
-                <div className="p-4 bg-[#3AB1A0]/10 rounded-xl border border-[#3AB1A0]">
-                  <p className={`text-xs font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>FIBER</p>
-                  <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{recipe.nutrition.fiber}g</p>
                 </div>
               )}
             </div>

@@ -47,7 +47,6 @@ interface MealItem {
       protein: number;
       carbs: number;
       fat: number;
-      fiber?: number;
       sugar?: number;
       sodium?: number;
     };
@@ -66,7 +65,6 @@ interface MealItem {
   protein?: number;
   carbs?: number;
   fats?: number;
-  fiber?: number;
 }
 
 interface Meal {
@@ -119,7 +117,6 @@ interface FullRecipeData {
     protein: number;
     carbs: number;
     fat: number;
-    fiber?: number;
     sugar?: number;
     sodium?: number;
   };
@@ -1091,231 +1088,229 @@ export default function UserPlanPage() {
               </div>
             </div>
 
-            {/* Meals List - Show all 6 meal slots */}
-            {allMealSlots.map((meal) => (
-              <div
-                key={meal.id}
-                className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}
-              >
-                {/* Meal Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex items-center justify-center w-12 h-12 text-2xl rounded-2xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}>
-                      {getMealIcon(meal.type)}
-                    </div>
-                    <div>
-                      <h3 className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{getMealLabel(meal.type)}</h3>
-                      <div className={`flex items-center gap-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        <Clock className="w-3 h-3" />
-                        <span>{meal.time}</span>
+            {/* Meals List - Show only meals with food items assigned */}
+            {allMealSlots
+              .filter(meal => meal.items.length > 0) // Hide empty meal slots
+              .map((meal) => (
+                <div
+                  key={meal.id}
+                  className={`p-5 shadow-sm rounded-2xl ${isDarkMode ? 'bg-gray-900 ring-1 ring-white/10' : 'bg-white'}`}
+                >
+                  {/* Meal Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex items-center justify-center w-12 h-12 text-2xl rounded-2xl ${isDarkMode ? 'bg-black/40' : 'bg-gray-50'}`}>
+                        {getMealIcon(meal.type)}
+                      </div>
+                      <div>
+                        <h3 className={`text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{getMealLabel(meal.type)}</h3>
+                        <div className={`flex items-center gap-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          <Clock className="w-3 h-3" />
+                          <span>{meal.time}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  {meal.isCompleted ? (
-                    <div className="flex items-center gap-1 text-[#3AB1A0]">
-                      <Check className="w-4 h-4" />
-                      <span className="text-sm font-medium">Done</span>
-                    </div>
-                  ) : meal.items.length > 0 ? (
-                    <div className="bg-[#E06A26]/10 text-[#E06A26] px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-                      <span>⚡</span>
-                      <span>{meal.totalCalories} kcal</span>
-                    </div>
-                  ) : (
-                    <div className={`px-3 py-1 text-sm font-medium rounded-full ${isDarkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-500 bg-gray-100'}`}>
-                      No food allotted
-                    </div>
-                  )}
-                </div>
-
-                {/* Meal Notes if any */}
-                {meal.notes && (
-                  <div className={`mb-4 p-3 rounded-xl border ${isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'}`}>
-                    <p className={`text-xs font-semibold mb-1 ${isDarkMode ? 'text-yellow-200' : 'text-yellow-700'}`}>📝 Notes from Dietitian</p>
-                    <div className={`text-sm space-y-1 ${isDarkMode ? 'text-yellow-100' : 'text-yellow-800'}`}>
-                      {formatNotesWithLineBreaks(meal.notes).map((line, idx) => (
-                        <p key={idx}>• {line}</p>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Meal Items - Stacked vertically, click to view recipe */}
-                {meal.items.length > 0 ? (
-                  <div className="mb-4 space-y-2">
-                    {/* Main Food Items - Stacked vertically (excluding alternatives) */}
-                    {meal.items.filter(item => !item.isAlternative).map((item, itemIndex) => (
-                      <button
-                        key={item.id}
-                        onClick={() => openRecipeModal(item)}
-                        className={`w-full p-4 rounded-xl text-left transition-all active:scale-[0.98] ${isDarkMode
-                          ? 'bg-black/40 hover:bg-[#3AB1A0]/10 active:bg-[#3AB1A0]/20'
-                          : 'bg-gray-50 hover:bg-[#3AB1A0]/10 active:bg-[#3AB1A0]/20'
-                          }`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            {/* Number indicator for multiple foods */}
-                            <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${itemIndex === 0
-                              ? 'bg-[#3AB1A0] text-white'
-                              : 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
-                              }`}>
-                              {itemIndex + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`font-semibold truncate ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-                                {item.name}
-                              </p>
-                              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                {item.portion} • {item.calories} kcal
-                              </p>
-                              {/* Tags */}
-                              {item.tags && item.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {item.tags.slice(0, 2).map((tag, i) => (
-                                    <span
-                                      key={i}
-                                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#DB9C6E]/20 text-[#DB9C6E] rounded text-[10px]"
-                                    >
-                                      <Tag className="w-2 h-2" />
-                                      {tag}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="shrink-0 flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-[#3AB1A0]" />
-                            <ChevronRight className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-
-                    {/* Alternatives Section - Show items marked as alternative AND nested alternatives */}
-                    {(meal.items.some(item => item.isAlternative) || meal.items.some(item => item.alternatives && item.alternatives.length > 0)) && (
-                      <div className={`mt-3 p-3 rounded-xl border-2 border-dashed ${isDarkMode ? 'border-orange-700/50 bg-orange-900/20' : 'border-orange-200 bg-orange-50/50'}`}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-base">🔄</span>
-                          <p className={`text-xs font-semibold uppercase tracking-wide ${isDarkMode ? 'text-orange-300' : 'text-orange-600'}`}>
-                            Optional Alternatives
-                          </p>
-                        </div>
-                        <div className="space-y-2">
-                          {/* Items marked as alternative food */}
-                          {meal.items.filter(item => item.isAlternative).map((item) => (
-                            <button
-                              key={item.id}
-                              onClick={() => openRecipeModal(item)}
-                              className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${isDarkMode ? 'bg-black/40 hover:bg-orange-900/30' : 'bg-white hover:bg-orange-50'}`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="px-2 py-0.5 text-[10px] font-bold text-orange-700 bg-orange-200 rounded">ALT</span>
-                                <div className="text-left">
-                                  <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{item.name}</p>
-                                  <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                                    {item.portion}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-semibold text-orange-600">{item.calories} kcal</p>
-                                <ChevronRight className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                              </div>
-                            </button>
-                          ))}
-                          {/* Nested alternatives from main items */}
-                          {meal.items.flatMap((item, itemIdx) =>
-                            (item.alternatives || []).map((alt, altIdx) => (
-                              <div
-                                key={`${itemIdx}-${altIdx}`}
-                                className={`flex items-center justify-between p-2 rounded-lg ${isDarkMode ? 'bg-black/40' : 'bg-white'}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-1.5 h-1.5 rounded-full bg-orange-400`} />
-                                  <div>
-                                    <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{alt.name}</p>
-                                    <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                                      Instead of: {item.name}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-sm font-semibold text-orange-600">{alt.calories} kcal</p>
-                                  <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{alt.portion}</p>
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
+                    {meal.isCompleted ? (
+                      <div className="flex items-center gap-1 text-[#3AB1A0]">
+                        <Check className="w-4 h-4" />
+                        <span className="text-sm font-medium">Done</span>
+                      </div>
+                    ) : (
+                      <div className="bg-[#E06A26]/10 text-[#E06A26] px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                        <span>⚡</span>
+                        <span>{meal.totalCalories} kcal</span>
                       </div>
                     )}
                   </div>
-                ) : (
-                  <div className={`py-6 mb-4 text-center rounded-xl ${isDarkMode ? 'text-gray-400 bg-black/40' : 'text-gray-400 bg-gray-50'}`}>
-                    <span className="block mb-2 text-2xl">🍽️</span>
-                    <p className="text-sm">No food assigned for this meal</p>
-                  </div>
-                )}
 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  {meal.isCompleted ? (
-                    <button className="flex-1 min-w-30 py-2.5 px-4 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-xl text-sm font-semibold cursor-default">
-                      ✓ Completed
-                    </button>
-                  ) : !isTodaySelected ? (
-                    /* Disabled for past/future dates */
-                    <button
-                      disabled
-                      className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold cursor-not-allowed flex items-center justify-center gap-2 ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-500'
-                        }`}
-                      title={selectedDate < new Date() ? 'Cannot mark past meals as complete' : 'Cannot mark future meals as complete'}
-                    >
-                      <Clock className="w-4 h-4" />
-                      <span>{selectedDate < new Date() ? 'Past Date' : 'Future Date'}</span>
-                    </button>
-                  ) : meal.items.length === 0 ? (
-                    /* Hide complete button when no food is allotted */
-                    <div className={`flex-1 min-w-30 py-2.5 px-4 rounded-xl text-sm font-medium text-center ${isDarkMode ? 'bg-gray-900 text-gray-500 ring-1 ring-white/10' : 'bg-gray-100 text-gray-400'
-                      }`}>
-                      No food to mark as complete
+                  {/* Meal Notes if any */}
+                  {meal.notes && (
+                    <div className={`mb-4 p-3 rounded-xl border ${isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'}`}>
+                      <p className={`text-xs font-semibold mb-1 ${isDarkMode ? 'text-yellow-200' : 'text-yellow-700'}`}>📝 Notes from Dietitian</p>
+                      <div className={`text-sm space-y-1 ${isDarkMode ? 'text-yellow-100' : 'text-yellow-800'}`}>
+                        {formatNotesWithLineBreaks(meal.notes).map((line, idx) => (
+                          <p key={idx}>• {line}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Meal Items - Stacked vertically, click to view recipe */}
+                  {meal.items.length > 0 ? (
+                    <div className="mb-4 space-y-2">
+                      {/* Main Food Items - Stacked vertically (excluding alternatives) */}
+                      {meal.items.filter(item => !item.isAlternative).map((item, itemIndex) => (
+                        <button
+                          key={item.id}
+                          onClick={() => openRecipeModal(item)}
+                          className={`w-full p-4 rounded-xl text-left transition-all active:scale-[0.98] ${isDarkMode
+                            ? 'bg-black/40 hover:bg-[#3AB1A0]/10 active:bg-[#3AB1A0]/20'
+                            : 'bg-gray-50 hover:bg-[#3AB1A0]/10 active:bg-[#3AB1A0]/20'
+                            }`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {/* Number indicator for multiple foods */}
+                              <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${itemIndex === 0
+                                ? 'bg-[#3AB1A0] text-white'
+                                : 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
+                                }`}>
+                                {itemIndex + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`font-semibold truncate ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                                  {item.name}
+                                </p>
+                                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  {item.portion} • {item.calories} kcal
+                                </p>
+                                {/* Tags */}
+                                {item.tags && item.tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {item.tags.slice(0, 2).map((tag, i) => (
+                                      <span
+                                        key={i}
+                                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#DB9C6E]/20 text-[#DB9C6E] rounded text-[10px]"
+                                      >
+                                        <Tag className="w-2 h-2" />
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="shrink-0 flex items-center gap-2">
+                              <BookOpen className="w-4 h-4 text-[#3AB1A0]" />
+                              <ChevronRight className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+
+                      {/* Alternatives Section - Show items marked as alternative AND nested alternatives */}
+                      {(meal.items.some(item => item.isAlternative) || meal.items.some(item => item.alternatives && item.alternatives.length > 0)) && (
+                        <div className={`mt-3 p-3 rounded-xl border-2 border-dashed ${isDarkMode ? 'border-orange-700/50 bg-orange-900/20' : 'border-orange-200 bg-orange-50/50'}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-base">🔄</span>
+                            <p className={`text-xs font-semibold uppercase tracking-wide ${isDarkMode ? 'text-orange-300' : 'text-orange-600'}`}>
+                              Optional Alternatives
+                            </p>
+                          </div>
+                          <div className="space-y-2">
+                            {/* Items marked as alternative food */}
+                            {meal.items.filter(item => item.isAlternative).map((item) => (
+                              <button
+                                key={item.id}
+                                onClick={() => openRecipeModal(item)}
+                                className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${isDarkMode ? 'bg-black/40 hover:bg-orange-900/30' : 'bg-white hover:bg-orange-50'}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 text-[10px] font-bold text-orange-700 bg-orange-200 rounded">ALT</span>
+                                  <div className="text-left">
+                                    <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{item.name}</p>
+                                    <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                      {item.portion}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-semibold text-orange-600">{item.calories} kcal</p>
+                                  <ChevronRight className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                                </div>
+                              </button>
+                            ))}
+                            {/* Nested alternatives from main items */}
+                            {meal.items.flatMap((item, itemIdx) =>
+                              (item.alternatives || []).map((alt, altIdx) => (
+                                <div
+                                  key={`${itemIdx}-${altIdx}`}
+                                  className={`flex items-center justify-between p-2 rounded-lg ${isDarkMode ? 'bg-black/40' : 'bg-white'}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-1.5 h-1.5 rounded-full bg-orange-400`} />
+                                    <div>
+                                      <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{alt.name}</p>
+                                      <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                        Instead of: {item.name}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm font-semibold text-orange-600">{alt.calories} kcal</p>
+                                    <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{alt.portion}</p>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <button
-                      onClick={() => openCompletionModal(meal)}
-                      disabled={completingMeal === meal.id}
-                      className="flex-1 min-w-30 py-2.5 px-4 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[#2A9A8B] transition-colors disabled:opacity-50"
-                    >
-                      {completingMeal === meal.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Camera className="w-4 h-4" />
-                          <span>Complete</span>
-                        </>
-                      )}
-                    </button>
+                    <div className={`py-6 mb-4 text-center rounded-xl ${isDarkMode ? 'text-gray-400 bg-black/40' : 'text-gray-400 bg-gray-50'}`}>
+                      <span className="block mb-2 text-2xl">🍽️</span>
+                      <p className="text-sm">No food assigned for this meal</p>
+                    </div>
                   )}
 
-                  {/* View Recipe Button - Show next to Complete if items exist */}
-                  {meal.items.length > 0 && (
-                    <button
-                      onClick={() => {
-                        // Open food selector modal to show all items
-                        setFoodSelectorModal({ meal, isOpen: true });
-                      }}
-                      className="flex-1 min-w-30 py-2.5 px-4 bg-[#DB9C6E]/10 text-[#DB9C6E] rounded-xl text-sm font-semibold hover:bg-[#DB9C6E]/20 transition-colors flex items-center justify-center gap-2"
-                      title="View recipe details"
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      <span>All Recipes</span>
-                    </button>
-                  )}
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {meal.isCompleted ? (
+                      <button className="flex-1 min-w-30 py-2.5 px-4 bg-[#3AB1A0]/10 text-[#3AB1A0] rounded-xl text-sm font-semibold cursor-default">
+                        ✓ Completed
+                      </button>
+                    ) : !isTodaySelected ? (
+                      /* Disabled for past/future dates */
+                      <button
+                        disabled
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold cursor-not-allowed flex items-center justify-center gap-2 ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-500'
+                          }`}
+                        title={selectedDate < new Date() ? 'Cannot mark past meals as complete' : 'Cannot mark future meals as complete'}
+                      >
+                        <Clock className="w-4 h-4" />
+                        <span>{selectedDate < new Date() ? 'Past Date' : 'Future Date'}</span>
+                      </button>
+                    ) : meal.items.length === 0 ? (
+                      /* Hide complete button when no food is allotted */
+                      <div className={`flex-1 min-w-30 py-2.5 px-4 rounded-xl text-sm font-medium text-center ${isDarkMode ? 'bg-gray-900 text-gray-500 ring-1 ring-white/10' : 'bg-gray-100 text-gray-400'
+                        }`}>
+                        No food to mark as complete
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => openCompletionModal(meal)}
+                        disabled={completingMeal === meal.id}
+                        className="flex-1 min-w-30 py-2.5 px-4 bg-[#3AB1A0] text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[#2A9A8B] transition-colors disabled:opacity-50"
+                      >
+                        {completingMeal === meal.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Camera className="w-4 h-4" />
+                            <span>Complete</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    {/* View Recipe Button - Show next to Complete if items exist */}
+                    {meal.items.length > 0 && (
+                      <button
+                        onClick={() => {
+                          // Open food selector modal to show all items
+                          setFoodSelectorModal({ meal, isOpen: true });
+                        }}
+                        className="flex-1 min-w-30 py-2.5 px-4 bg-[#DB9C6E]/10 text-[#DB9C6E] rounded-xl text-sm font-semibold hover:bg-[#DB9C6E]/20 transition-colors flex items-center justify-center gap-2"
+                        title="View recipe details"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        <span>All Recipes</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </>
         )}
       </div>

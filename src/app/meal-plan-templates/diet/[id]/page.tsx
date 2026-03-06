@@ -22,7 +22,6 @@ interface FoodOption {
   carbs: string;
   fats: string;
   protein: string;
-  fiber: string;
   isAlternative?: boolean;
 }
 
@@ -120,26 +119,26 @@ const getMealTypeColor = (mealType: string) => {
 // Parse time string to minutes for sorting (handles both 24-hour and 12-hour formats)
 const parseTimeToMinutes = (timeStr: string): number => {
   if (!timeStr) return 720; // Default to noon if no time
-  
+
   timeStr = timeStr.trim();
-  
+
   // Handle 12-hour format with AM/PM
   const ampmMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
   if (ampmMatch) {
     let hours = parseInt(ampmMatch[1], 10);
     const minutes = parseInt(ampmMatch[2], 10);
     const period = ampmMatch[3].toLowerCase();
-    
+
     // Convert to 24-hour for sorting
     if (period === 'pm' && hours !== 12) {
       hours += 12;
     } else if (period === 'am' && hours === 12) {
       hours = 0;
     }
-    
+
     return hours * 60 + minutes;
   }
-  
+
   // Handle 24-hour format
   const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
   if (timeMatch) {
@@ -147,7 +146,7 @@ const parseTimeToMinutes = (timeStr: string): number => {
     const minutes = parseInt(timeMatch[2], 10);
     return hours * 60 + minutes;
   }
-  
+
   return 720; // Default to noon
 };
 
@@ -157,13 +156,13 @@ const sortMealsByTime = (meals: { [mealType: string]: Meal }): [string, Meal][] 
     // First sort by time if available
     const timeA = parseTimeToMinutes(mealA.time);
     const timeB = parseTimeToMinutes(mealB.time);
-    
+
     if (timeA !== timeB) return timeA - timeB;
-    
+
     // Then by meal type order
     const orderA = MEAL_TYPE_ORDER[typeA.toLowerCase().replace(/[\s-_]/g, '')] || 50;
     const orderB = MEAL_TYPE_ORDER[typeB.toLowerCase().replace(/[\s-_]/g, '')] || 50;
-    
+
     return orderA - orderB;
   });
 };
@@ -235,7 +234,7 @@ export default function DietTemplateViewPage() {
     return colors[difficulty] || 'bg-gray-100 text-gray-800';
   };
 
-  const formatCategoryName = (category: string) => 
+  const formatCategoryName = (category: string) =>
     category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
   const formatDate = (dateStr: string) => {
@@ -488,7 +487,7 @@ export default function DietTemplateViewPage() {
                       <UtensilsCrossed className="h-4 w-4 text-orange-600" />
                       Diet Plan ({template.meals.length} Days)
                     </div>
-                    
+
                     {/* Day Selector - Horizontal scrollable tabs */}
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
                       {template.meals.map((day, index) => (
@@ -497,11 +496,10 @@ export default function DietTemplateViewPage() {
                           variant={selectedDay === index ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => setSelectedDay(index)}
-                          className={`text-xs whitespace-nowrap shrink-0 ${
-                            selectedDay === index 
-                              ? 'bg-emerald-600 hover:bg-emerald-700' 
+                          className={`text-xs whitespace-nowrap shrink-0 ${selectedDay === index
+                              ? 'bg-emerald-600 hover:bg-emerald-700'
                               : 'hover:bg-emerald-50 hover:border-emerald-300'
-                          }`}
+                            }`}
                         >
                           <Calendar className="h-3 w-3 mr-1" />
                           {day.day || `Day ${index + 1}`}
@@ -524,9 +522,9 @@ export default function DietTemplateViewPage() {
                               <span className="font-bold text-gray-800">{template.meals[selectedDay].day || `Day ${selectedDay + 1}`}</span>
                               {template.meals[selectedDay].date && (
                                 <Badge className="text-xs font-bold bg-emerald-100 text-emerald-800 border-0 ml-2">
-                                  📅 {new Date(template.meals[selectedDay].date).toLocaleDateString('en-US', { 
+                                  📅 {new Date(template.meals[selectedDay].date).toLocaleDateString('en-US', {
                                     weekday: 'long',
-                                    month: 'long', 
+                                    month: 'long',
                                     day: 'numeric',
                                     year: 'numeric'
                                   })}
@@ -560,15 +558,15 @@ export default function DietTemplateViewPage() {
                               {sortMealsByTime(template.meals[selectedDay].meals).map(([mealType, meal]: [string, any]) => {
                                 const MealIcon = getMealIcon(mealType);
                                 const mealColorClass = getMealTypeColor(mealType);
-                                
+
                                 // Separate primary and alternative foods
-                                const primaryFoods = meal.foodOptions?.filter((f: FoodOption, idx: number) => 
+                                const primaryFoods = meal.foodOptions?.filter((f: FoodOption, idx: number) =>
                                   !f.isAlternative && idx === 0
                                 ) || [];
-                                const alternativeFoods = meal.foodOptions?.filter((f: FoodOption, idx: number) => 
+                                const alternativeFoods = meal.foodOptions?.filter((f: FoodOption, idx: number) =>
                                   f.isAlternative || idx > 0
                                 ) || [];
-                                
+
                                 return (
                                   <div key={mealType} className="p-3 hover:bg-gray-50/50 transition-colors">
                                     {/* Meal Header */}
@@ -595,14 +593,14 @@ export default function DietTemplateViewPage() {
                                         {meal.foodOptions?.reduce((sum: number, f: FoodOption) => sum + (parseFloat(f.cal) || 0), 0).toFixed(0)} cal
                                       </Badge>
                                     </div>
-                                    
+
                                     {/* Food Items */}
                                     {meal.foodOptions && meal.foodOptions.length > 0 ? (
                                       <div className="space-y-1.5 ml-8">
                                         {/* Primary Food (First item) */}
                                         {meal.foodOptions.slice(0, 1).map((food: FoodOption, idx: number) => (
-                                          <div 
-                                            key={food.id || idx} 
+                                          <div
+                                            key={food.id || idx}
                                             className="bg-white rounded-lg p-3 border-2 border-emerald-300 shadow-sm"
                                           >
                                             <div className="flex justify-between items-start gap-2 mb-2">
@@ -631,23 +629,17 @@ export default function DietTemplateViewPage() {
                                                 <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
                                                 <span>F: <span className="font-bold">{food.fats}g</span></span>
                                               </span>
-                                              {food.fiber && (
-                                                <span className="flex items-center gap-1">
-                                                  <span className="w-2 h-2 rounded-full bg-green-400"></span>
-                                                  Fiber: {food.fiber}g
-                                                </span>
-                                              )}
                                             </div>
                                           </div>
                                         ))}
-                                        
+
                                         {/* Alternative Foods (Remaining items) - Show ONLY if there are actually alternatives */}
                                         {meal.foodOptions.length > 1 && (
                                           <div className="mt-1 space-y-2 pt-2 border-t-2 border-dashed border-blue-300">
                                             <div className="text-xs text-blue-700 font-bold px-1">🔄 Alternative Options</div>
                                             {meal.foodOptions.slice(1).map((food: FoodOption, idx: number) => (
-                                              <div 
-                                                key={food.id || `alt-${idx}`} 
+                                              <div
+                                                key={food.id || `alt-${idx}`}
                                                 className="bg-blue-50 rounded-lg p-2.5 border-2 border-blue-300 border-dashed"
                                               >
                                                 <div className="flex justify-between items-start gap-2 mb-1.5">
@@ -676,7 +668,6 @@ export default function DietTemplateViewPage() {
                                                     <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
                                                     <span>F: <span className="font-bold">{food.fats}g</span></span>
                                                   </span>
-                                                  {food.fiber && <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500"></span><span>Fiber: <span className="font-bold">{food.fiber}g</span></span></span>}
                                                 </div>
                                               </div>
                                             ))}

@@ -150,7 +150,7 @@ function safeJSONParse(value: any, fallback: any = null): any {
 /**
  * Parse nutrition data from various formats
  */
-function parseNutrition(value: any): { calories: number; protein: number; carbs: number; fat: number; fiber?: number; sugar?: number; sodium?: number } | null {
+function parseNutrition(value: any): { calories: number; protein: number; carbs: number; fat: number; sugar?: number; sodium?: number } | null {
   if (!value) return null;
 
   // If it's already an object with required fields
@@ -164,7 +164,6 @@ function parseNutrition(value: any): { calories: number; protein: number; carbs:
       protein: ['protein', 'proteins', 'prot'],
       carbs: ['carbs', 'carbohydrates', 'carb', 'carbohydrate'],
       fat: ['fat', 'fats', 'totalfat', 'total_fat'],
-      fiber: ['fiber', 'fibre', 'dietary_fiber'],
       sugar: ['sugar', 'sugars', 'total_sugar'],
       sodium: ['sodium', 'salt', 'na']
     };
@@ -183,8 +182,8 @@ function parseNutrition(value: any): { calories: number; protein: number; carbs:
     }
 
     // Check required fields
-    if (result.calories !== undefined && result.protein !== undefined && 
-        result.carbs !== undefined && result.fat !== undefined) {
+    if (result.calories !== undefined && result.protein !== undefined &&
+      result.carbs !== undefined && result.fat !== undefined) {
       return result;
     }
   }
@@ -206,7 +205,7 @@ function parseNutrition(value: any): { calories: number; protein: number; carbs:
 function reassembleIngredientsFromFlattened(data: Record<string, any>): any[] | null {
   const flatIngredientsPattern = /^ingredients\[(\d+)\]$/;
   const flatIngredients: Record<number, any> = {};
-  
+
   for (const [key, value] of Object.entries(data)) {
     const match = key.match(flatIngredientsPattern);
     if (match && value !== undefined && value !== null && value !== '') {
@@ -223,7 +222,7 @@ function reassembleIngredientsFromFlattened(data: Record<string, any>): any[] | 
       flatIngredients[index] = parsedValue;
     }
   }
-  
+
   // If we found any flattened ingredients, return them as an array
   if (Object.keys(flatIngredients).length > 0) {
     const sorted = Object.keys(flatIngredients)
@@ -232,7 +231,7 @@ function reassembleIngredientsFromFlattened(data: Record<string, any>): any[] | 
       .map(idx => flatIngredients[idx]);
     return sorted.length > 0 ? sorted : null;
   }
-  
+
   return null;
 }
 
@@ -245,7 +244,7 @@ function parseIngredients(value: any): Array<{ name: string; quantity: number; u
   // If already an array
   if (Array.isArray(value)) {
     const ingredients: Array<{ name: string; quantity: number; unit: string; remarks?: string }> = [];
-    
+
     for (const item of value) {
       if (typeof item === 'string') {
         // Simple string: "2 cups flour"
@@ -262,7 +261,7 @@ function parseIngredients(value: any): Array<{ name: string; quantity: number; u
         }
       } else if (typeof item === 'object' && item !== null) {
         const ing: any = { name: '', quantity: 1, unit: 'unit', remarks: '' };
-        
+
         // Map common field names
         if (item.name || item.ingredient || item.ingredientName) {
           ing.name = String(item.name || item.ingredient || item.ingredientName);
@@ -283,13 +282,13 @@ function parseIngredients(value: any): Array<{ name: string; quantity: number; u
             ing.remarks = String(remarks);
           }
         }
-        
+
         if (ing.name) {
           ingredients.push(ing);
         }
       }
     }
-    
+
     return ingredients.length > 0 ? ingredients : null;
   }
 
@@ -393,7 +392,7 @@ export class ValidationEngine {
     // Process each row
     for (const row of rows) {
       const result = await this.validateRow(row, forceModel);
-      
+
       if (result.detectedModel) {
         const group = modelGroups.get(result.detectedModel);
         if (group) {
@@ -420,7 +419,7 @@ export class ValidationEngine {
           data: result.data,
           matchAttempts: result.matchResults
         });
-        
+
         // Add error for unmatched row
         allErrors.push({
           row: result.rowIndex,
@@ -485,9 +484,9 @@ export class ValidationEngine {
     } else {
       // Detect model automatically
       matchResults = modelRegistry.detectModel(row.data);
-      
-      if (matchResults.length > 0 && 
-          matchResults[0].confidence >= this.modelConfidenceThreshold) {
+
+      if (matchResults.length > 0 &&
+        matchResults[0].confidence >= this.modelConfidenceThreshold) {
         detectedModel = matchResults[0].modelName;
         modelConfidence = matchResults[0].confidence;
       }
@@ -558,23 +557,23 @@ export class ValidationEngine {
     emptyFields: string[];
   } {
     const model = modelRegistry.get(modelName);
-    if (!model) return { 
-      cleaned: data, 
-      fieldMapping: [], 
-      unmappedFields: [], 
-      emptyFields: [] 
+    if (!model) return {
+      cleaned: data,
+      fieldMapping: [],
+      unmappedFields: [],
+      emptyFields: []
     };
 
     // PRE-PROCESS: Reassemble flattened array fields BEFORE field mapping
     // This handles CSV exports like ingredients[0], ingredients[1], etc.
     let processedData = { ...data };
-    
+
     if (modelName === 'Recipe') {
       // Reassemble flattened ingredients
       const flatIngredientsPattern = /^ingredients\[(\d+)\]$/;
       const flatIngredients: Record<number, any> = {};
       const flatIngredientKeys: string[] = [];
-      
+
       for (const [key, value] of Object.entries(processedData)) {
         const match = key.match(flatIngredientsPattern);
         if (match && value !== undefined && value !== null && value !== '') {
@@ -591,28 +590,28 @@ export class ValidationEngine {
           flatIngredientKeys.push(key);
         }
       }
-      
+
       // If we found flattened ingredients, reassemble them
       if (Object.keys(flatIngredients).length > 0) {
         const sortedIngredients = Object.keys(flatIngredients)
           .map(Number)
           .sort((a, b) => a - b)
           .map(idx => flatIngredients[idx]);
-        
+
         // Add the reassembled ingredients array
         processedData.ingredients = sortedIngredients;
-        
+
         // Remove the flattened fields
         for (const key of flatIngredientKeys) {
           delete processedData[key];
         }
       }
-      
+
       // Similarly handle flattened instructions if needed
       const flatInstructionsPattern = /^instructions\[(\d+)\]$/;
       const flatInstructions: Record<number, any> = {};
       const flatInstructionKeys: string[] = [];
-      
+
       for (const [key, value] of Object.entries(processedData)) {
         const match = key.match(flatInstructionsPattern);
         if (match && value !== undefined && value !== null && value !== '') {
@@ -621,15 +620,15 @@ export class ValidationEngine {
           flatInstructionKeys.push(key);
         }
       }
-      
+
       if (Object.keys(flatInstructions).length > 0) {
         const sortedInstructions = Object.keys(flatInstructions)
           .map(Number)
           .sort((a, b) => a - b)
           .map(idx => flatInstructions[idx]);
-        
+
         processedData.instructions = sortedInstructions;
-        
+
         for (const key of flatInstructionKeys) {
           delete processedData[key];
         }
@@ -663,7 +662,7 @@ export class ValidationEngine {
       'targetWeightBucket': ['target_weight_bucket', 'weight_bucket', 'target_bucket', 'your_target_weight', 'what_is_your_target_weight'],
       'activityLevel': ['activity_level', 'activitylevel', 'activity', 'physical_activity', 'exercise_level'],
       'activityRate': ['activity_rate', 'activityrate'],
-      
+
       // Recipe field aliases
       'prepTime': ['prep_time', 'preptime', 'preparation_time', 'prep', 'prep_minutes', 'preparation'],
       'cookTime': ['cook_time', 'cooktime', 'cooking_time', 'cook', 'cook_minutes', 'cooking'],
@@ -732,13 +731,13 @@ export class ValidationEngine {
 
     for (const [key, value] of Object.entries(processedData)) {
       // Check if value is empty
-      const isEmpty = value === null || value === undefined || value === '' || 
+      const isEmpty = value === null || value === undefined || value === '' ||
         (typeof value === 'string' && value.trim() === '');
-      
+
       // Track empty fields even if they're valid schema fields
       if (isEmpty) {
         // Check if it maps to a schema field
-        const schemaMatch = Array.from(allowedFields).find(af => 
+        const schemaMatch = Array.from(allowedFields).find(af =>
           af.toLowerCase() === key.toLowerCase() || normalizeFieldName(af) === normalizeFieldName(key)
         );
         if (schemaMatch) {
@@ -766,7 +765,7 @@ export class ValidationEngine {
       }
 
       // Try case-insensitive match (map to correct field name)
-      let matchedField = Array.from(allowedFields).find(af => 
+      let matchedField = Array.from(allowedFields).find(af =>
         af.toLowerCase() === key.toLowerCase()
       );
       if (matchedField) {
@@ -782,7 +781,7 @@ export class ValidationEngine {
 
       // Try normalized match (ignore underscores, hyphens, and case)
       const keyNormalized = normalizeFieldName(key);
-      matchedField = Array.from(allowedFields).find(af => 
+      matchedField = Array.from(allowedFields).find(af =>
         normalizeFieldName(af) === keyNormalized
       );
       if (matchedField) {
@@ -823,7 +822,7 @@ export class ValidationEngine {
 
       // Check if this is an array field
       if (Array.isArray(value)) {
-        const arrayField = schemaFields.find(f => 
+        const arrayField = schemaFields.find(f =>
           f === key || f.toLowerCase() === key.toLowerCase()
         );
         if (arrayField) {
@@ -836,9 +835,9 @@ export class ValidationEngine {
           });
           continue;
         }
-        
+
         // Also check without case sensitivity
-        const matchedArrayField = Array.from(allowedFields).find(af => 
+        const matchedArrayField = Array.from(allowedFields).find(af =>
           af.toLowerCase() === key.toLowerCase()
         );
         if (matchedArrayField) {
@@ -854,7 +853,7 @@ export class ValidationEngine {
       }
 
       // Check nested fields (dot notation)
-      const isNested = Array.from(allowedFields).some(af => 
+      const isNested = Array.from(allowedFields).some(af =>
         key.startsWith(af + '.') || af.startsWith(key + '.')
       );
       if (isNested) {
@@ -922,20 +921,20 @@ export class ValidationEngine {
         const goal = transformed.generalGoal.toLowerCase().trim();
         let mappedGoal = 'not-specified';
 
-        if (goal.includes('weight loss') || goal.includes('weight-loss') || 
-            goal.includes('lose') || goal.includes('kgs') ||
-            goal.includes('kg loss') || goal.includes('reduce')) {
+        if (goal.includes('weight loss') || goal.includes('weight-loss') ||
+          goal.includes('lose') || goal.includes('kgs') ||
+          goal.includes('kg loss') || goal.includes('reduce')) {
           mappedGoal = 'weight-loss';
-        } else if (goal.includes('weight gain') || goal.includes('weight-gain') || 
-                   goal.includes('gain') || goal.includes('increase')) {
+        } else if (goal.includes('weight gain') || goal.includes('weight-gain') ||
+          goal.includes('gain') || goal.includes('increase')) {
           mappedGoal = 'weight-gain';
-        } else if (goal.includes('disease') || goal.includes('medical') || 
-                   goal.includes('condition') || goal.includes('management')) {
+        } else if (goal.includes('disease') || goal.includes('medical') ||
+          goal.includes('condition') || goal.includes('management')) {
           mappedGoal = 'disease-management';
         } else if (goal.includes('muscle') || goal.includes('build')) {
           mappedGoal = 'muscle-gain';
-        } else if (goal.includes('maintain') || goal.includes('keep') || 
-                   goal.includes('same')) {
+        } else if (goal.includes('maintain') || goal.includes('keep') ||
+          goal.includes('same')) {
           mappedGoal = 'maintain-weight';
         }
 
@@ -985,7 +984,7 @@ export class ValidationEngine {
       // Handle healthGoals - must be array of strings
       if (transformed.healthGoals !== undefined) {
         let goals = transformed.healthGoals;
-        
+
         // If it's a string that looks like JSON, try to parse it
         if (typeof goals === 'string') {
           try {
@@ -1050,7 +1049,7 @@ export class ValidationEngine {
       // Handle assignedDietitians - validate ObjectIds
       if (transformed.assignedDietitians !== undefined) {
         let dietitians = transformed.assignedDietitians;
-        
+
         // Helper function to validate ObjectId format (24 hex chars)
         const isValidObjectId = (id: string): boolean => {
           if (typeof id !== 'string') return false;
@@ -1097,7 +1096,7 @@ export class ValidationEngine {
               return cleanObjectId(String(d));
             })
             .filter((id: string) => isValidObjectId(id));
-          
+
           if (validIds.length > 0) {
             transformed.assignedDietitians = validIds;
           } else {
@@ -1111,7 +1110,7 @@ export class ValidationEngine {
       // Handle assignedHealthCounselors - same logic as dietitians
       if (transformed.assignedHealthCounselors !== undefined) {
         let counselors = transformed.assignedHealthCounselors;
-        
+
         const isValidObjectId = (id: string): boolean => {
           if (typeof id !== 'string') return false;
           const cleanId = id.replace(/new ObjectId\(['"]?|['"]?\)/g, '').trim();
@@ -1151,7 +1150,7 @@ export class ValidationEngine {
               return cleanObjectId(String(c));
             })
             .filter((id: string) => isValidObjectId(id));
-          
+
           if (validIds.length > 0) {
             transformed.assignedHealthCounselors = validIds;
           } else {
@@ -1165,7 +1164,7 @@ export class ValidationEngine {
       // Handle tags - validate ObjectIds
       if (transformed.tags !== undefined) {
         let tags = transformed.tags;
-        
+
         const isValidObjectId = (id: string): boolean => {
           if (typeof id !== 'string') return false;
           const cleanId = id.replace(/new ObjectId\(['"]?|['"]?\)/g, '').trim();
@@ -1205,7 +1204,7 @@ export class ValidationEngine {
               return cleanObjectId(String(t));
             })
             .filter((id: string) => isValidObjectId(id));
-          
+
           if (validIds.length > 0) {
             transformed.tags = validIds;
           } else {
@@ -1290,7 +1289,7 @@ export class ValidationEngine {
           }
         }
       }
-      
+
       if (ingredientsToProcess !== undefined) {
         const parsedIngredients = parseIngredients(ingredientsToProcess);
         if (parsedIngredients) {
@@ -1323,7 +1322,7 @@ export class ValidationEngine {
       // Handle tags - for Recipe, tags are strings, not ObjectIds
       if (transformed.tags !== undefined) {
         let recipeTags = transformed.tags;
-        
+
         if (typeof recipeTags === 'string') {
           try {
             const parsed = JSON.parse(recipeTags.replace(/'/g, '"'));
@@ -1365,7 +1364,7 @@ export class ValidationEngine {
       // Handle dietaryRestrictions - ensure it's an array of strings
       if (transformed.dietaryRestrictions !== undefined) {
         let restrictions = transformed.dietaryRestrictions;
-        
+
         if (typeof restrictions === 'string') {
           try {
             const parsed = JSON.parse(restrictions.replace(/'/g, '"'));
@@ -1396,7 +1395,7 @@ export class ValidationEngine {
       if (transformed.allergens !== undefined) {
         let allergens = transformed.allergens;
         const validAllergens = ['nuts', 'dairy', 'eggs', 'soy', 'gluten', 'shellfish', 'fish', 'sesame'];
-        
+
         if (typeof allergens === 'string') {
           try {
             const parsed = JSON.parse(allergens.replace(/'/g, '"'));
@@ -1571,7 +1570,7 @@ export class ValidationEngine {
    */
   private categorizeError(message: string): ValidationError['errorType'] {
     const lowerMessage = message.toLowerCase();
-    
+
     if (lowerMessage.includes('required') || lowerMessage.includes('cannot be empty')) {
       return 'required';
     }
@@ -1584,14 +1583,14 @@ export class ValidationEngine {
     if (lowerMessage.includes('enum') || lowerMessage.includes('allowed')) {
       return 'enum';
     }
-    if (lowerMessage.includes('min') || lowerMessage.includes('max') || 
-        lowerMessage.includes('range') || lowerMessage.includes('length')) {
+    if (lowerMessage.includes('min') || lowerMessage.includes('max') ||
+      lowerMessage.includes('range') || lowerMessage.includes('length')) {
       return 'range';
     }
     if (lowerMessage.includes('not defined') || lowerMessage.includes('extra')) {
       return 'extra';
     }
-    
+
     return 'unknown';
   }
 
