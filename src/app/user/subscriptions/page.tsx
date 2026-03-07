@@ -382,7 +382,7 @@ export default function UserSubscriptionsPage() {
   if (status === 'loading' || loading) {
     return (
       <div
-        className={`fixed inset-0 flex items-center justify-center z-[100] ${
+        className={`fixed inset-0 flex items-center justify-center z-100 ${
           isDarkMode ? 'bg-gray-950' : 'bg-white'
         }`}
       >

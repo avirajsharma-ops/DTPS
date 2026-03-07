@@ -299,7 +299,7 @@ export default function ActivityPage() {
 
     if (loading) {
         return (
-            <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
+            <div className={`fixed inset-0 flex items-center justify-center z-100 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
                 <SpoonGifLoader size="lg" />
             </div>
         );

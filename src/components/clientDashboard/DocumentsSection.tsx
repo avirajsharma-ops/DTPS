@@ -223,7 +223,7 @@ export default function DocumentsSection({
                   placeholder="Search files..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 w-[180px]"
+                  className="pl-8 w-45"
                 />
                 {searchQuery && (
                   <button
@@ -240,7 +240,7 @@ export default function DocumentsSection({
                 value={filterType}
                 onValueChange={(val: any) => setFilterType(val)}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-45">
                   <SelectValue placeholder="Filter Documents" />
                 </SelectTrigger>
                 <SelectContent>
@@ -415,7 +415,7 @@ export default function DocumentsSection({
                             </span>
                           )}
                           {doc.source === "meal-completion" && doc.notes && (
-                            <span className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]" title={doc.notes}>
+                            <span className="text-xs text-gray-500 mt-0.5 truncate max-w-50" title={doc.notes}>
                               Note: {doc.notes}
                             </span>
                           )}

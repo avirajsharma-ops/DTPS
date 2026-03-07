@@ -208,7 +208,7 @@ export default function NotificationsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white dark:bg-gray-950">
+      <div className="fixed inset-0 z-100 flex items-center justify-center bg-white dark:bg-gray-950">
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -292,7 +292,7 @@ export default function NotificationsPage() {
       {/* Notifications List */}
       <div className="p-4">
         {loading ? (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white dark:bg-gray-950">
+          <div className="fixed inset-0 z-100 flex items-center justify-center bg-white dark:bg-gray-950">
             <SpoonGifLoader size="lg" />
           </div>
         ) : notifications.length === 0 ? (

@@ -182,7 +182,7 @@ export default function WatchPage() {
 
   if (status === 'loading' || watchLoading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-[100] bg-white dark:bg-gray-950">
+      <div className="fixed inset-0 flex items-center justify-center z-100 bg-white dark:bg-gray-950">
         <SpoonGifLoader size="lg" />
       </div>
     );
