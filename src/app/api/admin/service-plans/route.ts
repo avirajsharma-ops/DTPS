@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
     const plans = await withCache(
       `admin:service-plans:${JSON.stringify(query)}`,
       async () => await ServicePlan.find(query)
-      .populate('createdBy', 'firstName lastName')
-      .sort({ createdAt: -1 }),
+        .populate('createdBy', 'firstName lastName')
+        .sort({ createdAt: -1 }),
       { ttl: 120000, tags: ['admin'] }
     );
 
@@ -108,6 +108,11 @@ export async function POST(request: NextRequest) {
     });
 
     await servicePlan.save();
+
+    // Clear cache for all service plan queries
+    await clearCacheByTag('admin');
+    await clearCacheByTag('client');
+    await clearCacheByTag('service_plans');
 
     return NextResponse.json({
       success: true,
@@ -187,6 +192,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Service plan not found' }, { status: 404 });
     }
 
+    // Clear cache for all service plan queries
+    await clearCacheByTag('admin');
+    await clearCacheByTag('client');
+    await clearCacheByTag('service_plans');
+
     return NextResponse.json({
       success: true,
       plan: updatedPlan,
@@ -226,6 +236,11 @@ export async function DELETE(request: NextRequest) {
     if (!deletedPlan) {
       return NextResponse.json({ error: 'Service plan not found' }, { status: 404 });
     }
+
+    // Clear cache for all service plan queries
+    await clearCacheByTag('admin');
+    await clearCacheByTag('client');
+    await clearCacheByTag('service_plans');
 
     return NextResponse.json({
       success: true,
