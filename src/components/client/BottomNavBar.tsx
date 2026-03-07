@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, UtensilsCrossed, ListTodo, BarChart3, User } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { hapticSelection } from '@/lib/haptics';
 
 export default function BottomNavBar() {
   const pathname = usePathname();
@@ -14,6 +15,11 @@ export default function BottomNavBar() {
       return pathname === '/user';
     }
     return pathname.startsWith(href);
+  };
+
+  const handleNavClick = () => {
+    // Trigger haptic feedback on nav item click
+    hapticSelection();
   };
 
   const navItems = [
@@ -32,6 +38,7 @@ export default function BottomNavBar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={handleNavClick}
               className="flex items-center justify-center"
             >
               <item.icon

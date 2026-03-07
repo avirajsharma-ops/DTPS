@@ -44,13 +44,15 @@ export async function GET(request: Request) {
         ]);
 
         // --- Hydration ---
-        const waterEntries = journal?.hydration?.entries || [];
+        const waterEntriesRaw = journal?.hydration?.entries;
+        const waterEntries = Array.isArray(waterEntriesRaw) ? waterEntriesRaw : [];
         const totalWater = waterEntries.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
         const waterGoal = user?.goals?.water || journal?.targets?.water || 2500;
         const assignedWater = journal?.hydration?.assigned || null;
 
         // --- Sleep ---
-        const sleepEntries = journal?.sleep?.entries || [];
+        const sleepEntriesRaw = journal?.sleep?.entries;
+        const sleepEntries = Array.isArray(sleepEntriesRaw) ? sleepEntriesRaw : [];
         const totalSleep = sleepEntries.reduce((sum: number, e: any) => {
           return sum + (e.hours || 0) + (e.minutes || 0) / 60;
         }, 0);
@@ -58,7 +60,8 @@ export async function GET(request: Request) {
         const assignedSleep = journal?.sleep?.assigned || null;
 
         // --- Activity ---
-        const activityEntries = journal?.activity?.entries || [];
+        const activityEntriesRaw = journal?.activity?.entries;
+        const activityEntries = Array.isArray(activityEntriesRaw) ? activityEntriesRaw : [];
         const totalActivity = activityEntries.reduce(
           (sum: number, e: any) => sum + (e.duration || 0),
           0
@@ -67,7 +70,8 @@ export async function GET(request: Request) {
         const assignedActivity = journal?.activity?.assigned || null;
 
         // --- Steps ---
-        const stepsEntries = journal?.steps?.entries || [];
+        const stepsEntriesRaw = journal?.steps?.entries;
+        const stepsEntries = Array.isArray(stepsEntriesRaw) ? stepsEntriesRaw : [];
         const totalSteps = stepsEntries.reduce(
           (sum: number, e: any) => sum + (e.steps || 0),
           0

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Star, Check, X, Loader2, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Star, Check, Loader2, ShoppingCart } from 'lucide-react';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { toast } from 'sonner';
 import Script from 'next/script';
@@ -13,27 +13,6 @@ declare global {
     Razorpay: any;
   }
 }
-
-// Helper function to strip HTML tags from text
-const stripHtmlTags = (html: string): string => {
-  if (!html) return '';
-  // Replace common HTML entities
-  let text = html
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<\/p>/gi, ' ')
-    .replace(/<\/div>/gi, ' ')
-    .replace(/<\/li>/gi, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"');
-  // Remove all remaining HTML tags
-  text = text.replace(/<[^>]*>/g, '');
-  // Clean up extra whitespace
-  text = text.replace(/\s+/g, ' ').trim();
-  return text;
-};
 
 interface ServicePlan {
   _id: string;
@@ -59,9 +38,18 @@ export default function ServiceDetailPage() {
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [isNativeApp, setIsNativeApp] = useState(false);
 
   useEffect(() => {
     fetchServiceDetail();
+    // Check if running in native WebView app
+    if (typeof window !== 'undefined' && window.NativeApp) {
+      try {
+        setIsNativeApp(window.NativeApp.isNativeApp());
+      } catch (e) {
+        setIsNativeApp(false);
+      }
+    }
   }, [params.id]);
 
   const fetchServiceDetail = async () => {
@@ -93,7 +81,7 @@ export default function ServiceDetailPage() {
     setIsPurchasing(true);
 
     try {
-      // Create order via API
+      // Create order via API - always request payment link for WebView compatibility
       const response = await fetch('/api/client/service-plans/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -104,7 +92,8 @@ export default function ServiceDetailPage() {
           durationDays: tier.durationDays,
           durationLabel: tier.durationLabel,
           planName: service.name,
-          planCategory: service.category
+          planCategory: service.category,
+          usePaymentLink: true // Always use payment link for better WebView support
         })
       });
 
@@ -114,14 +103,15 @@ export default function ServiceDetailPage() {
         throw new Error(data.error || 'Failed to create order');
       }
 
-      // If we get a payment link, redirect to it
+      // If we get a payment link, redirect to it (works in both web and WebView)
       if (data.paymentLink) {
+        // Use location.href for redirect - works in WebView
         window.location.href = data.paymentLink;
         return;
       }
 
-      // If we get an order ID, open Razorpay checkout
-      if (data.orderId && razorpayLoaded && window.Razorpay) {
+      // Fallback: If we get an order ID and NOT in native app, try Razorpay checkout modal
+      if (data.orderId && !isNativeApp && razorpayLoaded && window.Razorpay) {
         const options = {
           key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_5iryw2HyZ6RWRW',
           amount: tier.amount * 100,
@@ -152,7 +142,6 @@ export default function ServiceDetailPage() {
                 toast.error(verifyData.error || 'Payment verification failed');
               }
             } catch (err) {
-              console.error('Verification error:', err);
               toast.error('Payment verification failed. Please contact support.');
             }
           },
@@ -177,12 +166,18 @@ export default function ServiceDetailPage() {
         return;
       }
 
+      // If in native app but no payment link, show error
+      if (isNativeApp && data.orderId && !data.paymentLink) {
+        toast.error('Unable to process payment. Please try again.');
+        setIsPurchasing(false);
+        return;
+      }
+
       // Fallback - show success message
       toast.success(data.message || 'Order created successfully!');
       router.push('/user');
 
     } catch (error: any) {
-      console.error('Purchase error:', error);
       toast.error(error.message || 'Failed to process payment');
     } finally {
       setIsPurchasing(false);
@@ -191,7 +186,7 @@ export default function ServiceDetailPage() {
 
   if (loading) {
     return (
-      <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
+      <div className={`fixed inset-0 flex items-center justify-center z-100 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -356,26 +351,7 @@ export default function ServiceDetailPage() {
 
 
         {/* Nutritional Disclaimer & Citations */}
-        <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-gray-800/50 ring-1 ring-white/5' : 'bg-gray-50'}`}>
-          <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            <span className="font-semibold">Disclaimer:</span> All diet plans and nutritional recommendations are prepared
-            by certified dietitians at DTPS using evidence-based guidelines from{' '}
-            <a href="https://www.ifct2017.com/" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
-              Indian Food Composition Tables (IFCT 2017, NIN)
-            </a>,{' '}
-            <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
-              USDA FoodData Central
-            </a>, and{' '}
-            <a href="https://www.who.int/publications/i/item/9241546123" target="_blank" rel="noopener noreferrer" className="text-[#3AB1A0] underline">
-              WHO/FAO dietary guidelines
-            </a>.
-            Plans are personalized and do not replace professional medical advice. Consult your healthcare
-            provider before making significant dietary changes.
-          </p>
-        </div>
-
-        {/* Nutritional Disclaimer & Citations */}
-        <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-gray-800/50 ring-1 ring-white/5' : 'bg-gray-50'}`}>
+        <div className={`p-4 rounded-2xl mb-8 ${isDarkMode ? 'bg-gray-800/50 ring-1 ring-white/5' : 'bg-gray-50'}`}>
           <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             <span className="font-semibold">Disclaimer:</span> All diet plans and nutritional recommendations are prepared
             by certified dietitians at DTPS using evidence-based guidelines from{' '}
@@ -400,8 +376,6 @@ export default function ServiceDetailPage() {
             disabled={isPurchasing || selectedTier === null}
             className="w-full py-4 px-6 bg-linear-to-r from-[#3AB1A0] to-[#2A9A8B] text-white rounded-2xl font-bold text-lg hover:shadow-lg transition-all max-w-5xl mx-auto disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
-
-
             {isPurchasing ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />

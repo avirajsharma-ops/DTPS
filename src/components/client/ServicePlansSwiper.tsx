@@ -73,15 +73,24 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
     const [showPurchaseModal, setShowPurchaseModal] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState<ServicePlan | null>(null);
     const [purchasing, setPurchasing] = useState(false);
+    const [isNativeApp, setIsNativeApp] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         fetchPlans();
         loadRazorpayScript();
+        // Check if running in native WebView app
+        if (typeof window !== 'undefined' && (window as any).NativeApp) {
+            try {
+                setIsNativeApp((window as any).NativeApp.isNativeApp());
+            } catch (e) {
+                setIsNativeApp(false);
+            }
+        }
     }, []);
 
     const loadRazorpayScript = () => {
-        
+
         if (document.getElementById('razorpay-script')) return;
         const script = document.createElement('script');
         script.id = 'razorpay-script';
@@ -146,14 +155,14 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
 
         const selectedTierId = selectedTiers[selectedPlan._id];
         const tier = selectedPlan.pricingTiers.find(t => t._id === selectedTierId);
-        
+
         if (!tier) {
             toast.error('Please select a duration');
             return;
         }
 
         setPurchasing(true);
-        
+
         try {
             const response = await fetch('/api/client/service-plans/purchase', {
                 method: 'POST',
@@ -165,7 +174,8 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                     durationDays: tier.durationDays,
                     durationLabel: tier.durationLabel,
                     planName: selectedPlan.name,
-                    planCategory: selectedPlan.category
+                    planCategory: selectedPlan.category,
+                    usePaymentLink: true // Always use payment link for WebView compatibility
                 })
             });
 
@@ -176,9 +186,14 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
 
             const data = await response.json();
 
+            // If we get a payment link, redirect to it (works in both web and WebView)
             if (data.paymentLink) {
                 window.location.href = data.paymentLink;
-            } else if (data.orderId && window.Razorpay) {
+                return;
+            }
+
+            // Fallback: If NOT in native app and we have an orderId, try Razorpay checkout
+            if (!isNativeApp && data.orderId && window.Razorpay) {
                 const options = {
                     key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
                     amount: tier.amount * 100,
@@ -222,7 +237,7 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                         color: '#E06A26'
                     },
                     modal: {
-                        ondismiss: function() {
+                        ondismiss: function () {
                             setPurchasing(false);
                         }
                     }
@@ -230,12 +245,20 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
 
                 const razorpay = new window.Razorpay(options);
                 razorpay.open();
-            } else {
-                toast.success('Order created! You will be contacted for payment details.');
-                setShowPurchaseModal(false);
+                return;
             }
+
+            // If in native app but no payment link, show error
+            if (isNativeApp && data.orderId && !data.paymentLink) {
+                toast.error('Unable to process payment. Please try again.');
+                setPurchasing(false);
+                return;
+            }
+
+            // Fallback
+            toast.success('Order created! You will be contacted for payment details.');
+            setShowPurchaseModal(false);
         } catch (error: any) {
-            console.error('Purchase error:', error);
             toast.error(error.message || 'Failed to process purchase');
         } finally {
             setPurchasing(false);
@@ -421,7 +444,7 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
             {/* Purchase Modal */}
             {showPurchaseModal && selectedPlan && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
-                    <div 
+                    <div
                         className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-slide-up"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -461,16 +484,14 @@ export default function ServicePlansSwiper({ onPlanSelect }: ServicePlansSwiperP
                                             <button
                                                 key={tier._id}
                                                 onClick={() => setSelectedTiers({ ...selectedTiers, [selectedPlan._id]: tier._id })}
-                                                className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
-                                                    isSelected 
-                                                        ? 'border-[#E06A26] bg-[#E06A26]/5' 
+                                                className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isSelected
+                                                        ? 'border-[#E06A26] bg-[#E06A26]/5'
                                                         : 'border-gray-200 hover:border-gray-300'
-                                                }`}
+                                                    }`}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                                                        isSelected ? 'bg-[#E06A26]' : 'bg-gray-100'
-                                                    }`}>
+                                                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${isSelected ? 'bg-[#E06A26]' : 'bg-gray-100'
+                                                        }`}>
                                                         <Clock className={`h-5 w-5 ${isSelected ? 'text-white' : 'text-gray-500'}`} />
                                                     </div>
                                                     <div className="text-left">
