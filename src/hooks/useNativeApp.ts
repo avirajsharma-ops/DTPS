@@ -12,7 +12,6 @@ declare global {
       getDeviceType: () => string;
       requestNotificationPermission: () => void;
       refreshFCMToken: () => void;
-      triggerHaptic: (type: string) => void;
       log: (message: string) => void;
     };
     // Handler that native app calls when foreground notification is received
@@ -73,7 +72,7 @@ export function useNativeApp(): UseNativeAppReturn {
   const tokenRegistrationAttempted = useRef(false);
   const tokenCheckInterval = useRef<NodeJS.Timeout | null>(null);
   const notificationHandlerRef = useRef<((notification: ForegroundNotification) => void) | null>(null);
-
+  
   // Track last notification to prevent duplicates
   const lastNotificationRef = useRef<{ id: string; timestamp: number } | null>(null);
 
@@ -82,12 +81,12 @@ export function useNativeApp(): UseNativeAppReturn {
     console.log('[useNativeApp] Setting foreground notification handler');
     notificationHandlerRef.current = handler;
   }, []);
-
+  
   // Helper to check if notification is duplicate
   const isDuplicateNotification = useCallback((notification: ForegroundNotification): boolean => {
     const now = Date.now();
     const notificationId = `${notification.title}-${notification.body}-${JSON.stringify(notification.data || {})}`;
-
+    
     // Check if same notification was received within last 2 seconds
     if (lastNotificationRef.current) {
       const timeDiff = now - lastNotificationRef.current.timestamp;
@@ -96,7 +95,7 @@ export function useNativeApp(): UseNativeAppReturn {
         return true;
       }
     }
-
+    
     // Update last notification
     lastNotificationRef.current = { id: notificationId, timestamp: now };
     return false;
@@ -111,12 +110,12 @@ export function useNativeApp(): UseNativeAppReturn {
     // Set up global handler that native app will call
     window.onForegroundNotification = (notification: ForegroundNotification) => {
       console.log('[useNativeApp] window.onForegroundNotification called with:', JSON.stringify(notification));
-
+      
       // Check for duplicate
       if (isDuplicateNotification(notification)) {
         return;
       }
-
+      
       if (notificationHandlerRef.current) {
         console.log('[useNativeApp] Calling registered handler');
         notificationHandlerRef.current(notification);
@@ -128,12 +127,12 @@ export function useNativeApp(): UseNativeAppReturn {
     // Also listen for custom event (alternative approach)
     const handleForegroundNotification = (event: CustomEvent<ForegroundNotification>) => {
       console.log('[useNativeApp] nativeForegroundNotification event received:', JSON.stringify(event.detail));
-
+      
       // Check for duplicate
       if (isDuplicateNotification(event.detail)) {
         return;
       }
-
+      
       if (notificationHandlerRef.current) {
         console.log('[useNativeApp] Calling registered handler from event');
         notificationHandlerRef.current(event.detail);
@@ -157,11 +156,11 @@ export function useNativeApp(): UseNativeAppReturn {
         try {
           const isNative = window.NativeApp.isNativeApp();
           setIsNativeApp(isNative);
-
+          
           if (isNative) {
             const type = window.NativeApp.getDeviceType();
             setDeviceType(type === 'android' ? 'android' : type === 'ios' ? 'ios' : 'web');
-
+            
             // Get FCM token
             const token = window.NativeApp.getFCMToken();
             if (token && token.length > 0) {
@@ -226,7 +225,7 @@ export function useNativeApp(): UseNativeAppReturn {
           console.error('Error getting FCM token:', error);
         }
       }
-
+      
       if (attempts >= maxAttempts && tokenCheckInterval.current) {
         clearInterval(tokenCheckInterval.current);
       }
@@ -252,7 +251,7 @@ export function useNativeApp(): UseNativeAppReturn {
       ) {
         tokenRegistrationAttempted.current = true;
         console.log('Registering FCM token with backend...');
-
+        
         const success = await registerTokenWithBackend(fcmToken, deviceType);
         if (success) {
           setTokenRegistered(true);

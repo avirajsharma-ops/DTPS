@@ -18,16 +18,10 @@ class MainViewController: UIViewController {
     private let appURL = "https://dtps.tech/user"
     private let allowedHosts = [
         "dtps.tech",
-        // Razorpay payment gateway and links
+        // Razorpay payment gateway
         "razorpay.com", "api.razorpay.com", "checkout.razorpay.com",
-        "rzp.io", // Razorpay short URLs for payment links
         // UPI & bank redirect hosts used by Razorpay
         "paytm.com", "phonepe.com", "gpay.com",
-        // UPI intent handling
-        "upi", "phonepe", "gpay", "paytm",
-        // Bank payment pages (common ones)
-        "hdfcbank.com", "icicibank.com", "sbibank.com", "axisbank.com",
-        "kotak.com", "yesbank.in", "indusind.com",
     ]
 
     private var progressObservation: NSKeyValueObservation?
@@ -668,10 +662,6 @@ extension MainViewController: WKScriptMessageHandler {
             if let cb = body["callback"] as? String, !cb.isEmpty {
                 webView.evaluateJavaScript("\(cb)('ios')", completionHandler: nil)
             }
-        case "triggerHaptic":
-            if let type = body["type"] as? String {
-                triggerHapticFeedback(type: type)
-            }
         case "log":
             if let msg = body["message"] as? String { print("[WebView] \(msg)") }
         case "requestNotificationPermission":
@@ -682,44 +672,6 @@ extension MainViewController: WKScriptMessageHandler {
             presentPhotoPicker()
         default:
             print("[DTPS] Unknown native action: \(action)")
-        }
-    }
-
-    /// Trigger haptic feedback based on type
-    private func triggerHapticFeedback(type: String) {
-        switch type {
-        case "light":
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.prepare()
-            generator.impactOccurred()
-        case "medium":
-            let generator = UIImpactFeedbackGenerator(style: .medium)
-            generator.prepare()
-            generator.impactOccurred()
-        case "heavy":
-            let generator = UIImpactFeedbackGenerator(style: .heavy)
-            generator.prepare()
-            generator.impactOccurred()
-        case "selection":
-            let generator = UISelectionFeedbackGenerator()
-            generator.prepare()
-            generator.selectionChanged()
-        case "success":
-            let generator = UINotificationFeedbackGenerator()
-            generator.prepare()
-            generator.notificationOccurred(.success)
-        case "warning":
-            let generator = UINotificationFeedbackGenerator()
-            generator.prepare()
-            generator.notificationOccurred(.warning)
-        case "error":
-            let generator = UINotificationFeedbackGenerator()
-            generator.prepare()
-            generator.notificationOccurred(.error)
-        default:
-            let generator = UISelectionFeedbackGenerator()
-            generator.prepare()
-            generator.selectionChanged()
         }
     }
 

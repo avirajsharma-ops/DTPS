@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Target, Plus, TrendingUp, User, Droplet, Scale, Calendar, Camera, Activity, Heart } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { hapticSelection, hapticMedium } from '@/lib/haptics';
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -14,17 +13,6 @@ export function MobileBottomNav() {
   const [showQuickActions, setShowQuickActions] = useState(false);
 
   const isActive = (path: string) => pathname === path;
-
-  // Trigger haptic on nav item click
-  const handleNavClick = () => {
-    hapticSelection();
-  };
-
-  // Trigger haptic on quick action button click
-  const handleQuickActionToggle = () => {
-    hapticMedium();
-    setShowQuickActions(!showQuickActions);
-  };
 
   const quickActions = [
     {
@@ -81,7 +69,6 @@ export function MobileBottomNav() {
   ];
 
   const handleQuickActionClick = (action: () => void) => {
-    hapticSelection();
     setShowQuickActions(false);
     action();
   };
@@ -135,9 +122,9 @@ export function MobileBottomNav() {
         <div className="grid grid-cols-5 h-16">
           <Link
             href="/client-dashboard"
-            onClick={handleNavClick}
-            className={`flex flex-col items-center justify-center transition-colors duration-300 ${isActive('/client-dashboard') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-              }`}
+            className={`flex flex-col items-center justify-center transition-colors duration-300 ${
+              isActive('/client-dashboard') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+            }`}
           >
             <Target className="h-6 w-6 mb-1" />
             <span className="text-xs font-medium">Home</span>
@@ -145,31 +132,32 @@ export function MobileBottomNav() {
 
           <Link
             href="/my-plan"
-            onClick={handleNavClick}
-            className={`flex flex-col items-center justify-center transition-colors duration-300 ${isActive('/my-plan') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-              }`}
+            className={`flex flex-col items-center justify-center transition-colors duration-300 ${
+              isActive('/my-plan') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+            }`}
           >
             <Heart className="h-6 w-6 mb-1" />
             <span className="text-xs font-medium">Plan</span>
           </Link>
 
           <button
-            onClick={handleQuickActionToggle}
+            onClick={() => setShowQuickActions(!showQuickActions)}
             className="flex flex-col items-center justify-center -mt-6"
           >
             <div className="h-14 w-14 rounded-full bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
               <Plus
-                className={`h-7 w-7 text-white transition-transform duration-300 ${showQuickActions ? 'rotate-45' : 'rotate-0'
-                  }`}
+                className={`h-7 w-7 text-white transition-transform duration-300 ${
+                  showQuickActions ? 'rotate-45' : 'rotate-0'
+                }`}
               />
             </div>
           </button>
 
           <Link
             href="/progress"
-            onClick={handleNavClick}
-            className={`flex flex-col items-center justify-center transition-colors duration-300 ${isActive('/progress') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-              }`}
+            className={`flex flex-col items-center justify-center transition-colors duration-300 ${
+              isActive('/progress') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+            }`}
           >
             <TrendingUp className="h-6 w-6 mb-1" />
             <span className="text-xs font-medium">Progress</span>
@@ -177,9 +165,9 @@ export function MobileBottomNav() {
 
           <Link
             href="/profile"
-            onClick={handleNavClick}
-            className={`flex flex-col items-center justify-center transition-colors duration-300 ${isActive('/profile') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-              }`}
+            className={`flex flex-col items-center justify-center transition-colors duration-300 ${
+              isActive('/profile') ? 'text-orange-500' : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+            }`}
           >
             <User className="h-6 w-6 mb-1" />
             <span className="text-xs font-medium">Profile</span>

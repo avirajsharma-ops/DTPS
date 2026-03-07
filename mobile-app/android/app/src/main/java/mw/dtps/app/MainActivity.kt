@@ -324,82 +324,8 @@ class MainActivity : AppCompatActivity() {
         }
         
         @JavascriptInterface
-        fun triggerHaptic(type: String) {
-            mainHandler.post {
-                triggerHapticFeedback(type)
-            }
-        }
-        
-        @JavascriptInterface
         fun log(message: String) {
             Log.d(TAG, "WebView: $message")
-        }
-    }
-    
-    @Suppress("DEPRECATION")
-    private fun triggerHapticFeedback(type: String) {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                // Use VibrationEffect API for precise control (API 26+)
-                val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager
-                    vibratorManager.defaultVibrator
-                } else {
-                    getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
-                }
-                
-                if (!vibrator.hasVibrator()) return
-                
-                when (type) {
-                    "light" -> {
-                        vibrator.vibrate(android.os.VibrationEffect.createOneShot(15, 40))
-                    }
-                    "medium" -> {
-                        vibrator.vibrate(android.os.VibrationEffect.createOneShot(25, 80))
-                    }
-                    "heavy" -> {
-                        vibrator.vibrate(android.os.VibrationEffect.createOneShot(35, 150))
-                    }
-                    "selection" -> {
-                        vibrator.vibrate(android.os.VibrationEffect.createOneShot(12, 50))
-                    }
-                    "success" -> {
-                        vibrator.vibrate(android.os.VibrationEffect.createWaveform(
-                            longArrayOf(0, 12, 60, 12), intArrayOf(0, 60, 0, 60), -1
-                        ))
-                    }
-                    "warning" -> {
-                        vibrator.vibrate(android.os.VibrationEffect.createWaveform(
-                            longArrayOf(0, 20, 50, 20), intArrayOf(0, 80, 0, 80), -1
-                        ))
-                    }
-                    "error" -> {
-                        vibrator.vibrate(android.os.VibrationEffect.createWaveform(
-                            longArrayOf(0, 25, 40, 25, 40, 25), intArrayOf(0, 120, 0, 120, 0, 120), -1
-                        ))
-                    }
-                    else -> {
-                        vibrator.vibrate(android.os.VibrationEffect.createOneShot(12, 50))
-                    }
-                }
-            } else {
-                // Fallback for older devices (API < 26)
-                val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
-                if (!vibrator.hasVibrator()) return
-                
-                when (type) {
-                    "light" -> vibrator.vibrate(15)
-                    "medium" -> vibrator.vibrate(25)
-                    "heavy" -> vibrator.vibrate(35)
-                    "selection" -> vibrator.vibrate(12)
-                    "success" -> vibrator.vibrate(longArrayOf(0, 12, 60, 12), -1)
-                    "warning" -> vibrator.vibrate(longArrayOf(0, 20, 50, 20), -1)
-                    "error" -> vibrator.vibrate(longArrayOf(0, 25, 40, 25, 40, 25), -1)
-                    else -> vibrator.vibrate(12)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Haptic feedback error: ${e.message}")
         }
     }
 
@@ -472,9 +398,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
-        // Enable haptic feedback on WebView
-        webView.isHapticFeedbackEnabled = true
-        
         // Add JavaScript interface for native features (FCM token, etc.)
         webView.addJavascriptInterface(NativeInterface(), "NativeApp")
 
@@ -515,23 +438,10 @@ class MainActivity : AppCompatActivity() {
                     return false
                 }
 
-                // Allow payment and auth providers (Razorpay ecosystem)
+                // Allow payment and auth providers
                 if (host.contains("razorpay.com") || 
-                    host.contains("rzp.io") || // Razorpay short URLs
                     host.contains("googleapis.com") ||
-                    host.contains("firebaseapp.com") ||
-                    // UPI apps
-                    host.contains("paytm.com") ||
-                    host.contains("phonepe.com") ||
-                    host.contains("gpay.com") ||
-                    // Bank payment pages
-                    host.contains("hdfcbank.com") ||
-                    host.contains("icicibank.com") ||
-                    host.contains("sbibank.com") ||
-                    host.contains("axisbank.com") ||
-                    host.contains("kotak.com") ||
-                    host.contains("yesbank.in") ||
-                    host.contains("indusind.com")) {
+                    host.contains("firebaseapp.com")) {
                     return false
                 }
 

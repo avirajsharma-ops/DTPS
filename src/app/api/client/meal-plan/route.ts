@@ -356,6 +356,15 @@ function extractMeals(mealsData: any, planId: string, dayIndex: number, date: Da
     });
   }
 
+  // Log for debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[extractMeals] Extracted meals:', results.map(m => ({
+      type: m.type,
+      itemCount: m.itemCount,
+      items: m.items?.map((i: any) => i.name)
+    })));
+  }
+
   return results;
 }
 
