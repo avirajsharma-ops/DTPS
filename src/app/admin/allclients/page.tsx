@@ -142,25 +142,25 @@ export default function AdminAllClientsPage() {
   const [filterAssigned, setFilterAssigned] = useState('all');
   const [stats, setStats] = useState({ total: 0, assigned: 0, unassigned: 0 });
   const [isSSEConnected, setIsSSEConnected] = useState(false);
-  
+
   // Pagination state - server-side
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20); // Fixed page size
   const [totalPages, setTotalPages] = useState(0);
   const [totalResults, setTotalResults] = useState(0);
-  
+
   // Debounce search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // SSE connection ref
   const eventSourceRef = useRef<EventSource | null>(null);
-  
+
   // Assignment dialog state
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedDietitianId, setSelectedDietitianId] = useState('');
-  const [selectedHealthCounselorId, setSelectedHealthCounselorId] = useState('');
+  const [selectedHealthCounselorIds, setSelectedHealthCounselorIds] = useState<string[]>([]);
   const [assigning, setAssigning] = useState(false);
   const [assignMode, setAssignMode] = useState<'add' | 'replace' | 'remove'>('add');
   const [dietitianSearchTerm, setDietitianSearchTerm] = useState('');
@@ -181,23 +181,23 @@ export default function AdminAllClientsPage() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      
+
       // Use server-side search, filtering, and pagination
       if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
       if (filterStatus !== 'all') params.append('status', filterStatus);
       if (filterAssigned !== 'all') params.append('assigned', filterAssigned);
       params.append('page', resetPage ? '1' : String(currentPage));
       params.append('limit', String(pageSize));
-      
+
       const response = await fetch(`/api/admin/clients?${params.toString()}`);
-      
+
       if (response.ok) {
         const data = await response.json();
         setClients(data.clients || []);
         setStats(data.stats || { total: 0, assigned: 0, unassigned: 0 });
         setTotalResults(data.pagination?.total || 0);
         setTotalPages(data.pagination?.pages || 0);
-        
+
         if (resetPage) {
           setCurrentPage(1);
         }
@@ -300,7 +300,7 @@ export default function AdminAllClientsPage() {
     console.log('Available health counselors:', healthCounselors.length);
     setSelectedClient(client);
     setSelectedDietitianId('');
-    setSelectedHealthCounselorId('');
+    setSelectedHealthCounselorIds([]);
     setAssignMode('add');
     setDietitianSearchTerm('');
     setHealthCounselorSearchTerm('');
@@ -312,14 +312,14 @@ export default function AdminAllClientsPage() {
 
     try {
       setAssigning(true);
-      const payload = { 
+      const payload = {
         dietitianId: selectedDietitianId || null,
-        healthCounselorId: selectedHealthCounselorId === '' ? null : selectedHealthCounselorId || null,
+        healthCounselorIds: selectedHealthCounselorIds.length > 0 ? selectedHealthCounselorIds : null,
         mode: assignMode
       };
-      
+
       console.log('Sending assignment payload:', payload);
-      
+
       const response = await fetch(`/api/admin/clients/${selectedClient._id}/assign`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -330,10 +330,20 @@ export default function AdminAllClientsPage() {
         const data = await response.json();
         console.log('Assignment response:', data);
         toast.success(data.message);
-        
+
+        // Update local table state immediately to avoid stale cache showing old assignments
+        if (data?.client?._id) {
+          setClients((prev) => prev.map((c) => (c._id === data.client._id ? data.client : c)));
+        }
+
         // Refresh the client list to show updated assignments
         await fetchClients();
-        
+
+        // Re-apply latest updated client in case list fetch returned stale cached payload
+        if (data?.client?._id) {
+          setClients((prev) => prev.map((c) => (c._id === data.client._id ? data.client : c)));
+        }
+
         setAssignDialogOpen(false);
       } else {
         const error = await response.json();
@@ -355,7 +365,7 @@ export default function AdminAllClientsPage() {
       const response = await fetch(`/api/admin/clients/${clientId}/assign`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           dietitianId: dietitianId,
           mode: 'remove'
         })
@@ -364,10 +374,20 @@ export default function AdminAllClientsPage() {
       if (response.ok) {
         const data = await response.json();
         toast.success('Dietitian removed successfully');
-        
+
+        // Update local table state immediately
+        if (data?.client?._id) {
+          setClients((prev) => prev.map((c) => (c._id === data.client._id ? data.client : c)));
+        }
+
         // Refresh the list
         await fetchClients();
-        
+
+        // Re-apply latest updated client in case list fetch returned stale cached payload
+        if (data?.client?._id) {
+          setClients((prev) => prev.map((c) => (c._id === data.client._id ? data.client : c)));
+        }
+
         // Update selected client if it's the same
         if (selectedClient?._id === clientId) {
           setSelectedClient(data.client);
@@ -391,18 +411,30 @@ export default function AdminAllClientsPage() {
       const response = await fetch(`/api/admin/clients/${clientId}/assign`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          healthCounselorId: healthCounselorId ? { id: healthCounselorId, action: 'remove' } : null
+        body: JSON.stringify({
+          healthCounselorId: healthCounselorId || null,
+          action: 'remove',
+          mode: 'remove'
         })
       });
 
       if (response.ok) {
         const data = await response.json();
         toast.success('Health counselor removed successfully');
-        
+
+        // Update local table state immediately so deleted counselor disappears from list view
+        if (data?.client?._id) {
+          setClients((prev) => prev.map((c) => (c._id === data.client._id ? data.client : c)));
+        }
+
         // Refresh the list
         await fetchClients();
-        
+
+        // Re-apply latest updated client in case list fetch returned stale cached payload
+        if (data?.client?._id) {
+          setClients((prev) => prev.map((c) => (c._id === data.client._id ? data.client : c)));
+        }
+
         // Update selected client if it's the same
         if (selectedClient?._id === clientId) {
           setSelectedClient(data.client);
@@ -421,8 +453,8 @@ export default function AdminAllClientsPage() {
 
   // Toggle client selection for bulk transfer
   const toggleClientSelection = (clientId: string) => {
-    setSelectedClients(prev => 
-      prev.includes(clientId) 
+    setSelectedClients(prev =>
+      prev.includes(clientId)
         ? prev.filter(id => id !== clientId)
         : [...prev, clientId]
     );
@@ -450,7 +482,7 @@ export default function AdminAllClientsPage() {
 
     try {
       setTransferring(true);
-      
+
       // Transfer each client
       const results = await Promise.all(
         selectedClients.map(async (clientId) => {
@@ -539,11 +571,10 @@ export default function AdminAllClientsPage() {
             <div className="flex items-center gap-3">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Clients</h1>
               {/* Real-time connection indicator */}
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
-                isSSEConnected 
-                  ? 'bg-green-100 text-green-700' 
+              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${isSSEConnected
+                  ? 'bg-green-100 text-green-700'
                   : 'bg-red-100 text-red-700'
-              }`}>
+                }`}>
                 {isSSEConnected ? (
                   <>
                     <Wifi className="h-3 w-3" />
@@ -562,7 +593,7 @@ export default function AdminAllClientsPage() {
             </p>
           </div>
           {selectedClients.length > 0 && (
-            <Button 
+            <Button
               onClick={() => setTransferDialogOpen(true)}
               className="bg-blue-600 hover:bg-blue-700"
             >
@@ -749,7 +780,7 @@ export default function AdminAllClientsPage() {
                 </table>
               </div>
             </CardContent>
-            
+
             {/* Skeleton Pagination */}
             <div className="flex items-center justify-between border-t px-4 py-4">
               <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
@@ -770,7 +801,7 @@ export default function AdminAllClientsPage() {
                 {debouncedSearchTerm ? 'No clients found' : 'No clients yet'}
               </h3>
               <p className="text-gray-600">
-                {debouncedSearchTerm 
+                {debouncedSearchTerm
                   ? 'Try adjusting your search terms or filters'
                   : 'Clients will appear here once they register'
                 }
@@ -800,312 +831,312 @@ export default function AdminAllClientsPage() {
                         </th>
                         <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Health Info
-                      </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Dietitian
-                      </th>
-                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Health Counselor
-                      </th>
-                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created By
-                      </th>
-                      <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Joined
-                      </th>
-                      <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {paginatedClients.map((client) => (
-                      <tr key={client._id} className={`hover:bg-gray-50 ${selectedClients.includes(client._id) ? 'bg-blue-50' : ''}`}>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <Checkbox
-                            checked={selectedClients.includes(client._id)}
-                            onCheckedChange={() => toggleClientSelection(client._id)}
-                            aria-label={`Select ${client.firstName} ${client.lastName}`}
-                          />
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <Avatar className="h-8 sm:h-10 w-8 sm:w-10">
-                              <AvatarImage src={client.avatar} />
-                              <AvatarFallback className="bg-linear-to-br from-blue-500 to-purple-600 text-white text-xs sm:text-sm">
-                                {client.firstName?.[0] || 'U'}{client.lastName?.[0] || 'N'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="ml-2 sm:ml-4">
-                              <div className="flex items-center gap-2">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {client.firstName} {client.lastName}
-                                </div>
-                                <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
-                                  {getClientId(client._id)}
-                                </span>
-                              </div>
-                              {/* Show email on mobile */}
-                              <div className="text-xs text-gray-500 sm:hidden truncate max-w-30">
-                                {client.email}
-                              </div>
-                              {client.dateOfBirth && calculateAge(client.dateOfBirth) && (
-                                <div className="text-xs text-gray-500 hidden sm:block">
-                                  {calculateAge(client.dateOfBirth)} years, {client.gender || 'N/A'}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{client.email}</div>
-                          {client.phone && (
-                            <div className="text-xs text-gray-500">{client.phone}</div>
-                          )}
-                        </td>
-                        <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {client.weight && <span>⚖️ {client.weight}kg</span>}
-                            {client.height && <span className="ml-2">📏 {client.height}cm</span>}
-                          </div>
-                          {client.healthGoals && client.healthGoals.length > 0 && (
-                            <div className="text-xs text-gray-500 capitalize">
-                              🎯 {client.healthGoals[0]}
-                              {client.healthGoals.length > 1 && ` +${client.healthGoals.length - 1}`}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          {(() => {
-                            // Combine assignedDietitian (singular) and assignedDietitians (array)
-                            const allDietitians: { _id: string; firstName: string; lastName: string; email: string; avatar?: string }[] = [];
-                            // Check if assignedDietitian is a populated object (has firstName)
-                            if (client.assignedDietitian && typeof client.assignedDietitian === 'object' && client.assignedDietitian.firstName) {
-                              allDietitians.push(client.assignedDietitian);
-                            }
-                            if (client.assignedDietitians && client.assignedDietitians.length > 0) {
-                              client.assignedDietitians.forEach(d => {
-                                // Only add if it's a populated object with firstName
-                                if (d && typeof d === 'object' && d.firstName && !allDietitians.find(existing => existing._id === d._id)) {
-                                  allDietitians.push(d);
-                                }
-                              });
-                            }
-                            
-                            if (allDietitians.length > 0) {
-                              return (
-                                <div className="space-y-1">
-                                  {allDietitians.map((dietitian) => (
-                                    <div key={dietitian._id} className="flex items-center gap-2 p-1.5 bg-green-50 rounded border border-green-200">
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarImage src={dietitian.avatar} />
-                                        <AvatarFallback className="bg-green-100 text-green-800 text-xs">
-                                          {dietitian.firstName?.[0]}{dietitian.lastName?.[0]}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div className="hidden sm:block min-w-0">
-                                        <div className="text-xs font-medium text-gray-900 truncate">
-                                          {dietitian.firstName} {dietitian.lastName}
-                                        </div>
-                                        <div className="text-xs text-gray-500 truncate">{dietitian.email}</div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
-                                  <UserMinus className="h-3 w-3 mr-1" />
-                                  <span className="hidden sm:inline">Unassigned</span>
-                                </Badge>
-                              );
-                            }
-                          })()}
-                        </td>
-                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
-                          {(() => {
-                            // Combine assignedHealthCounselor (singular) and assignedHealthCounselors (array)
-                            const allHealthCounselors: { _id: string; firstName: string; lastName: string; email: string; avatar?: string }[] = [];
-                            // Check if assignedHealthCounselor is a populated object (has firstName)
-                            if (client.assignedHealthCounselor && typeof client.assignedHealthCounselor === 'object' && client.assignedHealthCounselor.firstName) {
-                              allHealthCounselors.push(client.assignedHealthCounselor);
-                            }
-                            if (client.assignedHealthCounselors && client.assignedHealthCounselors.length > 0) {
-                              client.assignedHealthCounselors.forEach(hc => {
-                                // Only add if it's a populated object with firstName
-                                if (hc && typeof hc === 'object' && hc.firstName && !allHealthCounselors.find(existing => existing._id === hc._id)) {
-                                  allHealthCounselors.push(hc);
-                                }
-                              });
-                            }
-                            
-                            if (allHealthCounselors.length > 0) {
-                              return (
-                                <div className="space-y-1">
-                                  {allHealthCounselors.map((hc) => (
-                                    <div key={hc._id} className="flex items-center gap-2 p-1.5 bg-purple-50 rounded border border-purple-200">
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarImage src={hc.avatar} />
-                                        <AvatarFallback className="bg-purple-100 text-purple-800 text-xs">
-                                          {hc.firstName?.[0]}{hc.lastName?.[0]}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div className="min-w-0">
-                                        <div className="text-xs font-medium text-gray-900 truncate">
-                                          {hc.firstName} {hc.lastName}
-                                        </div>
-                                        <div className="text-xs text-gray-500 truncate">{hc.email}</div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">
-                                  <UserMinus className="h-3 w-3 mr-1" />
-                                  <span>Not Assigned</span>
-                                </Badge>
-                              );
-                            }
-                          })()}
-                        </td>
-                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
-                          <Badge className={getStatusColor(client.clientStatus || 'lead')}>
-                            {(client.clientStatus || 'lead') === 'lead' ? 'Lead' : (client.clientStatus || 'lead') === 'active' ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </td>
-                        <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
-                          {client.createdBy?.role ? (
-                            <div className="flex flex-col gap-0.5">
-                              {client.createdBy.role === 'self' ? (
-                                <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">
-                                  Self Registered
-                                </Badge>
-                              ) : client.createdBy.role === 'dietitian' ? (
-                                <>
-                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                    By Dietitian
-                                  </Badge>
-                                  {client.createdBy.userId && (
-                                    <span className="text-xs text-gray-500">
-                                      {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
-                                    </span>
-                                  )}
-                                </>
-                              ) : client.createdBy.role === 'health_counselor' ? (
-                                <>
-                                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
-                                    By Health Counselor
-                                  </Badge>
-                                  {client.createdBy.userId && (
-                                    <span className="text-xs text-gray-500">
-                                      {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
-                                    </span>
-                                  )}
-                                </>
-                              ) : client.createdBy.role === 'admin' ? (
-                                <>
-                                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
-                                    By Admin
-                                  </Badge>
-                                  {client.createdBy.userId && (
-                                    <span className="text-xs text-gray-500">
-                                      {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
-                                    </span>
-                                  )}
-                                </>
-                              ) : (
-                                <span className="text-xs text-gray-400">-</span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {formatDate(client.createdAt)}
-                          </div>
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-1 sm:gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openAssignDialog(client)}
-                              className="text-xs px-2 sm:px-3"
-                            >
-                              <UserPlus className="h-3 w-3 sm:mr-1" />
-                              <span className="hidden sm:inline">{client.assignedDietitian ? 'Reassign' : 'Assign'}</span>
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => router.push(`/dietician/clients/${client._id}`)}
-                              className="text-xs px-2 sm:px-3"
-                            >
-                              <Eye className="h-3 w-3 sm:mr-1" />
-                              <span className="hidden sm:inline">View Dashboard</span>
-                            </Button>
-                          </div>
-                        </td>
+                        </th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Dietitian
+                        </th>
+                        <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Health Counselor
+                        </th>
+                        <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Created By
+                        </th>
+                        <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Joined
+                        </th>
+                        <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {paginatedClients.map((client) => (
+                        <tr key={client._id} className={`hover:bg-gray-50 ${selectedClients.includes(client._id) ? 'bg-blue-50' : ''}`}>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <Checkbox
+                              checked={selectedClients.includes(client._id)}
+                              onCheckedChange={() => toggleClientSelection(client._id)}
+                              aria-label={`Select ${client.firstName} ${client.lastName}`}
+                            />
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <Avatar className="h-8 sm:h-10 w-8 sm:w-10">
+                                <AvatarImage src={client.avatar} />
+                                <AvatarFallback className="bg-linear-to-br from-blue-500 to-purple-600 text-white text-xs sm:text-sm">
+                                  {client.firstName?.[0] || 'U'}{client.lastName?.[0] || 'N'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="ml-2 sm:ml-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {client.firstName} {client.lastName}
+                                  </div>
+                                  <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
+                                    {getClientId(client._id)}
+                                  </span>
+                                </div>
+                                {/* Show email on mobile */}
+                                <div className="text-xs text-gray-500 sm:hidden truncate max-w-30">
+                                  {client.email}
+                                </div>
+                                {client.dateOfBirth && calculateAge(client.dateOfBirth) && (
+                                  <div className="text-xs text-gray-500 hidden sm:block">
+                                    {calculateAge(client.dateOfBirth)} years, {client.gender || 'N/A'}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{client.email}</div>
+                            {client.phone && (
+                              <div className="text-xs text-gray-500">{client.phone}</div>
+                            )}
+                          </td>
+                          <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {client.weight && <span>⚖️ {client.weight}kg</span>}
+                              {client.height && <span className="ml-2">📏 {client.height}cm</span>}
+                            </div>
+                            {client.healthGoals && client.healthGoals.length > 0 && (
+                              <div className="text-xs text-gray-500 capitalize">
+                                🎯 {client.healthGoals[0]}
+                                {client.healthGoals.length > 1 && ` +${client.healthGoals.length - 1}`}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            {(() => {
+                              // Combine assignedDietitian (singular) and assignedDietitians (array)
+                              const allDietitians: { _id: string; firstName: string; lastName: string; email: string; avatar?: string }[] = [];
+                              // Check if assignedDietitian is a populated object (has firstName)
+                              if (client.assignedDietitian && typeof client.assignedDietitian === 'object' && client.assignedDietitian.firstName) {
+                                allDietitians.push(client.assignedDietitian);
+                              }
+                              if (client.assignedDietitians && client.assignedDietitians.length > 0) {
+                                client.assignedDietitians.forEach(d => {
+                                  // Only add if it's a populated object with firstName
+                                  if (d && typeof d === 'object' && d.firstName && !allDietitians.find(existing => existing._id === d._id)) {
+                                    allDietitians.push(d);
+                                  }
+                                });
+                              }
 
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-between border-t px-4 py-4">
-              <div className="text-sm text-gray-600">
-                Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalResults)} of {totalResults} clients
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    const pageNum = currentPage <= 3 ? i + 1 : Math.max(currentPage - 2, 1) + i;
-                    if (pageNum > totalPages) return null;
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
-                        className="w-10 h-10 p-0"
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
+                              if (allDietitians.length > 0) {
+                                return (
+                                  <div className="space-y-1">
+                                    {allDietitians.map((dietitian) => (
+                                      <div key={dietitian._id} className="flex items-center gap-2 p-1.5 bg-green-50 rounded border border-green-200">
+                                        <Avatar className="h-6 w-6">
+                                          <AvatarImage src={dietitian.avatar} />
+                                          <AvatarFallback className="bg-green-100 text-green-800 text-xs">
+                                            {dietitian.firstName?.[0]}{dietitian.lastName?.[0]}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className="hidden sm:block min-w-0">
+                                          <div className="text-xs font-medium text-gray-900 truncate">
+                                            {dietitian.firstName} {dietitian.lastName}
+                                          </div>
+                                          <div className="text-xs text-gray-500 truncate">{dietitian.email}</div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
+                                    <UserMinus className="h-3 w-3 mr-1" />
+                                    <span className="hidden sm:inline">Unassigned</span>
+                                  </Badge>
+                                );
+                              }
+                            })()}
+                          </td>
+                          <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
+                            {(() => {
+                              // Combine assignedHealthCounselor (singular) and assignedHealthCounselors (array)
+                              const allHealthCounselors: { _id: string; firstName: string; lastName: string; email: string; avatar?: string }[] = [];
+                              // Check if assignedHealthCounselor is a populated object (has firstName)
+                              if (client.assignedHealthCounselor && typeof client.assignedHealthCounselor === 'object' && client.assignedHealthCounselor.firstName) {
+                                allHealthCounselors.push(client.assignedHealthCounselor);
+                              }
+                              if (client.assignedHealthCounselors && client.assignedHealthCounselors.length > 0) {
+                                client.assignedHealthCounselors.forEach(hc => {
+                                  // Only add if it's a populated object with firstName
+                                  if (hc && typeof hc === 'object' && hc.firstName && !allHealthCounselors.find(existing => existing._id === hc._id)) {
+                                    allHealthCounselors.push(hc);
+                                  }
+                                });
+                              }
+
+                              if (allHealthCounselors.length > 0) {
+                                return (
+                                  <div className="space-y-1">
+                                    {allHealthCounselors.map((hc) => (
+                                      <div key={hc._id} className="flex items-center gap-2 p-1.5 bg-purple-50 rounded border border-purple-200">
+                                        <Avatar className="h-6 w-6">
+                                          <AvatarImage src={hc.avatar} />
+                                          <AvatarFallback className="bg-purple-100 text-purple-800 text-xs">
+                                            {hc.firstName?.[0]}{hc.lastName?.[0]}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0">
+                                          <div className="text-xs font-medium text-gray-900 truncate">
+                                            {hc.firstName} {hc.lastName}
+                                          </div>
+                                          <div className="text-xs text-gray-500 truncate">{hc.email}</div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">
+                                    <UserMinus className="h-3 w-3 mr-1" />
+                                    <span>Not Assigned</span>
+                                  </Badge>
+                                );
+                              }
+                            })()}
+                          </td>
+                          <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
+                            <Badge className={getStatusColor(client.clientStatus || 'lead')}>
+                              {(client.clientStatus || 'lead') === 'lead' ? 'Lead' : (client.clientStatus || 'lead') === 'active' ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </td>
+                          <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
+                            {client.createdBy?.role ? (
+                              <div className="flex flex-col gap-0.5">
+                                {client.createdBy.role === 'self' ? (
+                                  <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">
+                                    Self Registered
+                                  </Badge>
+                                ) : client.createdBy.role === 'dietitian' ? (
+                                  <>
+                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                      By Dietitian
+                                    </Badge>
+                                    {client.createdBy.userId && (
+                                      <span className="text-xs text-gray-500">
+                                        {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : client.createdBy.role === 'health_counselor' ? (
+                                  <>
+                                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                                      By Health Counselor
+                                    </Badge>
+                                    {client.createdBy.userId && (
+                                      <span className="text-xs text-gray-500">
+                                        {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : client.createdBy.role === 'admin' ? (
+                                  <>
+                                    <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                                      By Admin
+                                    </Badge>
+                                    {client.createdBy.userId && (
+                                      <span className="text-xs text-gray-500">
+                                        {client.createdBy.userId.firstName} {client.createdBy.userId.lastName}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="text-xs text-gray-400">-</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div className="flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {formatDate(client.createdAt)}
+                            </div>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex items-center justify-end gap-1 sm:gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openAssignDialog(client)}
+                                className="text-xs px-2 sm:px-3"
+                              >
+                                <UserPlus className="h-3 w-3 sm:mr-1" />
+                                <span className="hidden sm:inline">{client.assignedDietitian ? 'Reassign' : 'Assign'}</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => router.push(`/dietician/clients/${client._id}`)}
+                                className="text-xs px-2 sm:px-3"
+                              >
+                                <Eye className="h-3 w-3 sm:mr-1" />
+                                <span className="hidden sm:inline">View Dashboard</span>
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
+              </CardContent>
+
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between border-t px-4 py-4">
+                <div className="text-sm text-gray-600">
+                  Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalResults)} of {totalResults} clients
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      const pageNum = currentPage <= 3 ? i + 1 : Math.max(currentPage - 2, 1) + i;
+                      if (pageNum > totalPages) return null;
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-10 h-10 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
           </>
         )}
 
@@ -1177,7 +1208,7 @@ export default function AdminAllClientsPage() {
                       }
                     });
                   }
-                  
+
                   return allDietitians.length > 0 ? (
                     <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                       <p className="text-sm text-green-900 mb-2 font-medium">Currently assigned dietitians ({allDietitians.length}):</p>
@@ -1231,7 +1262,7 @@ export default function AdminAllClientsPage() {
                       }
                     });
                   }
-                  
+
                   return allHCs.length > 0 ? (
                     <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
                       <p className="text-sm text-purple-900 mb-2 font-medium">Currently assigned health counselors ({allHCs.length}):</p>
@@ -1290,7 +1321,7 @@ export default function AdminAllClientsPage() {
               {/* Dietitian Selection Section */}
               <div className="border-t pt-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Dietitian Assignment</h4>
-                
+
                 {dietitians.length === 0 ? (
                   <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                     <p className="text-sm text-yellow-700">No dietitians available. Please add dietitians first.</p>
@@ -1324,15 +1355,15 @@ export default function AdminAllClientsPage() {
                               return fullName.includes(searchLower) || d.email?.toLowerCase().includes(searchLower);
                             })
                             .map((dietitian) => (
-                            <SelectItem key={dietitian._id} value={dietitian._id}>
-                              <div className="flex items-center justify-between w-full">
-                                <span>{dietitian.firstName} {dietitian.lastName}</span>
-                                <Badge variant="outline" className="ml-2">
-                                  {dietitian.clientCount} clients
-                                </Badge>
-                              </div>
-                            </SelectItem>
-                          ))}
+                              <SelectItem key={dietitian._id} value={dietitian._id}>
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{dietitian.firstName} {dietitian.lastName}</span>
+                                  <Badge variant="outline" className="ml-2">
+                                    {dietitian.clientCount} clients
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -1373,7 +1404,7 @@ export default function AdminAllClientsPage() {
               {/* Health Counselor Selection Section */}
               <div className="border-t pt-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Health Counselor Assignment</h4>
-                
+
                 {healthCounselors.length === 0 ? (
                   <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                     <p className="text-sm text-yellow-700">No health counselors available. Please add health counselors first.</p>
@@ -1382,7 +1413,7 @@ export default function AdminAllClientsPage() {
                   <>
                     <div>
                       <label className="text-sm font-medium mb-2 block">
-                        Select Health Counselor
+                        Select Health Counselors to Add (Multiple Selection)
                       </label>
                       <div className="relative mb-2">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -1393,42 +1424,49 @@ export default function AdminAllClientsPage() {
                           className="pl-9"
                         />
                       </div>
-                      <Select value={selectedHealthCounselorId} onValueChange={setSelectedHealthCounselorId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose a health counselor or leave empty for none..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">None (No Health Counselor)</SelectItem>
-                          {healthCounselors
-                            .filter(hc => {
-                              if (!healthCounselorSearchTerm.trim()) return true;
-                              const searchLower = healthCounselorSearchTerm.toLowerCase();
-                              const fullName = `${hc.firstName} ${hc.lastName}`.toLowerCase();
-                              return fullName.includes(searchLower) || hc.email?.toLowerCase().includes(searchLower);
-                            })
-                            .map((hc) => (
-                            <SelectItem key={hc._id} value={hc._id}>
-                              <div className="flex items-center justify-between w-full">
-                                <span>{hc.firstName} {hc.lastName}</span>
-                                <Badge variant="outline" className="ml-2">
-                                  {hc.clientCount} clients
-                                </Badge>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {selectedHealthCounselorId && (
-                      <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                        {(() => {
-                          const hc = healthCounselors.find(h => h._id === selectedHealthCounselorId);
-                          if (!hc) return null;
-                          return (
-                            <div>
-                              <p className="text-sm text-purple-900 mb-1">Selected health counselor:</p>
+                      <div className="max-h-48 overflow-y-auto border rounded-lg p-2 space-y-1">
+                        {healthCounselors
+                          .filter(hc => {
+                            // Filter out already assigned health counselors in 'add' mode
+                            if (assignMode === 'add') {
+                              const currentlyAssigned = new Set<string>();
+                              if (selectedClient?.assignedHealthCounselor && typeof selectedClient.assignedHealthCounselor === 'object') {
+                                currentlyAssigned.add(selectedClient.assignedHealthCounselor._id);
+                              }
+                              if (selectedClient?.assignedHealthCounselors && Array.isArray(selectedClient.assignedHealthCounselors)) {
+                                selectedClient.assignedHealthCounselors.forEach(h => {
+                                  if (h && h._id) currentlyAssigned.add(h._id);
+                                });
+                              }
+                              if (currentlyAssigned.has(hc._id)) return false;
+                            }
+                            if (!healthCounselorSearchTerm.trim()) return true;
+                            const searchLower = healthCounselorSearchTerm.toLowerCase();
+                            const fullName = `${hc.firstName} ${hc.lastName}`.toLowerCase();
+                            return fullName.includes(searchLower) || hc.email?.toLowerCase().includes(searchLower);
+                          })
+                          .map((hc) => (
+                            <div
+                              key={hc._id}
+                              className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${selectedHealthCounselorIds.includes(hc._id)
+                                  ? 'bg-purple-100 border border-purple-300'
+                                  : 'hover:bg-gray-50 border border-transparent'
+                                }`}
+                              onClick={() => {
+                                setSelectedHealthCounselorIds(prev =>
+                                  prev.includes(hc._id)
+                                    ? prev.filter(id => id !== hc._id)
+                                    : [...prev, hc._id]
+                                );
+                              }}
+                            >
                               <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedHealthCounselorIds.includes(hc._id)}
+                                  onChange={() => { }}
+                                  className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 mr-3"
+                                />
                                 <Avatar className="h-8 w-8">
                                   <AvatarImage src={hc.avatar} />
                                   <AvatarFallback className="bg-purple-200 text-purple-800 text-xs">
@@ -1436,17 +1474,72 @@ export default function AdminAllClientsPage() {
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="ml-2">
-                                  <p className="text-sm font-medium text-purple-900">
+                                  <p className="text-sm font-medium text-gray-900">
                                     {hc.firstName} {hc.lastName}
                                   </p>
-                                  <p className="text-xs text-purple-700">
-                                    {hc.email} • {hc.clientCount} clients
-                                  </p>
+                                  <p className="text-xs text-gray-500">{hc.email}</p>
                                 </div>
                               </div>
+                              <Badge variant="outline" className="text-xs">
+                                {hc.clientCount} clients
+                              </Badge>
                             </div>
-                          );
-                        })()}
+                          ))}
+                        {healthCounselors.filter(hc => {
+                          if (assignMode === 'add') {
+                            const currentlyAssigned = new Set<string>();
+                            if (selectedClient?.assignedHealthCounselor && typeof selectedClient.assignedHealthCounselor === 'object') {
+                              currentlyAssigned.add(selectedClient.assignedHealthCounselor._id);
+                            }
+                            if (selectedClient?.assignedHealthCounselors && Array.isArray(selectedClient.assignedHealthCounselors)) {
+                              selectedClient.assignedHealthCounselors.forEach(h => {
+                                if (h && h._id) currentlyAssigned.add(h._id);
+                              });
+                            }
+                            if (currentlyAssigned.has(hc._id)) return false;
+                          }
+                          if (!healthCounselorSearchTerm.trim()) return true;
+                          const searchLower = healthCounselorSearchTerm.toLowerCase();
+                          const fullName = `${hc.firstName} ${hc.lastName}`.toLowerCase();
+                          return fullName.includes(searchLower) || hc.email?.toLowerCase().includes(searchLower);
+                        }).length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-2">
+                              {assignMode === 'add' ? 'All health counselors are already assigned' : 'No health counselors match your search'}
+                            </p>
+                          )}
+                      </div>
+                    </div>
+
+                    {selectedHealthCounselorIds.length > 0 && (
+                      <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <p className="text-sm text-purple-900 mb-2 font-medium">
+                          Selected health counselors ({selectedHealthCounselorIds.length}):
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedHealthCounselorIds.map(id => {
+                            const hc = healthCounselors.find(h => h._id === id);
+                            if (!hc) return null;
+                            return (
+                              <Badge
+                                key={id}
+                                variant="secondary"
+                                className="flex items-center gap-1 bg-purple-100 text-purple-800"
+                              >
+                                {hc.firstName} {hc.lastName}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedHealthCounselorIds(prev => prev.filter(i => i !== id));
+                                  }}
+                                  className="ml-1 hover:text-purple-900"
+                                >
+                                  <XCircle className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </>

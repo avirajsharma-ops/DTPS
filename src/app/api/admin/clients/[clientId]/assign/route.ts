@@ -16,7 +16,7 @@ export async function PATCH(
 ) {
   try {
     const { clientId } = await params;
-    
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -24,11 +24,11 @@ export async function PATCH(
 
     // Check if user has admin role (case-insensitive and flexible)
     const userRole = session.user.role?.toLowerCase();
-    
+
     if (!userRole || (!userRole.includes('admin') && userRole !== 'admin')) {
-      return NextResponse.json({ 
-        error: 'Forbidden - Admin access required', 
-        userRole: session.user.role 
+      return NextResponse.json({
+        error: 'Forbidden - Admin access required',
+        userRole: session.user.role
       }, { status: 403 });
     }
 
@@ -53,11 +53,15 @@ export async function PATCH(
     }
 
     // Build update object for MongoDB
-    const updateObj: any = {};
+    // We need to separate direct field updates ($set) from array operators ($addToSet, $pull)
+    const setFields: any = {};
+    const addToSetFields: any = {};
+    const pullFields: any = {};
 
     // Handle multiple health counselors assignment
     if (healthCounselorIds && Array.isArray(healthCounselorIds)) {
       // Validate all health counselors
+      const validHealthCounselorIds = [];
       for (const hcId of healthCounselorIds) {
         if (hcId && hcId.trim() !== '') {
           const hc = await User.findById(hcId);
@@ -67,34 +71,91 @@ export async function PATCH(
           if (hc.role !== UserRole.HEALTH_COUNSELOR) {
             return NextResponse.json({ error: `User ${hcId} is not a health counselor` }, { status: 400 });
           }
+          validHealthCounselorIds.push(hcId);
         }
       }
-      // Set primary and array
-      if (healthCounselorIds.length > 0) {
-        updateObj.assignedHealthCounselor = healthCounselorIds[0];
-        updateObj.assignedHealthCounselors = healthCounselorIds;
+
+      if (validHealthCounselorIds.length > 0) {
+        if (assignAction === 'add') {
+          // Add to existing health counselors
+          addToSetFields.assignedHealthCounselors = { $each: validHealthCounselorIds };
+          // Set primary if not already set
+          if (!client.assignedHealthCounselor) {
+            setFields.assignedHealthCounselor = validHealthCounselorIds[0];
+          }
+        } else {
+          // Replace mode: Set primary and array
+          setFields.assignedHealthCounselor = validHealthCounselorIds[0];
+          setFields.assignedHealthCounselors = validHealthCounselorIds;
+        }
       }
     } else if (healthCounselorId !== undefined) {
-      // Handle single health counselor assignment (legacy)
-      if (healthCounselorId && healthCounselorId.trim() !== '') {
-        const healthCounselor = await User.findById(healthCounselorId);
-        if (!healthCounselor) {
-          return NextResponse.json({ error: 'Health counselor not found' }, { status: 404 });
+      // Handle single health counselor assignment (legacy) or removal
+      // healthCounselorId can be: string, object { id, action }, null, or empty string
+
+      // Check if it's an object with action (e.g., { id: '...', action: 'remove' })
+      if (healthCounselorId && typeof healthCounselorId === 'object' && healthCounselorId.id) {
+        const hcId = healthCounselorId.id;
+        const hcAction = healthCounselorId.action;
+
+        if (hcAction === 'remove') {
+          // Remove specific health counselor from array
+          pullFields.assignedHealthCounselors = hcId;
+          // If removing the primary, set a new primary
+          if (client.assignedHealthCounselor?.toString() === hcId) {
+            const remainingHCs = client.assignedHealthCounselors?.filter(
+              (h: any) => h.toString() !== hcId
+            ) || [];
+            setFields.assignedHealthCounselor = remainingHCs.length > 0 ? remainingHCs[0] : null;
+          }
+        } else {
+          // Add single health counselor
+          const healthCounselor = await User.findById(hcId);
+          if (!healthCounselor) {
+            return NextResponse.json({ error: 'Health counselor not found' }, { status: 404 });
+          }
+          if (healthCounselor.role !== UserRole.HEALTH_COUNSELOR) {
+            return NextResponse.json({ error: 'User is not a health counselor' }, { status: 400 });
+          }
+          setFields.assignedHealthCounselor = hcId;
+          setFields.assignedHealthCounselors = [hcId];
         }
-        if (healthCounselor.role !== UserRole.HEALTH_COUNSELOR) {
-          return NextResponse.json({ error: 'User is not a health counselor' }, { status: 400 });
+      } else if (healthCounselorId && typeof healthCounselorId === 'string' && healthCounselorId.trim() !== '') {
+        if (assignAction === 'remove') {
+          // Remove specific health counselor (string id)
+          pullFields.assignedHealthCounselors = healthCounselorId;
+          if (client.assignedHealthCounselor?.toString() === healthCounselorId) {
+            const remainingHCs = client.assignedHealthCounselors?.filter(
+              (h: any) => h.toString() !== healthCounselorId
+            ) || [];
+            setFields.assignedHealthCounselor = remainingHCs.length > 0 ? remainingHCs[0] : null;
+          }
+        } else {
+          // Legacy: string ID for single assignment
+          const healthCounselor = await User.findById(healthCounselorId);
+          if (!healthCounselor) {
+            return NextResponse.json({ error: 'Health counselor not found' }, { status: 404 });
+          }
+          if (healthCounselor.role !== UserRole.HEALTH_COUNSELOR) {
+            return NextResponse.json({ error: 'User is not a health counselor' }, { status: 400 });
+          }
+          setFields.assignedHealthCounselor = healthCounselorId;
+          setFields.assignedHealthCounselors = [healthCounselorId];
         }
-        updateObj.assignedHealthCounselor = healthCounselorId;
-        updateObj.assignedHealthCounselors = [healthCounselorId];
       } else {
         // Unassign health counselor if empty string or null
-        updateObj.assignedHealthCounselor = null;
-        updateObj.assignedHealthCounselors = [];
+        setFields.assignedHealthCounselor = null;
+        setFields.assignedHealthCounselors = [];
       }
     }
 
-    // Handle different actions for dietitians
-    if (assignAction === 'add' && dietitianIds && Array.isArray(dietitianIds)) {
+    // Handle different actions for dietitians (only when dietitian input is provided)
+    const hasDietitianInput =
+      dietitianId !== undefined ||
+      (Array.isArray(dietitianIds) && dietitianIds.length > 0) ||
+      assignAction === 'transfer';
+
+    if (hasDietitianInput && assignAction === 'add' && dietitianIds && Array.isArray(dietitianIds)) {
       // Validate and add multiple dietitians
       const validDietitianIds = [];
       for (const dId of dietitianIds) {
@@ -104,13 +165,12 @@ export async function PATCH(
         }
       }
       if (validDietitianIds.length > 0) {
-        if (!updateObj.$addToSet) updateObj.$addToSet = {};
-        updateObj.$addToSet.assignedDietitians = { $each: validDietitianIds };
+        addToSetFields.assignedDietitians = { $each: validDietitianIds };
         if (!client.assignedDietitian) {
-          updateObj.assignedDietitian = validDietitianIds[0];
+          setFields.assignedDietitian = validDietitianIds[0];
         }
       }
-    } else if (assignAction === 'add' && dietitianId) {
+    } else if (hasDietitianInput && assignAction === 'add' && dietitianId) {
       // Add single dietitian
       const dietitian = await User.findById(dietitianId);
       if (!dietitian) {
@@ -119,23 +179,21 @@ export async function PATCH(
       if (dietitian.role !== UserRole.DIETITIAN) {
         return NextResponse.json({ error: 'User is not a dietitian' }, { status: 400 });
       }
-      if (!updateObj.$addToSet) updateObj.$addToSet = {};
-      updateObj.$addToSet.assignedDietitians = dietitianId;
+      addToSetFields.assignedDietitians = dietitianId;
       if (!client.assignedDietitian) {
-        updateObj.assignedDietitian = dietitianId;
+        setFields.assignedDietitian = dietitianId;
       }
-    } else if (assignAction === 'remove' && dietitianId) {
+    } else if (hasDietitianInput && assignAction === 'remove' && dietitianId) {
       // Remove dietitian from array
-      if (!updateObj.$pull) updateObj.$pull = {};
-      updateObj.$pull.assignedDietitians = dietitianId;
+      pullFields.assignedDietitians = dietitianId;
       // If removing the primary, set a new primary
       if (client.assignedDietitian?.toString() === dietitianId) {
         const remainingDietitians = client.assignedDietitians?.filter(
           (d: any) => d.toString() !== dietitianId
         ) || [];
-        updateObj.assignedDietitian = remainingDietitians.length > 0 ? remainingDietitians[0] : null;
+        setFields.assignedDietitian = remainingDietitians.length > 0 ? remainingDietitians[0] : null;
       }
-    } else if (assignAction === 'transfer' && dietitianId) {
+    } else if (hasDietitianInput && assignAction === 'transfer' && dietitianId) {
       // Transfer to new primary dietitian
       const dietitian = await User.findById(dietitianId);
       if (!dietitian) {
@@ -144,18 +202,17 @@ export async function PATCH(
       if (dietitian.role !== UserRole.DIETITIAN) {
         return NextResponse.json({ error: 'User is not a dietitian' }, { status: 400 });
       }
-      
+
       // Add current primary to the array if not already there (for history)
-      if (!updateObj.$addToSet) updateObj.$addToSet = {};
       if (client.assignedDietitian) {
-        updateObj.$addToSet.assignedDietitians = client.assignedDietitian;
+        addToSetFields.assignedDietitians = client.assignedDietitian;
       } else {
-        updateObj.$addToSet.assignedDietitians = dietitianId;
+        addToSetFields.assignedDietitians = dietitianId;
       }
-      
+
       // Set new primary
-      updateObj.assignedDietitian = dietitianId;
-    } else {
+      setFields.assignedDietitian = dietitianId;
+    } else if (hasDietitianInput) {
       // Default: Replace primary dietitian
       if (dietitianId) {
         const dietitian = await User.findById(dietitianId);
@@ -165,13 +222,23 @@ export async function PATCH(
         if (dietitian.role !== UserRole.DIETITIAN) {
           return NextResponse.json({ error: 'User is not a dietitian' }, { status: 400 });
         }
-        updateObj.assignedDietitian = dietitianId;
-        if (!updateObj.$addToSet) {
-          updateObj.$addToSet = { assignedDietitians: dietitianId };
-        }
+        setFields.assignedDietitian = dietitianId;
+        addToSetFields.assignedDietitians = dietitianId;
       } else {
-        updateObj.assignedDietitian = null;
+        setFields.assignedDietitian = null;
       }
+    }
+
+    // Build the final update object with proper MongoDB operators
+    const updateObj: any = {};
+    if (Object.keys(setFields).length > 0) {
+      updateObj.$set = setFields;
+    }
+    if (Object.keys(addToSetFields).length > 0) {
+      updateObj.$addToSet = addToSetFields;
+    }
+    if (Object.keys(pullFields).length > 0) {
+      updateObj.$pull = pullFields;
     }
 
     // Update client using findByIdAndUpdate with proper operators
@@ -187,12 +254,12 @@ export async function PATCH(
     if (dietitianToSync) {
       // Update all active purchases for this client with the assigned dietitian
       await UnifiedPayment.updateMany(
-        { 
+        {
           client: updatedClient._id,
           status: { $in: ['active', 'pending', 'on_hold', 'paid'] }
         },
-        { 
-          $set: { dietitian: dietitianToSync } 
+        {
+          $set: { dietitian: dietitianToSync }
         }
       );
     }
@@ -204,19 +271,24 @@ export async function PATCH(
     await updatedClient.populate('assignedHealthCounselors', 'firstName lastName email avatar');
 
     const actionMessages: Record<string, string> = {
-      'add': 'Dietitian(s) added successfully',
-      'remove': 'Dietitian removed successfully',
+      'add': 'Professional(s) added successfully',
+      'remove': 'Professional removed successfully',
       'transfer': 'Client transferred successfully',
-      'replace': dietitianId ? 'Dietitian assigned successfully' : 'Dietitian unassigned successfully'
+      'replace': dietitianId ? 'Professional(s) assigned successfully' : 'Professional unassigned successfully'
     };
 
     // Build success message including HC if assigned
-    let successMessage = actionMessages[assignAction] || 'Dietitian updated successfully';
-    if (healthCounselorId && healthCounselorId.trim() !== '') {
+    let successMessage = actionMessages[assignAction] || 'Assignment updated successfully';
+    if (healthCounselorIds && healthCounselorIds.length > 0) {
+      const hcCount = healthCounselorIds.length;
+      successMessage = assignAction === 'add'
+        ? `Added ${hcCount} health counselor${hcCount > 1 ? 's' : ''} successfully`
+        : `Assigned ${hcCount} health counselor${hcCount > 1 ? 's' : ''} successfully`;
+      if (dietitianId) {
+        successMessage += ' and dietitian updated';
+      }
+    } else if (typeof healthCounselorId === 'string' && healthCounselorId.trim() !== '') {
       successMessage += ' and Health Counselor assigned successfully';
-    }
-    if (!healthCounselorId || healthCounselorId === '') {
-      successMessage += ' (Health Counselor removed)';
     }
 
     // Log activity
@@ -238,15 +310,15 @@ export async function PATCH(
     // Broadcast real-time update to all admin connections
     // Recalculate stats for the broadcast
     const total = await User.countDocuments({ role: UserRole.CLIENT });
-    const assignedCount = await User.countDocuments({ 
-      role: UserRole.CLIENT, 
+    const assignedCount = await User.countDocuments({
+      role: UserRole.CLIENT,
       $or: [
         { assignedDietitian: { $ne: null } },
         { assignedDietitians: { $exists: true, $not: { $size: 0 } } }
       ]
     });
-    const unassignedCount = await User.countDocuments({ 
-      role: UserRole.CLIENT, 
+    const unassignedCount = await User.countDocuments({
+      role: UserRole.CLIENT,
       assignedDietitian: null,
       $or: [
         { assignedDietitians: { $exists: false } },
@@ -268,6 +340,7 @@ export async function PATCH(
     // Clear cache to refresh client list
     clearCacheByTag('clients');
     clearCacheByTag('stats');
+    clearCacheByTag('admin');
 
     return NextResponse.json({
       success: true,
