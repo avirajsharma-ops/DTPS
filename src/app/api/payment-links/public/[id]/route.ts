@@ -41,15 +41,6 @@ export async function GET(
         .populate('dietitian', 'firstName lastName');
     }
 
-    // Try finding by URL pattern (for manual links)
-    if (!paymentLink) {
-      paymentLink = await PaymentLink.findOne({
-        razorpayPaymentLinkUrl: { $regex: new RegExp(`/payment/manual/${id}$`) }
-      })
-        .populate('client', 'firstName lastName email')
-        .populate('dietitian', 'firstName lastName');
-    }
-
     if (!paymentLink) {
       return NextResponse.json({ error: 'Payment link not found' }, { status: 404 });
     }

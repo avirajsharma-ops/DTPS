@@ -7,7 +7,7 @@ import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import Razorpay from 'razorpay';
-import { getPaymentCallbackUrl, getPaymentLinkBaseUrl } from '@/lib/config';
+import { getPaymentCallbackUrl } from '@/lib/config';
 import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 import { SSEManager } from '@/lib/realtime/sse-manager';
@@ -15,9 +15,9 @@ import { SSEManager } from '@/lib/realtime/sse-manager';
 // Initialize Razorpay
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
   ? new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET,
-    })
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  })
   : null;
 
 const createPaymentLinkSchema = z.object({
@@ -65,24 +65,24 @@ export async function GET(request: NextRequest) {
     else if (session.user.role === UserRole.DIETITIAN) {
       // Get all clients assigned to this dietitian
       const assignedClients = await withCache(
-      `payment-links:${JSON.stringify({
-        role: UserRole.CLIENT,
-        $or: [
-          { assignedDietitian: session.user.id },
-          { assignedDietitians: session.user.id }
-        ]
-      })}`,
-      async () => await User.find({
-        role: UserRole.CLIENT,
-        $or: [
-          { assignedDietitian: session.user.id },
-          { assignedDietitians: session.user.id }
-        ]
-      }).select('_id'),
-      { ttl: 120000, tags: ['payment_links'] }
-    );
+        `payment-links:${JSON.stringify({
+          role: UserRole.CLIENT,
+          $or: [
+            { assignedDietitian: session.user.id },
+            { assignedDietitians: session.user.id }
+          ]
+        })}`,
+        async () => await User.find({
+          role: UserRole.CLIENT,
+          $or: [
+            { assignedDietitian: session.user.id },
+            { assignedDietitians: session.user.id }
+          ]
+        }).select('_id'),
+        { ttl: 120000, tags: ['payment_links'] }
+      );
       const assignedClientIds = assignedClients.map(c => c._id);
-      
+
       // Dietitian can see payment links they created OR for their assigned clients
       query.$or = [
         { dietitian: session.user.id },
@@ -94,18 +94,18 @@ export async function GET(request: NextRequest) {
     else if (session.user.role === UserRole.HEALTH_COUNSELOR) {
       // Get all clients assigned to this health counselor
       const assignedClients = await withCache(
-      `payment-links:${JSON.stringify({
-        role: UserRole.CLIENT,
-        assignedHealthCounselor: session.user.id
-      })}`,
-      async () => await User.find({
-        role: UserRole.CLIENT,
-        assignedHealthCounselor: session.user.id
-      }).select('_id'),
-      { ttl: 120000, tags: ['payment_links'] }
-    );
+        `payment-links:${JSON.stringify({
+          role: UserRole.CLIENT,
+          assignedHealthCounselor: session.user.id
+        })}`,
+        async () => await User.find({
+          role: UserRole.CLIENT,
+          assignedHealthCounselor: session.user.id
+        }).select('_id'),
+        { ttl: 120000, tags: ['payment_links'] }
+      );
       const assignedClientIds = assignedClients.map(c => c._id);
-      
+
       // Health counselor can see payment links they created OR for their assigned clients
       query.$or = [
         { dietitian: session.user.id },
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
     // Only expire if the expiry date has fully passed (compare with start of today, not current time)
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
-    
+
     await PaymentLink.updateMany(
       {
         expireDate: { $lt: todayStart }, // Only expire if expiry date is before today (not including today)
@@ -139,11 +139,11 @@ export async function GET(request: NextRequest) {
     const paymentLinks = await withCache(
       `payment-links:${JSON.stringify(query)}:limit=${limit}:skip=${skip}`,
       async () => await PaymentLink.find(query)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email')
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip(skip),
+        .populate('client', 'firstName lastName email phone')
+        .populate('dietitian', 'firstName lastName email')
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .skip(skip),
       { ttl: 120000, tags: ['payment_links'] }
     );
 
@@ -179,9 +179,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Only dietitians, health counselors, and admins can create payment links
-    if (session.user.role !== UserRole.DIETITIAN && 
-        session.user.role !== UserRole.HEALTH_COUNSELOR && 
-        session.user.role !== UserRole.ADMIN) {
+    if (session.user.role !== UserRole.DIETITIAN &&
+      session.user.role !== UserRole.HEALTH_COUNSELOR &&
+      session.user.role !== UserRole.ADMIN) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -224,75 +224,84 @@ export async function POST(request: NextRequest) {
       paymentLinkData.expireDate = new Date(validatedData.expireDate);
     }
 
-    // Create Razorpay payment link if configured
-    if (razorpay) {
-      try {
-        const clientName = `${client.firstName} ${client.lastName}`.trim() || 'Customer';
-        const description = validatedData.planName 
-          ? `Payment for ${validatedData.planName}${validatedData.duration ? ` - ${validatedData.duration}` : ''}`
-          : 'Payment Link';
-
-        const today = new Date();
-        const paymentDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
-        
-        const razorpayPaymentLinkOptions: any = {
-          amount: Math.round(validatedData.finalAmount * 100), // Amount in paise
-          currency: 'INR',
-          accept_partial: false,
-          description: description,
-          customer: {
-            name: clientName,
-            email: client.email || undefined,
-            contact: client.phone || undefined,
-          },
-          notify: {
-            sms: !!client.phone,
-            email: !!client.email,
-          },
-          reminder_enable: true,
-          notes: {
-            clientId: validatedData.clientId,
-            clientName: clientName,
-            dietitianId: session.user.id,
-            planName: validatedData.planName || '',
-            planCategory: validatedData.planCategory || '',
-            durationDays: validatedData.durationDays?.toString() || '',
-            duration: validatedData.duration || '',
-            baseAmount: validatedData.amount.toString(),
-            tax: validatedData.tax.toString(),
-            discount: validatedData.discount.toString(),
-            finalAmount: validatedData.finalAmount.toString(),
-            paymentDate: paymentDate,
-            createdAt: today.toISOString(),
-          },
-          callback_url: getPaymentCallbackUrl('/user?payment_success=true'),
-          callback_method: 'get'
-        };
-
-        // Set expiry if provided
-        if (validatedData.expireDate) {
-          const expireTimestamp = Math.floor(new Date(validatedData.expireDate).getTime() / 1000);
-          razorpayPaymentLinkOptions.expire_by = expireTimestamp;
-        }
-
-        const razorpayLink = await razorpay.paymentLink.create(razorpayPaymentLinkOptions);
-
-        paymentLinkData.razorpayPaymentLinkId = razorpayLink.id;
-        paymentLinkData.razorpayPaymentLinkUrl = razorpayLink.short_url;
-        paymentLinkData.razorpayPaymentLinkShortUrl = razorpayLink.short_url;
-        paymentLinkData.status = 'pending';
-
-      } catch (razorpayError: any) {
-        console.error('Razorpay payment link creation failed:', razorpayError);
-        // Continue without Razorpay link - will create a manual link
-        paymentLinkData.razorpayPaymentLinkUrl = null;
-      }
+    // Enforce Razorpay-only flow: never create placeholder/manual URLs.
+    if (!razorpay) {
+      return NextResponse.json(
+        {
+          error: 'Razorpay is not configured. Payment link cannot be created right now.',
+          code: 'RAZORPAY_NOT_CONFIGURED',
+        },
+        { status: 503 }
+      );
     }
 
-    // If no Razorpay link was created, generate a placeholder using production URL
-    if (!paymentLinkData.razorpayPaymentLinkUrl) {
-      const linkId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-      paymentLinkData.razorpayPaymentLinkUrl = `${getPaymentLinkBaseUrl()}/payment/manual/${linkId}`;
+    // Create Razorpay payment link (required)
+    try {
+      const clientName = `${client.firstName} ${client.lastName}`.trim() || 'Customer';
+      const description = validatedData.planName
+        ? `Payment for ${validatedData.planName}${validatedData.duration ? ` - ${validatedData.duration}` : ''}`
+        : 'Payment Link';
+
+      const today = new Date();
+      const paymentDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+
+      const razorpayPaymentLinkOptions: any = {
+        amount: Math.round(validatedData.finalAmount * 100), // Amount in paise
+        currency: 'INR',
+        accept_partial: false,
+        description: description,
+        customer: {
+          name: clientName,
+          email: client.email || undefined,
+          contact: client.phone || undefined,
+        },
+        notify: {
+          sms: !!client.phone,
+          email: !!client.email,
+        },
+        reminder_enable: true,
+        notes: {
+          clientId: validatedData.clientId,
+          clientName: clientName,
+          dietitianId: session.user.id,
+          planName: validatedData.planName || '',
+          planCategory: validatedData.planCategory || '',
+          durationDays: validatedData.durationDays?.toString() || '',
+          duration: validatedData.duration || '',
+          baseAmount: validatedData.amount.toString(),
+          tax: validatedData.tax.toString(),
+          discount: validatedData.discount.toString(),
+          finalAmount: validatedData.finalAmount.toString(),
+          paymentDate: paymentDate,
+          createdAt: today.toISOString(),
+        },
+        callback_url: getPaymentCallbackUrl('/user?payment_success=true'),
+        callback_method: 'get'
+      };
+
+      // Set expiry if provided
+      if (validatedData.expireDate) {
+        const expireTimestamp = Math.floor(new Date(validatedData.expireDate).getTime() / 1000);
+        razorpayPaymentLinkOptions.expire_by = expireTimestamp;
+      }
+
+      const razorpayLink = await razorpay.paymentLink.create(razorpayPaymentLinkOptions);
+
+      paymentLinkData.razorpayPaymentLinkId = razorpayLink.id;
+      paymentLinkData.razorpayPaymentLinkUrl = razorpayLink.short_url;
+      paymentLinkData.razorpayPaymentLinkShortUrl = razorpayLink.short_url;
+      paymentLinkData.status = 'pending';
+
+    } catch (razorpayError: any) {
+      console.error('Razorpay payment link creation failed:', razorpayError);
+      return NextResponse.json(
+        {
+          error: 'Failed to create Razorpay payment link. Please try again.',
+          code: 'RAZORPAY_LINK_CREATE_FAILED',
+          details: razorpayError?.error?.description || razorpayError?.message || 'Unknown Razorpay error',
+        },
+        { status: 502 }
+      );
     }
 
     const paymentLink = await PaymentLink.create(paymentLinkData);
@@ -301,8 +310,8 @@ export async function POST(request: NextRequest) {
     const populatedPaymentLink = await withCache(
       `payment-links:${JSON.stringify(paymentLink._id)}`,
       async () => await PaymentLink.findById(paymentLink._id)
-      .populate('client', 'firstName lastName email phone')
-      .populate('dietitian', 'firstName lastName email'),
+        .populate('client', 'firstName lastName email phone')
+        .populate('dietitian', 'firstName lastName email'),
       { ttl: 120000, tags: ['payment_links'] }
     );
 
@@ -344,7 +353,7 @@ export async function POST(request: NextRequest) {
 
       await sendNotificationToUser(validatedData.clientId, {
         title: '💳 New Payment Request',
-        body: validatedData.planName 
+        body: validatedData.planName
           ? `Payment of ${amountFormatted} requested for "${validatedData.planName}". Tap to pay now.`
           : `A payment of ${amountFormatted} has been requested. Tap to pay now.`,
         icon: '/icons/icon-192x192.png',
@@ -364,12 +373,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       paymentLink: populatedPaymentLink,
-      message: razorpay ? 'Payment link created with Razorpay' : 'Payment link created (manual mode)'
+      message: 'Payment link created with Razorpay'
     }, { status: 201 });
 
   } catch (error) {
     console.error('Error creating payment link:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.issues },
@@ -408,8 +417,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check permissions - dietitians and health counselors can only cancel their own payment links
-    if ((session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) && 
-        paymentLink.dietitian.toString() !== session.user.id) {
+    if ((session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) &&
+      paymentLink.dietitian.toString() !== session.user.id) {
       return NextResponse.json({ error: 'You can only cancel payment links you created' }, { status: 403 });
     }
 
