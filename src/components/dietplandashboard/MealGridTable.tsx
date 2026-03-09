@@ -27,9 +27,15 @@ import { DatePicker } from './DatePicker';
 import { useState, useRef, useEffect } from 'react';
 import React from 'react';
 
+type MealTypeConfigLocal = {
+  name: string;
+  time: string;
+};
+
 type MealGridTableProps = {
   weekPlan: DayPlan[];
   mealTypes: string[];
+  mealTypeConfigs?: MealTypeConfigLocal[]; // Full config with times from parent
   onUpdate?: (weekPlan: DayPlan[]) => void;
   onAddMealType?: (mealType: string, position?: number, time?: string) => void;
   onRemoveMealType?: (mealType: string) => void;
@@ -81,7 +87,7 @@ function formatNotesDisplay(note: string): string[] {
   return note.split('.').map(s => s.trim()).filter(s => s.length > 0);
 }
 
-export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, onUpdateMealTimes, onExport, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', clientName = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
+export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpdate, onAddMealType, onRemoveMealType, onRemoveDay, onUpdateMealTimes, onExport, readOnly = false, clientDietaryRestrictions = '', clientMedicalConditions = '', clientAllergies = '', clientName = '', holdDays = [], totalHeldDays = 0 }: MealGridTableProps) {
 
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copySource, setCopySource] = useState<{ dayIndex: number; mealType: string } | null>(null);
@@ -144,6 +150,29 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
   const startIndex = currentPage * DAYS_PER_PAGE;
   const endIndex = Math.min(startIndex + DAYS_PER_PAGE, weekPlan.length);
   const paginatedDays = weekPlan.slice(startIndex, endIndex);
+
+  // Sync customMealTimes from parent's mealTypeConfigs so times persist across re-renders
+  useEffect(() => {
+    if (mealTypeConfigs && mealTypeConfigs.length > 0) {
+      const timesFromConfigs: { [key: string]: string } = {};
+      mealTypeConfigs.forEach(config => {
+        if (config.name && config.time) {
+          timesFromConfigs[config.name] = config.time;
+        }
+      });
+      if (Object.keys(timesFromConfigs).length > 0) {
+        setCustomMealTimes(prev => {
+          // Merge: parent config times take precedence on init, but keep any extra local entries
+          const merged = { ...prev, ...timesFromConfigs };
+          // Only update state if something actually changed
+          if (JSON.stringify(merged) !== JSON.stringify(prev)) {
+            return merged;
+          }
+          return prev;
+        });
+      }
+    }
+  }, [mealTypeConfigs]);
 
   // Fetch recipes when Find & Replace dialog opens
   useEffect(() => {
@@ -214,6 +243,17 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     if (newWeekPlan[dayIndex].meals[mealType]) {
       newWeekPlan[dayIndex].meals[mealType].time = time;
       onUpdate(newWeekPlan);
+
+      // Keep the header meal-type timing in sync with manual cell edits
+      setCustomMealTimes(prev => ({
+        ...prev,
+        [mealType]: time
+      }));
+
+      // Persist updated meal-type timing in parent configs (used on save/reopen)
+      if (onUpdateMealTimes) {
+        onUpdateMealTimes({ [mealType]: time });
+      }
     }
   };
 
@@ -589,6 +629,31 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
       ...prev,
       [mealType]: time
     }));
+
+    // Propagate to parent so mealTypeConfigs gets updated and saved
+    if (onUpdateMealTimes) {
+      onUpdateMealTimes({ ...customMealTimes, [mealType]: time });
+    }
+
+    // Also update the time in all weekPlan days for this meal type
+    if (onUpdate) {
+      const newWeekPlan = weekPlan.map(day => {
+        if (day.meals[mealType]) {
+          return {
+            ...day,
+            meals: {
+              ...day.meals,
+              [mealType]: {
+                ...day.meals[mealType],
+                time: time
+              }
+            }
+          };
+        }
+        return day;
+      });
+      onUpdate(newWeekPlan);
+    }
   };
 
   const goToNextPage = () => {
@@ -689,16 +754,20 @@ export function MealGridTable({ weekPlan, mealTypes, onUpdate, onAddMealType, on
     : null;
   const selectedDay = activeFoodDetail ? weekPlan[activeFoodDetail.dayIndex] : null;
 
-  // Build time map from meal cells - use the first occurrence of each meal type's time
+  // Build time map - customMealTimes (synced from parent mealTypeConfigs) takes priority
   const getMealTypeTime = (mealType: string): string => {
-    // First check if there's a time set in any day's meal
+    // 1. Check customMealTimes first (reflects latest user edits & parent mealTypeConfigs)
+    if (customMealTimes[mealType]) {
+      return customMealTimes[mealType];
+    }
+    // 2. Check weekPlan meal data (from DB)
     for (const day of weekPlan) {
       if (day.meals[mealType]?.time) {
         return day.meals[mealType].time;
       }
     }
-    // Fall back to custom times or suggestions
-    return customMealTimes[mealType] || mealTimeSuggestions[mealType] || '12:00 PM';
+    // 3. Fall back to default suggestions
+    return mealTimeSuggestions[mealType] || '12:00 PM';
   };
 
   // Convert 12h time string (e.g. "01:00 PM") to minutes since midnight for sorting

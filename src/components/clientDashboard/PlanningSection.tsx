@@ -584,7 +584,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   };
 
   // Handle saving the complete meal plan
-  const handleSavePlan = async (mealsData: any[]) => {
+  const handleSavePlan = async (mealsData: any[], mealTypesData?: { name: string; time: string }[]) => {
     try {
       setSaving(true);
 
@@ -605,6 +605,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         };
       });
 
+      const finalMealTypes = mealTypesData && mealTypesData.length > 0 ? mealTypesData : initialMealTypes;
+
       const payload: any = {
         clientId: client._id,
         name: planTitle,
@@ -613,7 +615,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         endDate,
         duration,
         meals: mealsWithDates,
-        mealTypes: initialMealTypes,
+        mealTypes: finalMealTypes,
         customizations: {
           targetCalories: selectedTemplate?.targetCalories?.max || 2000,
           targetMacros: {
@@ -653,6 +655,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       const data = await res.json();
 
       if (data.success) {
+        // Keep latest meal type timings in local state
+        setInitialMealTypes(finalMealTypes);
+
         // Update client purchase - ADD days used (do not change expected dates)
         if (paymentCheck?.purchase?._id) {
           try {
@@ -785,7 +790,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   };
 
   // Update existing plan
-  const handleUpdatePlan = async (mealsData: any[]) => {
+  const handleUpdatePlan = async (mealsData: any[], mealTypesData?: { name: string; time: string }[]) => {
     if (!editingPlan?._id) return;
 
     try {
@@ -808,13 +813,15 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         };
       });
 
+      const finalMealTypes = mealTypesData && mealTypesData.length > 0 ? mealTypesData : initialMealTypes;
+
       const payload: any = {
         name: planTitle,
         description,
         startDate,
         endDate,
         meals: mealsWithDates,
-        mealTypes: initialMealTypes,
+        mealTypes: finalMealTypes,
         customizations: {
           targetCalories: selectedTemplate?.targetCalories?.max || editingPlan.customizations?.targetCalories || 2000,
           targetMacros: {
@@ -843,6 +850,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       const data = await res.json();
 
       if (data.success) {
+        // Keep latest meal type timings in local state
+        setInitialMealTypes(finalMealTypes);
+
         toast.success('Diet plan updated successfully!');
         // Emit event to trigger automatic refresh across all components
         emitDataChange(DataEventTypes.MEAL_PLAN_UPDATED, { planId: editingPlan._id });
@@ -2312,7 +2322,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
               startDate={isEditMode && editingPlan?.startDate ? format(new Date(editingPlan.startDate), 'yyyy-MM-dd') : startDate}
               initialMeals={isEditMode && editingPlan?.meals ? editingPlan.meals : initialMeals}
               initialMealTypes={isEditMode && editingPlan?.mealTypes ? editingPlan.mealTypes : initialMealTypes}
-              onSave={isEditMode ? handleUpdatePlan : handleSavePlan}
+              onSavePlan={isEditMode ? handleUpdatePlan : handleSavePlan}
               clientId={client._id}
               clientName={`${client.firstName} ${client.lastName}`}
               clientDietaryRestrictions={toCommaString(client.dietaryRestrictions)}

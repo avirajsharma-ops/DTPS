@@ -148,7 +148,8 @@ const normalizeMealKeys = (meals: Record<string, Meal>): Record<string, Meal> =>
       normalized[displayName] = {
         ...current,
         name: displayName,
-        time: canonicalTime || current.time || '12:00 PM'
+        // Prefer user-saved time over canonical default
+        time: current.time || canonicalTime || '12:00 PM'
       };
     }
   });
@@ -283,7 +284,9 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       for (const meal of initialMealTypes) {
         const key = normalizeMealType(meal.name);
         const label = key ? MEAL_TYPES[key].label : meal.name;
-        const time = key ? MEAL_TYPES[key].time12h : normalizeTime(meal.time);
+        // IMPORTANT: Always prefer the user-saved time from DB (meal.time).
+        // Only fall back to canonical default if no saved time exists.
+        const time = normalizeTime(meal.time) || (key ? MEAL_TYPES[key].time12h : '12:00 PM');
         if (!seen.has(label)) {
           seen.add(label);
           normalized.push({ ...meal, name: label, time });
@@ -414,7 +417,8 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
             return {
               ...meal,
               name: key ? MEAL_TYPES[key].label : meal.name,
-              time: key ? MEAL_TYPES[key].time12h : normalizeTime(meal.time)
+              // Prefer user-saved time over canonical default
+              time: normalizeTime(meal.time) || (key ? MEAL_TYPES[key].time12h : '12:00 PM')
             };
           });
           // Deduplicate by name
@@ -730,6 +734,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
         <MealGridTable
           weekPlan={weekPlan}
           mealTypes={mealTypes}
+          mealTypeConfigs={mealTypeConfigs}
           onUpdate={readOnly ? undefined : setWeekPlan}
           onAddMealType={readOnly ? undefined : handleAddMealType}
           onRemoveMealType={readOnly ? undefined : handleRemoveMealType}
