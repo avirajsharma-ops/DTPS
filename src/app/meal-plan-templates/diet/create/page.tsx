@@ -655,6 +655,9 @@ export default function CreateDietTemplatePage() {
                   planType: template.category || 'Uncategorized'
                 }}
                 duration={template.duration}
+                onDurationChange={(nextDuration) =>
+                  setTemplate(prev => ({ ...prev, duration: nextDuration }))
+                }
                 initialMealTypes={mealTypesData}
                 clientDietaryRestrictions={template.dietaryRestrictions?.join(', ') || ''}
                 onBack={() => setCurrentStep(2)}

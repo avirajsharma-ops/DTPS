@@ -51,6 +51,7 @@ type DietPlanDashboardProps = {
   onBack?: () => void;
   onSavePlan?: (weekPlan: DayPlan[], mealTypes: MealTypeConfig[]) => void; // trigger parent save with meal data and meal types
   onSave?: (weekPlan: DayPlan[]) => void; // Simple save callback for PlanningSection
+  onDurationChange?: (duration: number) => void; // Notify parent when days count changes
   duration?: number; // number of days to show
   startDate?: string; // Start date in YYYY-MM-DD format
   initialMeals?: DayPlan[]; // Load existing meals
@@ -156,7 +157,7 @@ const normalizeMealKeys = (meals: Record<string, Meal>): Record<string, Meal> =>
   return normalized;
 };
 
-export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, duration = 7, startDate, initialMeals, initialMealTypes, clientId, clientName, readOnly = false, clientDietaryRestrictions, clientMedicalConditions, clientAllergies, holdDays = [], totalHeldDays = 0 }: DietPlanDashboardProps) {
+export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, onDurationChange, duration = 7, startDate, initialMeals, initialMealTypes, clientId, clientName, readOnly = false, clientDietaryRestrictions, clientMedicalConditions, clientAllergies, holdDays = [], totalHeldDays = 0 }: DietPlanDashboardProps) {
   // Get session for role-based export visibility
   const { data: session } = useSession();
   const userRole = session?.user?.role as string | undefined;
@@ -295,6 +296,14 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, dura
       setMealTypeConfigs(normalized);
     }
   }, [initialMealTypes]);
+
+  // Sync parent duration when days count changes (e.g., Add Day)
+  useEffect(() => {
+    if (!onDurationChange) return;
+    if (weekPlan.length && weekPlan.length !== duration) {
+      onDurationChange(weekPlan.length);
+    }
+  }, [weekPlan.length, duration, onDurationChange]);
 
   // ============ AUTO-SAVE FUNCTIONALITY ============
   // Draft key for this specific diet plan

@@ -428,6 +428,7 @@ export default function EditDietTemplatePage() {
                     planType: category || 'Uncategorized'
                   }}
                   duration={Number(duration)}
+                  onDurationChange={(nextDuration) => setDuration(String(nextDuration))}
                   initialMeals={meals}
                   initialMealTypes={mealTypes}
                   clientDietaryRestrictions={selectedRestrictions?.join(', ') || ''}
