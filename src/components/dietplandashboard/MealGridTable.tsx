@@ -64,16 +64,15 @@ function calculateDayMacros(day: DayPlan): { cal: number; carbs: number; fats: n
 
   Object.values(day.meals).forEach(meal => {
     if (meal && meal.foodOptions) {
-      // Only count the first food option (A option) for totals
-      const primaryOption = meal.foodOptions[0];
-      if (primaryOption) {
-        // If option has multiple foods array, use those values (already summed)
-        // Otherwise use the primary fields
-        totals.cal += parseFloat(primaryOption.cal) || 0;
-        totals.carbs += parseFloat(primaryOption.carbs) || 0;
-        totals.fats += parseFloat(primaryOption.fats) || 0;
-        totals.protein += parseFloat(primaryOption.protein) || 0;
-      }
+      // Only count MAIN food options (isAlternative is false or undefined)
+      // Exclude any options marked as alternatives
+      const mainFoods = meal.foodOptions.filter(opt => !opt.isAlternative);
+      mainFoods.forEach(opt => {
+        totals.cal += parseFloat(opt.cal) || 0;
+        totals.carbs += parseFloat(opt.carbs) || 0;
+        totals.fats += parseFloat(opt.fats) || 0;
+        totals.protein += parseFloat(opt.protein) || 0;
+      });
     }
   });
 

@@ -162,17 +162,20 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     });
   };
 
-  // Calculate daily totals
+  // Calculate daily totals (only main foods, exclude alternatives)
   const calculateDayTotals = (day: DayPlan) => {
     let cal = 0, carbs = 0, protein = 0, fats = 0;
 
     Object.values(day.meals).forEach(meal => {
-      if (meal?.foodOptions?.[0]) {
-        const opt = meal.foodOptions[0];
-        cal += parseFloat(opt.cal) || 0;
-        carbs += parseFloat(opt.carbs) || 0;
-        protein += parseFloat(opt.protein) || 0;
-        fats += parseFloat(opt.fats) || 0;
+      if (meal?.foodOptions) {
+        // Only count MAIN food options (isAlternative is false or undefined)
+        const mainFoods = meal.foodOptions.filter(opt => !opt.isAlternative);
+        mainFoods.forEach(opt => {
+          cal += parseFloat(opt.cal) || 0;
+          carbs += parseFloat(opt.carbs) || 0;
+          protein += parseFloat(opt.protein) || 0;
+          fats += parseFloat(opt.fats) || 0;
+        });
       }
     });
 

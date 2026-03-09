@@ -281,7 +281,9 @@ export default function UserHomePage() {
               // Sum up from items/foods in each meal
               const items = meal.items || meal.foods || meal.foodOptions || [];
               if (Array.isArray(items) && items.length > 0) {
-                items.forEach((item: any) => {
+                // Only count MAIN foods (exclude alternatives)
+                const mainItems = items.filter((item: any) => !item?.isAlternative);
+                mainItems.forEach((item: any) => {
                   totalCaloriesFromMeals += parseFloat(item.calories) || parseFloat(item.cal) || 0;
                   totalProteinFromMeals += parseFloat(item.protein) || 0;
                   totalCarbsFromMeals += parseFloat(item.carbs) || 0;
@@ -311,7 +313,9 @@ export default function UserHomePage() {
           completedMeals.forEach((meal: any) => {
             const items = meal.items || meal.foods || meal.foodOptions || [];
             if (Array.isArray(items) && items.length > 0) {
-              items.forEach((item: any) => {
+              // Only count MAIN foods (exclude alternatives)
+              const mainItems = items.filter((item: any) => !item?.isAlternative);
+              mainItems.forEach((item: any) => {
                 caloriesConsumed += parseFloat(item.calories) || parseFloat(item.cal) || 0;
                 proteinConsumed += parseFloat(item.protein) || 0;
                 carbsConsumed += parseFloat(item.carbs) || 0;
