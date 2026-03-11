@@ -71,6 +71,7 @@ import PaymentsSection from '@/components/clientDashboard/PaymentsSection';
 import DocumentsSection from '@/components/clientDashboard/DocumentsSection';
 import HistorySection from '@/components/clientDashboard/HistorySection';
 import TasksSection from '@/components/clientDashboard/TasksSection';
+import ImageLightbox from '@/components/ui/image-lightbox';
 
 interface ClientData {
   _id: string;
@@ -336,6 +337,15 @@ export default function ClientDetailPage() {
     showToClient: false,
     attachments: []
   });
+
+  // Lightbox state for note attachments
+  const [noteLightboxOpen, setNoteLightboxOpen] = useState(false);
+  const [noteLightboxImage, setNoteLightboxImage] = useState('');
+
+  const openNoteLightbox = (url: string) => {
+    setNoteLightboxImage(url);
+    setNoteLightboxOpen(true);
+  };
 
   // Form component states
   const [basicInfo, setBasicInfo] = useState<BasicInfoData>({
@@ -1140,12 +1150,12 @@ export default function ClientDetailPage() {
         console.error('Failed to save medical data');
       } else {
         // Immediately update client state with new medical data so PlanningSection has latest data
-        setClient(prev => ({
+        setClient(prev => prev ? ({
           ...prev,
           medicalConditions: medicalPayload.medicalConditions,
           allergies: medicalPayload.allergies,
           dietaryRestrictions: medicalPayload.dietaryRestrictions
-        }));
+        } as ClientData) : null);
       }
 
       // 4. Save dietary recall entries separately
@@ -1575,8 +1585,8 @@ export default function ClientDetailPage() {
               <button
                 onClick={() => setActiveSection('forms')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'forms'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <FileText className="h-4 w-4" />
@@ -1586,8 +1596,8 @@ export default function ClientDetailPage() {
               <button
                 onClick={() => setActiveSection('journal')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'journal'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <BookOpen className="h-4 w-4" />
@@ -1598,8 +1608,8 @@ export default function ClientDetailPage() {
               <button
                 onClick={() => setActiveSection('planning')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'planning'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -1609,8 +1619,8 @@ export default function ClientDetailPage() {
               <button
                 onClick={() => setActiveSection('payments')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'payments'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <CreditCard className="h-4 w-4" />
@@ -1620,8 +1630,8 @@ export default function ClientDetailPage() {
               <button
                 onClick={() => setActiveSection('bookings')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'bookings'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -1631,8 +1641,8 @@ export default function ClientDetailPage() {
               <button
                 onClick={() => setActiveSection('documents')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'documents'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <FileText className="h-4 w-4" />
@@ -1642,8 +1652,8 @@ export default function ClientDetailPage() {
               <button
                 onClick={() => setActiveSection('tasks')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'tasks'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -1653,8 +1663,8 @@ export default function ClientDetailPage() {
               <button
                 onClick={() => setActiveSection('history')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'history'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -1690,8 +1700,8 @@ export default function ClientDetailPage() {
                       <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
                         <div className="flex items-center gap-1.5">
                           <span className={`inline-block h-2 w-2 rounded-full ${clientComputedStatus === 'active' ? 'bg-green-500' :
-                              clientComputedStatus === 'inactive' ? 'bg-gray-400' :
-                                'bg-blue-500'
+                            clientComputedStatus === 'inactive' ? 'bg-gray-400' :
+                              'bg-blue-500'
                             }`} />
                           <span className="capitalize">
                             {clientComputedStatus === 'active' ? 'Active' :
@@ -1795,7 +1805,7 @@ export default function ClientDetailPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full ${activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'bg-emerald-400 animate-pulse' :
-                            'bg-gray-400'
+                          'bg-gray-400'
                           }`}></div>
                         <p className="text-sm font-medium text-slate-300 uppercase tracking-wide">
                           {activePlan.status === 'active' ? 'Currently Running' :
@@ -1863,13 +1873,13 @@ export default function ClientDetailPage() {
                         </div>
                       )}
                       <div className={`rounded-xl bg-linear-to-br ${activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'from-emerald-500 to-green-600' :
-                          'from-gray-500 to-gray-600'
+                        'from-gray-500 to-gray-600'
                         } px-4 py-3 shadow-md`}>
                         <p className={`text-xs font-medium uppercase tracking-wide ${activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'text-emerald-100' :
-                            'text-gray-100'
+                          'text-gray-100'
                           }`}>Status</p>
                         <Badge className={`mt-1.5 ${activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'bg-white/20' :
-                            'bg-gray-500/20'
+                          'bg-gray-500/20'
                           } backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold`}>
                           {activePlan.status === 'active' || activePlan.status === 'upcoming' ? 'Active' : 'Completed'}
                         </Badge>
@@ -1935,16 +1945,16 @@ export default function ClientDetailPage() {
                         <p className="mt-1.5 text-sm font-semibold text-white">No dates</p>
                       </div>
                       <div className={`rounded-xl bg-linear-to-br ${clientComputedStatus === 'lead' ? 'from-blue-600 to-blue-700' :
-                          clientComputedStatus === 'inactive' ? 'from-red-600 to-red-700' :
-                            'from-green-600 to-green-700'
+                        clientComputedStatus === 'inactive' ? 'from-red-600 to-red-700' :
+                          'from-green-600 to-green-700'
                         } px-4 py-3 shadow-md`}>
                         <p className={`text-xs font-medium uppercase tracking-wide ${clientComputedStatus === 'lead' ? 'text-blue-200' :
-                            clientComputedStatus === 'inactive' ? 'text-red-200' :
-                              'text-green-200'
+                          clientComputedStatus === 'inactive' ? 'text-red-200' :
+                            'text-green-200'
                           }`}>Status</p>
                         <Badge className={`mt-1.5 ${clientComputedStatus === 'lead' ? 'bg-blue-500/30' :
-                            clientComputedStatus === 'inactive' ? 'bg-red-500/30' :
-                              'bg-green-500/30'
+                          clientComputedStatus === 'inactive' ? 'bg-red-500/30' :
+                            'bg-green-500/30'
                           } backdrop-blur-sm border border-white/30 text-[11px] text-white font-semibold`}>
                           {clientComputedStatus === 'active' ? 'Active' : clientComputedStatus === 'inactive' ? 'Inactive' : 'Lead'}
                         </Badge>
@@ -2117,9 +2127,9 @@ export default function ClientDetailPage() {
                             {selectedNote.attachments.map((att, idx) => (
                               <div key={idx} className="relative">
                                 {att.type === 'image' && (
-                                  <a href={att.url} target="_blank" rel="noopener noreferrer">
+                                  <div className="cursor-pointer" onClick={() => openNoteLightbox(att.url)}>
                                     <img src={att.url} alt={att.filename || 'Image'} className="h-24 w-24 object-cover rounded-lg border shadow-sm hover:shadow-md transition-shadow" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                                  </a>
+                                  </div>
                                 )}
                                 {att.type === 'video' && (
                                   <video controls className="h-24 w-40 rounded-lg border shadow-sm">
@@ -2635,9 +2645,9 @@ export default function ClientDetailPage() {
                           <Badge
                             variant="secondary"
                             className={`text-[10px] px-2 py-0.5 mb-1 ${selectedTask.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                selectedTask.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
-                                  selectedTask.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                    'bg-yellow-100 text-yellow-700'
+                              selectedTask.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                                selectedTask.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                  'bg-yellow-100 text-yellow-700'
                               }`}
                           >
                             {selectedTask.status}
@@ -2927,9 +2937,9 @@ export default function ClientDetailPage() {
                                 </Badge>
                                 <Badge
                                   className={`text-[9px] px-1.5 py-0 ${task.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                      task.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
-                                        task.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                          'bg-yellow-100 text-yellow-700'
+                                    task.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                                      task.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                        'bg-yellow-100 text-yellow-700'
                                     }`}
                                 >
                                   {task.status}
@@ -3111,6 +3121,14 @@ export default function ClientDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Image Lightbox for note attachments */}
+      <ImageLightbox
+        isOpen={noteLightboxOpen}
+        onClose={() => setNoteLightboxOpen(false)}
+        src={noteLightboxImage}
+        alt="Note attachment"
+      />
     </DashboardLayout>
   );
 }

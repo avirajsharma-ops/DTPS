@@ -94,6 +94,7 @@ interface OtherPlatformPayment {
     servicePlanId?: string;
   };
   receiptImage?: string;
+  receiptImageUrl?: string;
   status: 'pending' | 'approved' | 'rejected';
   reviewedBy?: {
     _id: string;
@@ -141,7 +142,7 @@ export default function OtherPlatformPaymentsPage() {
   const [actionType, setActionType] = useState<'approve' | 'reject'>('approve');
   const [reviewNotes, setReviewNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-  
+
   // Image lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState('');
@@ -181,12 +182,12 @@ export default function OtherPlatformPaymentsPage() {
 
   useEffect(() => {
     if (sessionStatus === 'loading') return;
-    
+
     if (!session?.user || session.user.role !== UserRole.ADMIN) {
       router.push('/dashboard');
       return;
     }
-    
+
     fetchPayments();
   }, [session, sessionStatus, router, fetchPayments]);
 
@@ -308,248 +309,248 @@ export default function OtherPlatformPaymentsPage() {
           </p>
         </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-100 rounded-full">
-                <Wallet className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{counts.all}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-yellow-100 rounded-full">
-                <Clock className="h-5 w-5 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Pending</p>
-                <p className="text-2xl font-bold">{counts.pending}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-green-100 rounded-full">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Approved</p>
-                <p className="text-2xl font-bold">{counts.approved}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-red-100 rounded-full">
-                <XCircle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Rejected</p>
-                <p className="text-2xl font-bold">{counts.rejected}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content - Table Format */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <CardTitle>Payment Requests</CardTitle>
-              <CardDescription>
-                Verify payment receipts and transaction IDs before approving
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search payments..."
-                  className="pl-8 w-62.5"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <Button variant="outline" size="icon" onClick={fetchPayments}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
-              <TabsTrigger value="pending">Pending ({counts.pending})</TabsTrigger>
-              <TabsTrigger value="approved">Approved ({counts.approved})</TabsTrigger>
-              <TabsTrigger value="rejected">Rejected ({counts.rejected})</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value={activeTab} className="mt-0">
-              {filteredPayments.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No payments found</p>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <Wallet className="h-5 w-5 text-blue-600" />
                 </div>
-              ) : (
-                <div className="rounded-md border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Plan Details</TableHead>
-                        <TableHead>Platform</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Transaction ID</TableHead>
-                        <TableHead>Payment Date</TableHead>
-                        <TableHead>Receipt</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPayments.map((payment) => (
-                        <TableRow key={payment._id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="relative h-8 w-8 rounded-full bg-muted overflow-hidden">
-                                {payment.client?.profilePicture ? (
-                                  <Image
-                                    src={payment.client.profilePicture}
-                                    alt={payment.client.firstName}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                ) : (
-                                  <div className="flex items-center justify-center h-full w-full">
-                                    <User className="h-4 w-4 text-muted-foreground" />
-                                  </div>
-                                )}
+                <div>
+                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="text-2xl font-bold">{counts.all}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-2 bg-yellow-100 rounded-full">
+                  <Clock className="h-5 w-5 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Pending</p>
+                  <p className="text-2xl font-bold">{counts.pending}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-2 bg-green-100 rounded-full">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Approved</p>
+                  <p className="text-2xl font-bold">{counts.approved}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-2 bg-red-100 rounded-full">
+                  <XCircle className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Rejected</p>
+                  <p className="text-2xl font-bold">{counts.rejected}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content - Table Format */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <CardTitle>Payment Requests</CardTitle>
+                <CardDescription>
+                  Verify payment receipts and transaction IDs before approving
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search payments..."
+                    className="pl-8 w-62.5"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Button variant="outline" size="icon" onClick={fetchPayments}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
+                <TabsTrigger value="pending">Pending ({counts.pending})</TabsTrigger>
+                <TabsTrigger value="approved">Approved ({counts.approved})</TabsTrigger>
+                <TabsTrigger value="rejected">Rejected ({counts.rejected})</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value={activeTab} className="mt-0">
+                {filteredPayments.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No payments found</p>
+                  </div>
+                ) : (
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Client</TableHead>
+                          <TableHead>Plan Details</TableHead>
+                          <TableHead>Platform</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Transaction ID</TableHead>
+                          <TableHead>Payment Date</TableHead>
+                          <TableHead>Receipt</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredPayments.map((payment) => (
+                          <TableRow key={payment._id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="relative h-8 w-8 rounded-full bg-muted overflow-hidden">
+                                  {payment.client?.profilePicture ? (
+                                    <Image
+                                      src={payment.client.profilePicture}
+                                      alt={payment.client.firstName}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  ) : (
+                                    <div className="flex items-center justify-center h-full w-full">
+                                      <User className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">
+                                    {payment.client?.firstName} {payment.client?.lastName}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {payment.client?.email}
+                                  </p>
+                                </div>
                               </div>
+                            </TableCell>
+                            <TableCell>
                               <div>
                                 <p className="font-medium text-sm">
-                                  {payment.client?.firstName} {payment.client?.lastName}
+                                  {payment.planName || payment.paymentLink?.planName || 'N/A'}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {payment.client?.email}
+                                  {payment.planCategory || payment.paymentLink?.planCategory || 'N/A'}
+                                  {(payment.durationDays || payment.paymentLink?.durationDays) && (
+                                    <span> • {payment.durationDays || payment.paymentLink?.durationDays} days</span>
+                                  )}
                                 </p>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium text-sm">
-                                {payment.planName || payment.paymentLink?.planName || 'N/A'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {payment.planCategory || payment.paymentLink?.planCategory || 'N/A'}
-                                {(payment.durationDays || payment.paymentLink?.durationDays) && (
-                                  <span> • {payment.durationDays || payment.paymentLink?.durationDays} days</span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1.5">
+                                {platformIcons[payment.platform]}
+                                <span className="text-sm">{getPlatformDisplay(payment)}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-medium">₹{payment.amount?.toLocaleString()}</span>
+                            </TableCell>
+                            <TableCell>
+                              <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                                {payment.transactionId}
+                              </code>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm">
+                                {format(new Date(payment.paymentDate), 'dd MMM yyyy')}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {payment.receiptImageUrl ? (
+                                <button
+                                  onClick={() => openImageLightbox(payment.receiptImageUrl!)}
+                                  className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm hover:underline"
+                                >
+                                  <ImageIcon className="h-4 w-4" />
+                                  View
+                                </button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">No receipt</span>
+                              )}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                {payment.status === 'pending' && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                      onClick={() => openActionDialog(payment, 'approve')}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                      Approve
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      onClick={() => openActionDialog(payment, 'reject')}
+                                    >
+                                      <XCircle className="h-4 w-4 mr-1" />
+                                      Reject
+                                    </Button>
+                                  </>
                                 )}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1.5">
-                              {platformIcons[payment.platform]}
-                              <span className="text-sm">{getPlatformDisplay(payment)}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-medium">₹{payment.amount?.toLocaleString()}</span>
-                          </TableCell>
-                          <TableCell>
-                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                              {payment.transactionId}
-                            </code>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm">
-                              {format(new Date(payment.paymentDate), 'dd MMM yyyy')}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            {payment.receiptImage ? (
-                              <button
-                                onClick={() => openImageLightbox(payment.receiptImage!)}
-                                className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm hover:underline"
-                              >
-                                <ImageIcon className="h-4 w-4" />
-                                View
-                              </button>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">No receipt</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              {payment.status === 'pending' && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                    onClick={() => openActionDialog(payment, 'approve')}
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => openActionDialog(payment, 'reject')}
-                                  >
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Reject
-                                  </Button>
-                                </>
-                              )}
-                              {payment.status !== 'pending' && payment.reviewedBy && (
-                                <span className="text-xs text-muted-foreground">
-                                  by {payment.reviewedBy.firstName}
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                                {payment.status !== 'pending' && payment.reviewedBy && (
+                                  <span className="text-xs text-muted-foreground">
+                                    by {payment.reviewedBy.firstName}
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Image Lightbox with Blur Background */}
       {lightboxOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center"
           onClick={() => setLightboxOpen(false)}
         >
           {/* Blur Background */}
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          
+
           {/* Image Container */}
-          <div 
+          <div
             className="relative z-10 max-w-4xl max-h-[90vh] p-4"
             onClick={(e) => e.stopPropagation()}
           >
@@ -560,7 +561,7 @@ export default function OtherPlatformPaymentsPage() {
             >
               <X className="h-5 w-5" />
             </button>
-            
+
             {/* Download Button */}
             <a
               href={lightboxImage}
@@ -572,7 +573,7 @@ export default function OtherPlatformPaymentsPage() {
             >
               <Download className="h-5 w-5" />
             </a>
-            
+
             {/* Image */}
             <div className="bg-white rounded-lg overflow-hidden shadow-2xl">
               <img
@@ -621,10 +622,10 @@ export default function OtherPlatformPaymentsPage() {
                   <span className="text-muted-foreground">Transaction ID:</span>
                   <code className="text-sm">{selectedPayment.transactionId}</code>
                 </div>
-                {selectedPayment.receiptImage && (
+                {selectedPayment.receiptImageUrl && (
                   <div className="pt-2">
                     <button
-                      onClick={() => openImageLightbox(selectedPayment.receiptImage!)}
+                      onClick={() => openImageLightbox(selectedPayment.receiptImageUrl!)}
                       className="text-blue-600 hover:underline text-sm flex items-center gap-1"
                     >
                       <ImageIcon className="h-4 w-4" />

@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MediaUploadModal } from '@/components/chat/MediaUploadModal';
 import { VoiceRecorder } from '@/components/chat/VoiceRecorder';
+import ImageLightbox from '@/components/ui/image-lightbox';
 import {
   Send,
   Paperclip,
@@ -93,8 +94,15 @@ export default function UserMessagesPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [showMediaUpload, setShowMediaUpload] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const openLightbox = (url: string) => {
+    setLightboxImage(url);
+    setLightboxOpen(true);
+  };
 
   // Refs for SSE callbacks to avoid stale closures
   const selectedConversationRef = useRef<Conversation | null>(null);
@@ -499,12 +507,12 @@ export default function UserMessagesPage() {
                       </div>
                       <p
                         className={`text-sm truncate ${conv.unreadCount > 0
-                            ? isDarkMode
-                              ? 'text-white font-medium'
-                              : 'text-gray-900 font-medium'
-                            : isDarkMode
-                              ? 'text-gray-300'
-                              : 'text-gray-500'
+                          ? isDarkMode
+                            ? 'text-white font-medium'
+                            : 'text-gray-900 font-medium'
+                          : isDarkMode
+                            ? 'text-gray-300'
+                            : 'text-gray-500'
                           }`}
                       >
                         {conv.lastMessage?.content || 'Start a conversation'}
@@ -605,7 +613,7 @@ export default function UserMessagesPage() {
                                     src={attachment.thumbnail || attachment.url}
                                     alt="Image attachment"
                                     className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
-                                    onClick={() => window.open(attachment.url, '_blank')}
+                                    onClick={() => openLightbox(attachment.url)}
                                     style={{ maxHeight: '300px' }}
                                   />
                                   {message.content && (
@@ -691,12 +699,12 @@ export default function UserMessagesPage() {
                           <div className={`max-w-[85%] sm:max-w-[75%] ${isOwn ? 'order-2' : ''}`}>
                             <div
                               className={`px-3 py-2 rounded-lg shadow-sm inline-block ${isOwn
-                                  ? isDarkMode
-                                    ? 'bg-emerald-700 text-white rounded-tr-none'
-                                    : 'bg-[#DCF8C6] text-gray-900 rounded-tr-none'
-                                  : isDarkMode
-                                    ? 'bg-gray-800 text-white rounded-tl-none'
-                                    : 'bg-white text-gray-900 rounded-tl-none'
+                                ? isDarkMode
+                                  ? 'bg-emerald-700 text-white rounded-tr-none'
+                                  : 'bg-[#DCF8C6] text-gray-900 rounded-tr-none'
+                                : isDarkMode
+                                  ? 'bg-gray-800 text-white rounded-tl-none'
+                                  : 'bg-white text-gray-900 rounded-tl-none'
                                 }`}
                             >
                               {renderMessageContent()}
@@ -797,6 +805,14 @@ export default function UserMessagesPage() {
           </div>
         </div>
       </div>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        src={lightboxImage}
+        alt="Message attachment"
+      />
     </PageTransition>
   );
 }

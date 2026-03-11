@@ -5,6 +5,7 @@ import { Send, ArrowLeft, Users, Info, Loader2, Check, CheckCheck, Paperclip, Sm
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { format, isToday, isYesterday } from 'date-fns';
+import ImageLightbox from '@/components/ui/image-lightbox';
 
 interface GroupMessage {
   _id: string;
@@ -70,9 +71,16 @@ export default function GroupChatView({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const openLightbox = (url: string) => {
+    setLightboxImage(url);
+    setLightboxOpen(true);
+  };
 
   useEffect(() => {
     if (group._id) {
@@ -212,8 +220,8 @@ export default function GroupChatView({
       };
 
       const type = file.type.startsWith('image/') ? 'image' :
-                   file.type.startsWith('video/') ? 'video' :
-                   file.type.startsWith('audio/') ? 'audio' : 'file';
+        file.type.startsWith('video/') ? 'video' :
+          file.type.startsWith('audio/') ? 'audio' : 'file';
 
       const response = await fetch(`/api/messages/groups/${group._id}/messages`, {
         method: 'POST',
@@ -323,11 +331,10 @@ export default function GroupChatView({
                   </div>
                 )}
                 <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-1`}>
-                  <div className={`max-w-[75%] rounded-lg px-3 py-2 shadow-sm ${
-                    isMe
+                  <div className={`max-w-[75%] rounded-lg px-3 py-2 shadow-sm ${isMe
                       ? 'bg-[#dcf8c6] text-gray-900'
                       : 'bg-white text-gray-900'
-                  }`}>
+                    }`}>
                     {showName && (
                       <p className="text-xs font-semibold text-blue-600 mb-1">
                         {msg.sender.firstName} {msg.sender.lastName}
@@ -340,7 +347,12 @@ export default function GroupChatView({
                         {msg.attachments.map((att, attIdx) => (
                           <div key={attIdx}>
                             {att.mimeType?.startsWith('image/') ? (
-                              <img src={att.url} alt={att.filename} className="rounded max-w-full max-h-60 object-cover" />
+                              <img
+                                src={att.url}
+                                alt={att.filename}
+                                className="rounded max-w-full max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => openLightbox(att.url)}
+                              />
                             ) : (
                               <a
                                 href={att.url}
@@ -357,7 +369,7 @@ export default function GroupChatView({
                     )}
 
                     {msg.type !== 'image' && (
-                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap wrap-break-word">{msg.content}</p>
                     )}
 
                     <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -413,6 +425,14 @@ export default function GroupChatView({
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </Button>
       </div>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        src={lightboxImage}
+        alt="Attachment"
+      />
     </div>
   );
 }

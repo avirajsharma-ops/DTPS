@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Copy, Plus, RefreshCw, MoreVertical, Trash2, ExternalLink, Eye, FileText, Bell, Loader2, Mail, Printer, Package, ChevronDown, Wallet, Upload, Calendar } from "lucide-react";
 import { useRealtime } from "@/hooks/useRealtime";
+import ImageLightbox from "@/components/ui/image-lightbox";
 
 // Service Plan interfaces
 interface PricingTier {
@@ -71,7 +72,7 @@ export default function PaymentsSection({
 }) {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === 'admin';
-  
+
   const [paymentsState, setPaymentsState] = useState<PaymentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -96,6 +97,15 @@ export default function PaymentsSection({
 
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+
+  // Receipt image lightbox state
+  const [receiptLightboxOpen, setReceiptLightboxOpen] = useState(false);
+  const [receiptLightboxImage, setReceiptLightboxImage] = useState('');
+
+  const openReceiptLightbox = (url: string) => {
+    setReceiptLightboxImage(url);
+    setReceiptLightboxOpen(true);
+  };
 
   // Service Plans state
   const [servicePlans, setServicePlans] = useState<ServicePlan[]>([]);
@@ -215,12 +225,12 @@ export default function PaymentsSection({
   // Fetch payment links from API
   const fetchPaymentLinks = useCallback(async () => {
     if (!client?._id) return;
-    
+
     setLoading(true);
     try {
       const response = await fetch(`/api/payment-links?clientId=${client._id}`, { cache: 'no-store' });
       const data = await response.json();
-      
+
       if (data.success) {
         setPaymentsState(data.paymentLinks || []);
       } else {
@@ -386,7 +396,7 @@ export default function PaymentsSection({
 
   const generateInvoice = async (payment: PaymentItem) => {
     setOpenRowMenuId(null);
-    
+
     // Open invoice in new tab for viewing/printing
     window.open(`/api/payment-links/invoice?id=${payment._id}`, '_blank');
   };
@@ -533,13 +543,13 @@ export default function PaymentsSection({
   // Open expected dates modal from payment three-dots menu
   const openExpectedDatesModalForPayment = async (payment: PaymentItem) => {
     setOpenRowMenuId(null); // Close the dropdown
-    
+
     // Find the corresponding ClientPurchase for this payment
-    const purchase = clientPurchases.find(p => 
-      p.paymentLink?._id === payment._id || 
+    const purchase = clientPurchases.find(p =>
+      p.paymentLink?._id === payment._id ||
       p.paymentLink === payment._id
     );
-    
+
     if (purchase) {
       openExpectedDatesModal(purchase);
     } else {
@@ -549,8 +559,8 @@ export default function PaymentsSection({
         const data = await response.json();
         if (data.success && data.purchases?.length > 0) {
           // Find purchase matching this payment
-          const matchingPurchase = data.purchases.find((p: any) => 
-            p.planName === payment.planName && 
+          const matchingPurchase = data.purchases.find((p: any) =>
+            p.planName === payment.planName &&
             p.durationDays === payment.durationDays
           );
           if (matchingPurchase) {
@@ -903,10 +913,10 @@ export default function PaymentsSection({
                           if (p.status !== 'paid') {
                             return "—";
                           }
-                          
+
                           // Find the purchase for this payment - ONLY match by paymentLink ID to avoid confusion
-                          const purchase = clientPurchases.find(pur => 
-                            pur.paymentLink?._id === p._id || 
+                          const purchase = clientPurchases.find(pur =>
+                            pur.paymentLink?._id === p._id ||
                             pur.paymentLink === p._id
                           );
                           if (purchase?.expectedStartDate) {
@@ -928,7 +938,7 @@ export default function PaymentsSection({
                     {visibleColumns.link && (
                       <td className="p-3 whitespace-nowrap">
                         {getPaymentLink(p) ? (
-                          <button 
+                          <button
                             className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
                             onClick={() => window.open(getPaymentLink(p), "_blank")}
                           >
@@ -945,15 +955,15 @@ export default function PaymentsSection({
                           const dropdownHeight = 280;
                           const spaceBelow = window.innerHeight - rect.bottom;
                           const spaceAbove = rect.top;
-                          
+
                           let top = rect.bottom + 4;
                           if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
                             top = rect.top - dropdownHeight - 4;
                           }
-                          
+
                           let left = rect.left - 150;
                           if (left < 10) left = 10;
-                          
+
                           setDropdownPosition({ top, left });
                           setOpenRowMenuId(openRowMenuId === p._id ? null : p._id);
                         }}
@@ -973,11 +983,11 @@ export default function PaymentsSection({
       {/* Action Dropdown - Fixed position portal */}
       {openRowMenuId && dropdownPosition && (
         <>
-          <div 
-            className="fixed inset-0 z-9998" 
+          <div
+            className="fixed inset-0 z-9998"
             onClick={() => setOpenRowMenuId(null)}
           />
-          <div 
+          <div
             className="fixed w-52 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-9999"
             style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
           >
@@ -985,10 +995,10 @@ export default function PaymentsSection({
               const payment = paymentsState.find(p => p._id === openRowMenuId);
               const isPaid = payment?.status === 'paid';
               const isPending = payment?.status === 'pending' || payment?.status === 'created';
-              
+
               return (
                 <>
-                  
+
                   {/* Only show payment link options if NOT paid */}
                   {!isPaid && (
                     <>
@@ -1006,11 +1016,11 @@ export default function PaymentsSection({
                         <Copy className="h-4 w-4" />
                         Copy Link
                       </button>
-                      
+
                       <div className="border-t border-gray-100 my-1"></div>
                     </>
                   )}
-                  
+
                   <button
                     onClick={() => generateInvoice(payment!)}
                     className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -1018,7 +1028,7 @@ export default function PaymentsSection({
                     <Printer className="h-4 w-4" />
                     View/Print Invoice
                   </button>
-                  
+
                   {isPaid && (
                     <button
                       onClick={() => sendInvoiceEmail(payment!)}
@@ -1028,16 +1038,16 @@ export default function PaymentsSection({
                       Email Invoice
                     </button>
                   )}
-                  
+
                   {/* Set Expected Dates - only for paid payments */}
                   {isPaid && (() => {
                     // Find the purchase for this payment - ONLY match by paymentLink ID
-                    const purchase = clientPurchases.find(p => 
-                      p.paymentLink?._id === payment?._id || 
+                    const purchase = clientPurchases.find(p =>
+                      p.paymentLink?._id === payment?._id ||
                       p.paymentLink === payment?._id
                     );
                     const hasExpectedDates = purchase?.expectedStartDate && purchase?.expectedEndDate;
-                    
+
                     // If dates are already set, only admin can edit
                     if (hasExpectedDates && !isAdmin) {
                       return (
@@ -1047,7 +1057,7 @@ export default function PaymentsSection({
                         </div>
                       );
                     }
-                    
+
                     return (
                       <button
                         onClick={() => openExpectedDatesModalForPayment(payment!)}
@@ -1058,7 +1068,7 @@ export default function PaymentsSection({
                       </button>
                     );
                   })()}
-                  
+
                   {isPending && (
                     <button
                       onClick={() => sendReminder(payment!)}
@@ -1073,7 +1083,7 @@ export default function PaymentsSection({
                       Send Reminder Email
                     </button>
                   )}
-                  
+
                   {/* Sync Status - for pending/created payments */}
                   {isPending && (
                     <button
@@ -1089,9 +1099,9 @@ export default function PaymentsSection({
                       Sync from Razorpay
                     </button>
                   )}
-                  
+
                   <div className="border-t border-gray-100 my-1"></div>
-                  
+
                   <button
                     onClick={() => refreshPayment()}
                     className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -1099,7 +1109,7 @@ export default function PaymentsSection({
                     <RefreshCw className="h-4 w-4" />
                     Refresh Status
                   </button>
-                  
+
                   {!isPaid && (
                     <>
                       <div className="border-t border-gray-100 my-1"></div>
@@ -1131,7 +1141,7 @@ export default function PaymentsSection({
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
           <div className="bg-white p-6 rounded-lg w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4">Generate Payment Link</h2>
-            
+
             {/* Client info display */}
             {client && (
               <div className="mb-4 p-3 bg-gray-50 rounded-lg">
@@ -1210,11 +1220,11 @@ export default function PaymentsSection({
                 {/* Link Expire Date */}
                 <div>
                   <label className="text-xs font-medium text-gray-700">Link Expire Date</label>
-                  <input 
-                    type="date" 
-                    value={expireDate} 
-                    onChange={(e) => setExpireDate(e.target.value)} 
-                    className="w-full border p-2 rounded-lg mt-1" 
+                  <input
+                    type="date"
+                    value={expireDate}
+                    onChange={(e) => setExpireDate(e.target.value)}
+                    className="w-full border p-2 rounded-lg mt-1"
                     min={(() => {
                       const tomorrow = new Date();
                       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1228,12 +1238,12 @@ export default function PaymentsSection({
                   <label className="text-xs font-medium text-gray-700">Base Amount *</label>
                   <div className="relative mt-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
-                    <input 
-                      type="number" 
-                      value={amount} 
-                      onChange={(e) => setAmount(Number(e.target.value))} 
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(Number(e.target.value))}
                       placeholder="Auto-filled from plan"
-                      className="w-full border p-2 pl-8 rounded-lg bg-gray-50" 
+                      className="w-full border p-2 pl-8 rounded-lg bg-gray-50"
                       readOnly={!!selectedPricingTier}
                     />
                   </div>
@@ -1245,12 +1255,12 @@ export default function PaymentsSection({
                 {/* Tax */}
                 <div>
                   <label className="text-xs font-medium text-gray-700">Tax %</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     min="0"
-                    value={tax} 
-                    onChange={(e) => setTax(Number(e.target.value))} 
-                    className="w-full border p-2 rounded-lg mt-1" 
+                    value={tax}
+                    onChange={(e) => setTax(Number(e.target.value))}
+                    className="w-full border p-2 rounded-lg mt-1"
                     placeholder="Enter tax percentage"
                   />
                 </div>
@@ -1260,16 +1270,16 @@ export default function PaymentsSection({
                   <label className="text-xs font-medium text-gray-700">
                     Discount % <span className="text-gray-400">(Max {maxDiscount}%)</span>
                   </label>
-                  <input 
+                  <input
                     type="number"
                     min="0"
                     max={maxDiscount}
-                    value={discount} 
+                    value={discount}
                     onChange={(e) => {
                       const val = Number(e.target.value);
                       setDiscount(Math.min(val, maxDiscount));
-                    }} 
-                    className="w-full border p-2 rounded-lg mt-1" 
+                    }}
+                    className="w-full border p-2 rounded-lg mt-1"
                     placeholder={`Max ${maxDiscount}%`}
                   />
                 </div>
@@ -1285,21 +1295,21 @@ export default function PaymentsSection({
                 {/* Notes */}
                 <div className="md:col-span-2">
                   <label className="text-xs font-medium text-gray-700">Notes</label>
-                  <textarea 
-                    value={notes} 
-                    onChange={(e) => setNotes(e.target.value)} 
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
                     placeholder="Any additional notes..."
-                    className="w-full border p-2 rounded-lg mt-1" 
-                    rows={2} 
+                    className="w-full border p-2 rounded-lg mt-1"
+                    rows={2}
                   />
                 </div>
 
                 {/* Show to Client */}
                 <div className="md:col-span-2">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={showToClient} 
+                    <input
+                      type="checkbox"
+                      checked={showToClient}
                       onChange={(e) => setShowToClient(e.target.checked)}
                       className="rounded border-gray-300"
                     />
@@ -1313,8 +1323,8 @@ export default function PaymentsSection({
               <Button variant="ghost" onClick={resetModal} disabled={creating}>
                 Cancel
               </Button>
-              <Button 
-                onClick={generateLink} 
+              <Button
+                onClick={generateLink}
                 disabled={creating || !selectedServicePlan || !selectedPricingTier}
               >
                 {creating ? (
@@ -1339,7 +1349,7 @@ export default function PaymentsSection({
               <Wallet className="h-5 w-5 text-purple-600" />
               Other Platform Payment
             </h2>
-            
+
             {/* Plan Details - Locked */}
             <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-100">
               <p className="text-sm font-medium text-purple-800 mb-2">Plan Details (Locked)</p>
@@ -1425,7 +1435,7 @@ export default function PaymentsSection({
                       <div className="text-center">
                         <p className="text-sm font-medium text-green-600">✓ File selected</p>
                         <p className="text-xs text-gray-500 mt-1">{otherPaymentReceipt.name}</p>
-                        <button 
+                        <button
                           type="button"
                           onClick={(e) => { e.preventDefault(); setOtherPaymentReceipt(null); }}
                           className="text-xs text-red-500 hover:underline mt-2"
@@ -1474,7 +1484,7 @@ export default function PaymentsSection({
               <Button variant="ghost" onClick={resetOtherPaymentModal} disabled={submittingOtherPayment}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={submitOtherPlatformPayment}
                 disabled={submittingOtherPayment}
                 className="bg-purple-600 hover:bg-purple-700"
@@ -1526,8 +1536,8 @@ export default function PaymentsSection({
                         )}
                       </td>
                       <td className="p-3">
-                        {payment.platform === 'other' 
-                          ? payment.customPlatform 
+                        {payment.platform === 'other'
+                          ? payment.customPlatform
                           : platformOptions.find(p => p.value === payment.platform)?.label || payment.platform}
                       </td>
                       <td className="p-3 font-medium">₹{payment.amount?.toLocaleString()}</td>
@@ -1538,11 +1548,10 @@ export default function PaymentsSection({
                         {new Date(payment.paymentDate || payment.createdAt).toLocaleDateString()}
                       </td>
                       <td className="p-3">
-                        <span className={`text-xs px-2 py-1 rounded-full capitalize ${
-                          payment.status === 'approved' ? 'bg-green-100 text-green-800' :
-                          payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
+                        <span className={`text-xs px-2 py-1 rounded-full capitalize ${payment.status === 'approved' ? 'bg-green-100 text-green-800' :
+                            payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                          }`}>
                           {payment.status}
                         </span>
                         {payment.status === 'rejected' && payment.reviewNotes && (
@@ -1550,9 +1559,9 @@ export default function PaymentsSection({
                         )}
                       </td>
                       <td className="p-3">
-                        {payment.receiptImage ? (
+                        {payment.receiptImageUrl ? (
                           <button
-                            onClick={() => window.open(payment.receiptImage, '_blank')}
+                            onClick={() => openReceiptLightbox(payment.receiptImageUrl)}
                             className="text-xs text-blue-600 hover:underline flex items-center gap-1"
                           >
                             <Eye className="h-3 w-3" />
@@ -1579,12 +1588,12 @@ export default function PaymentsSection({
               <Calendar className="h-5 w-5 text-blue-600" />
               Set Expected Dates
             </h2>
-            
+
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <p className="font-medium">{selectedPurchaseForDates.planName}</p>
               <p className="text-sm text-gray-500">Total Duration: {selectedPurchaseForDates.durationLabel || `${selectedPurchaseForDates.durationDays} Days`}</p>
               <p className="text-sm text-gray-500">Remaining Days: {selectedPurchaseForDates.remainingDays}</p>
-              
+
               {/* Show plan phases if divided */}
               {selectedPurchaseForDates.daysUsed > 0 && (
                 <div className="mt-2 pt-2 border-t border-gray-200">
@@ -1601,7 +1610,7 @@ export default function PaymentsSection({
                   </div>
                 </div>
               )}
-              
+
 
 
               {/* Show existing dates if set */}
@@ -1700,6 +1709,14 @@ export default function PaymentsSection({
           </div>
         </div>
       )}
+
+      {/* Receipt Image Lightbox */}
+      <ImageLightbox
+        isOpen={receiptLightboxOpen}
+        onClose={() => setReceiptLightboxOpen(false)}
+        src={receiptLightboxImage}
+        alt="Payment receipt"
+      />
     </Card>
   );
 }

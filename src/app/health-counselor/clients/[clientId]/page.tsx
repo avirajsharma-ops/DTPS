@@ -58,6 +58,7 @@ import BookingsSection from '@/components/clientDashboard/BookingsSection';
 import PaymentsSection from '@/components/clientDashboard/PaymentsSection';
 import DocumentsSection from '@/components/clientDashboard/DocumentsSection';
 import HistorySection from '@/components/clientDashboard/HistorySection';
+import ImageLightbox from '@/components/ui/image-lightbox';
 import TasksSection from '@/components/clientDashboard/TasksSection';
 
 interface ClientData {
@@ -188,7 +189,16 @@ export default function HealthCounselorClientDetailPage() {
   const [renewalStartDate, setRenewalStartDate] = useState('');
   const [renewalEndDate, setRenewalEndDate] = useState('');
   const [uploadingMedia, setUploadingMedia] = useState(false);
-  
+
+  // Lightbox state for note attachments
+  const [noteLightboxOpen, setNoteLightboxOpen] = useState(false);
+  const [noteLightboxImage, setNoteLightboxImage] = useState('');
+
+  const openNoteLightbox = (url: string) => {
+    setNoteLightboxImage(url);
+    setNoteLightboxOpen(true);
+  };
+
   // Audio recording state
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -291,15 +301,15 @@ export default function HealthCounselorClientDetailPage() {
       if (mealPlanRes.ok) {
         const data = await mealPlanRes.json();
         const mealPlans = data.mealPlans || [];
-        
+
         const activePlans = mealPlans
           .filter((p: any) => p.status === 'active')
           .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-        
+
         if (activePlans.length > 0) {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          
+
           const currentlyRunningPlan = activePlans.find((plan: any) => {
             const planStart = new Date(plan.startDate);
             const planEnd = new Date(plan.endDate);
@@ -307,12 +317,12 @@ export default function HealthCounselorClientDetailPage() {
             planEnd.setHours(23, 59, 59, 999);
             return today >= planStart && today <= planEnd;
           });
-          
+
           if (currentlyRunningPlan) {
             const planDuration = Math.ceil(
               (new Date(currentlyRunningPlan.endDate).getTime() - new Date(currentlyRunningPlan.startDate).getTime()) / (1000 * 60 * 60 * 24)
             ) + 1;
-            
+
             setActivePlan({
               name: currentlyRunningPlan.name || 'Wellness Plan',
               startDate: currentlyRunningPlan.startDate,
@@ -361,12 +371,12 @@ export default function HealthCounselorClientDetailPage() {
 
     try {
       setSavingNote(true);
-      
+
       // Prepare note data - include renewal dates in content if Renewal type
       const noteToSave = {
         ...newNote,
         date: newNote.topicType === 'Renewal' ? renewalStartDate : newNote.date,
-        content: newNote.topicType === 'Renewal' 
+        content: newNote.topicType === 'Renewal'
           ? `${newNote.content}\n\n[Renewal Period: ${format(new Date(renewalStartDate), 'MMM d, yyyy')} - ${format(new Date(renewalEndDate), 'MMM d, yyyy')}]`
           : newNote.content
       };
@@ -497,7 +507,7 @@ export default function HealthCounselorClientDetailPage() {
       });
 
       if (response.ok) {
-        setClientNotes(prev => prev.map(n => 
+        setClientNotes(prev => prev.map(n =>
           n._id === noteId ? { ...n, showToClient } : n
         ));
         if (selectedNote && selectedNote._id === noteId) {
@@ -550,7 +560,7 @@ export default function HealthCounselorClientDetailPage() {
 
       if (response.ok) {
         toast.success('Note updated successfully');
-        setClientNotes(prev => prev.map(n => 
+        setClientNotes(prev => prev.map(n =>
           n._id === selectedNote._id ? { ...n, ...editNote } : n
         ));
         setSelectedNote({ ...selectedNote, ...editNote });
@@ -901,11 +911,10 @@ export default function HealthCounselorClientDetailPage() {
 
               <button
                 onClick={() => setActiveSection('forms')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-                  activeSection === 'forms'
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'forms'
                     ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <FileText className="h-4 w-4" />
                 Forms
@@ -913,11 +922,10 @@ export default function HealthCounselorClientDetailPage() {
 
               <button
                 onClick={() => setActiveSection('journal')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-                  activeSection === 'journal'
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'journal'
                     ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <BookOpen className="h-4 w-4" />
                 Journal
@@ -925,11 +933,10 @@ export default function HealthCounselorClientDetailPage() {
 
               <button
                 onClick={() => setActiveSection('planning')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-                  activeSection === 'planning'
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'planning'
                     ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <Calendar className="h-4 w-4" />
                 Planning (View Only)
@@ -937,11 +944,10 @@ export default function HealthCounselorClientDetailPage() {
 
               <button
                 onClick={() => setActiveSection('payments')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-                  activeSection === 'payments'
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'payments'
                     ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <CreditCard className="h-4 w-4" />
                 Payments
@@ -949,11 +955,10 @@ export default function HealthCounselorClientDetailPage() {
 
               <button
                 onClick={() => setActiveSection('bookings')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-                  activeSection === 'bookings'
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'bookings'
                     ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <Calendar className="h-4 w-4" />
                 Bookings
@@ -961,11 +966,10 @@ export default function HealthCounselorClientDetailPage() {
 
               <button
                 onClick={() => setActiveSection('documents')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-                  activeSection === 'documents'
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'documents'
                     ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <FileText className="h-4 w-4" />
                 Documents
@@ -973,11 +977,10 @@ export default function HealthCounselorClientDetailPage() {
 
               <button
                 onClick={() => setActiveSection('tasks')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-                  activeSection === 'tasks'
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'tasks'
                     ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <CheckSquare className="h-4 w-4" />
                 Tasks
@@ -985,11 +988,10 @@ export default function HealthCounselorClientDetailPage() {
 
               <button
                 onClick={() => setActiveSection('history')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-                  activeSection === 'history'
+                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'history'
                     ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <History className="h-4 w-4" />
                 History
@@ -1033,9 +1035,9 @@ export default function HealthCounselorClientDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="text-xs h-8 flex items-center gap-1.5"
                     onClick={() => setIsNotesOpen(true)}
                   >
@@ -1136,8 +1138,8 @@ export default function HealthCounselorClientDetailPage() {
             )}
 
             {activeSection === 'bookings' && (
-              <BookingsSection 
-                clientId={client._id} 
+              <BookingsSection
+                clientId={client._id}
                 clientName={`${client.firstName} ${client.lastName}`}
                 userRole="health_counselor"
                 dietitianId={client.assignedDietitian?._id}
@@ -1165,22 +1167,20 @@ export default function HealthCounselorClientDetailPage() {
       </div>
 
       {/* Notes Slide-out Panel */}
-      <div 
-        className={`fixed inset-0 z-40 transition-opacity duration-300 ${
-          isNotesOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+      <div
+        className={`fixed inset-0 z-40 transition-opacity duration-300 ${isNotesOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
       >
         {/* Backdrop */}
-        <div 
+        <div
           className="absolute inset-0 bg-black/30"
           onClick={() => setIsNotesOpen(false)}
         />
-        
+
         {/* Panel */}
-        <div 
-          className={`fixed top-1/2 right-0 -translate-y-1/2 h-[85vh] w-full max-w-sm bg-white shadow-2xl z-50 rounded-l-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${
-            isNotesOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
+        <div
+          className={`fixed top-1/2 right-0 -translate-y-1/2 h-[85vh] w-full max-w-sm bg-white shadow-2xl z-50 rounded-l-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${isNotesOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b bg-linear-to-r from-blue-50 to-white">
@@ -1193,9 +1193,9 @@ export default function HealthCounselorClientDetailPage() {
                 <p className="text-xs text-gray-500">{clientNotes.length} notes</p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
               onClick={() => setIsNotesOpen(false)}
             >
@@ -1222,115 +1222,115 @@ export default function HealthCounselorClientDetailPage() {
                 {/* Note Detail Card */}
                 <Card className="border-gray-200">
                   <CardContent className="p-4">
-                      <div className="space-y-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <Badge variant="secondary" className="text-[10px] px-2 py-0.5 mb-1">
-                              {selectedNote.topicType || 'General'}
-                            </Badge>
-                            <h3 className="text-lg font-semibold text-gray-900">{selectedNote.topicType || 'General'}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <p className="text-xs text-gray-500">
-                                {selectedNote.date ? format(new Date(selectedNote.date), 'MMMM d, yyyy') : 'No date'}
-                              </p>
-                              {selectedNote.showToClient ? (
-                                <Badge className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 border-green-200">
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  Visible to client
-                                </Badge>
-                              ) : (
-                                <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
-                                  <EyeOff className="h-3 w-3 mr-1" />
-                                  Hidden from client
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-gray-50 rounded-lg p-4 mt-4">
-                          <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Note Content</Label>
-                          <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap leading-relaxed">
-                            {selectedNote.content}
-                          </p>
-                        </div>
-
-                        {/* Attachments Display */}
-                        {selectedNote.attachments && selectedNote.attachments.length > 0 && (
-                          <div className="mt-4">
-                            <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Attachments</Label>
-                            <div className="flex flex-wrap gap-3 mt-2">
-                              {selectedNote.attachments.map((att, idx) => (
-                                <div key={idx} className="relative">
-                                  {att.type === 'image' && (
-                                    <a href={att.url} target="_blank" rel="noopener noreferrer">
-                                      <img src={att.url} alt={att.filename || 'Image'} className="h-24 w-24 object-cover rounded-lg border shadow-sm hover:shadow-md transition-shadow" />
-                                    </a>
-                                  )}
-                                  {att.type === 'video' && (
-                                    <video controls className="h-24 w-40 rounded-lg border shadow-sm">
-                                      <source src={att.url} type={att.mimeType || 'video/mp4'} />
-                                    </video>
-                                  )}
-                                  {att.type === 'audio' && (
-                                    <audio controls className="h-10 w-48">
-                                      <source src={att.url} type={att.mimeType || 'audio/mpeg'} />
-                                    </audio>
-                                  )}
-                                  <p className="text-[9px] text-gray-400 mt-0.5 truncate max-w-25">{att.filename}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {selectedNote.createdAt && (
-                          <p className="text-[10px] text-gray-400 pt-2">
-                            Created: {format(new Date(selectedNote.createdAt), 'MMM d, yyyy h:mm a')}
-                            {selectedNote.createdBy && (
-                              <span className="ml-1">
-                                by {selectedNote.createdBy.firstName} {selectedNote.createdBy.lastName}
-                              </span>
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <Badge variant="secondary" className="text-[10px] px-2 py-0.5 mb-1">
+                            {selectedNote.topicType || 'General'}
+                          </Badge>
+                          <h3 className="text-lg font-semibold text-gray-900">{selectedNote.topicType || 'General'}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-xs text-gray-500">
+                              {selectedNote.date ? format(new Date(selectedNote.date), 'MMMM d, yyyy') : 'No date'}
+                            </p>
+                            {selectedNote.showToClient ? (
+                              <Badge className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 border-green-200">
+                                <Eye className="h-3 w-3 mr-1" />
+                                Visible to client
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                                <EyeOff className="h-3 w-3 mr-1" />
+                                Hidden from client
+                              </Badge>
                             )}
-                          </p>
-                        )}
+                          </div>
+                        </div>
+                      </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 pt-3 border-t">
+                      <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                        <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Note Content</Label>
+                        <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap leading-relaxed">
+                          {selectedNote.content}
+                        </p>
+                      </div>
+
+                      {/* Attachments Display */}
+                      {selectedNote.attachments && selectedNote.attachments.length > 0 && (
+                        <div className="mt-4">
+                          <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Attachments</Label>
+                          <div className="flex flex-wrap gap-3 mt-2">
+                            {selectedNote.attachments.map((att, idx) => (
+                              <div key={idx} className="relative">
+                                {att.type === 'image' && (
+                                  <div className="cursor-pointer" onClick={() => openNoteLightbox(att.url)}>
+                                    <img src={att.url} alt={att.filename || 'Image'} className="h-24 w-24 object-cover rounded-lg border shadow-sm hover:shadow-md transition-shadow" />
+                                  </div>
+                                )}
+                                {att.type === 'video' && (
+                                  <video controls className="h-24 w-40 rounded-lg border shadow-sm">
+                                    <source src={att.url} type={att.mimeType || 'video/mp4'} />
+                                  </video>
+                                )}
+                                {att.type === 'audio' && (
+                                  <audio controls className="h-10 w-48">
+                                    <source src={att.url} type={att.mimeType || 'audio/mpeg'} />
+                                  </audio>
+                                )}
+                                <p className="text-[9px] text-gray-400 mt-0.5 truncate max-w-25">{att.filename}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedNote.createdAt && (
+                        <p className="text-[10px] text-gray-400 pt-2">
+                          Created: {format(new Date(selectedNote.createdAt), 'MMM d, yyyy h:mm a')}
+                          {selectedNote.createdBy && (
+                            <span className="ml-1">
+                              by {selectedNote.createdBy.firstName} {selectedNote.createdBy.lastName}
+                            </span>
+                          )}
+                        </p>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 pt-3 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleToggleNoteVisibility(selectedNote._id!, !selectedNote.showToClient)}
+                        >
+                          {selectedNote.showToClient ? (
+                            <>
+                              <EyeOff className="h-3.5 w-3.5 mr-1.5" />
+                              Hide from Client
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="h-3.5 w-3.5 mr-1.5" />
+                              Show to Client
+                            </>
+                          )}
+                        </Button>
+                        {/* Only show delete button if current user created the note */}
+                        {selectedNote.createdBy?._id === (session?.user as any)?.id && (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1"
-                            onClick={() => handleToggleNoteVisibility(selectedNote._id!, !selectedNote.showToClient)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                            onClick={() => {
+                              handleDeleteNote(selectedNote._id!);
+                              handleCloseNoteDetail();
+                            }}
                           >
-                            {selectedNote.showToClient ? (
-                              <>
-                                <EyeOff className="h-3.5 w-3.5 mr-1.5" />
-                                Hide from Client
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-3.5 w-3.5 mr-1.5" />
-                                Show to Client
-                              </>
-                            )}
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
-                          {/* Only show delete button if current user created the note */}
-                          {selectedNote.createdBy?._id === (session?.user as any)?.id && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                              onClick={() => {
-                                handleDeleteNote(selectedNote._id!);
-                                handleCloseNoteDetail();
-                              }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </div>
+                        )}
                       </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -1339,7 +1339,7 @@ export default function HealthCounselorClientDetailPage() {
               <>
                 {/* Add Note Button */}
                 {!isAddingNote && (
-                  <Button 
+                  <Button
                     className="w-full mb-3 bg-blue-600 hover:bg-blue-700 h-9 text-sm"
                     onClick={() => setIsAddingNote(true)}
                   >
@@ -1375,7 +1375,7 @@ export default function HealthCounselorClientDetailPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       {/* Show date range for Renewal, single date for others */}
                       {newNote.topicType === 'Renewal' ? (
                         <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -1417,306 +1417,314 @@ export default function HealthCounselorClientDetailPage() {
                           />
                         </div>
                       )}
-                  
-                  <div>
-                    <Label className="text-xs font-medium">Notes *</Label>
-                    <Textarea
-                      placeholder="Enter your notes here..."
-                      value={newNote.content}
-                      onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
-                      className="mt-1 min-h-20 text-sm resize-none"
-                    />
-                  </div>
 
-                  {/* Audio Recording Section */}
-                  <div>
-                    <Label className="text-xs font-medium">Voice Recording</Label>
-                    <div className="mt-1 flex items-center gap-2">
-                      {!isRecording ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-10 px-4 flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
-                          onClick={async () => {
-                            try {
-                              const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                              const recorder = new MediaRecorder(stream);
-                              const chunks: Blob[] = [];
-                              
-                              recorder.ondataavailable = (e) => {
-                                if (e.data.size > 0) chunks.push(e.data);
-                              };
-                              
-                              recorder.onstop = async () => {
-                                try {
-                                  if (chunks.length === 0) {
-                                    console.error('No audio chunks recorded');
-                                    toast.error('No audio recorded. Please try again.');
-                                    stream.getTracks().forEach(track => track.stop());
-                                    setRecordingTime(0);
-                                    setIsRecording(false);
-                                    return;
-                                  }
-                                  
-                                  const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-                                  
-                                  if (audioBlob.size === 0) {
-                                    console.error('Audio blob is empty');
-                                    toast.error('Audio file is empty. Please try again.');
-                                    stream.getTracks().forEach(track => track.stop());
-                                    setRecordingTime(0);
-                                    setIsRecording(false);
-                                    return;
-                                  }
-                                  
-                                  const file = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
-                                  
-                                  stream.getTracks().forEach(track => track.stop());
-                                  
-                                  await handleMediaUpload(file);
-                                  
-                                  setRecordingTime(0);
-                                  setIsRecording(false);
-                                } catch (error) {
-                                  console.error('Error in recorder.onstop:', error);
-                                  toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                                  stream.getTracks().forEach(track => track.stop());
-                                  setRecordingTime(0);
-                                  setIsRecording(false);
-                                }
-                              };
-                              
-                              setMediaRecorder(recorder);
-                              setAudioChunks([]);
-                              recorder.start();
-                              setIsRecording(true);
-                              
-                              // Start timer
-                              const timer = setInterval(() => {
-                                setRecordingTime(prev => prev + 1);
-                              }, 1000);
-                              recordingTimerRef.current = timer;
-                            } catch (err) {
-                              toast.error('Microphone access denied');
-                            }
-                          }}
-                        >
-                          <Mic className="h-4 w-4" />
-                          Record Audio
-                        </Button>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-lg border border-red-200">
-                            <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse" />
-                            <span className="text-sm font-mono text-red-600">
-                              {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
-                            </span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-10 px-4 flex items-center gap-2 text-gray-600"
-                            onClick={() => {
-                              if (mediaRecorder) {
-                                mediaRecorder.stop();
-                                setIsRecording(false);
-                                if (recordingTimerRef.current) {
-                                  clearInterval(recordingTimerRef.current);
-                                  recordingTimerRef.current = null;
-                                }
-                              }
-                            }}
-                          >
-                            <Square className="h-4 w-4" />
-                            Stop
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Media Upload Section */}
-                  <div>
-                    <Label className="text-xs font-medium">Attachments (Image/Video/Audio)</Label>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {(newNote.attachments || []).map((att, idx) => (
-                        <div key={idx} className="relative group">
-                          {att.type === 'image' && (
-                            <img src={att.url} alt={att.filename} className="h-16 w-16 object-cover rounded border" />
-                          )}
-                          {att.type === 'video' && (
-                            <div className="h-16 w-16 bg-gray-100 rounded border flex items-center justify-center">
-                              <span className="text-[10px] text-gray-500">Video</span>
-                            </div>
-                          )}
-                          {att.type === 'audio' && (
-                            <div className="h-16 w-16 bg-gray-100 rounded border flex items-center justify-center">
-                              <span className="text-[10px] text-gray-500">Audio</span>
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveAttachment(idx)}
-                            className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                      <label className="h-16 w-16 border-2 border-dashed border-gray-300 rounded flex items-center justify-center cursor-pointer hover:border-blue-400 transition-colors">
-                        <input
-                          type="file"
-                          accept="image/*,video/*,audio/*"
-                          capture="environment"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleMediaUpload(file);
-                            e.target.value = '';
-                          }}
-                          disabled={uploadingMedia}
+                      <div>
+                        <Label className="text-xs font-medium">Notes *</Label>
+                        <Textarea
+                          placeholder="Enter your notes here..."
+                          value={newNote.content}
+                          onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
+                          className="mt-1 min-h-20 text-sm resize-none"
                         />
-                        {uploadingMedia ? (
-                          <LoadingSpinner className="h-4 w-4" />
-                        ) : (
-                          <Plus className="h-5 w-5 text-gray-400" />
-                        )}
-                      </label>
-                    </div>
-                    <p className="text-[10px] text-gray-400 mt-1">Max 50MB per file</p>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="showToClient"
-                      checked={newNote.showToClient}
-                      onChange={(e) => setNewNote(prev => ({ ...prev, showToClient: e.target.checked }))}
-                      className="h-3.5 w-3.5 text-blue-600 rounded border-gray-300"
-                    />
-                    <Label htmlFor="showToClient" className="text-xs cursor-pointer">
-                      Show to client
-                    </Label>
-                  </div>
-                  
-                  <div className="flex gap-2 pt-1">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 h-8 text-xs"
-                      onClick={() => {
-                        setIsAddingNote(false);
-                        setNewNote({
-                          topicType: 'General',
-                          date: format(new Date(), 'yyyy-MM-dd'),
-                          content: '',
-                          showToClient: false,
-                          attachments: []
-                        });
-                        setRenewalStartDate('');
-                        setRenewalEndDate('');
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      className="flex-1 h-8 text-xs bg-blue-600 hover:bg-blue-700"
-                      onClick={handleSaveNote}
-                      disabled={savingNote || uploadingMedia}
-                    >
-                      {savingNote ? 'Saving...' : 'Save Note'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                      </div>
 
-            {/* Notes List */}
-            <div className="space-y-2">
-              {clientNotes.length === 0 && !isAddingNote ? (
-                <div className="text-center py-8">
-                  <StickyNote className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">No notes yet</p>
-                  <p className="text-gray-400 text-xs mt-1">Add your first note</p>
-                </div>
-              ) : (
-                clientNotes.map((note, index) => (
-                  <Card 
-                    key={note._id} 
-                    className="border-gray-200 hover:border-blue-300 transition-all duration-200 hover:shadow-md cursor-pointer animate-in fade-in slide-in-from-right-2 group"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    onClick={() => handleOpenNoteDetail(note)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                            <Badge variant="outline" className="text-[8px] px-1 py-0 text-gray-500">
-                              {note.topicType || 'General'}
-                            </Badge>
-                            {note.showToClient ? (
-                              <Badge className="text-[9px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200">
-                                <Eye className="h-2.5 w-2.5 mr-0.5" />
-                                Visible
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
-                                <EyeOff className="h-2.5 w-2.5 mr-0.5" />
-                                Hidden
-                              </Badge>
-                            )}
-                            {note.createdBy && (
-                              <span className="text-[9px] text-gray-400">
-                                by {note.createdBy.firstName} {note.createdBy.lastName}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-gray-500 mb-1">
-                            {note.date ? format(new Date(note.date), 'MMM d, yyyy') : 'No date'}
-                          </p>
-                          <p className="text-xs text-gray-600 line-clamp-2">{note.content}</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            onClick={() => handleToggleNoteVisibility(note._id!, !note.showToClient)}
-                            title={note.showToClient ? 'Hide from client' : 'Show to client'}
-                          >
-                            {note.showToClient ? (
-                              <EyeOff className="h-3.5 w-3.5 text-gray-500" />
-                            ) : (
-                              <Eye className="h-3.5 w-3.5 text-gray-500" />
-                            )}
-                          </Button>
-                          {/* Only show delete button if current user created the note */}
-                          {note.createdBy?._id === (session?.user as any)?.id && (
+                      {/* Audio Recording Section */}
+                      <div>
+                        <Label className="text-xs font-medium">Voice Recording</Label>
+                        <div className="mt-1 flex items-center gap-2">
+                          {!isRecording ? (
                             <Button
-                              variant="ghost"
+                              type="button"
+                              variant="outline"
                               size="sm"
-                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleDeleteNote(note._id!)}
+                              className="h-10 px-4 flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={async () => {
+                                try {
+                                  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                                  const recorder = new MediaRecorder(stream);
+                                  const chunks: Blob[] = [];
+
+                                  recorder.ondataavailable = (e) => {
+                                    if (e.data.size > 0) chunks.push(e.data);
+                                  };
+
+                                  recorder.onstop = async () => {
+                                    try {
+                                      if (chunks.length === 0) {
+                                        console.error('No audio chunks recorded');
+                                        toast.error('No audio recorded. Please try again.');
+                                        stream.getTracks().forEach(track => track.stop());
+                                        setRecordingTime(0);
+                                        setIsRecording(false);
+                                        return;
+                                      }
+
+                                      const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+
+                                      if (audioBlob.size === 0) {
+                                        console.error('Audio blob is empty');
+                                        toast.error('Audio file is empty. Please try again.');
+                                        stream.getTracks().forEach(track => track.stop());
+                                        setRecordingTime(0);
+                                        setIsRecording(false);
+                                        return;
+                                      }
+
+                                      const file = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
+
+                                      stream.getTracks().forEach(track => track.stop());
+
+                                      await handleMediaUpload(file);
+
+                                      setRecordingTime(0);
+                                      setIsRecording(false);
+                                    } catch (error) {
+                                      console.error('Error in recorder.onstop:', error);
+                                      toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                                      stream.getTracks().forEach(track => track.stop());
+                                      setRecordingTime(0);
+                                      setIsRecording(false);
+                                    }
+                                  };
+
+                                  setMediaRecorder(recorder);
+                                  setAudioChunks([]);
+                                  recorder.start();
+                                  setIsRecording(true);
+
+                                  // Start timer
+                                  const timer = setInterval(() => {
+                                    setRecordingTime(prev => prev + 1);
+                                  }, 1000);
+                                  recordingTimerRef.current = timer;
+                                } catch (err) {
+                                  toast.error('Microphone access denied');
+                                }
+                              }}
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Mic className="h-4 w-4" />
+                              Record Audio
                             </Button>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-lg border border-red-200">
+                                <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+                                <span className="text-sm font-mono text-red-600">
+                                  {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
+                                </span>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-10 px-4 flex items-center gap-2 text-gray-600"
+                                onClick={() => {
+                                  if (mediaRecorder) {
+                                    mediaRecorder.stop();
+                                    setIsRecording(false);
+                                    if (recordingTimerRef.current) {
+                                      clearInterval(recordingTimerRef.current);
+                                      recordingTimerRef.current = null;
+                                    }
+                                  }
+                                }}
+                              >
+                                <Square className="h-4 w-4" />
+                                Stop
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
+
+                      {/* Media Upload Section */}
+                      <div>
+                        <Label className="text-xs font-medium">Attachments (Image/Video/Audio)</Label>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {(newNote.attachments || []).map((att, idx) => (
+                            <div key={idx} className="relative group">
+                              {att.type === 'image' && (
+                                <img src={att.url} alt={att.filename} className="h-16 w-16 object-cover rounded border" />
+                              )}
+                              {att.type === 'video' && (
+                                <div className="h-16 w-16 bg-gray-100 rounded border flex items-center justify-center">
+                                  <span className="text-[10px] text-gray-500">Video</span>
+                                </div>
+                              )}
+                              {att.type === 'audio' && (
+                                <div className="h-16 w-16 bg-gray-100 rounded border flex items-center justify-center">
+                                  <span className="text-[10px] text-gray-500">Audio</span>
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveAttachment(idx)}
+                                className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                          <label className="h-16 w-16 border-2 border-dashed border-gray-300 rounded flex items-center justify-center cursor-pointer hover:border-blue-400 transition-colors">
+                            <input
+                              type="file"
+                              accept="image/*,video/*,audio/*"
+                              capture="environment"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleMediaUpload(file);
+                                e.target.value = '';
+                              }}
+                              disabled={uploadingMedia}
+                            />
+                            {uploadingMedia ? (
+                              <LoadingSpinner className="h-4 w-4" />
+                            ) : (
+                              <Plus className="h-5 w-5 text-gray-400" />
+                            )}
+                          </label>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-1">Max 50MB per file</p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="showToClient"
+                          checked={newNote.showToClient}
+                          onChange={(e) => setNewNote(prev => ({ ...prev, showToClient: e.target.checked }))}
+                          className="h-3.5 w-3.5 text-blue-600 rounded border-gray-300"
+                        />
+                        <Label htmlFor="showToClient" className="text-xs cursor-pointer">
+                          Show to client
+                        </Label>
+                      </div>
+
+                      <div className="flex gap-2 pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 h-8 text-xs"
+                          onClick={() => {
+                            setIsAddingNote(false);
+                            setNewNote({
+                              topicType: 'General',
+                              date: format(new Date(), 'yyyy-MM-dd'),
+                              content: '',
+                              showToClient: false,
+                              attachments: []
+                            });
+                            setRenewalStartDate('');
+                            setRenewalEndDate('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1 h-8 text-xs bg-blue-600 hover:bg-blue-700"
+                          onClick={handleSaveNote}
+                          disabled={savingNote || uploadingMedia}
+                        >
+                          {savingNote ? 'Saving...' : 'Save Note'}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
-                ))
-              )}
-            </div>
+                )}
+
+                {/* Notes List */}
+                <div className="space-y-2">
+                  {clientNotes.length === 0 && !isAddingNote ? (
+                    <div className="text-center py-8">
+                      <StickyNote className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500 text-sm">No notes yet</p>
+                      <p className="text-gray-400 text-xs mt-1">Add your first note</p>
+                    </div>
+                  ) : (
+                    clientNotes.map((note, index) => (
+                      <Card
+                        key={note._id}
+                        className="border-gray-200 hover:border-blue-300 transition-all duration-200 hover:shadow-md cursor-pointer animate-in fade-in slide-in-from-right-2 group"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                        onClick={() => handleOpenNoteDetail(note)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                <Badge variant="outline" className="text-[8px] px-1 py-0 text-gray-500">
+                                  {note.topicType || 'General'}
+                                </Badge>
+                                {note.showToClient ? (
+                                  <Badge className="text-[9px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200">
+                                    <Eye className="h-2.5 w-2.5 mr-0.5" />
+                                    Visible
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                    <EyeOff className="h-2.5 w-2.5 mr-0.5" />
+                                    Hidden
+                                  </Badge>
+                                )}
+                                {note.createdBy && (
+                                  <span className="text-[9px] text-gray-400">
+                                    by {note.createdBy.firstName} {note.createdBy.lastName}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-500 mb-1">
+                                {note.date ? format(new Date(note.date), 'MMM d, yyyy') : 'No date'}
+                              </p>
+                              <p className="text-xs text-gray-600 line-clamp-2">{note.content}</p>
+                            </div>
+
+                            <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => handleToggleNoteVisibility(note._id!, !note.showToClient)}
+                                title={note.showToClient ? 'Hide from client' : 'Show to client'}
+                              >
+                                {note.showToClient ? (
+                                  <EyeOff className="h-3.5 w-3.5 text-gray-500" />
+                                ) : (
+                                  <Eye className="h-3.5 w-3.5 text-gray-500" />
+                                )}
+                              </Button>
+                              {/* Only show delete button if current user created the note */}
+                              {note.createdBy?._id === (session?.user as any)?.id && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleDeleteNote(note._id!)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
               </>
             )}
           </div>
         </div>
       </div>
+
+      {/* Image Lightbox for note attachments */}
+      <ImageLightbox
+        isOpen={noteLightboxOpen}
+        onClose={() => setNoteLightboxOpen(false)}
+        src={noteLightboxImage}
+        alt="Note attachment"
+      />
     </DashboardLayout>
   );
 }
