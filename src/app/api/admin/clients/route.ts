@@ -33,43 +33,51 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100); // Cap at 100
     const page = Math.max(parseInt(searchParams.get('page') || '1'), 1);
 
-    // Build query
-    let query: any = { role: UserRole.CLIENT };
+    // Build query using $and to avoid $or conflicts
+    const andConditions: any[] = [{ role: UserRole.CLIENT }];
 
     // Filter by assignment status
     if (assigned === 'true') {
-      query.$or = [
-        { assignedDietitian: { $ne: null } },
-        { assignedDietitians: { $exists: true, $not: { $size: 0 } } }
-      ];
+      andConditions.push({
+        $or: [
+          { assignedDietitian: { $ne: null } },
+          { assignedDietitians: { $exists: true, $not: { $size: 0 } } }
+        ]
+      });
     } else if (assigned === 'false') {
-      query.assignedDietitian = null;
-      query.$or = [
-        { assignedDietitians: { $exists: false } },
-        { assignedDietitians: { $size: 0 } }
-      ];
+      andConditions.push({ assignedDietitian: null });
+      andConditions.push({
+        $or: [
+          { assignedDietitians: { $exists: false } },
+          { assignedDietitians: { $size: 0 } }
+        ]
+      });
     }
 
     // Filter by status (uses clientStatus: lead/active/inactive)
     if (status) {
-      query.clientStatus = status;
+      andConditions.push({ clientStatus: status });
     }
 
     // Add search filter
     if (search) {
       const searchRegex = { $regex: search, $options: 'i' };
-      query.$or = [
-        { firstName: searchRegex },
-        { lastName: searchRegex },
-        { email: searchRegex },
-        { phone: searchRegex }
-      ];
+      andConditions.push({
+        $or: [
+          { firstName: searchRegex },
+          { lastName: searchRegex },
+          { email: searchRegex },
+          { phone: searchRegex }
+        ]
+      });
     }
+
+    const query = andConditions.length === 1 ? andConditions[0] : { $and: andConditions };
 
     // Create cache key based on all query params
     const cacheKey = `admin:clients:v2:${JSON.stringify(query)}:page=${page}:limit=${limit}`;
 
-    // Fetch clients with pagination - use longer cache (5 minutes)
+    // Fetch clients with pagination - use 60s cache (shorter to reflect new clients faster)
     const clientsData = await withCache(
       cacheKey,
       async () => {
@@ -93,16 +101,17 @@ export async function GET(request: NextRequest) {
             .lean()
         ]);
 
+        console.log('[Admin Clients] Query:', JSON.stringify(query), 'Total found:', total, 'Page:', page, 'Limit:', limit);
         return { clients, total };
       },
-      { ttl: 300000, tags: ['admin', 'clients'] } // 5 minutes cache
+      { ttl: 60000, tags: ['admin', 'clients'] } // 1 minute cache
     );
 
     const { clients, total } = clientsData;
 
-    // Get stats with caching (these rarely change)
+    // Get stats with caching
     const stats = await withCache(
-      'admin:clients:stats:v2',
+      'admin:clients:stats:v3',
       async () => {
         const [totalCount, assignedCount, unassignedCount] = await Promise.all([
           User.countDocuments({ role: UserRole.CLIENT }),
@@ -114,22 +123,27 @@ export async function GET(request: NextRequest) {
             ]
           }),
           User.countDocuments({
-            role: UserRole.CLIENT,
-            assignedDietitian: null,
-            $or: [
-              { assignedDietitians: { $exists: false } },
-              { assignedDietitians: { $size: 0 } }
+            $and: [
+              { role: UserRole.CLIENT },
+              { assignedDietitian: null },
+              {
+                $or: [
+                  { assignedDietitians: { $exists: false } },
+                  { assignedDietitians: { $size: 0 } }
+                ]
+              }
             ]
           })
         ]);
 
+        console.log('[Admin Clients] Stats - Total:', totalCount, 'Assigned:', assignedCount, 'Unassigned:', unassignedCount);
         return {
           total: totalCount,
           assigned: assignedCount,
           unassigned: unassignedCount
         };
       },
-      { ttl: 300000, tags: ['admin', 'clients', 'stats'] } // 5 minutes cache
+      { ttl: 60000, tags: ['admin', 'clients', 'stats'] } // 1 minute cache
     );
 
     return NextResponse.json({

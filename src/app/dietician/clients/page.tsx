@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -88,6 +89,8 @@ const clientStatusColors: Record<string, { bg: string; text: string }> = {
 
 export default function DieticianClientsPage() {
   const { data: session, status } = useSession();
+  const urlSearchParams = useSearchParams();
+  const viewAs = urlSearchParams.get('viewAs') || '';
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -134,7 +137,7 @@ export default function DieticianClientsPage() {
       setLoading(false);
     }
     // While loading session, keep loading state true
-  }, [status, session?.user?.id, currentPage, pageSize, debouncedSearch]);
+  }, [status, session?.user?.id, currentPage, pageSize, debouncedSearch, viewAs]);
 
   const fetchMyClients = async (page = 1, limit = 50, search = '') => {
     try {
@@ -142,6 +145,7 @@ export default function DieticianClientsPage() {
       // Fetch clients with pagination and server-side search
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search.trim()) params.set('search', search.trim());
+      if (viewAs) params.set('viewAs', viewAs);
       const response = await fetch(`/api/users/clients?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
@@ -415,14 +419,14 @@ export default function DieticianClientsPage() {
                               <Badge
                                 variant="outline"
                                 className={`text-xs px-2 py-0.5 ${client.clientStatus === 'active' ? 'bg-green-100 text-green-700 border-green-300' :
-                                    client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
-                                      'bg-blue-100 text-blue-700 border-blue-300'
+                                  client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                                    'bg-blue-100 text-blue-700 border-blue-300'
                                   }`}
                               >
                                 <span className="flex items-center gap-1.5">
                                   <span className={`w-2 h-2 rounded-full ${client.clientStatus === 'active' ? 'bg-green-500' :
-                                      client.clientStatus === 'inactive' ? 'bg-gray-500' :
-                                        'bg-blue-500'
+                                    client.clientStatus === 'inactive' ? 'bg-gray-500' :
+                                      'bg-blue-500'
                                     }`}></span>
                                   {client.clientStatus === 'active' ? 'Active' : client.clientStatus === 'inactive' ? 'Inactive' : 'Lead'}
                                 </span>

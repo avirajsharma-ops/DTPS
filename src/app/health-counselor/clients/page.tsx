@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -85,12 +86,21 @@ const clientStatusColors: Record<string, { bg: string; text: string }> = {
 
 export default function HealthCounselorClientsPage() {
   const { data: session, status } = useSession();
+  const urlSearchParams = useSearchParams();
+  const viewAs = urlSearchParams.get('viewAs') || '';
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterFreeze, setFilterFreeze] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalClients, setTotalClients] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Create client dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -112,24 +122,35 @@ export default function HealthCounselorClientsPage() {
   const [selectedClientForTag, setSelectedClientForTag] = useState<string | null>(null);
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // Only fetch when session is authenticated and user ID is available
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {
-      fetchMyClients();
+      fetchMyClients(currentPage, pageSize, debouncedSearch);
     } else if (status === 'unauthenticated') {
       setLoading(false);
     }
     // While loading session, keep loading state true
-  }, [status, session?.user?.id]);
+  }, [status, session?.user?.id, currentPage, pageSize, debouncedSearch, viewAs]);
 
-  const fetchMyClients = async () => {
+  const fetchMyClients = async (page = 1, limit = 50, search = '') => {
     try {
       setLoading(true);
-      // Fetch only clients assigned to this health counselor
-      const response = await fetch('/api/users/clients');
+      // Fetch clients with pagination and server-side search
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (search.trim()) params.set('search', search.trim());
+      if (viewAs) params.set('viewAs', viewAs);
+      const response = await fetch(`/api/users/clients?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setClients(data.clients || []);
+        setTotalClients(data.pagination?.total || 0);
+        setTotalPages(data.pagination?.pages || 1);
         // Also fetch available tags
         fetchAvailableTags();
       }
@@ -239,7 +260,8 @@ export default function HealthCounselorClientsPage() {
         gender: '',
         dateOfBirth: '',
       });
-      await fetchMyClients();
+      setCurrentPage(1);
+      await fetchMyClients(1, pageSize, debouncedSearch);
     } catch (error: any) {
       toast.error(error?.message || 'Failed to create client');
     } finally {
@@ -274,16 +296,11 @@ export default function HealthCounselorClientsPage() {
   };
 
   const filteredClients = clients.filter(client => {
-    const matchesSearch = client.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone?.includes(searchTerm);
-
-    // Filter by client status
+    // Filter by client status only (search is now server-side)
     const matchesStatus = filterType === 'all' ||
       (client.clientStatus || 'lead') === filterType;
 
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
   const toggleClientSelection = (clientId: string) => {
@@ -296,9 +313,9 @@ export default function HealthCounselorClientsPage() {
 
   const toggleAllClients = () => {
     setSelectedClients(prev =>
-      prev.length === filteredClients.length
+      prev.length === clients.length
         ? []
-        : filteredClients.map(c => c._id)
+        : clients.map(c => c._id)
     );
   };
 
@@ -336,7 +353,7 @@ export default function HealthCounselorClientsPage() {
             </Button>
             <div className="flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
               <Users className="h-5 w-5 text-blue-600" />
-              <span className="text-blue-900 font-semibold">{filteredClients.length} Clients</span>
+              <span className="text-blue-900 font-semibold">{totalClients} Clients</span>
             </div>
           </div>
         </div>
@@ -384,7 +401,7 @@ export default function HealthCounselorClientsPage() {
             </Select>
           </div>
 
-          <Button size="sm" variant="ghost" onClick={fetchMyClients}>
+          <Button size="sm" variant="ghost" onClick={() => fetchMyClients(currentPage, pageSize, debouncedSearch)}>
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
@@ -404,7 +421,7 @@ export default function HealthCounselorClientsPage() {
                       <TableRow className="bg-gray-50">
                         <TableHead className="w-10 px-3">
                           <Checkbox
-                            checked={selectedClients.length === filteredClients.length && filteredClients.length > 0}
+                            checked={selectedClients.length === clients.length && clients.length > 0}
                             onCheckedChange={toggleAllClients}
                           />
                         </TableHead>
@@ -423,14 +440,14 @@ export default function HealthCounselorClientsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredClients.length === 0 ? (
+                      {clients.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={13} className="text-center py-12 text-gray-500">
                             No clients found
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredClients.map((client) => (
+                        clients.map((client) => (
                           <TableRow key={client._id} className="hover:bg-gray-50">
                             <TableCell className="px-3">
                               <Checkbox
@@ -539,14 +556,14 @@ export default function HealthCounselorClientsPage() {
                               <Badge
                                 variant="outline"
                                 className={`text-xs px-2 py-0.5 ${client.clientStatus === 'active' ? 'bg-green-100 text-green-700 border-green-300' :
-                                    client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
-                                      'bg-blue-100 text-blue-700 border-blue-300'
+                                  client.clientStatus === 'inactive' ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                                    'bg-blue-100 text-blue-700 border-blue-300'
                                   }`}
                               >
                                 <span className="flex items-center gap-1.5">
                                   <span className={`w-2 h-2 rounded-full ${client.clientStatus === 'active' ? 'bg-green-500' :
-                                      client.clientStatus === 'inactive' ? 'bg-gray-500' :
-                                        'bg-blue-500'
+                                    client.clientStatus === 'inactive' ? 'bg-gray-500' :
+                                      'bg-blue-500'
                                     }`}></span>
                                   {client.clientStatus === 'active' ? 'Active' : client.clientStatus === 'inactive' ? 'Inactive' : 'Lead'}
                                 </span>
@@ -564,8 +581,31 @@ export default function HealthCounselorClientsPage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-3 border-t text-sm text-gray-600">
-                  Showing {filteredClients.length} to 1 of {filteredClients.length} rows
+                <div className="px-4 py-3 border-t flex items-center justify-between text-sm text-gray-600">
+                  <div>
+                    Showing {clients.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to {Math.min(currentPage * pageSize, totalClients)} of {totalClients} rows
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-xs px-2">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
                 </div>
               </>
             )}

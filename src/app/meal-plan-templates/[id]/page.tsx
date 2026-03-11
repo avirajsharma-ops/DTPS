@@ -112,7 +112,7 @@ export default function MealPlanTemplateViewPage() {
     return colors[difficulty] || 'bg-gray-100 text-gray-800';
   };
 
-  const formatCategoryName = (category: string) => 
+  const formatCategoryName = (category: string) =>
     category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
   const formatDate = (dateStr: string) => {
@@ -202,10 +202,6 @@ export default function MealPlanTemplateViewPage() {
                     <Badge className={`${getCategoryColor(template.category)} border`}>
                       {formatCategoryName(template.category)}
                     </Badge>
-                  </div>
-                  <div className="bg-linear-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
-                    <div className="text-xs text-purple-600 font-medium mb-1">Duration</div>
-                    <div className="text-lg font-bold text-purple-800">{template.duration} Days</div>
                   </div>
                   <div className="bg-linear-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
                     <div className="text-xs text-orange-600 font-medium mb-1">Difficulty</div>

@@ -21,17 +21,18 @@ export async function GET(request: NextRequest) {
     // Only dietitians, health counselors, and admins can access client list
     const userRole = session.user.role?.toLowerCase();
     const userId = session.user.id;
-    
+
     if (userRole !== 'dietitian' && userRole !== 'health_counselor' && userRole !== 'health-counselor' && userRole !== 'healthcounselor' && !userRole?.includes('admin')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     await connectDB();
- 
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const limit = parseInt(searchParams.get('limit') || '100'); // Increased default limit
     const page = parseInt(searchParams.get('page') || '1');
+    const viewAs = searchParams.get('viewAs') || '';
 
     // Build query
     let query: any = { role: UserRole.CLIENT };
@@ -40,11 +41,46 @@ export async function GET(request: NextRequest) {
     const isDietitian = userRole === 'dietitian';
     const isHealthCounselor = userRole === 'health_counselor' || userRole === 'health-counselor' || userRole === 'healthcounselor';
 
-    // Convert userId to ObjectId for proper comparison
-    const userObjectId = new mongoose.Types.ObjectId(userId);
+    // Determine the effective user to filter by
+    // If admin is using viewAs param, look up that staff member and filter as them
+    let effectiveUserId = userId;
+    let effectiveIsDietitian = isDietitian;
+    let effectiveIsHealthCounselor = isHealthCounselor;
+    let effectiveIsAdmin = isAdmin;
+    let viewAsRole = '';
+
+    if (isAdmin && viewAs && mongoose.Types.ObjectId.isValid(viewAs)) {
+      const staffUser = await User.findById(viewAs).select('role').lean();
+      if (staffUser) {
+        effectiveUserId = viewAs;
+        // Use the raw role value and compare with UserRole enum values
+        const staffRole = (staffUser as any).role;
+        viewAsRole = staffRole;
+
+        // Check against UserRole enum values (handles different case formats)
+        effectiveIsDietitian = staffRole === UserRole.DIETITIAN || staffRole?.toLowerCase() === 'dietitian';
+        effectiveIsHealthCounselor = staffRole === UserRole.HEALTH_COUNSELOR ||
+          staffRole?.toLowerCase() === 'health_counselor' ||
+          staffRole?.toLowerCase() === 'health-counselor' ||
+          staffRole?.toLowerCase() === 'healthcounselor';
+
+        // When viewAs is used, admin should NOT see all clients - force staff view
+        effectiveIsAdmin = false;
+      } else {
+        // Staff user not found - return empty result for viewAs
+        return NextResponse.json({
+          clients: [],
+          pagination: { page: 1, limit, total: 0, pages: 0 },
+          error: 'Staff user not found for viewAs'
+        });
+      }
+    }
+
+    // Convert effectiveUserId to ObjectId for proper comparison
+    const userObjectId = new mongoose.Types.ObjectId(effectiveUserId);
 
     // If dietitian, show their assigned clients AND clients they created
-    if (isDietitian) {
+    if (effectiveIsDietitian) {
       query.$or = [
         { assignedDietitian: userObjectId },
         { assignedDietitians: userObjectId },
@@ -52,14 +88,25 @@ export async function GET(request: NextRequest) {
       ];
     }
     // If health counselor, show their assigned clients AND clients they created
-    else if (isHealthCounselor) {
+    else if (effectiveIsHealthCounselor) {
       query.$or = [
         { assignedHealthCounselor: userObjectId },
         { assignedHealthCounselors: userObjectId },
         { 'createdBy.userId': userObjectId }
       ];
     }
-    // Admin can see all clients (no additional filter needed)
+    // If viewAs was used but role didn't match dietitian/HC, still filter by that user
+    else if (viewAs && !effectiveIsAdmin) {
+      // Fallback: filter by both dietitian and HC fields for the viewAs user
+      query.$or = [
+        { assignedDietitian: userObjectId },
+        { assignedDietitians: userObjectId },
+        { assignedHealthCounselor: userObjectId },
+        { assignedHealthCounselors: userObjectId },
+        { 'createdBy.userId': userObjectId }
+      ];
+    }
+    // Admin (without viewAs) can see all clients (no additional filter needed)
 
     // Add search filter
     if (search) {
@@ -71,7 +118,7 @@ export async function GET(request: NextRequest) {
           { phone: { $regex: search, $options: 'i' } }
         ]
       };
-      
+
       if (query.$or) {
         // Combine existing $or with search $or using $and
         query = {
@@ -105,7 +152,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch meal plan data for all clients to get programStart, programEnd, lastDiet
     const clientIds = clientsData.map((c: any) => c._id);
-    
+
     // Get meal plan info for each client - we need both overall program dates and active plan dates
     const mealPlanData = await ClientMealPlan.aggregate([
       { $match: { clientId: { $in: clientIds } } },
@@ -122,13 +169,13 @@ export async function GET(request: NextRequest) {
           lastPlanName: { $last: '$name' },
           lastPlanStatus: { $last: '$status' },
           // Collect all plans for active plan detection
-          allPlans: { 
-            $push: { 
-              startDate: '$startDate', 
-              endDate: '$endDate', 
+          allPlans: {
+            $push: {
+              startDate: '$startDate',
+              endDate: '$endDate',
               status: '$status',
               name: '$name'
-            } 
+            }
           }
         }
       }
@@ -138,7 +185,7 @@ export async function GET(request: NextRequest) {
     const mealPlanMap = new Map();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     mealPlanData.forEach((mp: any) => {
       // Find the active plan with endDate in the future (for status display)
       const activePlan = mp.allPlans?.find((plan: any) => {
@@ -146,7 +193,7 @@ export async function GET(request: NextRequest) {
         end.setHours(23, 59, 59, 999);
         return plan.status === 'active' && end >= today;
       });
-      
+
       mealPlanMap.set(mp._id.toString(), {
         programStart: mp.programStart,
         programEnd: mp.programEnd,
@@ -235,6 +282,12 @@ export async function GET(request: NextRequest) {
       debug: process.env.NODE_ENV === 'development' ? {
         userRole,
         userId,
+        viewAs: viewAs || null,
+        viewAsRole: viewAsRole || null,
+        effectiveUserId,
+        effectiveIsDietitian,
+        effectiveIsHealthCounselor,
+        effectiveIsAdmin,
         queryUsed: JSON.stringify(query),
         totalFound: total
       } : undefined
@@ -246,9 +299,9 @@ export async function GET(request: NextRequest) {
       errorMessage: error?.message,
       errorStack: error?.stack?.split('\n').slice(0, 3).join('\n')
     });
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch clients',
         details: process.env.NODE_ENV === 'development' ? error?.message : undefined
       },

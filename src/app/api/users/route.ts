@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
     // Generate cache key based on role and query params
     const cacheKey = `users:${session.user.role}:${role || 'all'}:${search || ''}:${page}:${limit}`;
-    
+
     const { users, total, adminsCount, dietitiansCount, healthCounselorsCount, clientsCount } = await withCache(
       cacheKey,
       async () => {
@@ -220,14 +220,18 @@ export async function POST(request: NextRequest) {
     // Determine assignment based on who is creating the client
     let finalAssignedDietitian = assignedDietitian;
     let finalAssignedHealthCounselor = assignedHealthCounselor;
-    
+    let assignedDietitiansList = assignedDietitian ? [assignedDietitian] : [];
+    let assignedHealthCounselorsList = assignedHealthCounselor ? [assignedHealthCounselor] : [];
+
     // If health counselor is creating a client, auto-assign to themselves
     if (session.user.role === UserRole.HEALTH_COUNSELOR) {
       finalAssignedHealthCounselor = session.user.id;
+      assignedHealthCounselorsList = [session.user.id];
     }
     // If dietitian is creating a client, auto-assign to themselves
     else if (session.user.role === UserRole.DIETITIAN) {
       finalAssignedDietitian = finalAssignedDietitian || session.user.id;
+      assignedDietitiansList = [finalAssignedDietitian];
     }
 
     // Determine createdBy info based on who is creating the user
@@ -239,7 +243,7 @@ export async function POST(request: NextRequest) {
     } else if (session.user.role === UserRole.HEALTH_COUNSELOR) {
       createdByInfo = { userId: session.user.id, role: 'health_counselor' };
     }
-    
+
     const user = new User({
       email: String(email).toLowerCase(),
       password, // NOTE: comparePassword supports plain text in this codebase; replace with hashing in production
@@ -255,7 +259,9 @@ export async function POST(request: NextRequest) {
       gender,
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
       assignedDietitian: finalAssignedDietitian,
+      assignedDietitians: assignedDietitiansList,
       assignedHealthCounselor: finalAssignedHealthCounselor,
+      assignedHealthCounselors: assignedHealthCounselorsList,
       createdBy: createdByInfo,
       status: 'active'
     });
@@ -276,15 +282,15 @@ export async function POST(request: NextRequest) {
 
       // Recalculate stats
       const total = await User.countDocuments({ role: UserRole.CLIENT });
-      const assignedCount = await User.countDocuments({ 
-        role: UserRole.CLIENT, 
+      const assignedCount = await User.countDocuments({
+        role: UserRole.CLIENT,
         $or: [
           { assignedDietitian: { $ne: null } },
           { assignedDietitians: { $exists: true, $not: { $size: 0 } } }
         ]
       });
-      const unassignedCount = await User.countDocuments({ 
-        role: UserRole.CLIENT, 
+      const unassignedCount = await User.countDocuments({
+        role: UserRole.CLIENT,
         assignedDietitian: null,
         $or: [
           { assignedDietitians: { $exists: false } },
@@ -305,6 +311,10 @@ export async function POST(request: NextRequest) {
 
     // Clear users cache after creation
     clearCacheByTag('users');
+    // Also clear admin/clients cache so admin portal sees new clients immediately
+    clearCacheByTag('admin');
+    clearCacheByTag('clients');
+    clearCacheByTag('stats');
 
     const created = user.toJSON();
     delete (created as any).password;
@@ -367,6 +377,10 @@ export async function PUT(request: NextRequest) {
 
     // Clear users cache after update
     clearCacheByTag('users');
+    // Also clear admin/clients cache so admin portal reflects updates
+    clearCacheByTag('admin');
+    clearCacheByTag('clients');
+    clearCacheByTag('stats');
 
     // Return user without password
     const updatedUser = user.toJSON();

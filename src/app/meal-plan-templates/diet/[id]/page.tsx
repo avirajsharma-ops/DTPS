@@ -325,10 +325,6 @@ export default function DietTemplateViewPage() {
                       {formatCategoryName(template.category)}
                     </Badge>
                   </div>
-                  <div className="bg-linear-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
-                    <div className="text-xs text-purple-600 font-medium mb-1">Duration</div>
-                    <div className="text-lg font-bold text-purple-800">{template.duration} Days</div>
-                  </div>
                   <div className="bg-linear-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
                     <div className="text-xs text-orange-600 font-medium mb-1">Difficulty</div>
                     <Badge className={getDifficultyColor(template.difficulty || 'intermediate')}>
@@ -497,8 +493,8 @@ export default function DietTemplateViewPage() {
                           size="sm"
                           onClick={() => setSelectedDay(index)}
                           className={`text-xs whitespace-nowrap shrink-0 ${selectedDay === index
-                              ? 'bg-emerald-600 hover:bg-emerald-700'
-                              : 'hover:bg-emerald-50 hover:border-emerald-300'
+                            ? 'bg-emerald-600 hover:bg-emerald-700'
+                            : 'hover:bg-emerald-50 hover:border-emerald-300'
                             }`}
                         >
                           <Calendar className="h-3 w-3 mr-1" />
