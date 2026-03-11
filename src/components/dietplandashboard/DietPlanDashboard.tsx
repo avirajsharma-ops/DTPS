@@ -711,6 +711,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, onDu
                       }}
                       duration={duration}
                       startDate={startDate}
+                      dietitianName={session?.user?.firstName && session?.user?.lastName ? `${session.user.firstName} ${session.user.lastName}` : session?.user?.name || undefined}
                     />
                   )}
                   <Button onClick={handleSavePlan} className="bg-green-600 hover:bg-green-700 shadow font-medium">
@@ -731,6 +732,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, onDu
                   }}
                   duration={duration}
                   startDate={startDate}
+                  dietitianName={session?.user?.firstName && session?.user?.lastName ? `${session.user.firstName} ${session.user.lastName}` : session?.user?.name || undefined}
                 />
               )}
             </div>
@@ -771,6 +773,7 @@ export function DietPlanDashboard({ clientData, onBack, onSavePlan, onSave, onDu
             }}
             duration={duration}
             startDate={startDate}
+            dietitianName={session?.user?.firstName && session?.user?.lastName ? `${session.user.firstName} ${session.user.lastName}` : session?.user?.name || undefined}
             externalOpen={exportDialogOpen}
             onExternalOpenChange={setExportDialogOpen}
           />

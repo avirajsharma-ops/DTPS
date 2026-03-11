@@ -2748,26 +2748,31 @@ export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpd
 
         {/* Notes Dialog */}
         <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[95vw] max-w-2xl sm:max-w-xl rounded-lg overflow-hidden">
             <DialogHeader>
-              <DialogTitle>Day Notes</DialogTitle>
-              <DialogDescription>
-                Add notes for this day. Press Enter to go to the next line.
+              <DialogTitle className="text-lg sm:text-xl font-semibold">Day Notes</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Add notes for this day. Press Enter to create a new line.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
+            <div className="py-4 space-y-4">
               <Textarea
                 value={notesDialogValue}
                 onChange={(e) => setNotesDialogValue(e.target.value)}
-                placeholder="Enter notes here..."
-                className="min-h-37.5 resize-y"
+                placeholder="Enter your notes here... (diet notes, health observations, etc.)"
+                className="min-h-48 sm:min-h-56 w-full max-w-full resize-y text-sm sm:text-base leading-relaxed whitespace-pre-wrap wrap-anywhere"
                 autoFocus
               />
+              <div className="flex min-w-0 items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-slate-50 dark:bg-slate-900 p-3 rounded-md">
+                <span className="text-blue-500">ℹ️</span>
+                <span className="wrap-break-word">You can resize the text area by dragging the bottom corner. Your notes will be saved with this day's plan.</span>
+              </div>
             </div>
-            <DialogFooter className="flex gap-2">
+            <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
               <Button
                 variant="outline"
                 onClick={() => setNotesDialogOpen(false)}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
@@ -2778,6 +2783,7 @@ export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpd
                   }
                   setNotesDialogOpen(false);
                 }}
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
               >
                 Save Notes
               </Button>

@@ -23,11 +23,12 @@ interface DietPlanExportProps {
   };
   duration: number;
   startDate?: string;
+  dietitianName?: string; // Name of the dietitian who created the plan
   externalOpen?: boolean; // External control to open dialog
   onExternalOpenChange?: (open: boolean) => void; // Callback when dialog state changes externally
 }
 
-export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, duration, startDate, externalOpen, onExternalOpenChange }: DietPlanExportProps) {
+export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, duration, startDate, dietitianName, externalOpen, onExternalOpenChange }: DietPlanExportProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [exportFor, setExportFor] = useState<'dietitian' | 'client'>('dietitian');
 
@@ -57,6 +58,22 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     } catch (e) {
       return dateStr;
     }
+  };
+
+  // Helper: escape note text and render one sentence per line after a dot
+  const formatNoteForExport = (noteText?: string): string => {
+    if (!noteText) return '';
+
+    const escaped = noteText
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    return escaped
+      .replace(/\.\s+/g, '.<br/><span class="sentence-dot">●</span> ')
+      .replace(/\n/g, '<br/>');
   };
 
   // Helper function to get meal time — prefer actual stored time from plan data
@@ -182,9 +199,42 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
     return { cal, carbs, protein, fats };
   };
 
-  // Generate HTML table structure with date sorting
+  // Get meal type class suffix based on meal name
+  const getMealTypeClass = (mealType: string): string => {
+    const lowerMeal = mealType.toLowerCase();
+    if (lowerMeal.includes('breakfast') || lowerMeal.includes('early morning')) return 'breakfast';
+    if (lowerMeal.includes('mid morning') || lowerMeal.includes('mid-morning')) return 'mid';
+    if (lowerMeal.includes('lunch')) return 'lunch';
+    if (lowerMeal.includes('snack') || lowerMeal.includes('evening')) return 'snack';
+    if (lowerMeal.includes('dinner') || lowerMeal.includes('bed') || lowerMeal.includes('night')) return 'dinner';
+    return 'breakfast'; // default
+  };
+
+  // Get meal icon SVG based on meal type
+  const getMealIcon = (mealType: string): string => {
+    const lowerMeal = mealType.toLowerCase();
+    if (lowerMeal.includes('breakfast') || lowerMeal.includes('early morning')) {
+      return '<svg viewBox="0 0 24 24"><path d="M17 11h1a3 3 0 0 1 0 6h-1"/><path d="M3 11h14v6a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M6 6V3"/><path d="M10 6V3"/><path d="M14 6V3"/></svg>';
+    }
+    if (lowerMeal.includes('mid morning') || lowerMeal.includes('mid-morning')) {
+      return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
+    }
+    if (lowerMeal.includes('lunch')) {
+      return '<svg viewBox="0 0 24 24"><path d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"/><path d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15z"/><path d="m2 22 5.5-1.5L3.5 16.5z"/></svg>';
+    }
+    if (lowerMeal.includes('snack') || lowerMeal.includes('evening')) {
+      return '<svg viewBox="0 0 24 24"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06z"/><path d="M10 2c1 .5 2 2 2 5"/></svg>';
+    }
+    if (lowerMeal.includes('dinner') || lowerMeal.includes('bed') || lowerMeal.includes('night')) {
+      return '<svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>';
+    }
+    return '<svg viewBox="0 0 24 24"><path d="M17 11h1a3 3 0 0 1 0 6h-1"/><path d="M3 11h14v6a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/></svg>';
+  };
+
+  // Generate Premium HTML template matching the exact NutriBalance design
   const generateHTMLContent = useCallback((showMacros: boolean = true) => {
-    const today = format(new Date(), 'dd MMM yyyy');
+    const today = format(new Date(), 'MMMM d, yyyy');
+    const planRef = `NP-${format(new Date(), 'yyyy')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     // Sort days by actual date if available
     const sortedDays = [...weekPlan].sort((a, b) => {
@@ -194,210 +244,376 @@ export function DietPlanExport({ weekPlan, mealTypes, clientName, clientInfo, du
       return weekPlan.indexOf(a) - weekPlan.indexOf(b);
     });
 
-    const includeMacrosStyle = showMacros ? '' : `
-    .macro-cell { display: none !important; }
-    thead tr th:nth-child(3),
-    thead tr th:nth-child(4),
-    thead tr th:nth-child(5),
-    thead tr th:nth-child(6),
-    thead tr th:nth-child(7),
-    tbody tr td:nth-child(3),
-    tbody tr td:nth-child(4),
-    tbody tr td:nth-child(5),
-    tbody tr td:nth-child(6),
-    tbody tr td:nth-child(7) { display: none !important; }
-    `;
+    // Hide macros CSS for client version
+    const hideMacrosCSS = !showMacros ? `
+    .macros { display: none !important; }
+    th.c:nth-child(n+3), td.c:nth-child(n+3), td.cal { display: none !important; }
+    .meal-kcal { display: none !important; }
+    .alt-table td.ac, .alt-table td.am { display: none !important; }
+    ` : '';
 
     return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Diet Plan - ${clientName || 'Client'}</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Nutrition Plan — DTPS Nutrition</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #f5f5f5; }
-    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #16a34a; padding-bottom: 20px; }
-    .header h1 { color: #16a34a; font-size: 28px; margin-bottom: 10px; }
-    .header p { color: #666; font-size: 14px; }
-    .export-type { font-size: 12px; color: #16a34a; font-weight: 600; margin-top: 5px; }
-    .client-info { background: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-    .client-info-item { font-size: 13px; }
-    .client-info-item strong { color: #16a34a; }
-    .day-section { margin-bottom: 25px; page-break-inside: avoid; }
-    .day-header { background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color: white; padding: 12px 15px; border-radius: 8px 8px 0 0; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-    .day-header .date { font-size: 12px; opacity: 0.9; }
-    .day-note { background: #fef3c7; padding: 10px 15px; font-size: 12px; color: #92400e; border-left: 4px solid #f59e0b; margin-bottom: 5px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px 12px; text-align: left; border: 1px solid #e5e7eb; font-size: 13px; }
-    th { background: #f9fafb; font-weight: 600; color: #374151; }
-    .meal-name { font-weight: 600; color: #16a34a; white-space: nowrap; }
-    .meal-time { font-size: 11px; color: #6b7280; }
-    .food-item { margin-bottom: 5px; }
-    .food-name { font-weight: 500; }
-    .food-qty { color: #6b7280; font-size: 12px; }
-    .macro-cell { text-align: center; font-size: 12px; }
-    .macro-value { font-weight: 600; color: #374151; }
-    .macro-label { font-size: 10px; color: #9ca3af; }
-    .totals-row { background: #f0fdf4; font-weight: 600; }
-    .totals-row td { color: #16a34a; }
-    .alternatives { background: #fef9c3; font-size: 11px; padding: 5px 10px; border-radius: 4px; margin-top: 5px; }
-    .alternatives-label { font-weight: 600; color: #854d0e; }
-    .summary { margin-top: 30px; padding: 20px; background: #f0fdf4; border-radius: 8px; }
-    .summary h3 { color: #16a34a; margin-bottom: 15px; }
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
-    .summary-item { text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .summary-value { font-size: 24px; font-weight: 700; color: #16a34a; }
-    .summary-label { font-size: 12px; color: #6b7280; }
-    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; }
-    ${includeMacrosStyle}
-    @media print {
-      body { padding: 0; background: white; }
-      .container { box-shadow: none; padding: 10px; }
-      .day-section { page-break-inside: avoid; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #e7e5e4; color: #1c1917; padding: 32px 16px; }
+    .page { max-width: 860px; margin: 0 auto; background: #fff; border-radius: 2px; box-shadow: 0 1px 30px rgba(0,0,0,0.08); overflow: hidden; }
+    .accent-top { height: 6px; background: linear-gradient(to right, #10b981, #14b8a6, #06b6d4); border-radius: 2px 2px 0 0; }
+    .accent-bottom { height: 4px; background: linear-gradient(to right, #10b981, #14b8a6, #06b6d4); }
+
+    .header { padding: 40px 48px 32px; }
+    .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .logo-icon { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #10b981, #0d9488); display: flex; align-items: center; justify-content: center; }
+    .logo-icon svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .brand { font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em; color: #047857; font-weight: 600; }
+    .title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 600; color: #292524; margin-top: 12px; letter-spacing: -0.02em; }
+    .ref { color: #a8a29e; font-size: 13px; margin-top: 4px; }
+    .export-badge { display: inline-block; background: ${showMacros ? '#ecfdf5' : '#eff6ff'}; color: ${showMacros ? '#059669' : '#2563eb'}; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 500; margin-top: 8px; }
+
+    .client-bar { margin-top: 28px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #f5f5f4; border-radius: 8px; overflow: hidden; border: 1px solid #f5f5f4; }
+    .client-field { background: #fff; padding: 12px 16px; }
+    .client-field .fl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #a8a29e; font-weight: 500; }
+    .client-field .fv { font-size: 13px; color: #44403c; font-weight: 500; margin-top: 2px; }
+
+    .day-divider { padding: 16px 48px 8px; }
+    .day-divider-line { border: none; border-top: 2px dashed #d6d3d1; }
+    .day-header { padding: 24px 48px 20px; display: flex; align-items: center; gap: 12px; }
+    .day-icon { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #10b981, #14b8a6); display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .day-icon svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .day-name { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; color: #292524; letter-spacing: -0.02em; }
+    .day-name .day-num { color: #a8a29e; font-size: 16px; }
+    .day-date { font-size: 12px; color: #a8a29e; font-weight: 500; margin-top: -2px; }
+
+    .macros { padding: 0 48px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .mc { border-radius: 8px; padding: 14px 16px; }
+    .mc.cal { background: #fffbeb; }
+    .mc.pro { background: #eff6ff; }
+    .mc.carb { background: #ecfdf5; }
+    .mc.fat { background: #fff1f2; }
+    .mc-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .mc-dot { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+    .mc-dot svg { width: 12px; height: 12px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .mc.cal .mc-dot { background: linear-gradient(135deg, #f59e0b, #fb923c); }
+    .mc.pro .mc-dot { background: linear-gradient(135deg, #3b82f6, #818cf8); }
+    .mc.carb .mc-dot { background: linear-gradient(135deg, #10b981, #22c55e); }
+    .mc.fat .mc-dot { background: linear-gradient(135deg, #f43f5e, #ec4899); }
+    .mc-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #78716c; font-weight: 500; }
+    .mc-val { font-size: 22px; font-weight: 700; color: #292524; letter-spacing: -0.02em; }
+    .mc-val span { font-size: 12px; font-weight: 400; color: #a8a29e; }
+
+    .meals { padding: 0 48px 16px; }
+    .meal { margin-bottom: 20px; }
+    .meal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .meal-left { display: flex; align-items: center; gap: 10px; }
+    .meal-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .meal-icon svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .meal-icon.breakfast { background: linear-gradient(135deg, #f59e0b, #fb923c); }
+    .meal-icon.mid { background: linear-gradient(135deg, #0ea5e9, #22d3ee); }
+    .meal-icon.lunch { background: linear-gradient(135deg, #10b981, #22c55e); }
+    .meal-icon.snack { background: linear-gradient(135deg, #8b5cf6, #a855f7); }
+    .meal-icon.dinner { background: linear-gradient(135deg, #6366f1, #60a5fa); }
+    .meal-name { font-size: 15px; font-weight: 600; color: #292524; }
+    .meal-time { font-size: 12px; color: #a8a29e; margin-left: 8px; }
+    .meal-time svg { width: 12px; height: 12px; display: inline-block; vertical-align: -1px; margin-right: 2px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .meal-kcal { font-size: 12px; color: #a8a29e; font-weight: 500; }
+
+    .tbl-wrap { border-radius: 8px; overflow: hidden; }
+    .tbl-wrap.breakfast-border { border: 1px solid #fde68a; }
+    .tbl-wrap.mid-border { border: 1px solid #bae6fd; }
+    .tbl-wrap.lunch-border { border: 1px solid #a7f3d0; }
+    .tbl-wrap.snack-border { border: 1px solid #ddd6fe; }
+    .tbl-wrap.dinner-border { border: 1px solid #c7d2fe; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr.breakfast-bg { background: #fffbeb; }
+    thead tr.mid-bg { background: #f0f9ff; }
+    thead tr.lunch-bg { background: #ecfdf5; }
+    thead tr.snack-bg { background: #f5f3ff; }
+    thead tr.dinner-bg { background: #eef2ff; }
+    th { text-align: left; padding: 8px 12px; font-weight: 500; color: #78716c; }
+    th.c { text-align: center; }
+    td { padding: 10px 12px; }
+    td.food { color: #44403c; font-weight: 500; }
+    td.c { text-align: center; color: #78716c; }
+    td.cal { text-align: center; font-weight: 600; color: #44403c; }
+    tbody tr + tr td { border-top: 1px solid #f5f5f4; }
+
+    /* Alternatives */
+    .alt-wrap { margin-top: 10px; border-radius: 8px; overflow: hidden; }
+    .alt-wrap.breakfast-alt { border: 1px dashed rgba(251,146,60,0.4); background: rgba(255,247,237,0.5); }
+    .alt-wrap.mid-alt { border: 1px dashed rgba(34,211,238,0.4); background: rgba(236,254,255,0.5); }
+    .alt-wrap.lunch-alt { border: 1px dashed rgba(34,197,94,0.4); background: rgba(240,253,244,0.5); }
+    .alt-wrap.snack-alt { border: 1px dashed rgba(168,85,247,0.4); background: rgba(250,245,255,0.5); }
+    .alt-wrap.dinner-alt { border: 1px dashed rgba(96,165,250,0.4); background: rgba(239,246,255,0.5); }
+    .alt-header { padding: 10px 16px; display: flex; align-items: center; gap: 6px; }
+    .alt-header svg { width: 14px; height: 14px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .alt-header.breakfast-hdr svg { stroke: #fb923c; }
+    .alt-header.mid-hdr svg { stroke: #22d3ee; }
+    .alt-header.lunch-hdr svg { stroke: #22c55e; }
+    .alt-header.snack-hdr svg { stroke: #a855f7; }
+    .alt-header.dinner-hdr svg { stroke: #60a5fa; }
+    .alt-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #a8a29e; font-weight: 600; }
+
+    .alt-group-label { padding: 6px 16px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.5); }
+    .alt-group-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .alt-group-dot.breakfast-dot { background: #fb923c; }
+    .alt-group-dot.mid-dot { background: #22d3ee; }
+    .alt-group-dot.lunch-dot { background: #22c55e; }
+    .alt-group-dot.snack-dot { background: #a855f7; }
+    .alt-group-dot.dinner-dot { background: #60a5fa; }
+    .alt-group-text { font-size: 12px; color: #78716c; font-weight: 600; }
+    .alt-group-text strong { color: #57534e; font-weight: 600; }
+    .alt-group-sep { border: none; border-top: 1px dashed rgba(214,211,209,0.5); }
+
+    .alt-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .alt-table td { padding: 7px 12px; }
+    .alt-table td.af { padding-left: 32px; color: #57534e; font-weight: 500; }
+    .alt-table td.as { text-align: center; color: #a8a29e; white-space: nowrap; }
+    .alt-table td.ac { text-align: center; color: #57534e; font-weight: 600; }
+    .alt-table td.ac span { font-weight: 400; color: #a8a29e; }
+    .alt-table td.am { text-align: center; color: #a8a29e; }
+    .alt-table tr + tr td { border-top: 1px solid rgba(245,245,244,0.6); }
+
+    .notes { padding: 32px 48px; }
+    .notes-divider { border: none; border-top: 1px dashed #d6d3d1; margin-bottom: 28px; }
+    .notes-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: #44403c; font-weight: 600; margin-bottom: 12px; }
+    .note { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; color: #78716c; margin-bottom: 8px; }
+    .note p { margin: 0; flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+    .sentence-dot { color: black; font-size: 10px; margin-right: 6px; vertical-align: middle; }
+    .note-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; margin-top: 6px; flex-shrink: 0; }
+
+    .footer { padding: 0 48px 32px; }
+    .footer-inner { border-top: 1px solid #f5f5f4; padding-top: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .footer-text { font-size: 11px; color: #a8a29e; line-height: 1.7; }
+    .footer-text .green { color: #059669; font-weight: 600; }
+    .sig { text-align: center; }
+    .sig-line { width: 160px; border-bottom: 1px solid #d6d3d1; margin-bottom: 4px; }
+    .sig-name { font-size: 11px; color: #a8a29e; }
+    .sig-role { font-size: 10px; color: #a8a29e; }
+
+    .day-held-banner { background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 20px 48px; text-align: center; color: #92400e; font-weight: 500; }
+
+    ${hideMacrosCSS}
+
+    @media (max-width: 640px) {
+      body { padding: 12px 8px; }
+      .header, .meals, .notes, .footer { padding-left: 20px; padding-right: 20px; }
+      .macros { padding-left: 20px; padding-right: 20px; }
+      .day-header, .day-divider { padding-left: 20px; padding-right: 20px; }
+      .client-bar { grid-template-columns: repeat(2, 1fr); }
+      .macros { grid-template-columns: repeat(2, 1fr); }
+      .meal-time { display: none; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .am { display: none; }
     }
+    @media print { body { background: #fff; padding: 0; } .page { box-shadow: none; } }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>🥗 Personalized Diet Plan</h1>
-      <p><strong>${clientName || 'Client'}</strong> | Generated on ${today} | ${duration} Days Plan</p>
-      <div class="export-type">${showMacros ? '📋 Dietitian Version (with nutritional info)' : '👤 Client Version (meal plan only)'}</div>
-    </div>
+<div class="page">
+  <div class="accent-top"></div>
 
-    ${clientInfo ? `
-    <div class="client-info">
-      ${clientInfo.age ? `<div class="client-info-item"><strong>Age:</strong> ${clientInfo.age} years</div>` : ''}
-      ${clientInfo.goal ? `<div class="client-info-item"><strong>Goal:</strong> ${clientInfo.goal}</div>` : ''}
-      ${clientInfo.dietaryRestrictions ? `<div class="client-info-item"><strong>Dietary Restrictions:</strong> ${clientInfo.dietaryRestrictions}</div>` : ''}
-      ${clientInfo.medicalConditions ? `<div class="client-info-item"><strong>Medical Conditions:</strong> ${clientInfo.medicalConditions}</div>` : ''}
-      ${clientInfo.allergies ? `<div class="client-info-item"><strong>Allergies:</strong> ${clientInfo.allergies}</div>` : ''}
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-row">
+      <div class="logo-icon"><img src="https://dtps.tech/icons/icon-96x96.png" alt="DTPS" style="width: 27px; height: 26px; border-radius: 4px;" /></div>
+      <span class="brand">DTPS Nutrition</span>
     </div>
-    ` : ''}
+    <h1 class="title"> Nutrition Plan</h1>
+   
+    <span class="export-badge">${showMacros ? '📋 Dietitian Version' : '👤 Client Version'}</span>
+    <div class="client-bar">
+      <div class="client-field"><p class="fl">Client</p><p class="fv">${clientName || 'Client'}</p></div>
+      <div class="client-field"><p class="fl">Duration</p><p class="fv">${duration} Days</p></div>
+      <div class="client-field"><p class="fl">Plan Created</p><p class="fv">${today}</p></div>
+      <div class="client-field"><p class="fl">Dietitian</p><p class="fv">${dietitianName || 'DTPS Nutrition'}</p></div>
+    </div>
+  </div>
 
-    ${sortedDays.map((day, dayIndex) => {
+  ${sortedDays.map((day, dayIndex) => {
       const totals = calculateDayTotals(day);
-      const hasData = Object.keys(day.meals).length > 0;
+      const dayNum = dayIndex + 1;
+      const mealTypeClass = 'breakfast'; // default for day icon
+
+      // Day divider (not for first day)
+      const dayDivider = dayIndex > 0 ? '<div class="day-divider"><hr class="day-divider-line"/></div>' : '';
 
       if (day.isHeld) {
         return `
-        <div class="day-section">
-          <div class="day-header" style="background: #fbbf24;">
-            <span>📅 ${day.day}</span>
-            <span class="date">${day.date ? formatDateProper(day.date) : ''}</span>
-          </div>
-          <div class="day-note">⏸️ Plan on hold${day.holdReason ? `: ${day.holdReason}` : ''}</div>
+      ${dayDivider}
+      <div class="day-header">
+        <div class="day-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+        <div>
+          <div class="day-name">${day.day} <span class="day-num">&mdash; Day ${dayNum}</span></div>
+          <div class="day-date">${day.date ? formatDateProper(day.date) : ''}</div>
         </div>
-        `;
+      </div>
+      <div class="day-held-banner">⏸️ Plan on hold${day.holdReason ? `: ${day.holdReason}` : ''}</div>
+      `;
       }
 
+      const allMealTypes = getAllMealTypesSorted();
+
       return `
-      <div class="day-section">
-        <div class="day-header">
-          <span>📅 ${day.day}</span>
-          <span class="date">${day.date ? formatDateProper(day.date) : ''}</span>
-        </div>
-        ${day.note ? `<div class="day-note">📝 ${day.note}</div>` : ''}
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 120px;">Meal</th>
-              <th>Food Items</th>
-              <th style="width: 70px;" class="macro-cell">Calories</th>
-              <th style="width: 70px;" class="macro-cell">Carbs(g)</th>
-              <th style="width: 70px;" class="macro-cell">Protein(g)</th>
-              <th style="width: 70px;" class="macro-cell">Fats(g)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(() => {
-          const allMealTypes = getAllMealTypesSorted();
-          return allMealTypes.map(mealType => {
-            const meal = findMealInDay(day, mealType);
-            if (!meal) return '';
-
-            const primaryFood = meal.foodOptions?.[0];
-            const alternatives = meal.foodOptions?.slice(1) || [];
-
-            if (!primaryFood) return '';
-
-            return `
-                <tr>
-                  <td>
-                    <div class="meal-name">${mealType}</div>
-                    <div class="meal-time">${getMealTime(mealType)}</div>
-                  </td>
-                  <td>
-                    <div class="food-item">
-                      <span class="food-name">${primaryFood.food || '-'}</span>
-                      ${primaryFood.unit ? `<span class="food-qty">(${primaryFood.unit})</span>` : ''}
-                    </div>
-                    ${alternatives.length > 0 ? `
-                    <div class="alternatives">
-                      <span class="alternatives-label">Alternatives:</span>
-                      <ul style="margin: 4px 0 0 15px; padding: 0; list-style: disc;">
-                        ${alternatives.map(alt => `<li style="margin-bottom: 2px;">${alt.food || '-'}${alt.unit ? ` (${alt.unit})` : ''}${showMacros && alt.cal ? ` — <span style="color:#6b7280; font-size:10px;">Cal: ${alt.cal}, C: ${alt.carbs || 0}g, P: ${alt.protein || 0}g, F: ${alt.fats || 0}g</span>` : ''}</li>`).join('')}
-                      </ul>
-                    </div>
-                    ` : ''}
-                  </td>
-                  <td class="macro-cell"><div class="macro-value">${primaryFood.cal || '0'}</div></td>
-                  <td class="macro-cell"><div class="macro-value">${primaryFood.carbs || '0'}</div></td>
-                  <td class="macro-cell"><div class="macro-value">${primaryFood.protein || '0'}</div></td>
-                  <td class="macro-cell"><div class="macro-value">${primaryFood.fats || '0'}</div></td>
-                </tr>
-                `;
-          }).join('');
-        })()}
-            ${hasData ? `
-            <tr class="totals-row">
-              <td colspan="2" style="text-align: right;"><strong>Daily Total</strong></td>
-              <td class="macro-cell"><strong>${totals.cal.toFixed(0)}</strong></td>
-              <td class="macro-cell"><strong>${totals.carbs.toFixed(1)}</strong></td>
-              <td class="macro-cell"><strong>${totals.protein.toFixed(1)}</strong></td>
-              <td class="macro-cell"><strong>${totals.fats.toFixed(1)}</strong></td>
-            </tr>
-            ` : ''}}
-          </tbody>
-        </table>
+    ${dayDivider}
+    <div class="day-header">
+      <div class="day-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div>
+        <div class="day-name">${day.day} <span class="day-num">&mdash; Day ${dayNum}</span></div>
+        <div class="day-date">${day.date ? formatDateProper(day.date) : ''}</div>
       </div>
-      `;
+    </div>
+
+    <div class="macros">
+      <div class="mc cal"><div class="mc-top"><div class="mc-dot"><svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div><span class="mc-label">Calories</span></div><div class="mc-val">${totals.cal.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} <span>kcal</span></div></div>
+      <div class="mc pro"><div class="mc-top"><div class="mc-dot"><svg viewBox="0 0 24 24"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></div><span class="mc-label">Protein</span></div><div class="mc-val">${totals.protein.toFixed(0)} <span>g</span></div></div>
+      <div class="mc carb"><div class="mc-top"><div class="mc-dot"><svg viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></div><span class="mc-label">Carbs</span></div><div class="mc-val">${totals.carbs.toFixed(0)} <span>g</span></div></div>
+      <div class="mc fat"><div class="mc-top"><div class="mc-dot"><svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75"/></svg></div><span class="mc-label">Fats</span></div><div class="mc-val">${totals.fats.toFixed(0)} <span>g</span></div></div>
+    </div>
+
+    <div class="meals">
+      ${allMealTypes.map(mealType => {
+        const meal = findMealInDay(day, mealType);
+        if (!meal?.foodOptions?.length) return '';
+
+        // Separate main foods from alternatives
+        const mainFoods = meal.foodOptions.filter(opt => !opt.isAlternative);
+        const alternatives = meal.foodOptions.filter(opt => opt.isAlternative);
+
+        if (!mainFoods.length) return '';
+
+        const mealClass = getMealTypeClass(mealType);
+        const mealIcon = getMealIcon(mealType);
+        const mealTime = getMealTime(mealType);
+
+        // Calculate meal totals from main foods only
+        let mealCal = 0;
+        mainFoods.forEach(opt => {
+          mealCal += parseFloat(opt.cal) || 0;
+        });
+
+        return `
+        <div class="meal">
+          <div class="meal-head">
+            <div class="meal-left">
+              <div class="meal-icon ${mealClass}">${mealIcon}</div>
+              <span class="meal-name">${mealType}</span>
+              <span class="meal-time"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${mealTime}</span>
+            </div>
+            <span class="meal-kcal">${mealCal.toFixed(0)} kcal</span>
+          </div>
+          <div class="tbl-wrap ${mealClass}-border">
+            <table>
+              <thead>
+                <tr class="${mealClass}-bg">
+                  <th>Food Item</th>
+                  <th class="c">Srv.</th>
+                  <th class="c">Cal</th>
+                  <th class="c">P(g)</th>
+                  <th class="c">C(g)</th>
+                  <th class="c">F(g)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${mainFoods.map(food => `
+                <tr>
+                  <td class="food">${food.food || '-'}</td>
+                  <td class="c">${food.unit || '1'}</td>
+                  <td class="cal">${food.cal || '0'}</td>
+                  <td class="c">${food.protein || '0'}</td>
+                  <td class="c">${food.carbs || '0'}</td>
+                  <td class="c">${food.fats || '0'}</td>
+                </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          ${alternatives.length > 0 ? `
+          <div class="alt-wrap ${mealClass}-alt">
+            <div class="alt-header ${mealClass}-hdr">
+              <svg viewBox="0 0 24 24"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+              <span class="alt-label">Alternatives</span>
+            </div>
+            ${mainFoods.map((mainFood, mainIdx) => {
+          // Find alternatives that could replace this main food
+          // For now, show all alternatives under first main food
+          if (mainIdx > 0) return '';
+          return `
+              <div class="alt-group-label">
+                <span class="alt-group-dot ${mealClass}-dot"></span>
+                <span class="alt-group-text">Instead of <strong>${mainFood.food || 'Main Item'}</strong></span>
+              </div>
+              <table class="alt-table">
+                <tbody>
+                  ${alternatives.map(alt => `
+                  <tr>
+                    <td class="af">${alt.food || '-'}</td>
+                    <td class="as">${alt.unit || '1 srv'}</td>
+                    <td class="ac">${alt.cal || '0'} <span>cal</span></td>
+                    <td class="am">${alt.protein || '0'}p</td>
+                    <td class="am">${alt.carbs || '0'}c</td>
+                    <td class="am">${alt.fats || '0'}f</td>
+                  </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+              `;
+        }).join('')}
+          </div>
+          ` : ''}
+        </div>
+        `;
+      }).join('')}
+    </div>
+
+    ${day.note ? `
+    <div class="notes">
+      <hr class="notes-divider"/>
+      <p class="notes-title">Day Notes</p>
+      <div class="note"><span class="note-dot"></span><p>${formatNoteForExport(day.note)}</p></div>
+    </div>
+    ` : ''}
+    `;
     }).join('')}
 
-    <div class="summary">
-      <h3>📊 Plan Summary</h3>
-      <div class="summary-grid">
-        <div class="summary-item">
-          <div class="summary-value">${duration}</div>
-          <div class="summary-label">Total Days</div>
-        </div>
-        <div class="summary-item">
-          <div class="summary-value">${mealTypes.length}</div>
-          <div class="summary-label">Meals Per Day</div>
-        </div>
-        <div class="summary-item">
-          <div class="summary-value">${sortedDays.reduce((sum, day) => sum + calculateDayTotals(day).cal, 0).toFixed(0)}</div>
-          <div class="summary-label">Total Calories</div>
-        </div>
-        <div class="summary-item">
-          <div class="summary-value">${(sortedDays.reduce((sum, day) => sum + calculateDayTotals(day).cal, 0) / duration).toFixed(0)}</div>
-          <div class="summary-label">Avg Daily Calories</div>
-        </div>
+  <!-- NOTES -->
+  <div class="notes">
+    <hr class="notes-divider"/>
+    <p class="notes-title">Important Notes</p>
+    <div class="note"><span class="note-dot"></span><p>Drink at least 8-10 glasses of water throughout the day.</p></div>
+    <div class="note"><span class="note-dot"></span><p>Nutritional values are approximate and may vary by brand and preparation.</p></div>
+    <div class="note"><span class="note-dot"></span><p>Replace food items only with the listed alternatives to maintain macro balance.</p></div>
+    <div class="note"><span class="note-dot"></span><p>Avoid processed foods, sugary drinks, and excessive sodium intake.</p></div>
+    ${clientInfo?.dietaryRestrictions ? `<div class="note"><span class="note-dot"></span><p><strong>Dietary Restrictions:</strong> ${clientInfo.dietaryRestrictions}</p></div>` : ''}
+    ${clientInfo?.allergies ? `<div class="note"><span class="note-dot"></span><p><strong>Allergies:</strong> ${clientInfo.allergies}</p></div>` : ''}
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-inner">
+      <div class="footer-text">
+        <p>This diet plan is for informational purposes only. Consult your healthcare provider before making dietary changes.</p>
+        <p>Generated by <span class="green">DTPS Nutrition</span> &middot; ${format(new Date(), 'MMMM yyyy')}</p>
+      </div>
+      <div class="sig">
+        <div class="sig-line"></div>
+        <p class="sig-name">${dietitianName || 'DTPS Nutrition'}</p>
+        <p class="sig-role">Certified Nutritionist</p>
       </div>
     </div>
-
-    <div class="footer">
-      <p>Generated by DT Poonam Sagar Nutrition System | ${today}</p>
-      <p>This diet plan is personalized and should be followed as prescribed by your dietitian.</p>
-    </div>
   </div>
+
+  <div class="accent-bottom"></div>
+</div>
 </body>
 </html>
     `;
-  }, [weekPlan, mealTypes, clientName, clientInfo, duration]);
+  }, [weekPlan, mealTypes, clientName, clientInfo, duration, startDate, dietitianName]);
 
   // Generate CSV content with proper date/time sorting
   const generateCSVContent = useCallback(() => {
