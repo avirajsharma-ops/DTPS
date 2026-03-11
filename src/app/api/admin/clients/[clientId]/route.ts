@@ -20,7 +20,7 @@ async function isStaffAssignedToClient(staffId: string, clientId: string): Promi
     const result = await User.findById(clientId).select('assignedDietitian assignedDietitians assignedHealthCounselor assignedHealthCounselors').lean();
     const client = result as Record<string, any> | null;
     if (!client) return false;
-    
+
     const staffIdStr = staffId.toString();
     return (
       client.assignedDietitian?.toString() === staffIdStr ||
@@ -40,11 +40,10 @@ export async function GET(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   let clientId: string = '';
-  
+
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      console.log('[GET /api/admin/clients/[clientId]] Unauthorized - no session');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -53,8 +52,7 @@ export async function GET(
 
     // Validate clientId format
     if (!clientId || !isValidObjectId(clientId)) {
-      console.log('[GET /api/admin/clients/[clientId]] Invalid clientId format:', clientId);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Invalid client ID format',
         details: 'The provided client ID is not a valid MongoDB ObjectId'
       }, { status: 400 });
@@ -69,19 +67,9 @@ export async function GET(
     const isDietitian = userRole === 'dietitian';
     const isHealthCounselor = userRole === 'health-counselor' || userRole === 'healthcounselor' || userRole === 'health_counselor';
 
-    console.log('[GET /api/admin/clients/[clientId]] Request details:', {
-      clientId,
-      requestingUserId: userId,
-      requestingUserRole: userRole,
-      isAdmin,
-      isDietitian,
-      isHealthCounselor
-    });
-
     // Check authorization: admin can access all, dietitian/HC can only access assigned clients
     if (!isAdmin && !isDietitian && !isHealthCounselor) {
-      console.log('[GET /api/admin/clients/[clientId]] Forbidden - invalid role:', userRole);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Forbidden - Access denied',
         details: `Role '${userRole}' does not have permission to access client data`
       }, { status: 403 });
@@ -90,14 +78,9 @@ export async function GET(
     // For non-admin roles, verify they are assigned to this client
     if (!isAdmin) {
       const isAssigned = await isStaffAssignedToClient(userId, clientId);
-      console.log('[GET /api/admin/clients/[clientId]] Assignment check:', {
-        staffId: userId,
-        clientId,
-        isAssigned
-      });
-      
+
       if (!isAssigned) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'You are not assigned to this client',
           details: 'Access denied - no assignment relationship found'
         }, { status: 403 });
@@ -117,20 +100,11 @@ export async function GET(
     const client = clientResult as Record<string, any> | null;
 
     if (!client) {
-      console.log('[GET /api/admin/clients/[clientId]] Client not found:', clientId);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Client not found',
         details: `No client exists with ID: ${clientId}`
       }, { status: 404 });
     }
-
-    console.log('[GET /api/admin/clients/[clientId]] Client found:', {
-      clientId: client._id,
-      name: `${client.firstName} ${client.lastName}`,
-      role: client.role,
-      assignedDietitian: client.assignedDietitian?._id || client.assignedDietitian,
-      assignedDietitians: client.assignedDietitians?.map((d: any) => d._id || d)
-    });
 
     // Get meal plans
     const mealPlans = await ClientMealPlan.find({ clientId: new mongoose.Types.ObjectId(clientId) })
@@ -145,12 +119,6 @@ export async function GET(
       .sort({ createdAt: -1 })
       .limit(20)
       .lean();
-
-    console.log('[GET /api/admin/clients/[clientId]] Response summary:', {
-      clientId,
-      mealPlansCount: mealPlans.length,
-      paymentsCount: payments.length
-    });
 
     return NextResponse.json({
       client,
@@ -169,20 +137,20 @@ export async function GET(
 
     // Handle specific MongoDB errors
     if (error?.name === 'CastError') {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Invalid client ID',
         details: 'The provided ID is not a valid format'
       }, { status: 400 });
     }
 
     if (error?.name === 'MongoNetworkError' || error?.name === 'MongoServerSelectionError') {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Database connection failed',
         details: 'Unable to connect to the database. Please try again.'
       }, { status: 503 });
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Failed to fetch client details',
       details: process.env.NODE_ENV === 'development' ? error?.message : 'An unexpected error occurred'
     }, { status: 500 });
@@ -195,7 +163,7 @@ export async function PUT(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   let clientId: string = '';
-  
+
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -207,7 +175,7 @@ export async function PUT(
 
     // Validate clientId format
     if (!clientId || !isValidObjectId(clientId)) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Invalid client ID format',
         details: 'The provided client ID is not a valid MongoDB ObjectId'
       }, { status: 400 });
@@ -264,7 +232,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid client ID' }, { status: 400 });
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Failed to update client',
       details: process.env.NODE_ENV === 'development' ? error?.message : undefined
     }, { status: 500 });
@@ -277,7 +245,7 @@ export async function DELETE(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   let clientId: string = '';
-  
+
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -289,7 +257,7 @@ export async function DELETE(
 
     // Validate clientId format
     if (!clientId || !isValidObjectId(clientId)) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Invalid client ID format',
         details: 'The provided client ID is not a valid MongoDB ObjectId'
       }, { status: 400 });
@@ -339,7 +307,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invalid client ID' }, { status: 400 });
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Failed to process request',
       details: process.env.NODE_ENV === 'development' ? error?.message : undefined
     }, { status: 500 });
