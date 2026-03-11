@@ -72,7 +72,8 @@ const userSchema = new Schema({
     type: String,
     required: true,
     lowercase: true,
-    trim: true
+    trim: true,
+    unique: true
   },
   dtps_id: {
     type: String,
@@ -439,7 +440,8 @@ userSchema.index({ assignedDietitian: 1 });
 userSchema.index({ assignedDietitians: 1 });
 userSchema.index({ clientStatus: 1 }); // For filtering by status
 userSchema.index({ createdAt: -1 }); // For sorting by newest
-userSchema.index({ email: 1 }); // For email lookups
+userSchema.index({ email: 1 }, { unique: true }); // Unique email lookup
+userSchema.index({ phone: 1 }, { unique: true, sparse: true }); // Unique phone (sparse allows null)
 // Compound indexes for common queries in admin panel
 userSchema.index({ role: 1, clientStatus: 1 });
 userSchema.index({ role: 1, assignedDietitian: 1 });
