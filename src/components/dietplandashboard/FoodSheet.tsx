@@ -336,10 +336,10 @@ export function FoodDatabasePanel({
 
             // Get nutrition values - API returns flat values at recipe level
             // Also check nutrition object for backwards compatibility
-            const cals = recipe.calories || recipe.nutrition?.calories || recipe.flatNutrition?.calories || 0;
-            const carbsVal = recipe.carbs || recipe.nutrition?.carbs || recipe.flatNutrition?.carbs || 0;
-            const proteinVal = recipe.protein || recipe.nutrition?.protein || recipe.flatNutrition?.protein || 0;
-            const fatsVal = recipe.fat || recipe.nutrition?.fat || recipe.flatNutrition?.fat || 0;
+            const cals = parseFloat(Number(recipe.calories || recipe.nutrition?.calories || recipe.flatNutrition?.calories || 0).toFixed(2));
+            const carbsVal = parseFloat(Number(recipe.carbs || recipe.nutrition?.carbs || recipe.flatNutrition?.carbs || 0).toFixed(2));
+            const proteinVal = parseFloat(Number(recipe.protein || recipe.nutrition?.protein || recipe.flatNutrition?.protein || 0).toFixed(2));
+            const fatsVal = parseFloat(Number(recipe.fat || recipe.nutrition?.fat || recipe.flatNutrition?.fat || 0).toFixed(2));
 
             return {
               id: recipe._id,
@@ -615,16 +615,16 @@ export function FoodDatabasePanel({
                         <div className="text-sm text-slate-700">{item.amount}</div>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm font-medium text-slate-900">{item.cals} <span className="text-xs text-slate-500">kcal</span></div>
+                        <div className="text-sm font-medium text-slate-900">{typeof item.cals === 'number' ? parseFloat(item.cals.toFixed(2)) : item.cals} <span className="text-xs text-slate-500">kcal</span></div>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-700">{item.carbs} <span className="text-xs text-slate-500">gr</span></div>
+                        <div className="text-sm text-slate-700">{typeof item.carbs === 'number' ? parseFloat(item.carbs.toFixed(2)) : item.carbs} <span className="text-xs text-slate-500">gr</span></div>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-700">{item.protein} <span className="text-xs text-slate-500">gr</span></div>
+                        <div className="text-sm text-slate-700">{typeof item.protein === 'number' ? parseFloat(item.protein.toFixed(2)) : item.protein} <span className="text-xs text-slate-500">gr</span></div>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-700">{item.fats} <span className="text-xs text-slate-500">gr</span></div>
+                        <div className="text-sm text-slate-700">{typeof item.fats === 'number' ? parseFloat(item.fats.toFixed(2)) : item.fats} <span className="text-xs text-slate-500">gr</span></div>
                       </td>
                     </tr>
                   ))}

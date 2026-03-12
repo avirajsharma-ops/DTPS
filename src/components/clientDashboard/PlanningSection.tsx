@@ -161,7 +161,13 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
   const [templateSearch, setTemplateSearch] = useState('');
   const [templatePage, setTemplatePage] = useState(1);
   const [totalTemplates, setTotalTemplates] = useState(0);
-  const TEMPLATES_PER_PAGE = 20;
+  const TEMPLATES_PER_PAGE = 10;
+
+  // Diet Date Selection modal state
+  const [showDateSelectionModal, setShowDateSelectionModal] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState<DietTemplate | null>(null);
+  // Mapping: dateIndex → templateDayIndex (0-based), or -1 for Skip
+  const [templateDayMapping, setTemplateDayMapping] = useState<Record<number, number>>({});
 
   // Meal plan states
   const [initialMeals, setInitialMeals] = useState<any[]>([]);
@@ -261,40 +267,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
     return () => clearTimeout(timer);
   }, [planTitle, description, duration, startDate, endDate, primaryGoal, initialMeals, initialMealTypes, selectedTemplate, step, planFormDraftKey]);
 
-  // Restore form draft on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !isEditMode) {
-      try {
-        const saved = localStorage.getItem(planFormDraftKey);
-        if (saved) {
-          const draftData = JSON.parse(saved);
-          // Check if draft hasn't expired
-          if (draftData.expiresAt && Date.now() < draftData.expiresAt) {
-            if (draftData.planTitle) {
-              setPlanTitle(draftData.planTitle);
-              setDescription(draftData.description || '');
-              setDuration(draftData.duration || 7);
-              setStartDate(draftData.startDate || format(new Date(), 'yyyy-MM-dd'));
-              setEndDate(draftData.endDate || format(addDays(new Date(), 6), 'yyyy-MM-dd'));
-              setPrimaryGoal(draftData.primaryGoal || 'weight-loss');
-              if (draftData.initialMeals?.length > 0) {
-                setInitialMeals(draftData.initialMeals);
-              }
-              if (draftData.initialMealTypes?.length > 0) {
-                setInitialMealTypes(draftData.initialMealTypes);
-              }
-              // Move to last saved step
-              if (draftData.step) {
-                setStep(draftData.step);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Failed to restore plan form draft:', error);
-      }
-    }
-  }, [planFormDraftKey, isEditMode]);
+  // Don't auto-restore drafts on mount - this was causing navigation issues
+  // Drafts will be restored only when user explicitly clicks "Create New Plan"
+  // The hasMountedRef is no longer needed for this purpose
 
   // Calculate end date when duration or start date changes
   useEffect(() => {
@@ -376,9 +351,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
         isActive: 'true',
         page: page.toString(),
         limit: TEMPLATES_PER_PAGE.toString(),
+        skip: ((page - 1) * TEMPLATES_PER_PAGE).toString(),
         ...(search && { search }),
-        ...(primaryGoal && { primaryGoal }),
-        ...(duration && { duration: duration.toString() })
+        ...(primaryGoal && { primaryGoal })
       });
 
       const url = type === 'plan'
@@ -438,8 +413,27 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
 
   // Load template data into form
   const loadTemplate = (template: DietTemplate) => {
-    setPlanTitle(template.name);
-    setDescription(template.description || '');
+    // For diet templates with meals, switch to mapping view inside the same dialog
+    if (template.meals && template.meals.length > 0) {
+      setPendingTemplate(template);
+      // Initialize default mapping: sequentially map template days, skip rest
+      const templateDaysCount = template.meals.length;
+      const defaultMapping: Record<number, number> = {};
+      for (let i = 0; i < duration; i++) {
+        defaultMapping[i] = i < templateDaysCount ? i : -1;
+      }
+      setTemplateDayMapping(defaultMapping);
+      // Dialog stays open — pendingTemplate switches the view to mapping
+      return;
+    }
+
+    // For plan templates or templates without meals, load directly
+    applyTemplateDirectly(template);
+  };
+
+  // Apply template directly without date mapping (for plan templates)
+  const applyTemplateDirectly = (template: DietTemplate) => {
+    // Keep user's plan name and description — only load meals, meal types, and duration
     setDuration(template.duration);
     setSelectedTemplate(template);
 
@@ -451,8 +445,104 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       setInitialMeals(template.meals);
     }
 
+    // Force DietPlanDashboard to re-mount with new meals
+    setPlanKey(prev => prev + 1);
+
     setShowTemplateDialog(false);
     toast.success(`Template "${template.name}" loaded successfully`);
+  };
+
+  // Deep clone a meal day's data to avoid reference sharing between days
+  const deepCloneMealDay = (sourceDay: any) => {
+    const clonedMeals: Record<string, any> = {};
+    if (sourceDay.meals && typeof sourceDay.meals === 'object') {
+      Object.keys(sourceDay.meals).forEach(mealType => {
+        const meal = sourceDay.meals[mealType];
+        if (!meal) return;
+        clonedMeals[mealType] = {
+          ...meal,
+          id: meal.id || `meal-${mealType.toLowerCase().replace(/\s+/g, '-')}`,
+          name: meal.name || mealType,
+          time: meal.time || '',
+          foodOptions: (meal.foodOptions || []).map((opt: any) => ({
+            ...opt,
+            id: opt.id || `food-${Math.random().toString(36).substring(2, 9)}`,
+            foods: opt.foods ? opt.foods.map((f: any) => ({ ...f })) : undefined,
+          })),
+        };
+      });
+    }
+    return clonedMeals;
+  };
+
+  // Apply template with date→day mapping from the Date Selection modal
+  const applyTemplateMappingToMeals = () => {
+    if (!pendingTemplate || !pendingTemplate.meals) return;
+
+    const template = pendingTemplate;
+    const templateMeals = template.meals;
+
+    // Build the mapped meals array based on user's day selection
+    const mappedMeals: any[] = [];
+    const baseDate = new Date(startDate);
+
+    for (let i = 0; i < duration; i++) {
+      const templateDayIndex = templateDayMapping[i];
+      const dayDate = addDays(baseDate, i);
+      const dateStr = format(dayDate, 'yyyy-MM-dd');
+
+      if (templateDayIndex === undefined || templateDayIndex === -1) {
+        // Skip — push an empty day with no meals
+        mappedMeals.push({
+          id: `day-${i}`,
+          day: `Day ${i + 1}`,
+          date: dateStr,
+          meals: {},
+          note: ''
+        });
+      } else {
+        // Use the template day's data — deep clone to avoid reference issues
+        const sourceDay = templateMeals?.[templateDayIndex];
+        if (sourceDay) {
+          const clonedMeals = deepCloneMealDay(sourceDay);
+          mappedMeals.push({
+            id: `day-${i}`,
+            day: `Day ${i + 1}`,
+            date: dateStr,
+            meals: clonedMeals,
+            note: sourceDay.note || '',
+          });
+        } else {
+          mappedMeals.push({
+            id: `day-${i}`,
+            day: `Day ${i + 1}`,
+            date: dateStr,
+            meals: {},
+            note: ''
+          });
+        }
+      }
+    }
+
+    // Set template reference — keep user's plan name and description
+    setSelectedTemplate(template);
+
+    if (template.mealTypes && template.mealTypes.length > 0) {
+      setInitialMealTypes(template.mealTypes);
+    }
+
+    // Set the mapped meals — this triggers DietPlanDashboard to rebuild weekPlan
+    setInitialMeals(mappedMeals);
+
+    // Force DietPlanDashboard to re-mount with new meals
+    setPlanKey(prev => prev + 1);
+
+    // Close the dialog and reset mapping state
+    setShowTemplateDialog(false);
+    setPendingTemplate(null);
+    setTemplateDayMapping({});
+
+    toast.success(`Template "${template.name}" loaded with custom day mapping`);
   };
 
   // Fetch the latest meal plan's end date from already fetched clientPlans
@@ -542,8 +632,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       toast.error('Duration must be at least 1 day');
       return;
     }
-    // Check if duration exceeds remaining days in paid plan
-    if (paymentCheck?.hasPaidPlan && duration > paymentCheck.remainingDays) {
+    // Check if duration exceeds remaining days in paid plan (only for new plans)
+    if (!isEditMode && paymentCheck?.hasPaidPlan && duration > paymentCheck.remainingDays) {
       toast.error(`Duration cannot exceed ${paymentCheck.remainingDays} days (remaining in client's plan)`);
       return;
     }
@@ -553,8 +643,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
       return;
     }
 
-    // Validate start date is within expected range if set (end date can be outside)
-    if (paymentCheck?.purchase?.expectedStartDate && paymentCheck?.purchase?.expectedEndDate) {
+    // Validate start date is within expected range if set (only for new plans, not when editing)
+    if (!isEditMode && paymentCheck?.purchase?.expectedStartDate && paymentCheck?.purchase?.expectedEndDate) {
       const expectedStart = new Date(paymentCheck.purchase.expectedStartDate);
       const expectedEnd = new Date(paymentCheck.purchase.expectedEndDate);
       const planStartDate = new Date(startDate);
@@ -734,6 +824,21 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
     setIsEditMode(false);
     setViewingPlan(null);
     setPlanKey(prev => prev + 1); // Reset key to force fresh component
+
+    // Clear localStorage draft to prevent auto-restore on next mount
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(`dietPlan_formDraft_${client._id}_new`);
+        if (editingPlan?._id) {
+          localStorage.removeItem(`dietPlan_formDraft_${client._id}_${editingPlan._id}`);
+        }
+        if (viewingPlan?._id) {
+          localStorage.removeItem(`dietPlan_formDraft_${client._id}_${viewingPlan._id}`);
+        }
+      }
+    } catch (e) {
+      // Ignore localStorage errors
+    }
   };
 
   // View plan details
@@ -748,6 +853,9 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
     const planMeals = plan.meals || [];
     const planMealTypes = plan.mealTypes || DEFAULT_MEAL_TYPES_LIST;
 
+    // Clear any stale edit state before viewing
+    setEditingPlan(null);
+    setIsEditMode(false);
 
     setViewingPlan(plan);
     setPlanTitle(plan.name);
@@ -2153,7 +2261,12 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                   if (open) {
                     setTemplateSearch('');
                     setTemplatePage(1);
+                    setPendingTemplate(null);
+                    setTemplateDayMapping({});
                     fetchTemplates(templateType, 1, '');
+                  } else {
+                    setPendingTemplate(null);
+                    setTemplateDayMapping({});
                   }
                 }}>
                   <DialogTrigger asChild>
@@ -2162,127 +2275,240 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                       Load Templates
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-                    <DialogHeader>
-                      <DialogTitle>Load {templateType === 'plan' ? 'Plan' : 'Diet'} Template</DialogTitle>
-                    </DialogHeader>
-                    {/* Template Type Selector */}
-                    <div className="flex gap-2 mb-3">
-                      <Button
-                        variant={templateType === 'plan' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                          setTemplateType('plan');
-                          setTemplatePage(1);
-                          fetchTemplates('plan', 1, templateSearch);
-                        }}
-                      >
-                        Plan Templates
-                      </Button>
-                      <Button
-                        variant={templateType === 'diet' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                          setTemplateType('diet');
-                          setTemplatePage(1);
-                          fetchTemplates('diet', 1, templateSearch);
-                        }}
-                      >
-                        Diet Templates
-                      </Button>
-                    </div>
-                    {/* Search Input */}
-                    <div className="relative mb-3">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Search templates by name..."
-                        value={templateSearch}
-                        onChange={(e) => setTemplateSearch(e.target.value)}
-                        className="pl-9"
-                      />
-                    </div>
-                    {/* Total count */}
-                    <p className="text-xs text-gray-500 mb-2">
-                      {totalTemplates > 0 ? `Showing ${Math.min(TEMPLATES_PER_PAGE, templates.length)} of ${totalTemplates} templates` : ''}
-                    </p>
-                    {/* Templates List */}
-                    <div className="flex-1 overflow-y-auto min-h-0">
-                      {loadingTemplates ? (
-                        <div className="flex items-center justify-center py-8">
-                          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                        </div>
-                      ) : templates.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                          <p>No templates found</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {templates.map((template) => (
-                            <div
-                              key={template._id}
-                              className="border rounded-lg p-3 cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition-colors"
-                              onClick={() => loadTemplate(template)}
+                  <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
+                    {/* View 1: Template List */}
+                    {!pendingTemplate ? (
+                      <>
+                        <DialogHeader className="px-6 pt-6 pb-0">
+                          <DialogTitle>Load {templateType === 'plan' ? 'Plan' : 'Diet'} Template</DialogTitle>
+                        </DialogHeader>
+                        <div className="px-6 pb-4 flex-1 flex flex-col min-h-0">
+                          {/* Template Type Selector */}
+                          <div className="flex gap-2 mb-3 mt-3">
+                            <Button
+                              variant={templateType === 'plan' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => {
+                                setTemplateType('plan');
+                                setTemplatePage(1);
+                                fetchTemplates('plan', 1, templateSearch);
+                              }}
                             >
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium text-gray-900 truncate">{template.name}</h4>
-                                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                                    {template.category && (
-                                      <Badge className="text-xs capitalize bg-blue-100 text-blue-800">{template.category.replace(/-/g, ' ')}</Badge>
-                                    )}
-                                    <span className="text-xs text-gray-600">{template.duration} days</span>
-                                    {template.goals?.primaryGoal && (
-                                      <Badge variant="secondary" className="text-xs capitalize">
-                                        {template.goals.primaryGoal.replace(/-/g, ' ')}
-                                      </Badge>
-                                    )}
-                                    {template.dietaryRestrictions && template.dietaryRestrictions.length > 0 && (
-                                      <Badge variant="outline" className="text-xs">
-                                        {template.dietaryRestrictions.slice(0, 2).join(', ')}
-                                        {template.dietaryRestrictions.length > 2 && ` +${template.dietaryRestrictions.length - 2}`}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                                <Check className="h-4 w-4 text-gray-400 shrink-0" />
+                              Plan Templates
+                            </Button>
+                            <Button
+                              variant={templateType === 'diet' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => {
+                                setTemplateType('diet');
+                                setTemplatePage(1);
+                                fetchTemplates('diet', 1, templateSearch);
+                              }}
+                            >
+                              Diet Templates
+                            </Button>
+                          </div>
+                          {/* Search Input */}
+                          <div className="relative mb-3">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              placeholder="Search templates by name..."
+                              value={templateSearch}
+                              onChange={(e) => setTemplateSearch(e.target.value)}
+                              className="pl-9"
+                            />
+                          </div>
+                          {/* Total count */}
+                          <p className="text-xs text-gray-500 mb-2">
+                            {totalTemplates > 0 ? `Showing ${Math.min(TEMPLATES_PER_PAGE, templates.length)} of ${totalTemplates} templates` : ''}
+                          </p>
+                          {/* Templates List */}
+                          <div className="flex-1 overflow-y-auto min-h-0">
+                            {loadingTemplates ? (
+                              <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                               </div>
+                            ) : templates.length === 0 ? (
+                              <div className="text-center py-8 text-gray-500">
+                                <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p>No templates found</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {templates.map((template) => (
+                                  <div
+                                    key={template._id}
+                                    className="border rounded-lg p-3 cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition-colors"
+                                    onClick={() => loadTemplate(template)}
+                                  >
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-medium text-gray-900 truncate">{template.name}</h4>
+                                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                                          {template.category && (
+                                            <Badge className="text-xs capitalize bg-blue-100 text-blue-800">{template.category.replace(/-/g, ' ')}</Badge>
+                                          )}
+                                          <span className="text-xs text-gray-600">{template.duration} days</span>
+                                          {template.goals?.primaryGoal && (
+                                            <Badge variant="secondary" className="text-xs capitalize">
+                                              {template.goals.primaryGoal.replace(/-/g, ' ')}
+                                            </Badge>
+                                          )}
+                                          {template.dietaryRestrictions && template.dietaryRestrictions.length > 0 && (
+                                            <Badge variant="outline" className="text-xs">
+                                              {template.dietaryRestrictions.slice(0, 2).join(', ')}
+                                              {template.dietaryRestrictions.length > 2 && ` +${template.dietaryRestrictions.length - 2}`}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <ArrowRight className="h-4 w-4 text-gray-400 shrink-0" />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {/* Pagination */}
+                          {totalTemplates > TEMPLATES_PER_PAGE && (
+                            <div className="flex items-center justify-between pt-3 border-t mt-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={templatePage === 1 || loadingTemplates}
+                                onClick={() => {
+                                  const newPage = templatePage - 1;
+                                  setTemplatePage(newPage);
+                                  fetchTemplates(templateType, newPage, templateSearch);
+                                }}
+                              >
+                                <ArrowLeft className="h-4 w-4 mr-1" /> Previous
+                              </Button>
+                              <span className="text-sm text-gray-600">
+                                Page {templatePage} of {Math.ceil(totalTemplates / TEMPLATES_PER_PAGE)}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={templatePage >= Math.ceil(totalTemplates / TEMPLATES_PER_PAGE) || loadingTemplates}
+                                onClick={() => {
+                                  const newPage = templatePage + 1;
+                                  setTemplatePage(newPage);
+                                  fetchTemplates(templateType, newPage, templateSearch);
+                                }}
+                              >
+                                Next <ArrowRight className="h-4 w-4 ml-1" />
+                              </Button>
                             </div>
-                          ))}
+                          )}
                         </div>
-                      )}
-                    </div>
-                    {/* Pagination */}
-                    {totalTemplates > TEMPLATES_PER_PAGE && (
-                      <div className="flex items-center justify-between pt-3 border-t mt-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={templatePage === 1 || loadingTemplates}
-                          onClick={() => {
-                            const newPage = templatePage - 1;
-                            setTemplatePage(newPage);
-                            fetchTemplates(templateType, newPage, templateSearch);
-                          }}
-                        >
-                          <ArrowLeft className="h-4 w-4 mr-1" /> Previous
-                        </Button>
-                        <span className="text-sm text-gray-600">
-                          Page {templatePage} of {Math.ceil(totalTemplates / TEMPLATES_PER_PAGE)}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={templatePage >= Math.ceil(totalTemplates / TEMPLATES_PER_PAGE) || loadingTemplates}
-                          onClick={() => {
-                            const newPage = templatePage + 1;
-                            setTemplatePage(newPage);
-                            fetchTemplates(templateType, newPage, templateSearch);
-                          }}
-                        >
-                          Next <ArrowRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
+                      </>
+                    ) : (
+                      /* View 2: Day Mapping */
+                      <>
+                        <DialogHeader className="px-6 pt-6 pb-3">
+                          <DialogTitle className="text-lg font-semibold">Map Template Days to Diet Plan</DialogTitle>
+                          <DialogDescription className="sr-only">Select which template day to apply to each diet plan date</DialogDescription>
+                          <div className="space-y-2 mt-2">
+                            <p className="text-sm font-medium text-gray-700">
+                              Template: <span className="text-blue-700">{pendingTemplate.name}</span>
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                Template: {pendingTemplate.meals?.length || 0} Days
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                Diet Plan: {duration} Days
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              Select which template day&apos;s meals to copy to each date, or choose &quot;Skip&quot; to leave empty.
+                            </p>
+                          </div>
+                        </DialogHeader>
+
+                        {/* Column Headers */}
+                        <div className="flex items-center justify-between px-6 py-2 bg-gray-50 border-y text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          <span className="flex-1">Diet Plan Date</span>
+                          <span className="w-40 text-right">Template Day</span>
+                        </div>
+
+                        {/* Scrollable Day List */}
+                        <div className="flex-1 overflow-y-auto min-h-0 px-6">
+                          <div className="divide-y divide-gray-100">
+                            {Array.from({ length: duration }, (_, i) => {
+                              const dayDate = addDays(new Date(startDate), i);
+                              const dateLabel = format(dayDate, 'dd MMM yyyy');
+                              const dayName = format(dayDate, 'EEEE');
+                              const selectedValue = templateDayMapping[i] ?? -1;
+
+                              return (
+                                <div key={i} className="flex items-center justify-between gap-4 py-3">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold shrink-0">
+                                      {i + 1}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-medium text-gray-800">{dateLabel}</p>
+                                      <p className="text-xs text-gray-500">{dayName}</p>
+                                    </div>
+                                  </div>
+                                  <Select
+                                    value={String(selectedValue)}
+                                    onValueChange={(val) => {
+                                      setTemplateDayMapping(prev => ({ ...prev, [i]: parseInt(val, 10) }));
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-40 h-9 text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="-1">
+                                        <span className="text-gray-400">— Skip —</span>
+                                      </SelectItem>
+                                      {pendingTemplate?.meals?.map((_, tIdx) => (
+                                        <SelectItem key={tIdx} value={String(tIdx)}>
+                                          Day {tIdx + 1}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" className="text-xs" onClick={() => {
+                              const templateDaysCount = pendingTemplate?.meals?.length || 1;
+                              const newMapping: Record<number, number> = {};
+                              for (let i = 0; i < duration; i++) { newMapping[i] = i % templateDaysCount; }
+                              setTemplateDayMapping(newMapping);
+                            }}>
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Auto-fill
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-xs" onClick={() => {
+                              const newMapping: Record<number, number> = {};
+                              for (let i = 0; i < duration; i++) { newMapping[i] = -1; }
+                              setTemplateDayMapping(newMapping);
+                            }}>
+                              Skip All
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" onClick={() => { setPendingTemplate(null); setTemplateDayMapping({}); }}>
+                              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                            </Button>
+                            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={applyTemplateMappingToMeals}>
+                              <Check className="h-4 w-4 mr-2" /> Apply Template
+                            </Button>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </DialogContent>
                 </Dialog>
@@ -2361,7 +2587,12 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                   if (open) {
                     setTemplateSearch('');
                     setTemplatePage(1);
+                    setPendingTemplate(null);
+                    setTemplateDayMapping({});
                     fetchTemplates(templateType, 1, '');
+                  } else {
+                    setPendingTemplate(null);
+                    setTemplateDayMapping({});
                   }
                 }}>
                   <DialogTrigger asChild>
@@ -2370,128 +2601,241 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                       Load Template
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-                    <DialogHeader>
-                      <DialogTitle>Select {templateType === 'plan' ? 'Plan' : 'Diet'} Template</DialogTitle>
-                    </DialogHeader>
-                    {/* Template Type Selector */}
-                    <div className="flex gap-2 mb-3">
-                      <Button
-                        variant={templateType === 'plan' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                          setTemplateType('plan');
-                          setTemplatePage(1);
-                          fetchTemplates('plan', 1, templateSearch);
-                        }}
-                      >
-                        Plan Templates
-                      </Button>
-                      <Button
-                        variant={templateType === 'diet' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                          setTemplateType('diet');
-                          setTemplatePage(1);
-                          fetchTemplates('diet', 1, templateSearch);
-                        }}
-                      >
-                        Diet Templates
-                      </Button>
-                    </div>
-                    {/* Search Input */}
-                    <div className="relative mb-3">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Search templates by name..."
-                        value={templateSearch}
-                        onChange={(e) => setTemplateSearch(e.target.value)}
-                        className="pl-9"
-                      />
-                    </div>
-                    {/* Total count */}
-                    <p className="text-xs text-gray-500 mb-2">
-                      {totalTemplates > 0 ? `Showing ${Math.min(TEMPLATES_PER_PAGE, templates.length)} of ${totalTemplates} templates` : ''}
-                    </p>
-                    {/* Templates List */}
-                    <div className="flex-1 overflow-y-auto min-h-0">
-                      {loadingTemplates ? (
-                        <div className="flex items-center justify-center py-12">
-                          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                        </div>
-                      ) : templates.length === 0 ? (
-                        <div className="text-center py-12">
-                          <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                          <p className="text-gray-600">No templates found</p>
-                          <p className="text-sm text-gray-500">Create templates in the Meal Plan Templates section</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {templates.map((template) => (
-                            <div
-                              key={template._id}
-                              className="border rounded-lg p-3 hover:border-blue-400 hover:bg-blue-50/50 cursor-pointer transition-colors"
-                              onClick={() => loadTemplate(template)}
+                  <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
+                    {/* View 1: Template List */}
+                    {!pendingTemplate ? (
+                      <>
+                        <DialogHeader className="px-6 pt-6 pb-0">
+                          <DialogTitle>Select {templateType === 'plan' ? 'Plan' : 'Diet'} Template</DialogTitle>
+                        </DialogHeader>
+                        <div className="px-6 pb-4 flex-1 flex flex-col min-h-0">
+                          {/* Template Type Selector */}
+                          <div className="flex gap-2 mb-3 mt-3">
+                            <Button
+                              variant={templateType === 'plan' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => {
+                                setTemplateType('plan');
+                                setTemplatePage(1);
+                                fetchTemplates('plan', 1, templateSearch);
+                              }}
                             >
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium text-gray-900 truncate">{template.name}</h4>
-                                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                                    {template.category && (
-                                      <Badge className="text-xs capitalize bg-blue-100 text-blue-800">{template.category.replace(/-/g, ' ')}</Badge>
-                                    )}
-                                    <span className="text-xs text-gray-600">{template.duration} days</span>
-                                    {template.goals?.primaryGoal && (
-                                      <Badge variant="secondary" className="text-xs capitalize">
-                                        {template.goals.primaryGoal.replace(/-/g, ' ')}
-                                      </Badge>
-                                    )}
-                                    {template.dietaryRestrictions && template.dietaryRestrictions.length > 0 && (
-                                      <Badge variant="outline" className="text-xs">
-                                        {template.dietaryRestrictions.slice(0, 2).join(', ')}
-                                        {template.dietaryRestrictions.length > 2 && ` +${template.dietaryRestrictions.length - 2}`}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                                <Check className="h-4 w-4 text-gray-400 shrink-0" />
+                              Plan Templates
+                            </Button>
+                            <Button
+                              variant={templateType === 'diet' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => {
+                                setTemplateType('diet');
+                                setTemplatePage(1);
+                                fetchTemplates('diet', 1, templateSearch);
+                              }}
+                            >
+                              Diet Templates
+                            </Button>
+                          </div>
+                          {/* Search Input */}
+                          <div className="relative mb-3">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              placeholder="Search templates by name..."
+                              value={templateSearch}
+                              onChange={(e) => setTemplateSearch(e.target.value)}
+                              className="pl-9"
+                            />
+                          </div>
+                          {/* Total count */}
+                          <p className="text-xs text-gray-500 mb-2">
+                            {totalTemplates > 0 ? `Showing ${Math.min(TEMPLATES_PER_PAGE, templates.length)} of ${totalTemplates} templates` : ''}
+                          </p>
+                          {/* Templates List */}
+                          <div className="flex-1 overflow-y-auto min-h-0">
+                            {loadingTemplates ? (
+                              <div className="flex items-center justify-center py-12">
+                                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
                               </div>
+                            ) : templates.length === 0 ? (
+                              <div className="text-center py-12">
+                                <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                                <p className="text-gray-600">No templates found</p>
+                                <p className="text-sm text-gray-500">Create templates in the Meal Plan Templates section</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {templates.map((template) => (
+                                  <div
+                                    key={template._id}
+                                    className="border rounded-lg p-3 hover:border-blue-400 hover:bg-blue-50/50 cursor-pointer transition-colors"
+                                    onClick={() => loadTemplate(template)}
+                                  >
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-medium text-gray-900 truncate">{template.name}</h4>
+                                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                                          {template.category && (
+                                            <Badge className="text-xs capitalize bg-blue-100 text-blue-800">{template.category.replace(/-/g, ' ')}</Badge>
+                                          )}
+                                          <span className="text-xs text-gray-600">{template.duration} days</span>
+                                          {template.goals?.primaryGoal && (
+                                            <Badge variant="secondary" className="text-xs capitalize">
+                                              {template.goals.primaryGoal.replace(/-/g, ' ')}
+                                            </Badge>
+                                          )}
+                                          {template.dietaryRestrictions && template.dietaryRestrictions.length > 0 && (
+                                            <Badge variant="outline" className="text-xs">
+                                              {template.dietaryRestrictions.slice(0, 2).join(', ')}
+                                              {template.dietaryRestrictions.length > 2 && ` +${template.dietaryRestrictions.length - 2}`}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <ArrowRight className="h-4 w-4 text-gray-400 shrink-0" />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {/* Pagination */}
+                          {totalTemplates > TEMPLATES_PER_PAGE && (
+                            <div className="flex items-center justify-between pt-3 border-t mt-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={templatePage === 1 || loadingTemplates}
+                                onClick={() => {
+                                  const newPage = templatePage - 1;
+                                  setTemplatePage(newPage);
+                                  fetchTemplates(templateType, newPage, templateSearch);
+                                }}
+                              >
+                                <ArrowLeft className="h-4 w-4 mr-1" /> Previous
+                              </Button>
+                              <span className="text-sm text-gray-600">
+                                Page {templatePage} of {Math.ceil(totalTemplates / TEMPLATES_PER_PAGE)}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={templatePage >= Math.ceil(totalTemplates / TEMPLATES_PER_PAGE) || loadingTemplates}
+                                onClick={() => {
+                                  const newPage = templatePage + 1;
+                                  setTemplatePage(newPage);
+                                  fetchTemplates(templateType, newPage, templateSearch);
+                                }}
+                              >
+                                Next <ArrowRight className="h-4 w-4 ml-1" />
+                              </Button>
                             </div>
-                          ))}
+                          )}
                         </div>
-                      )}
-                    </div>
-                    {/* Pagination */}
-                    {totalTemplates > TEMPLATES_PER_PAGE && (
-                      <div className="flex items-center justify-between pt-3 border-t mt-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={templatePage === 1 || loadingTemplates}
-                          onClick={() => {
-                            const newPage = templatePage - 1;
-                            setTemplatePage(newPage);
-                            fetchTemplates(templateType, newPage, templateSearch);
-                          }}
-                        >
-                          <ArrowLeft className="h-4 w-4 mr-1" /> Previous
-                        </Button>
-                        <span className="text-sm text-gray-600">
-                          Page {templatePage} of {Math.ceil(totalTemplates / TEMPLATES_PER_PAGE)}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={templatePage >= Math.ceil(totalTemplates / TEMPLATES_PER_PAGE) || loadingTemplates}
-                          onClick={() => {
-                            const newPage = templatePage + 1;
-                            setTemplatePage(newPage);
-                            fetchTemplates(templateType, newPage, templateSearch);
-                          }}
-                        >
-                          Next <ArrowRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
+                      </>
+                    ) : (
+                      /* View 2: Day Mapping */
+                      <>
+                        <DialogHeader className="px-6 pt-6 pb-3">
+                          <DialogTitle className="text-lg font-semibold">Map Template Days to Diet Plan</DialogTitle>
+                          <DialogDescription className="sr-only">Select which template day to apply to each diet plan date</DialogDescription>
+                          <div className="space-y-2 mt-2">
+                            <p className="text-sm font-medium text-gray-700">
+                              Template: <span className="text-blue-700">{pendingTemplate.name}</span>
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                Template: {pendingTemplate.meals?.length || 0} Days
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                Diet Plan: {duration} Days
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              Select which template day&apos;s meals to copy to each date, or choose &quot;Skip&quot; to leave empty.
+                            </p>
+                          </div>
+                        </DialogHeader>
+
+                        {/* Column Headers */}
+                        <div className="flex items-center justify-between px-6 py-2 bg-gray-50 border-y text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          <span className="flex-1">Diet Plan Date</span>
+                          <span className="w-40 text-right">Template Day</span>
+                        </div>
+
+                        {/* Scrollable Day List */}
+                        <div className="flex-1 overflow-y-auto min-h-0 px-6">
+                          <div className="divide-y divide-gray-100">
+                            {Array.from({ length: duration }, (_, i) => {
+                              const dayDate = addDays(new Date(startDate), i);
+                              const dateLabel = format(dayDate, 'dd MMM yyyy');
+                              const dayName = format(dayDate, 'EEEE');
+                              const selectedValue = templateDayMapping[i] ?? -1;
+
+                              return (
+                                <div key={i} className="flex items-center justify-between gap-4 py-3">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold shrink-0">
+                                      {i + 1}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-medium text-gray-800">{dateLabel}</p>
+                                      <p className="text-xs text-gray-500">{dayName}</p>
+                                    </div>
+                                  </div>
+                                  <Select
+                                    value={String(selectedValue)}
+                                    onValueChange={(val) => {
+                                      setTemplateDayMapping(prev => ({ ...prev, [i]: parseInt(val, 10) }));
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-40 h-9 text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="-1">
+                                        <span className="text-gray-400">— Skip —</span>
+                                      </SelectItem>
+                                      {pendingTemplate?.meals?.map((_, tIdx) => (
+                                        <SelectItem key={tIdx} value={String(tIdx)}>
+                                          Day {tIdx + 1}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" className="text-xs" onClick={() => {
+                              const templateDaysCount = pendingTemplate?.meals?.length || 1;
+                              const newMapping: Record<number, number> = {};
+                              for (let i = 0; i < duration; i++) { newMapping[i] = i % templateDaysCount; }
+                              setTemplateDayMapping(newMapping);
+                            }}>
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Auto-fill
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-xs" onClick={() => {
+                              const newMapping: Record<number, number> = {};
+                              for (let i = 0; i < duration; i++) { newMapping[i] = -1; }
+                              setTemplateDayMapping(newMapping);
+                            }}>
+                              Skip All
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" onClick={() => { setPendingTemplate(null); setTemplateDayMapping({}); }}>
+                              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                            </Button>
+                            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={applyTemplateMappingToMeals}>
+                              <Check className="h-4 w-4 mr-2" /> Apply Template
+                            </Button>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </DialogContent>
                 </Dialog>
@@ -2562,8 +2906,8 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                     value={startDate}
                     onChange={(e) => {
                       const newStartDate = e.target.value;
-                      // Validate start date is within expected dates range (start date must be between expected start and end)
-                      if (paymentCheck?.purchase?.expectedStartDate && paymentCheck?.purchase?.expectedEndDate) {
+                      // Validate start date is within expected dates range (only for new plans, not when editing)
+                      if (!isEditMode && paymentCheck?.purchase?.expectedStartDate && paymentCheck?.purchase?.expectedEndDate) {
                         const expectedStart = new Date(paymentCheck.purchase.expectedStartDate);
                         const expectedEnd = new Date(paymentCheck.purchase.expectedEndDate);
                         const selectedDate = new Date(newStartDate);
@@ -2579,15 +2923,15 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                       }
                       setStartDate(newStartDate);
                     }}
-                    min={paymentCheck?.purchase?.expectedStartDate ? format(new Date(paymentCheck.purchase.expectedStartDate), 'yyyy-MM-dd') : undefined}
-                    max={paymentCheck?.purchase?.expectedEndDate ? format(new Date(paymentCheck.purchase.expectedEndDate), 'yyyy-MM-dd') : undefined}
+                    min={!isEditMode && paymentCheck?.purchase?.expectedStartDate ? format(new Date(paymentCheck.purchase.expectedStartDate), 'yyyy-MM-dd') : undefined}
+                    max={!isEditMode && paymentCheck?.purchase?.expectedEndDate ? format(new Date(paymentCheck.purchase.expectedEndDate), 'yyyy-MM-dd') : undefined}
                   />
-                  {paymentCheck?.purchase?.expectedStartDate && paymentCheck?.purchase?.expectedEndDate && (
+                  {!isEditMode && paymentCheck?.purchase?.expectedStartDate && paymentCheck?.purchase?.expectedEndDate && (
                     <p className="text-xs text-green-600 mt-1">
                       📅 Start date must be within: {format(new Date(paymentCheck.purchase.expectedStartDate), 'dd MMM')} - {format(new Date(paymentCheck.purchase.expectedEndDate), 'dd MMM yyyy')}
                     </p>
                   )}
-                  {!paymentCheck?.purchase?.expectedStartDate && paymentCheck?.hasPaidPlan && (
+                  {!isEditMode && !paymentCheck?.purchase?.expectedStartDate && paymentCheck?.hasPaidPlan && (
                     <p className="text-xs text-amber-600 mt-1">
                       ⚠️ No expected dates set. Set expected dates in Payment section first.
                     </p>
@@ -2596,27 +2940,27 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                 <div>
                   <Label className="text-sm font-medium mb-2 block">
                     Duration (Days) <span className="text-red-500">*</span>
-                    {paymentCheck?.hasPaidPlan && (
-                      <span className="text-gray-400 text-xs ml-1">(Max {paymentCheck.remainingDays})</span>
-                    )}
                   </Label>
                   <Input
                     type="number"
                     min={1}
-                    max={paymentCheck?.remainingDays || 365}
+                    max={isEditMode ? 365 : (paymentCheck?.remainingDays || 365)}
                     value={duration}
                     onChange={(e) => {
                       const val = parseInt(e.target.value) || 1;
-                      const maxDays = paymentCheck?.remainingDays || 365;
-                      if (val > maxDays) {
-                        toast.error(`Maximum duration allowed is ${maxDays} days based on client's purchased plan`);
-                        setDuration(maxDays);
+                      if (val < 1) {
+                        setDuration(1);
+                      } else if (!isEditMode && paymentCheck?.remainingDays && val > paymentCheck.remainingDays) {
+                        toast.error(`Maximum duration allowed is ${paymentCheck.remainingDays} days based on client's purchased plan`);
+                        setDuration(paymentCheck.remainingDays);
+                      } else if (val > 365) {
+                        setDuration(365);
                       } else {
                         setDuration(val);
                       }
                     }}
                   />
-                  {paymentCheck?.hasPaidPlan && (
+                  {!isEditMode && paymentCheck?.hasPaidPlan && (
                     <p className="text-xs text-amber-600 mt-1">
                       ⚠️ Client has {paymentCheck.remainingDays} days remaining in their plan
                     </p>
@@ -2658,7 +3002,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
               <div className="flex items-center gap-4 pt-4 border-t">
                 <Button
                   variant="outline"
-                  onClick={() => setStep('list')}
+                  onClick={resetForm}
                 >
                   Cancel
                 </Button>
@@ -2971,6 +3315,20 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                       toast.error('All plan days have been used. Client needs to purchase a new plan.');
                       return;
                     }
+                    // Clear any stale state before creating new plan
+                    setEditingPlan(null);
+                    setIsEditMode(false);
+                    setViewingPlan(null);
+                    setPlanTitle('');
+                    setDescription('');
+                    setInitialMeals([]);
+                    setInitialMealTypes(DEFAULT_MEAL_TYPES_LIST);
+                    setSelectedTemplate(null);
+                    setPlanKey(prev => prev + 1);
+                    // Clear any stale drafts
+                    try {
+                      localStorage.removeItem(`dietPlan_formDraft_${client._id}_new`);
+                    } catch (e) { }
                     // Set duration based on remaining days
                     if (paymentCheck.remainingDays > 0) {
                       setDuration(Math.min(paymentCheck.remainingDays, 30)); // Max 30 days at a time
@@ -3353,6 +3711,7 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
           </div>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

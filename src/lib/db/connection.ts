@@ -100,7 +100,7 @@ const connectionOptions: mongoose.ConnectOptions = {
   maxPoolSize: 20,                  // Handle concurrent requests (was 10)
   minPoolSize: 5,                   // Keep 5 connections warm (was 2)
   maxIdleTimeMS: 60000,             // Close idle connections after 60s (was 30s)
-  waitQueueTimeoutMS: 5000,         // Max wait for pool connection
+  waitQueueTimeoutMS: 10000,        // Max wait for pool connection (10s)
 
   // Retry settings (MongoDB driver handles these)
   retryWrites: true,

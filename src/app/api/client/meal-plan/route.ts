@@ -152,8 +152,8 @@ export async function GET(request: NextRequest) {
     dayMeals = await enrichMealsWithRecipeDetails(dayMeals);
 
     // Calculate total calories
-    const totalCalories = dayMeals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0) ||
-      mealPlan.customizations?.targetCalories || 0;
+    const totalCalories = Math.round((dayMeals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0) ||
+      mealPlan.customizations?.targetCalories || 0) * 100) / 100;
 
     // Check if this date is frozen
     const dateStr = format(normalizedDate, 'yyyy-MM-dd');
@@ -258,6 +258,12 @@ function calculateMealMacros(meal: any): { calories: number; protein: number; ca
     result.carbs += Number(food.carbs) || 0;
     result.fat += Number(food.fats) || Number(food.fat) || 0;
   }
+
+  // Round to 2 decimal places
+  result.calories = Math.round(result.calories * 100) / 100;
+  result.protein = Math.round(result.protein * 100) / 100;
+  result.carbs = Math.round(result.carbs * 100) / 100;
+  result.fat = Math.round(result.fat * 100) / 100;
 
   return result;
 }
@@ -400,15 +406,15 @@ function extractFoodItems(meal: any, planId: string, dayIndex: number, mealIndex
       id: `${planId}-${dayIndex}-${mealIndex}-${foodIndex}`,
       name: foodName || 'Food Item',
       portion: food.unit || food.portion || food.quantity || food.servingSize || '1 serving',
-      calories: Number(food.calories) || Number(food.cal) || 0,
+      calories: Math.round((Number(food.calories) || Number(food.cal) || 0) * 100) / 100,
       // Alternatives - ensure proper structure with full nutrition
       alternatives: Array.isArray(food.alternatives) ? food.alternatives.map((alt: any) => ({
         name: alt.name || alt.food || 'Alternative',
         portion: alt.portion || alt.unit || '1 serving',
-        calories: Number(alt.calories) || 0,
-        protein: Number(alt.protein) || 0,
-        carbs: Number(alt.carbs) || 0,
-        fats: Number(alt.fats) || Number(alt.fat) || 0
+        calories: Math.round((Number(alt.calories) || 0) * 100) / 100,
+        protein: Math.round((Number(alt.protein) || 0) * 100) / 100,
+        carbs: Math.round((Number(alt.carbs) || 0) * 100) / 100,
+        fats: Math.round((Number(alt.fats) || Number(alt.fat) || 0) * 100) / 100
       })) : [],
       // Flag for alternative food type
       isAlternative: food.isAlternative || false,
@@ -419,9 +425,9 @@ function extractFoodItems(meal: any, planId: string, dayIndex: number, mealIndex
       // Tags
       tags: Array.isArray(food.tags) ? food.tags : [],
       // Full nutrition info
-      protein: Number(food.protein) || 0,
-      carbs: Number(food.carbs) || 0,
-      fats: Number(food.fats) || Number(food.fat) || 0,
+      protein: Math.round((Number(food.protein) || 0) * 100) / 100,
+      carbs: Math.round((Number(food.carbs) || 0) * 100) / 100,
+      fats: Math.round((Number(food.fats) || Number(food.fat) || 0) * 100) / 100,
       // Additional details for full view
       notes: food.notes || food.dietitianNotes || food.remarks || '',
       timing: food.timing || food.whenToEat || food.timeToEat || '',

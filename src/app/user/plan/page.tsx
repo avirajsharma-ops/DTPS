@@ -195,6 +195,13 @@ function formatNotesWithLineBreaks(note: string): string[] {
   return note.split('.').map(s => s.trim()).filter(s => s.length > 0);
 }
 
+// Format numbers to max 2 decimal places, removing trailing zeros
+const formatNum = (val: number | string | undefined | null): string => {
+  const num = Number(val);
+  if (isNaN(num)) return '0';
+  return parseFloat(num.toFixed(2)).toString();
+};
+
 export default function UserPlanPage() {
   const { data: session, status } = useSession();
   const { isDarkMode } = useTheme();
@@ -1065,7 +1072,7 @@ export default function UserPlanPage() {
                 <div>
                   <p className={`text-xs tracking-wide uppercase ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Daily Target</p>
                   <p className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {dayPlan?.totalCalories}<span className={`ml-1 text-lg font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>kcal</span>
+                    {formatNum(dayPlan?.totalCalories)}<span className={`ml-1 text-lg font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>kcal</span>
                   </p>
                 </div>
                 <div className="text-right">
@@ -1118,7 +1125,7 @@ export default function UserPlanPage() {
                     ) : (
                       <div className="bg-[#E06A26]/10 text-[#E06A26] px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                         <span>⚡</span>
-                        <span>{meal.totalCalories} kcal</span>
+                        <span>{formatNum(meal.totalCalories)} kcal</span>
                       </div>
                     )}
                   </div>
@@ -1162,7 +1169,7 @@ export default function UserPlanPage() {
                                   {item.name}
                                 </p>
                                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                  {item.portion} • {item.calories} kcal
+                                  {item.portion} • {formatNum(item.calories)} kcal
                                 </p>
                                 {/* Tags */}
                                 {item.tags && item.tags.length > 0 && (
@@ -1215,7 +1222,7 @@ export default function UserPlanPage() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <p className="text-sm font-semibold text-orange-600">{item.calories} kcal</p>
+                                  <p className="text-sm font-semibold text-orange-600">{formatNum(item.calories)} kcal</p>
                                   <ChevronRight className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                                 </div>
                               </button>
@@ -1237,7 +1244,7 @@ export default function UserPlanPage() {
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-sm font-semibold text-orange-600">{alt.calories} kcal</p>
+                                    <p className="text-sm font-semibold text-orange-600">{formatNum(alt.calories)} kcal</p>
                                     <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{alt.portion}</p>
                                   </div>
                                 </div>
@@ -1402,7 +1409,7 @@ export default function UserPlanPage() {
                     </div>
                     <div className="text-right">
                       <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Calories</p>
-                      <p className="font-bold text-[#E06A26]">{fullRecipeData?.nutrition?.calories || recipeModal.item.calories} kcal</p>
+                      <p className="font-bold text-[#E06A26]">{formatNum(fullRecipeData?.nutrition?.calories || recipeModal.item.calories)} kcal</p>
                     </div>
                   </div>
 
@@ -1414,19 +1421,19 @@ export default function UserPlanPage() {
                       <h4 className={`mb-3 text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>📊 Nutrition (per serving)</h4>
                       <div className="grid grid-cols-4 gap-2">
                         <div className="text-center p-2 bg-red-50 rounded-lg">
-                          <p className="text-lg font-bold text-red-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.calories || 0}</p>
+                          <p className="text-lg font-bold text-red-600">{formatNum((fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.calories || 0)}</p>
                           <p className="text-xs text-gray-500">kcal</p>
                         </div>
                         <div className="text-center p-2 bg-blue-50 rounded-lg">
-                          <p className="text-lg font-bold text-blue-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.protein || 0}g</p>
+                          <p className="text-lg font-bold text-blue-600">{formatNum((fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.protein || 0)}g</p>
                           <p className="text-xs text-gray-500">Protein</p>
                         </div>
                         <div className="text-center p-2 bg-yellow-50 rounded-lg">
-                          <p className="text-lg font-bold text-yellow-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.carbs || 0}g</p>
+                          <p className="text-lg font-bold text-yellow-600">{formatNum((fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.carbs || 0)}g</p>
                           <p className="text-xs text-gray-500">Carbs</p>
                         </div>
                         <div className="text-center p-2 bg-orange-50 rounded-lg">
-                          <p className="text-lg font-bold text-orange-600">{(fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.fat || 0}g</p>
+                          <p className="text-lg font-bold text-orange-600">{formatNum((fullRecipeData?.nutrition || recipeModal.item.recipe?.nutrition)?.fat || 0)}g</p>
                           <p className="text-xs text-gray-500">Fat</p>
                         </div>
                       </div>
@@ -1564,7 +1571,7 @@ export default function UserPlanPage() {
                               <p className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{alt.name}</p>
                               <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{alt.portion}</p>
                             </div>
-                            <span className="text-sm font-semibold text-[#3AB1A0]">{alt.calories} kcal</span>
+                            <span className="text-sm font-semibold text-[#3AB1A0]">{formatNum(alt.calories)} kcal</span>
                           </div>
                         ))}
                       </div>
@@ -1620,7 +1627,7 @@ export default function UserPlanPage() {
                       <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{alt.name}</p>
                       <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{alt.portion}</p>
                     </div>
-                    <span className="text-sm font-semibold text-[#E06A26]">{alt.calories} kcal</span>
+                    <span className="text-sm font-semibold text-[#E06A26]">{formatNum(alt.calories)} kcal</span>
                   </div>
                 ))}
               </div>
@@ -1690,10 +1697,10 @@ export default function UserPlanPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-[#E06A26]">{item.calories} kcal</p>
+                        <p className="font-bold text-[#E06A26]">{formatNum(item.calories)} kcal</p>
                         {(item.protein || item.carbs || item.fats) && (
                           <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>
-                            P:{item.protein || 0}g C:{item.carbs || 0}g F:{item.fats || 0}g
+                            P:{formatNum(item.protein || 0)}g C:{formatNum(item.carbs || 0)}g F:{formatNum(item.fats || 0)}g
                           </p>
                         )}
                       </div>
@@ -1734,7 +1741,7 @@ export default function UserPlanPage() {
                               <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{alt.name}</p>
                               <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>{alt.portion}</p>
                             </div>
-                            <span className="text-sm font-semibold text-[#E06A26]">{alt.calories} kcal</span>
+                            <span className="text-sm font-semibold text-[#E06A26]">{formatNum(alt.calories)} kcal</span>
                           </div>
                         ))}
                       </div>

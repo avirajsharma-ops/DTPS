@@ -58,6 +58,13 @@ const mealTimeSuggestions: { [key: string]: string } = Object.fromEntries(
 
 const DAYS_PER_PAGE = 14;
 
+// Helper to format a number to at most 2 decimal places (strips trailing zeros)
+function formatNum(val: number): string {
+  if (Number.isNaN(val) || !Number.isFinite(val)) return '0';
+  // Round to 2 decimal places, then remove trailing zeros
+  return parseFloat(val.toFixed(2)).toString();
+}
+
 // Helper function to calculate daily macro totals
 function calculateDayMacros(day: DayPlan): { cal: number; carbs: number; fats: number; protein: number } {
   const totals = { cal: 0, carbs: 0, fats: 0, protein: 0 };
@@ -455,10 +462,10 @@ export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpd
         // Update the option's combined values
         targetOption.food = targetOption.foods.map(f => f.food).join(' + ');
         targetOption.unit = targetOption.foods.length > 1 ? 'Multiple' : targetOption.foods[0]?.unit || '';
-        targetOption.cal = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
-        targetOption.carbs = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
-        targetOption.fats = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
-        targetOption.protein = targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
+        targetOption.cal = formatNum(targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0));
+        targetOption.carbs = formatNum(targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0));
+        targetOption.fats = formatNum(targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0));
+        targetOption.protein = formatNum(targetOption.foods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0));
       });
     });
 
@@ -1386,10 +1393,10 @@ export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpd
                             <div className="mt-2 p-2 bg-emerald-50 rounded border border-emerald-200">
                               <div className="text-[10px] font-semibold text-emerald-700 mb-1 uppercase tracking-wide">Daily Totals</div>
                               <div className="grid grid-cols-2 gap-1 text-[10px]">
-                                <div className="text-emerald-900"><span className="font-medium">Cal:</span> {macros.cal.toFixed(0)}</div>
-                                <div className="text-emerald-900"><span className="font-medium">Carbs:</span> {macros.carbs.toFixed(1)}g</div>
-                                <div className="text-emerald-900"><span className="font-medium">Protein:</span> {macros.protein.toFixed(1)}g</div>
-                                <div className="text-emerald-900"><span className="font-medium">Fats:</span> {macros.fats.toFixed(1)}g</div>
+                                <div className="text-emerald-900"><span className="font-medium">Cal:</span> {formatNum(macros.cal)}</div>
+                                <div className="text-emerald-900"><span className="font-medium">Carbs:</span> {formatNum(macros.carbs)}g</div>
+                                <div className="text-emerald-900"><span className="font-medium">Protein:</span> {formatNum(macros.protein)}g</div>
+                                <div className="text-emerald-900"><span className="font-medium">Fats:</span> {formatNum(macros.fats)}g</div>
                               </div>
                             </div>
                           );
@@ -1591,10 +1598,10 @@ export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpd
                                                         // Recalculate totals
                                                         meal.foodOptions[optionIndex].food = allFoods.map(f => f.food).join(' + ');
                                                         meal.foodOptions[optionIndex].unit = allFoods.length > 1 ? 'Multiple' : allFoods[0]?.unit || '';
-                                                        meal.foodOptions[optionIndex].cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
-                                                        meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
-                                                        meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
-                                                        meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
+                                                        meal.foodOptions[optionIndex].cal = formatNum(allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0));
+                                                        meal.foodOptions[optionIndex].carbs = formatNum(allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0));
+                                                        meal.foodOptions[optionIndex].fats = formatNum(allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0));
+                                                        meal.foodOptions[optionIndex].protein = formatNum(allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0));
                                                       }
                                                       onUpdate(newWeekPlan);
                                                     }
@@ -1632,7 +1639,7 @@ export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpd
                                                   if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
                                                     meal.foodOptions[optionIndex].foods![foodIndex].cal = e.target.value;
                                                     const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                    meal.foodOptions[optionIndex].cal = allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0).toString();
+                                                    meal.foodOptions[optionIndex].cal = formatNum(allFoods.reduce((sum, f) => sum + (parseFloat(f.cal) || 0), 0));
                                                     onUpdate(newWeekPlan);
                                                   }
                                                 }}
@@ -1653,7 +1660,7 @@ export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpd
                                                   if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
                                                     meal.foodOptions[optionIndex].foods![foodIndex].carbs = e.target.value;
                                                     const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                    meal.foodOptions[optionIndex].carbs = allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0).toString();
+                                                    meal.foodOptions[optionIndex].carbs = formatNum(allFoods.reduce((sum, f) => sum + (parseFloat(f.carbs) || 0), 0));
                                                     onUpdate(newWeekPlan);
                                                   }
                                                 }}
@@ -1670,7 +1677,7 @@ export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpd
                                                   if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
                                                     meal.foodOptions[optionIndex].foods![foodIndex].fats = e.target.value;
                                                     const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                    meal.foodOptions[optionIndex].fats = allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0).toString();
+                                                    meal.foodOptions[optionIndex].fats = formatNum(allFoods.reduce((sum, f) => sum + (parseFloat(f.fats) || 0), 0));
                                                     onUpdate(newWeekPlan);
                                                   }
                                                 }}
@@ -1691,7 +1698,7 @@ export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpd
                                                   if (meal?.foodOptions[optionIndex]?.foods?.[foodIndex]) {
                                                     meal.foodOptions[optionIndex].foods![foodIndex].protein = e.target.value;
                                                     const allFoods = meal.foodOptions[optionIndex].foods!;
-                                                    meal.foodOptions[optionIndex].protein = allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0).toString();
+                                                    meal.foodOptions[optionIndex].protein = formatNum(allFoods.reduce((sum, f) => sum + (parseFloat(f.protein) || 0), 0));
                                                     onUpdate(newWeekPlan);
                                                   }
                                                 }}
@@ -2723,10 +2730,10 @@ export function MealGridTable({ weekPlan, mealTypes, mealTypeConfigs = [], onUpd
                   label: '',
                   food: food.menu,
                   unit: food.amount,
-                  cal: food.cals.toString(),
-                  carbs: food.carbs.toString(),
-                  fats: food.fats.toString(),
-                  protein: food.protein.toString(),
+                  cal: formatNum(food.cals),
+                  carbs: formatNum(food.carbs),
+                  fats: formatNum(food.fats),
+                  protein: formatNum(food.protein),
                   recipeUuid: food.recipeUuid,
                   isAlternative: preserveIsAlternative // Preserve alternative status
                 }));

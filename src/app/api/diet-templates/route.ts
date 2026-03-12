@@ -6,10 +6,10 @@ import DietTemplate from '@/lib/db/models/DietTemplate';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
-import { 
-  MEAL_TYPES, 
+import {
+  MEAL_TYPES,
   MEAL_TYPE_KEYS,
-  type MealTypeKey 
+  type MealTypeKey
 } from '@/lib/mealConfig';
 
 // Get default meal types from canonical config
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
   try {
 
     const session = await getServerSession(authOptions);
-    
+
     await connectDB();
 
     const { searchParams } = new URL(request.url);
@@ -91,11 +91,10 @@ export async function GET(request: NextRequest) {
     const dietaryRestrictions = searchParams.get('dietaryRestrictions');
     const createdBy = searchParams.get('createdBy');
     const sortBy = searchParams.get('sortBy') || 'newest';
-    const limit = parseInt(searchParams.get('limit') || '1000');
-    const skip = parseInt(searchParams.get('skip') || '0');
-    const days = searchParams.get('days');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const page = parseInt(searchParams.get('page') || '1');
+    const skip = parseInt(searchParams.get('skip') || String((page - 1) * limit));
     const primaryGoal = searchParams.get('primaryGoal');
-    const duration = searchParams.get('duration');
 
     // Build query
     const query: any = { isActive: true };
@@ -129,13 +128,8 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // Filter by duration
-    if (duration) {
-      const durationVal = parseInt(duration);
-      if (!isNaN(durationVal)) {
-        query.duration = durationVal;
-      }
-    }
+    // Duration filter removed — show all diet templates regardless of duration
+    // Templates can be mapped to any plan duration via the Date Selection modal
 
     if (isPublic !== null && isPublic !== undefined) {
       query.isPublic = isPublic === 'true';
@@ -152,19 +146,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (days) {
-      const durationVal = parseInt(days);
-      if (!isNaN(durationVal)) {
-        query.duration = durationVal;
-      }
-    }
-
     if (search) {
-      query.$or = [
+      const searchOr = [
         { name: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { tags: { $in: [new RegExp(search, 'i')] } }
       ];
+
+      // If primaryGoal already set an $or, combine with $and to avoid overwrite
+      if (query.$or) {
+        query.$and = [
+          { $or: query.$or },
+          { $or: searchOr }
+        ];
+        delete query.$or;
+      } else {
+        query.$or = searchOr;
+      }
     }
 
     // Sort options
@@ -189,10 +187,10 @@ export async function GET(request: NextRequest) {
     const templates = await withCache(
       `diet-templates:${JSON.stringify(query)}:limit=${limit}:skip=${skip}`,
       async () => await DietTemplate.find(query)
-      .populate('createdBy', 'firstName lastName')
-      .sort(sortOptions)
-      .limit(limit)
-      .skip(skip)
+        .populate('createdBy', 'firstName lastName')
+        .sort(sortOptions)
+        .limit(limit)
+        .skip(skip)
       ,
       { ttl: 120000, tags: ['diet_templates'] }
     );

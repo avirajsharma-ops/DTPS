@@ -80,59 +80,59 @@ export async function GET(request: NextRequest) {
       if (clientId) {
         // Check if dietitian has access to this client
         const client = await withCache(
-      `client-meal-plans:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
-      { ttl: 120000, tags: ['client_meal_plans'] }
-    );
+          `client-meal-plans:${JSON.stringify(clientId)}`,
+          async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
+          { ttl: 120000, tags: ['client_meal_plans'] }
+        );
         if (!client) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: true,
             mealPlans: [],
             pagination: { page: 1, limit: 20, total: 0, pages: 0 }
           });
         }
-        
-        const isAssigned = 
+
+        const isAssigned =
           client.assignedDietitian?.toString() === session.user.id ||
           client.assignedDietitians?.some((d: any) => d.toString() === session.user.id);
-        
+
         // Check if dietitian created any plans for this client
-        const hasCreatedPlans = await ClientMealPlan.exists({ 
-          clientId: clientId, 
-          dietitianId: session.user.id 
+        const hasCreatedPlans = await ClientMealPlan.exists({
+          clientId: clientId,
+          dietitianId: session.user.id
         });
-        
+
         if (!isAssigned && !hasCreatedPlans) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: true,
             mealPlans: [],
             pagination: { page: 1, limit: 20, total: 0, pages: 0 }
           });
         }
-        
+
         // Dietitian has access - just filter by clientId
         query.clientId = clientId;
       } else {
         // No clientId specified - get all clients assigned to this dietitian
         const assignedClients = await withCache(
-      `client-meal-plans:${JSON.stringify({
-          role: UserRole.CLIENT,
-          $or: [
-            { assignedDietitian: session.user.id },
-            { assignedDietitians: session.user.id }
-          ]
-        })}`,
-      async () => await User.find({
-          role: UserRole.CLIENT,
-          $or: [
-            { assignedDietitian: session.user.id },
-            { assignedDietitians: session.user.id }
-          ]
-        }).select('_id'),
-      { ttl: 120000, tags: ['client_meal_plans'] }
-    );
+          `client-meal-plans:${JSON.stringify({
+            role: UserRole.CLIENT,
+            $or: [
+              { assignedDietitian: session.user.id },
+              { assignedDietitians: session.user.id }
+            ]
+          })}`,
+          async () => await User.find({
+            role: UserRole.CLIENT,
+            $or: [
+              { assignedDietitian: session.user.id },
+              { assignedDietitians: session.user.id }
+            ]
+          }).select('_id'),
+          { ttl: 120000, tags: ['client_meal_plans'] }
+        );
         const assignedClientIds = assignedClients.map(c => c._id);
-        
+
         // Dietitian can see meal plans they created OR for their assigned clients
         query.$or = [
           { dietitianId: session.user.id },
@@ -149,44 +149,44 @@ export async function GET(request: NextRequest) {
       if (clientId) {
         // Check if HC has access to this client
         const client = await withCache(
-      `client-meal-plans:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).select('assignedHealthCounselor'),
-      { ttl: 120000, tags: ['client_meal_plans'] }
-    );
+          `client-meal-plans:${JSON.stringify(clientId)}`,
+          async () => await User.findById(clientId).select('assignedHealthCounselor'),
+          { ttl: 120000, tags: ['client_meal_plans'] }
+        );
         if (!client) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: true,
             mealPlans: [],
             pagination: { page: 1, limit: 20, total: 0, pages: 0 }
           });
         }
-        
+
         const isAssigned = client.assignedHealthCounselor?.toString() === session.user.id;
-        
+
         if (!isAssigned) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: true,
             mealPlans: [],
             pagination: { page: 1, limit: 20, total: 0, pages: 0 }
           });
         }
-        
+
         query.clientId = clientId;
       } else {
         // No clientId specified - get all clients assigned to this HC
         const assignedClients = await withCache(
-      `client-meal-plans:${JSON.stringify({
-          role: UserRole.CLIENT,
-          assignedHealthCounselor: session.user.id
-        })}`,
-      async () => await User.find({
-          role: UserRole.CLIENT,
-          assignedHealthCounselor: session.user.id
-        }).select('_id'),
-      { ttl: 120000, tags: ['client_meal_plans'] }
-    );
+          `client-meal-plans:${JSON.stringify({
+            role: UserRole.CLIENT,
+            assignedHealthCounselor: session.user.id
+          })}`,
+          async () => await User.find({
+            role: UserRole.CLIENT,
+            assignedHealthCounselor: session.user.id
+          }).select('_id'),
+          { ttl: 120000, tags: ['client_meal_plans'] }
+        );
         const assignedClientIds = assignedClients.map(c => c._id);
-        
+
         query.clientId = { $in: assignedClientIds };
       }
     } else {
@@ -236,9 +236,9 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ 
-        error: 'Unauthorized', 
-        message: 'Please log in to assign meal plans' 
+      return NextResponse.json({
+        error: 'Unauthorized',
+        message: 'Please log in to assign meal plans'
       }, { status: 401 });
     }
 
@@ -246,9 +246,9 @@ export async function POST(request: NextRequest) {
     const userRole = session.user.role?.toString().toLowerCase();
     const allowedRoles = ['dietitian', 'health_counselor', 'admin'];
     if (!userRole || !allowedRoles.includes(userRole)) {
-      return NextResponse.json({ 
-        error: 'Forbidden', 
-        message: 'Only dietitians, health counselors, and admins can assign meal plans to clients' 
+      return NextResponse.json({
+        error: 'Forbidden',
+        message: 'Only dietitians, health counselors, and admins can assign meal plans to clients'
       }, { status: 403 });
     }
 
@@ -299,7 +299,7 @@ export async function POST(request: NextRequest) {
           templateType = 'meal';
         }
       }
-      
+
       // If neither found, it's an error only if templateId was provided
       if (!template) {
         return NextResponse.json({
@@ -312,7 +312,7 @@ export async function POST(request: NextRequest) {
     // Validate date range
     const startDate = new Date(validatedData.startDate);
     const endDate = new Date(validatedData.endDate);
-    
+
     if (startDate > endDate) {
       return NextResponse.json({
         error: 'Invalid date range',
@@ -406,7 +406,7 @@ export async function POST(request: NextRequest) {
     await logHistoryServer({
       userId: validatedData.clientId,
       action: 'assign',
-      category: 'plan',
+      category: 'diet',
       description: `Meal plan assigned: ${validatedData.name} (${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()})`,
       performedById: session.user.id,
       metadata: {
@@ -451,7 +451,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error assigning meal plan:', error);
-    
+
     // Handle specific MongoDB errors
     if (error instanceof Error && error.name === 'ValidationError') {
       return NextResponse.json({
