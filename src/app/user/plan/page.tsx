@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -25,6 +26,7 @@ import { format, addDays, startOfWeek, isToday, isSameDay } from 'date-fns';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
 import { toast } from 'sonner';
 import { MEAL_TYPES, type MealTypeKey } from '@/lib/mealConfig';
+import { compressImage, validateImageFile } from '@/lib/imageCompression';
 
 interface MealItem {
   id: string;
@@ -230,6 +232,7 @@ export default function UserPlanPage() {
   const [completionImage, setCompletionImage] = useState<File | null>(null);
   const [completionImagePreview, setCompletionImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -575,18 +578,67 @@ export default function UserPlanPage() {
     setCompletionNotes('');
     setCompletionImage(null);
     setCompletionImagePreview(null);
+    setIsProcessingImage(false);
+  };
+
+  // Optimistically update completion state for instant UI feedback
+  const updateMealCompletionLocally = (mealId: string, isCompleted: boolean) => {
+    const dateKey = format(selectedDate, 'yyyy-MM-dd');
+    setDayPlan((prev) => {
+      if (!prev) return prev;
+
+      const updated: DayPlan = {
+        ...prev,
+        meals: prev.meals.map((meal) =>
+          meal.id === mealId ? { ...meal, isCompleted } : meal
+        ),
+      };
+
+      mealPlanCache.current.set(dateKey, updated);
+      return updated;
+    });
   };
 
   // Handle image selection
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    const validation = validateImageFile(file, 15);
+    if (!validation.valid) {
+      toast.error(validation.error || 'Invalid image file');
+      return;
+    }
+
+    setIsProcessingImage(true);
+    try {
+      // Client-side compression to reduce upload payload and submission time
+      const { blob, dataUrl } = await compressImage(file, {
+        maxWidth: 1280,
+        maxHeight: 1280,
+        quality: 0.78,
+        format: 'image/jpeg',
+      });
+
+      const compressedFile = new File(
+        [blob],
+        file.name.replace(/\.[^.]+$/, '.jpg'),
+        { type: 'image/jpeg' }
+      );
+
+      setCompletionImage(compressedFile);
+      setCompletionImagePreview(dataUrl);
+    } catch (error) {
+      // Fallback to original file if compression fails
+      console.error('Image compression failed, using original file:', error);
       setCompletionImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setCompletionImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    } finally {
+      setIsProcessingImage(false);
     }
   };
 
@@ -599,12 +651,32 @@ export default function UserPlanPage() {
       return;
     }
 
-    setIsSubmitting(true);
+    if (isProcessingImage) {
+      toast.info('Please wait, processing image...');
+      return;
+    }
+
+    const mealId = completionModal.meal.id;
+    const mealType = completionModal.meal.type;
+    const dateKey = format(selectedDate, 'yyyy-MM-dd');
+    const previousIsCompleted = dayPlan?.meals.find((m) => m.id === mealId)?.isCompleted ?? false;
+
+    // Use flushSync to force immediate DOM update - ensures "Done" mark appears instantly
+    flushSync(() => {
+      setIsSubmitting(true);
+      // Optimistic UI update for real-time feedback - update BEFORE modal closes for instant visibility
+      updateMealCompletionLocally(mealId, true);
+      closeCompletionModal();
+    });
+
+    // Show immediate toast confirmation
+    toast.success('Meal marked as complete!');
+
     try {
       const formData = new FormData();
-      formData.append('mealId', completionModal.meal.id);
+      formData.append('mealId', mealId);
       formData.append('date', format(selectedDate, 'yyyy-MM-dd'));
-      formData.append('mealType', completionModal.meal.type);
+      formData.append('mealType', mealType);
       if (completionNotes) formData.append('notes', completionNotes);
       formData.append('image', completionImage);
 
@@ -614,47 +686,8 @@ export default function UserPlanPage() {
       });
 
       if (response.ok) {
-        toast.success('Meal marked as complete!');
-        closeCompletionModal();
-        // Clear cache to force fresh data fetch
-        const dateKey = format(selectedDate, 'yyyy-MM-dd');
+        // Clear cache so next navigation/refresh gets fresh data
         mealPlanCache.current.delete(dateKey);
-        await fetchDayPlan(selectedDate);
-
-        // Emit events to notify other components about the change
-        window.dispatchEvent(new CustomEvent('meal-plan-updated', {
-          detail: { mealId: completionModal.meal.id, date: dateKey }
-        }));
-        window.dispatchEvent(new CustomEvent('user-data-changed', {
-          detail: { dataType: 'meal' }
-        }));
-      } else {
-        const data = await response.json();
-        toast.error(data.error || 'Failed to mark meal as complete');
-      }
-    } catch (error) {
-      console.error('Error completing meal:', error);
-      toast.error('Error completing meal');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleMarkComplete = async (mealId: string) => {
-    setCompletingMeal(mealId);
-    try {
-      const response = await fetch('/api/client/meal-plan/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mealId, date: format(selectedDate, 'yyyy-MM-dd') })
-      });
-      if (response.ok) {
-        toast.success('Meal marked as complete!');
-        // Clear cache to force fresh data fetch
-        const dateKey = format(selectedDate, 'yyyy-MM-dd');
-        mealPlanCache.current.delete(dateKey);
-        // Refresh the plan
-        await fetchDayPlan(selectedDate);
 
         // Emit events to notify other components about the change
         window.dispatchEvent(new CustomEvent('meal-plan-updated', {
@@ -664,9 +697,58 @@ export default function UserPlanPage() {
           detail: { dataType: 'meal' }
         }));
       } else {
+        const data = await response.json();
+        // Revert optimistic update on failure
+        updateMealCompletionLocally(mealId, previousIsCompleted);
+        toast.error(data.error || 'Failed to mark meal as complete');
+      }
+    } catch (error) {
+      // Revert optimistic update on failure
+      updateMealCompletionLocally(mealId, previousIsCompleted);
+      console.error('Error completing meal:', error);
+      toast.error('Error completing meal');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleMarkComplete = async (mealId: string) => {
+    const dateKey = format(selectedDate, 'yyyy-MM-dd');
+    const previousIsCompleted = dayPlan?.meals.find((m) => m.id === mealId)?.isCompleted ?? false;
+
+    // Use flushSync to force immediate DOM update - ensures "Done" mark appears instantly
+    flushSync(() => {
+      setCompletingMeal(mealId);
+      // Optimistic update for instant UX
+      updateMealCompletionLocally(mealId, true);
+    });
+
+    // Show immediate toast confirmation
+    toast.success('Meal marked as complete!');
+
+    try {
+      const response = await fetch('/api/client/meal-plan/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mealId, date: format(selectedDate, 'yyyy-MM-dd') })
+      });
+      if (response.ok) {
+        // Clear cache so next navigation/refresh gets fresh data
+        mealPlanCache.current.delete(dateKey);
+
+        // Emit events to notify other components about the change
+        window.dispatchEvent(new CustomEvent('meal-plan-updated', {
+          detail: { mealId, date: dateKey }
+        }));
+        window.dispatchEvent(new CustomEvent('user-data-changed', {
+          detail: { dataType: 'meal' }
+        }));
+      } else {
+        updateMealCompletionLocally(mealId, previousIsCompleted);
         toast.error('Failed to mark meal as complete');
       }
     } catch (error) {
+      updateMealCompletionLocally(mealId, previousIsCompleted);
       console.error('Error completing meal:', error);
       toast.error('Error completing meal');
     } finally {
@@ -1846,6 +1928,12 @@ export default function UserPlanPage() {
                   capture="environment"
                 />
 
+                {isProcessingImage && (
+                  <div className={`mb-3 text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                    Optimizing image for faster upload...
+                  </div>
+                )}
+
                 {completionImagePreview ? (
                   <div className="relative">
                     <div className={`relative w-full h-48 overflow-hidden rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
@@ -1860,6 +1948,7 @@ export default function UserPlanPage() {
                       onClick={() => {
                         setCompletionImage(null);
                         setCompletionImagePreview(null);
+                        setIsProcessingImage(false);
                         if (fileInputRef.current) {
                           fileInputRef.current.value = '';
                         }
@@ -1899,11 +1988,13 @@ export default function UserPlanPage() {
             <div className={`p-4 border-t ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-100'}`}>
               <button
                 onClick={handleSubmitCompletion}
-                disabled={isSubmitting || !completionImage}
+                disabled={isSubmitting || isProcessingImage || !completionImage}
                 className="w-full py-3 bg-[#3AB1A0] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-[#2A9A8B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <span>Submitting...</span>
+                ) : isProcessingImage ? (
+                  <span>Preparing image...</span>
                 ) : (
                   <>
                     <Check className="w-5 h-5" />

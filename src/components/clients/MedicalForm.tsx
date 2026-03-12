@@ -75,7 +75,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
   const dietaryOptions = [
     'None', 'Vegetarian', 'Vegan', 'Eggitarian', 'Gluten-Free', 'Non-Vegetarian', 'Dairy-Free', 'Keto', 'Low-Carb', 'Low-Fat', 'High-Protein', 'Paleo', 'Mediterranean', 'Jain', 'Halal', 'Kosher'
   ];
-  
+
   // Medical conditions multi-select
   const [selectedMedical, setSelectedMedical] = React.useState<string[]>(() => (medicalConditions ? medicalConditions.split(',').map(s => s.trim()).filter(Boolean) : []));
   const [otherMedicalCondition, setOtherMedicalCondition] = React.useState('');
@@ -97,8 +97,8 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
     'Cancer', 'Autoimmune Disease', 'HIV/AIDS', 'Tuberculosis',
     'Asthma', 'COPD', 'Other'
   ];
-  
-  
+
+
   const addDiseaseRow = () => {
     const newRow: DiseaseEntry = { id: Math.random().toString(36).slice(2), disease: '', since: '', frequency: '', severity: '', grading: '', action: '' };
     onChange('diseaseHistory', [...diseaseHistory, newRow]);
@@ -180,10 +180,10 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
 
     try {
       setDeletingReportId(report.id);
-      
+
       // Extract fileId from URL (e.g., /api/reports/12345 -> 12345)
       const fileId = report.url.split('/').pop();
-      
+
       if (fileId && onDeleteReport) {
         await onDeleteReport(fileId);
       } else if (fileId) {
@@ -191,7 +191,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
         const response = await fetch(`/api/reports/${fileId}`, {
           method: 'DELETE',
         });
-        
+
         if (response.ok) {
           removeReport(report.id);
           toast.success('Report deleted successfully');
@@ -211,7 +211,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
   const handleReportInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    
+
     setUploadingFile(true);
     for (const f of Array.from(files)) {
       await addReport(f, pendingReportName, reportCategory);
@@ -222,15 +222,15 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
     e.target.value = '';
   };
   const [pendingReportName, setPendingReportName] = React.useState('');
-  
+
   // Filter reports by category
-  const filteredReports = categoryFilter === 'all' 
-    ? reports 
+  const filteredReports = categoryFilter === 'all'
+    ? reports
     : reports.filter(r => r.category === categoryFilter);
 
   return (
     <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
-          <CardHeader className="bg-linear-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
+      <CardHeader className="bg-linear-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
         <CardTitle className="text-lg sm:text-xl font-bold text-white">Medical Information</CardTitle>
         <CardDescription className="text-blue-100 text-sm">Health conditions and dietary restrictions</CardDescription>
       </CardHeader>
@@ -253,8 +253,8 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                         return;
                       }
                       // Remove "None" if selecting another option
-                      let next = isSelected 
-                        ? selectedMedical.filter(s => s !== opt) 
+                      let next = isSelected
+                        ? selectedMedical.filter(s => s !== opt)
                         : [...selectedMedical.filter(s => s !== 'None'), opt];
                       setSelectedMedical(next);
                       onChange('medicalConditions', next.join(', '));
@@ -347,12 +347,12 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
               <tbody>
                 {diseaseHistory.map(row => (
                   <tr key={row.id} className="border-t">
-                    <td className="p-1"><Input value={row.disease} onChange={e => updateDiseaseRow(row.id,'disease', e.target.value)} placeholder="Disease" className="h-8 text-xs" /></td>
-                    <td className="p-1"><Input value={row.since} onChange={e => updateDiseaseRow(row.id,'since', e.target.value)} placeholder="YYYY" className="h-8 text-xs" /></td>
-                    <td className="p-1"><Input value={row.frequency} onChange={e => updateDiseaseRow(row.id,'frequency', e.target.value)} placeholder="Freq" className="h-8 text-xs" /></td>
-                    <td className="p-1"><Input value={row.severity} onChange={e => updateDiseaseRow(row.id,'severity', e.target.value)} placeholder="Severity" className="h-8 text-xs" /></td>
-                    <td className="p-1"><Input value={row.grading} onChange={e => updateDiseaseRow(row.id,'grading', e.target.value)} placeholder="Grade" className="h-8 text-xs" /></td>
-                    <td className="p-1"><Input value={row.action} onChange={e => updateDiseaseRow(row.id,'action', e.target.value)} placeholder="Action" className="h-8 text-xs" /></td>
+                    <td className="p-1"><Input value={row.disease} onChange={e => updateDiseaseRow(row.id, 'disease', e.target.value)} placeholder="Disease" className="h-8 text-xs" /></td>
+                    <td className="p-1"><Input value={row.since} onChange={e => updateDiseaseRow(row.id, 'since', e.target.value)} placeholder="YYYY" className="h-8 text-xs" /></td>
+                    <td className="p-1"><Input value={row.frequency} onChange={e => updateDiseaseRow(row.id, 'frequency', e.target.value)} placeholder="Freq" className="h-8 text-xs" /></td>
+                    <td className="p-1"><Input value={row.severity} onChange={e => updateDiseaseRow(row.id, 'severity', e.target.value)} placeholder="Severity" className="h-8 text-xs" /></td>
+                    <td className="p-1"><Input value={row.grading} onChange={e => updateDiseaseRow(row.id, 'grading', e.target.value)} placeholder="Grade" className="h-8 text-xs" /></td>
+                    <td className="p-1"><Input value={row.action} onChange={e => updateDiseaseRow(row.id, 'action', e.target.value)} placeholder="Action" className="h-8 text-xs" /></td>
                     <td className="p-1"><Button type="button" variant="ghost" size="sm" onClick={() => removeDiseaseRow(row.id)}>✕</Button></td>
                   </tr>
                 ))}
@@ -385,11 +385,11 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
           <div className="sm:col-span-2">
             <Label>Gut Issues *</Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {['Acidity','Bloating','Constipation','None'].map(issue => {
+              {['Acidity', 'Bloating', 'Constipation', 'None'].map(issue => {
                 const val = issue.toLowerCase();
                 const selected = gutIssues.includes(val);
                 return (
-                  <Button key={val} type="button" size="sm" variant={selected ? 'default':'outline'} onClick={() => toggleGutIssue(val)}>{issue}</Button>
+                  <Button key={val} type="button" size="sm" variant={selected ? 'default' : 'outline'} onClick={() => toggleGutIssue(val)}>{issue}</Button>
                 );
               })}
             </div>
@@ -398,7 +398,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
         {clientGender === 'female' && (
           <div className="space-y-4 border-t pt-4">
             <h4 className="font-semibold text-gray-900">Assessment Questions (Female Only)</h4>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="isPregnant" checked={isPregnant} onChange={e => onChange('isPregnant', e.target.checked)} className="h-4 w-4" />
@@ -420,6 +420,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                   <SelectContent>
                     <SelectItem value="regular">Regular</SelectItem>
                     <SelectItem value="irregular">Irregular</SelectItem>
+                    <SelectItem value="not-applicable">Not Applicable</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -433,6 +434,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                     <SelectItem value="light">Light</SelectItem>
                     <SelectItem value="normal">Normal</SelectItem>
                     <SelectItem value="heavy">Heavy</SelectItem>
+                    <SelectItem value="not-applicable">Not Applicable</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -459,7 +461,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
               {uploadingFile && <span className="text-sm text-gray-500">Uploading...</span>}
             </div>
           </div>
-          
+
           {/* Category Filter */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">Filter:</span>
@@ -475,7 +477,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="border rounded-md overflow-hidden">
             <table className="min-w-full text-xs">
               <thead className="bg-gray-50">
@@ -492,11 +494,10 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                   <tr key={r.id} className="border-t">
                     <td className="p-2">{r.fileName}</td>
                     <td className="p-2">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        r.category === 'other' 
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.category === 'other'
                           ? 'bg-gray-100 text-gray-700'
                           : 'bg-blue-100 text-blue-700'
-                      }`}>
+                        }`}>
                         {r.category === 'other' ? 'Other' : 'Medical Report'}
                       </span>
                     </td>
@@ -504,10 +505,10 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                     <td className="p-2">{r.fileType}</td>
                     <td className="p-2">
                       <div className="flex items-center gap-1">
-                        <Button 
-                          type="button" 
-                          size="sm" 
-                          variant="ghost" 
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
                           onClick={() => handleViewReport(r)}
                           disabled={!r.url}
                           className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 disabled:text-gray-400 disabled:cursor-not-allowed"
@@ -515,10 +516,10 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
-                        <Button 
-                          type="button" 
-                          size="sm" 
-                          variant="ghost" 
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
                           onClick={() => handleDeleteReport(r)}
                           disabled={deletingReportId === r.id}
                           className="text-red-600 hover:text-red-800 hover:bg-red-50"
@@ -542,8 +543,8 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
           <Textarea id="notes" value={notes} onChange={e => onChange('notes', e.target.value)} rows={3} placeholder="Any additional information about the client..." />
         </div>
         <div className="flex justify-end pt-6 border-t border-gray-200 mt-6">
-          <Button type="button" onClick={onSave} disabled={loading} 
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md hover:shadow-lg transition-all">    <Save className="mr-2 h-4 w-4" />
+          <Button type="button" onClick={onSave} disabled={loading}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md hover:shadow-lg transition-all">    <Save className="mr-2 h-4 w-4" />
             Save Medical
           </Button>
         </div>

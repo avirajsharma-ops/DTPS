@@ -79,8 +79,8 @@ const medicalInfoSchema = new Schema<IMedicalInfo>({
   isPregnant: { type: Boolean, default: false },
   // Female-specific fields
   isLactating: { type: Boolean, default: false },
-  menstrualCycle: { type: String, enum: ['regular', 'irregular', ''] },
-  bloodFlow: { type: String, enum: ['light', 'normal', 'heavy', ''] },
+  menstrualCycle: { type: String, enum: ['regular', 'irregular', 'not-applicable', ''] },
+  bloodFlow: { type: String, enum: ['light', 'normal', 'heavy', 'not-applicable', ''] },
   diseaseHistory: [diseaseEntrySchema],
   reports: [uploadedReportSchema],
 }, {

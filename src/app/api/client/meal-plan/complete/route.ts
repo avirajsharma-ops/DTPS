@@ -119,18 +119,24 @@ export async function POST(request: NextRequest) {
         const bytes = await imageFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Compress the image before upload
-        const compressedBase64 = await compressImageServer(buffer, {
-          quality: 85,
-          maxWidth: 1200,
-          maxHeight: 1200,
-          format: 'jpeg'
-        });
+        // Skip server-side compression for already-small images to reduce latency
+        // (client already compresses image before upload)
+        let uploadData: string;
+        if (imageFile.size <= 1.2 * 1024 * 1024) {
+          uploadData = buffer.toString('base64');
+        } else {
+          uploadData = await compressImageServer(buffer, {
+            quality: 85,
+            maxWidth: 1200,
+            maxHeight: 1200,
+            format: 'jpeg'
+          });
+        }
 
         // Upload to ImageKit in complete-meal folder
         const ik = getImageKit();
         const uploadResponse = await ik.upload({
-          file: compressedBase64,
+          file: uploadData,
           fileName: filename,
           folder: '/complete-meal',
         });
