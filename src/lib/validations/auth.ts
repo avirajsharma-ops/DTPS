@@ -48,7 +48,7 @@ export const signInSchema = z.object({
   password: z
     .string()
     .min(1, 'Password is required')
-    .min(6, 'Password must be at least 6 characters'),
+    .min(4, 'Password must be at least 4 characters'),
 });
 
 export const signUpSchema = z.object({
@@ -66,11 +66,7 @@ export const signUpSchema = z.object({
     }),
   password: z
     .string()
-    .min(6, 'Password must be at least 6 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-    ),
+    .min(4, 'Password must be at least 4 characters'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
   firstName: z
     .string()
@@ -177,11 +173,7 @@ export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z
     .string()
-    .min(6, 'New password must be at least 6 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-    ),
+    .min(4, 'New password must be at least 4 characters'),
   confirmNewPassword: z.string().min(1, 'Please confirm your new password'),
 }).refine((data) => data.newPassword === data.confirmNewPassword, {
   message: "New passwords don't match",

@@ -193,6 +193,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    if (String(password).length < 4) {
+      return NextResponse.json({ error: 'Password must be at least 4 characters' }, { status: 400 });
+    }
+
     if (!phone) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
     }

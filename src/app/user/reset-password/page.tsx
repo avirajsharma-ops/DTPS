@@ -11,7 +11,7 @@ import { Lock, Eye, EyeOff, CheckCircle, XCircle, Loader2, ArrowLeft } from 'luc
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
-  
+
   const [token, setToken] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +28,7 @@ function ResetPasswordForm() {
   useEffect(() => {
     const tokenParam = searchParams.get('token');
     const emailParam = searchParams.get('email');
-    
+
     if (tokenParam && emailParam) {
       setToken(tokenParam);
       setEmail(emailParam);
@@ -43,7 +43,7 @@ function ResetPasswordForm() {
     try {
       const response = await fetch(`/api/user/reset-password?token=${token}&email=${encodeURIComponent(email)}`);
       const data = await response.json();
-      
+
       if (data.valid) {
         setIsValid(true);
         setUserName(data.userName);
@@ -66,8 +66,8 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    if (password.length < 4) {
+      setError('Password must be at least 4 characters long.');
       return;
     }
 
@@ -244,7 +244,7 @@ function ResetPasswordForm() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-12 sm:h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white"
                   required
-                  minLength={6}
+                  minLength={4}
                 />
                 <button
                   type="button"
@@ -274,7 +274,7 @@ function ResetPasswordForm() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="h-12 sm:h-14 pl-12 pr-12 bg-[#3AB1A0]/5 border-[#3AB1A0]/20 text-black placeholder:text-gray-400 rounded-xl focus:border-[#3AB1A0] focus:ring-[#3AB1A0] focus:bg-white"
                   required
-                  minLength={6}
+                  minLength={4}
                 />
                 <button
                   type="button"

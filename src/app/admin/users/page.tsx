@@ -270,8 +270,8 @@ export default function AdminUsersPage() {
   async function handleChangePassword() {
     if (!passwordUser) return;
 
-    if (!newPassword || newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (!newPassword || newPassword.length < 4) {
+      toast.error("Password must be at least 4 characters");
       return;
     }
 
@@ -530,9 +530,9 @@ export default function AdminUsersPage() {
                         <tr key={u._id} className="border-b hover:bg-gray-50">
                           <td className="p-3">
                             <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${u.role === 'dietitian' ? 'bg-teal-100 text-teal-700' :
-                                u.role === 'client' ? 'bg-blue-100 text-blue-700' :
-                                  u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                                    'bg-orange-100 text-orange-700'
+                              u.role === 'client' ? 'bg-blue-100 text-blue-700' :
+                                u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                                  'bg-orange-100 text-orange-700'
                               }`}>
                               {formatUserId(u._id, u.role)}
                             </span>
@@ -544,9 +544,9 @@ export default function AdminUsersPage() {
                           <td className="p-3 text-sm">{u.email}</td>
                           <td className="p-3">
                             <span className={`text-xs px-2 py-1 rounded-full font-medium ${u.role === 'dietitian' ? 'bg-teal-100 text-teal-700' :
-                                u.role === 'client' ? 'bg-blue-100 text-blue-700' :
-                                  u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                                    'bg-orange-100 text-orange-700'
+                              u.role === 'client' ? 'bg-blue-100 text-blue-700' :
+                                u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                                  'bg-orange-100 text-orange-700'
                               }`}>
                               {roleNames[u.role] || u.role}
                             </span>
@@ -992,7 +992,7 @@ export default function AdminUsersPage() {
                         type={showPassword ? "text" : "password"}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password (min 6 characters)"
+                        placeholder="Enter new password (min 4 characters)"
                         className="pr-10"
                       />
                       <button
@@ -1022,10 +1022,10 @@ export default function AdminUsersPage() {
                     </p>
                   )}
 
-                  {newPassword && newPassword.length < 6 && (
+                  {newPassword && newPassword.length < 4 && (
                     <p className="text-sm text-amber-500 flex items-center gap-1">
                       <AlertCircle className="h-4 w-4" />
-                      Password must be at least 6 characters
+                      Password must be at least 4 characters
                     </p>
                   )}
                 </div>
@@ -1038,7 +1038,7 @@ export default function AdminUsersPage() {
               </Button>
               <Button
                 onClick={handleChangePassword}
-                disabled={passwordSaving || !newPassword || newPassword.length < 6 || newPassword !== confirmNewPassword}
+                disabled={passwordSaving || !newPassword || newPassword.length < 4 || newPassword !== confirmNewPassword}
               >
                 {passwordSaving ? (
                   <>

@@ -27,7 +27,7 @@ function normalizePhoneNumber(phone: string, defaultCountryCode: string = '+91')
 const registerSchema = z.object({
   signupContext: z.enum(['client', 'staff']).optional(),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
+  password: z.string().min(4, 'Password must be at least 4 characters').optional(),
   confirmPassword: z.string().optional(),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),

@@ -26,9 +26,9 @@ export async function POST(
         const { newPassword } = body;
 
         // Validate password
-        if (!newPassword || newPassword.length < 6) {
+        if (!newPassword || newPassword.length < 4) {
             return NextResponse.json(
-                { error: 'Password must be at least 6 characters' },
+                { error: 'Password must be at least 4 characters' },
                 { status: 400 }
             );
         }

@@ -14,7 +14,7 @@ import { Heart, Lock, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [token, setToken] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,7 +31,7 @@ function ResetPasswordForm() {
   useEffect(() => {
     const tokenParam = searchParams.get('token');
     const emailParam = searchParams.get('email');
-    
+
     if (tokenParam && emailParam) {
       setToken(tokenParam);
       setEmail(emailParam);
@@ -46,7 +46,7 @@ function ResetPasswordForm() {
     try {
       const response = await fetch(`/api/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`);
       const data = await response.json();
-      
+
       if (data.valid) {
         setIsValid(true);
         setUserName(data.userName);
@@ -69,8 +69,8 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    if (password.length < 4) {
+      setError('Password must be at least 4 characters long.');
       return;
     }
 
@@ -205,7 +205,7 @@ function ResetPasswordForm() {
           <CardHeader>
             <CardTitle>Create New Password</CardTitle>
             <CardDescription>
-              Your new password must be at least 6 characters long
+              Your new password must be at least 4 characters long
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -230,7 +230,7 @@ function ResetPasswordForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10"
                     required
-                    minLength={6}
+                    minLength={4}
                   />
                   <button
                     type="button"
@@ -260,7 +260,7 @@ function ResetPasswordForm() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="pl-10 pr-10"
                     required
-                    minLength={6}
+                    minLength={4}
                   />
                   <button
                     type="button"

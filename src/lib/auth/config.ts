@@ -308,10 +308,17 @@ export const authOptions: NextAuthOptions = {
               return null as any;
             }
           } else {
-            // Cache miss — check DB and cache result
+            // Cache miss — check DB and cache result (with timeout)
             try {
               await connectDB();
-              const userDoc = await User.findById(userId).select('status').lean();
+
+              // Add timeout to prevent connection pool exhaustion
+              const userStatusPromise = User.findById(userId).select('status').lean();
+              const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('User status check timeout')), 5000)
+              );
+
+              const userDoc = await Promise.race([userStatusPromise, timeoutPromise]) as any;
               const user = userDoc as { status?: string } | null;
               if (user) {
                 setCachedUserStatus(userId, user.status || 'active');
@@ -321,6 +328,10 @@ export const authOptions: NextAuthOptions = {
               }
             } catch (error) {
               console.error('Error checking user status in session:', error);
+              // Cache default status on error to prevent repeated DB hits
+              if (userId) {
+                setCachedUserStatus(userId, 'active');
+              }
               // Don't fail the session on error - just continue
             }
           }
