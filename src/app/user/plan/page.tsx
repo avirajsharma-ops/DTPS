@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useRealtime } from '@/hooks/useRealtime';
 import {
   Clock,
   Check,
@@ -322,6 +323,18 @@ export default function UserPlanPage() {
       window.removeEventListener('focus', handleFocus);
     };
   }, [selectedDate]);
+
+  // Real-time sync: Listen for meal plan updates from dietitian dashboard
+  const handleRealtimeMessage = useCallback((event: any) => {
+    if (event.type === 'meal_plan_updated' || event.type === 'meal_completion_updated') {
+      // Clear cache and refetch current date to get updated data
+      const dateKey = format(selectedDate, 'yyyy-MM-dd');
+      mealPlanCache.current.delete(dateKey);
+      fetchDayPlan(selectedDate, false);
+    }
+  }, [selectedDate]);
+
+  useRealtime({ onMessage: handleRealtimeMessage });
 
   // Prevent body scroll when any modal is open
   useEffect(() => {

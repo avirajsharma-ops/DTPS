@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Save, Eye, Trash2 } from 'lucide-react';
+import { Save, Eye, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { compressImage, validateImageFile } from '@/lib/imageCompression';
 
 export interface MedicalData {
   medicalConditions: string;
@@ -121,8 +122,45 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
     // If we have a clientId, upload to server
     if (clientId) {
       try {
+        let fileToUpload = file;
+
+        // Compress image files before upload (reduces size significantly)
+        if (file.type.startsWith('image/')) {
+          try {
+            // Validate the image file
+            const validation = validateImageFile(file);
+            if (!validation.valid) {
+              toast.error(validation.error || 'Invalid image file');
+              return;
+            }
+
+            // Compress the image (max 1200x1200, 80% quality)
+            const compressedResult = await compressImage(file, {
+              maxWidth: 1200,
+              maxHeight: 1200,
+              quality: 0.8
+            });
+
+            // Convert blob to File object
+            fileToUpload = new File([compressedResult.blob], file.name, {
+              type: compressedResult.blob.type,
+              lastModified: Date.now()
+            });
+
+            // Show compression stats
+            const originalSizeKB = Math.round(file.size / 1024);
+            const compressedSizeKB = Math.round(compressedResult.compressedSize / 1024);
+            if (compressedSizeKB < originalSizeKB) {
+              console.log(`Image compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB`);
+            }
+          } catch (compressionError) {
+            console.warn('Image compression failed, uploading original:', compressionError);
+            // Continue with original file if compression fails
+          }
+        }
+
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', fileToUpload);
         formData.append('fileName', customName || file.name);
         formData.append('category', category);
 
@@ -140,7 +178,7 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
         } else {
           const errorData = await response.json();
           console.error('Upload failed:', errorData);
-          toast.error('Failed to upload report');
+          toast.error(errorData.error || 'Failed to upload report');
         }
       } catch (error) {
         console.error('Error uploading report:', error);
@@ -495,8 +533,8 @@ export function MedicalForm({ medicalConditions, allergies, dietaryRestrictions,
                     <td className="p-2">{r.fileName}</td>
                     <td className="p-2">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.category === 'other'
-                          ? 'bg-gray-100 text-gray-700'
-                          : 'bg-blue-100 text-blue-700'
+                        ? 'bg-gray-100 text-gray-700'
+                        : 'bg-blue-100 text-blue-700'
                         }`}>
                         {r.category === 'other' ? 'Other' : 'Medical Report'}
                       </span>

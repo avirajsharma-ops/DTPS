@@ -3315,6 +3315,12 @@ export default function PlanningSection({ client, viewOnly = false }: PlanningSe
                       toast.error('All plan days have been used. Client needs to purchase a new plan.');
                       return;
                     }
+                    // Check if expected dates are set for the purchase
+                    const purchase = paymentCheck.purchase;
+                    if (!purchase?.expectedStartDate || !purchase?.expectedEndDate) {
+                      toast.error('Please set the expected start and end dates in the Payments tab before creating a meal plan.');
+                      return;
+                    }
                     // Clear any stale state before creating new plan
                     setEditingPlan(null);
                     setIsEditMode(false);

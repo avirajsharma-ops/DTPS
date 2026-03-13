@@ -115,8 +115,8 @@ function TimeRangeFilter({
           key={option}
           onClick={() => onChange(option)}
           className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${value === option
-              ? 'bg-[#E06A26] text-white shadow-sm'
-              : 'text-gray-600 hover:bg-gray-200'
+            ? 'bg-[#E06A26] text-white shadow-sm'
+            : 'text-gray-600 hover:bg-gray-200'
             }`}
         >
           {option}
@@ -363,7 +363,7 @@ export default function UserProgressPage() {
   const fetchProgressData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/client/progress?range=${timeRange}`);
+      const response = await fetch(`/api/client/progress?range=${timeRange}`, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
 
@@ -396,7 +396,7 @@ export default function UserProgressPage() {
 
       // Fetch user profile data (BMI, weight, height, etc.)
       try {
-        const profileRes = await fetch('/api/client/profile');
+        const profileRes = await fetch('/api/client/profile', { cache: 'no-store' });
         if (profileRes.ok) {
           const profileData = await profileRes.json();
           setUserProfile({
@@ -729,7 +729,7 @@ export default function UserProgressPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className={`fixed inset-0 flex items-center justify-center z-[100] ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
+      <div className={`fixed inset-0 flex items-center justify-center z-100 ${isDarkMode ? 'bg-gray-950' : 'bg-white'}`}>
         <SpoonGifLoader size="lg" />
       </div>
     );
@@ -761,10 +761,10 @@ export default function UserProgressPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id
-                  ? 'bg-[#E06A26] text-white shadow-lg shadow-[#E06A26]/25'
-                  : isDarkMode
-                    ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-[#E06A26] text-white shadow-lg shadow-[#E06A26]/25'
+                : isDarkMode
+                  ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -892,12 +892,12 @@ export default function UserProgressPage() {
                   {/* Category Badge */}
                   <span
                     className={`px-4 py-1.5 rounded-full text-sm font-semibold ${userProfile.bmiCategory === 'Normal'
-                        ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
-                        : userProfile.bmiCategory === 'Underweight'
-                          ? 'bg-blue-100 text-blue-700'
-                          : userProfile.bmiCategory === 'Overweight'
-                            ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
-                            : 'bg-[#E06A26]/15 text-[#E06A26]'
+                      ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
+                      : userProfile.bmiCategory === 'Underweight'
+                        ? 'bg-blue-100 text-blue-700'
+                        : userProfile.bmiCategory === 'Overweight'
+                          ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
+                          : 'bg-[#E06A26]/15 text-[#E06A26]'
                       }`}
                   >
                     {userProfile.bmiCategory}
@@ -1327,12 +1327,12 @@ export default function UserProgressPage() {
                   {/* Category Badge */}
                   <span
                     className={`px-4 py-1.5 rounded-full text-sm font-semibold ${userProfile.bmiCategory === 'Normal'
-                        ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
-                        : userProfile.bmiCategory === 'Underweight'
-                          ? 'bg-blue-100 text-blue-700'
-                          : userProfile.bmiCategory === 'Overweight'
-                            ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
-                            : 'bg-[#E06A26]/15 text-[#E06A26]'
+                      ? 'bg-[#3AB1A0]/15 text-[#3AB1A0]'
+                      : userProfile.bmiCategory === 'Underweight'
+                        ? 'bg-blue-100 text-blue-700'
+                        : userProfile.bmiCategory === 'Overweight'
+                          ? 'bg-[#DB9C6E]/20 text-[#DB9C6E]'
+                          : 'bg-[#E06A26]/15 text-[#E06A26]'
                       }`}
                   >
                     {userProfile.bmiCategory}

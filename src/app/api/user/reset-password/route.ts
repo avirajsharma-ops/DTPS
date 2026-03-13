@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
-import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 
@@ -31,17 +30,17 @@ export async function GET(request: NextRequest) {
     // Find user with matching email, token, and unexpired token - only clients
     const user = await withCache(
       `user:reset-password:${JSON.stringify({
-      email: email.toLowerCase().trim(),
-      role: 'client',
-      passwordResetToken: hashedToken,
-      passwordResetTokenExpiry: { $gt: new Date() }
-    })}`,
+        email: email.toLowerCase().trim(),
+        role: 'client',
+        passwordResetToken: hashedToken,
+        passwordResetTokenExpiry: { $gt: new Date() }
+      })}`,
       async () => await User.findOne({
-      email: email.toLowerCase().trim(),
-      role: 'client',
-      passwordResetToken: hashedToken,
-      passwordResetTokenExpiry: { $gt: new Date() }
-    }),
+        email: email.toLowerCase().trim(),
+        role: 'client',
+        passwordResetToken: hashedToken,
+        passwordResetTokenExpiry: { $gt: new Date() }
+      }),
       { ttl: 120000, tags: ['user'] }
     );
 
@@ -98,17 +97,17 @@ export async function POST(request: NextRequest) {
     // Find user with matching email, token, and unexpired token - only clients
     const user = await withCache(
       `user:reset-password:${JSON.stringify({
-      email: email.toLowerCase().trim(),
-      role: 'client',
-      passwordResetToken: hashedToken,
-      passwordResetTokenExpiry: { $gt: new Date() }
-    })}`,
+        email: email.toLowerCase().trim(),
+        role: 'client',
+        passwordResetToken: hashedToken,
+        passwordResetTokenExpiry: { $gt: new Date() }
+      })}`,
       async () => await User.findOne({
-      email: email.toLowerCase().trim(),
-      role: 'client',
-      passwordResetToken: hashedToken,
-      passwordResetTokenExpiry: { $gt: new Date() }
-    }),
+        email: email.toLowerCase().trim(),
+        role: 'client',
+        passwordResetToken: hashedToken,
+        passwordResetTokenExpiry: { $gt: new Date() }
+      }),
       { ttl: 120000, tags: ['user'] }
     );
 
@@ -119,15 +118,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Update password and clear reset token
-    user.password = hashedPassword;
+    // Set plain password - the pre-save hook will hash it
+    user.password = password;
     user.passwordResetToken = undefined;
     user.passwordResetTokenExpiry = undefined;
-    await user.save({ validateBeforeSave: false });
+    await user.save();
 
 
     return NextResponse.json({

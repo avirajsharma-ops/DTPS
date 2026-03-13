@@ -4,11 +4,11 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
-import { 
-  ArrowLeft, 
-  Save, 
-  Scale, 
-  Activity, 
+import {
+  ArrowLeft,
+  Save,
+  Scale,
+  Activity,
   Utensils,
   ChefHat,
   Wine,
@@ -47,6 +47,7 @@ interface LifestyleData {
 
 const foodPreferences = ["None", "Veg", "Non-Veg", "Eggetarian", "Vegan", "Pescatarian", "Flexitarian"];
 const cuisines = ["None", "Indian", "South Indian", "North Indian", "Chinese", "Italian", "Mexican", "Thai", "Continental", "Mediterranean", "Japanese", "Korean", "Middle Eastern"];
+const commonFoodAllergies = ["None", "Peanuts", "Tree Nuts", "Milk", "Eggs", "Wheat", "Soy", "Fish", "Shellfish", "Sesame", "Gluten"];
 const oils = ["None", "Ghee", "Mustard Oil", "Sunflower Oil", "Olive Oil", "Coconut Oil", "Groundnut Oil", "Rice Bran Oil", "Sesame Oil", "Butter", "Other"];
 const days = ["None", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const activityLevels = [
@@ -100,10 +101,10 @@ export default function LifestyleInfoPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/client/lifestyle-info");
+        const res = await fetch("/api/client/lifestyle-info", { cache: 'no-store' });
         if (res.ok) {
           const result = await res.json();
-          
+
           // Map backend food preference to display format
           const mapFoodPreference = (pref: string): string => {
             const prefMap: Record<string, string> = {
@@ -114,7 +115,7 @@ export default function LifestyleInfoPage() {
             };
             return prefMap[pref] || pref || '';
           };
-          
+
           setData({
             heightFeet: result.heightFeet || "",
             heightInch: result.heightInch || "",
@@ -169,14 +170,14 @@ export default function LifestyleInfoPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      
+
       // Transform data to match backend schema
       const transformedData = {
         ...data,
         // Convert food preference to lowercase for backend enum validation
         foodPreference: data.foodPreference ? data.foodPreference.toLowerCase().replace(' ', '-') : '',
       };
-      
+
       const res = await fetch("/api/client/lifestyle-info", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -201,10 +202,22 @@ export default function LifestyleInfoPage() {
 
   const toggleArrayItem = (field: keyof LifestyleData, item: string) => {
     const currentArray = data[field] as string[];
+
+    // Handle "None" selection - clears other selections
+    if (item === 'None') {
+      if (currentArray.includes('None')) {
+        setData({ ...data, [field]: [] });
+      } else {
+        setData({ ...data, [field]: ['None'] });
+      }
+      return;
+    }
+
+    // Remove "None" if selecting another option
     if (currentArray.includes(item)) {
       setData({ ...data, [field]: currentArray.filter(i => i !== item) });
     } else {
-      setData({ ...data, [field]: [...currentArray, item] });
+      setData({ ...data, [field]: [...currentArray.filter(i => i !== 'None'), item] });
     }
   };
 
@@ -234,7 +247,7 @@ export default function LifestyleInfoPage() {
             </Link>
             <h1 className={isDarkMode ? "text-lg font-bold text-white" : "text-lg font-bold text-gray-900"}>Lifestyle Information</h1>
           </div>
-          <button 
+          <button
             onClick={handleSave}
             disabled={saving}
             className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg shadow-green-500/25"
@@ -253,13 +266,12 @@ export default function LifestyleInfoPage() {
               <button
                 key={level.value}
                 onClick={() => setData({ ...data, activityLevel: level.value })}
-                className={`w-full p-3 rounded-xl text-left transition-all border ${
-                  data.activityLevel === level.value
+                className={`w-full p-3 rounded-xl text-left transition-all border ${data.activityLevel === level.value
                     ? "bg-green-50 border-green-500 ring-2 ring-green-500"
                     : isDarkMode
                       ? "bg-[#111] border-[#2a2a2a] hover:border-green-500/60"
                       : "bg-gray-50 border-gray-200 hover:border-green-300"
-                }`}
+                  }`}
               >
                 <p className={`font-medium ${data.activityLevel === level.value ? 'text-green-700' : (isDarkMode ? 'text-white' : 'text-gray-900')}`}>
                   {level.label}
@@ -277,13 +289,12 @@ export default function LifestyleInfoPage() {
               <button
                 key={pref}
                 onClick={() => setData({ ...data, foodPreference: pref })}
-                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  data.foodPreference === pref
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${data.foodPreference === pref
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                     : isDarkMode
                       ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                       : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                }`}
+                  }`}
               >
                 {pref}
               </button>
@@ -298,13 +309,12 @@ export default function LifestyleInfoPage() {
               <button
                 key={cuisine}
                 onClick={() => toggleArrayItem("preferredCuisine", cuisine)}
-                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                  data.preferredCuisine.includes(cuisine)
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.preferredCuisine.includes(cuisine)
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                     : isDarkMode
                       ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                       : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                }`}
+                  }`}
               >
                 {cuisine}
               </button>
@@ -319,13 +329,12 @@ export default function LifestyleInfoPage() {
               <button
                 key={oil}
                 onClick={() => toggleArrayItem("cookingOil", oil)}
-                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                  data.cookingOil.includes(oil)
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.cookingOil.includes(oil)
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                     : isDarkMode
                       ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                       : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                }`}
+                  }`}
               >
                 {oil}
               </button>
@@ -336,15 +345,34 @@ export default function LifestyleInfoPage() {
         {/* Food Allergies */}
         <Section title="Food Allergies" icon={Utensils}>
           <div className="space-y-3">
-            {data.allergiesFood.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {commonFoodAllergies.map(allergy => (
+                <button
+                  key={allergy}
+                  onClick={() => toggleArrayItem("allergiesFood", allergy)}
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.allergiesFood.includes(allergy)
+                      ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                      : isDarkMode
+                        ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    }`}
+                >
+                  {allergy}
+                </button>
+              ))}
+            </div>
+            {/* Show custom allergies that are not in the common list */}
+            {data.allergiesFood.filter(a => !commonFoodAllergies.includes(a)).length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {data.allergiesFood.map(allergy => (
-                  <span 
+                {data.allergiesFood.filter(a => !commonFoodAllergies.includes(a)).map(allergy => (
+                  <span
                     key={allergy}
-                    className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm flex items-center gap-1"
+                    className={isDarkMode
+                      ? "px-3 py-1.5 bg-green-500/20 text-green-400 rounded-full text-sm flex items-center gap-1"
+                      : "px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm flex items-center gap-1"}
                   >
                     {allergy}
-                    <button 
+                    <button
                       onClick={() => toggleArrayItem("allergiesFood", allergy)}
                       className="hover:text-red-500"
                     >
@@ -359,7 +387,7 @@ export default function LifestyleInfoPage() {
                 type="text"
                 value={customAllergy}
                 onChange={(e) => setCustomAllergy(e.target.value)}
-                placeholder="Add food allergy..."
+                placeholder="Add other food allergy..."
                 className={isDarkMode
                   ? "flex-1 px-4 py-2.5 bg-[#111] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
                   : "flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"}
@@ -382,13 +410,12 @@ export default function LifestyleInfoPage() {
               <button
                 key={craving}
                 onClick={() => setData({ ...data, cravingType: craving })}
-                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  data.cravingType === craving
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${data.cravingType === craving
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                     : isDarkMode
                       ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                       : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                }`}
+                  }`}
               >
                 {craving}
               </button>
@@ -403,13 +430,12 @@ export default function LifestyleInfoPage() {
               <button
                 key={day}
                 onClick={() => toggleArrayItem("fastDays", day)}
-                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                  data.fastDays.includes(day)
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.fastDays.includes(day)
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                     : isDarkMode
                       ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                       : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                }`}
+                  }`}
               >
                 {day.slice(0, 3)}
               </button>
@@ -425,13 +451,12 @@ export default function LifestyleInfoPage() {
                 <button
                   key={day}
                   onClick={() => toggleArrayItem("nonVegExemptDays", day)}
-                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                    data.nonVegExemptDays.includes(day)
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.nonVegExemptDays.includes(day)
                       ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                       : isDarkMode
                         ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                         : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                  }`}
+                    }`}
                 >
                   {day.slice(0, 3)}
                 </button>
@@ -477,13 +502,12 @@ export default function LifestyleInfoPage() {
               <button
                 key={freq}
                 onClick={() => setData({ ...data, eatOutFrequency: freq })}
-                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  data.eatOutFrequency === freq
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${data.eatOutFrequency === freq
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                     : isDarkMode
                       ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                       : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                }`}
+                  }`}
               >
                 {freq}
               </button>
@@ -503,13 +527,12 @@ export default function LifestyleInfoPage() {
                   <button
                     key={freq}
                     onClick={() => setData({ ...data, smokingFrequency: freq })}
-                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                      data.smokingFrequency === freq
+                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.smokingFrequency === freq
                         ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                         : isDarkMode
                           ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                           : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                    }`}
+                      }`}
                   >
                     {freq}
                   </button>
@@ -526,13 +549,12 @@ export default function LifestyleInfoPage() {
                   <button
                     key={freq}
                     onClick={() => setData({ ...data, alcoholFrequency: freq })}
-                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                      data.alcoholFrequency === freq
+                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.alcoholFrequency === freq
                         ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                         : isDarkMode
                           ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                           : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                    }`}
+                      }`}
                   >
                     {freq}
                   </button>

@@ -205,9 +205,9 @@ export default function UserHomePage() {
       const today = format(new Date(), 'yyyy-MM-dd');
       // Fetch aggregated health data + meal plan + food log in parallel (3 calls instead of 6)
       const [summaryRes, mealPlanRes, foodLogRes] = await Promise.all([
-        fetch(`/api/client/dashboard-summary?date=${today}`),
-        fetch(`/api/client/meal-plan?date=${today}`),
-        fetch(`/api/food-logs?date=${today}`)
+        fetch(`/api/client/dashboard-summary?date=${today}`, { cache: 'no-store' }),
+        fetch(`/api/client/meal-plan?date=${today}`, { cache: 'no-store' }),
+        fetch(`/api/food-logs?date=${today}`, { cache: 'no-store' })
       ]);
 
       const newData = { ...data };
@@ -364,7 +364,7 @@ export default function UserHomePage() {
     console.log('Refreshing all user data...');
     try {
       // Fetch service plans + health data (which includes profile)
-      const planRes = await fetch('/api/client/service-plans');
+      const planRes = await fetch('/api/client/service-plans', { cache: 'no-store' });
 
       // Also fetch health data (includes profile via dashboard-summary)
       fetchHealthData();

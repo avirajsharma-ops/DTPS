@@ -12,11 +12,11 @@ function calculateBMI(weightKg: number, heightCm: number): { bmi: string; bmiCat
   if (weightKg <= 0 || heightCm <= 0) {
     return { bmi: '', bmiCategory: '' };
   }
-  
+
   const heightM = heightCm / 100;
   const bmiValue = weightKg / (heightM * heightM);
   const bmi = bmiValue.toFixed(1);
-  
+
   let bmiCategory: string;
   if (bmiValue < 18.5) {
     bmiCategory = 'Underweight';
@@ -27,7 +27,7 @@ function calculateBMI(weightKg: number, heightCm: number): { bmi: string; bmiCat
   } else {
     bmiCategory = 'Obese';
   }
-  
+
   return { bmi, bmiCategory };
 }
 
@@ -45,7 +45,7 @@ export async function GET() {
 
     // Generate cache key based on user ID
     const cacheKey = `client-profile:${session.user.id}`;
-    
+
     const userData = await withCache(
       cacheKey,
       async () => {
@@ -63,7 +63,7 @@ export async function GET() {
         // Calculate BMI if not stored but weight and height available
         let bmi = user.bmi;
         let bmiCategory = user.bmiCategory;
-        
+
         if (!bmi && user.weightKg && user.heightCm) {
           const weightKg = parseFloat(user.weightKg);
           const heightCm = parseFloat(user.heightCm);
@@ -71,7 +71,7 @@ export async function GET() {
             const heightM = heightCm / 100;
             const bmiValue = weightKg / (heightM * heightM);
             bmi = bmiValue.toFixed(1);
-            
+
             if (bmiValue < 18.5) {
               bmiCategory = 'Underweight';
             } else if (bmiValue < 25) {
@@ -84,7 +84,7 @@ export async function GET() {
           }
         }
 
-        return { 
+        return {
           ...user,
           bmi,
           bmiCategory
@@ -155,14 +155,14 @@ export async function PUT(request: Request) {
 
     // Check if weight or height is being updated - recalculate BMI
     const isWeightOrHeightUpdated = data.weightKg !== undefined || data.heightCm !== undefined;
-    
+
     if (isWeightOrHeightUpdated) {
       // Get current user data to calculate BMI with new values
       const currentUser = await User.findById(session.user.id).select('weightKg heightCm').lean();
-      
+
       const finalWeightKg = parseFloat(data.weightKg !== undefined ? String(data.weightKg) : currentUser?.weightKg || '0');
       const finalHeightCm = parseFloat(data.heightCm !== undefined ? String(data.heightCm) : currentUser?.heightCm || '0');
-      
+
       // Calculate BMI if both weight and height are available
       if (finalWeightKg > 0 && finalHeightCm > 0) {
         const bmiData = calculateBMI(finalWeightKg, finalHeightCm);
@@ -184,6 +184,7 @@ export async function PUT(request: Request) {
     // Clear client profile cache after update
     clearCacheByTag(`client-profile:${session.user.id}`);
     clearCacheByTag('client-profile');
+    clearCacheByTag('client');
 
     // Send SSE update if BMI was recalculated
     if (isWeightOrHeightUpdated && user.bmi) {

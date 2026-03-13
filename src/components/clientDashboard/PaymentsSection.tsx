@@ -219,7 +219,8 @@ export default function PaymentsSection({
 
     const taxed = amt + (amt * t) / 100;
     const finalVal = Math.max(0, taxed - (amt * effectiveDiscount) / 100);
-    setFinalAmount(Number(finalVal.toFixed(2)));
+    // Round up to nearest integer (e.g., 739.26 → 740, 72.12 → 73)
+    setFinalAmount(Math.ceil(finalVal));
   }, [amount, tax, discount, maxDiscount]);
 
   // Fetch payment links from API
@@ -295,6 +296,11 @@ export default function PaymentsSection({
 
     if (!selectedServicePlan || !selectedPricingTier) {
       toast.error("Please select a service plan and duration");
+      return;
+    }
+
+    if (!expireDate) {
+      toast.error("Link expire date is required");
       return;
     }
 
@@ -1217,14 +1223,15 @@ export default function PaymentsSection({
                   )}
                 </div>
 
-                {/* Link Expire Date */}
+                {/* Link Expire Date - Required */}
                 <div>
-                  <label className="text-xs font-medium text-gray-700">Link Expire Date</label>
+                  <label className="text-xs font-medium text-gray-700">Link Expire Date *</label>
                   <input
                     type="date"
                     value={expireDate}
                     onChange={(e) => setExpireDate(e.target.value)}
                     className="w-full border p-2 rounded-lg mt-1"
+                    required
                     min={(() => {
                       const tomorrow = new Date();
                       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1549,8 +1556,8 @@ export default function PaymentsSection({
                       </td>
                       <td className="p-3">
                         <span className={`text-xs px-2 py-1 rounded-full capitalize ${payment.status === 'approved' ? 'bg-green-100 text-green-800' :
-                            payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
+                          payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
                           }`}>
                           {payment.status}
                         </span>

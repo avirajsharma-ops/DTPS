@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
-import bcrypt from 'bcryptjs';
 
 // POST /api/admin/users/[id]/password - Admin set/reset user password
 export async function POST(
@@ -45,12 +44,8 @@ export async function POST(
             );
         }
 
-        // Hash the new password
-        const salt = await bcrypt.genSalt(12);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-        // Update user with new password
-        user.password = hashedPassword;
+        // Set plain password - the pre-save hook will hash it
+        user.password = newPassword;
         user.passwordResetToken = null;
         user.passwordResetTokenExpiry = null;
 

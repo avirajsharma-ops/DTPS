@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
-import { 
-  ArrowLeft, 
-  Save, 
-  Clock, 
+import {
+  ArrowLeft,
+  Save,
+  Clock,
   Utensils,
   Plus,
   Trash2,
@@ -67,16 +67,16 @@ const loadDraftFromLocalStorage = (userId: string): MealEntry[] | null => {
   try {
     const draftStr = localStorage.getItem(DRAFT_KEY);
     if (!draftStr) return null;
-    
+
     const draft = JSON.parse(draftStr);
-    
+
     // Check if draft belongs to current user and hasn't expired
     if (draft.userId !== userId) return null;
     if (draft.expiresAt && Date.now() > draft.expiresAt) {
       localStorage.removeItem(DRAFT_KEY);
       return null;
     }
-    
+
     return draft.meals;
   } catch (error) {
     console.error('Error loading draft from localStorage:', error);
@@ -111,16 +111,16 @@ export default function DietaryRecallPage() {
   // Auto-save to draft when meals change (debounced)
   useEffect(() => {
     if (!session?.user?.id || loading || !draftRestored) return;
-    
+
     // Check if any meals have content
     const hasContent = meals.some(m => m.food.trim() !== '' || m.hour !== '' || m.minute !== '');
     if (!hasContent) return;
-    
+
     const timeoutId = setTimeout(() => {
       saveDraftToLocalStorage(meals, session.user.id);
       setHasDraft(true);
     }, 1000); // Debounce 1 second
-    
+
     return () => clearTimeout(timeoutId);
   }, [meals, session?.user?.id, loading, draftRestored]);
 
@@ -128,7 +128,7 @@ export default function DietaryRecallPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // First, check for local draft
         if (session?.user?.id) {
           const draftMeals = loadDraftFromLocalStorage(session.user.id);
@@ -145,9 +145,9 @@ export default function DietaryRecallPage() {
             }
           }
         }
-        
+
         // If no draft, fetch from server
-        const res = await fetch("/api/client/dietary-recall");
+        const res = await fetch("/api/client/dietary-recall", { cache: 'no-store' });
         if (res.ok) {
           const result = await res.json();
           if (result.recalls && result.recalls.length > 0) {
@@ -267,9 +267,9 @@ export default function DietaryRecallPage() {
   };
 
   const getMealInfo = (mealType: string) => {
-    return mealTypes.find(t => t.value === mealType) || { 
-      value: mealType, 
-      label: mealType, 
+    return mealTypes.find(t => t.value === mealType) || {
+      value: mealType,
+      label: mealType,
       icon: Utensils
     };
   };
@@ -310,7 +310,7 @@ export default function DietaryRecallPage() {
                 <RotateCcw className="w-4 h-4" />
               </button>
             )}
-            <button 
+            <button
               onClick={handleSave}
               disabled={saving}
               className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg shadow-green-500/25"
@@ -327,9 +327,9 @@ export default function DietaryRecallPage() {
         {meals.map((meal, index) => {
           const mealInfo = getMealInfo(meal.mealType);
           const MealIcon = mealInfo.icon;
-          
+
           return (
-            <div 
+            <div
               key={index}
               className={isDarkMode ? "bg-[#1a1a1a] rounded-2xl p-5 shadow-sm border border-[#2a2a2a]" : "bg-white rounded-2xl p-5 shadow-sm border border-gray-100"}
             >

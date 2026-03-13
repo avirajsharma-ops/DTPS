@@ -141,10 +141,16 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
           <Label htmlFor="phone">Phone *</Label>
           <div className="flex gap-2">
             <Select
-              value={phone?.startsWith('+91') ? '+91' : phone?.startsWith('+1') ? '+1' : phone?.startsWith('+44') ? '+44' : phone?.startsWith('+971') ? '+971' : '+91'}
+              value={(() => {
+                if (!phone) return '+91';
+                // Match country codes: +91, +1, +44, +971, +65, +61, +49, +33
+                const match = phone.match(/^\+(91|1|44|971|65|61|49|33)/);
+                return match ? `+${match[1]}` : '+91';
+              })()}
               onValueChange={(code) => {
                 if (disablePhone) return;
-                const currentNumber = phone?.replace(/^\+\d+\s*/, '') || '';
+                // Extract just the number part (remove any existing country code)
+                const currentNumber = phone?.replace(/^\+\d{1,3}[\s-]?/, '').trim() || '';
                 onChange('phone', `${code} ${currentNumber}`);
               }}
               disabled={disablePhone}
@@ -166,10 +172,16 @@ export function BasicInfoForm({ firstName, lastName, email, phone, dateOfBirth, 
             <Input
               id="phone"
               className="flex-1"
-              value={phone?.replace(/^\+\d+\s*/, '') || ''}
+              value={(() => {
+                if (!phone) return '';
+                // Remove country code prefix (+XX or +XXX) and any space/dash after it
+                return phone.replace(/^\+\d{1,3}[\s-]?/, '').trim();
+              })()}
               onChange={e => {
                 if (disablePhone) return;
-                const code = phone?.match(/^\+\d+/)?.[0] || '+91';
+                // Extract country code from current phone or default to +91
+                const match = phone?.match(/^\+(91|1|44|971|65|61|49|33)/);
+                const code = match ? `+${match[1]}` : '+91';
                 onChange('phone', `${code} ${e.target.value}`);
               }}
               placeholder="90000 00000"

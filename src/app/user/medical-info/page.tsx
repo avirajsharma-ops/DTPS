@@ -5,9 +5,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import PageTransition from "@/components/animations/PageTransition";
 import { useTheme } from "@/contexts/ThemeContext";
-import { 
-  ArrowLeft, 
-  Save, 
+import {
+  ArrowLeft,
+  Save,
   Heart,
   Droplets,
   AlertCircle,
@@ -20,7 +20,8 @@ import {
   Trash2,
   Eye,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  Utensils
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -58,21 +59,22 @@ interface MedicalData {
 
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const reportCategories = [
-  "Medical Report", 
-  "Blood Test", 
-  "X-Ray", 
-  "MRI/CT Scan", 
-  "Prescription", 
-  "Vaccination", 
-  "Insurance", 
+  "Medical Report",
+  "Blood Test",
+  "X-Ray",
+  "MRI/CT Scan",
+  "Prescription",
+  "Vaccination",
+  "Insurance",
   "Other"
 ];
 const commonConditions = [
-  "Diabetes", "Hypertension", "Heart Disease", "Thyroid", "PCOS/PCOD", 
+  "Diabetes", "Hypertension", "Heart Disease", "Thyroid", "PCOS/PCOD",
   "Asthma", "Arthritis", "High Cholesterol", "Kidney Disease", "Liver Disease",
   "IBS", "Celiac Disease", "Lactose Intolerance", "Osteoporosis", "Anemia"
 ];
 const commonAllergies = ["Peanuts", "Tree Nuts", "Milk", "Eggs", "Wheat", "Soy", "Fish", "Shellfish", "Sesame", "Gluten"];
+const commonDietaryRestrictions = ["None", "Vegetarian", "Vegan", "Eggitarian", "Gluten-Free", "Non-Vegetarian", "Dairy-Free", "Keto", "Low-Carb", "Low-Fat", "High-Protein", "Paleo", "Mediterranean", "Jain", "Halal", "Kosher"];
 const gutIssueOptions = ["Bloating", "Constipation", "Diarrhea", "Acidity", "IBS", "Acid Reflux", "Indigestion", "Gas"];
 
 export default function MedicalInfoPage() {
@@ -109,6 +111,7 @@ export default function MedicalInfoPage() {
 
   const [customCondition, setCustomCondition] = useState("");
   const [customAllergy, setCustomAllergy] = useState("");
+  const [customDietaryRestriction, setCustomDietaryRestriction] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -119,7 +122,7 @@ export default function MedicalInfoPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/client/medical-info");
+        const res = await fetch("/api/client/medical-info", { cache: 'no-store' });
         if (res.ok) {
           const result = await res.json();
           setUserGender(result.gender || "");
@@ -162,7 +165,7 @@ export default function MedicalInfoPage() {
       });
 
       const result = await res.json();
-      
+
       if (res.ok) {
         toast.success("Medical information saved successfully");
         router.push("/user/profile");
@@ -179,10 +182,22 @@ export default function MedicalInfoPage() {
 
   const toggleArrayItem = (field: keyof MedicalData, item: string) => {
     const currentArray = data[field] as string[];
+
+    // Handle "None" selection - clears other selections
+    if (item === 'None') {
+      if (currentArray.includes('None')) {
+        setData({ ...data, [field]: [] });
+      } else {
+        setData({ ...data, [field]: ['None'] });
+      }
+      return;
+    }
+
+    // Remove "None" if selecting another option
     if (currentArray.includes(item)) {
       setData({ ...data, [field]: currentArray.filter(i => i !== item) });
     } else {
-      setData({ ...data, [field]: [...currentArray, item] });
+      setData({ ...data, [field]: [...currentArray.filter(i => i !== 'None'), item] });
     }
   };
 
@@ -197,6 +212,13 @@ export default function MedicalInfoPage() {
     if (customAllergy.trim() && !data.allergies.includes(customAllergy.trim())) {
       setData({ ...data, allergies: [...data.allergies, customAllergy.trim()] });
       setCustomAllergy("");
+    }
+  };
+
+  const addCustomDietaryRestriction = () => {
+    if (customDietaryRestriction.trim() && !data.dietaryRestrictions.includes(customDietaryRestriction.trim())) {
+      setData({ ...data, dietaryRestrictions: [...data.dietaryRestrictions, customDietaryRestriction.trim()] });
+      setCustomDietaryRestriction("");
     }
   };
 
@@ -313,10 +335,10 @@ export default function MedicalInfoPage() {
 
   const getReportDate = (report: MedicalReport) => {
     const dateStr = report.uploadedAt || report.uploadedOn;
-    return dateStr ? new Date(dateStr).toLocaleDateString('en-IN', { 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric' 
+    return dateStr ? new Date(dateStr).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
     }) : '-';
   };
 
@@ -339,7 +361,7 @@ export default function MedicalInfoPage() {
             </Link>
             <h1 className={isDarkMode ? "text-lg font-bold text-white" : "text-lg font-bold text-gray-900"}>Medical Information</h1>
           </div>
-          <button 
+          <button
             onClick={handleSave}
             disabled={saving}
             className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-lg shadow-green-500/25"
@@ -358,13 +380,12 @@ export default function MedicalInfoPage() {
               <button
                 key={group}
                 onClick={() => setData({ ...data, bloodGroup: group })}
-                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  data.bloodGroup === group
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${data.bloodGroup === group
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                     : isDarkMode
                       ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                       : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                }`}
+                  }`}
               >
                 {group}
               </button>
@@ -380,13 +401,12 @@ export default function MedicalInfoPage() {
                 <button
                   key={condition}
                   onClick={() => toggleArrayItem("medicalConditions", condition)}
-                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                    data.medicalConditions.includes(condition)
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.medicalConditions.includes(condition)
                       ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                       : isDarkMode
                         ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                         : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                  }`}
+                    }`}
                 >
                   {condition}
                 </button>
@@ -421,13 +441,12 @@ export default function MedicalInfoPage() {
                 <button
                   key={allergy}
                   onClick={() => toggleArrayItem("allergies", allergy)}
-                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                    data.allergies.includes(allergy)
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.allergies.includes(allergy)
                       ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                       : isDarkMode
                         ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                         : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                  }`}
+                    }`}
                 >
                   {allergy}
                 </button>
@@ -454,6 +473,46 @@ export default function MedicalInfoPage() {
           </div>
         </Section>
 
+        {/* Dietary Restrictions */}
+        <Section title="Dietary Restrictions" icon={Utensils}>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {commonDietaryRestrictions.map(restriction => (
+                <button
+                  key={restriction}
+                  onClick={() => toggleArrayItem("dietaryRestrictions", restriction)}
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.dietaryRestrictions.includes(restriction)
+                      ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+                      : isDarkMode
+                        ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
+                        : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                    }`}
+                >
+                  {restriction}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customDietaryRestriction}
+                onChange={(e) => setCustomDietaryRestriction(e.target.value)}
+                placeholder="Add other dietary restriction..."
+                className={isDarkMode
+                  ? "flex-1 px-4 py-2.5 bg-[#111] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  : "flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"}
+                onKeyDown={(e) => e.key === 'Enter' && addCustomDietaryRestriction()}
+              />
+              <button
+                onClick={addCustomDietaryRestriction}
+                className="px-4 py-2.5 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </Section>
+
         {/* Gut Issues */}
         <Section title="Gut Issues" icon={AlertCircle}>
           <div className="flex flex-wrap gap-2">
@@ -461,13 +520,12 @@ export default function MedicalInfoPage() {
               <button
                 key={issue}
                 onClick={() => toggleArrayItem("gutIssues", issue)}
-                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                  data.gutIssues.includes(issue)
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${data.gutIssues.includes(issue)
                     ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                     : isDarkMode
                       ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                       : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                }`}
+                  }`}
               >
                 {issue}
               </button>
@@ -507,13 +565,12 @@ export default function MedicalInfoPage() {
                     <button
                       key={cycle}
                       onClick={() => setData({ ...data, menstrualCycle: cycle })}
-                      className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                        data.menstrualCycle === cycle
+                      className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${data.menstrualCycle === cycle
                           ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                           : isDarkMode
                             ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                             : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                      }`}
+                        }`}
                     >
                       {cycle.charAt(0).toUpperCase() + cycle.slice(1)}
                     </button>
@@ -528,13 +585,12 @@ export default function MedicalInfoPage() {
                     <button
                       key={flow}
                       onClick={() => setData({ ...data, bloodFlow: flow })}
-                      className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                        data.bloodFlow === flow
+                      className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${data.bloodFlow === flow
                           ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
                           : isDarkMode
                             ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]"
                             : "bg-gray-50 text-gray-600 hover:bg-green-50"
-                      }`}
+                        }`}
                     >
                       {flow.charAt(0).toUpperCase() + flow.slice(1)}
                     </button>
@@ -727,7 +783,7 @@ export default function MedicalInfoPage() {
 
       {/* Lightbox Modal - View on same screen */}
       {lightboxOpen && lightboxImage && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
           onClick={closeLightbox}
         >
@@ -754,13 +810,13 @@ export default function MedicalInfoPage() {
           </div>
 
           {/* Content */}
-          <div 
+          <div
             className="max-w-full max-h-full overflow-auto p-4"
             onClick={(e) => e.stopPropagation()}
           >
             {isImageFile(lightboxImage) ? (
-              <img 
-                src={lightboxImage.url} 
+              <img
+                src={lightboxImage.url}
                 alt={getReportName(lightboxImage)}
                 loading="lazy"
                 style={{ transform: `scale(${lightboxZoom})` }}

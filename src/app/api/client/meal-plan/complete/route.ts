@@ -8,6 +8,7 @@ import { parseISO, startOfDay, isToday } from 'date-fns';
 import { getImageKit } from '@/lib/imagekit';
 import { compressImageServer } from '@/lib/imageCompressionServer';
 import { MEAL_TYPE_KEYS, normalizeMealType, type MealTypeKey } from '@/lib/mealConfig';
+import { SSEManager } from '@/lib/realtime/sse-manager';
 
 // Map camelCase meal types to canonical UPPERCASE keys
 const CAMELCASE_TO_CANONICAL: Record<string, MealTypeKey> = {
@@ -200,6 +201,23 @@ export async function POST(request: NextRequest) {
     mealPlan.analytics.averageAdherence = Math.round((completedMeals / totalMeals) * 100);
 
     await mealPlan.save();
+
+    // Emit real-time event to notify the client (and other tabs/devices)
+    try {
+      const sseManager = SSEManager.getInstance();
+      sseManager.sendToUser(session.user.id, 'meal_completion_updated', {
+        type: 'meal_completion_updated',
+        mealPlanId: mealPlan._id,
+        date: requestedDate,
+        mealType: determinedMealType,
+        completed: true,
+        imagePath: imagePath,
+        timestamp: Date.now()
+      });
+    } catch (sseError) {
+      console.error('SSE notification error:', sseError);
+      // Don't fail the request if SSE fails
+    }
 
     return NextResponse.json({
       success: true,

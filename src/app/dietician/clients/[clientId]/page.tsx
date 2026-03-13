@@ -897,7 +897,7 @@ export default function ClientDetailPage() {
   const fetchClientDetails = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const response = await fetch(`/api/users/${params.clientId}`);
+      const response = await fetch(`/api/users/${params.clientId}`, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         setClient(data?.user);
@@ -912,7 +912,7 @@ export default function ClientDetailPage() {
         }
 
         // Fetch lifestyle data from separate API first to get physical measurements
-        const lifestyleResponse = await fetch(`/api/users/${params.clientId}/lifestyle`);
+        const lifestyleResponse = await fetch(`/api/users/${params.clientId}/lifestyle`, { cache: 'no-store' });
         let lifestyleInfo = null;
         if (lifestyleResponse.ok) {
           const lifestyleData = await lifestyleResponse.json();
@@ -973,7 +973,7 @@ export default function ClientDetailPage() {
         });
 
         // Fetch medical data from separate API
-        const medicalResponse = await fetch(`/api/users/${params.clientId}/medical`);
+        const medicalResponse = await fetch(`/api/users/${params.clientId}/medical`, { cache: 'no-store' });
         let medicalInfo = null;
         if (medicalResponse.ok) {
           const medicalData = await medicalResponse.json();
@@ -1014,7 +1014,7 @@ export default function ClientDetailPage() {
         });
 
         // Load dietary recall entries from separate API
-        const recallResponse = await fetch(`/api/users/${params.clientId}/recall`);
+        const recallResponse = await fetch(`/api/users/${params.clientId}/recall`, { cache: 'no-store' });
         if (recallResponse.ok) {
           const recallData = await recallResponse.json();
           // Use entries from API response (already formatted with id)

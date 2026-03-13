@@ -30,7 +30,7 @@ interface RecallFormProps {
 
 export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEntry, loading, userRole = 'client' }: RecallFormProps) {
   // Predefined meal slots - 8 canonical meal types
-  const defaultSlots: { mealType: string; hour: string; minute: string; meridian: 'AM'|'PM' }[] = [
+  const defaultSlots: { mealType: string; hour: string; minute: string; meridian: 'AM' | 'PM' }[] = [
     { mealType: 'Early Morning', hour: '6', minute: '00', meridian: 'AM' },
     { mealType: 'Breakfast', hour: '9', minute: '00', meridian: 'AM' },
     { mealType: 'Mid Morning', hour: '11', minute: '00', meridian: 'AM' },
@@ -75,33 +75,35 @@ export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEnt
 
   return (
     <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
-           <CardHeader className="bg-linear-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
+      <CardHeader className="bg-linear-to-r from-emerald-500 to-emerald-600 py-4 px-4 sm:px-6">
         <CardTitle className="text-lg sm:text-xl font-bold text-white">24h Dietary Recall</CardTitle>
         <CardDescription className="text-blue-100 text-sm">Record foods consumed in the past 24 hours</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-6 px-4 sm:px-6">
         <div className="space-y-5">
-          {entries.map((entry,index) => (
+          {entries.map((entry, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-5 space-y-4 bg-white hover:bg-gray-50 transition-colors">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <Select value={entry.mealType} onValueChange={(val: string) => updateEntry(entry.id,'mealType', val)}>
+                <Select value={entry.mealType} onValueChange={(val: string) => updateEntry(entry.id, 'mealType', val)}>
                   <SelectTrigger className="w-full sm:w-48 h-10 text-sm font-semibold">
                     <SelectValue>{entry.mealType}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Early Morning">Early Morning</SelectItem>
-                    <SelectItem value="BreakFast">BreakFast</SelectItem>
+                    <SelectItem value="Breakfast">Breakfast</SelectItem>
+                    <SelectItem value="Mid Morning">Mid Morning</SelectItem>
                     <SelectItem value="Lunch">Lunch</SelectItem>
-                    <SelectItem value="Evening Snack">Evening Snack</SelectItem>
+                    <SelectItem value="Mid Evening">Mid Evening</SelectItem>
+                    <SelectItem value="Evening">Evening</SelectItem>
                     <SelectItem value="Dinner">Dinner</SelectItem>
-                    <SelectItem value="Post Dinner">Post Dinner</SelectItem>
+                    <SelectItem value="Past Dinner">Past Dinner</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="flex items-center gap-1.5 bg-gray-100 rounded-lg p-2">
-                  <Input className="w-12 h-8 text-xs text-center border-0 bg-white" value={entry.hour} onChange={e => updateEntry(entry.id,'hour', e.target.value)} />
+                  <Input className="w-12 h-8 text-xs text-center border-0 bg-white" value={entry.hour} onChange={e => updateEntry(entry.id, 'hour', e.target.value)} />
                   <span className="text-sm font-bold text-gray-600">:</span>
-                  <Input className="w-12 h-8 text-xs text-center border-0 bg-white" value={entry.minute} onChange={e => updateEntry(entry.id,'minute', e.target.value)} />
-                  <Select value={entry.meridian} onValueChange={(val: 'AM' | 'PM') => updateEntry(entry.id,'meridian', val)}>
+                  <Input className="w-12 h-8 text-xs text-center border-0 bg-white" value={entry.minute} onChange={e => updateEntry(entry.id, 'minute', e.target.value)} />
+                  <Select value={entry.meridian} onValueChange={(val: 'AM' | 'PM') => updateEntry(entry.id, 'meridian', val)}>
                     <SelectTrigger className="w-16 h-8 text-xs border-0 bg-white"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="AM">AM</SelectItem>
@@ -113,11 +115,11 @@ export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEnt
 
               <div className="space-y-2.5">
                 <Label className="text-sm font-medium">Food Details</Label>
-                <Textarea 
-                  value={entry.food} 
-                  onChange={e => updateEntry(entry.id, 'food', e.target.value)} 
-                  rows={2} 
-                  placeholder="Please enter food details here..." 
+                <Textarea
+                  value={entry.food}
+                  onChange={e => updateEntry(entry.id, 'food', e.target.value)}
+                  rows={2}
+                  placeholder="Please enter food details here..."
                   className="resize-none"
                 />
               </div>
@@ -126,9 +128,9 @@ export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEnt
               {!isDietitian && (
                 <div className="flex justify-end gap-2 pt-2">
                   {onSaveEntry && (
-                    <Button 
-                      type="button" 
-                      size="sm" 
+                    <Button
+                      type="button"
+                      size="sm"
                       onClick={() => onSaveEntry(entry)}
                       disabled={loading}
                       className="bg-green-600 hover:bg-green-700 text-white text-xs"
@@ -138,10 +140,10 @@ export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEnt
                     </Button>
                   )}
                   {onDeleteEntry && entry._id && entry.food && (
-                    <Button 
-                      type="button" 
-                      variant="destructive" 
-                      size="sm" 
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
                       onClick={() => onDeleteEntry(entry.mealType)}
                       disabled={loading}
                       className="text-xs"
@@ -151,10 +153,10 @@ export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEnt
                     </Button>
                   )}
                   {(!entry._id || !entry.food) && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => removeEntry(entry.id)}
                       className="text-xs"
                     >
@@ -176,15 +178,15 @@ export function RecallForm({ entries, onChange, onSave, onSaveEntry, onDeleteEnt
             <Plus className="mr-2 h-4 w-4" />
             Add Custom Entry
           </Button>
-          
+
           {/* Single Save All button for dietitians */}
           {isDietitian && (
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               onClick={onSave}
               disabled={loading}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md hover:shadow-lg transition-all">
-                       
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md hover:shadow-lg transition-all">
+
               <Save className="mr-2 h-4 w-4" />
               Save All Entries
             </Button>

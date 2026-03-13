@@ -150,7 +150,7 @@ export default function UserSettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const response = await fetch('/api/client/settings');
+        const response = await fetch('/api/client/settings', { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
           if (data.settings) {

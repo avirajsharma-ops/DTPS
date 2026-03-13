@@ -5,9 +5,9 @@ import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import PageTransition from "@/components/animations/PageTransition";
 import { useTheme } from "@/contexts/ThemeContext";
-import { 
-  ArrowLeft, 
-  Save, 
+import {
+  ArrowLeft,
+  Save,
   User,
   Users,
   Phone,
@@ -108,7 +108,7 @@ export default function PersonalInfoPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/client/profile");
+        const res = await fetch("/api/client/profile", { cache: 'no-store' });
         if (res.ok) {
           const result = await res.json();
           const user = result.user || result;
@@ -168,7 +168,7 @@ export default function PersonalInfoPage() {
       });
 
       const result = await res.json();
-      
+
       if (res.ok) {
         // Update session with new avatar if profileImage was changed
         if (data.profileImage) {
@@ -178,7 +178,7 @@ export default function PersonalInfoPage() {
             lastName: data.lastName
           });
         }
-        
+
         toast.success("Personal information saved successfully");
         router.push("/user/profile");
       } else {
@@ -280,7 +280,7 @@ export default function PersonalInfoPage() {
             <ArrowLeft className={isDarkMode ? "w-5 h-5 text-gray-200" : "w-5 h-5 text-gray-700"} />
           </Link>
           <h1 className={isDarkMode ? "text-lg font-bold text-white" : "text-lg font-bold text-black"}>Personal Information</h1>
-          <button 
+          <button
             onClick={handleSave}
             disabled={saving}
             className={isDarkMode
@@ -306,9 +306,9 @@ export default function PersonalInfoPage() {
               className="hidden"
             />
             {data.profileImage ? (
-              <img 
-                src={data.profileImage} 
-                alt="Profile" 
+              <img
+                src={data.profileImage}
+                alt="Profile"
                 loading="lazy"
                 className={isDarkMode ? "w-28 h-28 rounded-2xl border-4 border-white/10 object-cover shadow-xl" : "w-28 h-28 rounded-2xl border-4 border-[#3AB1A0]/20 object-cover shadow-xl"}
               />
@@ -319,7 +319,7 @@ export default function PersonalInfoPage() {
                 </span>
               </div>
             )}
-            <button 
+            <button
               onClick={handleImageClick}
               disabled={uploading}
               className={isDarkMode
@@ -352,7 +352,7 @@ export default function PersonalInfoPage() {
                 placeholder="Last name"
               />
             </div>
-            
+
             <InputField
               label="Phone Number"
               value={data.phone}
@@ -394,11 +394,10 @@ export default function PersonalInfoPage() {
                   <button
                     key={gender}
                     onClick={() => setData({ ...data, gender })}
-                    className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                      data.gender === gender
+                    className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${data.gender === gender
                         ? (isDarkMode ? "bg-[#ff9500] text-white shadow-lg shadow-[#ff9500]/25" : "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25")
                         : (isDarkMode ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]" : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10")
-                    }`}
+                      }`}
                   >
                     {gender.charAt(0).toUpperCase() + gender.slice(1)}
                   </button>
@@ -517,11 +516,10 @@ export default function PersonalInfoPage() {
               <button
                 key={level.value}
                 onClick={() => setData({ ...data, activityLevel: level.value })}
-                className={`w-full p-3 rounded-xl text-left transition-all border ${
-                  data.activityLevel === level.value
+                className={`w-full p-3 rounded-xl text-left transition-all border ${data.activityLevel === level.value
                     ? (isDarkMode ? "bg-white/5 border-[#ff9500] ring-2 ring-[#ff9500]" : "bg-[#3AB1A0]/10 border-[#3AB1A0] ring-2 ring-[#3AB1A0]")
                     : (isDarkMode ? "bg-[#111] border-[#2a2a2a] hover:border-[#ff9500]/60" : "bg-gray-50 border-gray-200 hover:border-green-300")
-                }`}
+                  }`}
               >
                 <p className={`font-medium ${data.activityLevel === level.value ? (isDarkMode ? 'text-[#ff9500]' : 'text-green-700') : (isDarkMode ? 'text-white' : 'text-gray-900')}`}>
                   {level.label}
@@ -539,11 +537,10 @@ export default function PersonalInfoPage() {
               <button
                 key={goal.value}
                 onClick={() => setData({ ...data, generalGoal: goal.value })}
-                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  data.generalGoal === goal.value
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${data.generalGoal === goal.value
                     ? (isDarkMode ? "bg-[#ff9500] text-white shadow-lg shadow-[#ff9500]/25" : "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25")
                     : (isDarkMode ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]" : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10")
-                }`}
+                  }`}
               >
                 {goal.label}
               </button>
@@ -558,11 +555,10 @@ export default function PersonalInfoPage() {
               <button
                 key={diet.value}
                 onClick={() => setData({ ...data, dietType: diet.value })}
-                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  data.dietType === diet.value
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${data.dietType === diet.value
                     ? (isDarkMode ? "bg-[#ff9500] text-white shadow-lg shadow-[#ff9500]/25" : "bg-[#3AB1A0] text-white shadow-lg shadow-[#3AB1A0]/25")
                     : (isDarkMode ? "bg-[#111] text-gray-300 hover:bg-white/10 border border-[#2a2a2a]" : "bg-gray-50 text-gray-600 hover:bg-[#3AB1A0]/10")
-                }`}
+                  }`}
               >
                 {diet.label}
               </button>
@@ -586,13 +582,13 @@ export default function PersonalInfoPage() {
 }
 
 // Section Component
-function Section({ 
-  title, 
-  icon: Icon, 
-  children 
-}: { 
-  title: string; 
-  icon: React.ElementType; 
+function Section({
+  title,
+  icon: Icon,
+  children
+}: {
+  title: string;
+  icon: React.ElementType;
   children: React.ReactNode;
 }) {
   const { isDarkMode } = useTheme();

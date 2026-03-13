@@ -9,7 +9,7 @@ import { withCache, clearCacheByTag } from '@/lib/api/utils';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -29,7 +29,7 @@ export async function GET() {
       async () => await MedicalInfo.findOne({ userId: session.user.id }),
       { ttl: 120000, tags: ['client'] }
     );
-    
+
     if (!medicalInfo) {
       return NextResponse.json({
         gender: gender,
@@ -64,7 +64,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -74,16 +74,20 @@ export async function POST(request: Request) {
 
     const medicalInfo = await MedicalInfo.findOneAndUpdate(
       { userId: session.user.id },
-      { 
+      {
         ...data,
-        userId: session.user.id 
+        userId: session.user.id
       },
-      { 
-        upsert: true, 
+      {
+        upsert: true,
         new: true,
         runValidators: true
       }
     );
+
+    // Clear caches so profile/medical pages show updated data immediately
+    clearCacheByTag('client');
+    clearCacheByTag(`client:medical-info:${session.user.id}`);
 
     return NextResponse.json({ success: true, data: medicalInfo });
   } catch (error: any) {

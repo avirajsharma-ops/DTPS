@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/db/connection';
 import { MedicalInfo } from '@/lib/db/models';
 import mongoose from 'mongoose';
+import { clearCacheByTag } from '@/lib/api/utils';
 
 // POST /api/users/[id]/medical/upload - Upload medical report file
 export async function POST(
@@ -79,6 +80,10 @@ export async function POST(
         reports: [reportEntry]
       });
     }
+
+    // Clear cache so profile page shows updated reports
+    clearCacheByTag('client');
+    clearCacheByTag(`client:medical-info:${id}`);
 
     return NextResponse.json({
       success: true,

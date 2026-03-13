@@ -6,12 +6,12 @@ import { ResponsiveLayout } from '@/components/client/layouts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Flame, 
-  Droplet, 
-  TrendingUp, 
-  Calendar, 
-  ChevronRight, 
+import {
+  Flame,
+  Droplet,
+  TrendingUp,
+  Calendar,
+  ChevronRight,
   Target,
   Activity,
   Apple,
@@ -48,7 +48,7 @@ export default function UserDashboard() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/client/dashboard-stats');
+      const response = await fetch('/api/client/dashboard-stats', { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         setStats(data);
@@ -189,7 +189,7 @@ export default function UserDashboard() {
               { name: 'Mid Evening', time: '04:00 PM', calories: 150, completed: false },
               { name: 'Dinner', time: '07:00 PM', calories: 550, completed: false },
             ].map((meal) => (
-              <div 
+              <div
                 key={meal.name}
                 className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
               >
