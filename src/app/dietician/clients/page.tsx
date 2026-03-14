@@ -603,6 +603,7 @@ export default function DieticianClientsPage() {
                 }}
                 placeholder="client@example.com"
                 className={emailError ? 'border-red-500' : ''}
+                autoComplete="off"
               />
               {emailError && <p className="text-sm text-red-500 mt-1">{emailError}</p>}
             </div>
@@ -613,6 +614,7 @@ export default function DieticianClientsPage() {
                 value={createForm.password}
                 onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
                 placeholder="Enter password"
+                autoComplete="new-password"
               />
             </div>
             <div>
