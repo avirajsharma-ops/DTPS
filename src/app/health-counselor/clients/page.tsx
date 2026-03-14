@@ -68,6 +68,11 @@ interface Client {
     firstName: string;
     lastName: string;
   };
+  assignedDietitians?: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+  }>;
   createdBy?: {
     userId?: {
       _id: string;
@@ -526,15 +531,33 @@ export default function HealthCounselorClientsPage() {
                               )}
                             </TableCell>
                             <TableCell className="px-3">
-                              {client.assignedDietitian ? (
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-sm font-medium text-gray-900">
-                                    Dr. {client.assignedDietitian.firstName} {client.assignedDietitian.lastName}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-sm text-gray-500">Not Assigned</span>
-                              )}
+                              {(() => {
+                                // Check singular first
+                                if (client.assignedDietitian?.firstName || client.assignedDietitian?.lastName) {
+                                  return (
+                                    <div className="flex flex-col gap-1">
+                                      <span className="text-sm font-medium text-gray-900">
+                                        Dr. {client.assignedDietitian.firstName} {client.assignedDietitian.lastName}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                // Check plural array
+                                if (client.assignedDietitians && client.assignedDietitians.length > 0) {
+                                  const dietitians = client.assignedDietitians.filter(d => d?.firstName || d?.lastName);
+                                  if (dietitians.length > 0) {
+                                    return (
+                                      <div className="flex flex-col gap-1">
+                                        <span className="text-sm font-medium text-gray-900">
+                                          Dr. {dietitians[0].firstName} {dietitians[0].lastName}
+                                          {dietitians.length > 1 && <span className="text-xs text-gray-500"> +{dietitians.length - 1}</span>}
+                                        </span>
+                                      </div>
+                                    );
+                                  }
+                                }
+                                return <span className="text-sm text-gray-500">Not Assigned</span>;
+                              })()}
                             </TableCell>
                             <TableCell className="px-3">
                               {client.tags && client.tags.length > 0 ? (

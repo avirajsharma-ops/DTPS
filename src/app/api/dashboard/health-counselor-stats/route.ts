@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     // Only allow health counselors and admins to access this endpoint
     if (session.user.role !== UserRole.HEALTH_COUNSELOR &&
-        session.user.role !== UserRole.ADMIN) {
+      session.user.role !== UserRole.ADMIN) {
       return NextResponse.json({ error: 'Forbidden - Health Counselor access required' }, { status: 403 });
     }
 
@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
       // Health counselors see clients assigned specifically to them
       clientQuery.$or = [
         { assignedHealthCounselor: healthCounselorObjectId },
+        { assignedHealthCounselors: healthCounselorObjectId },
         { 'createdBy.userId': healthCounselorObjectId }
       ];
       // Appointments where this health counselor is the dietitian (provider)
@@ -132,9 +133,9 @@ export async function GET(request: NextRequest) {
     // Get clients with active meal plans
     const clientsWithMealPlans = clientIds.length > 0
       ? await ClientMealPlan.distinct('clientId', {
-          clientId: { $in: clientIds },
-          status: 'active'
-        }).then(ids => ids.length)
+        clientId: { $in: clientIds },
+        status: 'active'
+      }).then(ids => ids.length)
       : 0;
 
     const completionRate = totalPastAppointments > 0
@@ -143,7 +144,7 @@ export async function GET(request: NextRequest) {
 
     // Get payments from assigned clients
     let paymentQuery: any = {};
-    
+
     if (session.user.role === UserRole.HEALTH_COUNSELOR) {
       if (clientIds.length > 0) {
         paymentQuery = { client: { $in: clientIds } };

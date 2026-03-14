@@ -104,6 +104,11 @@ interface ClientData {
     firstName: string;
     lastName: string;
   };
+  assignedDietitians?: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+  }>;
   createdBy?: {
     userId?: {
       _id: string;
@@ -118,6 +123,11 @@ interface ClientData {
     firstName: string;
     lastName: string;
   };
+  assignedHealthCounselors?: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+  }>;
   // Lifestyle fields
   sleepHours?: number | string;
   stressLevel?: string;
@@ -316,13 +326,44 @@ export default function ClientDetailPage() {
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const getDietitianDisplayName = () => {
+    // Check singular assignedDietitian first
     const assigned = client?.assignedDietitian;
     if (assigned?.firstName || assigned?.lastName) {
       return `${assigned?.firstName || ''} ${assigned?.lastName || ''}`.trim();
     }
+    // Check plural assignedDietitians array
+    const assignedArray = client?.assignedDietitians;
+    if (assignedArray && assignedArray.length > 0) {
+      const names = assignedArray
+        .filter(d => d?.firstName || d?.lastName)
+        .map(d => `${d?.firstName || ''} ${d?.lastName || ''}`.trim());
+      if (names.length > 0) {
+        return names.length > 2 ? `${names.slice(0, 2).join(', ')} +${names.length - 2}` : names.join(', ');
+      }
+    }
+    // Fallback to createdBy dietitian
     const createdByDietitian = client?.createdBy?.role === 'dietitian' ? client?.createdBy?.userId : null;
     if (createdByDietitian?.firstName || createdByDietitian?.lastName) {
       return `${createdByDietitian?.firstName || ''} ${createdByDietitian?.lastName || ''}`.trim();
+    }
+    return 'Not Assigned';
+  };
+
+  const getHealthCounselorDisplayName = () => {
+    // Check singular assignedHealthCounselor first
+    const assigned = client?.assignedHealthCounselor;
+    if (assigned?.firstName || assigned?.lastName) {
+      return `${assigned?.firstName || ''} ${assigned?.lastName || ''}`.trim();
+    }
+    // Check plural assignedHealthCounselors array
+    const assignedArray = client?.assignedHealthCounselors;
+    if (assignedArray && assignedArray.length > 0) {
+      const names = assignedArray
+        .filter(hc => hc?.firstName || hc?.lastName)
+        .map(hc => `${hc?.firstName || ''} ${hc?.lastName || ''}`.trim());
+      if (names.length > 0) {
+        return names.length > 2 ? `${names.slice(0, 2).join(', ')} +${names.length - 2}` : names.join(', ');
+      }
     }
     return 'Not Assigned';
   };
@@ -1712,7 +1753,7 @@ export default function ClientDetailPage() {
                         <span className="text-gray-300">•</span>
                         <span>Dietitian: {getDietitianDisplayName()}</span>
                         <span className="text-gray-300">•</span>
-                        <span>HC: {client.assignedHealthCounselor ? `${client.assignedHealthCounselor.firstName} ${client.assignedHealthCounselor.lastName}` : 'Not Assigned'}</span>
+                        <span>HC: {getHealthCounselorDisplayName()}</span>
                         <span className="text-gray-300">•</span>
                         <span className="whitespace-nowrap">Last seen: {formatLastSeen(client?.lastLoginAt || client?.createdAt)}</span>
                       </div>

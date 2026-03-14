@@ -66,7 +66,9 @@ export async function GET(
       async () => await User.findById(id)
         .select('-password')
         .populate('assignedDietitian', 'firstName lastName email avatar')
+        .populate('assignedDietitians', 'firstName lastName email avatar')
         .populate('assignedHealthCounselor', 'firstName lastName email avatar')
+        .populate('assignedHealthCounselors', 'firstName lastName email avatar')
         .populate('tags', 'name description color icon')
         .populate({
           path: 'createdBy.userId',

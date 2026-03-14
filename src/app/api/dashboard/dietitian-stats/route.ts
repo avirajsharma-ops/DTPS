@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
 
     // Only allow dietitians, health counselors, and admins to access this endpoint
     if (session.user.role !== UserRole.DIETITIAN &&
-        session.user.role !== UserRole.HEALTH_COUNSELOR &&
-        session.user.role !== UserRole.ADMIN) {
+      session.user.role !== UserRole.HEALTH_COUNSELOR &&
+      session.user.role !== UserRole.ADMIN) {
       return NextResponse.json({ error: 'Forbidden - Dietitian or Health Counselor access required' }, { status: 403 });
     }
 
@@ -39,13 +39,21 @@ export async function GET(request: NextRequest) {
 
     // If dietitian or health counselor, filter by assigned clients AND clients they created
     if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
-      const dietitianObjectId = new mongoose.Types.ObjectId(session.user.id);
-      clientQuery.$or = [
-        { assignedDietitian: dietitianObjectId },
-        { assignedDietitians: dietitianObjectId },
-        { 'createdBy.userId': dietitianObjectId }
+      const staffObjectId = new mongoose.Types.ObjectId(session.user.id);
+      const orConditions: any[] = [
+        { assignedDietitian: staffObjectId },
+        { assignedDietitians: staffObjectId },
+        { 'createdBy.userId': staffObjectId }
       ];
-      appointmentQuery.dietitian = dietitianObjectId;
+      // Health counselors should also see clients assigned to them via HC fields
+      if (session.user.role === UserRole.HEALTH_COUNSELOR) {
+        orConditions.push(
+          { assignedHealthCounselor: staffObjectId },
+          { assignedHealthCounselors: staffObjectId }
+        );
+      }
+      clientQuery.$or = orConditions;
+      appointmentQuery.dietitian = staffObjectId;
     }
     // Admin sees all clients (no filter needed)
 
@@ -138,9 +146,9 @@ export async function GET(request: NextRequest) {
     // Get actual clients with active meal plans
     const clientsWithMealPlans = clientIds.length > 0
       ? await ClientMealPlan.distinct('clientId', {
-          clientId: { $in: clientIds },
-          status: 'active'
-        }).then(ids => ids.length)
+        clientId: { $in: clientIds },
+        status: 'active'
+      }).then(ids => ids.length)
       : 0;
 
     const completionRate = totalPastAppointments > 0
@@ -149,7 +157,7 @@ export async function GET(request: NextRequest) {
 
     // Get payments ONLY from clients assigned to this dietitian
     let paymentQuery: any = {};
-    
+
     if (session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) {
       if (clientIds.length > 0) {
         paymentQuery = { client: { $in: clientIds } };

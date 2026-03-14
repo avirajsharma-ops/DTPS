@@ -8,11 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  CreditCard, 
-  Download, 
-  CheckCircle, 
-  Clock, 
+import {
+  CreditCard,
+  Download,
+  CheckCircle,
+  Clock,
   AlertCircle,
   IndianRupee,
   FileText,
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import SpoonGifLoader from '@/components/ui/SpoonGifLoader';
+import { useRealtime } from '@/hooks/useRealtime';
 
 interface Invoice {
   id: string;
@@ -54,6 +55,15 @@ export default function UserBillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
+
+  // Real-time SSE: auto-refresh billing data when payment status changes
+  useRealtime({
+    onMessage: (event) => {
+      if (event.type === 'payment_updated' || event.type === 'payment_link_updated') {
+        fetchBillingData();
+      }
+    },
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -198,7 +208,7 @@ export default function UserBillingPage() {
             <ArrowLeft className={`w-5 h-5 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`} />
           </Link>
           <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>Billing</h1>
-          <button 
+          <button
             onClick={fetchBillingData}
             className="absolute right-4 flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#ff9500]/10 transition-colors"
           >
@@ -211,9 +221,8 @@ export default function UserBillingPage() {
         {/* Active Subscription Card */}
         {subscription && (
           <Card
-            className={`border-0 shadow-sm bg-linear-to-br ${
-              isDarkMode ? 'from-[#3AB1A0]/20 to-gray-900' : 'from-[#3AB1A0]/10 to-emerald-50'
-            }`}
+            className={`border-0 shadow-sm bg-linear-to-br ${isDarkMode ? 'from-[#3AB1A0]/20 to-gray-900' : 'from-[#3AB1A0]/10 to-emerald-50'
+              }`}
           >
             <CardContent className="p-4 md:p-6">
               <div className="flex items-start justify-between mb-4">
@@ -268,7 +277,7 @@ export default function UserBillingPage() {
             <CardContent className="p-4 pt-2">
               <div className="space-y-3">
                 {invoices.map((invoice) => (
-                  <div 
+                  <div
                     key={invoice.id}
                     className={`flex items-center justify-between py-3 border-b last:border-0 ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}
                   >

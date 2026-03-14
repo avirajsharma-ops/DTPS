@@ -1708,7 +1708,7 @@ export default function AdminAllClientsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Client ID</p>
-                      <p className="text-sm font-medium text-gray-900">{getClientId(detailClient._id)}</p>
+                      <p className="text-sm font-medium text-gray-900">{detailClient.clientId || getClientId(detailClient._id)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>

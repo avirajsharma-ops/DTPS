@@ -24,9 +24,16 @@ export async function GET(request: NextRequest) {
 
     // Build query based on user role
     let clientQuery: any = { role: UserRole.CLIENT, status: 'active' };
-    
+
     if (session.user.role === UserRole.DIETITIAN) {
       clientQuery.$or = [
+        { assignedDietitian: session.user.id },
+        { assignedDietitians: session.user.id }
+      ];
+    } else if (session.user.role === UserRole.HEALTH_COUNSELOR) {
+      clientQuery.$or = [
+        { assignedHealthCounselor: session.user.id },
+        { assignedHealthCounselors: session.user.id },
         { assignedDietitian: session.user.id },
         { assignedDietitians: session.user.id }
       ];
@@ -38,7 +45,7 @@ export async function GET(request: NextRequest) {
     const clients = await withCache(
       `dashboard:pending-plans:${JSON.stringify(clientQuery)}`,
       async () => await User.find(clientQuery)
-      .select('_id firstName lastName email phone')
+        .select('_id firstName lastName email phone')
       ,
       { ttl: 120000, tags: ['dashboard'] }
     );
@@ -48,15 +55,15 @@ export async function GET(request: NextRequest) {
     // Get all meal plans for these clients (active and completed)
     const mealPlans = await withCache(
       `dashboard:pending-plans:${JSON.stringify({
-      clientId: { $in: clientIds },
-      status: { $in: ['active', 'completed'] }
-    })}`,
+        clientId: { $in: clientIds },
+        status: { $in: ['active', 'completed'] }
+      })}`,
       async () => await ClientMealPlan.find({
-      clientId: { $in: clientIds },
-      status: { $in: ['active', 'completed'] }
-    })
-      .select('clientId name startDate endDate duration status purchaseId')
-      .sort({ startDate: 1 })
+        clientId: { $in: clientIds },
+        status: { $in: ['active', 'completed'] }
+      })
+        .select('clientId name startDate endDate duration status purchaseId')
+        .sort({ startDate: 1 })
       ,
       { ttl: 120000, tags: ['dashboard'] }
     );
@@ -64,15 +71,15 @@ export async function GET(request: NextRequest) {
     // Get all purchases for these clients
     const purchases = await withCache(
       `dashboard:pending-plans:${JSON.stringify({
-      client: { $in: clientIds },
-      status: { $in: ['active', 'paid'] }
-    })}`,
+        client: { $in: clientIds },
+        status: { $in: ['active', 'paid'] }
+      })}`,
       async () => await UnifiedPayment.find({
-      client: { $in: clientIds },
-      status: { $in: ['active', 'paid'] }
-    })
-      .select('client planName durationDays durationLabel expectedStartDate expectedEndDate mealPlanCreated daysUsed parentPaymentId status createdAt')
-      .sort({ createdAt: -1 })
+        client: { $in: clientIds },
+        status: { $in: ['active', 'paid'] }
+      })
+        .select('client planName durationDays durationLabel expectedStartDate expectedEndDate mealPlanCreated daysUsed parentPaymentId status createdAt')
+        .sort({ createdAt: -1 })
       ,
       { ttl: 120000, tags: ['dashboard'] }
     );
@@ -113,16 +120,16 @@ export async function GET(request: NextRequest) {
 
       // Get the latest/active purchase - this has the correct durationDays
       const latestPurchase = clientPurchases[0]; // Already sorted by createdAt desc
-      
+
       // Calculate total purchased days from the purchase record
       const totalPurchasedDays = latestPurchase.durationDays || 0;
-      
+
       // Get days already used from the purchase record
       const daysUsed = latestPurchase.daysUsed || 0;
-      
+
       // Pending days to create = purchased days - days used
       const pendingDaysToCreate = Math.max(0, totalPurchasedDays - daysUsed);
-      
+
       // Calculate total meal plan days created (for display purposes)
       const totalMealPlanDays = daysUsed;
 
@@ -157,26 +164,26 @@ export async function GET(request: NextRequest) {
           clientName: `${(client as any).firstName} ${(client as any).lastName}`,
           phone: (client as any).phone || 'N/A',
           email: (client as any).email,
-          
+
           // Current plan info
           currentPlanName: null,
           currentPlanStartDate: null,
           currentPlanEndDate: null,
           currentPlanRemainingDays: 0,
-          
+
           // Previous plan info
           previousPlanName: null,
-          
+
           // Purchase info
           purchasedPlanName: latestPurchase.planName,
           totalPurchasedDays,
           totalMealPlanDays,
           pendingDaysToCreate,
-          
+
           // Expected dates from purchase
           expectedStartDate: latestPurchase.expectedStartDate,
           expectedEndDate: latestPurchase.expectedEndDate,
-          
+
           // Status
           reason: 'no_meal_plan',
           reasonText: 'No meal plan created',
@@ -215,26 +222,26 @@ export async function GET(request: NextRequest) {
               clientName: `${(client as any).firstName} ${(client as any).lastName}`,
               phone: (client as any).phone || 'N/A',
               email: (client as any).email,
-              
+
               // Current plan info
               currentPlanName: currentPlan.name,
               currentPlanStartDate: currentPlan.startDate,
               currentPlanEndDate: currentPlan.endDate,
               currentPlanRemainingDays: daysRemaining,
-              
+
               // Previous plan info
               previousPlanName: lastPlan?.name || null,
-              
+
               // Purchase info
               purchasedPlanName: latestPurchase.planName,
               totalPurchasedDays,
               totalMealPlanDays,
               pendingDaysToCreate,
-              
+
               // Expected dates from purchase
               expectedStartDate: latestPurchase.expectedStartDate,
               expectedEndDate: latestPurchase.expectedEndDate,
-              
+
               // Status
               reason: 'current_ending_soon',
               reasonText: `Current phase ends in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`,
@@ -257,27 +264,27 @@ export async function GET(request: NextRequest) {
             clientName: `${(client as any).firstName} ${(client as any).lastName}`,
             phone: (client as any).phone || 'N/A',
             email: (client as any).email,
-            
+
             // Current plan info (none currently running)
             currentPlanName: null,
             currentPlanStartDate: null,
             currentPlanEndDate: null,
             currentPlanRemainingDays: 0,
-            
+
             // Previous plan info
             previousPlanName: lastPlan.name,
             previousPlanEndDate: lastPlan.endDate,
-            
+
             // Purchase info
             purchasedPlanName: latestPurchase.planName,
             totalPurchasedDays,
             totalMealPlanDays,
             pendingDaysToCreate,
-            
+
             // Expected dates
             expectedStartDate: latestPurchase.expectedStartDate,
             expectedEndDate: latestPurchase.expectedEndDate,
-            
+
             // Status
             // Status
             reason: 'phase_gap',
@@ -296,15 +303,15 @@ export async function GET(request: NextRequest) {
       if (pendingDaysToCreate > 0) {
         // Check if already added in previous cases
         const alreadyAdded = pendingPlans.some(p => p.clientId.toString() === clientId);
-        
+
         if (!alreadyAdded) {
           // Determine the "current" plan to show - either running plan or the upcoming one
           const displayPlan = currentPlan || (upcomingPlans.length > 0 ? upcomingPlans[0] : null);
-          
+
           let daysUntilNextAction = 0;
           let reasonText = '';
           let urgency: 'critical' | 'high' | 'medium' = 'medium';
-          
+
           if (currentPlan) {
             // Has a running plan
             daysUntilNextAction = differenceInDays(new Date(currentPlan.endDate), today);
@@ -327,32 +334,32 @@ export async function GET(request: NextRequest) {
             clientName: `${(client as any).firstName} ${(client as any).lastName}`,
             phone: (client as any).phone || 'N/A',
             email: (client as any).email,
-            
+
             // Current/Display plan info
             currentPlanName: currentPlan?.name || null,
             currentPlanStartDate: currentPlan?.startDate || null,
             currentPlanEndDate: currentPlan?.endDate || null,
             currentPlanRemainingDays: currentPlan ? differenceInDays(new Date(currentPlan.endDate), today) : 0,
-            
+
             // Previous plan info
             previousPlanName: lastPlan?.name || null,
             previousPlanEndDate: lastPlan?.endDate || null,
-            
+
             // Upcoming plan info
             upcomingPlanName: upcomingPlans.length > 0 ? upcomingPlans[0].name : null,
             upcomingPlanStartDate: upcomingPlans.length > 0 ? upcomingPlans[0].startDate : null,
             upcomingPlanEndDate: upcomingPlans.length > 0 ? upcomingPlans[0].endDate : null,
-            
+
             // Purchase info
             purchasedPlanName: latestPurchase.planName,
             totalPurchasedDays,
             totalMealPlanDays,
             pendingDaysToCreate,
-            
+
             // Expected dates
             expectedStartDate: latestPurchase.expectedStartDate,
             expectedEndDate: latestPurchase.expectedEndDate,
-            
+
             // Status
             reason: currentPlan ? 'current_ending_soon' : (upcomingPlans.length > 0 ? 'upcoming_with_pending' : 'phase_gap'),
             reasonText,

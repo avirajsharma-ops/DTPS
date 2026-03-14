@@ -337,10 +337,12 @@ export async function PATCH(
       timestamp: Date.now()
     });
 
-    // Clear cache to refresh client list
+    // Clear cache to refresh client list, user details, and dashboard
     clearCacheByTag('clients');
     clearCacheByTag('stats');
     clearCacheByTag('admin');
+    clearCacheByTag('users');
+    clearCacheByTag('dashboard');
 
     return NextResponse.json({
       success: true,

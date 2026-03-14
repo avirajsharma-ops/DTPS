@@ -3,6 +3,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db/connection';
 import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
+import User from '@/lib/db/models/User';
+import { UserRole } from '@/types';
+import { SSEManager } from '@/lib/realtime/sse-manager';
+import { clearCacheByTag } from '@/lib/cache/memoryCache';
 import crypto from 'crypto';
 
 // POST /api/client/service-plans/verify - Verify Razorpay payment
@@ -54,6 +58,32 @@ export async function POST(request: NextRequest) {
         paidAt: new Date()
       }
     );
+
+    // Invalidate caches so payment lists return fresh data
+    clearCacheByTag('payment_links');
+    clearCacheByTag('payments');
+    clearCacheByTag('client_purchases');
+
+    // Emit SSE events so billing pages update in real-time
+    try {
+      const admins = await User.find({ role: UserRole.ADMIN }).select('_id');
+      const sse = SSEManager.getInstance();
+      const notifyUserIds = new Set<string>([
+        ...admins.map((a: any) => String(a._id)),
+        session.user.id,
+      ]);
+      // Also notify dietitian if present on the payment
+      if (payment?.dietitian) {
+        notifyUserIds.add(String(payment.dietitian));
+      }
+      sse.sendToUsers(Array.from(notifyUserIds), 'payment_updated', {
+        paymentId: payment ? String(payment._id) : undefined,
+        status: 'paid',
+        paidAt: new Date(),
+      });
+    } catch (e) {
+      console.warn('Failed to emit payment SSE events (client verify):', e);
+    }
 
     return NextResponse.json({
       success: true,

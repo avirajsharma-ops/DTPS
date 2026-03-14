@@ -26,6 +26,7 @@ interface AdminUser {
   role: UserRole;
   status: UserStatus;
   clientStatus?: string; // 'lead', 'active', 'inactive' for clients
+  clientId?: string; // Sequential client ID (C-1, C-2, etc.)
   phone?: string;
   avatar?: string;
   password?: string;
@@ -534,7 +535,7 @@ export default function AdminUsersPage() {
                                 u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
                                   'bg-orange-100 text-orange-700'
                               }`}>
-                              {formatUserId(u._id, u.role)}
+                              {u.role === 'client' && u.clientId ? u.clientId : formatUserId(u._id, u.role)}
                             </span>
                           </td>
                           <td className="p-3">

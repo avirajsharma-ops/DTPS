@@ -92,11 +92,21 @@ interface ClientData {
     firstName: string;
     lastName: string;
   };
+  assignedDietitians?: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+  }>;
   assignedHealthCounselor?: {
     _id: string;
     firstName: string;
     lastName: string;
   };
+  assignedHealthCounselors?: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+  }>;
   sleepHours?: number | string;
   stressLevel?: string;
   smokingStatus?: string;
@@ -912,8 +922,8 @@ export default function HealthCounselorClientDetailPage() {
               <button
                 onClick={() => setActiveSection('forms')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'forms'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <FileText className="h-4 w-4" />
@@ -923,8 +933,8 @@ export default function HealthCounselorClientDetailPage() {
               <button
                 onClick={() => setActiveSection('journal')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'journal'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <BookOpen className="h-4 w-4" />
@@ -934,8 +944,8 @@ export default function HealthCounselorClientDetailPage() {
               <button
                 onClick={() => setActiveSection('planning')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'planning'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -945,8 +955,8 @@ export default function HealthCounselorClientDetailPage() {
               <button
                 onClick={() => setActiveSection('payments')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'payments'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <CreditCard className="h-4 w-4" />
@@ -956,8 +966,8 @@ export default function HealthCounselorClientDetailPage() {
               <button
                 onClick={() => setActiveSection('bookings')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'bookings'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -967,8 +977,8 @@ export default function HealthCounselorClientDetailPage() {
               <button
                 onClick={() => setActiveSection('documents')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'documents'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <FileText className="h-4 w-4" />
@@ -978,8 +988,8 @@ export default function HealthCounselorClientDetailPage() {
               <button
                 onClick={() => setActiveSection('tasks')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'tasks'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <CheckSquare className="h-4 w-4" />
@@ -989,8 +999,8 @@ export default function HealthCounselorClientDetailPage() {
               <button
                 onClick={() => setActiveSection('history')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${activeSection === 'history'
-                    ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'text-blue-700 bg-blue-50 border border-blue-200 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <History className="h-4 w-4" />
@@ -1026,9 +1036,31 @@ export default function HealthCounselorClientDetailPage() {
                         <span>Last seen: {formatLastSeen(client?.lastLoginAt || client?.createdAt)}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
-                        <span>Dietitian: {client.assignedDietitian ? `${client.assignedDietitian.firstName} ${client.assignedDietitian.lastName}` : 'Not Assigned'}</span>
+                        <span>Dietitian: {(() => {
+                          // Check singular
+                          if (client.assignedDietitian?.firstName || client.assignedDietitian?.lastName) {
+                            return `${client.assignedDietitian?.firstName || ''} ${client.assignedDietitian?.lastName || ''}`.trim();
+                          }
+                          // Check plural array
+                          if (client.assignedDietitians && client.assignedDietitians.length > 0) {
+                            const names = client.assignedDietitians.filter(d => d?.firstName || d?.lastName).map(d => `${d?.firstName || ''} ${d?.lastName || ''}`.trim());
+                            return names.length > 2 ? `${names.slice(0, 2).join(', ')} +${names.length - 2}` : names.join(', ');
+                          }
+                          return 'Not Assigned';
+                        })()}</span>
                         <span className="text-gray-300">•</span>
-                        <span>Health Counselor: {client.assignedHealthCounselor ? `${client.assignedHealthCounselor.firstName} ${client.assignedHealthCounselor.lastName}` : 'Not Assigned'}</span>
+                        <span>Health Counselor: {(() => {
+                          // Check singular
+                          if (client.assignedHealthCounselor?.firstName || client.assignedHealthCounselor?.lastName) {
+                            return `${client.assignedHealthCounselor?.firstName || ''} ${client.assignedHealthCounselor?.lastName || ''}`.trim();
+                          }
+                          // Check plural array
+                          if (client.assignedHealthCounselors && client.assignedHealthCounselors.length > 0) {
+                            const names = client.assignedHealthCounselors.filter(hc => hc?.firstName || hc?.lastName).map(hc => `${hc?.firstName || ''} ${hc?.lastName || ''}`.trim());
+                            return names.length > 2 ? `${names.slice(0, 2).join(', ')} +${names.length - 2}` : names.join(', ');
+                          }
+                          return 'Not Assigned';
+                        })()}</span>
                       </div>
                     </div>
                   </div>
