@@ -69,6 +69,7 @@ export default function AuditLogsPage() {
   const [page, setPage] = useState(0);
   const [limit] = useState(50);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     adminEmail: '',
     targetUserEmail: '',
@@ -108,6 +109,7 @@ export default function AuditLogsPage() {
   };
 
   useEffect(() => {
+    setIsClient(true);
     fetchLogs(0);
   }, []);
 
@@ -268,7 +270,9 @@ export default function AuditLogsPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-gray-600 whitespace-nowrap">
-                        {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
+                        {isClient
+                          ? formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })
+                          : '—'}
                       </TableCell>
                       <TableCell>
                         <Button
@@ -353,7 +357,9 @@ export default function AuditLogsPage() {
                     </div>
                     <div className="min-w-0">
                       <span className="text-blue-700 font-medium text-sm">Timestamp:</span>
-                      <p className="text-gray-700 text-sm">{new Date(selectedLog.createdAt).toLocaleString()}</p>
+                      <p className="text-gray-700 text-sm">
+                        {isClient ? new Date(selectedLog.createdAt).toLocaleString() : '—'}
+                      </p>
                     </div>
                   </div>
                 </div>
