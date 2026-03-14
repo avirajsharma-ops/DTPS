@@ -249,12 +249,31 @@ export async function POST(request: NextRequest) {
       createdByInfo = { userId: session.user.id, role: 'health_counselor' };
     }
 
+    // Generate sequential clientId for clients
+    let newClientId: string | undefined;
+    if ((role || UserRole.CLIENT) === UserRole.CLIENT) {
+      // Find the highest existing clientId number using aggregation for proper numeric sorting
+      const result = await User.aggregate([
+        { $match: { role: UserRole.CLIENT, clientId: { $exists: true, $ne: null, $regex: /^C-\d+$/ } } },
+        { $project: { clientIdNum: { $toInt: { $substr: ['$clientId', 2, -1] } } } },
+        { $sort: { clientIdNum: -1 } },
+        { $limit: 1 }
+      ]);
+
+      let nextNumber = 1;
+      if (result.length > 0 && result[0].clientIdNum) {
+        nextNumber = result[0].clientIdNum + 1;
+      }
+      newClientId = `C-${nextNumber}`;
+    }
+
     const user = new User({
       email: String(email).toLowerCase(),
       password, // NOTE: comparePassword supports plain text in this codebase; replace with hashing in production
       firstName,
       lastName,
       role: role || UserRole.CLIENT,
+      clientId: newClientId,
       phone: normalizedPhone,
       bio,
       experience,

@@ -33,7 +33,7 @@ const clientSignUpSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Please enter a valid email'),
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(4, 'Password must be at least 4 characters'),
   confirmPassword: z.string(),
   referralCode: z.string().optional(),
   agreeToTerms: z.boolean().refine(val => val === true, {

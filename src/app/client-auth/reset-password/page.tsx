@@ -6,8 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Lock, 
+import {
+  Lock,
   Eye,
   EyeOff,
   Loader2,
@@ -41,24 +41,15 @@ function ResetPasswordContent() {
   }, [token, email]);
 
   const validatePassword = (pwd: string) => {
-    if (pwd.length < 8) {
-      return 'Password must be at least 8 characters';
-    }
-    if (!/[A-Z]/.test(pwd)) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!/[a-z]/.test(pwd)) {
-      return 'Password must contain at least one lowercase letter';
-    }
-    if (!/[0-9]/.test(pwd)) {
-      return 'Password must contain at least one number';
+    if (pwd.length < 4) {
+      return 'Password must be at least 4 characters';
     }
     return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const passwordError = validatePassword(password);
     if (passwordError) {
       toast.error(passwordError);
@@ -130,7 +121,7 @@ function ResetPasswordContent() {
 
           {/* Request New Link Button */}
           <Link href="/user/settings/password" className="w-full max-w-sm">
-            <Button 
+            <Button
               className="w-full h-14 bg-[#3AB1A0] hover:bg-[#3AB1A0]/90 text-white font-semibold rounded-xl text-base"
             >
               Request New Link
@@ -176,7 +167,7 @@ function ResetPasswordContent() {
 
           {/* Go to Login Button */}
           <Link href="/client-auth/signin" className="w-full max-w-sm">
-            <Button 
+            <Button
               className="w-full h-14 bg-[#3AB1A0] hover:bg-[#3AB1A0]/90 text-white font-semibold rounded-xl text-base"
             >
               Go to Login
@@ -279,28 +270,16 @@ function ResetPasswordContent() {
           <div className="bg-gray-50 rounded-xl p-4">
             <p className="text-sm font-medium text-gray-700 mb-2">Password Requirements:</p>
             <ul className="space-y-1 text-sm text-gray-600">
-              <li className={`flex items-center gap-2 ${password.length >= 8 ? 'text-[#3AB1A0]' : ''}`}>
-                <CheckCircle className={`h-4 w-4 ${password.length >= 8 ? 'text-[#3AB1A0]' : 'text-gray-300'}`} />
-                At least 8 characters
-              </li>
-              <li className={`flex items-center gap-2 ${/[A-Z]/.test(password) ? 'text-[#3AB1A0]' : ''}`}>
-                <CheckCircle className={`h-4 w-4 ${/[A-Z]/.test(password) ? 'text-[#3AB1A0]' : 'text-gray-300'}`} />
-                One uppercase letter
-              </li>
-              <li className={`flex items-center gap-2 ${/[a-z]/.test(password) ? 'text-[#3AB1A0]' : ''}`}>
-                <CheckCircle className={`h-4 w-4 ${/[a-z]/.test(password) ? 'text-[#3AB1A0]' : 'text-gray-300'}`} />
-                One lowercase letter
-              </li>
-              <li className={`flex items-center gap-2 ${/[0-9]/.test(password) ? 'text-[#3AB1A0]' : ''}`}>
-                <CheckCircle className={`h-4 w-4 ${/[0-9]/.test(password) ? 'text-[#3AB1A0]' : 'text-gray-300'}`} />
-                One number
+              <li className={`flex items-center gap-2 ${password.length >= 4 ? 'text-[#3AB1A0]' : ''}`}>
+                <CheckCircle className={`h-4 w-4 ${password.length >= 4 ? 'text-[#3AB1A0]' : 'text-gray-300'}`} />
+                At least 4 characters (letters, numbers, or special characters)
               </li>
             </ul>
           </div>
 
           {/* Submit Button */}
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full h-14 bg-[#3AB1A0] hover:bg-[#3AB1A0]/90 text-white font-semibold rounded-xl text-base"
             disabled={loading}
           >

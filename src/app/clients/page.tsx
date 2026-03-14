@@ -23,6 +23,7 @@ import { getClientId } from '@/lib/utils';
 
 interface Client {
   _id: string;
+  clientId?: string; // Sequential client ID (C-1, C-2, etc.)
   firstName: string;
   lastName: string;
   email: string;
@@ -89,7 +90,7 @@ export default function ClientsPage() {
               Manage and monitor your client relationships
             </p>
           </div>
-          
+
           <Button className="cursor-pointer" asChild>
             <Link href="/clients/new">
               <Plus className="h-4 w-4 mr-2" />
@@ -111,7 +112,7 @@ export default function ClientsPage() {
                   className="pl-10"
                 />
               </div>
-              
+
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <Users className="h-4 w-4" />
                 <span>{filteredClients.length} clients</span>
@@ -133,7 +134,7 @@ export default function ClientsPage() {
                 {searchTerm ? 'No clients found' : 'No clients yet'}
               </h3>
               <p className="text-gray-600 mb-4">
-                {searchTerm 
+                {searchTerm
                   ? 'Try adjusting your search terms'
                   : 'Start building your client base by adding your first client'
                 }
@@ -158,26 +159,26 @@ export default function ClientsPage() {
                           {client.firstName[0]}{client.lastName[0]}
                         </AvatarFallback>
                       </Avatar>
-                      
+
                       <div>
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-lg">
                             {client.firstName} {client.lastName}
                           </CardTitle>
                           <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
-                            {getClientId(client._id)}
+                            {client.clientId || getClientId(client._id)}
                           </span>
                         </div>
                         <CardDescription>{client.email}</CardDescription>
                       </div>
                     </div>
-                    
+
                     <Badge className={getStatusColor(client.status)}>
                       {client.status}
                     </Badge>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent className="space-y-4">
                   {/* WooCommerce Data */}
                   {(client as any).wooCommerceData && (
@@ -212,7 +213,7 @@ export default function ClientsPage() {
                     <p className="text-gray-600">
                       📅 Joined {format(new Date(client.createdAt), 'MMM d, yyyy')}
                     </p>
-                    
+
                     {client.healthGoals && client.healthGoals.length > 0 && (
                       <div>
                         <p className="text-gray-600 mb-1">🎯 Goals:</p>

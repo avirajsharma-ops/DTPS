@@ -81,6 +81,13 @@ const userSchema = new Schema({
     unique: true,
     sparse: true
   },
+  clientId: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true,
+    description: 'Sequential client ID (C-1, C-2, etc.) for clients only'
+  },
   password: {
     type: String,
     required: true,

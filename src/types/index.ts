@@ -30,6 +30,7 @@ export interface IUser extends Document {
   role: UserRole;
   status: UserStatus;
   clientStatus?: ClientStatus; // For tracking client engagement
+  clientId?: string; // Sequential client ID (C-1, C-2, etc.) for clients only
   phone?: string;
   avatar?: string;
   emailVerified: boolean;

@@ -151,6 +151,20 @@ export async function POST(request: NextRequest) {
       userData.bio = validatedData.bio;
       userData.consultationFee = validatedData.consultationFee;
     } else if (validatedData.role === UserRole.CLIENT) {
+      // Generate sequential clientId for clients using aggregation for proper numeric sorting
+      const result = await User.aggregate([
+        { $match: { role: UserRole.CLIENT, clientId: { $exists: true, $ne: null, $regex: /^C-\d+$/ } } },
+        { $project: { clientIdNum: { $toInt: { $substr: ['$clientId', 2, -1] } } } },
+        { $sort: { clientIdNum: -1 } },
+        { $limit: 1 }
+      ]);
+
+      let nextNumber = 1;
+      if (result.length > 0 && result[0].clientIdNum) {
+        nextNumber = result[0].clientIdNum + 1;
+      }
+      userData.clientId = `C-${nextNumber}`;
+
       if (validatedData.dateOfBirth) {
         userData.dateOfBirth = new Date(validatedData.dateOfBirth);
       }

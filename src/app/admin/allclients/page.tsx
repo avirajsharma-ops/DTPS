@@ -50,6 +50,7 @@ import { ProfessionalSection } from '@/components/admin/ProfessionalGrid';
 
 interface Client {
   _id: string;
+  clientId?: string; // Sequential client ID (C-1, C-2, etc.)
   firstName: string;
   lastName: string;
   email: string;
@@ -572,8 +573,8 @@ export default function AdminAllClientsPage() {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Clients</h1>
               {/* Real-time connection indicator */}
               <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${isSSEConnected
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-red-100 text-red-700'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700'
                 }`}>
                 {isSSEConnected ? (
                   <>
@@ -876,7 +877,7 @@ export default function AdminAllClientsPage() {
                                     {client.firstName} {client.lastName}
                                   </div>
                                   <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
-                                    {getClientId(client._id)}
+                                    {client.clientId || getClientId(client._id)}
                                   </span>
                                 </div>
                                 {/* Show email on mobile */}
@@ -1449,8 +1450,8 @@ export default function AdminAllClientsPage() {
                             <div
                               key={hc._id}
                               className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${selectedHealthCounselorIds.includes(hc._id)
-                                  ? 'bg-purple-100 border border-purple-300'
-                                  : 'hover:bg-gray-50 border border-transparent'
+                                ? 'bg-purple-100 border border-purple-300'
+                                : 'hover:bg-gray-50 border border-transparent'
                                 }`}
                               onClick={() => {
                                 setSelectedHealthCounselorIds(prev =>

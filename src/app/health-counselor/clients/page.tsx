@@ -49,6 +49,7 @@ interface Tag {
 
 interface Client {
   _id: string;
+  clientId?: string; // Sequential client ID (C-1, C-2, etc.)
   firstName: string;
   lastName: string;
   email: string;
@@ -460,14 +461,14 @@ export default function HealthCounselorClientsPage() {
                                 href={`/health-counselor/clients/${client._id}`}
                                 className="text-blue-600 hover:underline font-medium text-sm"
                               >
-                                {getClientId(client._id)}
+                                {client.clientId || getClientId(client._id)}
                               </Link>
                             </TableCell>
                             <TableCell className="px-3">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-medium text-sm whitespace-nowrap">{client.firstName} {client.lastName}</span>
                                 <span className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded font-medium">
-                                  {getClientId(client._id)}
+                                  {client.clientId || getClientId(client._id)}
                                 </span>
                                 <Link href={`/health-counselor/clients/${client._id}`}>
                                   <ExternalLink className="h-3 w-3 text-gray-400 hover:text-gray-600" />
