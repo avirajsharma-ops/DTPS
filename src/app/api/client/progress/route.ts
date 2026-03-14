@@ -9,6 +9,7 @@ import ClientMealPlan from "@/lib/db/models/ClientMealPlan";
 import { startOfDay, endOfDay, format } from 'date-fns';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 import { MEAL_TYPES, MEAL_TYPE_KEYS } from '@/lib/mealConfig';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 // Get all possible meal type keys (canonical + common variations for DB compatibility)
 const ALL_MEAL_KEYS = [...MEAL_TYPE_KEYS, ...MEAL_TYPE_KEYS.map(k => MEAL_TYPES[k].label)];
@@ -29,7 +30,7 @@ function getStartDate(range: string): Date {
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -45,8 +46,8 @@ export async function GET(request: Request) {
     const user = await withCache(
       `client:progress:${JSON.stringify(session.user.id)}`,
       async () => await User.findById(session.user.id).select(
-      "weightKg targetWeightKg heightCm goals"
-    ),
+        "weightKg targetWeightKg heightCm goals"
+      ),
       { ttl: 120000, tags: ['client'] }
     );
 
@@ -56,13 +57,13 @@ export async function GET(request: Request) {
 
     const allProgressEntries = await withCache(
       `client:progress:${JSON.stringify({
-      user: session.user.id,
-      recordedAt: { $gte: oneYearAgo }
-    })}`,
+        user: session.user.id,
+        recordedAt: { $gte: oneYearAgo }
+      })}`,
       async () => await ProgressEntry.find({
-      user: session.user.id,
-      recordedAt: { $gte: oneYearAgo }
-    }).sort({ recordedAt: -1 }),
+        user: session.user.id,
+        recordedAt: { $gte: oneYearAgo }
+      }).sort({ recordedAt: -1 }),
       { ttl: 120000, tags: ['client'] }
     );
 
@@ -82,7 +83,7 @@ export async function GET(request: Request) {
     // Calculate week's change
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const weekAgoEntry = weightEntries.find(entry => 
+    const weekAgoEntry = weightEntries.find(entry =>
       new Date(entry.date) <= oneWeekAgo
     );
     const weightChange = weekAgoEntry ? latestWeight - weekAgoEntry.weight : 0;
@@ -90,17 +91,17 @@ export async function GET(request: Request) {
     // Calculate BMI - ensure proper calculation with validation
     const heightCm = parseFloat(user?.heightCm);
     const heightM = heightCm && !isNaN(heightCm) && heightCm > 0 ? heightCm / 100 : 0;
-    const bmi = latestWeight > 0 && heightM > 0 
-      ? Math.round((latestWeight / (heightM * heightM)) * 10) / 10 
+    const bmi = latestWeight > 0 && heightM > 0
+      ? Math.round((latestWeight / (heightM * heightM)) * 10) / 10
       : 0;
-    
+
     // Validate BMI is in reasonable range (10-60)
     const validBmi = bmi > 10 && bmi < 60 ? bmi : 0;
 
     // Get latest measurements - each type is stored separately
     const measurementTypes = ['waist', 'hips', 'chest', 'arms', 'thighs'];
     const measurements: Record<string, number> = {};
-    
+
     for (const type of measurementTypes) {
       const latestEntry = allProgressEntries.find(entry => entry.type === type);
       measurements[type] = latestEntry ? Number(latestEntry.value) : 0;
@@ -109,7 +110,7 @@ export async function GET(request: Request) {
     // Get today's measurements specifically
     const todayStr = new Date().toISOString().split('T')[0];
     const todayMeasurements: Record<string, number> = {};
-    
+
     for (const type of measurementTypes) {
       const todayEntry = allProgressEntries.find(entry => {
         const entryDate = new Date(entry.recordedAt).toISOString().split('T')[0];
@@ -120,35 +121,35 @@ export async function GET(request: Request) {
 
     // Build measurement history - group by date
     const measurementHistoryMap = new Map<string, any>();
-    
+
     for (const entry of allProgressEntries) {
       if (measurementTypes.includes(entry.type)) {
         const dateKey = new Date(entry.recordedAt).toISOString().split('T')[0];
-        
+
         if (!measurementHistoryMap.has(dateKey)) {
           measurementHistoryMap.set(dateKey, { date: entry.recordedAt });
         }
-        
+
         const existing = measurementHistoryMap.get(dateKey);
         existing[entry.type] = Number(entry.value);
       }
     }
-    
+
     const measurementHistory = Array.from(measurementHistoryMap.values())
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // Get last measurement date for 7-day restriction check
-    const lastMeasurementEntry = allProgressEntries.find(entry => 
+    const lastMeasurementEntry = allProgressEntries.find(entry =>
       measurementTypes.includes(entry.type)
     );
     const lastMeasurementDate = lastMeasurementEntry?.recordedAt?.toISOString() || null;
 
     // Check if user can add new measurement (7 days restriction)
-    const canAddMeasurement = !lastMeasurementEntry || 
+    const canAddMeasurement = !lastMeasurementEntry ||
       (new Date().getTime() - new Date(lastMeasurementEntry.recordedAt).getTime()) >= 7 * 24 * 60 * 60 * 1000;
 
     // Calculate days until next measurement
-    const daysUntilNextMeasurement = lastMeasurementEntry 
+    const daysUntilNextMeasurement = lastMeasurementEntry
       ? Math.max(0, 7 - Math.floor((new Date().getTime() - new Date(lastMeasurementEntry.recordedAt).getTime()) / (24 * 60 * 60 * 1000)))
       : 0;
 
@@ -167,13 +168,13 @@ export async function GET(request: Request) {
     // 1. Check FoodLog first (manual food logging)
     const todayFoodLog = await withCache(
       `client:progress:${JSON.stringify({
-      client: session.user.id,
-      date: { $gte: today, $lt: todayEnd }
-    })}`,
+        client: session.user.id,
+        date: { $gte: today, $lt: todayEnd }
+      })}`,
       async () => await FoodLog.findOne({
-      client: session.user.id,
-      date: { $gte: today, $lt: todayEnd }
-    }),
+        client: session.user.id,
+        date: { $gte: today, $lt: todayEnd }
+      }),
       { ttl: 120000, tags: ['client'] }
     );
 
@@ -218,20 +219,20 @@ export async function GET(request: Request) {
 
           if (dayData?.meals) {
             const mealsObj = dayData.meals;
-            
+
             // Sum nutrition from completed meals
             for (const completion of todayCompletions) {
               const mealType = completion.mealType;
               // Try different case variations and formats
-              const mealData = mealsObj[mealType] || 
-                              mealsObj[mealType.toLowerCase()] || 
-                              mealsObj[mealType.charAt(0).toUpperCase() + mealType.slice(1).toLowerCase()] ||
-                              // Also check by meal name (e.g., "Breakfast", "Lunch")
-                              Object.values(mealsObj).find((m: any) => 
-                                m.name?.toLowerCase() === mealType.toLowerCase() ||
-                                m.id === mealType
-                              );
-              
+              const mealData = mealsObj[mealType] ||
+                mealsObj[mealType.toLowerCase()] ||
+                mealsObj[mealType.charAt(0).toUpperCase() + mealType.slice(1).toLowerCase()] ||
+                // Also check by meal name (e.g., "Breakfast", "Lunch")
+                Object.values(mealsObj).find((m: any) =>
+                  m.name?.toLowerCase() === mealType.toLowerCase() ||
+                  m.id === mealType
+                );
+
               if (mealData) {
                 // Check for foodOptions array (new meal plan structure)
                 if (mealData.foodOptions && Array.isArray(mealData.foodOptions)) {
@@ -359,24 +360,24 @@ export async function GET(request: Request) {
     // Get calorie history from food logs
     const foodLogs = await withCache(
       `client:progress:${JSON.stringify({
-      client: session.user.id,
-      date: { $gte: oneYearAgo }
-    })}`,
+        client: session.user.id,
+        date: { $gte: oneYearAgo }
+      })}`,
       async () => await FoodLog.find({
-      client: session.user.id,
-      date: { $gte: oneYearAgo }
-    }).select('date totalNutrition entries').sort({ date: -1 }),
+        client: session.user.id,
+        date: { $gte: oneYearAgo }
+      }).select('date totalNutrition entries').sort({ date: -1 }),
       { ttl: 120000, tags: ['client'] }
     );
 
     // Build nutrition history with macros
     const nutritionHistoryMap = new Map<string, { calories: number; protein: number; carbs: number; fat: number }>();
-    
+
     // Add food log data to history
     for (const log of foodLogs) {
       const dateKey = format(new Date(log.date), 'yyyy-MM-dd');
       const existing = nutritionHistoryMap.get(dateKey) || { calories: 0, protein: 0, carbs: 0, fat: 0 };
-      
+
       if (log.totalNutrition?.calories) {
         existing.calories += log.totalNutrition.calories || 0;
         existing.protein += log.totalNutrition.protein || 0;
@@ -390,7 +391,7 @@ export async function GET(request: Request) {
           existing.fat += entry.fat || 0;
         }
       }
-      
+
       nutritionHistoryMap.set(dateKey, existing);
     }
 
@@ -403,25 +404,25 @@ export async function GET(request: Request) {
 
       for (const plan of mealPlansWithCompletions) {
         if (!plan.mealCompletions?.length || !plan.meals?.length) continue;
-        
+
         for (const completion of plan.mealCompletions) {
           if (!completion.completed) continue;
-          
+
           const completionDate = format(new Date(completion.date), 'yyyy-MM-dd');
           const existing = nutritionHistoryMap.get(completionDate) || { calories: 0, protein: 0, carbs: 0, fat: 0 };
-          
+
           // Calculate day index
           const planStart = startOfDay(new Date(plan.startDate));
           const completionDay = startOfDay(new Date(completion.date));
           const dayIdx = Math.floor((completionDay.getTime() - planStart.getTime()) / (1000 * 60 * 60 * 24));
           const dayData = plan.meals[dayIdx % plan.meals.length];
-          
+
           if (dayData?.meals) {
             const mealType = completion.mealType;
-            const mealData = dayData.meals[mealType] || 
-                            dayData.meals[mealType.toLowerCase()] || 
-                            dayData.meals[mealType.charAt(0).toUpperCase() + mealType.slice(1).toLowerCase()];
-            
+            const mealData = dayData.meals[mealType] ||
+              dayData.meals[mealType.toLowerCase()] ||
+              dayData.meals[mealType.charAt(0).toUpperCase() + mealType.slice(1).toLowerCase()];
+
             if (mealData?.foodOptions && Array.isArray(mealData.foodOptions)) {
               for (const food of mealData.foodOptions) {
                 existing.calories += parseFloat(food.cal) || parseFloat(food.calories) || 0;
@@ -431,7 +432,7 @@ export async function GET(request: Request) {
               }
             }
           }
-          
+
           nutritionHistoryMap.set(completionDate, existing);
         }
       }
@@ -492,7 +493,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -513,6 +514,22 @@ export async function POST(request: Request) {
         recordedAt: new Date()
       });
       await progressEntry.save();
+
+      // Log activity
+      logActivity({
+        userId: session.user.id,
+        userRole: 'client',
+        userName: session.user.name || '',
+        userEmail: session.user.email || '',
+        action: 'upload_progress_photo',
+        actionType: 'create',
+        category: 'health',
+        description: `Uploaded transformation photo (${side || 'front'} view)`,
+        targetUserId: session.user.id,
+        targetUserName: session.user.name || '',
+        details: { side: side || 'front' }
+      }).catch(console.error);
+
       return NextResponse.json({ success: true, entry: progressEntry });
     }
 
@@ -534,6 +551,23 @@ export async function POST(request: Request) {
           await progressEntry.save();
           savedEntries.push(progressEntry);
         }
+      }
+
+      // Log activity
+      if (savedEntries.length > 0) {
+        logActivity({
+          userId: session.user.id,
+          userRole: 'client',
+          userName: session.user.name || '',
+          userEmail: session.user.email || '',
+          action: 'log_body_measurements',
+          actionType: 'create',
+          category: 'health',
+          description: `Recorded body measurements: ${savedEntries.map(e => e.type).join(', ')}`,
+          targetUserId: session.user.id,
+          targetUserName: session.user.name || '',
+          details: measurements
+        }).catch(console.error);
       }
 
       return NextResponse.json({ success: true, entries: savedEntries });
@@ -558,6 +592,21 @@ export async function POST(request: Request) {
       });
     }
 
+    // Log activity
+    logActivity({
+      userId: session.user.id,
+      userRole: 'client',
+      userName: session.user.name || '',
+      userEmail: session.user.email || '',
+      action: type === 'weight' ? 'log_weight' : 'log_progress',
+      actionType: 'create',
+      category: 'health',
+      description: `Recorded ${type}: ${value}${type === 'weight' ? ' kg' : ' cm'}`,
+      targetUserId: session.user.id,
+      targetUserName: session.user.name || '',
+      details: { type, value, unit: type === 'weight' ? 'kg' : 'cm' }
+    }).catch(console.error);
+
     return NextResponse.json({ success: true, entry: progressEntry });
   } catch (error) {
     console.error("Error saving progress:", error);
@@ -568,16 +617,16 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await dbConnect();
-    
+
     const { searchParams } = new URL(request.url);
     const entryId = searchParams.get('id');
-    
+
     if (!entryId) {
       return NextResponse.json({ error: "Entry ID is required" }, { status: 400 });
     }

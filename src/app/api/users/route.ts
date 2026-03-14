@@ -6,6 +6,7 @@ import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { adminSSEManager } from '@/lib/realtime/admin-sse-manager';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 // GET /api/users - Get users (for dietitians to see clients, admins to see all)
 export async function GET(request: NextRequest) {
@@ -319,6 +320,28 @@ export async function POST(request: NextRequest) {
     clearCacheByTag('admin');
     clearCacheByTag('clients');
     clearCacheByTag('stats');
+
+    // Log activity for user creation
+    logActivity({
+      userId: session.user.id,
+      userRole: session.user.role as 'admin' | 'dietitian' | 'health_counselor' | 'client',
+      userName: session.user.name || session.user.email || 'Staff',
+      userEmail: session.user.email || '',
+      action: 'create_user',
+      actionType: 'create',
+      category: 'profile',
+      description: `Created new ${role || 'client'}: ${firstName} ${lastName} (${email})`,
+      targetUserId: user._id.toString(),
+      targetUserName: `${firstName} ${lastName}`,
+      details: {
+        newUserRole: role || UserRole.CLIENT,
+        newUserEmail: email,
+        assignedDietitian: finalAssignedDietitian,
+        assignedHealthCounselor: finalAssignedHealthCounselor,
+      },
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
 
     const created = user.toJSON();
     delete (created as any).password;

@@ -6,6 +6,7 @@ export interface IActivityLog {
   userRole: 'admin' | 'dietitian' | 'health_counselor' | 'client';
   userName: string;
   userEmail: string;
+  userPhone?: string;
   action: string;
   actionType: 'create' | 'update' | 'delete' | 'view' | 'assign' | 'complete' | 'cancel' | 'payment' | 'login' | 'logout' | 'other';
   category: 'meal_plan' | 'diet_plan' | 'appointment' | 'payment' | 'task' | 'note' | 'document' | 'profile' | 'client_assignment' | 'recipe' | 'fitness' | 'message' | 'subscription' | 'auth' | 'system' | 'other';
@@ -49,6 +50,9 @@ const activityLogSchema = new Schema<IActivityLog>(
     userEmail: {
       type: String,
       required: true
+    },
+    userPhone: {
+      type: String
     },
     action: {
       type: String,

@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import mongoose from 'mongoose';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 export async function GET(request: NextRequest) {
     try {
@@ -24,16 +25,16 @@ export async function GET(request: NextRequest) {
         const dayEnd = endOfDay(targetDate);
 
         const journal = await withCache(
-      `client:sleep:${JSON.stringify({
-            client: session.user.id,
-            date: { $gte: dayStart, $lt: dayEnd }
-        })}`,
-      async () => await JournalTracking.findOne({
-            client: session.user.id,
-            date: { $gte: dayStart, $lt: dayEnd }
-        }),
-      { ttl: 120000, tags: ['client'] }
-    );
+            `client:sleep:${JSON.stringify({
+                client: session.user.id,
+                date: { $gte: dayStart, $lt: dayEnd }
+            })}`,
+            async () => await JournalTracking.findOne({
+                client: session.user.id,
+                date: { $gte: dayStart, $lt: dayEnd }
+            }),
+            { ttl: 120000, tags: ['client'] }
+        );
 
         if (!journal) {
             return NextResponse.json({
@@ -128,6 +129,19 @@ export async function POST(request: NextRequest) {
             },
             { upsert: true, new: true }
         );
+
+        // Log activity
+        logActivity({
+            userId: session.user.id,
+            userRole: 'client',
+            userName: session.user.name || session.user.email || '',
+            userEmail: session.user.email || '',
+            action: 'Logged Sleep',
+            actionType: 'create',
+            category: 'fitness',
+            description: `Client logged ${hours}h ${minutes}m of sleep.`,
+            details: { hours, minutes, quality, date: format(targetDate, 'yyyy-MM-dd') },
+        }).catch(() => { });
 
         return NextResponse.json({
             success: true,

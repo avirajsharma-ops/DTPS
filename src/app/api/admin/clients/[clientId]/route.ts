@@ -7,7 +7,22 @@ import ClientMealPlan from '@/lib/db/models/ClientMealPlan';
 import UnifiedPayment from '@/lib/db/models/UnifiedPayment';
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 import mongoose from 'mongoose';
+
+// Helper: human-readable role label
+function roleLabel(r?: string) {
+  if (!r) return 'Admin';
+  const map: Record<string, string> = {
+    admin: 'Admin',
+    dietitian: 'Dietitian',
+    health_counselor: 'Health Counselor',
+    'health-counselor': 'Health Counselor',
+    healthcounselor: 'Health Counselor',
+    client: 'Client',
+  };
+  return map[r] ?? r;
+}
 
 // Helper function to validate MongoDB ObjectId
 function isValidObjectId(id: string): boolean {
@@ -206,6 +221,9 @@ export async function PUT(
     // Remove fields that shouldn't be updated directly
     const { password, _id, role, ...updateData } = body;
 
+    // Fetch existing client for change tracking
+    const existingClient = await User.findById(clientId).select('-password').lean() as Record<string, any> | null;
+
     const client = await User.findByIdAndUpdate(
       clientId,
       { $set: updateData },
@@ -215,6 +233,26 @@ export async function PUT(
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
+
+    // Log activity
+    const changedFields = Object.keys(updateData);
+    logActivity({
+      userId: session.user.id,
+      userRole: (userRole as 'admin' | 'dietitian' | 'health_counselor') || 'admin',
+      userName: session.user.name || session.user.email || '',
+      userEmail: session.user.email || '',
+      action: 'Updated Client Details',
+      actionType: 'update',
+      category: 'profile',
+      description: `${roleLabel(userRole)} updated client ${existingClient?.firstName || ''} ${existingClient?.lastName || ''} (${existingClient?.email || clientId}). Fields: ${changedFields.join(', ')}`,
+      targetUserId: clientId,
+      targetUserName: `${existingClient?.firstName || ''} ${existingClient?.lastName || ''} (${existingClient?.email || ''})`,
+      changeDetails: changedFields.map(f => ({
+        fieldName: f,
+        oldValue: existingClient?.[f] ?? null,
+        newValue: updateData[f] ?? null,
+      })),
+    }).catch(() => { });
 
     // Clear cache for this client
     clearCacheByTag('admin');
@@ -272,12 +310,27 @@ export async function DELETE(
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'deactivate'; // 'deactivate' or 'delete'
 
+    // Fetch client details before delete/deactivate for logging
+    const targetClient = await User.findById(clientId).select('firstName lastName email').lean() as Record<string, any> | null;
+
     if (action === 'delete') {
       // Permanent delete - use with caution
       const result = await User.findByIdAndDelete(clientId);
       if (!result) {
         return NextResponse.json({ error: 'Client not found' }, { status: 404 });
       }
+      logActivity({
+        userId: session.user.id,
+        userRole: 'admin',
+        userName: session.user.name || session.user.email || '',
+        userEmail: session.user.email || '',
+        action: 'Deleted Client',
+        actionType: 'delete',
+        category: 'profile',
+        description: `Admin permanently deleted client ${targetClient?.firstName || ''} ${targetClient?.lastName || ''} (${targetClient?.email || clientId}).`,
+        targetUserId: clientId,
+        targetUserName: `${targetClient?.firstName || ''} ${targetClient?.lastName || ''} (${targetClient?.email || ''})`,
+      }).catch(() => { });
       clearCacheByTag('admin');
       return NextResponse.json({ message: 'Client deleted permanently' });
     } else {
@@ -292,6 +345,19 @@ export async function DELETE(
         return NextResponse.json({ error: 'Client not found' }, { status: 404 });
       }
 
+      logActivity({
+        userId: session.user.id,
+        userRole: 'admin',
+        userName: session.user.name || session.user.email || '',
+        userEmail: session.user.email || '',
+        action: 'Deactivated Client',
+        actionType: 'update',
+        category: 'profile',
+        description: `Admin deactivated client ${targetClient?.firstName || ''} ${targetClient?.lastName || ''} (${targetClient?.email || clientId}).`,
+        targetUserId: clientId,
+        targetUserName: `${targetClient?.firstName || ''} ${targetClient?.lastName || ''} (${targetClient?.email || ''})`,
+        changeDetails: [{ fieldName: 'status', oldValue: 'active', newValue: 'inactive' }],
+      }).catch(() => { });
       clearCacheByTag('admin');
       return NextResponse.json({ client, message: 'Client deactivated successfully' });
     }

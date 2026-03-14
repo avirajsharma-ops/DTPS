@@ -9,6 +9,7 @@ import { getImageKit } from '@/lib/imagekit';
 import { compressImageServer } from '@/lib/imageCompressionServer';
 import { MEAL_TYPE_KEYS, normalizeMealType, type MealTypeKey } from '@/lib/mealConfig';
 import { SSEManager } from '@/lib/realtime/sse-manager';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 // Map camelCase meal types to canonical UPPERCASE keys
 const CAMELCASE_TO_CANONICAL: Record<string, MealTypeKey> = {
@@ -201,6 +202,22 @@ export async function POST(request: NextRequest) {
     mealPlan.analytics.averageAdherence = Math.round((completedMeals / totalMeals) * 100);
 
     await mealPlan.save();
+
+    // Log activity
+    logActivity({
+      userId: session.user.id,
+      userRole: 'client',
+      userName: session.user.name || session.user.email || '',
+      userEmail: session.user.email || '',
+      action: 'Completed Meal',
+      actionType: 'complete',
+      category: 'meal_plan',
+      description: `Client completed ${determinedMealType.toLowerCase().replace('_', ' ')} meal.`,
+      resourceId: mealPlan._id?.toString(),
+      resourceType: 'ClientMealPlan',
+      resourceName: mealPlan.name,
+      details: { mealType: determinedMealType, date: requestedDate.toISOString(), hasImage: !!imagePath },
+    }).catch(() => { });
 
     // Emit real-time event to notify the client (and other tabs/devices)
     try {

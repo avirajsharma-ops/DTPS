@@ -4,11 +4,12 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db/connection";
 import DietaryRecall from "@/lib/db/models/DietaryRecall";
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -19,8 +20,8 @@ export async function GET() {
     const recalls = await withCache(
       `client:dietary-recall:${JSON.stringify({ userId: session.user.id })}`,
       async () => await DietaryRecall.find({ userId: session.user.id })
-      .sort({ date: -1 })
-      .limit(30),
+        .sort({ date: -1 })
+        .limit(30),
       { ttl: 120000, tags: ['client'] }
     ); // Get last 30 recalls
 
@@ -34,7 +35,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -49,24 +50,24 @@ export async function POST(request: Request) {
     // Check if a recall already exists for this date
     const existingRecall = await withCache(
       `client:dietary-recall:${JSON.stringify({
-      userId: session.user.id,
-      date: {
-        $gte: date,
-        $lt: new Date(date.getTime() + 24 * 60 * 60 * 1000)
-      }
-    })}`,
+        userId: session.user.id,
+        date: {
+          $gte: date,
+          $lt: new Date(date.getTime() + 24 * 60 * 60 * 1000)
+        }
+      })}`,
       async () => await DietaryRecall.findOne({
-      userId: session.user.id,
-      date: {
-        $gte: date,
-        $lt: new Date(date.getTime() + 24 * 60 * 60 * 1000)
-      }
-    }),
+        userId: session.user.id,
+        date: {
+          $gte: date,
+          $lt: new Date(date.getTime() + 24 * 60 * 60 * 1000)
+        }
+      }),
       { ttl: 120000, tags: ['client'] }
     );
 
     let dietaryRecall;
-    
+
     if (existingRecall) {
       // Update existing recall
       existingRecall.meals = data.meals || [];
@@ -79,6 +80,24 @@ export async function POST(request: Request) {
         meals: data.meals || []
       });
     }
+
+    // Log activity
+    logActivity({
+      userId: session.user.id,
+      userRole: 'client',
+      userName: session.user.name || '',
+      userEmail: session.user.email || '',
+      action: existingRecall ? 'update_dietary_recall' : 'create_dietary_recall',
+      actionType: existingRecall ? 'update' : 'create',
+      category: 'health',
+      description: `${existingRecall ? 'Updated' : 'Recorded'} dietary recall for ${date.toDateString()}`,
+      targetUserId: session.user.id,
+      targetUserName: session.user.name || '',
+      details: {
+        date: date.toISOString(),
+        mealsCount: data.meals?.length || 0
+      }
+    }).catch(console.error);
 
     return NextResponse.json({ success: true, data: dietaryRecall });
   } catch (error) {

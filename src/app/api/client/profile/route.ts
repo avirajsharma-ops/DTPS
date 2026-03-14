@@ -6,6 +6,7 @@ import User from "@/lib/db/models/User";
 import { SSEManager } from "@/lib/realtime/sse-manager";
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 import { getClientStatusInfo } from '@/lib/status/computeClientStatus';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 // BMI Calculation Helper
 function calculateBMI(weightKg: number, heightCm: number): { bmi: string; bmiCategory: string } {
@@ -185,6 +186,24 @@ export async function PUT(request: Request) {
     clearCacheByTag(`client-profile:${session.user.id}`);
     clearCacheByTag('client-profile');
     clearCacheByTag('client');
+
+    // Log activity
+    const changedFields = Object.keys(updateData);
+    logActivity({
+      userId: session.user.id,
+      userRole: 'client',
+      userName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.name || '',
+      userEmail: user.email || session.user.email || '',
+      action: 'Updated Profile',
+      actionType: 'update',
+      category: 'profile',
+      description: `Client updated their profile. Fields: ${changedFields.join(', ')}`,
+      changeDetails: changedFields.map(f => ({
+        fieldName: f,
+        oldValue: null,
+        newValue: updateData[f] ?? null,
+      })),
+    }).catch(() => { });
 
     // Send SSE update if BMI was recalculated
     if (isWeightOrHeightUpdated && user.bmi) {

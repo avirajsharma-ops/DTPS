@@ -6,18 +6,19 @@ import DietaryRecall from '@/lib/db/models/DietaryRecall';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 export const dynamic = 'force-dynamic';
 
 // Helper function to check if dietitian is assigned to client
 async function isDietitianAssigned(dietitianId: string, clientId: string): Promise<boolean> {
   const client = await withCache(
-      `dietitian-panel:clients:clientId:dietary-recall:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
-      { ttl: 120000, tags: ['dietitian_panel'] }
-    );
+    `dietitian-panel:clients:clientId:dietary-recall:${JSON.stringify(clientId)}`,
+    async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
+    { ttl: 120000, tags: ['dietitian_panel'] }
+  );
   if (!client) return false;
-  
+
   return (
     client.assignedDietitian?.toString() === dietitianId ||
     client.assignedDietitians?.some((d: any) => d.toString() === dietitianId)
@@ -131,6 +132,20 @@ export async function PUT(
       },
       { upsert: true, new: true }
     );
+
+    // Log activity
+    logActivity({
+      userId: session.user.id,
+      userRole: 'dietitian',
+      userName: session.user.name || session.user.email || '',
+      userEmail: session.user.email || '',
+      action: 'Updated Dietary Recall',
+      actionType: 'update',
+      category: 'diet_plan',
+      description: `Dietitian updated dietary recall for client ${client.firstName || ''} ${client.lastName || ''} (${client.email}).`,
+      targetUserId: clientId,
+      targetUserName: `${client.firstName || ''} ${client.lastName || ''} (${client.email})`,
+    }).catch(() => { });
 
     return NextResponse.json({
       success: true,

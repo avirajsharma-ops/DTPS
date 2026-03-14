@@ -6,6 +6,7 @@ import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import { clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 // Comprehensive registration schema for API
 // Helper function to normalize phone number with country code
@@ -120,19 +121,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate temporary password if not provided (for clients created by dietitian/health counselor)
-    let finalPassword = validatedData.password;
-    if (!finalPassword && validatedData.role === UserRole.CLIENT && session?.user) {
-      // Generate a random 12-character password
-      finalPassword = Math.random().toString(36).substring(2, 14) + Math.random().toString(36).substring(2, 14).substring(0, 12);
-    }
-
-    if (!finalPassword) {
+    // Password is always required - no auto-generation
+    if (!validatedData.password) {
       return NextResponse.json(
         { error: 'Password is required' },
         { status: 400 }
       );
     }
+
+    const finalPassword = validatedData.password;
 
     // Create user data
     const userData: any = {
@@ -207,6 +204,32 @@ export async function POST(request: NextRequest) {
     clearCacheByTag('admin');
     clearCacheByTag('clients');
     clearCacheByTag('stats');
+
+    // Log activity
+    const creatorId = session?.user?.id || user._id.toString();
+    const creatorRole = session?.user?.role || 'self';
+    const creatorName = session?.user?.name || `${validatedData.firstName} ${validatedData.lastName}`;
+    const creatorEmail = session?.user?.email || validatedData.email;
+
+    logActivity({
+      userId: creatorId,
+      userRole: (creatorRole === 'self' ? 'client' : creatorRole) as any,
+      userName: creatorName,
+      userEmail: creatorEmail,
+      action: 'create_user',
+      actionType: 'create',
+      category: 'account',
+      description: session?.user
+        ? `Created new ${validatedData.role} account: ${validatedData.firstName} ${validatedData.lastName}`
+        : `New ${validatedData.role} registration: ${validatedData.firstName} ${validatedData.lastName}`,
+      targetUserId: user._id.toString(),
+      targetUserName: `${validatedData.firstName} ${validatedData.lastName}`,
+      details: {
+        userRole: validatedData.role,
+        email: validatedData.email,
+        selfRegistered: !session?.user
+      }
+    }).catch(console.error);
 
     // Return user without password
     const userResponse = user.toJSON();

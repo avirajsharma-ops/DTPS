@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/connection';
 import WooCommerceClient from '@/lib/db/models/WooCommerceClient';
 import jwt from 'jsonwebtoken';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-secret-key';
 
@@ -53,6 +54,20 @@ export async function POST(request: NextRequest) {
       { expiresIn: '7d' }
     );
 
+    // Log login activity
+    logActivity({
+      userId: String(client._id),
+      userRole: 'client',
+      userName: client.name || client.email,
+      userEmail: client.email,
+      action: 'Logged In',
+      actionType: 'login',
+      category: 'auth',
+      description: `Client ${client.name || client.email} logged in.`,
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '',
+      userAgent: request.headers.get('user-agent') || '',
+    }).catch(() => { });
+
     // Return client data and token
     return NextResponse.json({
       message: 'Login successful',
@@ -84,7 +99,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'No token provided' },
@@ -96,7 +111,7 @@ export async function GET(request: NextRequest) {
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
-      
+
       if (decoded.role !== 'client') {
         return NextResponse.json(
           { error: 'Invalid token type' },

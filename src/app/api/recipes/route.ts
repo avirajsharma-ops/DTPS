@@ -19,6 +19,7 @@ import {
   VALID_DIETARY_RESTRICTIONS,
   VALID_MEDICAL_CONTRAINDICATIONS
 } from '@/lib/recipe-normalize';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 // Recipe validation schema - flexible to handle both old and new formats (no word limits)
 const recipeSchema = z.object({
@@ -666,6 +667,24 @@ export async function POST(request: NextRequest) {
 
     // Populate the created recipe
     await recipe.populate('createdBy', 'firstName lastName');
+
+    // Log activity
+    logActivity({
+      userId: session.user.id,
+      userRole: session.user.role as any,
+      userName: session.user.name || '',
+      userEmail: session.user.email || '',
+      action: 'create_recipe',
+      actionType: 'create',
+      category: 'recipe',
+      description: `Created recipe: ${recipeData.name}`,
+      details: {
+        recipeName: recipeData.name,
+        calories: caloriesValue,
+        servings: servingsValue,
+        tags: recipeData.tags
+      }
+    }).catch(console.error);
 
     return NextResponse.json({
       success: true,

@@ -8,6 +8,7 @@ import Tag from '@/lib/db/models/Tag'; // Ensure Tag model is registered
 import Task from '@/lib/db/models/Task'; // Ensure Task model is registered
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 // Helper function to log admin actions
 async function logAdminAction(
@@ -63,15 +64,15 @@ export async function GET(
     const user = await withCache(
       `users:id:${JSON.stringify(id)}`,
       async () => await User.findById(id)
-      .select('-password')
-      .populate('assignedDietitian', 'firstName lastName email avatar')
-      .populate('assignedHealthCounselor', 'firstName lastName email avatar')
-      .populate('tags', 'name description color icon')
-      .populate({
-        path: 'createdBy.userId',
-        select: 'firstName lastName role',
-        strictPopulate: false
-      }),
+        .select('-password')
+        .populate('assignedDietitian', 'firstName lastName email avatar')
+        .populate('assignedHealthCounselor', 'firstName lastName email avatar')
+        .populate('tags', 'name description color icon')
+        .populate({
+          path: 'createdBy.userId',
+          select: 'firstName lastName role',
+          strictPopulate: false
+        }),
       { ttl: 120000, tags: ['users'] }
     );
 
@@ -88,11 +89,11 @@ export async function GET(
       session.user.role === UserRole.ADMIN ||
       session.user.id === id ||
       ((session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) &&
-       user.role === UserRole.CLIENT) || // Allow dietitians/health counselors to view any client
+        user.role === UserRole.CLIENT) || // Allow dietitians/health counselors to view any client
       (session.user.role === UserRole.CLIENT &&
-       (user.role === UserRole.DIETITIAN || user.role === UserRole.HEALTH_COUNSELOR)) || // Allow clients to view dietitians/health counselors
+        (user.role === UserRole.DIETITIAN || user.role === UserRole.HEALTH_COUNSELOR)) || // Allow clients to view dietitians/health counselors
       ((session.user.role === UserRole.DIETITIAN || session.user.role === UserRole.HEALTH_COUNSELOR) &&
-       (user.role === UserRole.DIETITIAN || user.role === UserRole.HEALTH_COUNSELOR)); // Allow dietitians/health counselors to view each other
+        (user.role === UserRole.DIETITIAN || user.role === UserRole.HEALTH_COUNSELOR)); // Allow dietitians/health counselors to view each other
 
 
 
@@ -218,7 +219,24 @@ export async function PATCH(
     // Clear cache
     await clearCacheByTag('users');
 
-    return NextResponse.json({ 
+    // Log activity
+    logActivity({
+      userId: session.user.id,
+      userRole: session.user.role as 'admin' | 'dietitian' | 'health_counselor' | 'client',
+      userName: session.user.name || session.user.email || 'Admin',
+      userEmail: session.user.email || '',
+      action: `user_status_${status}`,
+      actionType: 'update',
+      category: 'profile',
+      description: `Changed user status to ${status} for ${user.email}`,
+      targetUserId: id,
+      targetUserName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+      changeDetails: [{ fieldName: 'status', oldValue: user.status, newValue: status }],
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
+
+    return NextResponse.json({
       user,
       message: `User ${status === 'active' ? 'activated' : 'deactivated'} successfully`
     });
@@ -275,13 +293,30 @@ export async function DELETE(
     );
 
     const action = newStatus === 'active' ? 'activated' : 'deactivated';
-    const actionMessage = newStatus === 'active' 
+    const actionMessage = newStatus === 'active'
       ? `${user.firstName || user.email} has been reactivated successfully. They can now log in.`
       : `${user.firstName || user.email} (${user.role}) has been deactivated. They will be logged out on their next page refresh or login attempt.`;
-    
+
+    // Log activity for toggle status
+    logActivity({
+      userId: session.user.id,
+      userRole: session.user.role as 'admin' | 'dietitian' | 'health_counselor' | 'client',
+      userName: session.user.name || session.user.email || 'Admin',
+      userEmail: session.user.email || '',
+      action: newStatus === 'active' ? 'activate_user' : 'deactivate_user',
+      actionType: 'update',
+      category: 'profile',
+      description: `${newStatus === 'active' ? 'Activated' : 'Deactivated'} user ${user.email}`,
+      targetUserId: id,
+      targetUserName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+      changeDetails: [{ fieldName: 'status', oldValue: oldStatus, newValue: newStatus }],
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
+
     // Note: If user was deactivated, their session will be automatically invalidated on next page refresh
     // due to the session callback in auth/config.ts checking user status
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: actionMessage,
       status: newStatus,
@@ -329,7 +364,7 @@ export async function PUT(
     const isDietitianEditingClient =
       session.user.role === UserRole.DIETITIAN &&
       (targetUser.assignedDietitian?.toString() === session.user.id ||
-       targetUser.assignedDietitians?.some((d: any) => d.toString() === session.user.id));
+        targetUser.assignedDietitians?.some((d: any) => d.toString() === session.user.id));
 
     // Health Counselor can update ONLY their assigned clients
     const isHealthCounselorEditingClient =
@@ -342,7 +377,7 @@ export async function PUT(
 
     // Admin-only fields that can be updated
     const adminOnlyFields = ["email", "phone", "role", "status", "clientStatus"];
-    
+
     // Allowed fields to update (only User model fields)
     let allowedFields = [
       // Basic Info
@@ -402,7 +437,7 @@ export async function PUT(
 
     // Validate email uniqueness if being updated
     if (isAdmin && body.email && body.email !== targetUser.email) {
-      const existingUser = await User.findOne({ 
+      const existingUser = await User.findOne({
         email: body.email.toLowerCase(),
         _id: { $ne: id }
       });
@@ -413,7 +448,7 @@ export async function PUT(
 
     // Validate phone uniqueness if being updated
     if (isAdmin && body.phone && body.phone !== targetUser.phone) {
-      const existingUser = await User.findOne({ 
+      const existingUser = await User.findOne({
         phone: body.phone,
         _id: { $ne: id }
       });
@@ -457,7 +492,7 @@ export async function PUT(
     // Store original values before update for audit logging
     const originalValues: Record<string, any> = {};
     const changedFields: Record<string, { old: any; new: any }> = {};
-    
+
     Object.keys(updateData).forEach(key => {
       originalValues[key] = (targetUser as any)[key];
     });
@@ -481,21 +516,21 @@ export async function PUT(
     // Log admin action if admin made changes
     if (isAdmin && Object.keys(changedFields).length > 0) {
       // Determine action type
-      let actionType = 'update_user';
+      let actionTypeStr = 'update_user';
       if (changedFields.status) {
-        if (changedFields.status.new === 'suspended') actionType = 'suspend_user';
-        else if (changedFields.status.new === 'inactive') actionType = 'deactivate_user';
-        else if (changedFields.status.new === 'active') actionType = 'activate_user';
-        else actionType = 'change_status';
+        if (changedFields.status.new === 'suspended') actionTypeStr = 'suspend_user';
+        else if (changedFields.status.new === 'inactive') actionTypeStr = 'deactivate_user';
+        else if (changedFields.status.new === 'active') actionTypeStr = 'activate_user';
+        else actionTypeStr = 'change_status';
       }
       if (changedFields.role) {
-        actionType = 'change_role';
+        actionTypeStr = 'change_role';
       }
 
       await logAdminAction(
         session.user.id,
         session.user.email || 'unknown',
-        actionType,
+        actionTypeStr,
         id,
         targetUser.email,
         targetUser.role,
@@ -504,10 +539,35 @@ export async function PUT(
       );
     }
 
+    // Log activity for any update (admin, dietitian, health counselor)
+    if (Object.keys(changedFields).length > 0) {
+      const changeDetailsList = Object.entries(changedFields).map(([field, vals]) => ({
+        fieldName: field,
+        oldValue: vals.old,
+        newValue: vals.new,
+      }));
+
+      logActivity({
+        userId: session.user.id,
+        userRole: session.user.role as 'admin' | 'dietitian' | 'health_counselor' | 'client',
+        userName: session.user.name || session.user.email || 'User',
+        userEmail: session.user.email || '',
+        action: 'update_user_profile',
+        actionType: 'update',
+        category: 'profile',
+        description: `Updated user profile for ${targetUser.email} - ${Object.keys(changedFields).join(', ')}`,
+        targetUserId: id,
+        targetUserName: `${targetUser.firstName || ''} ${targetUser.lastName || ''}`.trim() || targetUser.email,
+        changeDetails: changeDetailsList,
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+      });
+    }
+
     const updatedUser = targetUser?.toJSON();
     delete updatedUser.password;
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       user: updatedUser,
       message: "User updated successfully"
     });
@@ -559,7 +619,7 @@ export async function POST(
     const isDietitianAssigned =
       session.user.role === UserRole.DIETITIAN &&
       (user.assignedDietitian?.toString() === session.user.id ||
-       user.assignedDietitians?.some((d: { toString: () => string }) => d.toString() === session.user.id));
+        user.assignedDietitians?.some((d: { toString: () => string }) => d.toString() === session.user.id));
 
     if (!isAdmin && !isSelf && !isDietitianAssigned) {
       return NextResponse.json({ error: "Forbidden: You cannot upload documents for this user" }, { status: 403 });

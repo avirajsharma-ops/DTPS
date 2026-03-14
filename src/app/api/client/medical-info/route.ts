@@ -5,6 +5,7 @@ import dbConnect from "@/lib/db/connection";
 import MedicalInfo from "@/lib/db/models/MedicalInfo";
 import User from "@/lib/db/models/User";
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 export async function GET() {
   try {
@@ -88,6 +89,25 @@ export async function POST(request: Request) {
     // Clear caches so profile/medical pages show updated data immediately
     clearCacheByTag('client');
     clearCacheByTag(`client:medical-info:${session.user.id}`);
+
+    // Log activity
+    logActivity({
+      userId: session.user.id,
+      userRole: 'client',
+      userName: session.user.name || '',
+      userEmail: session.user.email || '',
+      action: 'update_medical_info',
+      actionType: 'update',
+      category: 'health',
+      description: 'Updated own medical information',
+      targetUserId: session.user.id,
+      targetUserName: session.user.name || '',
+      details: {
+        hasConditions: (data.medicalConditions?.length || 0) > 0,
+        hasAllergies: (data.allergies?.length || 0) > 0,
+        bloodGroup: data.bloodGroup || 'not set'
+      }
+    }).catch(console.error);
 
     return NextResponse.json({ success: true, data: medicalInfo });
   } catch (error: any) {

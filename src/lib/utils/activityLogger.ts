@@ -18,6 +18,7 @@ interface LogActivityParams {
   userRole: UserRole;
   userName: string;
   userEmail: string;
+  userPhone?: string;
   action: string;
   actionType: ActivityActionType;
   category: ActivityCategory;
@@ -53,12 +54,13 @@ interface CreateSystemAlertParams {
 export async function logActivity(params: LogActivityParams): Promise<IActivityLog | null> {
   try {
     await connectDB();
-    
+
     const activity = await ActivityLog.create({
       userId: params.userId,
       userRole: params.userRole,
       userName: params.userName,
       userEmail: params.userEmail,
+      userPhone: params.userPhone,
       action: params.action,
       actionType: params.actionType,
       category: params.category,
@@ -97,7 +99,7 @@ export async function logActivity(params: LogActivityParams): Promise<IActivityL
 export async function createSystemAlert(params: CreateSystemAlertParams): Promise<ISystemAlert | null> {
   try {
     await connectDB();
-    
+
     const alert = await SystemAlert.create({
       type: params.type,
       source: params.source,

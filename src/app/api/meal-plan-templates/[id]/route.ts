@@ -5,9 +5,10 @@ import connectDB from '@/lib/db/connect';
 import MealPlanTemplate from '@/lib/db/models/MealPlanTemplate';
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 export async function GET(
-  request: NextRequest, 
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -16,7 +17,7 @@ export async function GET(
     const template = await withCache(
       `meal-plan-templates:id:${JSON.stringify(id)}`,
       async () => await MealPlanTemplate.findById(id)
-      .populate('createdBy', 'firstName lastName')
+        .populate('createdBy', 'firstName lastName')
       ,
       { ttl: 120000, tags: ['meal_plan_templates'] }
     );
@@ -78,6 +79,27 @@ export async function PUT(
 
     await existingTemplate.save();
     await existingTemplate.populate('createdBy', 'firstName lastName');
+
+    // Clear cache
+    clearCacheByTag('meal-plan-templates');
+    clearCacheByTag('meal_plan_templates');
+
+    // Log activity
+    logActivity({
+      userId: session.user.id,
+      userRole: session.user.role as 'admin' | 'dietitian' | 'health_counselor' | 'client',
+      userName: session.user.name || session.user.email || 'Staff',
+      userEmail: session.user.email || '',
+      action: 'update_meal_plan_template',
+      actionType: 'update',
+      category: 'meal_plan',
+      description: `Updated meal plan template: ${existingTemplate.name}`,
+      resourceId: id,
+      resourceType: 'MealPlanTemplate',
+      resourceName: existingTemplate.name,
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
 
     return NextResponse.json({
       success: true,
@@ -194,6 +216,27 @@ export async function DELETE(
     // Soft delete by setting isActive to false
     existingTemplate.isActive = false;
     await existingTemplate.save();
+
+    // Clear cache
+    clearCacheByTag('meal-plan-templates');
+    clearCacheByTag('meal_plan_templates');
+
+    // Log activity
+    logActivity({
+      userId: session.user.id,
+      userRole: session.user.role as 'admin' | 'dietitian' | 'health_counselor' | 'client',
+      userName: session.user.name || session.user.email || 'Staff',
+      userEmail: session.user.email || '',
+      action: 'delete_meal_plan_template',
+      actionType: 'delete',
+      category: 'meal_plan',
+      description: `Deleted meal plan template: ${existingTemplate.name}`,
+      resourceId: id,
+      resourceType: 'MealPlanTemplate',
+      resourceName: existingTemplate.name,
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
 
     return NextResponse.json({
       success: true,

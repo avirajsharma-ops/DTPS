@@ -6,13 +6,14 @@ import User from '@/lib/db/models/User';
 import LifestyleInfo from '@/lib/db/models/LifestyleInfo';
 import MedicalInfo from '@/lib/db/models/MedicalInfo';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -23,9 +24,9 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB();
-    
+
     const userId = session.user.id;
-    
+
     // CRITICAL: Check if onboarding is already completed to prevent duplicate submissions
     const existingUser = await User.findById(userId).select('onboardingCompleted').lean() as { onboardingCompleted?: boolean } | null;
     if (existingUser?.onboardingCompleted) {
@@ -49,12 +50,12 @@ export async function POST(request: NextRequest) {
     let bmiCategory = '';
     const weightKg = parseFloat(data.weightKg);
     const heightCm = parseFloat(data.heightCm);
-    
+
     if (weightKg > 0 && heightCm > 0) {
       const heightM = heightCm / 100;
       const bmiValue = weightKg / (heightM * heightM);
       bmi = bmiValue.toFixed(1);
-      
+
       // Determine BMI category
       if (bmiValue < 18.5) {
         bmiCategory = 'Underweight';
@@ -121,9 +122,9 @@ export async function POST(request: NextRequest) {
           weightKg: data.weightKg,
           targetWeightKg: data.targetWeightKg,
           activityLevel: data.activityLevel,
-          foodPreference: data.dietType === 'vegetarian' ? 'veg' : 
-                         data.dietType === 'vegan' ? 'vegan' : 
-                         data.dietType === 'standard' ? 'non-veg' : 'non-veg',
+          foodPreference: data.dietType === 'vegetarian' ? 'veg' :
+            data.dietType === 'vegan' ? 'vegan' :
+              data.dietType === 'standard' ? 'non-veg' : 'non-veg',
           allergiesFood: data.allergies || [],
         }
       },
@@ -152,6 +153,25 @@ export async function POST(request: NextRequest) {
       // Non-blocking - continue even if cache clear fails
     }
 
+    // Log activity
+    logActivity({
+      userId: userId,
+      userRole: 'client',
+      userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+      userEmail: user.email || '',
+      action: 'Completed Onboarding',
+      actionType: 'update',
+      category: 'profile',
+      description: `Client completed onboarding with goal: ${data.generalGoal || 'not specified'}, diet type: ${data.dietType || 'not specified'}.`,
+      details: {
+        generalGoal: data.generalGoal,
+        dietType: data.dietType,
+        activityLevel: data.activityLevel,
+        bmi: bmi,
+        bmiCategory: bmiCategory,
+      },
+    }).catch(() => { });
+
     return NextResponse.json({
       success: true,
       message: 'Onboarding completed successfully',
@@ -178,7 +198,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -199,10 +219,10 @@ export async function GET(request: NextRequest) {
       onboardingCompleted,
       onboardingStep,
     });
-    
+
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     response.headers.set('Pragma', 'no-cache');
-    
+
     return response;
 
   } catch (error) {

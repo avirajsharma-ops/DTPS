@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import mongoose from 'mongoose';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 export async function GET(request: NextRequest) {
     try {
@@ -23,16 +24,16 @@ export async function GET(request: NextRequest) {
         const dayEnd = endOfDay(targetDate);
 
         const journal = await withCache(
-      `client:activity:${JSON.stringify({
-            client: session.user.id,
-            date: { $gte: dayStart, $lt: dayEnd }
-        })}`,
-      async () => await JournalTracking.findOne({
-            client: session.user.id,
-            date: { $gte: dayStart, $lt: dayEnd }
-        }),
-      { ttl: 120000, tags: ['client'] }
-    );
+            `client:activity:${JSON.stringify({
+                client: session.user.id,
+                date: { $gte: dayStart, $lt: dayEnd }
+            })}`,
+            async () => await JournalTracking.findOne({
+                client: session.user.id,
+                date: { $gte: dayStart, $lt: dayEnd }
+            }),
+            { ttl: 120000, tags: ['client'] }
+        );
 
         if (!journal) {
             return NextResponse.json({
@@ -139,6 +140,27 @@ export async function POST(request: NextRequest) {
             },
             { upsert: true, new: true }
         );
+
+        // Log activity
+        logActivity({
+            userId: session.user.id,
+            userRole: 'client',
+            userName: session.user.name || '',
+            userEmail: session.user.email || '',
+            action: 'log_activity',
+            actionType: 'create',
+            category: 'health',
+            description: `Logged activity: ${entry.name} for ${entry.duration} minutes`,
+            targetUserId: session.user.id,
+            targetUserName: session.user.name || '',
+            details: {
+                activityName: entry.name,
+                duration: entry.duration,
+                intensity: entry.intensity,
+                sets: entry.sets,
+                reps: entry.reps
+            }
+        }).catch(console.error);
 
         return NextResponse.json({
             success: true,

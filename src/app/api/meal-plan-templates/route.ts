@@ -7,10 +7,11 @@ import Recipe from '@/lib/db/models/Recipe';
 import { UserRole } from '@/types';
 import { z } from 'zod';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 // Validation schema for meal plan template (no word limits)
 const mealPlanTemplateSchema = z.object({
-  templateType: z.enum(['plan','diet']).default('plan'),
+  templateType: z.enum(['plan', 'diet']).default('plan'),
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   category: z.enum(['weight-loss', 'weight-gain', 'maintenance', 'muscle-gain', 'diabetes', 'heart-healthy', 'keto', 'vegan', 'custom']),
@@ -56,21 +57,21 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-  const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const isPublic = searchParams.get('isPublic');
     const search = searchParams.get('search');
     const difficulty = searchParams.get('difficulty');
     const dietaryRestrictions = searchParams.get('dietaryRestrictions');
-  const templateType = searchParams.get('templateType');
-  const createdBy = searchParams.get('createdBy');
-  const sortBy = searchParams.get('sortBy') || 'newest';
-  const limit = parseInt(searchParams.get('limit') || '1000');
-  const skip = parseInt(searchParams.get('skip') || '0');
-  const days = searchParams.get('days'); // filter by duration
+    const templateType = searchParams.get('templateType');
+    const createdBy = searchParams.get('createdBy');
+    const sortBy = searchParams.get('sortBy') || 'newest';
+    const limit = parseInt(searchParams.get('limit') || '1000');
+    const skip = parseInt(searchParams.get('skip') || '0');
+    const days = searchParams.get('days'); // filter by duration
 
     // Build query
-  const query: any = { isActive: true };
+    const query: any = { isActive: true };
     if (templateType) {
       if (templateType === 'plan') {
         // include legacy documents with no templateType field
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
 
     // Generate cache key based on query params
     const cacheKey = `meal-plan-templates:${templateType || ''}:${category || ''}:${createdBy || ''}:${search || ''}:${sortBy}:${skip}:${limit}`;
-    
+
     const { templates, total, categories } = await withCache(
       cacheKey,
       async () => {
@@ -211,6 +212,24 @@ export async function POST(request: NextRequest) {
 
     // Populate creator info
     await template.populate('createdBy', 'firstName lastName');
+
+    // Log activity
+    logActivity({
+      userId: session.user.id,
+      userRole: session.user.role as any,
+      userName: session.user.name || '',
+      userEmail: session.user.email || '',
+      action: 'create_meal_plan_template',
+      actionType: 'create',
+      category: 'meal_plan',
+      description: `Created meal plan template: ${validatedData.name}`,
+      details: {
+        templateName: validatedData.name,
+        category: validatedData.category,
+        duration: validatedData.duration,
+        isPublic: validatedData.isPublic
+      }
+    }).catch(console.error);
 
     return NextResponse.json({
       success: true,

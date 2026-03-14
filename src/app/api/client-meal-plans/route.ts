@@ -12,6 +12,7 @@ import { logHistoryServer } from '@/lib/server/history';
 import { sendNotificationToUser } from '@/lib/firebase/firebaseNotification';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
 import { updateClientStatusFromMealPlan } from '@/lib/status/computeClientStatus';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 // Validation schema for client meal plan assignment
 const clientMealPlanSchema = z.object({
@@ -418,6 +419,33 @@ export async function POST(request: NextRequest) {
         status: clientMealPlan.status
       }
     });
+
+    // Log activity for audit trail
+    const roleMap: Record<string, 'admin' | 'dietitian' | 'health_counselor' | 'client'> = {
+      admin: 'admin',
+      dietitian: 'dietitian',
+      health_counselor: 'health_counselor',
+    };
+    logActivity({
+      userId: session.user.id,
+      userRole: roleMap[userRole as string] || 'admin',
+      userName: session.user.name || session.user.email || '',
+      userEmail: session.user.email || '',
+      action: 'Assigned Meal Plan',
+      actionType: 'create',
+      category: 'meal_plan',
+      description: `Assigned meal plan "${validatedData.name}" to client ${client.firstName || ''} ${client.lastName || ''} (${client.email}).`,
+      targetUserId: validatedData.clientId,
+      targetUserName: `${client.firstName || ''} ${client.lastName || ''} (${client.email})`,
+      resourceId: clientMealPlan._id?.toString(),
+      resourceType: 'ClientMealPlan',
+      resourceName: validatedData.name,
+      details: {
+        startDate: validatedData.startDate,
+        endDate: validatedData.endDate,
+        templateId: validatedData.templateId,
+      },
+    }).catch(() => { });
 
     // Send push notification to client about new meal plan
     try {

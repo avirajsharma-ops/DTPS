@@ -5,18 +5,19 @@ import connectDB from '@/lib/db/connection';
 import User from '@/lib/db/models/User';
 import { UserRole } from '@/types';
 import { withCache, clearCacheByTag } from '@/lib/api/utils';
+import { logActivity } from '@/lib/utils/activityLogger';
 
 export const dynamic = 'force-dynamic';
 
 // Helper function to check if dietitian is assigned to client
 async function isDietitianAssigned(dietitianId: string, clientId: string): Promise<boolean> {
   const client = await withCache(
-      `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId)}`,
-      async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
-      { ttl: 120000, tags: ['dietitian_panel'] }
-    );
+    `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId)}`,
+    async () => await User.findById(clientId).select('assignedDietitian assignedDietitians'),
+    { ttl: 120000, tags: ['dietitian_panel'] }
+  );
   if (!client) return false;
-  
+
   return (
     client.assignedDietitian?.toString() === dietitianId ||
     client.assignedDietitians?.some((d: any) => d.toString() === dietitianId)
@@ -51,9 +52,9 @@ export async function GET(
     const client = await withCache(
       `dietitian-panel:clients:clientId:profile:${JSON.stringify(clientId)}`,
       async () => await User.findById(clientId)
-      .select('-password')
-      .populate('assignedDietitian', 'firstName lastName email')
-      .populate('assignedDietitians', 'firstName lastName email'),
+        .select('-password')
+        .populate('assignedDietitian', 'firstName lastName email')
+        .populate('assignedDietitians', 'firstName lastName email'),
       { ttl: 120000, tags: ['dietitian_panel'] }
     );
 
@@ -139,6 +140,28 @@ export async function PUT(
       { $set: updateData },
       { new: true }
     ).select('-password');
+
+    // Log activity
+    const changedFields = Object.keys(updateData).filter(
+      k => !['updatedBy', 'updatedByRole', 'updatedAt'].includes(k)
+    );
+    logActivity({
+      userId: session.user.id,
+      userRole: 'dietitian',
+      userName: session.user.name || session.user.email || '',
+      userEmail: session.user.email || '',
+      action: 'Updated Client Profile',
+      actionType: 'update',
+      category: 'profile',
+      description: `Dietitian updated profile for client ${existingClient.firstName || ''} ${existingClient.lastName || ''} (${existingClient.email}). Fields: ${changedFields.join(', ')}`,
+      targetUserId: clientId,
+      targetUserName: `${existingClient.firstName || ''} ${existingClient.lastName || ''} (${existingClient.email})`,
+      changeDetails: changedFields.map(f => ({
+        fieldName: f,
+        oldValue: (existingClient as any)[f] ?? null,
+        newValue: updateData[f] ?? null,
+      })),
+    }).catch(() => { });
 
     return NextResponse.json({
       success: true,
